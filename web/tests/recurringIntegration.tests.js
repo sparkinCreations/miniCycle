@@ -21,7 +21,6 @@ function setupDIDeps(mockAppState, mockShowNotification, mockFeatureFlags) {
         AppState: mockAppState,
         showNotification: mockShowNotification,
         FeatureFlags: mockFeatureFlags,
-        loadMiniCycleData: () => mockAppState?.get?.() || null,
         refreshUIFromState: () => {},
         updateProgressBar: () => {},
         notifications: { showConfirmationModal: () => {} },

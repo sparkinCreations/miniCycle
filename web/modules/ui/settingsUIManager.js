@@ -72,7 +72,6 @@ const _deps = new Proxy({}, {
  * Set dependencies for settings UI manager
  * @param {Object} dependencies - Dependency configuration
  * @param {Object} dependencies.AppState - AppState instance (required)
- * @param {Function} dependencies.loadMiniCycleData - Data loader (required)
  * @param {Function} dependencies.showNotification - Notification function (required)
  * @param {Function} dependencies.safeAddEventListener - Event listener helper (required)
  * @param {Function} [dependencies.hideMainMenu] - Menu hide function

@@ -90,7 +90,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
                 isDirty: false,
                 init: () => {}
             },
-            loadMiniCycleData: () => mockSchemaData,
             showPromptModal: (options) => {
                 // Simulate modal callback for testing
                 if (options.callback) {
@@ -277,7 +276,6 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // These are the actual required deps per _validateDependencies()
         const requiredDeps = [
             'AppState',
-            'loadMiniCycleData',
             'showPromptModal',
             'sanitizeInput',
             'completeInitialSetup',

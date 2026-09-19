@@ -26,7 +26,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_V
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
-import { getRoutines, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
+import { getRoutines, getRoutine, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -44,7 +44,6 @@ let getUniqueCycleName;
 
 const di = createDIModule('MenuManager', {
     appInit: optional(null),
-    loadMiniCycleData: optional(null),
     AppState: optional(null),
     showNotification: optional(null),
     showPromptModal: optional(null),
@@ -85,7 +84,7 @@ const di = createDIModule('MenuManager', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, loadMiniCycleData: Function|null, AppState: Object|null, showNotification: Function|null, showPromptModal: Function|null, showConfirmationModal: Function|null, safeAddEventListener: Function|null, switchMiniCycle: Function|null, createNewMiniCycle: Function|null, loadMiniCycle: Function|null, updateCycleModeDescription: Function|null, checkGamesUnlock: Function|null, sanitizeInput: Function|null, updateCycleData: Function|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, enableUndoSystemOnFirstInteraction: Function|null, recurringPanel: Object|null, AppMeta: Object|null, getElementById: Function, querySelector: Function, querySelectorAll: Function}} */
+/** @type {{appInit: Object|null, AppState: Object|null, showNotification: Function|null, showPromptModal: Function|null, showConfirmationModal: Function|null, safeAddEventListener: Function|null, switchMiniCycle: Function|null, createNewMiniCycle: Function|null, loadMiniCycle: Function|null, updateCycleModeDescription: Function|null, checkGamesUnlock: Function|null, sanitizeInput: Function|null, updateCycleData: Function|null, updateProgressBar: Function|null, updateStatsPanel: Function|null, checkCompleteAllButton: Function|null, updateUndoRedoButtons: Function|null, enableUndoSystemOnFirstInteraction: Function|null, recurringPanel: Object|null, AppMeta: Object|null, getElementById: Function, querySelector: Function, querySelectorAll: Function}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -94,7 +93,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for MenuManager (call before creating instance)
- * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ * @param {Object} dependencies - { AppState, showNotification, etc. }
  * @returns {void}
  */
 export function setMenuManagerDependencies(dependencies) {
@@ -128,7 +127,6 @@ export class MenuManager {
 
         // Store dependencies - DI provides all of these via moduleLoader
         this.deps = {
-            loadMiniCycleData: resolvedDeps.loadMiniCycleData,
             AppState: resolvedDeps.AppState,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             showPromptModal: resolvedDeps.showPromptModal || this.fallbackPromptModal,
@@ -394,6 +392,39 @@ export class MenuManager {
         this.loadCollapsedStates();
     }
 
+    /**
+     * The live state, or null while AppState is not ready.
+     * AppState is delivered as a callable accessor in production (and as a plain
+     * object by some tests) — accept both, as saveMiniCycleAsNew does.
+     * @returns {Object|null}
+     */
+    _liveState() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        return AppState?.isReady?.() ? AppState.get() : null;
+    }
+
+    /**
+     * The live state, or null while AppState is not ready.
+     * AppState is delivered as a callable accessor in production (and as a plain
+     * object by some tests) — accept both, as saveMiniCycleAsNew does.
+     * @returns {Object|null}
+     */
+    _liveState() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        return AppState?.isReady?.() ? AppState.get() : null;
+    }
+
+    /**
+     * The live state, or null while AppState is not ready.
+     * AppState is delivered as a callable accessor in production (and as a plain
+     * object by some tests) — accept both, as saveMiniCycleAsNew does.
+     * @returns {Object|null}
+     */
+    _liveState() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        return AppState?.isReady?.() ? AppState.get() : null;
+    }
+
     loadCollapsedStates() {
         const state = this.deps.AppState?.get();
         const collapsibleHeaders = this.deps.querySelectorAll(DOM_SELECTORS.MENU_SECTION_HEADER_COLLAPSIBLE);
@@ -475,17 +506,17 @@ export class MenuManager {
         const menuHeaderTitle = this.deps.getElementById(DOM_IDS.MAIN_MENU_TITLE);
         const dateElement = this.deps.getElementById(DOM_IDS.CURRENT_DATE);
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._liveState();
+        if (!state) {
             console.warn('⚠️ No data available for updateMainMenuHeader');
             return;
         }
 
-        const { cycles, activeCycle } = schemaData;
+        const activeCycle = getActiveRoutineId(state);
+        const currentCycle = getRoutine(state, activeCycle);
         let activeCycleTitle = getLabel('routine.noSelected');
 
-        if (activeCycle && cycles[activeCycle]) {
-            const currentCycle = cycles[activeCycle];
+        if (activeCycle && currentCycle) {
             activeCycleTitle = currentCycle.title || activeCycle;
         } else {
             console.warn('⚠️ No active cycle found for header update');
@@ -700,15 +731,15 @@ export class MenuManager {
      */
     async clearAllTasks() {
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._liveState();
+        if (!state) {
             console.error('❌ State data required for clearAllTasks');
             this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
+        const activeCycle = getActiveRoutineId(state);
+        const currentCycle = getRoutine(state, activeCycle);
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to clear tasks');
@@ -779,15 +810,15 @@ export class MenuManager {
      */
     deleteAllTasks() {
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const state = this._liveState();
+        if (!state) {
             console.error('❌ State data required for deleteAllTasks');
             this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const currentCycle = cycles[activeCycle];
+        const activeCycle = getActiveRoutineId(state);
+        const currentCycle = getRoutine(state, activeCycle);
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to delete tasks from');

@@ -13,13 +13,14 @@ import { DOM_IDS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
 import { buildMcycPayload, buildMcycFilename } from '../utils/mcycPayload.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
 // ============================================================================
 
 const di = createDIModule('CycleExportManager', {
-    loadMiniCycleData: required(),
+    AppState: required(),
     showNotification: required(),
     showConfirmationModal: required(),
     safeAddEventListener: required(),
@@ -27,7 +28,7 @@ const di = createDIModule('CycleExportManager', {
     AppMeta: optional(null)  // For version info
 });
 
-/** @type {{loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, getElementById: Function|null, AppMeta: Object|null}} */
+/** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, getElementById: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -162,17 +163,16 @@ export function setupExportButton() {
 
     exportBtn._clickHandler = () => {
 
-        const loadMiniCycleData = _deps.loadMiniCycleData;
-        const schemaData = loadMiniCycleData();
-
-        if (!schemaData) {
+        const AppState = _deps.AppState;
+        if (!AppState.isReady()) {
             console.error('State data required for export');
             _deps.showNotification(getLabel('notify.exportNoData'), "error");
             return;
         }
 
-        const { cycles, activeCycle } = schemaData;
-        const cycle = cycles[activeCycle];
+        const state = AppState.get();
+        const activeCycle = getActiveRoutineId(state);
+        const cycle = getRoutine(state, activeCycle);
 
         if (!activeCycle || !cycle) {
             _deps.showNotification(getLabel('notify.exportNoActiveCycle'));

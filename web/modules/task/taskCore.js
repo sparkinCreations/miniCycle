@@ -59,7 +59,6 @@ const di = createDIModule('TaskCore', {
     appInit: optional(null),
     AppState: optional(null),
     AppGlobalState: optional(null),  // Passed through to taskCycleReset for the batch-operation flag
-    loadMiniCycleData: optional(null),
     autoSave: optional(null),
     sanitizeInput: optional(null),
     isPerformingUndoRedo: optional(null),
@@ -96,7 +95,7 @@ const di = createDIModule('TaskCore', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, autoSave: Function|null, sanitizeInput: Function|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, checkOverdueTasks: Function|null, updateArrowsInDOM: Function|null, updateMoveArrowsVisibility: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, recurringPanel: Object|null, updateRecurringPanelButtonVisibility: Function|null, enableDragAndDropOnTask: Function|null, checkMiniCycle: Function|null, incrementCycleCount: Function|null, animateProgressBarFill: Function|null, animateProgressBarEmpty: Function|null, pluginManager: Object|null, AppMeta: Object|null, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, autoSave: Function|null, sanitizeInput: Function|null, isPerformingUndoRedo: Function|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, checkOverdueTasks: Function|null, updateArrowsInDOM: Function|null, updateMoveArrowsVisibility: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, recurringPanel: Object|null, updateRecurringPanelButtonVisibility: Function|null, enableDragAndDropOnTask: Function|null, checkMiniCycle: Function|null, incrementCycleCount: Function|null, animateProgressBarFill: Function|null, animateProgressBarEmpty: Function|null, pluginManager: Object|null, AppMeta: Object|null, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: Object|null, DEFAULT_TASK_OPTION_BUTTONS: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -236,7 +235,6 @@ export class TaskCore {
             AppState: resolvedDeps.AppState || null,
 
             // Data operations
-            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
             sanitizeInput: resolvedDeps.sanitizeInput || ((text) => text),
 
             // Undo system state check
@@ -366,11 +364,6 @@ export class TaskCore {
     // ========================================================================
 
     fallbackNotification(message, type = 'info') {
-    }
-
-    fallbackLoadData() {
-        console.warn('loadMiniCycleData not available');
-        return null;
     }
 
     fallbackPromptModal(config) {

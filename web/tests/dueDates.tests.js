@@ -172,11 +172,10 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('accepts dependency injection', async () => {
             const mockShowNotification = (msg) => console.log(msg);
-            const mockLoadData = () => ({ metadata: { version: '2.5' }, data: { routine: {} }});
 
             const instance = new MiniCycleDueDates({
                 showNotification: mockShowNotification,
-                loadMiniCycleData: mockLoadData
+                AppState: createMockAppStateForDueDates()
             });
 
             if (!instance || !instance.deps.showNotification) {
@@ -190,7 +189,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskDueDate updates task in Schema 2.5', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 AppState: createMockAppStateForDueDates()
             });
 
@@ -211,7 +209,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             await new Promise(resolve => setTimeout(resolve, 10));
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 AppState: createMockAppStateForDueDates()
             });
 
@@ -226,7 +223,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('clears due date when set to null', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 AppState: createMockAppStateForDueDates()
             });
 
@@ -266,7 +262,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('checkOverdueTasks identifies overdue tasks', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 querySelectorAll: () => [],
                 AppState: createMockAppStateForDueDates()
             });
@@ -317,7 +312,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saves due date to correct Schema 2.5 location', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 AppState: createMockAppStateForDueDates()
             });
 
@@ -333,7 +327,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('stores overdue states in Schema 2.5', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 querySelectorAll: () => [],
                 AppState: createMockAppStateForDueDates()
             });
@@ -352,7 +345,7 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('handles missing task gracefully', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
+                AppState: createMockAppStateForDueDates(),
                 showNotification: () => {}
             });
 
@@ -372,11 +365,11 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             localStorage.clear();
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => null,
+                AppState: { isReady: () => false, get: () => null },
                 showNotification: () => {}
             });
 
-            // Should throw error when Schema 2.5 data is missing
+            // Should throw error when state is not ready
             let errorThrown = false;
             try {
                 await instance.saveTaskDueDate('task-1', '2025-12-31');
@@ -452,7 +445,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('saveTaskDueDate completes within reasonable time', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 AppState: createMockAppStateForDueDates()
             });
 
@@ -469,7 +461,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
 
         await test('checkOverdueTasks completes within reasonable time', async () => {
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 querySelectorAll: () => [],
                 AppState: createMockAppStateForDueDates()
             });
@@ -506,7 +497,7 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             let notificationShown = false;
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: false } }),
+                AppState: { isReady: () => true, get: () => ({ customReminders: { dueDatesReminders: false } }) },
                 querySelectorAll: () => [],
                 showNotification: () => { notificationShown = true; }
             });
@@ -532,7 +523,7 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             mockTask.appendChild(taskText);
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: true } }),
+                AppState: { isReady: () => true, get: () => ({ customReminders: { dueDatesReminders: true } }) },
                 querySelectorAll: (selector) => {
                     if (selector === '.task') return [mockTask];
                     return [];
@@ -557,7 +548,7 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             mockTask.classList.add('task'); // Not overdue
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => ({ reminders: { dueDatesReminders: true } }),
+                AppState: { isReady: () => true, get: () => ({ customReminders: { dueDatesReminders: true } }) },
                 querySelectorAll: (selector) => {
                     if (selector === '.task') return [mockTask];
                     return [];
@@ -576,7 +567,7 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
         await test('remindOverdueTasks handles missing schema data gracefully', () => {
             const mockToggle = { checked: false };
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => null,
+                AppState: { isReady: () => false, get: () => null },
                 querySelectorAll: () => []
             });
             instance.toggleAutoReset = mockToggle;
@@ -600,7 +591,6 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             const todayLocal = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
             const instance = new MiniCycleDueDates({
-                loadMiniCycleData: () => { const d = JSON.parse(localStorage.getItem('miniCycleData')); return { cycles: d.data.routine, activeCycle: d.appState.activeRoutineId, settings: d.settings || {}, reminders: d.customReminders || {} }; },
                 querySelectorAll: () => [],
                 AppState: createMockAppStateForDueDates()
             });

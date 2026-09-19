@@ -42,8 +42,8 @@ export async function runTitleManagerTests(resultsDiv) {
         return fn;
     }
 
-    // Build an in-memory AppState + matching loadMiniCycleData over the SAME object,
-    // so the handler's load + update operate on consistent data.
+    // Build an in-memory AppState over one object, so the handler's read + update
+    // operate on consistent data.
     function makeEnv(cycles, activeRoutineId) {
         const state = {
             data: { routine: cycles },
@@ -56,11 +56,7 @@ export async function runTitleManagerTests(resultsDiv) {
             update: async (fn) => { fn(state); return state; },
             forceSave: () => {}
         };
-        const loadMiniCycleData = () => ({
-            cycles: state.data.routine,
-            activeCycle: state.appState.activeRoutineId
-        });
-        return { state, AppState, loadMiniCycleData };
+        return { state, AppState };
     }
 
     async function wire(overrides = {}) {
@@ -132,7 +128,6 @@ export async function runTitleManagerTests(resultsDiv) {
         // This is the FIRST wire() — guard not yet set, so listener attaches here.
         await wire({
             AppState: env.AppState,
-            loadMiniCycleData: env.loadMiniCycleData,
             showNotification: notify,
             __titleText: 'Old'
         });
@@ -160,7 +155,7 @@ export async function runTitleManagerTests(resultsDiv) {
         removeTitleEl();
         const env = makeEnv({ Morning: { title: 'Morning', tasks: [{ id: 't1' }] } }, 'Morning');
         const notify = makeNotifSpy();
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        await wire({ AppState: env.AppState, showNotification: notify });
         const el = makeTitleEl('Evening Routine');
         try {
             await mod.handleMiniCycleTitleBlur();
@@ -178,7 +173,7 @@ export async function runTitleManagerTests(resultsDiv) {
         removeTitleEl();
         const env = makeEnv({ Keep: { title: 'Keep', tasks: [] } }, 'Keep');
         const notify = makeNotifSpy();
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        await wire({ AppState: env.AppState, showNotification: notify });
         const el = makeTitleEl('   '); // whitespace → empty after trim
         try {
             await mod.handleMiniCycleTitleBlur();
@@ -192,7 +187,7 @@ export async function runTitleManagerTests(resultsDiv) {
         removeTitleEl();
         const env = makeEnv({ Same: { title: 'Same', tasks: [] } }, 'Same');
         const notify = makeNotifSpy();
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        await wire({ AppState: env.AppState, showNotification: notify });
         makeTitleEl('Same');
         try {
             await mod.handleMiniCycleTitleBlur();
@@ -208,7 +203,7 @@ export async function runTitleManagerTests(resultsDiv) {
             B: { title: 'B', tasks: [] }
         }, 'A');
         const notify = makeNotifSpy();
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        await wire({ AppState: env.AppState, showNotification: notify });
         const el = makeTitleEl('B'); // rename A -> B, but B exists
         try {
             await mod.handleMiniCycleTitleBlur();
@@ -224,7 +219,7 @@ export async function runTitleManagerTests(resultsDiv) {
         const limit = LIMITS.CYCLE_NAME_CHARACTER || 100;
         const env = makeEnv({ Short: { title: 'Short', tasks: [] } }, 'Short');
         const notify = makeNotifSpy();
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        await wire({ AppState: env.AppState, showNotification: notify });
         const longName = 'X'.repeat(limit + 25);
         const el = makeTitleEl(longName);
         try {
@@ -253,28 +248,28 @@ export async function runTitleManagerTests(resultsDiv) {
     await test('aborts (no throw, no state change) when no title element exists', async () => {
         removeTitleEl();
         const env = makeEnv({ Z: { title: 'Z', tasks: [] } }, 'Z');
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: makeNotifSpy() });
+        await wire({ AppState: env.AppState, showNotification: makeNotifSpy() });
         removeTitleEl(); // remove again — handler should bail early
         // no element → returns immediately; state intact
         await mod.handleMiniCycleTitleBlur();
         if (!env.state.data.routine['Z']) throw new Error('state should be untouched with no title element');
     });
 
-    await test('aborts when loadMiniCycleData returns null (no throw)', async () => {
+    await test('aborts when state is not ready (no throw)', async () => {
         removeTitleEl();
         const env = makeEnv({ Q: { title: 'Q', tasks: [] } }, 'Q');
-        await wire({ AppState: env.AppState, loadMiniCycleData: () => null, showNotification: makeNotifSpy() });
+        await wire({ AppState: { ...env.AppState, isReady: () => false }, showNotification: makeNotifSpy() });
         const el = makeTitleEl('Renamed Q');
         try {
-            await mod.handleMiniCycleTitleBlur(); // schemaData null → early return
-            if (env.state.data.routine['Renamed Q']) throw new Error('should not rename when schema data missing');
+            await mod.handleMiniCycleTitleBlur(); // state not ready → early return
+            if (env.state.data.routine['Renamed Q']) throw new Error('should not rename when state is not ready');
         } finally { removeTitleEl(); }
     });
 
     await test('title is normalized (trimmed), NOT HTML-stripped; renders safely via textContent', async () => {
         removeTitleEl();
         const env = makeEnv({ Plain: { title: 'Plain', tasks: [] } }, 'Plain');
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: makeNotifSpy() });
+        await wire({ AppState: env.AppState, showNotification: makeNotifSpy() });
         const el = makeTitleEl('  <b>Bold</b>Name  ');
         try {
             await mod.handleMiniCycleTitleBlur();
@@ -292,16 +287,16 @@ export async function runTitleManagerTests(resultsDiv) {
         } finally { removeTitleEl(); }
     });
 
-    await test('AppState not ready → reverts title and notifies error', async () => {
+    await test('AppState not ready → no rename, and the user is told', async () => {
         removeTitleEl();
         const env = makeEnv({ NR: { title: 'NR', tasks: [] } }, 'NR');
-        env.AppState.isReady = () => false; // becomes not-ready after load
+        env.AppState.isReady = () => false;
         const notify = makeNotifSpy();
-        await wire({ AppState: env.AppState, loadMiniCycleData: env.loadMiniCycleData, showNotification: notify });
+        await wire({ AppState: env.AppState, showNotification: notify });
         const el = makeTitleEl('Attempted');
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (el.textContent !== 'NR') throw new Error('should revert to old title when AppState not ready');
+            if (env.state.data.routine['Attempted']) throw new Error('should not rename when AppState not ready');
             const err = notify.calls.find(c => c.type === 'error');
             if (!err) throw new Error('expected an error notification');
         } finally { removeTitleEl(); }

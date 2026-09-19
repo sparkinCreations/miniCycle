@@ -37,7 +37,6 @@ export async function runShareManagerTests(resultsDiv) {
 
     await test('setShareManagerDependencies accepts mock dependencies', () => {
         mod.setShareManagerDependencies({
-            loadMiniCycleData: () => ({}),
             showNotification: () => {},
             safeAddEventListener: () => {},
             hideMainMenu: () => {}
@@ -57,7 +56,6 @@ export async function runShareManagerTests(resultsDiv) {
 
     await test('setupShareRoutineButton does not throw when DOM elements missing', () => {
         mod.setShareManagerDependencies({
-            loadMiniCycleData: () => ({}),
             showNotification: () => {},
             safeAddEventListener: () => {},
             hideMainMenu: () => {}
@@ -71,7 +69,6 @@ export async function runShareManagerTests(resultsDiv) {
 
     await test('setupShareAppButton does not throw when DOM elements missing', () => {
         mod.setShareManagerDependencies({
-            loadMiniCycleData: () => ({}),
             showNotification: () => {},
             safeAddEventListener: () => {},
             hideMainMenu: () => {}

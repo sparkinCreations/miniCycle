@@ -28,7 +28,6 @@ import {
 const di = createDIModule('RecurringIntegration', {
     appInit: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     showNotification: optional(null),
     showNotificationWithTip: optional(null),
     refreshUIFromState: optional(null),
@@ -144,7 +143,6 @@ export async function initRecurringModules(options = {}) {
 
                     // Optional (nullable — panel checks before use)
                     appInit: deps.appInit,
-                    loadData: () => deps.loadMiniCycleData?.(),
                     safeAddEventListener: deps.GlobalUtils?.safeAddEventListener,
                     escapeHtml: deps.escapeHtml,
                     syncRecurringStateToDOM: deps.syncRecurringStateToDOM,
@@ -186,15 +184,6 @@ export async function initRecurringModules(options = {}) {
                     throw new Error('AppState not available');
                 }
                 return deps.AppState.update(updateFn, immediate, options);
-            },
-
-            // Data operations (legacy - for backwards compatibility)
-            loadData: () => {
-                if (typeof deps.loadMiniCycleData !== 'function') {
-                    console.warn('⚠️ loadMiniCycleData not available');
-                    return null;
-                }
-                return deps.loadMiniCycleData();
             },
 
             // Notifications (required) - DI-pure

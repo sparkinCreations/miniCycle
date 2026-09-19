@@ -37,7 +37,6 @@ export async function runCycleExportManagerTests(resultsDiv) {
 
     await test('setCycleExportManagerDependencies accepts mock dependencies', () => {
         mod.setCycleExportManagerDependencies({
-            loadMiniCycleData: () => ({}),
             showNotification: () => {},
             showConfirmationModal: () => {},
             safeAddEventListener: () => {}

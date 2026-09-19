@@ -38,7 +38,6 @@ export async function runTaskDOMTests(resultsDiv) {
     setTaskDOMManagerDependencies({
         sanitizeInput: mockSanitizeInput,
         showNotification: () => {},
-        loadMiniCycleData: () => null,
         safeAddEventListener: env.deps.safeAddEventListener,
         vocabThemeManager: mockVocabThemeManager
     });

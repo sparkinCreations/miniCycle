@@ -27,7 +27,6 @@ let getUniqueCycleName;
 const di = createDIModule('TitleManager', {
     GlobalUtils: optional(null),
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     showNotification: optional(null),
     updateMainMenuHeader: optional(null),
     updateUndoRedoButtons: optional(null),
@@ -38,7 +37,7 @@ const di = createDIModule('TitleManager', {
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{GlobalUtils: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, showNotification: Function|null, updateMainMenuHeader: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, enableUndoSystemOnFirstInteraction: Function|null, onCycleRenamed: Function|null}} */
+/** @type {{GlobalUtils: Object|null, AppState: Object|null, showNotification: Function|null, updateMainMenuHeader: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, enableUndoSystemOnFirstInteraction: Function|null, onCycleRenamed: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -105,19 +104,19 @@ async function handleMiniCycleTitleBlur() {
     if (!titleElement) return;
 
     const AppState = _deps.AppState;
-    const loadMiniCycleData = _deps.loadMiniCycleData;
     const showNotification = _deps.showNotification;
     const GlobalUtils = _deps.GlobalUtils;
 
-    // Load data once at the start — repeated reads mid-function can observe a mid-save state
-    const schemaData = loadMiniCycleData?.();
-    if (!schemaData) {
-        console.error('State data required for title update');
+    // Read state once at the start — repeated reads mid-function can observe a mid-save state
+    const state = AppState?.isReady?.() ? AppState.get() : null;
+    if (!state) {
+        console.error('Title update failed: AppState not ready');
+        showNotification?.(getLabel('notify.titleSaveFailed'), 'error');
         return;
     }
 
-    const { cycles, activeCycle } = schemaData;
-    const miniCycleData = cycles[activeCycle];
+    const activeCycle = getActiveRoutineId(state);
+    const miniCycleData = getRoutine(state, activeCycle);
 
     if (!activeCycle || !miniCycleData) {
         console.warn("No active miniCycle found. Title update aborted.");
@@ -151,14 +150,6 @@ async function handleMiniCycleTitleBlur() {
 
     // No change - exit early
     if (newTitle === oldTitle) {
-        return;
-    }
-
-    // Check AppState readiness
-    if (!AppState?.isReady?.()) {
-        console.error('Title update failed: AppState not ready');
-        showNotification?.(getLabel('notify.titleSaveFailed'), 'error');
-        titleElement.textContent = oldTitle;
         return;
     }
 
@@ -274,7 +265,6 @@ export async function initTitleManager(dependencies = {}) {
     const adaptedDeps = {
         GlobalUtils: dependencies.GlobalUtils,
         AppState: dependencies.AppState,
-        loadMiniCycleData: dependencies.loadMiniCycleData,
         showNotification: dependencies.showNotification,
         updateMainMenuHeader: dependencies.updateMainMenuHeader,
         updateUndoRedoButtons: dependencies.updateUndoRedoButtons,

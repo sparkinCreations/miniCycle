@@ -124,7 +124,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
 
         return {
             AppMeta: { version: '1.0.0-test' },
-            loadMiniCycleData: () => mockFlattenedData,
             AppState: AppStateMock,
             showNotification: () => {},
             showPromptModal: (opts) => opts.callback && opts.callback(null),
@@ -210,11 +209,9 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     });
 
     test('accepts constructor dependency injection', () => {
-        const mockLoad = () => ({ cycles: {}, activeCycle: null });
         const mockNotify = () => {};
 
         const instance = new MenuManager({
-            loadMiniCycleData: mockLoad,
             showNotification: mockNotify,
             AppState: () => ({ isReady: () => true, get: () => ({}) })
         });
@@ -401,7 +398,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => mockFlattenedData,
             updateCycleData: (id, updateFn, save) => {
                 updatedCycle = { tasks: JSON.parse(JSON.stringify(mockFlattenedData.cycles[id].tasks)) };
                 updateFn(updatedCycle);
@@ -439,7 +435,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => mockFlattenedData,
             showConfirmationModal: (opts) => opts.callback(true), // User confirms
             updateCycleData: (id, updateFn, save) => {
                 updatedCycle = { tasks: [], recurringTemplates: {} };
@@ -478,10 +473,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => ({
-                cycles: mockFullSchema.data.routine,
-                activeCycle: 'cycle-1'
-            }),
             AppState: () => ({
                 isReady: () => true,
                 get: () => mockFullSchema,
@@ -527,8 +518,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('shows an error notification when Schema 2.5 data is missing (DI)', async () => {
         let notified = null;
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => null,  // missing data → early guard
-            AppState: () => null,
+            AppState: () => null,  // missing data → early guard
             showNotification: (msg, type) => { notified = { msg, type }; }
         }));
         const instance = new MenuManager();
@@ -566,10 +556,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
 
     test('handles user cancellation in deleteAllTasks (DI)', () => {
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => ({
-                cycles: { 'cycle-1': { title: 'Test', tasks: [] } },
-                activeCycle: 'cycle-1'
-            }),
             showConfirmationModal: (opts) => opts.callback(false), // User cancelled
             updateCycleData: () => { throw new Error('Should not be called'); },
             showNotification: () => {}
@@ -600,7 +586,6 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         };
 
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => mockFlattenedData,
             getElementById: getElementByIdMock
         }));
         const instance = new MenuManager();
@@ -637,8 +622,10 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         let clearedCycleId = null;
         const cycle = { title: 'Test', tasks: [{ id: 't1', completed: true }] };
         setMenuManagerDependencies(createMockDeps({
-            AppState: () => null,
-            loadMiniCycleData: () => ({ cycles: { 'cycle-1': cycle }, activeCycle: 'cycle-1' }),
+            AppState: () => ({
+                isReady: () => true,
+                get: () => ({ data: { routine: { 'cycle-1': cycle } }, appState: { activeRoutineId: 'cycle-1' } })
+            }),
             updateCycleData: (id, updateFn) => { clearedCycleId = id; updateFn(cycle); return true; },
             querySelectorAll: () => [],
             getElementById: () => ({ textContent: '' })
@@ -650,7 +637,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         // With an active cycle, clearAllTasks routes through updateCycleData to uncheck tasks.
         // The old test was `instance.clearAllTasks().catch(()=>{})` with no assertion — it
         // could never fail. (Its "fallback mode when AppState null" name was also misleading:
-        // clearAllTasks reads loadMiniCycleData + updateCycleData, not AppState.)
+        // clearAllTasks reads the active routine from AppState and writes via updateCycleData.)
         if (clearedCycleId !== 'cycle-1') throw new Error('should update the active cycle via updateCycleData');
         if (cycle.tasks[0].completed !== false) throw new Error('tasks should be unchecked');
     });
@@ -718,9 +705,9 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
                 if (id === 'current-date') return document.createElement('span');
                 return null;
             },
-            loadMiniCycleData: () => ({
-                cycles: { 'cycle-1': { title: '' } },
-                activeCycle: 'cycle-1'
+            AppState: () => ({
+                isReady: () => true,
+                get: () => ({ data: { routine: { 'cycle-1': { title: '' } } }, appState: { activeRoutineId: 'cycle-1' } })
             })
         }));
         const instance = new MenuManager();
@@ -732,7 +719,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('shows a notification when there is no active cycle to clear (DI)', async () => {
         let notified = null;
         setMenuManagerDependencies(createMockDeps({
-            loadMiniCycleData: () => ({ cycles: {}, activeCycle: null }),
+            AppState: () => ({ isReady: () => true, get: () => ({ data: { routine: {} }, appState: { activeRoutineId: null } }) }),
             showNotification: (msg) => { notified = msg; }
         }));
         const instance = new MenuManager();

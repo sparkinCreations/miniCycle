@@ -15,7 +15,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, DEFAULT_REMINDERS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Date-only strings ("YYYY-MM-DD", which is exactly what <input type="date">.value
 // yields) parse as UTC midnight via new Date(). In any negative UTC offset that
@@ -32,18 +32,16 @@ import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 const di = createDIModule('DueDates', {
     appInit: optional(null),
-    loadMiniCycleData: optional(null),
     showNotification: optional(null),
     updateStatsPanel: optional(null),
     updateProgressBar: optional(null),
     checkCompleteAllButton: optional(null),
-    saveTaskToSchema25: optional(null),
     AppState: optional(null),
     AppMeta: optional(null)
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, loadMiniCycleData: Function|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, saveTaskToSchema25: Function|null, AppState: Object|null, AppMeta: Object|null}} */
+/** @type {{appInit: Object|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, saveTaskToSchema25: Function|null, AppState: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -52,7 +50,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for MiniCycleDueDates (call before creating instance)
- * @param {Object} dependencies - { loadMiniCycleData, showNotification, etc. }
+ * @param {Object} dependencies - { AppState, showNotification, etc. }
  * @returns {void}
  */
 export function setDueDatesDependencies(dependencies) {
@@ -69,12 +67,10 @@ export class MiniCycleDueDates {
 
         // Store dependencies with intelligent fallbacks
         this.deps = {
-            loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
             showNotification: resolvedDeps.showNotification || this.fallbackNotification,
             updateStatsPanel: resolvedDeps.updateStatsPanel || (() => {}),
             updateProgressBar: resolvedDeps.updateProgressBar || (() => {}),
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton || (() => {}),
-            saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
             getElementById: resolvedDeps.getElementById || ((id) => document.getElementById(id)),
             querySelectorAll: resolvedDeps.querySelectorAll || ((selector) => document.querySelectorAll(selector)),
             safeAddEventListener: resolvedDeps.safeAddEventListener,
@@ -137,34 +133,29 @@ export class MiniCycleDueDates {
 
         await _deps.appInit?.waitForCore();
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.isReady?.()) {
             throw new Error('State data not found');
         }
 
-        const { cycles, activeCycle } = schemaData;
+        const state = AppState.get();
+        const activeCycle = getActiveRoutineId(state);
+        const routine = getRoutine(state, activeCycle);
 
-        if (!activeCycle || !cycles[activeCycle]) {
+        if (!activeCycle || !routine) {
             console.error('❌ Error: Active routine not found in state.');
             return;
         }
 
-        const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
+        const task = routine.tasks?.find(t => t.id === taskId);
 
         if (!task) {
             console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
             return;
         }
 
-        // Update task due date
-        task.dueDate = newDueDate;
-
-        // ✅ Use AppState only (no localStorage fallback)
-        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-        if (!AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for saveTaskDueDate');
-            return;
-        }
+        // The due date is written inside update() below, never on the live task
+        // first (CLAUDE.md #13: the undo snapshot would capture the post-change state).
 
         try {
             await AppState.update(state => {
@@ -302,23 +293,23 @@ export class MiniCycleDueDates {
 
         const safeAdd = this.deps.safeAddEventListener;
         dueDateInput._changeHandler = async () => {
-            // ✅ Read fresh state from localStorage (source of truth)
+            // ✅ Read fresh state (source of truth)
             await _deps.appInit?.waitForCore();
 
-            const schemaData = this.deps.loadMiniCycleData();
-            if (!schemaData) {
+            const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+            if (!AppState?.isReady?.()) {
                 console.error('❌ Cannot update due date - no data available');
                 return;
             }
 
-            const { cycles, activeCycle: currentActiveCycle } = schemaData;
-            const currentCycle = cycles[currentActiveCycle];
-            const taskToUpdate = currentCycle?.tasks?.find(t => t.id === assignedTaskId);
-
-            if (taskToUpdate) {
-                taskToUpdate.dueDate = dueDateInput.value;
-                this.deps.saveTaskToSchema25(currentActiveCycle, currentCycle);
-            }
+            const currentActiveCycle = getActiveRoutineId(AppState.get());
+            let taskToUpdate = null;
+            await AppState.update(state => {
+                taskToUpdate = getRoutine(state, currentActiveCycle)?.tasks?.find(t => t.id === assignedTaskId) || null;
+                if (taskToUpdate) {
+                    taskToUpdate.dueDate = dueDateInput.value;
+                }
+            }, true);
 
             this.deps.updateStatsPanel();
             this.deps.updateProgressBar();
@@ -389,23 +380,15 @@ export class MiniCycleDueDates {
                 const autoReset = this.toggleAutoReset.checked;
                 this.updateDueDateVisibility(autoReset);
 
-                const schemaData = this.deps.loadMiniCycleData();
-                if (!schemaData) {
+                const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+                if (!AppState?.isReady?.()) {
                     console.error('❌ State data required for due date toggle');
                     return;
                 }
 
-                const { activeCycle } = schemaData;
+                const activeCycle = getActiveRoutineId(AppState.get());
 
                 if (activeCycle) {
-
-                    // ✅ Use AppState only (no localStorage fallback)
-                    const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-                    if (!AppState?.isReady?.()) {
-                        console.error('❌ AppState not ready for auto reset toggle');
-                        return;
-                    }
-
                     try {
                         await AppState.update(state => {
                             if (getRoutine(state, activeCycle)) {
@@ -443,30 +426,26 @@ export class MiniCycleDueDates {
         const taskId = taskItem?.dataset.taskId;
         const dueDateValue = event.target.value;
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.isReady?.()) {
             console.error('❌ State data required for handleDueDateChange');
             return;
         }
 
-        const { cycles, activeCycle, reminders } = schemaData;
+        const state = AppState.get();
+        const activeCycle = getActiveRoutineId(state);
+        const routine = getRoutine(state, activeCycle);
+        const reminders = state.customReminders || DEFAULT_REMINDERS;
 
-        if (!activeCycle || !cycles[activeCycle]) {
+        if (!activeCycle || !routine) {
             console.error("❌ Error: Active routine not found in state.");
             return;
         }
 
-        const task = cycles[activeCycle].tasks?.find(t => t.id === taskId);
+        const task = routine.tasks?.find(t => t.id === taskId);
 
         if (!task) {
             console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
-            return;
-        }
-
-        // ✅ Use AppState only (no localStorage fallback)
-        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-        if (!AppState?.isReady?.()) {
-            console.error('❌ AppState not ready for handleDueDateChange');
             return;
         }
 
@@ -517,14 +496,13 @@ export class MiniCycleDueDates {
      */
     remindOverdueTasks() {
 
-        const schemaData = this.deps.loadMiniCycleData();
-        if (!schemaData) {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.isReady?.()) {
             console.error('❌ State data required for remindOverdueTasks');
             return;
         }
 
-        const { reminders } = schemaData;
-        const remindersSettings = reminders || {};
+        const remindersSettings = AppState.get().customReminders || DEFAULT_REMINDERS;
 
         const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
 
@@ -621,15 +599,6 @@ export class MiniCycleDueDates {
     // ============================================
 
     fallbackNotification(message, type) {
-    }
-
-    fallbackLoadData() {
-        console.warn('⚠️ Data loading not available - due dates cannot function');
-        return null;
-    }
-
-    fallbackSave() {
-        console.warn('⚠️ Save function not available - due dates will not persist');
     }
 
     fallbackAddEventListener(element, event, handler) {

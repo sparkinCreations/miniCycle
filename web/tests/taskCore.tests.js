@@ -54,7 +54,6 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
     const mockShowNotification = createMockNotification();
     setTaskCoreDependencies({
         showNotification: mockShowNotification,
-        loadMiniCycleData: () => null,
         autoSave: () => {},
         showPromptModal: (opts) => { if (opts.callback) opts.callback('Test'); }
     });
@@ -178,8 +177,7 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
         const mockNotification = (msg) => ({ message: msg });
 
         const instance = new TaskCore({
-            showNotification: mockNotification,
-            loadMiniCycleData: () => createMockSchemaData()
+            showNotification: mockNotification
         });
 
         if (!instance || !instance.deps.showNotification) {
@@ -193,9 +191,6 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
 
         if (typeof instance.deps.showNotification !== 'function') {
             throw new Error('Fallback notification not set');
-        }
-        if (typeof instance.deps.loadMiniCycleData !== 'function') {
-            throw new Error('Fallback loadData not set');
         }
     });
 
@@ -355,15 +350,6 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
 
         // Should use fallback and not throw
         instance.fallbackNotification('Test message', 'info');
-    });
-
-    await test('fallback load data returns null', async () => {
-        const instance = new TaskCore();
-
-        const result = instance.fallbackLoadData();
-        if (result !== null) {
-            throw new Error('Fallback loadData should return null');
-        }
     });
 
     await test('fallback prompt modal works', async () => {
@@ -529,7 +515,7 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
             // Other dependencies missing
         });
 
-        if (!instance.deps.loadMiniCycleData) {
+        if (typeof instance.deps.sanitizeInput !== 'function') {
             throw new Error('Should have fallback for missing dependencies');
         }
     });
@@ -548,8 +534,7 @@ export async function runTaskCoreTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles missing AppState gracefully', async () => {
         const instance = new TaskCore({
-            AppState: null,
-            loadMiniCycleData: () => createMockSchemaData()
+            AppState: null
         });
 
         // Should fall back to localStorage operations

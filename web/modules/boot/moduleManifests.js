@@ -388,7 +388,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/dueDates.js',
         phase: PHASES.RECURRING,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['checkCompleteAllButton', 'saveTaskToSchema25', 'updateProgressBar', 'updateStatsPanel'],  // UI refresh after a due-date edit
+        optionalDeps: ['checkCompleteAllButton', 'updateProgressBar', 'updateStatsPanel'],  // UI refresh after a due-date edit
         provides: ['checkOverdueTasks', 'createDueDateInput'],
         provideInstance: 'dueDates',  // depMappings setupDueDateButtonInteraction resolves via deps.features.dueDates
         api: 'features',
@@ -532,7 +532,7 @@ export const MODULE_MANIFESTS = {
     titleManager: {
         path: '../ui/titleManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'GlobalUtils', 'AppState', 'loadMiniCycleData', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons', 'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'onCycleRenamed'],
+        requires: ['appInit', 'GlobalUtils', 'AppState', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons', 'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'onCycleRenamed'],
         provides: ['setupMiniCycleTitleListener', 'handleMiniCycleTitleBlur'],
         api: 'ui',
         after: ['undoRedoManager']  // undoRedoManager provides updateUndoRedoButtons, captureStateSnapshot, onCycleRenamed
@@ -559,7 +559,7 @@ export const MODULE_MANIFESTS = {
     taskUI: {
         path: '../ui/taskUI.js',
         phase: PHASES.THEME_VISUAL, // Must load before TASK_MANAGEMENT so TaskOptionsVisibilityController is available
-        requires: ['appInit', 'loadMiniCycleData'],
+        requires: ['appInit'],
         optionalDeps: ['showCustomizerTip', 'addTask', 'isTouchDevice', 'taskToAddTaskOptions'],
         // NOTE: taskUI also exports refreshTaskListUI (tested directly), but the DI
         // mapping reads taskDOM's deps.task copy — declaring it here would mask
@@ -638,7 +638,7 @@ export const MODULE_MANIFESTS = {
     helpWindowManager: {
         path: '../ui/helpWindowManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'loadMiniCycleData', 'safeAddEventListener', 'getModal'],
+        requires: ['appInit', 'AppState', 'safeAddEventListener', 'getModal'],
         provides: [],
         provideInstance: 'helpWindowManager',
         api: 'ui'

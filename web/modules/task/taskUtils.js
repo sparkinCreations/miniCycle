@@ -33,6 +33,7 @@ import { priorityFields, isPriorityLevel } from '../utils/priorityLevel.js';
 import {
     DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS,
     DEFAULT_RECURRING_DELETE_SETTINGS,
+    DEFAULT_REMINDERS,
     DOM_IDS,
     DOM_SELECTORS,
     DOM_CLASSES
@@ -44,7 +45,6 @@ import {
 
 const di = createDIModule('TaskUtils', {
     AppState: optional(null),
-    loadMiniCycleData: optional(null),
     generateId: optional(null),
     remindOverdueTasks: optional(null),
     enableDragAndDropOnTask: optional(null),
@@ -56,7 +56,7 @@ const di = createDIModule('TaskUtils', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, loadMiniCycleData: Function|null, generateId: Function|null, remindOverdueTasks: Function|null, enableDragAndDropOnTask: Function|null, updateMoveArrowsVisibility: Function|null, saveTaskToSchema25: Function|null}} */
+/** @type {{AppState: Object|null, generateId: Function|null, remindOverdueTasks: Function|null, enableDragAndDropOnTask: Function|null, updateMoveArrowsVisibility: Function|null, saveTaskToSchema25: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -65,7 +65,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for TaskUtils wrapper functions
- * @param {Object} dependencies - { AppState, loadMiniCycleData, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility, saveTaskToSchema25 }
+ * @param {Object} dependencies - { AppState, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility, saveTaskToSchema25 }
  */
 export function setTaskUtilsDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -141,25 +141,27 @@ export class TaskUtils {
     }
 
     /**
-     * Load task context from schema data
+     * Load task context from state
      * @param {string} taskTextTrimmed - Sanitized task text
      * @param {string} taskId - Task ID (optional, will generate if not provided)
      * @param {Object} taskOptions - Additional task options
      * @param {boolean} isLoading - Whether task is being loaded (vs created)
-     * @param {Function} loadMiniCycleData - Function to load data
+     * @param {Object} AppState - State manager; must be ready
      * @param {Function} generateId - Function to generate ID
      * @returns {Object} - Task context object
      */
-    static loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false, loadMiniCycleData, generateId) {
+    static loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false, AppState, generateId) {
 
-        const schemaData = loadMiniCycleData();
-        if (!schemaData) {
+        if (!AppState?.isReady?.()) {
             console.warn('⚠️ State data required for loadTaskContext');
             throw new Error('State data not found');
         }
 
-        const { cycles, activeCycle, settings, reminders } = schemaData;
-        const currentCycle = cycles[activeCycle];
+        const state = AppState.get();
+        const activeCycle = getActiveRoutineId(state);
+        const currentCycle = getRoutine(state, activeCycle);
+        const settings = state.settings;
+        const reminders = state.customReminders || DEFAULT_REMINDERS;
 
         if (!activeCycle || !currentCycle) {
             console.warn("⚠️ No active routine found in state for loadTaskContext");
@@ -174,8 +176,6 @@ export class TaskUtils {
         return {
             taskTextTrimmed,
             assignedTaskId,
-            schemaData,
-            cycles,
             activeCycle,
             currentCycle,
             settings,
@@ -375,20 +375,13 @@ function buildTaskContext(taskItem, taskId) {
 }
 
 function loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading = false) {
-    const loadMiniCycleData = _deps.loadMiniCycleData;
+    const AppState = _deps.AppState;
     const generateId = _deps.generateId;
-    if (!loadMiniCycleData) {
-        console.warn('⚠️ loadMiniCycleData not injected for loadTaskContext');
-        throw new Error('loadMiniCycleData dependency not available');
+    if (!AppState) {
+        console.warn('⚠️ AppState not injected for loadTaskContext');
+        throw new Error('AppState dependency not available');
     }
-    return TaskUtils.loadTaskContext(
-        taskTextTrimmed,
-        taskId,
-        taskOptions,
-        isLoading,
-        loadMiniCycleData,
-        generateId
-    );
+    return TaskUtils.loadTaskContext(taskTextTrimmed, taskId, taskOptions, isLoading, AppState, generateId);
 }
 
 function scrollToNewTask(taskList) {

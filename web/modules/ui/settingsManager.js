@@ -26,7 +26,6 @@ let _initialized = false;
 
 const di = createDIModule('SettingsManager', {
     appInit: optional(null),
-    loadMiniCycleData: required(),
     AppState: required(),
     showNotification: required(),
     showConfirmationModal: required(),
@@ -67,7 +66,7 @@ const di = createDIModule('SettingsManager', {
     showPromptModal: optional(null)
 });
 
-/** @type {{appInit: Object|null, loadMiniCycleData: Function, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object, showNotification: Function, showConfirmationModal: Function, hideMainMenu: Function|null, setupDarkModeToggle: Function|null, setupQuickDarkToggle: Function|null, updateMoveArrowsVisibility: Function|null, toggleHoverTaskOptions: Function|null, refreshTaskListUI: Function|null, resetDefaultRecurringSettings: Function|null, organizeCompletedTasks: Function|null, DataValidator: Object|null, calculateNextOccurrence: Function|null, sanitizeInput: Function, AppMeta: Object|null, safeAddEventListener: Function, BackupManager: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -210,7 +209,7 @@ function wireSubModuleDependencies(dependencies) {
     });
 
     _subModules.setCycleExportManagerDependencies({
-        loadMiniCycleData: dependencies.loadMiniCycleData,
+        AppState: dependencies.AppState,
         showNotification: dependencies.showNotification,
         showConfirmationModal: dependencies.showConfirmationModal,
         safeAddEventListener: dependencies.safeAddEventListener,
@@ -218,7 +217,6 @@ function wireSubModuleDependencies(dependencies) {
     });
 
     _subModules.setCycleImportManagerDependencies({
-        loadMiniCycleData: dependencies.loadMiniCycleData,
         AppState: dependencies.AppState,
         showNotification: dependencies.showNotification,
         showChoiceModal: dependencies.showChoiceModal,
@@ -261,7 +259,7 @@ function wireSubModuleDependencies(dependencies) {
     });
 
     _subModules.setShareManagerDependencies({
-        loadMiniCycleData: dependencies.loadMiniCycleData,
+        AppState: dependencies.AppState,
         showNotification: dependencies.showNotification,
         showConfirmationModal: dependencies.showConfirmationModal,
         showChoiceModal: dependencies.showChoiceModal,

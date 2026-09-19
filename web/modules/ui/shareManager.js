@@ -13,13 +13,14 @@ import { DOM_IDS, APP_URL, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, shareRoutineFileNative, shareTextNative } from '../platform/capacitorBridge.js';
 import { buildMcycPayload, buildMcycFilename } from '../utils/mcycPayload.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
 // ============================================================================
 
 const di = createDIModule('ShareManager', {
-    loadMiniCycleData: required(),
+    AppState: required(),
     showNotification: required(),
     showConfirmationModal: optional(null),
     showChoiceModal: optional(null),
@@ -27,7 +28,7 @@ const di = createDIModule('ShareManager', {
     hideMainMenu: optional(null)
 });
 
-/** @type {{loadMiniCycleData: Function, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null}} */
+/** @type {{AppState: Object, showNotification: Function, safeAddEventListener: Function, hideMainMenu: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -115,16 +116,10 @@ export function setupShareRoutineButton() {
  * the share sheet in every path.
  */
 export async function shareCurrentRoutine() {
-    const loadMiniCycleData = _deps.loadMiniCycleData;
-    const schemaData = loadMiniCycleData();
-
-    if (!schemaData) {
-        _deps.showNotification(getLabel('notify.shareRoutineNoActiveCycle'), 'error');
-        return;
-    }
-
-    const { cycles, activeCycle } = schemaData;
-    const cycle = cycles[activeCycle];
+    const AppState = _deps.AppState;
+    const state = AppState.isReady() ? AppState.get() : null;
+    const activeCycle = getActiveRoutineId(state);
+    const cycle = getRoutine(state, activeCycle);
 
     if (!activeCycle || !cycle) {
         _deps.showNotification(getLabel('notify.shareRoutineNoActiveCycle'), 'error');

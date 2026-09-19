@@ -22,9 +22,7 @@ export async function runTaskUtilsTests(resultsDiv) {
 
     // Setup test environment and dependencies
     await setupTestEnvironment();
-    setTaskUtilsDependencies({
-        loadMiniCycleData: () => null
-    });
+    setTaskUtilsDependencies({});
 
     let passed = { count: 0 };
     let total = { count: 0 };
@@ -344,13 +342,20 @@ export async function runTaskUtilsTests(resultsDiv) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">📝 Load Task Context</h4>';
 
-    await test('loadTaskContext throws when no schema data', () => {
-        const mockLoadData = () => null;
+    // loadTaskContext reads the active routine from AppState (the wrapper it
+    // used to take read AROUND the state manager — STATE_TRUTH_MIGRATION #25).
+    const appStateWith = (routines, activeRoutineId) => ({
+        isReady: () => true,
+        get: () => ({ data: { routine: routines }, appState: { activeRoutineId }, settings: {}, customReminders: {} })
+    });
+
+    await test('loadTaskContext throws when state is not ready', () => {
+        const notReady = { isReady: () => false, get: () => null };
         const mockGenId = () => 'generated-id';
 
         let errorThrown = false;
         try {
-            TaskUtils.loadTaskContext('Test', null, {}, false, mockLoadData, mockGenId);
+            TaskUtils.loadTaskContext('Test', null, {}, false, notReady, mockGenId);
         } catch (error) {
             errorThrown = true;
         }
@@ -361,17 +366,11 @@ export async function runTaskUtilsTests(resultsDiv) {
     });
 
     await test('loadTaskContext throws when no active cycle', () => {
-        const mockLoadData = () => ({
-            cycles: {},
-            activeCycle: null,
-            settings: {},
-            reminders: {}
-        });
         const mockGenId = () => 'generated-id';
 
         let errorThrown = false;
         try {
-            TaskUtils.loadTaskContext('Test', null, {}, false, mockLoadData, mockGenId);
+            TaskUtils.loadTaskContext('Test', null, {}, false, appStateWith({}, null), mockGenId);
         } catch (error) {
             errorThrown = true;
         }
@@ -382,15 +381,9 @@ export async function runTaskUtilsTests(resultsDiv) {
     });
 
     await test('loadTaskContext generates ID when not provided', () => {
-        const mockLoadData = () => ({
-            cycles: { 'cycle-1': { tasks: [] } },
-            activeCycle: 'cycle-1',
-            settings: {},
-            reminders: {}
-        });
         const mockGenId = () => 'generated-id';
 
-        const context = TaskUtils.loadTaskContext('Test', null, {}, false, mockLoadData, mockGenId);
+        const context = TaskUtils.loadTaskContext('Test', null, {}, false, appStateWith({ 'cycle-1': { tasks: [] } }, 'cycle-1'), mockGenId);
 
         if (context.assignedTaskId !== 'generated-id') {
             throw new Error('Should use generated ID');
@@ -398,15 +391,9 @@ export async function runTaskUtilsTests(resultsDiv) {
     });
 
     await test('loadTaskContext uses provided ID', () => {
-        const mockLoadData = () => ({
-            cycles: { 'cycle-1': { tasks: [] } },
-            activeCycle: 'cycle-1',
-            settings: {},
-            reminders: {}
-        });
         const mockGenId = () => 'generated-id';
 
-        const context = TaskUtils.loadTaskContext('Test', 'custom-id', {}, false, mockLoadData, mockGenId);
+        const context = TaskUtils.loadTaskContext('Test', 'custom-id', {}, false, appStateWith({ 'cycle-1': { tasks: [] } }, 'cycle-1'), mockGenId);
 
         if (context.assignedTaskId !== 'custom-id') {
             throw new Error('Should use provided ID');
@@ -414,16 +401,11 @@ export async function runTaskUtilsTests(resultsDiv) {
     });
 
     await test('loadTaskContext includes isLoading flag', () => {
-        const mockLoadData = () => ({
-            cycles: { 'cycle-1': { tasks: [] } },
-            activeCycle: 'cycle-1',
-            settings: {},
-            reminders: {}
-        });
+        const AppState = appStateWith({ 'cycle-1': { tasks: [] } }, 'cycle-1');
         const mockGenId = () => 'id';
 
-        const contextLoading = TaskUtils.loadTaskContext('Test', 'id', {}, true, mockLoadData, mockGenId);
-        const contextNotLoading = TaskUtils.loadTaskContext('Test', 'id', {}, false, mockLoadData, mockGenId);
+        const contextLoading = TaskUtils.loadTaskContext('Test', 'id', {}, true, AppState, mockGenId);
+        const contextNotLoading = TaskUtils.loadTaskContext('Test', 'id', {}, false, AppState, mockGenId);
 
         if (contextLoading.isLoading !== true) {
             throw new Error('Should set isLoading to true when passed');

@@ -47,19 +47,21 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
     // Create mock dependencies
     function createMockDeps(overrides = {}) {
         return {
-            AppState: { isReady: () => false, get: () => null },
-            loadMiniCycleData: () => ({
-                cycles: {
-                    'test-cycle': {
-                        title: 'Test Cycle',
-                        tasks: [
-                            { id: '1', text: 'Task 1', completed: false },
-                            { id: '2', text: 'Task 2', completed: true }
-                        ]
-                    }
-                },
-                activeCycle: 'test-cycle'
-            }),
+            AppState: {
+                isReady: () => true,
+                get: () => ({
+                    data: { routine: {
+                        'test-cycle': {
+                            title: 'Test Cycle',
+                            tasks: [
+                                { id: '1', text: 'Task 1', completed: false },
+                                { id: '2', text: 'Task 2', completed: true }
+                            ]
+                        }
+                    } },
+                    appState: { activeRoutineId: 'test-cycle' }
+                })
+            },
             addTask: () => {},
             getElementById: (id) => document.getElementById(id),
             getTaskList: () => document.getElementById('taskList'),
@@ -638,7 +640,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         createTestDOM();
         setTaskUIDependencies({
             ...createMockDeps(),
-            loadMiniCycleData: () => null
+            AppState: { isReady: () => false, get: () => null }
         });
 
         let threwError = false;
@@ -660,10 +662,7 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         createTestDOM();
         setTaskUIDependencies({
             ...createMockDeps(),
-            loadMiniCycleData: () => ({
-                cycles: {},
-                activeCycle: 'nonexistent'
-            })
+            AppState: { isReady: () => true, get: () => ({ data: { routine: {} }, appState: { activeRoutineId: 'nonexistent' } }) }
         });
 
         // Should not throw, just return early

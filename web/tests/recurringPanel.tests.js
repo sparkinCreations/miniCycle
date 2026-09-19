@@ -32,7 +32,6 @@ function setupPanelDeps(overrides = {}) {
         buildRecurringSummary: overrides.buildRecurringSummary || ((settings) => `Recurs ${settings?.frequency || 'unknown'}`),
         formatNextOccurrence: overrides.formatNextOccurrence || (() => 'N/A'),
         updateAppState: overrides.updateAppState || ((fn) => {}),
-        loadData: overrides.loadData || (() => null),
         showConfirmationModal: overrides.showConfirmationModal || ((options) => options?.onConfirm?.()),
         getElementById: overrides.getElementById || ((id) => document.getElementById(id)),
         querySelector: overrides.querySelector || ((sel) => document.querySelector(sel)),

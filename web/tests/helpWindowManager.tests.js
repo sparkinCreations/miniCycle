@@ -816,41 +816,28 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
     // === DEPENDENCY INJECTION ===
     resultsDiv.innerHTML += '<h4 class="test-section">💉 Dependency Injection</h4>';
 
-    await test('setHelpWindowManagerDependencies accepts loadMiniCycleData', () => {
-        const mockLoader = () => ({
-            cycles: { 'cycle-main': { cycleCount: 10 } },
-            activeCycle: 'cycle-main'
-        });
-
-        setHelpWindowManagerDependencies({
-            loadMiniCycleData: mockLoader,
-            AppState: null // Clear AppState to use loadMiniCycleData
-        });
-
-        addMockTasks(3, 1);
-        const manager = new HelpWindowManager();
-        const message = manager.getCurrentStatusMessage();
-
-        if (!message.cta.includes('10 cycles')) {
-            throw new Error('Should use loadMiniCycleData for cycle count');
-        }
-    });
-
-    await test('AppState takes precedence over loadMiniCycleData', () => {
-        setHelpWindowManagerDependencies({
-            loadMiniCycleData: () => ({
-                cycles: { 'cycle-main': { cycleCount: 5 } },
-                activeCycle: 'cycle-main'
-            }),
-            AppState: createMockAppState(20)
-        });
+    await test('cycle count is read from AppState (no wrapper fallback)', () => {
+        setHelpWindowManagerDependencies({ AppState: createMockAppState(20) });
 
         addMockTasks(3, 1);
         const manager = new HelpWindowManager();
         const message = manager.getCurrentStatusMessage();
 
         if (!message.cta.includes('20 cycles')) {
-            throw new Error('AppState should take precedence');
+            throw new Error('Cycle count should come from AppState');
+        }
+    });
+
+    await test('before state is ready the progress figures stay at zero', () => {
+        setHelpWindowManagerDependencies({ AppState: { isReady: () => false, get: () => null } });
+
+        addMockTasks(3, 1);
+        const manager = new HelpWindowManager();
+        const message = manager.getCurrentStatusMessage();
+
+        // No routine to count from: the first-cycle prompt, never a stale number.
+        if (typeof message.cta !== 'string' || /\d+ cycles/.test(message.cta)) {
+            throw new Error('Expected no cycle count before state is ready, got: ' + message.cta);
         }
     });
 
