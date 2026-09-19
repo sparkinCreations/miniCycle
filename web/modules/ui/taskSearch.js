@@ -592,11 +592,12 @@ export function resetSearch() {
     collapseSearch();
 }
 
-// Auto-initialize when DOM is ready
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTaskSearch);
-} else {
-    // DOM already loaded, initialize immediately
-    initTaskSearch();
-}
+// No import-time self-init. The module loader calls initTaskSearch() itself, AFTER
+// setTaskSearchDependencies (findInitFunction picks it up by name). The
+// DOMContentLoaded / readyState block that used to live here ran init on import —
+// before any dependency existed — so every boot logged "TaskSearch missing
+// required deps: AppState, vocabThemeManager", the loader's own init call then hit
+// the isInitialized guard and did nothing, and the listeners were attached by the
+// fallback addEventListener rather than safeAddEventListener (measured on
+// production, Sep 2026, via a stack trace on the DI warning).
 

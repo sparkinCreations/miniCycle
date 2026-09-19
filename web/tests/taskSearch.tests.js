@@ -20,6 +20,24 @@ export async function runTaskSearchTests(resultsDiv) {
         if (typeof mod.setTaskSearchDependencies !== 'function') throw new Error('Missing export');
     });
 
+    await test('importing the module does not initialize it or resolve its deps (no import-time self-init)', async () => {
+        // The module loader wires deps and THEN calls initTaskSearch(). A self-init on
+        // import ran before any dep existed: every boot warned "missing required deps",
+        // the loader's init hit the isInitialized guard, and the listeners were
+        // attached without safeAddEventListener. A fresh instance must import silently.
+        const warned = [];
+        const origWarn = console.warn;
+        console.warn = (...args) => { warned.push(args.map(String).join(' ')); };
+        try {
+            await import(`../modules/ui/taskSearch.js?v=selfinit-${Date.now()}`);
+            await new Promise(r => setTimeout(r, 20));
+        } finally {
+            console.warn = origWarn;
+        }
+        const hit = warned.find(w => /TaskSearch missing required deps/.test(w));
+        if (hit) throw new Error(`import resolved deps before wiring: ${hit}`);
+    });
+
     await test('initTaskSearch is exported as a function', () => {
         if (typeof mod.initTaskSearch !== 'function') throw new Error('Missing export');
     });
