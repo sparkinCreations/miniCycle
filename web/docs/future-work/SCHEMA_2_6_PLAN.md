@@ -867,7 +867,7 @@ as the small part and the audit of the surfaces above as the real work.
 
 ## Success criteria
 
-- [ ] 2.5 data migrates with zero loss, verified on a real backup
+- [x] 2.5 data migrates with zero loss, verified on a real backup — v2.573 (Sep 19 2026): MJ's desktop and phone data (7 routines / 178 tasks and 7 / 68 with 27 flagged) migrated on first open with no issues reported; a seeded 2.5 document driven through the LIVE build by Playwright came up re-keyed, converted and rendered with one pre-migration copy
 - [x] `validateSchema25Structure` (or its successor) accepts 2.6 at every call site
 - [x] `autoClear` is a single field; no mirror remains; `taskCycleReset` reads via the resolver
 - [x] `schema/mcyc-2.5.schema.json` byte-identical; `schema/mcyc-2.6.schema.json` published;
@@ -893,7 +893,7 @@ as the small part and the audit of the surfaces above as the real work.
       unreadable-backup message; no new UI was added for pre-2.5 data
 - [x] A brand-new user still gets initial state at boot; `validate:di`, `validate:api` and
       `validate:reset` are green after the legacy references are removed
-- [ ] Full suite and every gate green (see [Testing](#testing))
+- [x] Full suite and every gate green (see [Testing](#testing)) — 3,753 units, 28 journeys, all 19 gates on the release commit
 - [x] New migration tests, each mutation-verified
 - [x] `SCHEMA_2_6.md`, `DATA_SCHEMA_GUIDE.md`, `MCYC_FILE_FORMAT.md`, `CLAUDE.md` updated;
       a `SCHEMA_2_6.md` written
