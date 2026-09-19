@@ -32,6 +32,20 @@ setting as one open map (`autoClear`). Every 2.5 spelling is still read — perm
 the exporter writes both spellings for as long as older platform builds are in use, so a file
 from either side imports on the other. When both are present the 2.6 field wins.
 
+**Closing the dual-write window (decided Sep 19, 2026).** The extra pair protects exactly one
+case: a file written by a current build and opened by a reader that knows only the 2.5
+spelling, which still imports but loses priority and clear settings to their defaults. Web
+cannot be that reader (the service worker keeps it current), Lite does not import `.mcyc`, and
+the iOS and Android builds shipped with 2.6 (v2.573 and v2.574 went to all four platforms).
+Drop the pair in the first release after BOTH hold: the Chrome Web Store listing has been on
+2.573 or later for about a week, and no `.mcyc` has been handed to anyone on an older build.
+Expected early-to-mid October 2026. Doing it means three things together: remove the four
+legacy fields from `utils/mcycPayload.js` (`highPriority`, `priorityColor`,
+`deleteWhenCompleteSettings`, `deleteWhenComplete`), reword this note and the matching line on
+the published spec page with the date, and leave the importer's 2.5 readers
+(`getLegacyPriorityLevel`, `deleteWhenCompleteSettings`) and the pinned 2.5 schema exactly as
+they are — those are the compatibility promise, not the transition.
+
 Two consequences worth stating plainly for anyone changing the importer:
 
 - **A key that has ever been written must keep importing — permanently.** A rename adds an

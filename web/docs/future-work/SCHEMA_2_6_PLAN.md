@@ -566,6 +566,12 @@ decided:
    `cycleImportManager.tests.js`, mutation-verified. So once the exporter writes 2.6, every web
    build from this one on reads it; the dual-write window only has to cover platform builds
    older than this.
+   *Closing the window (decided Sep 19 2026, after v2.574 shipped all four platforms):* drop
+   the 2.5 pair from `mcycPayload.js` in the first release after the Chrome Web Store listing
+   has sat on ≥ 2.573 for about a week and no `.mcyc` has been handed to an older build —
+   expected early-to-mid October 2026. The importer's 2.5 readers and the pinned 2.5 schema
+   stay; only the exporter and the two doc notes change. Exit criteria and the exact edit list
+   live in `docs/reference/MCYC_FILE_FORMAT.md` ("Closing the dual-write window").
    *Version gates (Sep 2026):* every restore / import / sanitize gate outside the shape owners
    now asks `isSupportedStoredVersion()` (`utils/schemaVersion.js`) — true from
    `SCHEMA.OLDEST_MIGRATABLE` (`'2.5'`, which stays put) up to `SCHEMA.CURRENT` — instead of
