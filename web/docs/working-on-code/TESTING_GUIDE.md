@@ -347,8 +347,7 @@ export function runOnboardingManagerTests(resultsDiv) {
     // Wire dependencies before testing
     setOnboardingManagerDependencies({
         AppState: mockAppState,
-        showNotification: mockNotification,
-        loadMiniCycleData: () => mockAppState.get()
+        showNotification: mockNotification
     });
 
     // Create instance with mocked deps

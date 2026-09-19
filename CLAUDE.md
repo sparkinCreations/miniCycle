@@ -317,7 +317,7 @@ this.deps.AppState.update(state => {
 }, true); // true = immediate save (default: 600ms debounce)
 ```
 
-**Note:** `dataAccess.js` (`loadMiniCycleData`, `autoSave`, `updateCycleData`) is a legacy wrapper layer. New code should use `AppState.get()` and `AppState.update()` directly — do not add new consumers of `dataAccess.js`.
+**Note:** `dataAccess.js` (`autoSave`, `updateCycleData`) is a legacy wrapper layer. New code should use `AppState.get()` and `AppState.update()` directly — do not add new consumers of `dataAccess.js`. Its `loadMiniCycleData` reader was retired in Sep 2026 (STATE_TRUTH_MIGRATION #25): read state from `AppState.get()` with the `cycleMode.js` helpers, never through a wrapper that can fall back to storage.
 
 Schema 2.6 shape (`SCHEMA.CURRENT`; routines keyed by a generated id, `title` is the name):
 ```

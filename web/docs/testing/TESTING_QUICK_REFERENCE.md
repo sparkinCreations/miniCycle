@@ -734,7 +734,7 @@ test('rolls back on update error', async () => {
 // ❌ WRONG - This test would pass with incorrect code!
 test('updatePreview works', async () => {
     const instance = new RoutineSwitcher({
-        loadMiniCycleData: () => ({ cycles: {} })  // Wrong structure!
+        AppState: { isReady: () => true, get: () => ({ cycles: {} }) }  // Wrong structure!
     });
 
     // Test might not catch the bug if it doesn't actually use the data
@@ -767,7 +767,7 @@ test('updatePreview generates task preview', async () => {
     document.body.appendChild(previewWindow);
 
     const instance = new RoutineSwitcher({
-        loadMiniCycleData: () => schemaData,
+        AppState: { isReady: () => true, get: () => schemaData },
         getElementById: (id) => document.getElementById(id)
     });
 

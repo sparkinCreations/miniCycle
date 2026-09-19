@@ -580,7 +580,7 @@ no live task*, *import never attaches a template to a non-recurring task*), muta
 watcher would resurrect it — but the notification says only "Task deleted: {name}" and never
 mentions that a recurrence was cancelled, which is the more consequential half.
 
-### #25 `loadMiniCycleData` still in the living graph — first batch DONE Sep 2026; scope was understated
+### #25 `loadMiniCycleData` still in the living graph — DONE Sep 19 2026 (wrapper deleted)
 
 **Where:** `statsPanel`, `modeManager`, `reminders` (settings vs tasks already split), `featureBoot` `stateApiObj`.
 
@@ -610,6 +610,22 @@ their initial state from the class the pre-paint script already applied. Pinned 
 every further wrapper retirement: **grep the module's boot-time callers for "runs before data
 exists" assumptions**, and consider removing the wrapper's create side effect outright once
 `appInit`'s own initial-data path is confirmed to cover every first-run route.*
+
+*✅ Finished Sep 19 2026, in three commits after the Schema 2.6 release: the settings
+readers (`settingsUIManager`, `notifications`, `educationalTips`, `deviceDetection`), the routine
+readers (`shareManager`, `cycleExportManager`, `helpWindowManager`, `titleManager`, `taskUI`,
+`menuManager`, `dueDates`, the task-creation chain through `taskUtils.loadTaskContext`) and the
+boot layer (`appInit`, `coreBoot`'s fallback setup, `routineLoader.loadMiniCycle`) all read
+`AppState.get()` through the `cycleMode.js` helpers. `dataAccess.loadMiniCycleData` is deleted,
+along with its `CORE_DEPS` entry, depMappings, `stateApi` key, appContext value and every test
+mock. `appInit` keeps the flat `{ cycles, activeCycle, reminders, settings }` shape internally
+(`_readSchemaData()`, AppState only) because `onboardingManager.showOnboarding` and
+`_routeFirstRunChoice` still take it. Two things the retirement changed on purpose: `appInit`
+now checks the newer-build block BEFORE the corruption modal (the wrapper's storage parse used
+to hand a newer document back as if it were adoptable), and its "no active routine" recovery
+called `AppState.load()`, a method that does not exist — it now re-reads state. `dueDates`'
+input handler also stopped mutating the live task and calling the legacy `saveTaskToSchema25`
+writer; it writes inside `update()`.*
 
 *✅ Side effect removed, same day: `loadMiniCycleData()` now returns null on an empty origin
 and creates nothing (pinned in `dataAccess.tests.js` with an injected creator that must never be

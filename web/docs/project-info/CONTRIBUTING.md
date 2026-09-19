@@ -23,7 +23,7 @@ miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure d
 |------------|--------------|
 | **Pure DI** | All dependencies are explicitly injected via `createDIModule()`. No `window.*` fallbacks. |
 | **DI Framework** | Use `createDIModule()` from `diBase.js` with `required()` and `optional()` markers. |
-| **Schema Safety** | All data reads/writes must go through `AppState` or schema-safe helpers like `loadMiniCycleData()`. |
+| **Schema Safety** | All data reads/writes go through `AppState` (`get()` / `update()`), with the `utils/cycleMode.js` helpers for the stored names. |
 | **Three-Phase Boot** | Orchestrated boot: coreBoot → featureBoot → uiBoot. Modules wait for `appInit.waitForCore()`. |
 | **Zero Frameworks** | No React/Vue. miniCycle's architecture is custom-built to stay lightweight, offline-first, and localStorage-based. |
 

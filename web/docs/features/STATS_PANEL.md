@@ -256,7 +256,6 @@ const isToDoMode = activeCycleData?.deleteCheckedTasks === true;
 ```javascript
 const di = createDIModule('StatsPanel', {
     showNotification: optional(null),
-    loadMiniCycleData: optional(null),
     isOverlayActive: optional(null),
     isDraggingNotification: optional(null),
     updateThemeColor: optional(null),

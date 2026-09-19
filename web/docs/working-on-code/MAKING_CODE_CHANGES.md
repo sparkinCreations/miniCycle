@@ -226,7 +226,7 @@ constructor(dependencies = {}) {
     const resolvedDeps = { ..._deps, ...dependencies };
     this.deps = {
         AppState: resolvedDeps.AppState || null,
-        loadMiniCycleData: resolvedDeps.loadMiniCycleData || this.fallbackLoadData,
+        showNotification: resolvedDeps.showNotification || this.fallbackNotification,
         sanitizeInput: resolvedDeps.sanitizeInput || ((text) => text),
         // ... every dep listed explicitly ...
     };

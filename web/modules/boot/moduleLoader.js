@@ -1360,7 +1360,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
     // Map common dependencies from deps container
     const depMappings = {
         // Core
-        loadMiniCycleData: () => deps.core?.loadMiniCycleData?.(),
         autoSave: () => deps.core?.autoSave?.(),
         updateCycleData: (...args) => deps.core?.updateCycleData?.(...args),
         assignCycleVariables: () => deps.core?.assignCycleVariables?.(),
@@ -2044,7 +2043,6 @@ function buildGroupedApis(deps) {
             AppState: deps.core?.AppState,
             AppGlobalState: deps.core?.AppGlobalState,
             AppMeta: deps.core?.AppMeta,
-            loadMiniCycleData: deps.core?.loadMiniCycleData,
             autoSave: deps.core?.autoSave
         },
         task: {

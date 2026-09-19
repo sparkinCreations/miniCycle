@@ -63,7 +63,6 @@ export async function runNotificationsTests(resultsDiv) {
             cleanupTestEnvironment();
             // Clean up mock globals
             delete window.AppState;
-            delete window.loadMiniCycleData;
             delete window.generateHashId;
 
             // 🔒 RESTORE REAL APP DATA after test completes (even if it failed)
@@ -128,12 +127,6 @@ export async function runNotificationsTests(resultsDiv) {
     }
 
     function setupMockGlobals() {
-        // Mock loadMiniCycleData
-        window.loadMiniCycleData = () => {
-            const data = localStorage.getItem('miniCycleData');
-            return data ? JSON.parse(data) : null;
-        };
-
         // Mock generateHashId
         window.generateHashId = (str) => {
             let hash = 0;
@@ -944,7 +937,6 @@ export async function runNotificationsTests(resultsDiv) {
 
     await test('restoreNotificationPosition() handles missing data', () => {
         setupMockGlobals();
-        window.loadMiniCycleData = () => null;
 
         const container = createNotificationContainer();
         const notifications = new window.MiniCycleNotifications();
@@ -958,7 +950,6 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     await test('loadDismissedTips() handles a missing AppState', () => {
-        delete window.loadMiniCycleData;
 
         const tipManager = new window.EducationalTipManager();
         const tips = tipManager.loadDismissedTips();
@@ -973,7 +964,6 @@ export async function runNotificationsTests(resultsDiv) {
     });
 
     await test('saveDismissedTips() handles a missing AppState', () => {
-        delete window.loadMiniCycleData;
 
         const tipManager = new window.EducationalTipManager();
 

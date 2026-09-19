@@ -119,7 +119,7 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
 
             // Reset dependencies for each test (must explicitly set to null)
             setRoutineLoaderDependencies({
-                loadMiniCycleData: null,
+                AppState: null,
                 createInitialSchema25Data: null,
                 addTask: null,
                 updateThemeColor: null,
@@ -148,7 +148,6 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
 
     await test('sets dependencies correctly', () => {
         const mockDeps = {
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' } }),
             addTask: () => {},
             updateThemeColor: () => {}
         };
@@ -181,11 +180,11 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     // === CORE FUNCTIONALITY TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">⚙️ Core Functionality</h4>';
 
-    await test('handles missing Schema 2.5 data gracefully', () => {
+    await test('creates initial data when state is not ready', () => {
         let initialDataCreated = false;
 
         setRoutineLoaderDependencies({
-            loadMiniCycleData: () => null,
+            AppState: { isReady: () => false, get: () => null },
             createInitialSchema25Data: () => { initialDataCreated = true; },
             addTask: () => {}
         });
@@ -497,7 +496,6 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
     const loadWith = async (AppState) => {
         setRoutineLoaderDependencies({
             AppState,
-            loadMiniCycleData: () => ({ cycles: AppState.get().data.routine, activeCycle: 'r1', settings: {} }),
             addTask: () => {}
         });
         try {

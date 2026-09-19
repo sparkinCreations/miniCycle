@@ -101,9 +101,6 @@ export async function runCoreBootTests(resultsDiv) {
         const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js');
         const code = await response.text();
 
-        if (!code.includes('loadMiniCycleData')) {
-            throw new Error('loadMiniCycleData not found');
-        }
         if (!code.includes('autoSave')) {
             throw new Error('autoSave not found');
         }

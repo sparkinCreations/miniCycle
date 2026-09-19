@@ -50,7 +50,6 @@ export function getTestAppState() { return getContextValue('AppState'); }
 export function getTestAppInit() { return getContextValue('appInit'); }
 export function getTestAppGlobalState() { return getContextValue('AppGlobalState'); }
 export function getTestFeatureFlags() { return getContextValue('FeatureFlags'); }
-export function getTestLoadMiniCycleData() { return getContextValue('loadMiniCycleData'); }
 
 // ============================================================================
 // MANAGER GETTERS
@@ -241,7 +240,6 @@ export function getAllTestGlobals() {
         AppGlobalState: getTestAppGlobalState(),
         FeatureFlags: getTestFeatureFlags(),
         appInit: getTestAppInit(),
-        loadMiniCycleData: getTestLoadMiniCycleData(),
         showNotification: getTestShowNotification(),
         hideMainMenu: getTestHideMainMenu(),
 

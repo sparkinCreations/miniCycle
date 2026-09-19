@@ -465,11 +465,11 @@ get deps() {
 ### 5. Not using function wrappers for optional deps
 
 ```javascript
-// ❌ WRONG: Throws if loadMiniCycleData doesn't exist
-loadData: window.loadMiniCycleData
+// ❌ WRONG: Throws if updateStatsPanel doesn't exist
+updateStatsPanel: window.updateStatsPanel
 
 // ✅ RIGHT: Safe access with optional chaining
-loadData: () => window.loadMiniCycleData?.()
+updateStatsPanel: () => window.updateStatsPanel?.()
 ```
 
 ---

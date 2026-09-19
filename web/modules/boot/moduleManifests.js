@@ -711,7 +711,7 @@ export const MODULE_MANIFESTS = {
     routineLoader: {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'AppState', 'loadMiniCycleData'],
+        requires: ['appInit', 'AppState'],
         optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
@@ -893,7 +893,6 @@ export const CORE_DEPS = new Set([
     'FeatureFlags',
     'AppMeta',
     'DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS',  // Constant from coreBoot (deps.core); also a depMappings key
-    'loadMiniCycleData',
     'autoSave',
     'sanitizeInput',
     'generateId',

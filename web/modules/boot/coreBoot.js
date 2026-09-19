@@ -10,7 +10,7 @@
  * - Loads and configures appInit (2-phase initialization system)
  * - Creates AppState (central state manager)
  * - Loads core constants and migration manager
- * - Provides core data functions (loadMiniCycleData, autoSave, updateCycleData)
+ * - Provides core data functions (autoSave, updateCycleData)
  *
  * IMPORT RULES:
  * - This file must NOT import from featureBoot.js or uiBoot.js
@@ -35,13 +35,13 @@
  * @property {Object} core.appInit - App initialization manager
  * @property {MiniCycleState} core.AppState - State manager instance
  * @property {Object} core.AppMeta - App metadata with version
- * @property {Function} core.loadMiniCycleData - Load data from state
  * @property {Function} core.autoSave - Auto-save function
  * @property {Object} utils - Utility functions
  * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
 import { Z_INDEX } from '../core/constants.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // POLYFILLS: Must run before any other code
@@ -393,7 +393,6 @@ export async function initAppState(deps, showNotification) {
       // silently swallowed — the trap that hid the sample-view option (July 2026).
       // The getter-style wrappers below (loadMiniCycle, updateReminderButtons, …)
       // return a function/value and must NOT take args.
-      loadMiniCycleData: (...args) => loadMiniCycleData?.(...args),
       createInitialSchema25Data: (...args) => migrationMod.createInitialSchema25Data?.(...args),
       showCycleCreationModal: (...args) => appContextMod.getCycleApi?.()?.create?.(...args),
       getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
@@ -471,7 +470,6 @@ export async function initAppState(deps, showNotification) {
   await initDataAccess(deps);
 
   // Update appContext with data functions (legacy individual values)
-  appContextMod.setContextValue('loadMiniCycleData', loadMiniCycleData);
   appContextMod.setContextValue('autoSave', autoSave);
 
   // ========== Register stateApi (grouped API) ==========
@@ -480,12 +478,10 @@ export async function initAppState(deps, showNotification) {
     AppState,
     AppGlobalState: deps.core.AppGlobalState,
     AppMeta: deps.core.AppMeta,  // Use deps, not window.*
-    loadMiniCycleData,
     autoSave
   });
 
   // Update deps.core with data functions
-  deps.core.loadMiniCycleData = loadMiniCycleData;
   deps.core.autoSave = autoSave;
   deps.core.updateCycleData = updateCycleData;
 
@@ -502,7 +498,7 @@ export async function initAppState(deps, showNotification) {
 // Re-exported here for backward compatibility
 
 // Import will be done dynamically after appContext is initialized
-let loadMiniCycleData, autoSave, updateCycleData;
+let autoSave, updateCycleData;
 
 // Initialize data access functions (called after appContext is ready)
 async function initDataAccess(deps) {
@@ -516,7 +512,6 @@ async function initDataAccess(deps) {
     });
   }
 
-  loadMiniCycleData = dataAccessMod.loadMiniCycleData;
   autoSave = dataAccessMod.autoSave;
   updateCycleData = dataAccessMod.updateCycleData;
 
@@ -525,7 +520,7 @@ async function initDataAccess(deps) {
 }
 
 // Export the functions (they'll be populated after initDataAccess)
-export { loadMiniCycleData, autoSave, updateCycleData, initDataAccess };
+export { autoSave, updateCycleData, initDataAccess };
 
 // ============================================================================
 // SECTION 3: Cache Recovery Helpers (SINGLE SOURCE OF TRUTH)
@@ -722,26 +717,28 @@ async function runFallbackInitialSetup(deps) {
   try {
     const createData = deps.core.createInitialSchema25Data;
 
-    let schemaData = loadMiniCycleData?.();
+    const readState = () => (AppState?.isReady?.() ? AppState.get() : null);
+    let state = readState();
 
-    if (!schemaData) {
+    if (!state) {
       createData?.();
-      schemaData = loadMiniCycleData?.();
+      AppState?.reload?.();
+      state = readState();
     }
 
-    if (!schemaData) {
+    if (!state) {
       console.error('❌ Failed to load or create data');
       return;
     }
 
-    const { cycles, activeCycle } = schemaData;
+    const activeCycle = getActiveRoutineId(state);
 
     // Use appContext instead of window.* for app functions
     // ✅ Use version param for cache-busting (like appInit pattern)
     const { withV } = deps.core;
     const appContextMod = await import(withV('../core/appContext.js'));
 
-    if (!activeCycle || !cycles?.[activeCycle]) {
+    if (!activeCycle || !getRoutine(state, activeCycle)) {
       appContextMod.getCycleApi?.()?.create?.();
       return;
     }

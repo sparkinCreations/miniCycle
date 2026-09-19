@@ -7,16 +7,17 @@
  * These functions exist for backward compatibility with modules that were written
  * before the state-first architecture was established. Do not add new consumers.
  *
+ * loadMiniCycleData() lived here until Sep 2026; every reader now takes the state
+ * from AppState directly (STATE_TRUTH_MIGRATION #25).
+ *
  * Extracted from coreBoot.js (Dec 2025) to reduce window.* pollution.
  *
  * Functions:
- * - loadMiniCycleData(): Wraps AppState.get() with legacy-shaped return value
  * - autoSave(): Wraps AppState.update() for task arrays
  * - updateCycleData(): Wraps AppState.update() for cycle mutations
  */
 
-import { STORAGE_KEYS, DEFAULT_REMINDERS } from './constants.js';
-import { getRoutines, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION
@@ -39,74 +40,6 @@ export function setDataAccessDeps(deps) {
 // ============================================================================
 // DATA ACCESS FUNCTIONS
 // ============================================================================
-
-/**
- * Load miniCycle data from AppState (Schema 2.5 format)
- * Returns legacy-compatible format for backward compatibility
- * Creates initial data if none exists
- * @returns {Object|null} Cycle data or null if unavailable
- */
-export function loadMiniCycleData() {
-    // ✅ FIX: Use injected AppState first (avoids versioned/unversioned module mismatch)
-    const AppState = _injectedAppState;
-
-    // Try AppState first for most current data (if available)
-    if (AppState?.isReady?.()) {
-        try {
-            const state = AppState.get();
-            if (state) {
-                // Load reminders from root customReminders (where reminders.js saves)
-                const activeCycleId = getActiveRoutineId(state);
-                const reminders = state.customReminders || { ...DEFAULT_REMINDERS };
-
-                return {
-                    cycles: getRoutines(state),
-                    activeCycle: activeCycleId,
-                    reminders: reminders,
-                    settings: state.settings
-                };
-            }
-        } catch (error) {
-            // Loud on purpose (review F-004): this fallback reads AROUND the
-            // state manager, and because saves are debounced the stored copy
-            // can be up to one SAVE_DELAY window behind in-memory state. An
-            // AppState read throwing is itself a bug worth surfacing — don't
-            // let the fallback make it look routine.
-            console.error('❌ AppState read failed — falling back to DIRECT localStorage read (may be up to one debounce window stale):', error);
-        }
-    }
-
-    // Fallback to localStorage
-    const data = localStorage.getItem(STORAGE_KEYS.DATA);
-    if (data) {
-        try {
-            const parsed = JSON.parse(data);
-            const activeCycleId = getActiveRoutineId(parsed);
-            // Read from root customReminders (where reminders.js saves)
-            const reminders = parsed.customReminders || { ...DEFAULT_REMINDERS };
-
-            return {
-                cycles: getRoutines(parsed),
-                activeCycle: activeCycleId,
-                reminders: reminders,
-                settings: parsed.settings
-            };
-        } catch (error) {
-            console.error('❌ Error parsing stored data:', error);
-            console.error('❌ This likely means data is corrupted. NOT creating fresh data to preserve existing localStorage.');
-            return null;
-        }
-    }
-
-    // No data in storage: report it, never create it. This wrapper used to call
-    // createInitialSchema25Data() here, so whichever module read it FIRST during a
-    // first-run boot silently seeded storage for every module after it — a boot-order
-    // dependency nothing declared. Measured Sep 2026 (STATE_TRUTH_MIGRATION #25):
-    // retiring one early caller moved the seed later and left the dark-mode toggle
-    // dead for the session. Initial data is created only where the app decides to —
-    // appInit's first-run path and the corruption-recovery choice.
-    return null;
-}
 
 /**
  * Auto-save task data to AppState
@@ -206,7 +139,6 @@ export async function updateCycleData(cycleId, updateFn, immediate = true) {
  */
 export function createDataAccess() {
     return {
-        loadMiniCycleData,
         autoSave,
         updateCycleData
     };

@@ -104,7 +104,6 @@ export async function runRecurringPanelTests(resultsDiv) {
         const savedGlobals = {
             AppState: window.AppState,
             showNotification: window.showNotification,
-            loadMiniCycleData: window.loadMiniCycleData,
             refreshUIFromState: window.refreshUIFromState,
             FeatureFlags: window.FeatureFlags
         };

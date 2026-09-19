@@ -542,6 +542,25 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         if (appInit._appResolve) appInit._appResolve();
     }
 
+    // appInit reads state through getMiniCycleState (AppState) only — the legacy
+    // loadMiniCycleData wrapper is gone (STATE_TRUTH_MIGRATION #25). Build a ready
+    // AppState from the flat fixture shape these tests were written in.
+    const stateOf = (flat) => {
+        const state = {
+            data: { routine: flat.cycles || {} },
+            appState: { activeRoutineId: flat.activeCycle ?? null },
+            customReminders: flat.reminders,
+            settings: flat.settings || {}
+        };
+        return {
+            isReady: () => true,
+            get: () => state,
+            update: async (fn) => { fn(state); },
+            reload: () => state,
+            isBlockedByNewerData: () => null
+        };
+    };
+
     await test('setAppInitDependencies function exists', () => {
         if (typeof setAppInitDependencies !== 'function') {
             throw new Error('setAppInitDependencies should be exported as a function');
@@ -551,7 +570,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
     await test('setAppInitDependencies accepts dependencies object', () => {
         // Should not throw when called with valid dependencies
         setAppInitDependencies({
-            loadMiniCycleData: () => null,
+            getMiniCycleState: () => null,
             getElementById: (id) => document.getElementById(id)
         });
     });
@@ -565,11 +584,10 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
     await test('runInitialSetup returns a Promise', () => {
         // Set up minimal dependencies to prevent errors
         setAppInitDependencies({
-            loadMiniCycleData: () => ({ cycles: {}, activeCycle: null, reminders: {}, settings: {} }),
+            getMiniCycleState: () => stateOf({ cycles: {}, activeCycle: null, reminders: {}, settings: {} }),
             createInitialSchema25Data: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({}),
-            getMiniCycleState: () => null
         });
 
         const result = appInit.runInitialSetup();
@@ -602,7 +620,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         const mockTitleElement = { textContent: '' };
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'title-test': { title: 'My Test Cycle', autoReset: false, deleteCheckedTasks: false } },
                 reminders: { enabled: false },
                 settings: {}
@@ -620,7 +638,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             },
             addBodyClass: () => {},
             removeBodyClass: () => {},
-            getMiniCycleState: () => null
         });
 
         await appInit.runCompleteInitialSetup('title-test', null, {
@@ -638,7 +655,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         const mockToggle = { checked: false };
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'auto-test': { title: 'Test', autoReset: true, deleteCheckedTasks: false } },
                 reminders: { enabled: false },
                 settings: {}
@@ -656,7 +673,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             },
             addBodyClass: () => {},
             removeBodyClass: () => {},
-            getMiniCycleState: () => null
         });
 
         await appInit.runCompleteInitialSetup('auto-test', null, {
@@ -674,7 +690,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         let darkModeApplied = false;
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'dark-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
                 reminders: { enabled: false },
                 settings: { darkMode: true }
@@ -691,7 +707,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 if (cls === 'dark-mode') darkModeApplied = true;
             },
             removeBodyClass: () => {},
-            getMiniCycleState: () => null
         });
 
         await appInit.runCompleteInitialSetup('dark-test', null, {
@@ -710,7 +725,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         let themesRemoved = [];
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'theme-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
                 reminders: { enabled: false },
                 settings: { theme: 'dark-ocean' }
@@ -729,7 +744,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             removeBodyClass: (cls) => {
                 themesRemoved.push(cls);
             },
-            getMiniCycleState: () => null
         });
 
         await appInit.runCompleteInitialSetup('theme-test', null, {
@@ -747,7 +761,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         let themeColorCalled = false;
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'color-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
                 reminders: { enabled: false },
                 settings: {}
@@ -762,7 +776,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             getElementById: () => null,
             addBodyClass: () => {},
             removeBodyClass: () => {},
-            getMiniCycleState: () => null
         });
 
         await appInit.runCompleteInitialSetup('color-test', null, {
@@ -778,7 +791,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
 
     await test('runCompleteInitialSetup returns true on success', async () => {
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'success-test': { title: 'Test', autoReset: false, deleteCheckedTasks: false } },
                 reminders: { enabled: false },
                 settings: {}
@@ -793,7 +806,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             getElementById: () => null,
             addBodyClass: () => {},
             removeBodyClass: () => {},
-            getMiniCycleState: () => null
         });
 
         const result = await appInit.runCompleteInitialSetup('success-test', null, {
@@ -809,7 +821,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
 
     await test('runCompleteInitialSetup handles missing cycle gracefully', async () => {
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: {},
                 reminders: { enabled: false },
                 settings: {}
@@ -824,7 +836,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             getElementById: () => null,
             addBodyClass: () => {},
             removeBodyClass: () => {},
-            getMiniCycleState: () => null
         });
 
         // Should not throw, just return undefined
@@ -843,7 +854,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         let onboardingShown = false;
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: {},
                 activeCycle: null,
                 reminders: { enabled: false },
@@ -854,7 +865,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             getOnboardingManager: () => ({
                 showOnboarding: () => { onboardingShown = true; }
             }),
-            getMiniCycleState: () => ({ load: () => null })
         });
 
         await appInit.runInitialSetup();
@@ -874,7 +884,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         let onboardingShown = false;
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
                 activeCycle: 'Closing Shift Checklist',
                 reminders: { enabled: false },
@@ -886,7 +896,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 showOnboarding: () => { onboardingShown = true; },
                 armFirstSessionLifecycle: () => {}
             }),
-            getMiniCycleState: () => null
         });
 
         await appInit.runInitialSetup();
@@ -902,7 +911,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         let onboardingShown = false;
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
+            getMiniCycleState: () => stateOf({
                 cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
                 activeCycle: 'Closing Shift Checklist',
                 reminders: { enabled: false },
@@ -914,7 +923,6 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 showOnboarding: () => { onboardingShown = true; },
                 armFirstSessionLifecycle: () => {}
             }),
-            getMiniCycleState: () => null
         });
 
         await appInit.runInitialSetup();
@@ -924,27 +932,35 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('runInitialSetup shows cycle creation for existing users without active cycle', async () => {
+    await test('runInitialSetup recovers an existing user with no active routine by activating the first one', async () => {
+        // Routines exist but none is active (a corrupted pointer). With state ready
+        // the setup path activates the first routine inside update() and carries on;
+        // the creation modal is only the fallback for when no routine can be activated.
         let cycleModalShown = false;
+        const appState = stateOf({
+            cycles: { 'old-cycle': { title: 'Old' } },
+            activeCycle: null, // No active cycle
+            reminders: { enabled: false },
+            settings: { onboardingCompleted: true } // Existing user - completed onboarding
+        });
 
         setAppInitDependencies({
-            loadMiniCycleData: () => ({
-                cycles: { 'old-cycle': { title: 'Old' } },
-                activeCycle: null, // No active cycle
-                reminders: { enabled: false },
-                settings: { onboardingCompleted: true } // Existing user - completed onboarding
-            }),
+            getMiniCycleState: () => appState,
             createInitialSchema25Data: () => {},
             showCycleCreationModal: () => { cycleModalShown = true; },
-            getOnboardingManager: () => ({
-            }),
-            getMiniCycleState: () => null
+            showNotification: () => {},
+            getOnboardingManager: () => ({}),
+            loadMiniCycle: () => null,
+            getElementById: () => null
         });
 
         await appInit.runInitialSetup();
 
-        if (!cycleModalShown) {
-            throw new Error('Cycle creation modal should be shown for users without active cycle');
+        if (appState.get().appState.activeRoutineId !== 'old-cycle') {
+            throw new Error('the first routine should have been activated, got: ' + appState.get().appState.activeRoutineId);
+        }
+        if (cycleModalShown) {
+            throw new Error('recovery must not fall back to the creation modal');
         }
     });
 

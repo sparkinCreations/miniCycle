@@ -1,7 +1,7 @@
 /**
  * DataAccess Tests
  * Tests for modules/core/dataAccess.js — the legacy AppState wrapper layer
- * (loadMiniCycleData / autoSave / updateCycleData) + DI injection.
+ * (autoSave / updateCycleData) + DI injection.
  */
 import { createProtectedTest } from './testHelpers.js';
 
@@ -9,7 +9,7 @@ export async function runDataAccessTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/core/dataAccess.js?v=${cacheBuster}`);
     const {
-        setDataAccessDeps, loadMiniCycleData, autoSave, updateCycleData, createDataAccess
+        setDataAccessDeps, autoSave, updateCycleData, createDataAccess
     } = mod;
 
     resultsDiv.innerHTML = '<h2>DataAccess Tests</h2><h3>Running tests...</h3>';
@@ -49,78 +49,21 @@ export async function runDataAccessTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
     await test('Module loads with all expected exports', () => {
-        for (const [n, f] of [['setDataAccessDeps', setDataAccessDeps], ['loadMiniCycleData', loadMiniCycleData],
+        for (const [n, f] of [['setDataAccessDeps', setDataAccessDeps],
                               ['autoSave', autoSave], ['updateCycleData', updateCycleData], ['createDataAccess', createDataAccess]]) {
             if (typeof f !== 'function') throw new Error(`${n}: expected function, got ${typeof f}`);
         }
     });
 
-    await test('createDataAccess returns an object bundling the 3 wrappers', () => {
+    await test('createDataAccess returns an object bundling the 2 wrappers', () => {
         const da = createDataAccess();
-        if (typeof da.loadMiniCycleData !== 'function') throw new Error('missing loadMiniCycleData');
+        if ('loadMiniCycleData' in da) throw new Error('the retired reader is still bundled');
         if (typeof da.autoSave !== 'function') throw new Error('missing autoSave');
         if (typeof da.updateCycleData !== 'function') throw new Error('missing updateCycleData');
     });
 
-    // ── loadMiniCycleData ─────────────────────────────────────────────────────
-    resultsDiv.innerHTML += '<h4 class="test-section">📥 loadMiniCycleData</h4>';
-
-    await test('returns legacy shape from a ready AppState', () => {
-        setDataAccessDeps({ AppState: makeAppState(baseState()) });
-        const result = loadMiniCycleData();
-        if (!result) throw new Error('expected a result object');
-        if (result.activeCycle !== 'cycle-A') throw new Error('wrong activeCycle: ' + result.activeCycle);
-        if (!result.cycles['cycle-A']) throw new Error('cycles not surfaced');
-        if (result.settings.theme !== 'dark') throw new Error('settings not surfaced');
-    });
-
-    await test('surfaces customReminders from root when present', () => {
-        setDataAccessDeps({ AppState: makeAppState(baseState()) });
-        const result = loadMiniCycleData();
-        if (!result.reminders || result.reminders.frequencyValue !== 15) {
-            throw new Error('customReminders not surfaced: ' + JSON.stringify(result.reminders));
-        }
-    });
-
-    await test('falls back to DEFAULT_REMINDERS when customReminders missing', () => {
-        const st = baseState();
-        delete st.customReminders;
-        setDataAccessDeps({ AppState: makeAppState(st) });
-        const result = loadMiniCycleData();
-        if (!result.reminders) throw new Error('reminders missing');
-        if (result.reminders.enabled !== false || result.reminders.frequencyValue !== 30) {
-            throw new Error('default reminders wrong: ' + JSON.stringify(result.reminders));
-        }
-        if (result.reminders.frequencyUnit !== 'minutes') throw new Error('default unit wrong');
-    });
-
     // ── autoSave: guard / no-op paths ─────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">💾 autoSave guards</h4>';
-
-    // The wrapper used to CREATE the initial data when AppState was not ready and
-    // storage was empty, so whichever module read it first on a first-run boot seeded
-    // storage for everyone after it (STATE_TRUTH_MIGRATION #25, measured Sep 2026).
-    await test('loadMiniCycleData reports an empty origin as null and creates nothing', () => {
-        const saved = localStorage.getItem('miniCycleData');
-        try {
-            localStorage.removeItem('miniCycleData');
-            // A creator is injected on purpose: the old path invoked it here, and a
-            // test that injects none cannot tell the two apart.
-            let created = 0;
-            setDataAccessDeps({
-                AppState: makeAppState(baseState(), { ready: false }),
-                createInitialSchema25Data: () => { created++; localStorage.setItem('miniCycleData', JSON.stringify(baseState())); }
-            });
-            const result = loadMiniCycleData();
-            if (created !== 0) throw new Error('a READ invoked createInitialSchema25Data');
-            if (result !== null) throw new Error(`expected null on an empty origin, got ${JSON.stringify(result).slice(0, 80)}`);
-            if (localStorage.getItem('miniCycleData') !== null) {
-                throw new Error('a READ created initial data in storage');
-            }
-        } finally {
-            if (saved !== null) localStorage.setItem('miniCycleData', saved);
-        }
-    });
 
     await test('returns error when AppState not ready', async () => {
         setDataAccessDeps({ AppState: makeAppState(baseState(), { ready: false }) });

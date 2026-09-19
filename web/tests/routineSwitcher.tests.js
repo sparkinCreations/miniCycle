@@ -193,7 +193,6 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
                 get: () => JSON.parse(localStorage.getItem('miniCycleData'))
             },
             showNotification: (msg) => console.log(msg),
-            loadMiniCycleData: () => JSON.parse(localStorage.getItem('miniCycleData')),
             hideMainMenu: () => {},
             getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
@@ -486,7 +485,6 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         localStorage.setItem('miniCycleData', 'invalid-json');
 
         const mockDeps = {
-            loadMiniCycleData: () => null,
             showNotification: () => {},
             getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };
@@ -821,7 +819,6 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         document.body.appendChild(previewWindow);
 
         const mockDeps = {
-            loadMiniCycleData: () => schemaData,
             getElementById: (id) => document.getElementById(id),
             getModal: () => document.querySelector('.mini-cycle-switch-modal')
         };

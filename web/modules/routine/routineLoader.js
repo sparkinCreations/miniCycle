@@ -33,7 +33,6 @@ import { announce } from '../utils/announce.js';
 const di = createDIModule('RoutineLoader', {
   appInit: optional(null),
   AppState: optional(null),
-  loadMiniCycleData: optional(null),
   createInitialSchema25Data: optional(null),
   addTask: optional(null),
   updateThemeColor: optional(null),
@@ -55,7 +54,7 @@ const di = createDIModule('RoutineLoader', {
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{appInit: Object|null, AppState: Object|null, loadMiniCycleData: Function|null, createInitialSchema25Data: Function|null, addTask: Function|null, updateThemeColor: Function|null, startReminders: Function|null, catchUpMissedRecurringTasks: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, updateStatsPanel: Function|null, syncAllTasksWithMode: Function|null, taskToAddTaskOptions: Function|null, updateSearchVisibility: Function|null, syncModeFromToggles: Function|null, completedTasksManager: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, createInitialSchema25Data: Function|null, addTask: Function|null, updateThemeColor: Function|null, startReminders: Function|null, catchUpMissedRecurringTasks: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, updateStatsPanel: Function|null, syncAllTasksWithMode: Function|null, taskToAddTaskOptions: Function|null, updateSearchVisibility: Function|null, syncModeFromToggles: Function|null, completedTasksManager: Object|null}} */
 const _deps = new Proxy({}, {
   get(_, prop) {
     return di.resolve()[prop];
@@ -66,7 +65,6 @@ const _deps = new Proxy({}, {
  * Set dependencies for routine loader module
  * @param {Object} overrides - Dependency overrides
  * @param {Function} [overrides.AppState] - AppState getter or instance
- * @param {Function} [overrides.loadMiniCycleData] - Data loader function
  * @param {Function} [overrides.addTask] - Task addition function
  * @param {Function} [overrides.updateProgressBar] - Progress bar updater
  * @param {Function} [overrides.syncModeFromToggles] - Mode sync function
@@ -103,28 +101,27 @@ function assertInjected(name, fn) {
  *
  * @async
  * @returns {Promise<void>}
- * @throws {Error} If loadMiniCycleData dependency is missing
+ * @throws {Error} If the AppState dependency is missing
  * @throws {Error} If addTask dependency is missing
  */
 async function loadMiniCycle() {
 
-  assertInjected('loadMiniCycleData', _deps.loadMiniCycleData);
+  const appState = getAppState();
+  if (!appState) throw new Error('routineLoader: missing dependency AppState');
   assertInjected('addTask', _deps.addTask);
 
-  const schemaData = _deps.loadMiniCycleData();
+  // Reads AppState only (STATE_TRUTH_MIGRATION #25): the routine rendered below
+  // IS the live state tree, never a copy parsed from storage.
+  const state = appState.isReady?.() ? appState.get() : null;
 
-  if (!schemaData) {
+  if (!state) {
     console.error('❌ No state data found');
     _deps.createInitialSchema25Data?.();
     return;
   }
 
-  const cycles = schemaData.cycles || getRoutines(schemaData) || {};
-  const activeCycleId =
-    schemaData.activeCycle ||
-    getActiveRoutineId(schemaData) ||
-    schemaData.appState?.activeCycle ||
-    null;
+  const cycles = getRoutines(state) || {};
+  const activeCycleId = getActiveRoutineId(state);
 
   if (!activeCycleId || !cycles[activeCycleId]) {
     console.error('❌ No valid active cycle found (id:', activeCycleId, ')');
@@ -164,10 +161,10 @@ async function loadMiniCycle() {
   }
 
   // 3) Update UI state
-  updateCycleUIState(currentCycle, schemaData.settings || {}, titleBeforeLoad);
+  updateCycleUIState(currentCycle, state.settings || {}, titleBeforeLoad);
 
   // 4) Reminders
-  await setupRemindersForCycle(schemaData.reminders || schemaData.customReminders || {});
+  await setupRemindersForCycle(state.customReminders || {});
 
   // 5) Dependent UI components
   updateDependentComponents();
@@ -548,7 +545,7 @@ function updateDependentComponents() {
 /**
  * Repair the routine being loaded without mutating live state outside update().
  *
- * While state is ready, loadMiniCycleData() hands back the LIVE AppState tree, so the
+ * While state is ready, the loader renders the LIVE AppState tree, so the
  * old in-place repair changed live state before any update() ran (CLAUDE.md #13):
  * subscribers were then notified with an oldState that already held the repair, and
  * the save that followed assigned the same object back over itself
@@ -584,8 +581,8 @@ async function repairRoutineBeforeRender(routineId, routine) {
   }
 
   // Normally `routine` IS the live object and is now repaired. If the loader was
-  // handed a copy anyway (its AppState read fell back to storage), repair that copy
-  // too so the render matches what was saved.
+  // handed a copy anyway (a caller passing its own object), repair that copy too
+  // so the render matches what was saved.
   if (liveRoutine !== routine) repairAndCleanTasks(routine, routineId, { quiet: true });
 }
 

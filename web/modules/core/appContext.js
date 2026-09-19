@@ -15,7 +15,6 @@
  * import { state, task, ui } from '../core/appContext.js';
  *
  * // Access state
- * const data = state().loadMiniCycleData();
  * const appState = state().AppState;
  *
  * // Perform task operations
@@ -43,7 +42,6 @@ const DEV_MODE = false; // Production mode - set to true for development
  * @property {Object} AppState - Main application state
  * @property {Object} AppGlobalState - Runtime flags and temporary state
  * @property {Object} AppMeta - Application metadata (version, etc.)
- * @property {Function} loadMiniCycleData - Load current cycle data
  * @property {Function} autoSave - Trigger auto-save
  */
 
@@ -141,7 +139,6 @@ const legacy = {
     AppGlobalState: null,
     AppMeta: null,
     FeatureFlags: null,
-    loadMiniCycleData: null,
     autoSave: null,
 
     // Managers
@@ -430,7 +427,6 @@ export function createLazyDeps() {
         get AppState() { return legacy.AppState; },
         get appInit() { return legacy.appInit; },
         get AppGlobalState() { return legacy.AppGlobalState; },
-        get loadMiniCycleData() { return legacy.loadMiniCycleData; },
         get autoSave() { return legacy.autoSave; },
         get GlobalUtils() { return legacy.GlobalUtils; },
         get showNotification() { return legacy.showNotification; },

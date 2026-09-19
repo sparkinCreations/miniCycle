@@ -173,7 +173,7 @@ Exports:    RoutineManager class, setRoutineManagerDependencies()
 Imports:    none
 Dependencies (strict DI via setRoutineManagerDependencies):
   - AppState, showPromptModal, sanitizeInput
-  - loadMiniCycleData, completeInitialSetup, hideMainMenu, autoSave
+  - completeInitialSetup, hideMainMenu, autoSave
   - safeLocalStorageGet, safeLocalStorageSet (storage utilities)
   - safeJSONParse, safeJSONStringify (JSON utilities)
   - DEFAULT_TASK_OPTION_BUTTONS (constant)
@@ -186,7 +186,7 @@ Exports:    loadMiniCycle(), renderTasksToDOM(), and related functions
             (no class), setRoutineLoaderDependencies()
 Imports:    appInit, constants.js
 Dependencies (strict DI):
-  - AppState, loadMiniCycleData, addTask, updateThemeColor
+  - AppState, addTask, updateThemeColor
   - startReminders, catchUpMissedRecurringTasks
   - updateProgressBar, updateMainMenuHeader, updateStatsPanel
   - updateSearchVisibility (task search visibility)
@@ -226,7 +226,7 @@ Dependencies (strict DI):
 Exports:    TaskCore class, setTaskCoreDependencies()
 Imports:    appInit
 Dependencies (strict DI):
-  - AppState, loadMiniCycleData, sanitizeInput
+  - AppState, sanitizeInput
   - showNotification, updateStatsPanel, updateProgressBar
   - checkCompleteAllButton, refreshUIFromState
   - captureStateSnapshot, enableUndoSystemOnFirstInteraction

@@ -59,7 +59,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         // Also required(), and the facade forwards it to its sub-modules at WIRE
         // time — so a constructor override never reaches settingsUIManager and
         // it has to come from here. Tests needing specific data still override.
-        loadMiniCycleData: () => ({ settings: {} })
     });
 
     resultsDiv.innerHTML = '<h2>⚙️ Settings Manager Tests</h2>';
@@ -134,7 +133,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 }
             };
 
-            // Flattened data structure that loadMiniCycleData returns
             const mockFlattenedData = {
                 cycles: mockFullSchema.data.routine,
                 activeCycle: mockFullSchema.appState.activeRoutineId
@@ -222,7 +220,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         const mockNotify = () => {};
 
         const instance = new SettingsManager({
-            loadMiniCycleData: mockLoad,
             showNotification: mockNotify,
             AppState: () => ({ isReady: () => true, get: () => ({}) })
         });
@@ -283,8 +280,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 return document.createElement('div');
             },
             setupDarkModeToggle: () => {},
-            setupQuickDarkToggle: () => {},
-            loadMiniCycleData: () => ({ cycles: {}, activeCycle: null })
+            setupQuickDarkToggle: () => {}
         });
 
         // Run setup (sub-modules loaded via init)
@@ -313,7 +309,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 if (id === 'export-mini-cycle') return exportBtn;
                 return null;
             },
-            loadMiniCycleData: () => mockFlattenedData,
             showNotification: () => {}
         });
 
@@ -336,7 +331,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 if (id === 'import-mini-cycle') return importBtn;
                 return null;
             },
-            loadMiniCycleData: () => mockFlattenedData,
             AppState: () => ({ isReady: () => true, get: () => ({}) })
         });
 
@@ -355,7 +349,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('exportMiniCycleData creates download', async (mockFlattenedData) => {
         const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
             showNotification: () => {}
         });
         await instance.init();
@@ -378,7 +371,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('exportMiniCycleData handles export flow', async (mockFlattenedData) => {
         const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
             showNotification: () => {}
         });
         await instance.init();
@@ -404,7 +396,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('exportMiniCycleData sanitizes filename', async (mockFlattenedData) => {
         const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
             showNotification: () => {}
         });
         await instance.init();
@@ -444,7 +435,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         deleteCheckedTasks.checked = false;
 
         const instance = new SettingsManager({
-            loadMiniCycleData: () => mockFlattenedData,
             getElementById: (id) => {
                 if (id === 'toggleAutoReset') return toggleAutoReset;
                 if (id === 'deleteCheckedTasks') return deleteCheckedTasks;
@@ -466,7 +456,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         localStorage.clear();
 
         const instance = new SettingsManager({
-            loadMiniCycleData: () => null
         });
 
         await instance.init();
@@ -490,7 +479,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 if (id === 'factory-reset') return resetBtn;
                 return null;
             },
-            loadMiniCycleData: () => ({}),
             showConfirmationModal: () => {},
             AppState: () => null
         });
@@ -513,8 +501,7 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
             querySelector: () => null,
             getElementById: () => null,
             setupDarkModeToggle: () => {},
-            setupQuickDarkToggle: () => {},
-            loadMiniCycleData: () => null
+            setupQuickDarkToggle: () => {}
         });
 
         await instance.init();
@@ -528,7 +515,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
     await test('handles corrupted localStorage in export', async () => {
         localStorage.clear();
         const instance = new SettingsManager({
-            loadMiniCycleData: () => null,
             showNotification: () => {}
         });
         await instance.init();
@@ -549,7 +535,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
         localStorage.clear();
 
         const instance = new SettingsManager({
-            loadMiniCycleData: () => null,
             AppState: () => null
         });
 
@@ -592,7 +577,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 el?.addEventListener(event, handler);
             },
             AppState: Object.assign(() => appStateMethods, appStateMethods),
-            loadMiniCycleData: () => ({ settings: {} }),
             showNotification: () => {},
             showConfirmationModal: () => {},
             sanitizeInput: (text) => text,
@@ -650,7 +634,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 el?.addEventListener(event, handler);
             },
             AppState: Object.assign(() => appStateMethods2, appStateMethods2),
-            loadMiniCycleData: () => ({ settings: {} }),
             showNotification: () => {},
             showConfirmationModal: () => {},
             sanitizeInput: (text) => text,
@@ -700,7 +683,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
                 el?.addEventListener(event, handler);
             },
             AppState: Object.assign(() => appStateMethods3, appStateMethods3),
-            loadMiniCycleData: () => ({ settings: {} }),
             showNotification: () => {},
             showConfirmationModal: () => {},
             sanitizeInput: (text) => text,
@@ -752,7 +734,6 @@ export async function runSettingsManagerTests(resultsDiv, isPartOfSuite = false)
 
     await test('handles empty settings object', async () => {
         const instance = new SettingsManager({
-            loadMiniCycleData: () => ({ cycles: {}, activeCycle: null })
         });
 
         // Should not throw

@@ -51,7 +51,6 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     setTaskOptionsCustomizerDependencies({
         showNotification: () => {},
         showConfirmationModal: (opts) => { if (opts.onConfirm) opts.onConfirm(); },
-        loadMiniCycleData: () => null,
         autoSave: () => {}
     });
 
@@ -137,7 +136,6 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
                     el.removeEventListener(event, handler);
                     el.addEventListener(event, handler);
                 },
-                loadMiniCycleData: () => null,
                 autoSave: () => {}
             });
 

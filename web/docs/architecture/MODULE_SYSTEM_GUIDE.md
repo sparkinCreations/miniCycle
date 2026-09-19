@@ -101,7 +101,7 @@ export class StatsPanelManager {
 // Legacy wiring (globals)
 const statsPanel = new StatsPanelManager({
     showNotification: window.showNotification,
-    loadData: window.loadMiniCycleData,
+    AppState: window.AppState,
 });
 ```
 
@@ -128,16 +128,15 @@ function assertInjected(name, fn) {
 }
 
 export function loadMiniCycle() {
-    assertInjected('loadMiniCycleData', Deps.loadMiniCycleData);
     assertInjected('addTask', Deps.addTask);
 
-    const data = Deps.loadMiniCycleData();
+    const data = Deps.AppState.get();
     // ...
 }
 
 // Legacy wiring (globals)
 setRoutineLoaderDependencies({
-    loadMiniCycleData: window.loadMiniCycleData,
+    AppState: window.AppState,
     addTask: window.addTask,
 });
 ```

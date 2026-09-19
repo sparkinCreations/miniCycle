@@ -60,7 +60,6 @@ export async function runMODULE_NAMETests(resultsDiv) {
                 update: (fn) => { fn({}); }
             },
             showNotification: () => {},
-            loadMiniCycleData: () => ({ metadata: { version: '2.5' }, settings: {} }),
             ...overrides
         };
     }

@@ -198,21 +198,6 @@ export function createMockData(overrides = {}) {
 }
 
 /**
- * Creates flattened mock data (format returned by loadMiniCycleData)
- * @param {Object} schemaData - Full Schema 2.5 data (uses createMockData if not provided)
- * @returns {Object} Flattened data with cycles and activeCycle
- */
-export function createFlattenedMockData(schemaData = null) {
-    const fullData = schemaData || createMockData();
-    return {
-        metadata: fullData.metadata,
-        cycles: fullData.data?.routine || {},
-        activeCycle: fullData.appState?.activeRoutineId || null,
-        settings: fullData.settings
-    };
-}
-
-/**
  * Sets up localStorage with mock data
  * @param {Object} data - Data to store (uses createMockData defaults if not provided)
  * @param {string} key - localStorage key (default: 'miniCycleData')
@@ -234,15 +219,6 @@ export function clearTestStorage() {
 // =====================================================
 // DEPENDENCY INJECTION HELPERS
 // =====================================================
-
-/**
- * Creates a mock loadMiniCycleData function
- * @param {Object} customData - Custom data to return (uses createFlattenedMockData if not provided)
- * @returns {Function} Mock function
- */
-export function createMockLoadMiniCycleData(customData = null) {
-    return () => customData || createFlattenedMockData();
-}
 
 /**
  * Creates a mock updateCycleData function
@@ -292,7 +268,6 @@ export function createCommonDependencies(overrides = {}) {
         hideMainMenu: createMockHideMainMenu(),
         sanitizeInput: createMockSanitizeInput(),
         generateId: createMockGenerateId(),
-        loadMiniCycleData: createMockLoadMiniCycleData(),
         updateCycleData: createMockUpdateCycleData(),
         getElementById: (id) => document.getElementById(id),
         querySelector: (sel) => document.querySelector(sel),
