@@ -487,6 +487,7 @@
             <option value="headerLayoutManager">📏 Header Layout</option>
             <option value="featureAvailability">🚦 Feature Availability</option>
             <option value="dataRecovery">🩹 Data Recovery</option>
+            <option value="updateCheck">🔄 Update Check</option>
             <option value="uiOrchestrator">🎼 UI Orchestrator</option>
             <option value="preferencesBgImage">🖼️ Preferences BG Image</option>
             <option value="preferencesPresets">🎨 Preferences Presets</option>
@@ -591,6 +592,7 @@
         const { runHeaderLayoutManagerTests } = await import(`./headerLayoutManager.tests.js?v=${cacheBuster}`);
         const { runFeatureAvailabilityTests } = await import(`./featureAvailability.tests.js?v=${cacheBuster}`);
         const { runDataRecoveryTests } = await import(`./dataRecovery.tests.js?v=${cacheBuster}`);
+        const { runUpdateCheckTests } = await import(`./updateCheck.tests.js?v=${cacheBuster}`);
         const { runGuidedTourManagerTests } = await import(`./guidedTourManager.tests.js?v=${cacheBuster}`);
         const { runModalManagerTests } = await import(`./modalManager.tests.js?v=${cacheBuster}`);
         const { runMenuManagerTests } = await import(`./menuManager.tests.js?v=${cacheBuster}`);
@@ -1990,7 +1992,7 @@
                     await import(`../modules/features/uxRatings.js?v=${cacheBuster}`);
                     currentModule = 'uxRatings';
                     resultsDiv.innerHTML = '<p>✅ UXRatings loaded. Click "Run Tests" to begin.</p>';
-                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','onboardingCarousel','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','priorityLevel','schemaVersion','schemaMigration26','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
+                } else if (['diWiring','orchestrator','moduleLoader','moduleManifests','modalTemplates','appContext','dataAccess','appGlobalState','types','modalRegistry','modalUtils','panelVisibilityHelpers','gesturePanelManager','titleManager','headerLayoutManager','featureAvailability','dataRecovery','updateCheck','uiOrchestrator','preferencesBgImage','preferencesPresets','taskDOMPatch','debugMode','iconInit','icons','keyboardNav','collapsibleSections','educationalTips','routineSwitcherThemePicker','routineSwitcherPreview','routineSwitcherListTransforms','routineSwitcherRepair','routineSwitcherActions','onboardingDemo','onboardingSplash','onboardingCarousel','longPressHint','mcycPayload','bootSw','nameUtils','styleValidators','cycleMode','priorityLevel','schemaVersion','schemaMigration26','undoSnapshotUtils','undoTransactionDiff','panelCarousel','focusTaskPanel','recurringPanelEvents','recurringPanelForm','recurringPanelGrids','recurringPanelSetup','recurringPanelSummary','recurringSettings','recurringSettingsApplicator','recurringWatcher','statsPanelGestures','statsPanelRewards','taskViewLayoutManager'].includes(moduleName)) {
                     const pathMap = {
                         diWiring: '../modules/boot/moduleLoader.js',
                         orchestrator: '../modules/boot/orchestrator.js',
@@ -2009,6 +2011,7 @@
                         headerLayoutManager: '../modules/ui/headerLayoutManager.js',
                         featureAvailability: '../modules/utils/featureAvailability.js',
                         dataRecovery: '../modules/utils/dataRecovery.js',
+                        updateCheck: '../modules/utils/updateCheck.js',
                         uiOrchestrator: '../modules/ui/uiOrchestrator.js',
                         preferencesBgImage: '../modules/ui/preferencesBgImage.js',
                         preferencesPresets: '../modules/ui/preferencesPresets.js',
@@ -2307,6 +2310,7 @@
             } else if (currentModule === 'headerLayoutManager') { await runHeaderLayoutManagerTests(resultsDiv);
             } else if (currentModule === 'featureAvailability') { await runFeatureAvailabilityTests(resultsDiv);
             } else if (currentModule === 'dataRecovery') { await runDataRecoveryTests(resultsDiv);
+            } else if (currentModule === 'updateCheck') { await runUpdateCheckTests(resultsDiv);
             } else if (currentModule === 'uiOrchestrator') { await runUIOrchestratorTests(resultsDiv);
             } else if (currentModule === 'preferencesBgImage') { await runPreferencesBgImageTests(resultsDiv);
             } else if (currentModule === 'preferencesPresets') { await runPreferencesPresetsTests(resultsDiv);
@@ -2607,6 +2611,7 @@
                 { name: 'HeaderLayoutManager', key: 'headerLayoutManager', runFn: runHeaderLayoutManagerTests, importPath: '../modules/ui/headerLayoutManager.js' },
                 { name: 'FeatureAvailability', key: 'featureAvailability', runFn: runFeatureAvailabilityTests, importPath: '../modules/utils/featureAvailability.js' },
                 { name: 'DataRecovery', key: 'dataRecovery', runFn: runDataRecoveryTests, importPath: '../modules/utils/dataRecovery.js' },
+                { name: 'UpdateCheck', key: 'updateCheck', runFn: runUpdateCheckTests, importPath: '../modules/utils/updateCheck.js' },
                 { name: 'Constants', key: 'constants', runFn: runConstantsTests, importPath: '../modules/core/constants.js' },
                 { name: 'BasicPluginSystem', key: 'basicPluginSystem', runFn: runBasicPluginSystemTests, importPath: '../modules/other/basicPluginSystem.js' },
                 { name: 'Accessibility', key: 'accessibility', runFn: runAccessibilityTests, importPath: null },

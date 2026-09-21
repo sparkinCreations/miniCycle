@@ -1146,6 +1146,9 @@ export const DOM_IDS = Object.freeze({
     // ---- Lite Version ----
     TRY_LITE_VERSION: 'try-lite-version',
     MENU_LITE_VERSION: 'menu-lite-version',
+    // "Check for Updates" — Settings → Advanced, and the main menu (utils/updateCheck.js)
+    CHECK_FOR_UPDATES: 'check-for-updates',
+    MENU_CHECK_UPDATES: 'menu-check-updates',
 
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',

@@ -47,6 +47,10 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     noun: {
+        // Update sources named by Check for Updates
+        chromeWebStore:  'the Chrome Web Store',
+        appStore:        'the App Store',
+        googlePlay:      'Google Play',
         task:      { one: 'task',    other: 'tasks' },
         cycle:     { one: 'cycle',   other: 'cycles' },
         routine:   { one: 'routine', other: 'routines' },
@@ -865,6 +869,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // reports its version; the plain string above is the fallback for when
         // it cannot be asked (no message channel, timeout, identical versions).
         updateAvailableFromTo:   'Update available: version {from} → {to}. Reload to update.',
+        // Check for Updates (utils/updateCheck.js)
+        checkingUpdates:         'Checking for updates…',
+        updateUpToDate:          'You are on the latest version ({version}).',
+        updateAvailableStore:    'Version {to} is available (you have {from}). Get it from {store}.',
+        updateCheckFailed:       'Could not check for updates right now. You are on version {version}.',
         refreshed:               'Refreshed',
 
         // Undo/redo notifications

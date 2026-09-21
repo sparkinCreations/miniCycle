@@ -276,6 +276,7 @@ var BOOT_CRITICAL = [
   // cache, which iOS evicts; once evicted, offline boot dies with "Importing
   // binding name '…' is not found" (e.g. goToLiteVersion). Keep these here.
   './modules/utils/liteVersion.js',
+  './modules/utils/updateCheck.js',
   './modules/utils/dialogClose.js',
   './modules/utils/popoverUtils.js',
   './modules/platform/capacitorBridge.js',

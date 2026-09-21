@@ -718,6 +718,19 @@ export const MODULE_MANIFESTS = {
         after: ['taskCore']
     },
 
+    // "Check for Updates" (Settings + main menu). Owns the behaviour the inline
+    // handler in miniCycle.html used to delegate to two window.* functions that
+    // never existed (Sep 2026): SW update on the web, live-version compare with a
+    // store hint in the Chrome / iOS / Android builds.
+    updateCheck: {
+        path: '../utils/updateCheck.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['showNotification', 'AppMeta', 'safeAddEventListener'],
+        provides: ['checkForUpdates'],
+        api: 'utils',
+        optional: true
+    },
+
     pullToRefresh: {
         path: '../ui/pullToRefresh.js',
         phase: PHASES.UI_MANAGERS,

@@ -995,7 +995,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             <span>${getLabel('settings.debugMode')}</span>
                         </label>
                         <button id="open-testing-modal" class="settings-btn"><i class="fas fa-flask"></i> ${getLabel('settings.diagnostics')}</button>
-                        <button id="check-for-updates" class="settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>
+                        <button id="${DOM_IDS.CHECK_FOR_UPDATES}" class="settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>
                         <button id="try-lite-version" class="settings-btn"><i class="fas fa-mobile-alt"></i> ${getLabel('settings.tryLite')}</button>
                         <button id="factory-reset" class="settings-btn factory-reset-btn"><i class="fas fa-exclamation-triangle"></i> ${getLabel('settings.factoryReset')}</button>
                     </div>

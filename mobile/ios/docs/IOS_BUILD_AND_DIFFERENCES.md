@@ -159,7 +159,8 @@ Still open (iOS-specific):
   (`npx @capacitor/assets generate --ios`) from a 1024×1024 source icon.
 - **`.mcyc` import** — same gap as Android (file-open / document-type registration not wired);
   import uses the web file picker.
-- **"Check for Updates"** — no-op in the app (updates ship via the App Store), same as Android.
+- **"Check for Updates"** — compares the build with the live `version.js` (CORS) and says whether
+  the App Store has a newer one (`utils/updateCheck.js`, Sep 2026), same as Android.
 - **Device pass** — first run on a real iPhone should sanity-check: safe areas (notch + home
   indicator), status-bar style in dark mode, keyboard behavior over the task input, and the
   share sheet.

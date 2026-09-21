@@ -76,7 +76,7 @@ but there are **fewer** of them than for the Chrome extension:
 | **`legal/` pages** | Linked relatively, served live | **Bundled** into `www/legal/`; back-links rewritten `../miniCycle.html` → `../index.html` | Keep legal nav inside the app |
 | **`pages/` + `tests/` links** | Relative | Rewritten to absolute `https://minicycle.app/…` | Not bundled; would 404 from the local origin |
 | **Automated-test tab** | Visible in the testing modal | Hidden via `android-overrides.css` | `tests/` isn't bundled; the iframe would 404 |
-| **"Check for Updates" button** | Triggers SW update | **No-op** (no SW); updates come via Play Store | Distribution model differs — see §7 |
+| **"Check for Updates" button** | Asks the SW to update; names the waiting version | Fetches the live `version.js` (CORS) and compares with the build; names Google Play when newer (`utils/updateCheck.js`, Sep 2026) | Distribution model differs — see §7 |
 | **Reminder notifications** | web `Notification` / SW `showNotification` | **Native** via `@capacitor/local-notifications` | WebView lacks the web Notification API — see §9 |
 | **Routine export / share** (`.mcyc`) | File System Access / `navigator.share` / download | **Native** share sheet via `@capacitor/share` (+ filesystem) | WebView can't anchor-download or use File System Access — see §9 |
 | **Status bar / splash / back button** | n/a (browser chrome) | **Native** via status-bar/splash/app plugins (`initNativeShell()`) | Native shell UX — see §9 |
@@ -283,8 +283,8 @@ Still open (not yet wired):
   not yet handled; import still uses the web file picker.
 - **Notification small icon** — currently the launcher icon; add a monochrome
   `res/drawable/ic_stat_*` and set `smallIcon` in the bridge to brand the status-bar icon.
-- **"Check for Updates"** — a no-op in the app (updates ship via Play); hide it or repoint it to
-  the Play listing.
+- ~~**"Check for Updates"** — a no-op in the app~~ Done Sep 2026: `utils/updateCheck.js` compares
+  the build with the live `version.js` and says whether Google Play has a newer one.
 
 ---
 
