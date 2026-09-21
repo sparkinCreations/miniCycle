@@ -1,3 +1,8 @@
+## [2.575] - 2026-09-21
+- feat(settings): the pre-migration copy can be downloaded, restored or deleted from Settings; restores read 2.5 backups again and clear undo
+- docs(mcyc): record the exit criteria for the exporter's 2.5 dual-write window
+
+
 ## [2.574] - 2026-09-19
 - docs(mcyc): date-stamp format 2.6 on the reference, the spec page and the product timeline
 - refactor(state): retire the loadMiniCycleData wrapper (batch 3, boot layer)
