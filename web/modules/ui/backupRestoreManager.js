@@ -10,7 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
@@ -38,7 +38,10 @@ const di = createDIModule('BackupRestoreManager', {
     // Factory reset closes undo's IndexedDB connection before deleting the
     // databases, then reopens it so a SECOND reset works without a page reload.
     closeUndoIndexedDB: optional(null),
-    initUndoIndexedDB: optional(null)
+    initUndoIndexedDB: optional(null),
+    // Restoring the pre-migration copy: undo snapshots were taken of the state
+    // being replaced, so an undo afterwards would put one back over the copy.
+    clearAllUndoHistory: optional(null)
 });
 
 /** @type {{AppState: Object, showNotification: Function, showConfirmationModal: Function, safeAddEventListener: Function, BackupManager: Object|null, AppMeta: Object|null, loadMiniCycle: Function|null, showLoader: Function|null, hideLoader: Function|null, hideMainMenu: Function|null, closeAllModals: Function|null, appInit: Object|null}} */
@@ -64,7 +67,8 @@ export function setBackupRestoreManagerDependencies(dependencies) {
 const _initialized = {
     backupButton: false,
     restoreButton: false,
-    resetButton: false
+    resetButton: false,
+    preMigration: false
 };
 
 const LITE_STORAGE_KEYS = Object.freeze([
@@ -188,6 +192,9 @@ function reloadWithLoader(logContext, options = {}) {
             // Leave it up when it is hosting the choice screen — the pick's own
             // handler hides it (see rearmFirstRunChoiceScreen).
             if (!armFirstRunChoice) _deps.hideLoader?.();
+            // The copy may have appeared (an older document was just restored and
+            // migrated) or gone (factory reset); keep the Settings block truthful.
+            refreshPreMigrationCopyControls();
         }
     }, 400);
 }
@@ -789,6 +796,18 @@ async function processRestoreData(fileContent) {
                     }
                 }
 
+                // Undo snapshots are per routine and hold only that routine's tasks;
+                // a restore replaces the whole document. An Undo afterwards would
+                // drop one routine's old tasks over the restored data while settings,
+                // progress and every other routine stayed restored. The safety backup
+                // above is the coherent way back, so the stack goes (as it does at the
+                // migration boot and the pre-migration restore).
+                try {
+                    await _deps.clearAllUndoHistory?.();
+                } catch (e) {
+                    console.warn('Could not clear undo history before the restore:', e);
+                }
+
                 // Stop AppState from auto-saving
                 neutralizeAppState();
 
@@ -828,6 +847,260 @@ async function processRestoreData(fileContent) {
             }
         });
     });
+}
+
+// ============================================================================
+// PRE-MIGRATION COPY (Settings → Data Management)
+// ============================================================================
+// AppState keeps the raw stored document under `<DATA>_pre-migration_<ts>` before
+// migrating it to a newer schema (appState._migrateIfOlder). Until Sep 2026 that
+// copy was reachable only by hand, through DevTools or the testing modal. These
+// controls let the user download it as an ordinary backup file, restore it (the
+// reload migrates it again, with the CURRENT build's migration — the point when
+// the original one went wrong), or delete it. The block renders only while a
+// copy exists.
+
+/**
+ * The newest pre-migration copy in storage, or null.
+ * @returns {{key: string, timestamp: number, raw: string}|null}
+ */
+export function findPreMigrationCopy() {
+    let newest = null;
+    try {
+        for (const key of Object.keys(localStorage)) {
+            if (!key.startsWith(PRE_MIGRATION_BACKUP_PREFIX)) continue;
+            const timestamp = Number(key.slice(PRE_MIGRATION_BACKUP_PREFIX.length));
+            if (!Number.isFinite(timestamp)) continue;
+            if (!newest || timestamp > newest.timestamp) {
+                newest = { key, timestamp, raw: localStorage.getItem(key) };
+            }
+        }
+    } catch (e) {
+        console.warn('Could not read the pre-migration copy:', e);
+        return null;
+    }
+    return newest && typeof newest.raw === 'string' ? newest : null;
+}
+
+/**
+ * A backup file (the shape Restore All Routines reads) carrying the copy. The
+ * document inside is the raw pre-migration bytes, unchanged: restoring the file
+ * migrates it exactly as boot would.
+ * @param {{timestamp: number, raw: string}} copy
+ * @returns {Object|null} null when the copy is not a readable document
+ */
+export function buildPreMigrationBackupPayload(copy) {
+    if (!copy || !validateSchema25PayloadString(copy.raw)) return null;
+    const parsed = JSON.parse(copy.raw);
+    const schemaVersion = String(parsed.schemaVersion || parsed.metadata?.schemaVersion || SCHEMA.OLDEST_MIGRATABLE);
+    return {
+        schemaVersion,
+        miniCycleData: copy.raw,
+        backupMetadata: {
+            createdAt: copy.timestamp,
+            version: parsed.metadata?.version || _deps.AppMeta?.version || schemaVersion,
+            schemaVersion,
+            includesLiteStorage: false,
+            source: 'miniCycle App (pre-migration copy)'
+        }
+    };
+}
+
+function formatCopyDate(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+    } catch {
+        return new Date(timestamp).toDateString();
+    }
+}
+
+/**
+ * Show or hide the Settings block for the copy and fill in its date. Safe to
+ * call at any time (after a restore, a factory reset, a delete).
+ * @returns {void}
+ */
+export function refreshPreMigrationCopyControls() {
+    const block = document.getElementById(DOM_IDS.PRE_MIGRATION_COPY);
+    if (!block) return;
+    const copy = findPreMigrationCopy();
+    block.hidden = !copy;
+    const desc = document.getElementById(DOM_IDS.PRE_MIGRATION_COPY_DESC);
+    if (desc && copy) {
+        desc.textContent = getLabel('settings.preMigrationCopyDesc', { vars: { date: formatCopyDate(copy.timestamp) } });
+    }
+}
+
+/**
+ * Wire the Download / Restore / Delete buttons for the pre-migration copy.
+ * Idempotent; the block stays hidden while there is no copy.
+ * @returns {void}
+ */
+export function setupPreMigrationCopyControls() {
+    if (_initialized.preMigration) {
+        refreshPreMigrationCopyControls();
+        return;
+    }
+
+    const block = document.getElementById(DOM_IDS.PRE_MIGRATION_COPY);
+    if (!block) return;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('BackupRestoreManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.preMigration = true;
+
+    const downloadBtn = document.getElementById(DOM_IDS.PRE_MIGRATION_DOWNLOAD);
+    const restoreBtn = document.getElementById(DOM_IDS.PRE_MIGRATION_RESTORE);
+    const deleteBtn = document.getElementById(DOM_IDS.PRE_MIGRATION_DELETE);
+    if (downloadBtn) safeAddEventListener(downloadBtn, 'click', () => { downloadPreMigrationCopy(); });
+    if (restoreBtn) safeAddEventListener(restoreBtn, 'click', () => { restorePreMigrationCopy(); });
+    if (deleteBtn) safeAddEventListener(deleteBtn, 'click', () => { deletePreMigrationCopy(); });
+
+    refreshPreMigrationCopyControls();
+}
+
+/**
+ * Download the copy as a backup file Restore All Routines can read.
+ * @returns {boolean} true when a file was handed to the browser
+ */
+export function downloadPreMigrationCopy() {
+    const copy = findPreMigrationCopy();
+    const payload = buildPreMigrationBackupPayload(copy);
+    if (!payload) {
+        _deps.showNotification(getLabel('notify.preMigrationUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        refreshPreMigrationCopyControls();
+        return false;
+    }
+    const stamp = new Date(copy.timestamp).toISOString().slice(0, 10);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `miniCycle-before-update-${stamp}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    _deps.showNotification('✅ ' + getLabel('notify.preMigrationDownloaded'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    return true;
+}
+
+/**
+ * Replace the current data with the copy after a confirmation and a safety
+ * backup, then re-render in place. The copy is an OLDER document, so the reload
+ * migrates it again and keeps a fresh copy of the same bytes; the one restored
+ * from is dropped so there is still exactly one.
+ * @returns {Promise<boolean>} true when the copy was written back
+ */
+export async function restorePreMigrationCopy() {
+    const copy = findPreMigrationCopy();
+    if (!copy || !validateSchema25PayloadString(copy.raw)) {
+        _deps.showNotification(getLabel('notify.preMigrationUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        refreshPreMigrationCopyControls();
+        return false;
+    }
+
+    const showConfirmationModal = _deps.showConfirmationModal;
+    const date = formatCopyDate(copy.timestamp);
+    const confirmed = await new Promise((resolve) => showConfirmationModal({
+        title: getLabel('modal.preMigrationRestoreTitle'),
+        message: getLabel('modal.preMigrationRestoreMessage', { vars: { date } }),
+        confirmText: getLabel('modal.preMigrationRestoreConfirm'),
+        cancelText: getLabel('button.cancel'),
+        destructive: true,
+        callback: resolve
+    }));
+    if (!confirmed) {
+        _deps.showNotification(getLabel('notify.restoreCancelled'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        return false;
+    }
+
+    // Same safety net as Restore All Routines: a TRACKED backup first, and
+    // explicit consent to go on without one.
+    let safetyBackupOk = false;
+    try {
+        const BackupManager = _deps.BackupManager?.();
+        if (BackupManager) {
+            await BackupManager.createManualBackup(`Pre-Restore Safety Backup ${new Date().toLocaleString()}`);
+            safetyBackupOk = true;
+        }
+    } catch (backupErr) {
+        console.warn('Could not create safety backup:', backupErr);
+    }
+    if (!safetyBackupOk) {
+        const proceedAnyway = await new Promise((resolve) => showConfirmationModal({
+            title: getLabel('modal.restoreNoSafetyBackupTitle'),
+            message: getLabel('modal.restoreNoSafetyBackupMessage'),
+            confirmText: getLabel('modal.restoreNoSafetyBackupConfirm'),
+            cancelText: getLabel('button.cancel'),
+            destructive: true,
+            callback: resolve
+        }));
+        if (!proceedAnyway) {
+            _deps.showNotification(getLabel('notify.restoreCancelled'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+            return false;
+        }
+    }
+
+    // Before AppState is neutralized: clearing undo goes through AppGlobalState and
+    // IndexedDB, not state, but it must not race a snapshot of the outgoing data.
+    try {
+        await _deps.clearAllUndoHistory?.();
+    } catch (e) {
+        console.warn('Could not clear undo history before the restore:', e);
+    }
+
+    // Stop the debounced save from writing the outgoing state over the copy.
+    neutralizeAppState();
+    try {
+        localStorage.setItem(STORAGE_KEYS.DATA, copy.raw);
+        localStorage.removeItem(copy.key);
+    } catch (e) {
+        console.error('Could not write the pre-migration copy back:', e);
+        // Storage still holds the outgoing document; adopt it again so the app
+        // is not left with no state.
+        getAppStateInstance()?.reload?.();
+        _deps.showNotification(getLabel('notify.preMigrationRestoreFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        return false;
+    }
+
+    _deps.showNotification('✅ ' + getLabel('notify.preMigrationRestored'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+    reloadWithLoader('Pre-migration restore');
+    return true;
+}
+
+/**
+ * Delete the copy (every copy, should more than one exist) after a confirmation.
+ * @returns {Promise<boolean>} true when a copy was removed
+ */
+export async function deletePreMigrationCopy() {
+    const copy = findPreMigrationCopy();
+    if (!copy) {
+        refreshPreMigrationCopyControls();
+        return false;
+    }
+
+    const confirmed = await new Promise((resolve) => _deps.showConfirmationModal({
+        title: getLabel('modal.preMigrationDeleteTitle'),
+        message: getLabel('modal.preMigrationDeleteMessage', { vars: { date: formatCopyDate(copy.timestamp) } }),
+        confirmText: getLabel('modal.preMigrationDeleteConfirm'),
+        cancelText: getLabel('button.cancel'),
+        destructive: true,
+        callback: resolve
+    }));
+    if (!confirmed) return false;
+
+    try {
+        Object.keys(localStorage)
+            .filter((key) => key.startsWith(PRE_MIGRATION_BACKUP_PREFIX))
+            .forEach((key) => localStorage.removeItem(key));
+    } catch (e) {
+        console.warn('Could not delete the pre-migration copy:', e);
+        return false;
+    }
+    _deps.showNotification(getLabel('notify.preMigrationDeleted'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    refreshPreMigrationCopyControls();
+    return true;
 }
 
 // ============================================================================

@@ -2863,6 +2863,204 @@ async function journeyBootMigratesSchema25(browser, baseURL) {
     return { name: 'a 2.5 document is migrated at boot', failures };
 }
 
+// ── Journey: the copy kept before a schema migration is usable from Settings ───
+// appState._migrateIfOlder keeps the raw older document under
+// miniCycleData_pre-migration_<ts>. Until Sep 2026 only DevTools or the testing
+// modal could reach it. Settings → Data Management now offers it: restore (the
+// reload migrates it again with the current build), download, delete.
+function legacy25Document() {
+    return {
+        schemaVersion: '2.5',
+        metadata: { createdAt: 1, lastModified: 2, schemaVersion: '2.5', totalCyclesCreated: 1 },
+        settings: { theme: 'default', darkMode: false, onboardingCompleted: true },
+        data: { cycles: { 'Morning Routine': {
+            id: 'Morning Routine', title: 'Morning Routine', cycleCount: 3, autoReset: true, deleteCheckedTasks: false,
+            recurringTemplates: {},
+            tasks: [
+                { id: 't1', text: 'Stretch', completed: false, highPriority: true, priorityColor: '#dc3545', schemaVersion: 2 },
+                { id: 't2', text: 'Coffee', completed: false, highPriority: false, priorityColor: null, schemaVersion: 2 }
+            ],
+            clearedTasks: { entries: [], totalCleared: 0 }
+        } } },
+        appState: { activeCycleId: 'Morning Routine' },
+        userProgress: { cyclesCompleted: 3 }
+    };
+}
+
+async function openSettingsPanel(page) {
+    await page.evaluate(() => document.querySelector('.menu-button')?.click());
+    await page.waitForTimeout(600);
+    await page.evaluate(() =>
+        document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')));
+    await page.evaluate(() => document.getElementById('open-settings')?.click());
+    await page.waitForTimeout(1200);
+}
+
+// Confirm a destructive prompt; a second click covers the "no safety backup"
+// follow-up prompt when IndexedDB is unavailable to the safety backup.
+async function confirmDestructive(page) {
+    await page.evaluate(() => document.querySelector('button.btn-confirm.btn-destructive')?.click());
+    await page.waitForTimeout(900);
+    await page.evaluate(() => document.querySelector('button.btn-confirm.btn-destructive')?.click());
+}
+
+const readPreMigrationState = () => ({
+    v: JSON.parse(localStorage.getItem('miniCycleData') || '{}').schemaVersion,
+    titles: Object.values((JSON.parse(localStorage.getItem('miniCycleData') || '{}').data || {}).routine || {}).map(r => r.title),
+    copies: Object.keys(localStorage).filter(k => k.startsWith('miniCycleData_pre-migration_')).length,
+    rows: document.querySelectorAll('#taskList .task').length,
+    blockPresent: !!document.getElementById('pre-migration-copy'),
+    blockHidden: document.getElementById('pre-migration-copy')?.hidden,
+    desc: document.getElementById('pre-migration-copy-desc')?.textContent || ''
+});
+
+async function journeyPreMigrationCopyFromSettings(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const raw = JSON.stringify(legacy25Document());
+    const { context, page } = await openFresh(browser, baseURL, {
+        noNavigate: true,
+        initScript: (doc) => { if (!localStorage.getItem('__seeded')) { localStorage.setItem('miniCycleData', doc); localStorage.setItem('__seeded', '1'); } },
+        initArg: raw
+    });
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+
+        await openSettingsPanel(page);
+        const offered = await page.evaluate(readPreMigrationState);
+        record('after the migration boot, Settings offers the copy with its date',
+            offered.blockPresent && offered.blockHidden === false && /\d{4}/.test(offered.desc) && offered.copies === 1,
+            JSON.stringify(offered));
+
+        // Change something after the migration, so the restore has something to undo:
+        // tick the first task (the copy has it unticked).
+        await page.evaluate(() => document.getElementById('close-settings')?.click());
+        await page.waitForTimeout(600);
+        await page.evaluate(() => document.querySelector('#taskList .task input[type="checkbox"]')?.click());
+        await page.waitForTimeout(1200);
+        const changed = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('miniCycleData')).data.routine)[0].tasks.filter(t => t.completed).length);
+        record('the post-migration edit is in storage before the restore', changed === 1, `${changed} completed tasks`);
+
+        await openSettingsPanel(page);
+        await page.evaluate(() => document.getElementById('pre-migration-restore')?.click());
+        await page.waitForTimeout(900);
+        await confirmDestructive(page);
+        await page.waitForTimeout(3500);
+
+        const after = await page.evaluate(readPreMigrationState);
+        const tasksAfter = await page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('miniCycleData')).data.routine)[0].tasks.filter(t => t.completed).map(t => t.text));
+        record('the restored copy is migrated again by this build and rendered',
+            after.v === '2.6' && after.titles.length === 1 && after.titles[0] === 'Morning Routine' && after.rows === 2,
+            JSON.stringify({ v: after.v, titles: after.titles, rows: after.rows }));
+        record('the edit made after the migration is gone, as the prompt said', tasksAfter.length === 0,
+            `still completed: ${JSON.stringify(tasksAfter)}`);
+        record('exactly one copy remains and Settings still offers it', after.copies === 1, JSON.stringify({ copies: after.copies }));
+
+        // The in-place reload may capture a snapshot of the RESTORED state while it
+        // renders (as any load does); what must not survive is a snapshot of the
+        // replaced state, whose first task was ticked above.
+        const undoAfter = await page.evaluate(() => new Promise((resolve) => {
+            const req = indexedDB.open('miniCycleUndoHistory');
+            req.onerror = () => resolve({ error: 'open-error' });
+            req.onsuccess = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains('undoStacks')) { db.close(); resolve({ snapshots: 0, ticked: 0 }); return; }
+                const all = db.transaction('undoStacks', 'readonly').objectStore('undoStacks').getAll();
+                all.onsuccess = () => {
+                    db.close();
+                    const snaps = all.result.flatMap(rec => [...(rec.undoStack || []), ...(rec.redoStack || [])]);
+                    resolve({ snapshots: snaps.length, ticked: snaps.filter(sn => (sn.tasks || []).some(t => t.completed === true)).length });
+                };
+                all.onerror = () => { db.close(); resolve({ error: 'read-error' }); };
+            };
+        }));
+        record('no undo snapshot of the replaced state survives the restore', !undoAfter.error && undoAfter.ticked === 0, JSON.stringify(undoAfter));
+
+        await openSettingsPanel(page);
+        await page.evaluate(() => document.getElementById('pre-migration-delete')?.click());
+        await page.waitForTimeout(900);
+        await confirmDestructive(page);
+        await page.waitForTimeout(900);
+        const gone = await page.evaluate(readPreMigrationState);
+        record('deleting the copy removes it and hides the block', gone.copies === 0 && gone.blockHidden === true,
+            JSON.stringify({ copies: gone.copies, hidden: gone.blockHidden }));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'the pre-migration copy is usable from Settings', failures };
+}
+
+// ── Journey: a backup file written before 2.6 restores through Settings ───────
+// The Settings restore validates the payload's shape before writing it. From
+// v2.573 that check demanded the 2.6 layout, so every backup file a user had
+// made before the update was rejected as corrupt — while the version check right
+// beside it admitted 2.5. The reload migrates the restored document.
+async function journeySettingsRestoreAcceptsOlderBackup(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const inner = JSON.stringify(Object.assign(legacy25Document(), {
+        data: { cycles: { restored: { id: 'restored', title: 'Restored Routine', tasks: [{ id: 'r1', text: 'From the old file', completed: false, schemaVersion: 2 }],
+            cycleCount: 4, autoReset: true, deleteCheckedTasks: false, recurringTemplates: {}, clearedTasks: { entries: [], totalCleared: 0 } } } },
+        appState: { activeCycleId: 'restored' }
+    }));
+    const file = JSON.stringify({
+        schemaVersion: '2.5', miniCycleData: inner,
+        backupMetadata: { createdAt: Date.now(), version: '2.5', schemaVersion: '2.5', source: 'miniCycle App' }
+    });
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // A gesture before the restore, so the undo stack holds a snapshot of the
+        // state being replaced (the seeded routine with one task ticked).
+        await page.evaluate(() => document.querySelector('#taskList .task input[type="checkbox"]')?.click());
+        await page.waitForTimeout(1200);
+
+        await openSettingsPanel(page);
+        await page.evaluate(() => document.getElementById('restore-mini-cycles')?.click());
+        await page.waitForTimeout(600);
+        await page.setInputFiles('#import-cycle-file-input', {
+            name: 'before-2.6.json', mimeType: 'application/json', buffer: Buffer.from(file)
+        });
+        await page.waitForTimeout(1500);
+        await confirmDestructive(page);
+        await page.waitForTimeout(3500);
+
+        const after = await page.evaluate(readPreMigrationState);
+        record('a 2.5 backup file is accepted, migrated and rendered',
+            after.v === '2.6' && after.titles.includes('Restored Routine') && after.rows === 1, JSON.stringify(after));
+        record('the migration kept a copy of the restored file, and Settings offers it', after.copies === 1, JSON.stringify({ copies: after.copies }));
+
+        // Undo snapshots are per routine; a whole-document restore cannot be undone
+        // by them, only half-reverted. None of the replaced state may survive.
+        const undoAfter = await page.evaluate(() => new Promise((resolve) => {
+            const req = indexedDB.open('miniCycleUndoHistory');
+            req.onerror = () => resolve({ error: 'open-error' });
+            req.onsuccess = () => {
+                const db = req.result;
+                if (!db.objectStoreNames.contains('undoStacks')) { db.close(); resolve({ snapshots: 0, ticked: 0 }); return; }
+                const all = db.transaction('undoStacks', 'readonly').objectStore('undoStacks').getAll();
+                all.onsuccess = () => {
+                    db.close();
+                    const snaps = all.result.flatMap(rec => [...(rec.undoStack || []), ...(rec.redoStack || [])]);
+                    resolve({ snapshots: snaps.length, ticked: snaps.filter(sn => (sn.tasks || []).some(t => t.completed === true)).length });
+                };
+                all.onerror = () => { db.close(); resolve({ error: 'read-error' }); };
+            };
+        }));
+        record('no undo snapshot of the replaced state survives the file restore', !undoAfter.error && undoAfter.ticked === 0, JSON.stringify(undoAfter));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a backup made before 2.6 restores from Settings', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -2870,6 +3068,8 @@ const JOURNEYS = [
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
     { name: 'a 2.5 document is migrated at boot', fn: journeyBootMigratesSchema25 },
+    { name: 'the pre-migration copy is usable from Settings', fn: journeyPreMigrationCopyFromSettings },
+    { name: 'a backup made before 2.6 restores from Settings', fn: journeySettingsRestoreAcceptsOlderBackup },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },

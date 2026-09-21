@@ -16,7 +16,7 @@ export async function runDataRecoveryTests(resultsDiv) {
         return { passed: 0, total: 1 };
     }
 
-    const { attemptJsonSalvage, backupCorruptedData, validateRecoveredData, recoverCorruptedData } = mod;
+    const { attemptJsonSalvage, backupCorruptedData, validateRecoveredData, recoverCorruptedData, validateSchema25PayloadString } = mod;
 
     const passed = { count: 0 };
     const total = { count: 0 };
@@ -189,6 +189,30 @@ export async function runDataRecoveryTests(resultsDiv) {
         assert(validateRecoveredData(null) === false, 'null invalid');
         assert(validateRecoveredData({ data: {} }) === false, 'no cycles invalid');
         assert(validateRecoveredData({ cycles: { c1: { tasks: 'nope' } } }) === false, 'non-array tasks invalid');
+    });
+
+    // The version check admits 2.5 (SCHEMA.OLDEST_MIGRATABLE) and AppState migrates
+    // it on adoption, so the shape check must admit the 2.5 layout too. v2.573 did
+    // not, and Restore All Routines rejected every backup file made before 2.6.
+    await test('validateSchema25PayloadString: admits a 2.5 document (routines under data.cycles)', () => {
+        const doc25 = JSON.stringify({
+            schemaVersion: '2.5', metadata: { version: '2.5', schemaVersion: '2.5' },
+            data: { cycles: { Morning: { id: 'Morning', title: 'Morning', tasks: [] } } },
+            appState: { activeCycleId: 'Morning' }, settings: {}
+        });
+        if (!validateSchema25PayloadString(doc25)) throw new Error('a 2.5 backup payload was rejected');
+        const doc26 = JSON.stringify({
+            schemaVersion: '2.6', metadata: { version: '2.6', schemaVersion: '2.6' },
+            data: { routine: { r1: { id: 'r1', title: 'Morning', tasks: [] } } },
+            appState: { activeRoutineId: 'r1' }, settings: {}
+        });
+        if (!validateSchema25PayloadString(doc26)) throw new Error('a 2.6 payload was rejected');
+        const noRoutines = JSON.stringify({ schemaVersion: '2.6', metadata: {}, data: {}, appState: {} });
+        if (validateSchema25PayloadString(noRoutines)) throw new Error('a payload with no routine map was accepted');
+    });
+
+    await test('validateRecoveredData: accepts the 2.5 layout as well', () => {
+        if (!validateRecoveredData({ data: { cycles: { a: { tasks: [] } } } })) throw new Error('2.5 layout rejected');
     });
 
     await test('recoverCorruptedData: salvages + backs up in one pass', () => {

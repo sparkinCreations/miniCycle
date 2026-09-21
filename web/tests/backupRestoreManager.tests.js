@@ -246,13 +246,15 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         localStorage.removeItem('evilKey');
 
         const notes = [];
+        let undoCleared = false;
         mod.setBackupRestoreManagerDependencies({
             AppState: { get: () => ({}), forceSave: () => {} },
             showNotification: (msg) => notes.push(String(msg)),
             // Confirm both prompts: the restore itself, and the "no safety backup" one
             // that fires because BackupManager is absent here.
             showConfirmationModal: ({ callback }) => callback(true),
-            safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts)
+            safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts),
+            clearAllUndoHistory: async () => { undoCleared = true; }
         });
 
         const btn = document.createElement('button');
@@ -286,6 +288,9 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             if (localStorage.getItem('evilKey') !== null) {
                 throw new Error('a key no exporter collects was written back — the restorable-key filter is not applied');
             }
+            // Per-routine undo snapshots cannot undo a whole-document restore; they
+            // would half-revert one routine. The stack must be cleared before the write.
+            if (!undoCleared) throw new Error('undo history was not cleared before the file restore');
         } finally {
             btn.remove();
             document.getElementById('import-cycle-file-input')?.remove();
@@ -348,6 +353,136 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
 
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🏭 Factory Reset</h4>';
+
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🗂️ Pre-migration copy (Settings → Data Management)</h4>';
+
+    const PRE_PREFIX = 'miniCycleData_pre-migration_';   // PRE_MIGRATION_BACKUP_PREFIX
+    const legacyDoc = () => JSON.stringify({
+        schemaVersion: '2.5',
+        metadata: { version: '2.5', schemaVersion: '2.5', createdAt: 1, lastModified: 2 },
+        settings: { onboardingCompleted: true },
+        data: { cycles: { Morning: { id: 'Morning', title: 'Morning', tasks: [{ id: 't1', text: 'Stretch', completed: false }], cycleCount: 1 } } },
+        appState: { activeCycleId: 'Morning' },
+        userProgress: {}
+    });
+    const clearCopies = () => Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX)).forEach(k => localStorage.removeItem(k));
+
+    // One block for the whole group: setupPreMigrationCopyControls() wires its
+    // listeners once per module instance, so the elements must outlive the tests.
+    const preBlock = document.createElement('div');
+    preBlock.id = 'pre-migration-copy';
+    preBlock.hidden = true;
+    preBlock.innerHTML = '<p id="pre-migration-copy-desc"></p>'
+        + '<button id="pre-migration-download"></button>'
+        + '<button id="pre-migration-restore"></button>'
+        + '<button id="pre-migration-delete"></button>';
+    document.body.appendChild(preBlock);
+
+    const wirePre = (over = {}) => mod.setBackupRestoreManagerDependencies({
+        AppState: { isReady: () => true, get: () => ({}), forceSave: () => {}, reload: () => {}, update: () => {} },
+        showNotification: () => {},
+        showConfirmationModal: ({ callback }) => callback(true),
+        safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+        ...over
+    });
+
+    try {
+        await test('pre-migration copy: the block stays hidden while no copy exists', () => {
+            clearCopies();
+            wirePre();
+            mod.setupPreMigrationCopyControls();
+            if (!preBlock.hidden) throw new Error('block shown with no copy in storage');
+        });
+
+        await test('pre-migration copy: the block shows and names the copy date', () => {
+            clearCopies();
+            const ts = Date.UTC(2026, 8, 19, 12, 0, 0);
+            localStorage.setItem(PRE_PREFIX + ts, legacyDoc());
+            wirePre();
+            mod.refreshPreMigrationCopyControls();
+            const desc = document.getElementById('pre-migration-copy-desc').textContent;
+            if (preBlock.hidden) throw new Error('block hidden although a copy exists');
+            if (!/2026/.test(desc)) throw new Error('description does not carry the copy date: ' + desc);
+            const found = mod.findPreMigrationCopy();
+            if (!found || found.timestamp !== ts || found.raw !== legacyDoc()) throw new Error('findPreMigrationCopy did not return the stored copy');
+        });
+
+        await test('pre-migration copy: the newest of several copies wins', () => {
+            clearCopies();
+            localStorage.setItem(PRE_PREFIX + '1000', 'older');
+            localStorage.setItem(PRE_PREFIX + '2000', legacyDoc());
+            localStorage.setItem(PRE_PREFIX + 'garbage', 'x');
+            const found = mod.findPreMigrationCopy();
+            if (!found || found.timestamp !== 2000) throw new Error('expected the newest numeric copy, got ' + JSON.stringify(found && found.timestamp));
+        });
+
+        await test('pre-migration copy: download builds a backup file Restore All Routines reads (raw bytes, 2.5 stamps)', () => {
+            clearCopies();
+            const raw = legacyDoc();
+            localStorage.setItem(PRE_PREFIX + '3000', raw);
+            const payload = mod.buildPreMigrationBackupPayload(mod.findPreMigrationCopy());
+            if (!payload) throw new Error('no payload built for a readable copy');
+            if (payload.miniCycleData !== raw) throw new Error('the document inside the file is not the raw copy');
+            if (payload.schemaVersion !== '2.5' || payload.backupMetadata.schemaVersion !== '2.5') throw new Error('file is not stamped 2.5: ' + JSON.stringify(payload.schemaVersion));
+            if (payload.backupMetadata.createdAt !== 3000) throw new Error('createdAt is not the copy timestamp');
+            if (mod.buildPreMigrationBackupPayload({ timestamp: 1, raw: 'not json' }) !== null) throw new Error('an unreadable copy produced a payload');
+        });
+
+        await test('pre-migration copy: restore writes the raw document back, drops the copy, clears undo, re-renders', async () => {
+            clearCopies();
+            const raw = legacyDoc();
+            localStorage.setItem(PRE_PREFIX + '4000', raw);
+            localStorage.setItem('miniCycleData', JSON.stringify({ schemaVersion: '2.6', data: { routine: {} }, appState: {}, metadata: {} }));
+            let undoCleared = false, reloaded = false, rendered = false;
+            const confirms = [];
+            wirePre({
+                showConfirmationModal: ({ title, callback }) => { confirms.push(title); callback(true); },
+                clearAllUndoHistory: async () => { undoCleared = true; },
+                AppState: { isReady: () => true, get: () => ({}), forceSave: () => {}, reload: () => { reloaded = true; }, update: () => {} },
+                loadMiniCycle: () => { rendered = true; }
+            });
+            const ok = await mod.restorePreMigrationCopy();
+            if (!ok) throw new Error('restore reported failure');
+            if (localStorage.getItem('miniCycleData') !== raw) throw new Error('the raw copy was not written back to miniCycleData');
+            if (localStorage.getItem(PRE_PREFIX + '4000') !== null) throw new Error('the copy restored from was left behind');
+            if (!undoCleared) throw new Error('undo history was not cleared');
+            // Two prompts: the restore itself, then "no safety backup" (BackupManager absent here).
+            if (confirms.length !== 2) throw new Error('expected 2 confirmations, got ' + confirms.length);
+            for (let i = 0; i < 40 && !rendered; i++) await new Promise(r => setTimeout(r, 50));
+            if (!reloaded || !rendered) throw new Error('the in-place reload did not run (reload=' + reloaded + ', render=' + rendered + ')');
+        });
+
+        await test('pre-migration copy: a declined confirmation changes nothing', async () => {
+            clearCopies();
+            const raw = legacyDoc();
+            const current = JSON.stringify({ schemaVersion: '2.6', data: { routine: {} }, appState: {}, metadata: {} });
+            localStorage.setItem(PRE_PREFIX + '5000', raw);
+            localStorage.setItem('miniCycleData', current);
+            wirePre({ showConfirmationModal: ({ callback }) => callback(false) });
+            const ok = await mod.restorePreMigrationCopy();
+            if (ok) throw new Error('restore reported success after a decline');
+            if (localStorage.getItem('miniCycleData') !== current) throw new Error('current data changed after a decline');
+            if (localStorage.getItem(PRE_PREFIX + '5000') !== raw) throw new Error('the copy changed after a decline');
+        });
+
+        await test('pre-migration copy: delete removes every copy after confirmation and hides the block', async () => {
+            clearCopies();
+            localStorage.setItem(PRE_PREFIX + '6000', legacyDoc());
+            localStorage.setItem(PRE_PREFIX + '6001', legacyDoc());
+            wirePre({ showConfirmationModal: ({ callback }) => callback(false) });
+            if (await mod.deletePreMigrationCopy()) throw new Error('deleted after a decline');
+            if (Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX)).length !== 2) throw new Error('copies changed after a decline');
+            wirePre();
+            if (!(await mod.deletePreMigrationCopy())) throw new Error('delete reported failure');
+            if (Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX)).length !== 0) throw new Error('a copy survived the delete');
+            mod.refreshPreMigrationCopyControls();
+            if (!preBlock.hidden) throw new Error('block still shown after the delete');
+        });
+    } finally {
+        clearCopies();
+        preBlock.remove();
+    }
 
     await test('factory reset: a failed pre-wipe backup blocks the wipe instead of deleting unprotected', async () => {
         // The reset destroys localStorage, sessionStorage, caches AND every app

@@ -837,6 +837,9 @@ export const MODULE_MANIFESTS = {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
         requires: ['AppState', 'showNotification', 'notifications', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture', 'backupManager', 'getModal'],
+        // The IndexedDB restore clears undo before writing: per-routine snapshots
+        // cannot undo a whole-document restore (same rule as the Settings restore).
+        optionalDeps: ['clearAllUndoHistory'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true,

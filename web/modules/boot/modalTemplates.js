@@ -952,6 +952,12 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-section-content" id="settings-section-data">
                         <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
                         <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
+                        <div id="${DOM_IDS.PRE_MIGRATION_COPY}" class="settings-subsection" hidden>
+                            <p id="${DOM_IDS.PRE_MIGRATION_COPY_DESC}" class="settings-note"></p>
+                            <button id="${DOM_IDS.PRE_MIGRATION_DOWNLOAD}" class="settings-btn settings-btn-ghost"><i class="fas fa-file-download"></i> ${getLabel('settings.preMigrationDownload')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_RESTORE}" class="settings-btn settings-btn-ghost"><i class="fas fa-history"></i> ${getLabel('settings.preMigrationRestore')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_DELETE}" class="settings-btn settings-btn-ghost"><i class="fas fa-trash-alt"></i> ${getLabel('settings.preMigrationDelete')}</button>
+                        </div>
                     </div>
                 </div>
 

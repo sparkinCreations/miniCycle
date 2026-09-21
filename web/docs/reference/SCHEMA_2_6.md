@@ -544,6 +544,27 @@ The migration is pure and separately tested (`tests/schemaMigration26.tests.js`)
 boot seam that runs it, keeps the pre-migration copy and clears undo history is pinned
 by the *a 2.5 document is migrated at boot* journey.
 
+**The copy is the user's, not just a debugging aid (Sep 21, 2026).** While a
+`miniCycleData_pre-migration_<ts>` key exists, Settings → Data Management shows a
+block naming its date with three actions (`backupRestoreManager`):
+*Download the copy* writes it as an ordinary backup file (the raw bytes inside a
+`{ schemaVersion, miniCycleData, backupMetadata }` wrapper, so Restore All Routines
+reads it); *Restore the copy* takes a confirmation and a safety backup, clears undo
+history (its snapshots are of the state being replaced), writes the raw document
+back and re-renders in place — the reload migrates it again with the *current*
+build's migration, which is the point when the original one went wrong, and keeps a
+fresh copy of the same bytes; *Delete the copy* removes it. Pinned by the *the
+pre-migration copy is usable from Settings* journey. The same change made
+`validateSchema25PayloadString` admit the 2.5 layout: from v2.573 to v2.574 the
+Settings restore had rejected every backup file made before 2.6 as corrupt while the
+version check beside it admitted 2.5 (*a backup made before 2.6 restores from
+Settings* journey). Every restore entry point now clears undo history before writing
+(Settings file restore, the testing modal's IndexedDB restore, the pre-migration
+restore): undo snapshots are per routine and hold only that routine's tasks, so after a
+whole-document restore an Undo would drop one routine's old tasks over restored
+settings, progress and routines — a half-revert. The safety backup taken first is the
+coherent way back.
+
 ## Usage Example
 
 ```javascript

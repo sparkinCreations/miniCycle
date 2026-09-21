@@ -153,6 +153,7 @@ async function loadSubModules(version) {
         setupBackupButton: backupRestoreModule.setupBackupButton,
         setupRestoreButton: backupRestoreModule.setupRestoreButton,
         setupFactoryResetButton: backupRestoreModule.setupFactoryResetButton,
+        setupPreMigrationCopyControls: backupRestoreModule.setupPreMigrationCopyControls,
         neutralizeAppState: backupRestoreModule.neutralizeAppState,
         downloadBackupFile: backupRestoreModule.downloadBackupFile,
 
@@ -247,6 +248,7 @@ function wireSubModuleDependencies(dependencies) {
         showPromptModal: dependencies.showPromptModal,
         closeUndoIndexedDB: dependencies.closeUndoIndexedDB,
         initUndoIndexedDB: dependencies.initUndoIndexedDB,
+        clearAllUndoHistory: dependencies.clearAllUndoHistory,
         // reloadWithLoader re-renders IN PLACE (there is no page reload), so every
         // routine-scoped surface has to be told the data is gone — see the
         // dataless re-render there.
@@ -315,6 +317,7 @@ export class SettingsManager {
             _subModules.setupBackupButton?.();
             _subModules.setupRestoreButton?.();
             _subModules.setupFactoryResetButton?.();
+            _subModules.setupPreMigrationCopyControls?.();
             _subModules.setupShareRoutineButton?.();
             _subModules.setupShareAppButton?.();
 
@@ -561,6 +564,12 @@ export function setupRestoreButton() { _subModules?.setupRestoreButton?.(); }
  * @returns {void}
  */
 export function setupFactoryResetButton() { _subModules?.setupFactoryResetButton?.(); }
+
+/**
+ * Initialize the Settings controls for the copy kept before a schema migration.
+ * @returns {void}
+ */
+export function setupPreMigrationCopyControls() { _subModules?.setupPreMigrationCopyControls?.(); }
 
 /**
  * Neutralize AppState to prevent saves during destructive operations.

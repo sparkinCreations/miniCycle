@@ -44,7 +44,10 @@ let deps = {
     consoleCapture: null,
 
     // Modal registry
-    getModal: null
+    getModal: null,
+
+    // Undo (optional): the IndexedDB restore clears the stack before writing
+    clearAllUndoHistory: null
 };
 
 /**

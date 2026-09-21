@@ -183,7 +183,7 @@ export function backupCorruptedData(corruptedData, storage) {
 export function validateRecoveredData(data) {
     if (!data || typeof data !== 'object') return false;
 
-    const cycles = data.data?.routine || data.routine;
+    const cycles = data.data?.routine || data.data?.cycles || data.routine;
     if (!cycles || typeof cycles !== 'object') return false;
 
     for (const cycle of Object.values(cycles)) {
@@ -212,7 +212,12 @@ export function validateSchema25PayloadString(payloadString) {
         return !!(parsed &&
             isSupportedStoredVersion(parsed) &&
             parsed.metadata && typeof parsed.metadata === 'object' &&
-            parsed.data && typeof parsed.data.routine === 'object' &&
+            // A 2.5 document keeps its routines under `data.cycles`. The version
+            // check above admits 2.5 (SCHEMA.OLDEST_MIGRATABLE) and AppState migrates
+            // it on adoption, so the shape check has to admit what the version check
+            // does — v2.573 rejected every backup file made before 2.6 right here
+            // (measured Sep 21 2026).
+            parsed.data && typeof (parsed.data.routine ?? parsed.data.cycles) === 'object' &&
             parsed.appState && typeof parsed.appState === 'object');
     } catch {
         return false;

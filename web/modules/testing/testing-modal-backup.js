@@ -419,6 +419,17 @@ export async function restoreFromBackup() {
                         appendToTestResults(`Could not create safety backup: ${backupErr.message}\n`);
                     }
 
+                    // Undo snapshots are per routine; a whole-document restore cannot
+                    // be undone by them, only half-reverted (one routine's old tasks
+                    // over restored settings and progress). The safety backup above is
+                    // the way back, so the stack goes — as in the Settings restore.
+                    try {
+                        await deps.clearAllUndoHistory?.();
+                        appendToTestResults(`Cleared undo history\n`);
+                    } catch (undoErr) {
+                        appendToTestResults(`Could not clear undo history: ${undoErr.message}\n`);
+                    }
+
                     // Neutralize AppState to prevent auto-save
                     if (deps.AppState) {
                         if (deps.AppState.saveTimeout) {
