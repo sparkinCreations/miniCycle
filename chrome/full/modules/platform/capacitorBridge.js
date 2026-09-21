@@ -32,10 +32,21 @@ function cap() {
     return typeof globalThis !== 'undefined' ? globalThis.Capacitor : undefined;
 }
 
-/** True only inside a Capacitor native shell (the Android app). False on the web. */
+/** True only inside a Capacitor native shell (the iOS or Android app). False on the web. */
 export function isNativeApp() {
     const c = cap();
     return !!(c && typeof c.isNativePlatform === 'function' && c.isNativePlatform());
+}
+
+/**
+ * Which native shell this is: 'ios' or 'android' inside the app, null on the web.
+ * @returns {'ios'|'android'|null}
+ */
+export function getNativePlatform() {
+    const c = cap();
+    if (!isNativeApp() || typeof c.getPlatform !== 'function') return null;
+    const platform = c.getPlatform();
+    return platform === 'ios' || platform === 'android' ? platform : null;
 }
 
 /**

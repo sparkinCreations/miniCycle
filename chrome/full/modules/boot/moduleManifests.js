@@ -718,6 +718,19 @@ export const MODULE_MANIFESTS = {
         after: ['taskCore']
     },
 
+    // "Check for Updates" (Settings + main menu). Owns the behaviour the inline
+    // handler in miniCycle.html used to delegate to two window.* functions that
+    // never existed (Sep 2026): SW update on the web, live-version compare with a
+    // store hint in the Chrome / iOS / Android builds.
+    updateCheck: {
+        path: '../utils/updateCheck.js',
+        phase: PHASES.UI_MANAGERS,
+        requires: ['showNotification', 'AppMeta', 'safeAddEventListener'],
+        provides: ['checkForUpdates'],
+        api: 'utils',
+        optional: true
+    },
+
     pullToRefresh: {
         path: '../ui/pullToRefresh.js',
         phase: PHASES.UI_MANAGERS,
@@ -837,6 +850,9 @@ export const MODULE_MANIFESTS = {
         path: '../testing/testing-modal.js',
         phase: PHASES.TESTING,
         requires: ['AppState', 'showNotification', 'notifications', 'safeAddEventListener', 'safeAddEventListenerById', 'safeLocalStorageGet', 'safeLocalStorageSet', 'safeJSONParse', 'safeJSONStringify', 'consoleCapture', 'backupManager', 'getModal'],
+        // The IndexedDB restore clears undo before writing: per-routine snapshots
+        // cannot undo a whole-document restore (same rule as the Settings restore).
+        optionalDeps: ['clearAllUndoHistory'],
         provides: ['openStorageViewer', 'closeStorageViewer'],
         api: 'testing',
         optional: true,

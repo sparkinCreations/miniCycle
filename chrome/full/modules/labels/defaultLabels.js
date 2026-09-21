@@ -47,6 +47,10 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     noun: {
+        // Update sources named by Check for Updates
+        chromeWebStore:  'the Chrome Web Store',
+        appStore:        'the App Store',
+        googlePlay:      'Google Play',
         task:      { one: 'task',    other: 'tasks' },
         cycle:     { one: 'cycle',   other: 'cycles' },
         routine:   { one: 'routine', other: 'routines' },
@@ -629,6 +633,11 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
         factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
         restoreCancelled:        'Restore cancelled.',
+        preMigrationRestored:    'Restored the copy from before the update.',
+        preMigrationRestoreFailed: 'The copy could not be written back. Nothing was changed.',
+        preMigrationDeleted:     'The copy from before the update was deleted.',
+        preMigrationDownloaded:  'Downloaded the copy from before the update.',
+        preMigrationUnreadable:  'The saved copy could not be read.',
 
         // Import/export notifications
         fileTooLarge:            'File too large. Maximum size is 10MB.',
@@ -860,6 +869,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // reports its version; the plain string above is the fallback for when
         // it cannot be asked (no message channel, timeout, identical versions).
         updateAvailableFromTo:   'Update available: version {from} → {to}. Reload to update.',
+        // Check for Updates (utils/updateCheck.js)
+        checkingUpdates:         'Checking for updates…',
+        updateUpToDate:          'You are on the latest version ({version}).',
+        updateAvailableStore:    'Version {to} is available (you have {from}). Get it from {store}.',
+        updateCheckFailed:       'Could not check for updates right now. You are on version {version}.',
         refreshed:               'Refreshed',
 
         // Undo/redo notifications
@@ -938,6 +952,12 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreBackupTitle:       'Restore Backup',
         restoreBackupMessage:     'This will replace all your current routines, settings, and progress with the backup data. A safety backup will be saved first.',
         restoreBackupConfirm:     'Restore',
+        preMigrationRestoreTitle:   'Restore the copy from before the update',
+        preMigrationRestoreMessage: 'Your current routines, settings and progress will be replaced by the copy saved on {date}. Anything changed since then will be lost. A safety backup is saved first.',
+        preMigrationRestoreConfirm: 'Restore',
+        preMigrationDeleteTitle:    'Delete the copy from before the update',
+        preMigrationDeleteMessage:  'This removes the copy saved on {date}. You will not be able to go back to it.',
+        preMigrationDeleteConfirm:  'Delete',
         restoreNoSafetyBackupTitle:   'No Safety Backup',
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
@@ -1320,6 +1340,11 @@ export const DEFAULT_LABELS = deepFreeze({
         dataManagement:       'Data Management',
         backupAll:            'Backup All Routines',
         restoreAll:           'Restore All Routines',
+        // The copy AppState kept before a schema migration (Settings → Data Management)
+        preMigrationCopyDesc: 'A copy of your data from before the update on {date} is kept on this device.',
+        preMigrationDownload: 'Download the copy',
+        preMigrationRestore:  'Restore the copy',
+        preMigrationDelete:   'Delete the copy',
         resetOptions:         'Reset Options',
         resetOnboarding:      'Reset Onboarding',
         resetNotifPosition:   'Reset Notification Position',

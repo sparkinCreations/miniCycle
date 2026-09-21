@@ -311,6 +311,22 @@
     border-color: var(--color-gray-500);
 }
 
+/* A secondary group inside a section, with a short note above its buttons
+   (the pre-migration copy under Data Management). Hidden via the `hidden`
+   attribute while it has nothing to offer. */
+.settings-subsection {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-input-border)));
+}
+
+.settings-note {
+    margin: 0 0 var(--space-2);
+    font-size: var(--font-size-sm);
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    opacity: 0.85;
+}
+
 /* Factory reset button — combined selector wins over .settings-btn alone */
 .settings-btn.factory-reset-btn {
     background: var(--color-error);

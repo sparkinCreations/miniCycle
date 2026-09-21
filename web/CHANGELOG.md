@@ -1,3 +1,7 @@
+## [2.576] - 2026-09-21
+- feat(updates): Check for Updates works — SW update on web, live-version compare with a store hint on Chrome/iOS/Android
+
+
 ## [2.575] - 2026-09-21
 - feat(settings): the pre-migration copy can be downloaded, restored or deleted from Settings; restores read 2.5 backups again and clear undo
 - docs(mcyc): record the exit criteria for the exporter's 2.5 dual-write window

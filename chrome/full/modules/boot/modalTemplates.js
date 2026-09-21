@@ -952,6 +952,12 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-section-content" id="settings-section-data">
                         <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
                         <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
+                        <div id="${DOM_IDS.PRE_MIGRATION_COPY}" class="settings-subsection" hidden>
+                            <p id="${DOM_IDS.PRE_MIGRATION_COPY_DESC}" class="settings-note"></p>
+                            <button id="${DOM_IDS.PRE_MIGRATION_DOWNLOAD}" class="settings-btn settings-btn-ghost"><i class="fas fa-file-download"></i> ${getLabel('settings.preMigrationDownload')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_RESTORE}" class="settings-btn settings-btn-ghost"><i class="fas fa-history"></i> ${getLabel('settings.preMigrationRestore')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_DELETE}" class="settings-btn settings-btn-ghost"><i class="fas fa-trash-alt"></i> ${getLabel('settings.preMigrationDelete')}</button>
+                        </div>
                     </div>
                 </div>
 
@@ -989,7 +995,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             <span>${getLabel('settings.debugMode')}</span>
                         </label>
                         <button id="open-testing-modal" class="settings-btn"><i class="fas fa-flask"></i> ${getLabel('settings.diagnostics')}</button>
-                        <button id="check-for-updates" class="settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>
+                        <button id="${DOM_IDS.CHECK_FOR_UPDATES}" class="settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>
                         <button id="try-lite-version" class="settings-btn"><i class="fas fa-mobile-alt"></i> ${getLabel('settings.tryLite')}</button>
                         <button id="factory-reset" class="settings-btn factory-reset-btn"><i class="fas fa-exclamation-triangle"></i> ${getLabel('settings.factoryReset')}</button>
                     </div>

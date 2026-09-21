@@ -41,8 +41,9 @@ import { collectSwatchSets } from '../utils/priorityLevel.js';
 
 // Where an older document is kept, byte for byte, before it is migrated —
 // beside the `<DATA>_corrupted_<ts>` copies dataRecovery keeps. The factory
-// reset sweeps it like every other miniCycle-prefixed key.
-const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`;
+// reset sweeps it like every other miniCycle-prefixed key, and Settings → Data
+// Management offers it back to the user (backupRestoreManager).
+import { PRE_MIGRATION_BACKUP_PREFIX } from './constants.js';
 
 // NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
 // so its storage is physically isolated from real user data. The former test-mode

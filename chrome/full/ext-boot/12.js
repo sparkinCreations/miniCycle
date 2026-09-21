@@ -20,16 +20,5 @@ document.addEventListener('DOMContentLoaded', function () {
     }).catch(function(){ /* no active SW — this only feeds the version display */ });
   }
 
-  // Wire "Check for Updates" buttons (settings + main menu).
-  // Uses event delegation because #check-for-updates lives in the settings modal
-  // which is injected by modalTemplates.js AFTER DOMContentLoaded.
-  document.addEventListener('click', function (e) {
-    var btn = e.target.closest('#check-for-updates, #menu-check-updates');
-    if (!btn) return;
-    if (typeof window.forceServiceWorkerUpdate === 'function') {
-      window.forceServiceWorkerUpdate();
-    } else if (typeof window.checkForUpdates === 'function') {
-      window.checkForUpdates();
-    }
-  });
+  // "Check for Updates" (settings + main menu) is wired by modules/utils/updateCheck.js.
 });

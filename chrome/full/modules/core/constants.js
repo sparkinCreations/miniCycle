@@ -658,6 +658,17 @@ export const STORAGE_KEYS = Object.freeze({
     TIME_TRACKER: 'timeTrackerData'
 });
 
+/**
+ * Where AppState keeps the raw stored document, byte for byte, before migrating it
+ * to a newer schema: `<DATA>_pre-migration_<timestamp>` (appState._migrateIfOlder),
+ * beside the `<DATA>_corrupted_<ts>` copies dataRecovery keeps. Settings → Data
+ * Management lets the user download, restore or delete it (backupRestoreManager).
+ * Not a STORAGE_KEYS entry: the key is dynamic, and the factory reset sweeps it by
+ * the name-matching rule.
+ * @constant {string}
+ */
+export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`;
+
 // ============================================================================
 // CUSTOM EVENT NAMES — Single source of truth for document.dispatchEvent
 // ============================================================================
@@ -1135,10 +1146,19 @@ export const DOM_IDS = Object.freeze({
     // ---- Lite Version ----
     TRY_LITE_VERSION: 'try-lite-version',
     MENU_LITE_VERSION: 'menu-lite-version',
+    // "Check for Updates" — Settings → Advanced, and the main menu (utils/updateCheck.js)
+    CHECK_FOR_UPDATES: 'check-for-updates',
+    MENU_CHECK_UPDATES: 'menu-check-updates',
 
     // ---- Backup & Recovery ----
     BACKUP_MINI_CYCLES: 'backup-mini-cycles',
     RESTORE_MINI_CYCLES: 'restore-mini-cycles',
+    // The copy AppState kept before a schema migration (Settings → Data Management)
+    PRE_MIGRATION_COPY: 'pre-migration-copy',
+    PRE_MIGRATION_COPY_DESC: 'pre-migration-copy-desc',
+    PRE_MIGRATION_DOWNLOAD: 'pre-migration-download',
+    PRE_MIGRATION_RESTORE: 'pre-migration-restore',
+    PRE_MIGRATION_DELETE: 'pre-migration-delete',
     FACTORY_RESET: 'factory-reset',
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',
