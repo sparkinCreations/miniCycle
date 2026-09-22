@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: September 21, 2026
+**Last Updated**: September 22, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.576 |
+| **App Version** | 2.577 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 161 |
-| **Total Tests** | 3772 |
+| **Total Modules** | 162 |
+| **Total Tests** | 3774 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1524 |
+| **JSDoc Blocks** | 1529 |
 | **Documentation Files** | 249 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -49,10 +49,10 @@
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
-| `platform/` | 1 | capacitorBridge — native shell for iOS/Android; no-op on web |
+| `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **161** | |
+| **Total** | **162** | |
 
 ---
 
@@ -61,11 +61,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~50 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~1281 | Sequence control + boot UI + early coordination |
+| `modules/boot/orchestrator.js` | ~1285 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~770 | Core state & init |
 | `modules/boot/featureBoot.js` | ~622 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1255 | UI handlers |
-| **Total** | **~3978** | |
+| `modules/boot/uiBoot.js` | ~1257 | UI handlers |
+| **Total** | **~3984** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 3772 |
+| Total Tests | 3774 |
 | Test Files | 151 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

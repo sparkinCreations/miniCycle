@@ -51,6 +51,7 @@ export const DEFAULT_LABELS = deepFreeze({
         chromeWebStore:  'the Chrome Web Store',
         appStore:        'the App Store',
         googlePlay:      'Google Play',
+        desktopDownloadSite: 'minicycleapp.com',
         task:      { one: 'task',    other: 'tasks' },
         cycle:     { one: 'cycle',   other: 'cycles' },
         routine:   { one: 'routine', other: 'routines' },

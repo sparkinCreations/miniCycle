@@ -59,6 +59,7 @@
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
@@ -980,9 +981,10 @@ export function setupMenuRetakeTours() {
  */
 export function setupTryLiteVersionButton(_GlobalUtils, deps) {
   // The lite version is a web-only fallback (old browsers / slow connections).
-  // It isn't bundled in the native (Capacitor) build, so don't offer it there —
-  // hide the menu entries and skip wiring. No effect on web (isNativeApp() false).
-  if (isNativeApp()) {
+  // It isn't bundled in the native (Capacitor) build or the desktop app, so
+  // don't offer it there — hide the menu entries and skip wiring. No effect on
+  // web (both tests are false).
+  if (isNativeApp() || isDesktopApp()) {
     for (const id of [DOM_IDS.TRY_LITE_VERSION, DOM_IDS.MENU_LITE_VERSION]) {
       const el = document.getElementById(id);
       if (el) el.style.display = 'none';

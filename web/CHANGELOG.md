@@ -1,3 +1,7 @@
+## [2.577] - 2026-09-22
+- feat(desktop): Electron app for macOS + Windows — same generated web payload on an app:// origin, offline-proven smoke gate, --desktop/--desktop-dist release flags; packaged builds no longer 404 boot-sw.js on boot
+
+
 ## [2.576] - 2026-09-21
 - feat(updates): Check for Updates works — SW update on web, live-version compare with a store hint on Chrome/iOS/Android
 

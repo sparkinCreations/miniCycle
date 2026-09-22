@@ -242,7 +242,7 @@ miniCycle/
 ├── mobile/                         # Native mobile builds
 │   ├── android/                    # Capacitor app — WebView shell over the byte-identical web app
 │   └── ios/                        # Capacitor app (SPM-based) — same web payload, iOS shell
-├── desktop/                        # Reserved for a future desktop build
+├── desktop/                        # Electron app (macOS + Windows) — same generated web payload, desktop shell
 ├── shared/                         # Reserved for platform-agnostic logic (empty by design)
 ├── .github/workflows/              # CI pipelines (tests + Lighthouse + perf)
 └── CLAUDE.md                       # Implementation rules & patterns

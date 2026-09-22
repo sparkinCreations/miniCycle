@@ -1,0 +1,56 @@
+# electron-builder configuration for the miniCycle desktop app.
+#
+# The web payload (www/) is generated from web/ by `npm run build:www` (which
+# every dist script runs first) and served by src/main.js over the app://
+# scheme. Nothing here is generated; edit by hand.
+#
+# Signing: none yet. `identity: null` stops electron-builder from picking up a
+# random certificate from the keychain; without an Apple Developer ID the macOS
+# build is unsigned and un-notarized (Gatekeeper asks the user to allow it), and
+# the Windows installer is unsigned (SmartScreen warns). See
+# docs/DESKTOP_BUILD_AND_DIFFERENCES.md §5 for what signing needs.
+
+appId: com.sparkincreations.minicycle
+productName: miniCycle
+copyright: Copyright © 2026 sparkinCreations
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - src/**/*
+  - www/**/*
+  - package.json
+
+asar: true
+
+# One artifact name shape for every platform: miniCycle-<version>-<os>-<arch>.<ext>
+artifactName: ${productName}-${version}-${os}-${arch}.${ext}
+
+mac:
+  category: public.app-category.productivity
+  identity: null
+  hardenedRuntime: false
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+
+dmg:
+  # Plain drag-to-Applications layout; no custom background image yet.
+  contents:
+    - { x: 130, y: 220 }
+    - { x: 410, y: 220, type: link, path: /Applications }
+
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  shortcutName: miniCycle

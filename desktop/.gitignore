@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Generated web payload — produced from web/ by web/scripts/build-desktop-www.cjs.
+# Never committed: `npm run build:www` regenerates it and main.js serves it
+# straight from this folder over the app:// scheme (no cap sync step).
+www/
+
+# electron-builder output (installers, unpacked apps, smoke screenshots)
+dist/
+
+# OS files
+.DS_Store
+Thumbs.db

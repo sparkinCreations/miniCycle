@@ -19,6 +19,7 @@
 import { STORAGE_KEYS, UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from './liteVersion.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
@@ -172,10 +173,11 @@ export class DeviceDetectionManager {
   }
 
   redirectToLite() {
-    // Suppress the whole flow on native — no "redirecting" notification, no nav.
-    // The WebView always runs the full app; goToLiteVersion() is the nav backstop.
-    if (isNativeApp()) {
-      console.warn('[miniCycle] lite auto-redirect suppressed (native build)');
+    // Suppress the whole flow on native and desktop — no "redirecting"
+    // notification, no nav. Those shells always run the full app;
+    // goToLiteVersion() is the nav backstop.
+    if (isNativeApp() || isDesktopApp()) {
+      console.warn('[miniCycle] lite auto-redirect suppressed (packaged build)');
       return;
     }
 

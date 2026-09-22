@@ -1,0 +1,26 @@
+{
+  "name": "minicycle-desktop",
+  "version": "2.577.0",
+  "productName": "miniCycle",
+  "description": "miniCycle desktop app — Electron shell wrapping the byte-identical web app (web/).",
+  "private": true,
+  "main": "src/main.js",
+  "//": "The web payload (www/) is GENERATED from web/ by web/scripts/build-desktop-www.cjs. Never hand-edit www/. The version field is APP_VERSION plus a trailing .0 (electron-builder requires semver; the app uses two parts), synced by web/scripts/update-version.sh --desktop. See docs/DESKTOP_BUILD_AND_DIFFERENCES.md.",
+  "scripts": {
+    "build:www": "node ../web/scripts/build-desktop-www.cjs",
+    "start": "npm run build:www && electron .",
+    "smoke": "npm run build:www && MINICYCLE_SMOKE=dist/smoke.png electron .",
+    "smoke:offline": "npm run build:www && MINICYCLE_SMOKE=dist/smoke-offline.png MINICYCLE_SMOKE_OFFLINE=1 electron .",
+    "pack": "npm run build:www && electron-builder --dir",
+    "dist": "npm run build:www && npm run installers",
+    "dist:mac": "npm run build:www && electron-builder --mac",
+    "dist:win": "npm run build:www && electron-builder --win",
+    "installers": "electron-builder --mac --win"
+  },
+  "author": "sparkinCreations",
+  "license": "SEE LICENSE IN ../LICENSE",
+  "devDependencies": {
+    "electron": "^44.4.3",
+    "electron-builder": "^26.15.3"
+  }
+}

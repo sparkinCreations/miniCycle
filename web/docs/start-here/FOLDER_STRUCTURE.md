@@ -163,7 +163,7 @@ web/
 │   ├── utils/                           # Notifications, device detection, utilities
 │   ├── storage/                         # Backup manager, storage persistence
 │   ├── progress/                        # Cycle completion tracking
-│   ├── platform/                        # capacitorBridge (native shell; no-op on web)
+│   ├── platform/                        # capacitorBridge + desktopBridge (shell detection; no-op on web)
 │   ├── testing/                         # Test infrastructure
 │   └── other/                           # Plugins, experimental
 │
@@ -591,11 +591,12 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `platform/` - Native Platform Bridge (1 module)
-**Purpose:** Native shell integration for the Capacitor (iOS/Android) builds
+### `platform/` - Native Platform Bridge (2 modules)
+**Purpose:** Shell integration for the packaged builds — Capacitor (iOS/Android) and Electron (desktop)
 **When to add here:** Platform-specific bridging code
 
 - `capacitorBridge.js` - Capacitor native shell bridge (no-op on web)
+- `desktopBridge.js` - Electron desktop shell detection (no-op on web)
 
 **Philosophy:** Platform-specific code is isolated so the web app stays platform-agnostic.
 

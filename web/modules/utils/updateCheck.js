@@ -12,10 +12,11 @@
  *    About modal uses); `app:verifyVersion` (miniCycle.html's verifyVersionFresh)
  *    catches stale cached HTML and hard-reloads on its own. When nothing is
  *    waiting, the live `version.js` decides between "up to date" and "reload".
- *  - **Chrome extension, iOS, Android:** there is no service worker and the app
- *    cannot update itself. The live `version.js` is fetched cross-origin
+ *  - **Chrome extension, iOS, Android, desktop:** there is no service worker and
+ *    the app cannot update itself. The live `version.js` is fetched cross-origin
  *    (netlify.toml sends `Access-Control-Allow-Origin: *` on it) and compared with
- *    the running build; the notification names the store to update from.
+ *    the running build; the notification names where to get the update — the
+ *    store, or the download page for the desktop app.
  *  - **Offline / fetch failed:** say so, and name the running version.
  *
  * DI-pure: no window.* globals. `fetch` and the SW registration are injectable
@@ -26,6 +27,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, UI_TIMEOUTS, APP_URL } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp, getNativePlatform } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -63,16 +65,18 @@ const WORKER_VERSION_TIMEOUT_MS = 1500;
 const STORE_LABEL_KEY = Object.freeze({
     extension: 'noun.chromeWebStore',
     ios: 'noun.appStore',
-    android: 'noun.googlePlay'
+    android: 'noun.googlePlay',
+    desktop: 'noun.desktopDownloadSite'
 });
 
 /**
  * Where updates come from for the running build.
- * @returns {'web'|'extension'|'ios'|'android'}
+ * @returns {'web'|'extension'|'ios'|'android'|'desktop'}
  */
 export function detectUpdateChannel() {
     if (typeof location !== 'undefined' && location.protocol === 'chrome-extension:') return 'extension';
     if (isNativeApp()) return getNativePlatform() === 'ios' ? 'ios' : 'android';
+    if (isDesktopApp()) return 'desktop';
     return 'web';
 }
 
@@ -100,8 +104,8 @@ export function isNewerVersion(candidate, current) {
 /**
  * The APP_VERSION the live site serves right now, or null when unreachable.
  * `version.js` is never cached (netlify.toml) and carries CORS for the packaged
- * builds, whose origins are chrome-extension://, capacitor://localhost and
- * http://localhost.
+ * builds, whose origins are chrome-extension://, capacitor://localhost,
+ * http://localhost and app://minicycle (desktop).
  * @param {Function} [fetchImpl] - fetch to use (injectable for tests)
  * @returns {Promise<string|null>}
  */
@@ -147,7 +151,7 @@ function askWorkerVersion(worker) {
  * Run the check for the running platform and tell the user what it found.
  *
  * @param {Object} [options] - Injection points; production callers pass none
- * @param {'web'|'extension'|'ios'|'android'} [options.channel] - override detection
+ * @param {'web'|'extension'|'ios'|'android'|'desktop'} [options.channel] - override detection
  * @param {Function} [options.fetchImpl] - fetch to use for the live version
  * @param {Function} [options.getRegistration] - returns the SW registration (web)
  * @param {Function} [options.verifyVersion] - the stale-HTML check trigger (web)

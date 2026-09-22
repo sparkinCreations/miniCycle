@@ -51,10 +51,23 @@ export async function runUpdateCheckTests(resultsDiv) {
         if (mod.detectUpdateChannel() !== 'web') throw new Error('expected web, got ' + mod.detectUpdateChannel());
     });
 
-    // ============================================
-    resultsDiv.innerHTML += '<h4 class="test-section">📦 Packaged builds (extension / iOS / Android)</h4>';
+    await test('detectUpdateChannel reports desktop when the Electron preload global is present', () => {
+        const had = Object.prototype.hasOwnProperty.call(globalThis, 'miniCycleDesktop');
+        const saved = globalThis.miniCycleDesktop;
+        try {
+            globalThis.miniCycleDesktop = { platform: 'darwin', shellVersion: '2.577' };
+            if (mod.detectUpdateChannel() !== 'desktop') throw new Error('expected desktop, got ' + mod.detectUpdateChannel());
+            globalThis.miniCycleDesktop = { platform: 42 };
+            if (mod.detectUpdateChannel() !== 'web') throw new Error('a malformed shell global must not count as desktop');
+        } finally {
+            if (had) globalThis.miniCycleDesktop = saved; else delete globalThis.miniCycleDesktop;
+        }
+    });
 
-    for (const [channel, storeWord] of [['extension', 'Chrome Web Store'], ['ios', 'App Store'], ['android', 'Google Play']]) {
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📦 Packaged builds (extension / iOS / Android / desktop)</h4>';
+
+    for (const [channel, storeWord] of [['extension', 'Chrome Web Store'], ['ios', 'App Store'], ['android', 'Google Play'], ['desktop', 'minicycleapp.com']]) {
         await test(`${channel}: a newer live version names ${storeWord}`, async () => {
             const notes = [];
             wire(notes, '2.575');

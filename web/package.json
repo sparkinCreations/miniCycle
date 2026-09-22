@@ -1,6 +1,6 @@
 {
   "name": "minicycle-web",
-  "version": "2.576",
+  "version": "2.577",
   "description": "miniCycle - Turn Your Routine Into Progress",
   "type": "module",
   "private": true,
@@ -49,6 +49,7 @@
     "build:chrome-full": "node scripts/build-chrome-full.cjs",
     "build:android": "node scripts/build-android-www.cjs",
     "build:ios": "node scripts/build-ios-www.cjs",
+    "build:desktop": "node scripts/build-desktop-www.cjs",
     "capture:screenshots": "node scripts/capture-store-screenshots.cjs",
     "lighthouse": "lhci autorun",
     "lighthouse:install": "npm install -g @lhci/cli",

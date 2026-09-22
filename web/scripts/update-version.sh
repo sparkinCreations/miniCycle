@@ -20,6 +20,7 @@
 #  - --android flag to rebuild the Capacitor web payload + sync the native version
 #  - --android-run flag to also build the debug APK and install/launch it on a device
 #  - --ios flag to rebuild the iOS Capacitor payload + sync MARKETING_VERSION/build number
+#  - --desktop flag to rebuild the Electron payload + sync desktop/package.json; --desktop-dist smoke-boots + builds installers
 #  - Automatic CSP hash verification — detects new/changed inline scripts and updates netlify.toml
 
 # ============================================
@@ -180,7 +181,7 @@ set -euo pipefail
 
 # Single source of truth for this script's own version (keep in sync with the
 # `# Version:` header comment above). Used in --help and the runtime banners.
-SCRIPT_VERSION="5.5"
+SCRIPT_VERSION="5.6"
 
 AUTO_MODE=false
 AUTO_GIT_TAG=false
@@ -196,6 +197,8 @@ BUILD_CHROME=false
 BUILD_ANDROID=false
 DEPLOY_ANDROID=false
 BUILD_IOS=false
+BUILD_DESKTOP=false
+DIST_DESKTOP=false
 DRY_RUN=false
 
 # ============================================
@@ -262,6 +265,15 @@ while [[ $# -gt 0 ]]; do
             BUILD_IOS=true
             shift
             ;;
+        --desktop|-D)
+            BUILD_DESKTOP=true
+            shift
+            ;;
+        --desktop-dist)
+            DIST_DESKTOP=true
+            BUILD_DESKTOP=true  # installers imply rebuilding the payload first
+            shift
+            ;;
         --dry-run|-n)
             DRY_RUN=true
             shift
@@ -280,6 +292,8 @@ while [[ $# -gt 0 ]]; do
             echo "  --android, -A   Rebuild the Android (Capacitor) web payload + sync versionName"
             echo "  --android-run, -R  Also build the debug APK + install/launch on a connected device"
             echo "  --ios, -I       Rebuild the iOS (Capacitor) web payload + sync MARKETING_VERSION"
+            echo "  --desktop, -D   Rebuild the desktop (Electron) web payload + sync desktop/package.json"
+            echo "  --desktop-dist  Also smoke-boot the shell and build the macOS + Windows installers (desktop/dist/)"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -1839,7 +1853,7 @@ echo ""
 # versionName X over an X-1 payload with git status clean. Sweep BEFORE any
 # platform stage so the class can't recur. Deletes only when the original
 # sibling exists; never touches archives. See scripts/sweep-icloud-cruft.cjs.
-if [ "$BUILD_CHROME" = true ] || [ "$BUILD_ANDROID" = true ] || [ "$BUILD_IOS" = true ]; then
+if [ "$BUILD_CHROME" = true ] || [ "$BUILD_ANDROID" = true ] || [ "$BUILD_IOS" = true ] || [ "$BUILD_DESKTOP" = true ]; then
     node scripts/sweep-icloud-cruft.cjs || echo "⚠️  Cruft sweep failed (continuing — builds may hit ENOTEMPTY on duplicates)"
 fi
 
@@ -2143,6 +2157,136 @@ if [ "$REBUILD_IOS" = true ]; then
     fi
 else
     echo "⏭️  Skipping iOS app"
+fi
+
+echo ""
+
+# ============================================
+# OPTIONAL: REBUILD DESKTOP (ELECTRON) PAYLOAD
+# ============================================
+# Regenerates desktop/www/ from web/ with the same engine as Android/iOS (drops
+# the PWA/SW blocks, prunes assets), then syncs desktop/package.json's version
+# to $NEW_VERSION — electron-builder stamps the installers and the About box
+# from that field, so a stale value would ship an installer named for a version
+# it does not contain. Runs BEFORE the git-tag stage so the version sync is
+# part of the release commit/tag. www/ itself is gitignored (main.js serves it
+# straight from desktop/www/; there is no cap sync step).
+# With --desktop-dist the shell is smoke-booted (screenshot + exit code) and the
+# macOS + Windows installers are built into desktop/dist/ (gitignored, unsigned).
+# See web/scripts/build-desktop-www.cjs and desktop/docs/DESKTOP_BUILD_AND_DIFFERENCES.md.
+
+echo "🖥️  Optional: Desktop (Electron) App"
+echo "------------------------------------"
+
+REBUILD_DESKTOP=false
+if [ "$LITE_ONLY" = true ]; then
+    echo "⏭️  Skipping desktop app (LITE ONLY mode)"
+elif [ "$AUTO_MODE" = true ]; then
+    if [ "$BUILD_DESKTOP" = true ]; then
+        REBUILD_DESKTOP=true
+        echo "🤖 Auto mode: Rebuilding desktop (Electron) payload..."
+    else
+        echo "⏭️  Skipping desktop app (use --desktop to rebuild)"
+    fi
+else
+    if [ "$BUILD_DESKTOP" = true ]; then
+        REBUILD_DESKTOP=true
+    else
+        read -p "Rebuild desktop (Electron) web payload to desktop/www/? (y/N): " -n 1 -r
+        echo ""
+        if [[ $REPLY =~ ^[Yy]$ ]]; then
+            REBUILD_DESKTOP=true
+        fi
+    fi
+fi
+
+if [ "$REBUILD_DESKTOP" = true ]; then
+    if [ -f "scripts/build-desktop-www.cjs" ]; then
+        # Don't let a build failure abort the whole run (set -e) — the version
+        # files are already updated; just warn that the payload may be stale.
+        DESKTOP_BUILD_OK=false
+        if node scripts/build-desktop-www.cjs; then
+            echo "✅ Rebuilt desktop/www/ (v$NEW_VERSION)"
+            DESKTOP_BUILD_OK=true
+        else
+            echo "⚠️  Desktop web payload build failed — desktop/www/ is stale"
+            echo "    ↳ SKIPPING desktop/package.json version sync + installers so a build can't"
+            echo "      be stamped v$NEW_VERSION while still running old code. Fix the build,"
+            echo "      then re-run: ./scripts/update-version.sh --desktop (no version bump needed)."
+        fi
+
+        # Sync the shell's package.json version to NEW_VERSION. Gated on a
+        # SUCCESSFUL payload rebuild, same as the Android/iOS native bumps.
+        # electron-builder rejects a two-part version ("Invalid version: 2.576"
+        # — it needs semver), so the shell carries APP_VERSION plus ".0"; the
+        # installers are named miniCycle-2.576.0-… and About shows the same.
+        DESKTOP_PKG="../desktop/package.json"
+        DESKTOP_SEMVER="$NEW_VERSION.0"
+        if [ "$DESKTOP_BUILD_OK" = false ] && [ "$DRY_RUN" = false ]; then
+            :  # build failed — already warned above; leave package.json untouched
+        elif [ "$DRY_RUN" = true ]; then
+            echo "🔍 [dry-run] would set \"version\": \"$DESKTOP_SEMVER\" in $DESKTOP_PKG"
+        elif [ -f "$DESKTOP_PKG" ]; then
+            # A targeted edit of the one field (not `npm version`, which needs a
+            # node_modules and rewrites formatting).
+            "${SED_INPLACE[@]}" -E "s/^(  \"version\": )\"[^\"]*\"/\1\"$DESKTOP_SEMVER\"/" "$DESKTOP_PKG"
+            if grep -q "\"version\": \"$DESKTOP_SEMVER\"" "$DESKTOP_PKG"; then
+                echo "✅ Desktop version: desktop/package.json → $DESKTOP_SEMVER"
+            else
+                echo "⚠️  Could not set the version in $DESKTOP_PKG — set it manually"
+            fi
+
+            # ── Optional: smoke-boot + installers. Opt in with --desktop-dist;
+            #    or answer the prompt in interactive mode. Skipped in dry-run,
+            #    and in --auto unless --desktop-dist.
+            DO_DIST=false
+            if [ "$DRY_RUN" = true ]; then
+                :
+            elif [ "$DIST_DESKTOP" = true ]; then
+                DO_DIST=true
+            elif [ "$AUTO_MODE" = false ]; then
+                read -p "Smoke-boot the shell and build the macOS + Windows installers now? (y/N): " -n 1 -r
+                echo ""
+                if [[ $REPLY =~ ^[Yy]$ ]]; then
+                    DO_DIST=true
+                fi
+            fi
+
+            if [ "$DO_DIST" = true ]; then
+                if [ ! -d "../desktop/node_modules/electron" ]; then
+                    echo "⚠️  Electron not installed in desktop/ — run 'npm install' there first; skipping installers"
+                else
+                    # The smoke boot is the gate: a payload that cannot boot
+                    # must not be packaged into installers named v$NEW_VERSION.
+                    # env -u ELECTRON_RUN_AS_NODE: VS Code's extension host sets it, and
+                    # with it set the Electron binary runs as plain Node and main.js dies
+                    # on `protocol` being undefined (hit Sep 2026).
+                    # MINICYCLE_SMOKE_OFFLINE=1: boot with every http(s) request cancelled
+                    # at the session level, and require a live fetch to FAIL — a payload
+                    # that boots this way needs nothing from the network.
+                    if ( cd ../desktop && env -u ELECTRON_RUN_AS_NODE MINICYCLE_SMOKE="dist/smoke-$NEW_VERSION.png" MINICYCLE_SMOKE_OFFLINE=1 npx electron . ); then
+                        echo "✅ Desktop shell smoke boot passed OFFLINE (desktop/dist/smoke-$NEW_VERSION.png)"
+                        # CSC_IDENTITY_AUTO_DISCOVERY=false: no signing identity is set up
+                        # yet; stop electron-builder hunting the keychain for one.
+                        if ( cd ../desktop && env -u ELECTRON_RUN_AS_NODE CSC_IDENTITY_AUTO_DISCOVERY=false npm run installers ); then
+                            echo "✅ Desktop installers built:"
+                            ls -1 ../desktop/dist/*.dmg ../desktop/dist/*.exe ../desktop/dist/*.zip 2>/dev/null | sed 's/^/     /'
+                        else
+                            echo "⚠️  Desktop installer build failed — see electron-builder output above"
+                        fi
+                    else
+                        echo "⚠️  Desktop shell smoke boot FAILED — installers not built (payload v$NEW_VERSION is on disk; run 'npm run smoke' in desktop/ to debug)"
+                    fi
+                fi
+            fi
+        else
+            echo "⚠️  $DESKTOP_PKG not found — skipping version sync"
+        fi
+    else
+        echo "⚠️  scripts/build-desktop-www.cjs not found - skipping"
+    fi
+else
+    echo "⏭️  Skipping desktop app"
 fi
 
 echo ""

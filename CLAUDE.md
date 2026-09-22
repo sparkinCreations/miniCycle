@@ -116,7 +116,7 @@ web/
 │   ├── utils/                  # Notifications, device detection, globalUtils
 │   ├── storage/                # backupManager (IndexedDB)
 │   ├── progress/               # Cycle completion tracking
-│   ├── platform/               # capacitorBridge (native shell for Android; no-op on web)
+│   ├── platform/               # capacitorBridge (iOS/Android shell) + desktopBridge (Electron); both no-op on web
 │   └── other/                  # Plugin system
 ├── styles/                     # Token-based CSS (variables.css foundation)
 └── tests/                      # Playwright browser tests

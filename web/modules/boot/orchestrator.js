@@ -27,6 +27,7 @@
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
 
 // ✅ Single source of truth: Read version from globalThis (set by version.js)
@@ -1191,8 +1192,11 @@ async function waitForServiceWorker() {
   // worker — build-android-www.cjs strips the SW registration from index.html. The
   // Android WebView still exposes navigator.serviceWorker, so `.ready` never resolves
   // and this would burn the full timeout (~8s) on every cold start. Skip it on native;
-  // there is nothing to wait for. No effect on the web/PWA build (isNativeApp() is false).
-  if (isNativeApp()) return;
+  // there is nothing to wait for. The Electron desktop app is the same case: its
+  // payload comes from the same engine (no SW registration) and Chromium exposes
+  // navigator.serviceWorker on the app:// origin. No effect on the web/PWA build
+  // (both tests are false).
+  if (isNativeApp() || isDesktopApp()) return;
   if (!('serviceWorker' in navigator)) return;
 
   // iOS kills SW when PWA is backgrounded. It needs more time to restart.

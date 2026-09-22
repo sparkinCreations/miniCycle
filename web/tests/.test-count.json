@@ -1,6 +1,6 @@
 {
-  "totalTests": 3772,
-  "fingerprint": "017d2e0fe42235a92c97ade0f445d40537212ebe",
-  "generatedAt": "2026-09-21T18:47:59.995Z",
+  "totalTests": 3774,
+  "fingerprint": "7d969fc8cac373da77a392de629c1a9c98c8e0b7",
+  "generatedAt": "2026-09-22T08:40:33.565Z",
   "note": "Written by run-browser-tests.cjs; read by scripts/collect-stats.cjs. Do not hand-edit."
 }
