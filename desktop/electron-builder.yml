@@ -54,3 +54,22 @@ nsis:
   allowToChangeInstallationDirectory: true
   perMachine: false
   shortcutName: miniCycle
+
+# Linux builds from this Mac too (electron-builder needs no Linux host). Untested
+# on a real distro as of Sep 2026 — AppImage runs anywhere with FUSE (or with
+# --appimage-extract-and-run); the .deb covers Debian/Ubuntu/Mint installs.
+linux:
+  category: Utility
+  synopsis: Routine checklist manager
+  # desktopName (package.json) becomes the WM_CLASS so the desktop links the
+  # running window to its launcher entry; homepage (package.json) is required
+  # by the .deb metadata.
+  syncDesktopName: true
+  # .deb metadata requires a maintainer email; this is the address the legal
+  # pages already publish, so nothing private lands in the package.
+  maintainer: sparkinCreations <admin@sparkincreations.com>
+  target:
+    - target: AppImage
+      arch: [x64, arm64]
+    - target: deb
+      arch: [x64, arm64]

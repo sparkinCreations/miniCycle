@@ -1,3 +1,7 @@
+## [2.578] - 2026-09-22
+- feat(desktop): Linux builds — AppImage + deb for x64 and arm64, built alongside the macOS and Windows installers
+
+
 ## [2.577] - 2026-09-22
 - feat(desktop): Electron app for macOS + Windows — same generated web payload on an app:// origin, offline-proven smoke gate, --desktop/--desktop-dist release flags; packaged builds no longer 404 boot-sw.js on boot
 

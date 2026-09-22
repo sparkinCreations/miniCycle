@@ -293,7 +293,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --android-run, -R  Also build the debug APK + install/launch on a connected device"
             echo "  --ios, -I       Rebuild the iOS (Capacitor) web payload + sync MARKETING_VERSION"
             echo "  --desktop, -D   Rebuild the desktop (Electron) web payload + sync desktop/package.json"
-            echo "  --desktop-dist  Also smoke-boot the shell and build the macOS + Windows installers (desktop/dist/)"
+            echo "  --desktop-dist  Also smoke-boot the shell and build the macOS + Windows + Linux installers (desktop/dist/)"
             echo "  --lite, -l      Include lite version files (normally static)"
             echo "  --lite-only     Update ONLY lite version files (independent of main app)"
             echo "  --tag, -t       Auto-create git tag (use with --auto)"
@@ -2270,7 +2270,7 @@ if [ "$REBUILD_DESKTOP" = true ]; then
                         # yet; stop electron-builder hunting the keychain for one.
                         if ( cd ../desktop && env -u ELECTRON_RUN_AS_NODE CSC_IDENTITY_AUTO_DISCOVERY=false npm run installers ); then
                             echo "✅ Desktop installers built:"
-                            ls -1 ../desktop/dist/*.dmg ../desktop/dist/*.exe ../desktop/dist/*.zip 2>/dev/null | sed 's/^/     /'
+                            ls -1 ../desktop/dist/*.dmg ../desktop/dist/*.exe ../desktop/dist/*.zip ../desktop/dist/*.AppImage ../desktop/dist/*.deb 2>/dev/null | sed 's/^/     /'
                         else
                             echo "⚠️  Desktop installer build failed — see electron-builder output above"
                         fi

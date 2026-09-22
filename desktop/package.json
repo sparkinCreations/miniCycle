@@ -1,7 +1,9 @@
 {
   "name": "minicycle-desktop",
-  "version": "2.577.0",
+  "version": "2.578.0",
   "productName": "miniCycle",
+  "desktopName": "minicycle.desktop",
+  "homepage": "https://minicycleapp.com",
   "description": "miniCycle desktop app — Electron shell wrapping the byte-identical web app (web/).",
   "private": true,
   "main": "src/main.js",
@@ -15,7 +17,8 @@
     "dist": "npm run build:www && npm run installers",
     "dist:mac": "npm run build:www && electron-builder --mac",
     "dist:win": "npm run build:www && electron-builder --win",
-    "installers": "electron-builder --mac --win"
+    "dist:linux": "npm run build:www && electron-builder --linux",
+    "installers": "electron-builder --mac --win --linux"
   },
   "author": "sparkinCreations",
   "license": "SEE LICENSE IN ../LICENSE",

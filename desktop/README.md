@@ -1,4 +1,4 @@
-# miniCycle Desktop (macOS + Windows)
+# miniCycle Desktop (macOS, Windows, Linux)
 
 An [Electron](https://www.electronjs.org/) shell wrapping the **byte-identical** miniCycle web
 app (`web/`), bundled for offline. Same pattern as the Android and iOS apps: the web payload
@@ -18,7 +18,7 @@ npm install        # first time only (downloads Electron)
 npm start          # generate www/ from web/ and open the app
 npm run smoke      # boot headless, write dist/smoke.png, exit 0/1
 npm run smoke:offline  # same with the network cut — the release gate
-npm run dist       # macOS (dmg + zip, arm64 + x64) and Windows (NSIS x64) installers → dist/
+npm run dist       # macOS (dmg + zip), Windows (NSIS x64), Linux (AppImage + deb) → dist/
 ```
 
 If you launch from inside VS Code's extension host, prefix Electron commands with
@@ -32,7 +32,7 @@ Desktop is a snapshot cut on demand from `web/`, like the other packaged builds:
 ```bash
 cd web
 ./scripts/update-version.sh --auto --push --changelog --desktop          # payload + version sync
-./scripts/update-version.sh --auto --push --changelog --desktop-dist     # …plus smoke boot + installers
+./scripts/update-version.sh --auto --push --changelog --desktop-dist     # …plus smoke boot + all installers
 ```
 
 `--desktop` regenerates `www/` and sets `desktop/package.json`'s version to `APP_VERSION.0`
@@ -58,4 +58,5 @@ desktop/
   for reminders, external links in the default browser, "Check for Updates" pointing at
   minicycleapp.com, single-instance.
 - **Is not (yet):** system tray, global shortcut, auto-start on login, `.mcyc` file association,
-  auto-updater, code signing / notarization, Linux builds.
+  auto-updater, code signing / notarization. Linux artifacts are built but have not been run
+  on a real distro yet.

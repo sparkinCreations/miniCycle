@@ -86,10 +86,12 @@ web/                       (source of truth)
 desktop/src/main.js  serves www/ on app://minicycle
 desktop/src/preload.js  publishes globalThis.miniCycleDesktop
                                    │
-  npm run installers  (electron-builder --mac --win) ──► desktop/dist/
+  npm run installers  (electron-builder --mac --win --linux) ──► desktop/dist/
         miniCycle-<ver>-mac-arm64.dmg / .zip
         miniCycle-<ver>-mac-x64.dmg   / .zip
         miniCycle-<ver>-win-x64.exe   (NSIS, per-user, choose directory)
+        miniCycle-<ver>-linux-x86_64.AppImage / -arm64.AppImage
+        miniCycle-<ver>-linux-amd64.deb       / -arm64.deb
 ```
 
 - **Version.** electron-builder rejects a two-part version, so `desktop/package.json` carries
@@ -107,9 +109,12 @@ desktop/src/preload.js  publishes globalThis.miniCycleDesktop
   a throwaway profile (`<temp>/minicycle-smoke`), so they never touch real data or collide
   with an open copy on the single-instance lock. `--desktop-dist` runs the offline variant
   before building installers and refuses to package a payload that cannot boot.
-- **Windows from macOS.** electron-builder builds the NSIS installer on macOS without Wine
-  (it downloads its own NSIS toolchain on first run). No Windows machine is needed to build;
-  one is needed to *test* the installer.
+- **Windows and Linux from macOS.** electron-builder builds the NSIS installer, the AppImages
+  and the .debs on macOS without Wine or a Linux host (it downloads its own toolchains on
+  first run). No Windows or Linux machine is needed to build; one is needed to *test*. As of
+  Sep 2026 the Linux artifacts have never been run on a real distro — expect the usual
+  unknowns there: libnotify for reminders, FUSE for AppImage (or
+  `--appimage-extract-and-run`), Wayland vs X11 scaling, GTK portal file dialogs.
 - **Icons.** `build/icon.png` is the 512px PWA icon; electron-builder derives `.icns`/`.ico`.
   Replace with a 1024px master when one exists.
 - **ELECTRON_RUN_AS_NODE.** VS Code's extension host exports it. The release script and the
