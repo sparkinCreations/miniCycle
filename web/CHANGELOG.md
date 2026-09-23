@@ -1,3 +1,7 @@
+## [2.580] - 2026-09-23
+- fix(ci): lower the legacy-read ratchet ceiling to the real count (171 -> 9)
+
+
 ## [2.579] - 2026-09-23
 - fix(first-run): tour no longer hides the routine behind the welcome banner
 
