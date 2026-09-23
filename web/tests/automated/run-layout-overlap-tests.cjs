@@ -182,6 +182,46 @@ function measureFocus() {
     };
 }
 
+/**
+ * First-run tour ("Learn How Cycles Work") geometry. While the welcome banner
+ * is up, main.css un-fixes #task-view so the PAGE scrolls under a fixed banner;
+ * Skip hands back the locked focus view. That override has to reset every
+ * offset the focus layout sets — v2.474 added `bottom` to the focus band, the
+ * override never reset it, and on a relative element with top: auto `bottom`
+ * is an upward offset: the input bar, title and first task sat ~156px up
+ * behind the banner, unreachable by scrolling, from Aug 2026 until found by
+ * hand. Must be called at scrollTop 0 (the banner is fixed; content is not).
+ */
+function measureFirstRunTour() {
+    const top = (el) => { if (!el) return null; const r = el.getBoundingClientRect();
+        return r.height > 0 ? Math.round(r.top) : null; };
+    const banner = document.querySelector('.first-run-welcome');
+    const bannerBottom = banner ? Math.round(banner.getBoundingClientRect().bottom) : null;
+    const parts = [
+        ['input bar', top(document.getElementById('task-input-row'))],
+        ['routine title', top(document.querySelector('#task-view .title-row'))],
+        ['first task', top(document.querySelector('#taskList li'))],
+    ].filter(([, t]) => t !== null);
+    const covered = bannerBottom === null ? [] : parts.filter(([, t]) => t < bannerBottom - 1)
+        .map(([name, t]) => `${name}.top ${t}`);
+    const tv = document.getElementById('task-view');
+    const list = document.querySelector('#task-view .task-list-container');
+    const se = document.scrollingElement;
+    return {
+        active: document.body.classList.contains('first-run-welcome-active'),
+        bannerBottom, covered,
+        // Content must be reachable by scrolling the PAGE: the view's bottom
+        // edge (document coords) may not sit past the end of the scroll range.
+        contentBottom: tv ? Math.round(tv.getBoundingClientRect().bottom + se.scrollTop) : null,
+        scrollHeight: se.scrollHeight,
+        // The list must not scroll on its own inside the page. On iOS a swipe
+        // that starts in an inner scroller latches to it and never reaches the
+        // page — the list "works", the page does not move.
+        listInnerScroll: list ? list.scrollHeight - list.clientHeight : 0,
+        pageExtra: se.scrollHeight - innerHeight,
+    };
+}
+
 function measureStats() {
     const q = (s) => document.querySelector(s);
     const rect = (el) => el ? el.getBoundingClientRect() : null;
@@ -984,6 +1024,80 @@ async function run() {
                 const el = document.querySelector('.fixed-header-container');
                 if (el) el.style.paddingTop = '';
             });
+        }
+
+        // ── First-run tour: nothing behind the banner, the page scrolls ──────
+        // Every check above strips first-run-welcome-active to measure the
+        // normal layout, so the tour's own layout contract had no coverage —
+        // which is how v2.474 hid the top of the routine behind the banner
+        // for months. Driven through the REAL first-run choice in a fresh
+        // context (the choice screen only shows with empty storage).
+        {
+            const tourContext = await browser.newContext({ bypassCSP: true });
+            await tourContext.addInitScript(() => {
+                if (navigator.serviceWorker) {
+                    navigator.serviceWorker.register = () => Promise.reject(new Error('SW disabled for layout test'));
+                }
+            });
+            try {
+                const tp = await tourContext.newPage();
+                await tp.setViewportSize({ width: 390, height: 844 });
+                await tp.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                await tp.click('[data-choice="learn"]', { timeout: 20000 });
+                await tp.waitForFunction(
+                    () => document.body.classList.contains('first-run-welcome-active'), null, { timeout: 20000 });
+                // Hold one slide: auto-advance re-measures the banner height, and
+                // a mid-fade read is noise, not a regression.
+                await tp.waitForTimeout(1500);
+                await tp.evaluate(() => {
+                    const b = document.querySelector('.first-run-welcome');
+                    const t = document.querySelector('.first-run-welcome__toggle');
+                    if (t && b && !b.classList.contains('first-run-welcome--paused')) t.click();
+                });
+                // A longer routine, so the page genuinely has to scroll on every
+                // viewport and a capped inner list would show.
+                for (let i = 1; i <= 6; i++) {
+                    await tp.fill('#taskInput', `Layout tour task ${i}`);
+                    await tp.press('#taskInput', 'Enter');
+                    await tp.waitForTimeout(120);
+                }
+
+                for (const vp of VIEWPORTS) {
+                    await tp.setViewportSize({ width: vp.width, height: vp.height });
+                    await tp.waitForTimeout(600);
+                    await tp.evaluate(() => window.scrollTo(0, 0));
+                    await tp.waitForTimeout(100);
+                    const t = await tp.evaluate(measureFirstRunTour);
+                    console.log(`\n${colors.cyan}▸ tour ${vp.name} ${vp.width}x${vp.height}${colors.reset}`);
+                    record(vp, 'tour is active', t.active, 'first-run-welcome-active not on <body>');
+                    record(vp, 'tour: nothing sits behind the banner', t.covered.length === 0,
+                        `${t.covered.join(', ')} < banner.bottom ${t.bannerBottom}`);
+                    record(vp, 'tour: whole routine reachable by page scroll',
+                        t.contentBottom !== null && t.contentBottom <= t.scrollHeight + TOL,
+                        `task-view ends at ${t.contentBottom} but the page only scrolls to ${t.scrollHeight}`);
+                    record(vp, 'tour: task list has no inner scroll', t.listInnerScroll <= TOL,
+                        `.task-list-container scrolls ${t.listInnerScroll}px on its own`);
+                }
+
+                // Skip → the locked focus view comes back: no page scroll at all.
+                await tp.evaluate(() => {
+                    const skip = document.querySelector('.first-run-welcome button[class*="skip" i]')
+                        || [...document.querySelectorAll('.first-run-welcome button')]
+                            .find(b => /^\s*skip\s*$/i.test(b.textContent));
+                    if (skip) skip.click();
+                });
+                await tp.waitForFunction(
+                    () => !document.body.classList.contains('first-run-welcome-active'), null, { timeout: 5000 });
+                for (const vp of VIEWPORTS) {
+                    await tp.setViewportSize({ width: vp.width, height: vp.height });
+                    await tp.waitForTimeout(400);
+                    const extra = await tp.evaluate(() => document.scrollingElement.scrollHeight - innerHeight);
+                    record(vp, 'after Skip: focus view is locked (no page scroll)', extra <= TOL,
+                        `page still scrolls ${extra}px after the tour ended`);
+                }
+            } finally {
+                await tourContext.close();
+            }
         }
 
         // ── Static pages: no sideways scroll at any width ────────────────────

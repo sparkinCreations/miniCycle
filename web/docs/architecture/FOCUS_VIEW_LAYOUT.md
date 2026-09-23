@@ -151,6 +151,29 @@ Not fixed: deciding what Focus View drops when there is no room (the help window
 is the obvious candidate) is a product decision. The layout suite prints this
 case as a `⚠` naming the viewport rather than asserting it away.
 
+## The first-run tour un-does the band
+
+While the first-run welcome banner is up (`body.first-run-welcome-active`, and the
+legacy `body.onboarding-active`), `styles/main.css` takes `#task-view` OUT of the
+band: `position: relative`, in document flow below the fixed banner, with the
+page scrolling underneath it. Skip removes the class and the locked band returns.
+The tour opens in Focus View, so that override sits on top of everything above.
+
+**Every property the band sets on `#task-view` has to be reset there**, or it keeps
+its meaning under a different positioning scheme. v2.474 added `bottom` to the band;
+the override reset `top` but not `bottom`, and on a relative element with
+`top: auto`, `bottom` is an upward offset: the input bar, title and first task sat
+~156px up behind the banner, where scrolling cannot reach, from Aug 2026 until
+the Sep 2026 fix. The same override has to beat the focus caps on `.task-card` and
+`.task-list-container` (they carry `#task-view`, so the override must too), or the
+list keeps its own inner scroll, and on iOS that captures a swipe that starts on it.
+
+**Adding a property to the band means adding its reset to the tour override.** The
+layout suite's tour phase (`tour: …` / `after Skip: …` rows) drives the real
+first-run choice and fails if anything sits behind the banner, the routine is not
+reachable by page scroll, the list scrolls on its own, or the page still scrolls
+after Skip.
+
 ---
 
 ## Related

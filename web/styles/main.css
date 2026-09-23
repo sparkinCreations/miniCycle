@@ -348,6 +348,12 @@ body.first-run-welcome-active #task-view:not(.hide),
 body.onboarding-active #task-view:not(.hide) {
     position: relative;
     top: auto;
+    /* The focus band (focus-mode.css, v2.474) sets `bottom` so the view
+       fills the band. On a relative element with top: auto, `bottom` is
+       an upward OFFSET — it lifted the whole view ~156px behind the
+       banner, input bar and title unreachable by scrolling. Every
+       offset the focus layout sets must be reset here. */
+    bottom: auto;
     left: auto;
     transform: none;
     max-height: none;
@@ -371,6 +377,7 @@ body.first-run-welcome-active #task-view.hide,
 body.onboarding-active #task-view.hide {
     position: relative;
     top: auto;
+    bottom: auto;
     left: auto;
     max-height: none;
     margin: calc(var(--first-run-welcome-height, 190px) - var(--space-7-5)) auto var(--space-10);
@@ -380,9 +387,18 @@ body.onboarding-active #task-view.hide {
 
 /* Task list inside the un-fixed task-view: let it grow with content
    instead of using its own internal scroll, so all scrolling happens
-   on the page during onboarding. */
-body.first-run-welcome-active .task-list-container,
-body.onboarding-active .task-list-container {
+   on the page during onboarding. The card is uncapped too, or its
+   overflow: hidden clips what the list gives up.
+
+   Selectors carry #task-view ON PURPOSE: focus mode caps both with
+   `body.focus-mode #task-view .task-card / .task-list-container`
+   (focus-mode.css), and the old class-only selectors lost to that id,
+   so in Focus View the list kept its own inner scroll — which on iOS
+   captures a swipe that starts on the list, and the page never moves. */
+body.first-run-welcome-active #task-view .task-card,
+body.onboarding-active #task-view .task-card,
+body.first-run-welcome-active #task-view .task-list-container,
+body.onboarding-active #task-view .task-list-container {
     max-height: none;
 }
 
