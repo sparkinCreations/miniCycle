@@ -1,3 +1,7 @@
+## [2.579] - 2026-09-23
+- fix(first-run): tour no longer hides the routine behind the welcome banner
+
+
 ## [2.578] - 2026-09-22
 - feat(desktop): Linux builds — AppImage + deb for x64 and arm64, built alongside the macOS and Windows installers
 
