@@ -23,8 +23,8 @@ import { fileURLToPath } from 'url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Reference count as of v2.369 (27 files). Lower this as consumers migrate.
-const CEILING = 171;
+// Reference count as of v2.580 (9 files; was 171 at v2.369). Lower this as consumers migrate.
+const CEILING = 9;
 
 const WEB = path.resolve(__dirname, '..');
 const NEEDLE = 'loadMiniCycleData';
