@@ -1,3 +1,8 @@
+## [2.581] - 2026-09-24
+- chore(desktop): sync package-lock version with package.json (2.576 -> 2.578.0)
+- fix(switcher): clicking blank space in the routine list or preview panel deselects the routine again (broken since v2.114); header controls no longer deselect. Release script now keeps desktop/package-lock.json in step with package.json
+
+
 ## [2.580] - 2026-09-23
 - fix(ci): lower the legacy-read ratchet ceiling to the real count (171 -> 9)
 

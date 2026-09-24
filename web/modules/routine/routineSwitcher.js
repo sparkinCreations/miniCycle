@@ -51,6 +51,11 @@ let getUniqueCycleName;
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
+// Native/ARIA controls inside the switcher that a blank-space click must never be
+// mistaken for (see setupModalClickOutside). Local by design: it describes this
+// modal's markup, not an app-wide selector.
+const INTERACTIVE_CONTROL_SELECTOR = 'button, input, select, textarea, a, label, [role="button"], [contenteditable]';
+
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
     AppMeta: optional(null),
@@ -624,12 +629,15 @@ export class RoutineSwitcher {
                 const clickedActions = event.target.closest(`#${DOM_IDS.SWITCH_ITEMS_ROW}`);
                 const clickedThemePicker = event.target.closest(`#${DOM_IDS.THEME_PICKER_ROW}`);
                 const clickedRecentChip = event.target.closest(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
-                // Check both panel containers (list + preview)
-                const clickedListPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT);
-                const clickedPreviewPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT);
+                // The preview shows the selected routine's own tasks; reading or
+                // scrolling it is not a request to drop the selection.
+                const clickedPreviewWindow = event.target.closest(DOM_SELECTORS.DESKTOP_PREVIEW_WINDOW);
+                // Header controls (search, filter, sort), Open/Import, Close: they
+                // have their own jobs and must not double as a deselect.
+                const clickedControl = event.target.closest(INTERACTIVE_CONTROL_SELECTOR);
 
-                // If clicking on a routine item, actions, or recent chip — let those handlers run
-                if (clickedItem || clickedActions || clickedThemePicker || clickedRecentChip) {
+                // If clicking on a routine item, actions, chip, preview or control — let those handlers run
+                if (clickedItem || clickedActions || clickedThemePicker || clickedRecentChip || clickedPreviewWindow || clickedControl) {
                     return;
                 }
 
@@ -642,12 +650,11 @@ export class RoutineSwitcher {
                     return;
                 }
 
-                // Clicks inside the list or preview panels don't deselect
-                if (clickedListPanel || clickedPreviewPanel) {
-                    return;
-                }
-
-                // Clicked outside all interactive areas — deselect routine
+                // Clicked blank space — anywhere in the modal, INCLUDING the empty
+                // part of the list panel and the preview panel — deselect. From
+                // Mar 22 2026 (d04287ff) to Sep 2026 both panels were excluded
+                // here, which left almost nowhere to click to deselect: the two
+                // panels ARE the modal body.
                 this._deselectRoutine();
             };
             safeAdd(switchModalContent, "click", switchModalContent._clickHandler);

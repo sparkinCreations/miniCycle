@@ -2235,6 +2235,22 @@ if [ "$REBUILD_DESKTOP" = true ]; then
             else
                 echo "⚠️  Could not set the version in $DESKTOP_PKG — set it manually"
             fi
+            # package-lock.json records the same version twice (top level and the
+            # root package entry); npm rewrites it on the next install if they
+            # drift, which then rides into an unrelated commit (MJ hand-fixed
+            # 2.576 -> 2.578.0 on Sep 23 2026). Keep both in step here.
+            DESKTOP_LOCK="../desktop/package-lock.json"
+            if [ -f "$DESKTOP_LOCK" ]; then
+                node -e '
+                    const fs = require("fs"); const [file, v] = process.argv.slice(1);
+                    const lock = JSON.parse(fs.readFileSync(file, "utf8"));
+                    lock.version = v;
+                    if (lock.packages && lock.packages[""]) lock.packages[""].version = v;
+                    fs.writeFileSync(file, JSON.stringify(lock, null, 2) + "\n");
+                ' "$DESKTOP_LOCK" "$DESKTOP_SEMVER" \
+                    && echo "✅ Desktop version: desktop/package-lock.json → $DESKTOP_SEMVER" \
+                    || echo "⚠️  Could not sync $DESKTOP_LOCK — run 'npm install' in desktop/ to refresh it"
+            fi
 
             # ── Optional: smoke-boot + installers. Opt in with --desktop-dist;
             #    or answer the prompt in interactive mode. Skipped in dry-run,

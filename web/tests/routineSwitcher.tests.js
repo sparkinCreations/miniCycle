@@ -778,6 +778,93 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
     });
 
     // === PERFORMANCE TESTS ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🖱️ Click-to-deselect (regression: panels swallowed blank clicks since Mar 2026)</h4>';
+
+    // A fixture that mirrors the switcher modal's body: header controls, the two
+    // panels (list + preview), one routine item, the actions row and the theme
+    // picker. Built here because the test page has no switcher markup.
+    const buildDeselectFixture = () => {
+        const root = document.createElement('div');
+        root.innerHTML = `
+            <dialog class="mini-cycle-switch-modal" open>
+            <div class="mini-cycle-switch-modal-content">
+                <div class="routine-switcher-header"><button id="sort-alpha" class="routine-sort-btn">A-Z</button></div>
+                <div class="routine-switcher-body">
+                    <div class="routine-switcher-left">
+                        <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox">
+                            <div class="mini-cycle-switch-item selected" data-cycle-key="r1" aria-selected="true">Morning</div>
+                        </div>
+                        <div id="routine-list-hint" class="routine-list-hint">blank space below the list</div>
+                    </div>
+                    <div class="routine-switcher-right">
+                        <div id="desktop-preview-window" class="desktop-preview-window">tasks…</div>
+                        <div id="desktop-preview-hint" class="desktop-preview-hint">blank space in the preview panel</div>
+                    </div>
+                </div>
+                <div id="switch-items-row" class="switch-items-row"><button id="switch-theme">Theme</button></div>
+                <div id="theme-picker-row" class="theme-picker-row hidden"></div>
+            </div>
+            </dialog>`;
+        document.body.appendChild(root);
+        const deps = {
+            querySelector: (sel) => root.querySelector(sel),
+            querySelectorAll: (sel) => root.querySelectorAll(sel),
+            getElementById: (id) => root.querySelector('#' + CSS.escape(id)),
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            getModal: () => root.querySelector('dialog'),
+            AppState: { isReady: () => true, get: () => ({}) },
+            showNotification: () => {}
+        };
+        const instance = new RoutineSwitcher(deps);
+        instance._selectedCycleKey = 'r1';
+        const click = (sel) => root.querySelector(sel).dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+        const teardown = () => {
+            if (instance._clickOutsideHandler) document.removeEventListener('click', instance._clickOutsideHandler);
+            root.remove();
+        };
+        return { instance, click, root, teardown };
+    };
+
+    await test('a click on blank space in the LIST panel deselects the routine', async () => {
+        const f = buildDeselectFixture();
+        try {
+            f.click('#routine-list-hint');
+            if (f.instance._selectedCycleKey !== null) throw new Error('still selected after clicking blank list-panel space');
+            if (f.root.querySelector('.mini-cycle-switch-item').classList.contains('selected')) throw new Error('.selected class not cleared');
+        } finally { f.teardown(); }
+    });
+
+    await test('a click on blank space in the PREVIEW panel deselects the routine', async () => {
+        const f = buildDeselectFixture();
+        try {
+            f.click('#desktop-preview-hint');
+            if (f.instance._selectedCycleKey !== null) throw new Error('still selected after clicking blank preview-panel space');
+        } finally { f.teardown(); }
+    });
+
+    await test('clicks on a routine item, the preview window, the actions row or a header button keep the selection', async () => {
+        const f = buildDeselectFixture();
+        try {
+            for (const sel of ['.mini-cycle-switch-item', '#desktop-preview-window', '#switch-theme', '#sort-alpha']) {
+                f.click(sel);
+                if (f.instance._selectedCycleKey !== 'r1') throw new Error(`selection lost after clicking ${sel}`);
+            }
+        } finally { f.teardown(); }
+    });
+
+    await test('with the theme picker open, a blank click closes the picker and keeps the selection', async () => {
+        const f = buildDeselectFixture();
+        try {
+            const picker = f.root.querySelector('#theme-picker-row');
+            picker.classList.remove('hidden');
+            f.click('#routine-list-hint');
+            if (!picker.classList.contains('hidden')) throw new Error('picker did not close');
+            if (f.instance._selectedCycleKey !== 'r1') throw new Error('selection should survive the picker-closing click');
+            f.click('#routine-list-hint');
+            if (f.instance._selectedCycleKey !== null) throw new Error('second blank click should deselect');
+        } finally { f.teardown(); }
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance Tests</h4>';
 
     await test('loadMiniCycleListActual completes quickly', async () => {
