@@ -1,3 +1,7 @@
+## [2.582] - 2026-09-24
+- fix(switcher): blank-click deselect is re-armed on every open (it died on the first close since Apr 2026); test: manifest lazyRequires check skips on bundled builds, customizer suite closes its dialogs so the dialog-host suite starts clean
+
+
 ## [2.581] - 2026-09-24
 - chore(desktop): sync package-lock version with package.json (2.576 -> 2.578.0)
 - fix(switcher): clicking blank space in the routine list or preview panel deselects the routine again (broken since v2.114); header controls no longer deselect. Release script now keeps desktop/package-lock.json in step with package.json

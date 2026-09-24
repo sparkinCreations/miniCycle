@@ -187,6 +187,12 @@ export async function runModuleManifestsTests(resultsDiv) {
     });
 
     await test('every lazyRequires[] entry resolves to a provider/module', () => {
+        // Same source-structural dependency as the requires[] check above: a lazy dep
+        // may be wired only in moduleLoader's depMappings (openTipArchive is), and
+        // those keys come from reading the loader's SOURCE — unreadable on the
+        // bundled build. Until Sep 2026 this test lacked the skip and failed on every
+        // in-app (dist) run while passing in source CI.
+        if (globalThis.__MC_MODULE_MAP) { console.log('⏭️ skipped on bundled build — source-structural check (identifiers are minified; covered by the source CI run)'); return; }
         const dangling = [];
         for (const [name, m] of entries) {
             for (const dep of m.lazyRequires || []) {

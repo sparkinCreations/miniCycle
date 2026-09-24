@@ -611,6 +611,18 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
     }
 
     // 🔓 RESTORE original localStorage data (only when running individually)
+    // Close any customizer dialog a test left open. In the one-page in-app run the
+    // suite that follows (NotificationDialogHost) seeds its stack from every
+    // dialog[open] in the document, so a dialog left open here made ALL eleven of
+    // its reparenting assertions off by one (found Sep 24 2026 with a probe; the
+    // per-page CLI runner never sees it because each suite gets a fresh page).
+    document.querySelectorAll('dialog[open]').forEach((dialog) => {
+        if (dialog.id === 'task-options-customizer-modal' || dialog.classList.contains('task-options-customizer-modal')) {
+            try { dialog.close(); } catch { /* already closed */ }
+            dialog.remove();
+        }
+    });
+
     restoreOriginalData();
 
     return { passed: passed.count, total: total.count };

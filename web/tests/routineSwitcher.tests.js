@@ -865,6 +865,41 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         } finally { f.teardown(); }
     });
 
+    await test('blank-click deselect survives closing and reopening the switcher (regression: died on first close since Apr 2026)', async () => {
+        const f = buildDeselectFixture();
+        try {
+            // Real close path: the dialog's close event runs _cleanup(), which removes the handler.
+            f.root.querySelector('dialog').dispatchEvent(new Event('close'));
+            f.instance._selectedCycleKey = 'r1';
+            f.click('#routine-list-hint');
+            if (f.instance._selectedCycleKey !== null) {
+                // If this ever starts passing on its own, _cleanup() stopped removing the
+                // handler — fine, but then the reopen step below is what this test is for.
+                console.warn('close no longer removes the deselect handler');
+            }
+            // Real open path: switchMiniCycle() must re-arm it. The fixture only carries
+            // the markup the deselect needs, so later steps of the open path may throw —
+            // that is not what is under test; the handler must be armed before them.
+            f.instance.deps.AppState = {
+                isReady: () => true,
+                get: () => ({ data: { routine: { r1: { title: 'Morning', tasks: [] } } }, appState: { activeRoutineId: 'r1' }, settings: {} })
+            };
+            f.instance.deps.hideMainMenu = () => {};
+            try { f.instance.switchMiniCycle(); } catch (e) { console.warn('open path continued past the deselect wiring and threw in the fixture:', e.message); }
+            f.instance._selectedCycleKey = 'r1';
+            f.click('#routine-list-hint');
+            if (f.instance._selectedCycleKey !== null) throw new Error('after close + reopen, a blank click no longer deselects');
+            // And it must not stack: a second open adds no second handler (would double-fire).
+            try { f.instance.switchMiniCycle(); } catch { /* same as above */ }
+            let calls = 0;
+            const orig = f.instance._deselectRoutine.bind(f.instance);
+            f.instance._deselectRoutine = () => { calls++; orig(); };
+            f.instance._selectedCycleKey = 'r1';
+            f.click('#routine-list-hint');
+            if (calls !== 1) throw new Error(`deselect ran ${calls} times for one click — handlers are stacking across opens`);
+        } finally { f.teardown(); }
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">⚡ Performance Tests</h4>';
 
     await test('loadMiniCycleListActual completes quickly', async () => {

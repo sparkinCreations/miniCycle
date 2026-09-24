@@ -206,6 +206,13 @@ export class RoutineSwitcher {
         switchModal._previousFocus = document.activeElement;
         if (!switchModal.open) switchModal.showModal();
 
+        // Re-arm the blank-click deselect. _cleanup() removes it on every close
+        // (Apr 2026) but until Sep 2026 it was only ever attached in the
+        // constructor — so deselect worked once per page load and died on the
+        // first close. Every other listener the modal needs is (re)wired below
+        // on each open; this one has to be too.
+        this._armDeselectHandler();
+
         // Prevent iOS rubber-band drag on the modal backdrop
         // Allow touchmove only inside scrollable children (routine list, preview)
         if (!switchModal._touchmoveHandler) {
@@ -617,7 +624,26 @@ export class RoutineSwitcher {
         };
         safeAdd(document, "click", this._clickOutsideHandler);
 
-        // Handle clicks inside modal: close theme picker first, then deselect routine
+        this._armDeselectHandler();
+
+        // Restore focus when dialog closes (including native ESC)
+        const switchModal = this.deps.getModal('routineSwitcher');
+        if (switchModal) {
+            safeAdd(switchModal, "close", () => {
+                this._cleanup();
+                switchModal._previousFocus?.focus({ focusVisible: false });
+            });
+        }
+    }
+
+    /**
+     * Attach the modal-content click handler: close the theme picker first, else
+     * deselect the routine on a blank click. Idempotent — the previous handler is
+     * removed before the new one is added — and called from BOTH the constructor
+     * and switchMiniCycle(), because _cleanup() removes it on close.
+     */
+    _armDeselectHandler() {
+        const safeAdd = this.deps.safeAddEventListener;
         const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
         if (switchModalContent) {
             // Remove old handler before creating new one
@@ -658,15 +684,6 @@ export class RoutineSwitcher {
                 this._deselectRoutine();
             };
             safeAdd(switchModalContent, "click", switchModalContent._clickHandler);
-        }
-
-        // Restore focus when dialog closes (including native ESC)
-        const switchModal = this.deps.getModal('routineSwitcher');
-        if (switchModal) {
-            safeAdd(switchModal, "close", () => {
-                this._cleanup();
-                switchModal._previousFocus?.focus({ focusVisible: false });
-            });
         }
     }
 
