@@ -208,6 +208,121 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📁 Backup — save where the user chooses (saveBackupFileAs)</h4>';
+
+    // Swap window.showSaveFilePicker for the duration of `run` (headless Chromium
+    // has the real one, which would open a native dialog and hang the suite).
+    async function withSavePicker(picker, run) {
+        const had = Object.prototype.hasOwnProperty.call(window, 'showSaveFilePicker');
+        const orig = window.showSaveFilePicker;
+        if (picker === null) delete window.showSaveFilePicker; else window.showSaveFilePicker = picker;
+        try { return await run(); }
+        finally { if (had) window.showSaveFilePicker = orig; else delete window.showSaveFilePicker; }
+    }
+    // Async twin of captureBackupDownload: records what the <a download> fallback would ship.
+    async function captureBackupDownloadAsync(run) {
+        let payloadText = null; let clicked = 0;
+        const OrigBlob = window.Blob, origClick = HTMLAnchorElement.prototype.click;
+        const origCreate = URL.createObjectURL, origRevoke = URL.revokeObjectURL;
+        window.Blob = function (parts, opts) { if (parts && typeof parts[0] === 'string') payloadText = parts[0]; return new OrigBlob(parts, opts); };
+        URL.createObjectURL = () => 'blob:backup-test'; URL.revokeObjectURL = () => {};
+        HTMLAnchorElement.prototype.click = () => { clicked++; };
+        try { const result = await run(); return { result, payloadText, clicked }; }
+        finally { window.Blob = OrigBlob; HTMLAnchorElement.prototype.click = origClick; URL.createObjectURL = origCreate; URL.revokeObjectURL = origRevoke; }
+    }
+    const abortError = () => { const e = new Error('The user aborted a request.'); e.name = 'AbortError'; return e; };
+
+    await test('with a Save dialog: writes the backup to the chosen file, suggests a .json name, records the timestamp', async () => {
+        let stamped = null; let pickerOpts = null; const written = [];
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(2), forceSave: () => {}, update: (fn) => { const st = { settings: {} }; fn(st); stamped = st.settings.lastFileBackupTimestamp; } },
+            showNotification: () => {}, showConfirmationModal: () => {}, safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.583' }
+        });
+        const picker = async (opts) => { pickerOpts = opts; return { name: 'my-routines.json', createWritable: async () => ({ write: async (b) => { written.push(b); }, close: async () => {} }) }; };
+        const { result, clicked } = await captureBackupDownloadAsync(() => withSavePicker(picker, () => mod.saveBackupFileAs()));
+        if (result !== 'saved') throw new Error(`expected 'saved', got ${JSON.stringify(result)}`);
+        if (!pickerOpts || !/\.json$/.test(pickerOpts.suggestedName)) throw new Error('suggestedName should end in .json: ' + JSON.stringify(pickerOpts));
+        if (!pickerOpts.types?.[0]?.accept?.['application/json']) throw new Error('dialog should filter to JSON files');
+        if (written.length !== 1) throw new Error(`expected one write to the chosen file, got ${written.length}`);
+        const parsed = JSON.parse(await written[0].text());
+        if (!parsed.miniCycleData || parsed.backupMetadata?.version !== '2.583') throw new Error('written file is not a miniCycle backup: ' + JSON.stringify(parsed).slice(0, 120));
+        if (clicked !== 0) throw new Error('must not ALSO trigger the download fallback');
+        if (!stamped) throw new Error('lastFileBackupTimestamp not recorded');
+    });
+
+    await test("closing the Save dialog returns 'cancelled': no file, no download fallback, no timestamp", async () => {
+        let stamped = false;
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => { stamped = true; } },
+            showNotification: () => {}, showConfirmationModal: () => {}, safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.583' }
+        });
+        const { result, clicked, payloadText } = await captureBackupDownloadAsync(() => withSavePicker(async () => { throw abortError(); }, () => mod.saveBackupFileAs()));
+        if (result !== 'cancelled') throw new Error(`expected 'cancelled', got ${JSON.stringify(result)}`);
+        if (clicked !== 0 || payloadText !== null) throw new Error('a declined dialog must not fall back to a download');
+        if (stamped) throw new Error('a cancelled backup must not record a timestamp');
+    });
+
+    await test('a Save dialog that fails for any other reason falls back to the plain download', async () => {
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {} },
+            showNotification: () => {}, showConfirmationModal: () => {}, safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.583' }
+        });
+        const { result, clicked, payloadText } = await captureBackupDownloadAsync(() => withSavePicker(async () => { throw new TypeError('not allowed in this context'); }, () => mod.saveBackupFileAs()));
+        if (result !== 'saved') throw new Error(`expected 'saved' via download, got ${JSON.stringify(result)}`);
+        if (clicked !== 1 || !payloadText) throw new Error('the download fallback did not run');
+    });
+
+    await test('without a Save dialog (Safari/Firefox): downloads, same as before', async () => {
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {} },
+            showNotification: () => {}, showConfirmationModal: () => {}, safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.583' }
+        });
+        const { result, clicked } = await captureBackupDownloadAsync(() => withSavePicker(null, () => mod.saveBackupFileAs()));
+        if (result !== 'saved' || clicked !== 1) throw new Error(`expected a download, got result=${JSON.stringify(result)} clicks=${clicked}`);
+    });
+
+    await test('factory reset: cancelling the Save dialog deletes nothing and says so without an error tone', async () => {
+        const origSWGetRegs = navigator.serviceWorker && navigator.serviceWorker.getRegistrations;
+        const origCachesKeys = (typeof window.caches !== 'undefined') && window.caches.keys;
+        const origIdbDelete = indexedDB.deleteDatabase;
+        if (origSWGetRegs) navigator.serviceWorker.getRegistrations = async () => [];
+        if (origCachesKeys) window.caches.keys = async () => [];
+        let idbDeleteCalled = false;
+        indexedDB.deleteDatabase = () => { idbDeleteCalled = true; const req = {}; setTimeout(() => { if (req.onsuccess) req.onsuccess({}); }, 0); return req; };
+        localStorage.setItem('miniCycleData', JSON.stringify({ x: 1 }));
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'factory-reset';   // DOM_IDS.FACTORY_RESET
+        document.body.appendChild(resetBtn);
+        const notifications = [];
+        let confirmPromise = null;
+        const resetMod = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-resetcancel`);
+        resetMod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {}, reload: () => {} },
+            showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); },
+            showConfirmationModal: (opts) => { confirmPromise = opts.callback(true); },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            appInit: { runInitialSetup: async () => {} },
+            closeAllModals: () => {}, hideMainMenu: () => {}, showLoader: () => {}, hideLoader: () => {}
+        });
+        try {
+            await withSavePicker(async () => { throw abortError(); }, async () => {
+                resetMod.setupFactoryResetButton();
+                resetBtn.click();
+                await confirmPromise;
+            });
+            if (localStorage.getItem('miniCycleData') === null) throw new Error('a cancelled backup must NOT wipe data');
+            if (idbDeleteCalled) throw new Error('a cancelled backup must not reach IndexedDB deletion');
+            if (notifications.some(n => n.type === 'error')) throw new Error('declining the dialog is not an error: ' + JSON.stringify(notifications));
+            if (!notifications.some(n => n.type === 'info' && /nothing was deleted/i.test(n.msg))) throw new Error('user should be told nothing was deleted: ' + JSON.stringify(notifications));
+        } finally {
+            indexedDB.deleteDatabase = origIdbDelete;
+            if (origSWGetRegs) navigator.serviceWorker.getRegistrations = origSWGetRegs;
+            if (origCachesKeys) window.caches.keys = origCachesKeys;
+            resetBtn.remove();
+        }
+    });
+
+    // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">♻️ Restore — both backup formats</h4>';
 
     // The app writes TWO backup shapes and, until v2.506, each restore entry point
@@ -530,9 +645,14 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         });
 
         try {
-            resetMod.setupFactoryResetButton();
-            resetBtn.click();
-            await confirmPromise;
+            // No Save dialog here: headless Chromium auto-dismisses the real one,
+            // which reads as "cancelled" — this test is about the FAILURE path
+            // (nothing exportable), so take the download route.
+            await withSavePicker(null, async () => {
+                resetMod.setupFactoryResetButton();
+                resetBtn.click();
+                await confirmPromise;
+            });
 
             if (localStorage.getItem('miniCycleData') === null) {
                 throw new Error('a failed backup must NOT wipe data');
@@ -619,9 +739,13 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             if (!notifications.some(n => n.type === 'info')) throw new Error('cancel should surface an info (cancelled) notification');
 
             // --- Confirm path: miniCycle-matching keys cleared, unrelated preserved, success notified ---
+            // Stub the Save dialog: headless Chromium auto-dismisses the real one,
+            // which the reset correctly treats as "cancelled" and stops.
             confirmValue = true;
-            resetBtn.click();
-            await confirmPromise;
+            await withSavePicker(null, async () => {
+                resetBtn.click();
+                await confirmPromise;
+            });
             if (localStorage.getItem('miniCycleData') !== null) throw new Error('confirm should remove miniCycleData');
             if (localStorage.getItem('miniCycle_backup_test') !== null) throw new Error('confirm should remove miniCycle_backup_* keys');
             if (localStorage.getItem('unrelatedKey') !== 'keep-me') throw new Error('unrelated keys must be preserved');

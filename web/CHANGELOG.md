@@ -1,3 +1,7 @@
+## [2.583] - 2026-09-25
+- feat(settings): factory reset saves its backup where the user chooses (native Save dialog where available; closing it stops the reset and deletes nothing; plain download elsewhere)
+
+
 ## [2.582] - 2026-09-24
 - fix(switcher): blank-click deselect is re-armed on every open (it died on the first close since Apr 2026); test: manifest lazyRequires check skips on bundled builds, customizer suite closes its dialogs so the dialog-host suite starts clean
 
