@@ -1273,6 +1273,7 @@ else
 
             TEST_FILE_COUNT="$STATS_TESTFILES"
             LITE_VER="$STATS_LITEVERSION"
+            SCHEMA_VER="$STATS_SCHEMAVERSION"
 
             MAIN_JS_LINES="$STATS_BOOT_MINICYCLE_MAIN"
             ORCH_LINES="$STATS_BOOT_ORCHESTRATOR"
@@ -1288,6 +1289,7 @@ else
             echo "   - JSDoc Blocks: $JSDOC_COUNT"
             echo "   - Documentation Files: $DOC_COUNT"
             echo "   - Lite Version: $LITE_VER"
+            echo "   - Schema Version: $SCHEMA_VER"
             echo "   - Boot Files Total: ~$BOOT_TOTAL lines"
 
             # Update Quick Reference table
@@ -1300,6 +1302,12 @@ else
 
             # Update Lite Version
             do_sed "$PROJECT_STATS_FILE" "s/| \*\*Lite Version\*\* | [0-9.]* (frozen) |/| **Lite Version** | $LITE_VER (frozen) |/g"
+            # Guarded: a reader miss yields "unknown" — keep the stale number rather than publish that.
+            if [[ "$SCHEMA_VER" =~ ^[0-9.]+$ ]]; then
+                do_sed "$PROJECT_STATS_FILE" "s/| \*\*Schema Version\*\* | [0-9.]* |/| **Schema Version** | $SCHEMA_VER |/g"
+            else
+                echo "   ⚠️  Schema version unreadable ('$SCHEMA_VER') — leaving that row untouched"
+            fi
 
             # Update "Last Updated" date at top
             do_sed "$PROJECT_STATS_FILE" "s/\*\*Last Updated\*\*: .*/\*\*Last Updated\*\*: $CURRENT_DATE/g"

@@ -126,10 +126,14 @@ function readLiteVersion() {
     return m ? m[1] : 'unknown';
 }
 
+// SCHEMA.CURRENT in constants.js is the single source; appState.js only
+// references it (`schemaVersion: SCHEMA.CURRENT`), so reading a literal there
+// silently published "unknown" once 2.6 landed.
 function readSchemaVersion() {
-    const abs = p('modules', 'core', 'appState.js');
+    const abs = p('modules', 'core', 'constants.js');
     if (!fs.existsSync(abs)) return 'unknown';
-    const m = fs.readFileSync(abs, 'utf8').match(/schemaVersion:\s*["']([\d.]+)["']/);
+    const block = fs.readFileSync(abs, 'utf8').match(/export const SCHEMA = Object\.freeze\(\{([\s\S]*?)\}\);/);
+    const m = block && block[1].match(/^\s*CURRENT:\s*["']([\d.]+)["']/m);
     return m ? m[1] : 'unknown';
 }
 

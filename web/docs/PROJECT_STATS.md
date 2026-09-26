@@ -20,7 +20,7 @@
 |--------|-------|
 | **App Version** | 2.583 |
 | **Lite Version** | 2.092 (frozen) |
-| **Schema Version** | 2.5 |
+| **Schema Version** | 2.6 |
 | **Total Modules** | 162 |
 | **Total Tests** | 3988 |
 | **Test Pass Rate** | 100% |
@@ -113,6 +113,7 @@ this file, `dist/stats.json`, and the SparkinCreations mirror, so the public
 surfaces can't drift apart. These are updated when you run `./scripts/update-version.sh`:
 - ✅ App Version
 - ✅ Lite Version (read from `lite/miniCycle-lite-scripts.js`)
+- ✅ Schema Version (read from `SCHEMA.CURRENT` in `modules/core/constants.js`)
 - ✅ Total Modules (counted from `modules/`)
 - ✅ Module Breakdown per directory (counted per `modules/*/`)
 - ✅ Total Tests (counted from `tests/`)
@@ -126,11 +127,10 @@ surfaces can't drift apart. These are updated when you run `./scripts/update-ver
 **Manual Updates Required:**
 
 These metrics must be updated manually as needed:
-1. **Schema Version** - Only changes with data model updates
-2. **Test Pass Rate** - Update after test runs (should always be 100%)
-3. **DI Completion** - Update when DI migration milestones reached
-4. **Custom window.* Globals** - Update if global count changes
-5. **Architecture Milestones** - Add new milestones as they're reached
+1. **Test Pass Rate** - Update after test runs (should always be 100%)
+2. **DI Completion** - Update when DI migration milestones reached
+3. **Custom window.* Globals** - Update if global count changes
+4. **Architecture Milestones** - Add new milestones as they're reached
 
 ---
 
