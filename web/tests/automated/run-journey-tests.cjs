@@ -119,10 +119,64 @@ let _pagesThisJourney = [];
  * @param {*} [opts.initArg] Serialisable argument passed to initScript.
  * @param {boolean} [opts.noNavigate] Return the page unnavigated, so the caller can
  *        drive the first-run choice screen instead of having it consumed here.
+ * @param {'save'|'cancel'} [opts.saveDialog] Simulate the native Save As dialog —
+ *        REQUIRED by anything that triggers a factory reset. See SAVE_DIALOG_STUB.
  */
+// ── The factory reset's Save-As gate, simulated ──────────────────────────────
+//
+// v2.583 put a backup gate in front of the factory reset: it calls
+// saveBackupFileAs() and REFUSES to wipe unless a file was written. That is the
+// right design — the reset clears localStorage, caches and every IndexedDB
+// database, so a downloaded file is the only recovery path that outlives the
+// click — but it makes the reset untestable without help.
+//
+// In headless Chromium `window.showSaveFilePicker` EXISTS and rejects with
+// AbortError ("The user aborted a request"), because there is no UI to show.
+// saveBackupFileAs reads AbortError as "the user closed the dialog" and returns
+// 'cancelled', so the reset correctly declines to delete anything. Measured
+// Oct 2026: 1 routine in, 1 routine out, every reset assertion failing.
+//
+// That is what took CI red at v2.583 (green at v2.582, failing at da82744f, the
+// commit that added the gate) and it was NOT a product defect — the same probe
+// with the picker stubbed wipes correctly, writing a 3544-byte backup first.
+// The real cost was silent: for nine days the most destructive operation in the
+// app had ZERO automated coverage, because all four reset journeys stopped at
+// the gate instead of reaching the code they exist to test.
+//
+// So: any journey that triggers a reset must pass `saveDialog`. It is opt-in and
+// per-journey on purpose — a blanket stub in the shared harness would hide a real
+// browser API from all 31 journeys, and this suite's value is that it drives the
+// real app. 'save' simulates a user choosing a file; 'cancel' simulates closing
+// the dialog, which must leave the data alone.
+const SAVE_DIALOG_STUB = (mode) => {
+    window.__saveDialog = { calls: 0, bytes: 0, mode };
+    window.showSaveFilePicker = async (opts) => {
+        window.__saveDialog.calls++;
+        if (mode === 'cancel') {
+            // Exactly what a closed dialog throws, so the gate's 'cancelled'
+            // branch is exercised rather than its generic-failure branch.
+            const e = new Error('The user aborted a request.');
+            e.name = 'AbortError';
+            throw e;
+        }
+        return {
+            name: (opts && opts.suggestedName) || 'journey-backup.json',
+            createWritable: async () => ({
+                write: async (blob) => { window.__saveDialog.bytes = (blob && blob.size) || 0; },
+                close: async () => { window.__saveDialog.closed = true; }
+            })
+        };
+    };
+};
+
+async function applySaveDialogStub(context, mode) {
+    await context.addInitScript(SAVE_DIALOG_STUB, mode === 'cancel' ? 'cancel' : 'save');
+}
+
 async function openFresh(browser, baseURL, opts = {}) {
     const context = await browser.newContext();
     await context.grantPermissions(['notifications'], { origin: baseURL });
+    if (opts.saveDialog) await applySaveDialogStub(context, opts.saveDialog);
     if (opts.initScript) await context.addInitScript(opts.initScript, opts.initArg);
     const page = await context.newPage();
     // Collected here and asserted by the caller, so a starved dependency FAILS the
@@ -843,7 +897,8 @@ async function journeyTodoStatsSync(browser, baseURL) {
 // warns on failure, so the reset used to claim success unconditionally.
 async function journeyFactoryResetRepeat(browser, baseURL) {
     const { failures, record } = makeRecorder();
-    const { context, page } = await openFresh(browser, baseURL);
+    // saveDialog: the reset will not wipe without a written backup — see SAVE_DIALOG_STUB.
+    const { context, page } = await openFresh(browser, baseURL, { saveDialog: 'save' });
 
     const notices = [];
     page.on('console', (m) => {
@@ -959,7 +1014,7 @@ async function journeyResetHonesty(browser, baseURL) {
 
     const verdictOf = async (blockDb) => {
         const { context, page } = await openFresh(browser, baseURL, {
-            initScript: patchIndexedDB, initArg: blockDb
+            initScript: patchIndexedDB, initArg: blockDb, saveDialog: 'save'
         });
         const seen = [];
         try {
@@ -2066,6 +2121,8 @@ async function journeyResetTwoTabs(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const context = await browser.newContext();
     await context.grantPermissions(['notifications'], { origin: baseURL });
+    // Builds its own context, so it applies the Save-As stub itself.
+    await applySaveDialogStub(context, 'save');
     try {
         const A = await context.newPage();
         const B = await context.newPage();
@@ -2135,7 +2192,8 @@ async function journeyResetTwoTabs(browser, baseURL) {
 // counters were still reading the old cycle count.
 async function journeyResetClearsRenderedState(browser, baseURL) {
     const { failures, record } = makeRecorder();
-    const { context, page } = await openFresh(browser, baseURL);
+    // saveDialog: the reset will not wipe without a written backup — see SAVE_DIALOG_STUB.
+    const { context, page } = await openFresh(browser, baseURL, { saveDialog: 'save' });
     try {
         // A routine with values worth going stale: a completed task and 42 cycles.
         await page.evaluate(() => {
@@ -3160,6 +3218,73 @@ async function journeySettingsRestoreAcceptsOlderBackup(browser, baseURL) {
     return { name: 'a backup made before 2.6 restores from Settings', failures };
 }
 
+// ── Journey: the reset fails CLOSED when no backup was saved ─────────────────
+//
+// v2.583 made the factory reset refuse to run unless saveBackupFileAs() reports
+// a written file, because after the wipe there is nowhere in the browser a
+// backup could survive. Nothing asserted that gate — and because the gate
+// silently swallowed every reset in CI, the four journeys that DO exercise the
+// reset were passing through it untested for nine days (see SAVE_DIALOG_STUB).
+//
+// Both directions are pinned here. The cancel direction is the one that
+// protects user data, so it is not optional coverage: if a future change makes
+// a cancelled dialog fall through to the wipe, a user who closed the Save
+// dialog loses everything with no file to restore from.
+async function journeyResetRequiresBackup(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+
+    const runReset = async (mode) => {
+        const { context, page } = await openFresh(browser, baseURL, { saveDialog: mode });
+        try {
+            await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+            await page.waitForTimeout(1000);
+            const before = await page.evaluate(() => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return Object.keys((p && p.data && p.data.routine) || {}).length;
+            });
+
+            await openMenu(page).catch(() => {});
+            await clickEl(page, '#open-settings');
+            await page.waitForTimeout(1200);
+            await clickEl(page, '#factory-reset');
+            await page.waitForTimeout(1000);
+            await clickEl(page, 'button.btn-confirm.btn-destructive');
+            await page.waitForTimeout(5000);
+
+            return await page.evaluate((b) => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return {
+                    before: b,
+                    after: Object.keys((p && p.data && p.data.routine) || {}).length,
+                    dialog: window.__saveDialog || null
+                };
+            }, before);
+        } finally {
+            await context.close();
+        }
+    };
+
+    try {
+        const cancelled = await runReset('cancel');
+        record('a cancelled Save dialog is actually offered', (cancelled.dialog?.calls || 0) > 0,
+            'the Save dialog was never reached, so this proves nothing about the gate');
+        record('a cancelled Save dialog leaves the data alone',
+            cancelled.before > 0 && cancelled.after === cancelled.before,
+            `routines went ${cancelled.before} -> ${cancelled.after} after the user declined to save a backup — the wipe ran with no recovery file`);
+
+        const saved = await runReset('save');
+        record('a saved backup is written BEFORE the wipe', (saved.dialog?.bytes || 0) > 0,
+            'nothing was written to the chosen file, so the reset wiped without a recovery path');
+        record('a saved backup lets the reset proceed', saved.before > 0 && saved.after === 0,
+            `routines went ${saved.before} -> ${saved.after}; the reset did not clear storage even though the backup succeeded`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    }
+
+    return { name: 'the reset fails closed when no backup was saved', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -3190,6 +3315,7 @@ const JOURNEYS = [
     { name: 'imported delete-settings reconcile and KEEP is honoured', fn: journeyImportedKeepOnReset },
     { name: 'a factory reset survives a second open tab', fn: journeyResetTwoTabs },
     { name: 'a factory reset clears the state it had rendered', fn: journeyResetClearsRenderedState },
+    { name: 'the reset fails closed when no backup was saved', fn: journeyResetRequiresBackup },
     { name: 'a badge earned by clearing is not re-advertised in cycle mode', fn: journeyBadgeCrossAxis },
     { name: "a new routine's empty-state hint matches the bar on screen", fn: journeyNewRoutineHintMatchesBar },
 ];

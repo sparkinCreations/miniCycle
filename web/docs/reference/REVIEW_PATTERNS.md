@@ -463,3 +463,51 @@ in the shared chunk throughout.
 (inlined `critical.css`, markup, labels), or just open the page and assert the
 behaviour. Only follow the chunk chain when you actually need to.
 Full method: [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md).
+
+## 15. A browser API that only *exists* in automation can gate the code under test
+
+In headless Chromium `window.showSaveFilePicker` is a **function** — it just
+rejects with `AbortError` ("The user aborted a request"), because there is no UI
+to show a dialog. So a `typeof window.showSaveFilePicker === 'function'` feature
+check passes, the call is made, and the rejection is indistinguishable from a
+user closing the dialog.
+
+That is exactly how the factory reset reads it, and correctly: `AbortError` means
+"the user declined", so [`backupRestoreManager.js`](../../modules/ui/backupRestoreManager.js)
+`saveBackupFileAs()` returns `'cancelled'` and the reset **declines to delete
+anything** (it fails closed on purpose — after the wipe there is nowhere in the
+browser a backup could survive).
+
+The product behaviour was right. The test consequence was not:
+
+- v2.583 added that gate. CI's Automated Tests went green → red on the same
+  commit (`c338015a` green, `da82744f` red).
+- All four factory-reset journeys began stopping **at the gate**, so for nine
+  days the operation that clears localStorage, caches and every IndexedDB
+  database had **zero** automated coverage.
+- The red read as "the reset tests are flaky again", which is the worst possible
+  disguise for "the reset is no longer verifiable".
+
+Measured Oct 2026, same app, same click, only the picker differing:
+
+| Picker | Routines before → after | Backup written |
+|---|---|---|
+| Native (headless) | 1 → 1 (survived) | 0 bytes |
+| Stubbed (user saves) | 1 → 0 (wiped) | 3,544 bytes |
+
+**Check:** when a journey drives a destructive or file-touching flow, assert that
+the gate in front of it was actually *reached and satisfied*, not just that the
+end state looks plausible — a skipped destructive action and a correctly-refused
+one are the same DOM. Journeys that trigger a reset must pass
+`openFresh(..., { saveDialog: 'save' | 'cancel' })`; the stub and the full
+reasoning live at `SAVE_DIALOG_STUB` in
+[`run-journey-tests.cjs`](../../tests/automated/run-journey-tests.cjs).
+
+The stub is **opt-in per journey, never harness-wide**: replacing a real browser
+API for all 32 journeys to fix 4 trades a visible failure for an invisible one.
+
+Generalise beyond this one API — the same shape applies to anything automation
+provides as a stub that rejects or no-ops: `showSaveFilePicker`,
+`showOpenFilePicker`, `navigator.share`, Notification permission, clipboard
+reads. If a feature check cannot tell "present and working" from "present and
+inert", the test must stub it deliberately or assert it was satisfied.
