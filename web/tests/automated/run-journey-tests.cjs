@@ -1206,6 +1206,105 @@ async function journeyFirstRunRestore(browser, baseURL) {
     return { name: 'first-run restore accepts both backup formats', failures };
 }
 
+// ── Journey 11b: an established user is never trapped on the choice screen ──
+//
+// The pre-paint first-run reader in miniCycle.html lets three independent signals
+// graduate a user to the normal splash: `miniCycle_firstRunChoiceMade`,
+// `settings.onboardingCompleted`, and OWNING A ROUTINE. The first two are flags
+// that can fail to write — app close mid-flow, crash, PWA kill — which is exactly
+// how the Aug 2026 lockout happened (2 routines + 2 completed cycles, shown the
+// choice screen on every load with no route back to their own data). Routine
+// ownership is the durable backstop, and it is the one nothing covered.
+//
+// It went dead for every 2.6 user. Schema 2.6 renamed `data.cycles` → `data.routine`
+// and schemaMigration26 DELETES the old key, but the inline reader still asked for
+// `data.cycles`, so `hasRoutines` was permanently false from v2.573 until it was
+// found by reading the file. Every journey above seeds through the choice screen or
+// via "learn", both of which set the flags — so the backstop was never the signal
+// under test and all of them stayed green.
+//
+// Both spellings are asserted because this block runs BEFORE migration: a user
+// arriving from 2.5 still has `data.cycles` in storage at pre-paint time.
+async function journeyEstablishedUserNotTrapped(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+
+    const routines = (n) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`r${i}`, {
+        id: `r${i}`, title: `Routine ${i}`, tasks: [{ id: `t${i}`, text: 'task', completed: false }],
+        cycleCount: 2, recurringTemplates: {}, history: { events: [], maxEvents: 100 },
+        clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false }
+    }]));
+
+    // NOTE: settings.onboardingCompleted is deliberately absent and
+    // miniCycle_firstRunChoiceMade is deliberately never written. That is the
+    // whole point — this pins the path where BOTH flags were lost.
+    const CASES = [
+        {
+            label: '2.6 document (post-migration)',
+            doc: {
+                schemaVersion: '2.6',
+                metadata: { schemaVersion: '2.6', lastModified: Date.now(), createdAt: Date.now() },
+                settings: {}, data: { routine: routines(2) },
+                appState: { activeRoutineId: 'r0' }, userProgress: { cyclesCompleted: 4 }
+            }
+        },
+        {
+            label: '2.5 document (pre-migration, same pre-paint moment)',
+            doc: {
+                schemaVersion: '2.5',
+                metadata: { schemaVersion: '2.5', lastModified: Date.now(), createdAt: Date.now() },
+                settings: {}, data: { cycles: routines(2) },
+                appState: { activeCycleId: 'r0' }, userProgress: { cyclesCompleted: 4 }
+            }
+        }
+    ];
+
+    for (const c of CASES) {
+        // noNavigate: openFresh's normal path clicks through the choice screen,
+        // which is the screen under test.
+        const { context, page } = await openFresh(browser, baseURL, {
+            noNavigate: true,
+            initScript: (raw) => { try { localStorage.setItem('miniCycleData', raw); } catch (e) { /* seeded origin only */ } },
+            initArg: JSON.stringify(c.doc)
+        });
+
+        try {
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'load' });
+
+            // The decision is made pre-paint, so it is already final at `load` —
+            // no waiting, and no chance of reading a pre-decision frame.
+            const seen = await page.evaluate(() => ({
+                trapped: document.documentElement.classList.contains('mc-first-run'),
+                choiceVisible: (() => {
+                    const el = document.getElementById('first-run-choice');
+                    return !!el && getComputedStyle(el).display !== 'none';
+                })(),
+                awaiting: (document.getElementById('app-loader') || {}).dataset?.awaitingChoice
+            }));
+
+            record(`${c.label}: not sent back to the choice screen`, !seen.trapped,
+                'html.mc-first-run applied to a user who owns 2 routines — the established-user backstop is dead');
+            record(`${c.label}: loader is not awaiting a choice`, seen.awaiting !== 'true',
+                'loader left waiting on a pick, so hideAppLoader() will never dismiss it');
+
+            // The user must actually land on THEIR data, not just avoid the screen.
+            const landed = await page.waitForFunction(() => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                const map = p && p.data && (p.data.routine || p.data.cycles);
+                return !!map && Object.keys(map).length >= 2;
+            }, null, { timeout: 25000 }).then(() => true).catch(() => false);
+            record(`${c.label}: their routines survive the load`, landed,
+                'the seeded routines are gone after boot');
+        } catch (e) {
+            console.log(`   ${colors.red}❌ errored (${c.label}): ${e.message}${colors.reset}`);
+            failures.push(`harness error (${c.label}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+
+    return { name: 'an established user is never trapped on the choice screen', failures };
+}
+
 // ── Journey 12: the first-run state contract (core-ready ≠ state-ready) ─────
 // appInit.waitForCore() resolving does NOT mean AppState has data. On a brand-new
 // origin AppState.init() deliberately returns with `data = null` and
@@ -3085,6 +3184,7 @@ const JOURNEYS = [
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
+    { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
     { name: 'quick actions are writable during a first-run session', fn: journeyFirstRunQuickActions },
     { name: 'imported delete-settings reconcile and KEEP is honoured', fn: journeyImportedKeepOnReset },

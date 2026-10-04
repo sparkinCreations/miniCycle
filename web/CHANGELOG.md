@@ -1,3 +1,7 @@
+## [2.584] - 2026-10-04
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.583] - 2026-09-25
 - feat(settings): factory reset saves its backup where the user chooses (native Save dialog where available; closing it stops the reset and deletes nothing; plain download elsewhere)
 

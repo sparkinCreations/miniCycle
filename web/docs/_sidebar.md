@@ -143,6 +143,7 @@
   * [Boot Performance Roadmap](future-work/BOOT_PERF_ROADMAP.md)
   * [Error Handling — Phases 3–5](future-work/ERROR_HANDLING_PHASES_3_5.md)
   * [Feedback TODO (Jul 2026)](future-work/FEEDBACK_TODO_2026_07.md)
+  * [HTML Bootstrap Responsibility Reduction](future-work/HTML_BOOTSTRAP_RESPONSIBILITY_REDUCTION_PLAN.md)
   * [Welcome Screen + Tip Archive ✅ closed](future-work/WELCOME_SCREEN_PLAN.md)
   * [i18n Language Packs](future-work/I18N_LANGUAGE_PACK_PLAN.md)
   * [Large Module Splits ✅ closed](future-work/LARGE_MODULE_SPLITS_PLAN.md)
