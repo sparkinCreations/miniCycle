@@ -739,13 +739,43 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             if (!notifications.some(n => n.type === 'info')) throw new Error('cancel should surface an info (cancelled) notification');
 
             // --- Confirm path: miniCycle-matching keys cleared, unrelated preserved, success notified ---
-            // Stub the Save dialog: headless Chromium auto-dismisses the real one,
-            // which the reset correctly treats as "cancelled" and stops.
+            // The reset exports a backup BEFORE wiping, so the Save dialog has to be
+            // stubbed or the reset correctly refuses to delete anything (headless
+            // Chromium rejects the real picker with AbortError, which reads as
+            // "the user declined").
+            //
+            // Supply a WORKING picker rather than deleting the API. Deleting it sends
+            // saveBackupFileAs down its `<a download>` fallback — and that fallback
+            // really downloads. This suite also runs IN THE LIVE APP from the Testing
+            // modal, where that dropped a mini-cycle-backup-<date>.json into the
+            // user's Downloads folder on every single run (measured Oct 2026, traced
+            // from the anchor click back to this line). A test must not hand the user
+            // a file.
+            //
+            // captureBackupDownloadAsync is both a second line of defence and the
+            // assertion: if the picker stub ever stops working, `clicked` catches the
+            // regression here instead of a stray file appearing in someone's browser.
             confirmValue = true;
-            await withSavePicker(null, async () => {
-                resetBtn.click();
-                await confirmPromise;
-            });
+            let pickerUsed = 0;
+            const savingPicker = async () => {
+                pickerUsed++;
+                return {
+                    name: 'reset-backup.json',
+                    createWritable: async () => ({ write: async () => {}, close: async () => {} })
+                };
+            };
+            const { clicked: fellBackToDownload } = await captureBackupDownloadAsync(() =>
+                withSavePicker(savingPicker, async () => {
+                    resetBtn.click();
+                    await confirmPromise;
+                })
+            );
+            if (pickerUsed === 0) {
+                throw new Error('the reset never offered a Save dialog, so its pre-wipe backup gate went unexercised');
+            }
+            if (fellBackToDownload) {
+                throw new Error('the reset fell back to an <a download> — in the live app that hands the user a file on every test run');
+            }
             if (localStorage.getItem('miniCycleData') !== null) throw new Error('confirm should remove miniCycleData');
             if (localStorage.getItem('miniCycle_backup_test') !== null) throw new Error('confirm should remove miniCycle_backup_* keys');
             if (localStorage.getItem('unrelatedKey') !== 'keep-me') throw new Error('unrelated keys must be preserved');

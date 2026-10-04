@@ -9,6 +9,28 @@ export async function runFocusModeTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/ui/focusMode.js?v=${cacheBuster}`);
 
+    // These label assertions must name the KEY, never the default vocabulary's
+    // English word. focusMode.{cycle,clear}ActionLabel are vocab-themable, and
+    // getLabel() resolves through whatever lens is wired at the time:
+    //
+    //   themes.js calls setLabelResolverDependencies() at MODULE LOAD TIME and
+    //   imports labelResolver.js UNVERSIONED, so the first test anywhere in the
+    //   run that imports themes.js wires the ONE shared resolver to live
+    //   AppState — permanently, for every test after it.
+    //
+    // That is why "data-label contains 'cycle'" held under `npm test` (per-module
+    // isolation, themes.js never loaded, raw defaults) and failed in the in-app
+    // "Run All" (one page, shared registry, live routine themed `fitness` →
+    // "Complete\nWorkout", which contains no "cycle"). Measured Oct 2026; the
+    // classic fallback happens to yield "Cycle", which is why this hid for so long.
+    //
+    // The contract worth testing is the mode→key MAPPING, not the wording, so
+    // resolve the same keys the module does and compare. Importing labelResolver
+    // unversioned is deliberate: it must be the instance focusMode.js itself uses.
+    const { getLabel } = await import('../modules/labels/labelResolver.js');
+    const cycleLabel = () => getLabel('focusMode.cycleActionLabel');
+    const clearLabel = () => getLabel('focusMode.clearActionLabel');
+
     resultsDiv.innerHTML = '<h2>FocusMode Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
     const test = createProtectedTest(resultsDiv, passed, total);
@@ -786,12 +808,13 @@ export async function runFocusModeTests(resultsDiv) {
         const dataLabel = instance._button.getAttribute('data-label') || '';
         const ariaLabel = instance._button.getAttribute('aria-label') || '';
         cleanup();
-        if (!dataLabel.toLowerCase().includes('clear')) {
-            throw new Error('data-label should contain "Clear" for todo mode, got: ' + dataLabel);
+        if (dataLabel !== clearLabel()) {
+            throw new Error(`todo mode should use the clear label key; expected ${JSON.stringify(clearLabel())}, got ${JSON.stringify(dataLabel)}`);
         }
-        if (!ariaLabel.toLowerCase().includes('clear')) {
-            throw new Error('aria-label should describe clear action, got: ' + ariaLabel);
+        if (dataLabel === cycleLabel()) {
+            throw new Error('todo mode used the CYCLE label — the mode→key mapping is wrong');
         }
+        if (!ariaLabel) throw new Error('aria-label should be set for the clear action');
     });
 
     await test('manual-cycle override sets cycle labels and themed data-label', () => {
@@ -801,12 +824,13 @@ export async function runFocusModeTests(resultsDiv) {
         const dataLabel = instance._button.getAttribute('data-label') || '';
         const ariaLabel = instance._button.getAttribute('aria-label') || '';
         cleanup();
-        if (!dataLabel.toLowerCase().includes('cycle')) {
-            throw new Error('data-label should contain "Cycle" for manual mode, got: ' + dataLabel);
+        if (dataLabel !== cycleLabel()) {
+            throw new Error(`manual-cycle should use the cycle label key; expected ${JSON.stringify(cycleLabel())}, got ${JSON.stringify(dataLabel)}`);
         }
-        if (!ariaLabel.toLowerCase().includes('cycle')) {
-            throw new Error('aria-label should describe cycle action, got: ' + ariaLabel);
+        if (dataLabel === clearLabel()) {
+            throw new Error('manual-cycle used the CLEAR label — the mode→key mapping is wrong');
         }
+        if (!ariaLabel) throw new Error('aria-label should be set for the cycle action');
     });
 
     await test('reads mode from body class when no override given', () => {
@@ -816,8 +840,8 @@ export async function runFocusModeTests(resultsDiv) {
         instance._updateActionButtonAria();
         const dataLabel = instance._button.getAttribute('data-label') || '';
         cleanup();
-        if (!dataLabel.toLowerCase().includes('clear')) {
-            throw new Error('Should read todo-mode from body class, got: ' + dataLabel);
+        if (dataLabel !== clearLabel()) {
+            throw new Error(`should read todo-mode from the body class; expected ${JSON.stringify(clearLabel())}, got ${JSON.stringify(dataLabel)}`);
         }
     });
 
@@ -829,9 +853,8 @@ export async function runFocusModeTests(resultsDiv) {
         instance._updateActionButtonAria('manual-cycle');
         const dataLabel = instance._button.getAttribute('data-label') || '';
         cleanup();
-        if (!dataLabel.toLowerCase().includes('cycle') ||
-            dataLabel.toLowerCase().includes('clear')) {
-            throw new Error('Override should win over body class; got: ' + dataLabel);
+        if (dataLabel !== cycleLabel() || dataLabel === clearLabel()) {
+            throw new Error(`override should win over the body class; expected ${JSON.stringify(cycleLabel())}, got ${JSON.stringify(dataLabel)}`);
         }
     });
 

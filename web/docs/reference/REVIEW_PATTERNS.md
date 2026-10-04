@@ -511,3 +511,60 @@ provides as a stub that rejects or no-ops: `showSaveFilePicker`,
 `showOpenFilePicker`, `navigator.share`, Notification permission, clipboard
 reads. If a feature check cannot tell "present and working" from "present and
 inert", the test must stub it deliberately or assert it was satisfied.
+
+## 16. A test that asserts `getLabel()` wording depends on what ran before it
+
+[`themes.js`](../../modules/labels/themes.js) calls `setLabelResolverDependencies()`
+**at module load time**, and it imports `labelResolver.js` **unversioned**. So the
+first test anywhere in a run that imports `themes.js` wires the ONE shared
+resolver to live `AppState` — permanently, for every test after it. Nothing
+unwires it, and nothing announces it.
+
+The same assertion then gives two different answers depending on the runner:
+
+- `npm test` — per-module isolation, `themes.js` never loaded, so `getLabel()`
+  returns raw `DEFAULT_LABELS`;
+- the in-app suite's **Run All** — one page, one shared module registry, so
+  `getLabel()` returns the *active routine's themed* label.
+
+Oct 2026: two `focusMode` assertions required `data-label` to contain the literal
+word `"cycle"`, inside a test named "…and themed data-label". `focusMode.cycleActionLabel`
+is vocab-themable and **no theme's value contains "cycle"**:
+
+| theme | `cycleActionLabel` | literal-word assertion |
+|---|---|---|
+| classic | `Cycle` | ✅ |
+| habit-tracker | `Complete\nStreak` | ❌ |
+| fitness | `Complete\nWorkout` | ❌ |
+| scholar | `Complete\nSession` | ❌ |
+| cleaning | `Complete\nSweep` | ❌ |
+
+Two accidents kept it hidden. `getActiveTheme()` falls back to
+`THEME_DEFINITIONS.classic` rather than null, and `classic` happens to leave the
+label as `"Cycle"` — so the default path passes. And the sibling todo-mode
+assertion passes under *every* theme only because all four clear labels happen to
+begin with "Clear". Neither is a contract; both are coincidence.
+
+This mattered beyond CI: the Testing modal ships in production, so every user on
+a non-classic theme saw two failures that were not failures.
+
+**Check:** never assert the *wording* of a themable label. Resolve the same key
+the module resolves and compare, then cross-check that the opposite key was not
+used — the contract worth testing is the **mode → key mapping**, not the English:
+
+```js
+const cycleLabel = () => getLabel('focusMode.cycleActionLabel');
+const clearLabel = () => getLabel('focusMode.clearActionLabel');
+if (dataLabel !== cycleLabel()) throw new Error(`expected ${cycleLabel()}, got ${dataLabel}`);
+if (dataLabel === clearLabel()) throw new Error('used the CLEAR label — mapping is wrong');
+```
+
+Verify across the lens, not just the default: wire each theme in turn and assert
+the module still passes. A suite that is green under `classic` alone proves only
+that one vocabulary works. Scope at the time of writing: 6 test files import
+`themes.js`, 9 assert `getLabel()` output, and 4 modules import `themes.js` at
+top level — any of which is enough to flip the resolver for everything downstream.
+
+Same family as [#15](#15-a-browser-api-that-only-exists-in-automation-can-gate-the-code-under-test):
+a signal that cannot distinguish "working" from "inert". There, an inert API read
+as user intent; here, an unwired resolver reads as the default vocabulary.
