@@ -647,6 +647,89 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        // === PER-TASK REMINDER NOTIFICATION HONESTY ===
+        resultsDiv.innerHTML += '<h4>🔔 Per-task reminder: the notification must match what will happen</h4>';
+
+        // The 🔔 task button is reachable while the GLOBAL "Enable Reminders"
+        // switch is off, because updateReminderButtons() deliberately stopped
+        // gating its visibility on the global setting (it is controlled by
+        // taskOptionButtons customization). startReminders() then returns
+        // immediately on `!customReminders.enabled`, so nothing fires.
+        //
+        // Before Oct 2026 the handler said "Reminder enabled: Every 1 hours"
+        // regardless — interpolating the stored frequency out of the very object
+        // whose enabled:false made it inert, i.e. promising a specific schedule
+        // that could never arrive. Reported by a user, not caught by a test.
+        function wireTaskReminder({ globalEnabled, freq = 1, unit = 'hours' }) {
+            const state = {
+                customReminders: { enabled: globalEnabled, frequencyValue: freq, frequencyUnit: unit },
+                appState: { activeRoutineId: 'r1' },
+                data: { routine: { r1: { id: 'r1', title: 'R', tasks: [{ id: 't1', text: 'task', remindersEnabled: false }] } } },
+                settings: {}
+            };
+            const notifications = [];
+            setRemindersDependencies({
+                AppGlobalState: {},
+                AppState: { isReady: () => true, get: () => state, update: async (fn) => fn(state) },
+                appInit: null,
+                showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); return null; },
+                updateUndoRedoButtons: () => {}
+            });
+            // safeAddEventListener is a CONSTRUCTOR dep (_constructorDeps), not a
+            // module-level DI dep — passing it to setRemindersDependencies leaves
+            // this.deps.safeAddEventListener undefined and the handler never binds.
+            const instance = new MiniCycleReminders({
+                safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn)
+            });
+            const button = document.createElement('button');
+            instance.setupReminderButtonHandler(button, { assignedTaskId: 't1' });
+            return { instance, button, notifications, state };
+        }
+
+        await test('global reminders OFF: does not claim the reminder is enabled, and names no schedule', async () => {
+            const { button, notifications } = wireTaskReminder({ globalEnabled: false, freq: 1, unit: 'hours' });
+            await button._reminderClickHandler();
+            const n = notifications[notifications.length - 1];
+            if (!n) throw new Error('no notification was shown at all');
+            if (/reminder enabled/i.test(n.msg)) {
+                throw new Error(`claimed the reminder is enabled while global reminders are off: ${JSON.stringify(n.msg)}`);
+            }
+            if (/every\s*1/i.test(n.msg)) {
+                throw new Error(`promised a schedule that cannot fire (global reminders are off): ${JSON.stringify(n.msg)}`);
+            }
+            if (n.type === 'success') {
+                throw new Error('reported success for a reminder that will not fire');
+            }
+            if (!/enable reminders/i.test(n.msg)) {
+                throw new Error(`should tell the user what to turn on, got: ${JSON.stringify(n.msg)}`);
+            }
+        });
+
+        await test('global reminders OFF: the task flag is still saved, so it works once the switch is on', async () => {
+            const { button, state } = wireTaskReminder({ globalEnabled: false });
+            await button._reminderClickHandler();
+            const task = state.data.routine.r1.tasks[0];
+            if (task.remindersEnabled !== true) {
+                throw new Error('the per-task intent must still persist — turning the global switch on later should just work');
+            }
+        });
+
+        await test('global reminders ON: still reports the real schedule', async () => {
+            const { button, notifications } = wireTaskReminder({ globalEnabled: true, freq: 2, unit: 'hours' });
+            await button._reminderClickHandler();
+            const n = notifications[notifications.length - 1];
+            if (!n) throw new Error('no notification was shown');
+            if (!/reminder enabled/i.test(n.msg)) {
+                throw new Error(`should confirm the reminder is enabled, got: ${JSON.stringify(n.msg)}`);
+            }
+            if (!/2/.test(n.msg)) {
+                throw new Error(`should name the configured frequency, got: ${JSON.stringify(n.msg)}`);
+            }
+            if (n.type !== 'success') {
+                throw new Error(`expected a success notification, got type=${n.type}`);
+            }
+        });
+
         // === SUMMARY ===
         const percentage = Math.round((passed.count / total.count) * 100);
         resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

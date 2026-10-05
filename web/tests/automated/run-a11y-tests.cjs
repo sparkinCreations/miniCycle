@@ -405,6 +405,146 @@ async function run() {
             });
             await page.waitForTimeout(2000);
         }, 'renamed');
+
+        // ── E. The task-options trigger must announce the menu's REAL state ──
+        // aria-expanded on the three-dots button used to be maintained at the
+        // CALL SITES rather than by the function that owns visibility, so only
+        // the click path kept it right. Every other route desynced, in both
+        // directions (reported Oct 2026: "the controls can disappear while their
+        // trigger still reports itself as expanded").
+        //
+        // This asserts the INVARIANT — aria-expanded matches whether the menu is
+        // actually on screen — rather than any one route, deliberately: two of
+        // the routes bypass TaskOptionsVisibilityController entirely (Escape in
+        // taskButtons.js and _restoreActiveTaskOptions in taskRenderer.js, neither
+        // of which has the controller injected) and hand-mirror its writes. Only
+        // an end-state check covers a path that does not exist yet.
+        //
+        // Requires three-dots mode — in hover mode the button is never built, so
+        // there is no trigger to audit. If the setting cannot be turned on, that
+        // is reported rather than silently skipped.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(600);
+
+        // Three-dots mode has to be ON for a trigger to exist at all, and it
+        // cannot be switched on from the Settings toggle here: setupThreeDotsToggle()
+        // latches its idempotency flag BEFORE its `if (!settings) return`, so on a
+        // first-run boot (state deliberately not ready — see CLAUDE.md "core-ready
+        // does not mean state-ready") the handler is never attached and can never be
+        // retried. Measured Oct 2026: the checkbox flips, settings.showThreeDots
+        // stays false, no trigger is ever built. Filed separately; this section
+        // routes around it by seeding the setting BEFORE boot, in its own context,
+        // so the main audit above is untouched.
+        const ariaCtx = await browser.newContext();
+        await ariaCtx.addInitScript(() => {
+            const r = {
+                id: 'a11y', title: 'Aria Probe', tasks: [
+                    { id: 'a1', text: 'one', completed: false },
+                    { id: 'a2', text: 'two', completed: false },
+                    { id: 'a3', text: 'three', completed: false }
+                ],
+                cycleCount: 0, recurringTemplates: {},
+                history: { events: [], maxEvents: 100 },
+                clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false }
+            };
+            try {
+                localStorage.setItem('miniCycleData', JSON.stringify({
+                    schemaVersion: '2.6',
+                    metadata: { schemaVersion: '2.6', createdAt: Date.now(), lastModified: Date.now() },
+                    settings: { onboardingCompleted: true, showThreeDots: true },
+                    appState: { activeRoutineId: 'a11y' },
+                    data: { routine: { a11y: r } },
+                    userProgress: { cyclesCompleted: 0 }
+                }));
+            } catch (e) { /* storage unavailable — the guard below reports it unaudited */ }
+        });
+        const ariaPage = await ariaCtx.newPage();
+        await ariaPage.goto(`${srv.url}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await ariaPage.waitForTimeout(6000);
+        const threeDotsOn = await ariaPage.evaluate(
+            () => document.querySelectorAll('#taskList .task .three-dots-btn').length > 0);
+
+        const probe = () => ariaPage.evaluate(() => {
+            const rows = [...document.querySelectorAll('#taskList .task')];
+            return rows.map(t => {
+                const trig = t.querySelector('.three-dots-btn');
+                const opts = t.querySelector('.task-options');
+                if (!trig || !opts) return null;
+                const visible = opts.classList.contains('task-options-visible')
+                    && !opts.classList.contains('task-options-force-hidden');
+                return { expanded: trig.getAttribute('aria-expanded'), visible };
+            }).filter(Boolean);
+        });
+
+        const firstRow = (rows) => rows[0] || null;
+        const mismatches = (rows) => rows.filter(r => String(r.visible) !== r.expanded);
+
+        const baseline = await probe();
+        if (!threeDotsOn || baseline.length === 0) {
+            failures.push('task-options trigger: no .three-dots-btn rendered, so aria-expanded was NOT audited');
+        } else {
+            // EFFECT CHECKS ARE MANDATORY HERE. aria-expanded and visibility are
+            // consistent when BOTH are false, so a step that silently did nothing
+            // looks identical to a step that worked — the same trap the
+            // announceCase helper above warns about. Measured: without the
+            // expectVisible assertion this whole section passed against the
+            // unfixed code, because a mis-sequenced Escape left the menu open and
+            // the later focusout then had nothing to hide.
+            const openMenu = async () => {
+                await ariaPage.evaluate(() => document.querySelector('#taskList .task .three-dots-btn')?.click());
+                await ariaPage.waitForTimeout(900);
+            };
+            const ariaCase = async (label, expectVisible) => {
+                const rows = await probe();
+                const first = firstRow(rows);
+                if (!first) {
+                    failures.push(`task-options trigger (${label}): no task row to audit`);
+                    return;
+                }
+                if (first.visible !== expectVisible) {
+                    console.log(`   ${colors.red}❌ task-options aria-expanded — ${label} (no effect)${colors.reset}`);
+                    failures.push(`task-options trigger (${label}): expected the menu to be `
+                        + `${expectVisible ? 'OPEN' : 'CLOSED'} but it was not, so this case did not exercise the `
+                        + `aria sync at all — fix the step, do not trust the pass`);
+                    return;
+                }
+                const bad = mismatches(rows);
+                if (bad.length) {
+                    console.log(`   ${colors.red}❌ task-options aria-expanded — ${label}${colors.reset}`);
+                    failures.push(`task-options trigger (${label}): aria-expanded disagrees with the menu on screen in `
+                        + `${bad.length}/${rows.length} task(s) — ${JSON.stringify(bad.slice(0, 3))}. A screen reader is told `
+                        + `the menu is ${bad[0].expanded === 'true' ? 'OPEN while it is gone' : 'CLOSED while it is on screen'}.`);
+                } else {
+                    console.log(`   ${colors.green}✅ task-options aria-expanded correct — ${label}${colors.reset}`);
+                }
+            };
+
+            await ariaCase('initial render (all collapsed)', false);
+
+            await openMenu();
+            await ariaCase('opened via the three-dots button', true);
+
+            // THE REPORTED CASE: focus leaves the task, the controller hides the
+            // menu, and before Oct 2026 the trigger kept announcing expanded="true".
+            // Verified to FAIL against the unfixed source: {"expanded":"true","visible":false}.
+            await ariaPage.evaluate(() => document.querySelector('#taskList .task')
+                ?.dispatchEvent(new FocusEvent('focusout', { bubbles: true })));
+            await ariaPage.waitForTimeout(900);
+            await ariaCase('focus left the task (focusout hid the menu)', false);
+
+            await openMenu();
+            await ariaCase('reopened after a focusout close', true);
+
+            // A re-render while the menu is open must not strand the announcement.
+            await ariaPage.evaluate(() => {
+                const boxes = [...document.querySelectorAll('#taskList .task input[type="checkbox"]')];
+                const other = boxes[boxes.length - 1];
+                if (other && !other.checked) { other.checked = true; other.dispatchEvent(new Event('change', { bubbles: true })); }
+            });
+            await ariaPage.waitForTimeout(1800);
+            await ariaCase('another task completed while the menu was open', true);
+        }
+        await ariaCtx.close();
     } catch (e) {
         console.log(`   ${colors.red}❌ harness error: ${e.message}${colors.reset}`);
         failures.push(`harness error: ${e.message}`);

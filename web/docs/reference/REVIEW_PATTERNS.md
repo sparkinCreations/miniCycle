@@ -568,3 +568,82 @@ top level — any of which is enough to flip the resolver for everything downstr
 Same family as [#15](#15-a-browser-api-that-only-exists-in-automation-can-gate-the-code-under-test):
 a signal that cannot distinguish "working" from "inert". There, an inert API read
 as user intent; here, an unwired resolver reads as the default vocabulary.
+
+## 17. ARIA state maintained at the call sites instead of by the owner
+
+`aria-expanded` on the task-options trigger was set in
+`taskEvents.revealTaskButtons` — a *caller* of
+`TaskOptionsVisibilityController.setVisibility()`, the function that actually
+owns whether the menu is on screen. The click path was therefore correct and
+every other path was wrong, in both directions:
+
+| route | before |
+|---|---|
+| three-dots click | correct (the one call site that set it) |
+| `focusout` | menu hidden, trigger still `expanded="true"` |
+| `arrow-move` | `expanded="true"` set although `canHandle()` **rejected** the caller and the menu never opened |
+| Escape (`taskButtons.js`) | hides directly, never touched aria |
+| `_restoreActiveTaskOptions` (`taskRenderer.js`) | shows directly, never touched aria |
+
+Reported Oct 2026 as "the controls can disappear while their trigger still
+reports itself as expanded". Measured pre-fix: `{"expanded":"true","visible":false}`.
+
+The `arrow-move` row is the instructive one. Setting the attribute beside the
+call cannot know whether the call *did* anything — `setVisibility()` returns
+early for a caller its mode does not permit. Moving the sync inside, after that
+gate, makes the attribute follow the visibility that actually happened.
+
+**Check:** a state attribute belongs in the function that owns the state, below
+whatever guard can abort it. If two call sites must still do it by hand (here:
+`taskButtons.js` and `taskRenderer.js` have no controller injected, so routing
+them would mean a 4-step DI change plus a new `canHandle` permission), make the
+**test** the anti-drift mechanism rather than the code structure — assert the
+end state, so a route that does not exist yet is covered too.
+
+### …and the test for it is trivially vacuous
+
+`aria-expanded` and visibility are *consistent when both are false*. So a test
+step that silently did nothing is indistinguishable from one that worked, and the
+first version of this section passed against the unfixed code: a mis-sequenced
+Escape left the menu open, and the later `focusout` then had nothing to hide.
+
+Every case now asserts the menu reached the expected state **before** comparing
+the attribute, and says so when it did not:
+
+> `expected the menu to be CLOSED but it was not, so this case did not exercise
+> the aria sync at all — fix the step, do not trust the pass`
+
+Same requirement the `announceCase` helper in the same file already states for
+live-region announcements. Pinned by `npm run test:a11y` § E.
+
+## 18. An idempotency latch set before the work succeeds
+
+```javascript
+if (_initialized.x) return;
+_initialized.x = true;        // ← latched on ENTRY
+if (!settings) return;        // ← transient failure, now permanent
+```
+
+Setting the guard before the checks that can abort turns a temporary failure into
+a permanent one: the function can never be retried, so the feature is dead for the
+session. And because `core-ready does not mean state-ready` is a deliberate
+contract in this app, "state missing during UI init" is the normal first-run
+case, not a rare race.
+
+Measured Oct 2026 on `setupThreeDotsToggle`: the Settings checkbox flips to
+`checked: true`, `settings.showThreeDots` stays `false`, no three-dots button is
+ever built, and the only signal is one console line. **13 of 15** setup functions
+in `settingsUIManager.js` share the shape — and the cookbook template taught it.
+Full survey and the testing requirement: [SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
+
+**Check:** order the latch below every guard that can fire. A missing *element*
+is usually permanent, so latching past it is harmless; a missing *state* is always
+transient. When in doubt, latch later — a redundant re-wire is cheap, a dead
+control is not.
+
+**Testing it needs the transient state, not the happy path.** A test that boots
+with state already ready cannot see this class at all. The failing sequence is
+*setup runs → state not ready → setup runs again → state ready*, and the
+assertion must read the **stored value**, never the checkbox: `checked` is set by
+the browser on click whether or not a handler exists, which is precisely why it
+hid.

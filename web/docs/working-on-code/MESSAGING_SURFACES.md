@@ -219,6 +219,45 @@ If the help window says `"Add your first task!"` and the empty state ALSO says `
 
 ---
 
+### "Confirming an action a global switch makes inert"
+
+A notification is a claim about what just happened. If a second setting decides
+whether the action has any effect, the message has to read that setting — not
+just the thing the user touched.
+
+Enabling a **per-task** reminder said `🔔 Reminder enabled: Every 1 hours` with
+no regard for the global *Enable Reminders* switch. With that switch off,
+`startReminders()` returns immediately on `!customReminders.enabled`, so nothing
+ever fires. Worse, the frequency in the message was interpolated out of
+`customReminders` — the very object whose `enabled: false` made it inert — so the
+notification promised a specific schedule that could not arrive. Reported by a
+user, Oct 2026.
+
+The 🔔 button is reachable in that state on purpose: `updateReminderButtons()`
+deliberately stopped gating its visibility on the global setting (visibility is
+owned by Task Options customization), so "the button is visible" is not evidence
+the feature is on.
+
+Fixed by branching the message, not the behaviour:
+
+| global switch | message | type | action button |
+|---|---|---|---|
+| on | `🔔 Reminder enabled: Every 2 hours` | `success` | Reminder Settings |
+| off | `🔕 Task reminder selected — turn on Enable Reminders to receive notifications` | `info` | **Enable Reminders** |
+
+Three rules this encodes:
+
+- **Drop the specifics you cannot honour.** No frequency is named when none will run.
+- **Match icon and severity to the outcome**, not the click — `🔕`/`info`, not `🔔`/`success`.
+- **Name the control that fixes it**, using the exact words on that control
+  ("Enable Reminders"), and point the existing action button at it.
+
+Keep the user's intent persisted either way. The per-task flag still saves with
+the global switch off, so flipping the switch later just works — refusing to save
+would be a behaviour change dressed up as a copy fix.
+
+---
+
 ## Where Labels Live (Cross-Reference)
 
 | Surface | Label namespace | Examples |

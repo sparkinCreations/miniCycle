@@ -312,17 +312,23 @@ const _initialized = {
     myToggle: false,
 };
 
-// Create setup function with idempotency guard
+// Create setup function with idempotency guard.
+// ⚠️ LATCH LAST — see "The idempotency guard must latch on success" below.
 function setupMyToggle() {
     if (_initialized.myToggle) return;
-    _initialized.myToggle = true;
 
     const toggle = _deps.getElementById?.(DOM_IDS.TOGGLE_MY_FEATURE);
     if (!toggle) return;
 
-    // Read current state
+    // Read current state. If state is not ready this must RETURN WITHOUT
+    // LATCHING, so a later call can succeed — on first run state is
+    // deliberately not ready when the UI initialises.
     const state = _deps.AppState?.get();
-    toggle.checked = state?.settings?.myFeature ?? false;
+    if (!state?.settings) return;
+    toggle.checked = state.settings.myFeature ?? false;
+
+    // Everything that can fail is behind us: only now is setup really done.
+    _initialized.myToggle = true;
 
     // Handle changes
     _deps.safeAddEventListener?.(toggle, 'change', () => {
@@ -359,9 +365,45 @@ wireSubModuleDependencies(deps) {
 }
 ```
 
+### The idempotency guard must latch on success, not on entry
+
+Setting `_initialized.myToggle = true` *before* the early returns turns a
+**transient** failure into a **permanent** one. The guard then short-circuits
+every later call, so the toggle is never wired again for the life of the
+session — it still flips (it is a checkbox), it just persists nothing and
+applies nothing.
+
+This is not hypothetical. `core-ready does not mean state-ready`: on a first
+run `AppState.init()` returns with `data = null` on purpose (see the boot
+section of `CLAUDE.md`), so a setup function that runs during UI init and
+latches before `if (!settings) return` is dead for that session.
+
+Measured Oct 2026 on `setupThreeDotsToggle`: the Settings checkbox flipped to
+`checked: true`, `settings.showThreeDots` stayed `false`, the body class never
+applied, and no three-dots button was ever built — with only
+`❌ State data required for three dots toggle` in the console. A survey of
+`settingsUIManager.js` found **13 of 15** setup functions sharing the shape.
+Tracked in
+[SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
+
+Order the function so that every guard that can fire sits **above** the latch:
+
+```javascript
+if (_initialized.x) return;      // 1. already wired? bail
+if (!element) return;            // 2. nothing to wire (permanent — fine either way)
+if (!state?.settings) return;    // 3. TRANSIENT — must not latch
+_initialized.x = true;           // 4. committed
+// ...attach listeners...
+```
+
+A missing *element* is usually permanent, so latching past it is harmless. A
+missing *state* is always transient. If you cannot tell which a guard is,
+latch after it.
+
 ### Checklist
 
 - [ ] `setupMyToggle()` in `settingsUIManager.js` with idempotency guard
+- [ ] **Guard latches AFTER every early return that could be transient** (state reads)
 - [ ] Added to `_initialized` object in `settingsUIManager.js`
 - [ ] Called from `initAllToggles()` in `settingsUIManager.js`
 - [ ] Toggle ID added to `DOM_IDS` in `constants.js`
@@ -535,8 +577,21 @@ whatever was true when the control was wired.
   that re-runs its wiring on every open (the routine switcher) must call the
   returned `detach` before re-attaching, or it stacks a second set of touch
   listeners. A surface that rebuilds its elements (Quick Actions slots) should
-  *not* hold the detachers — the listeners die with the element, and keeping the
-  functions would retain closures over elements that no longer exist.
+  *not* hold the detachers in a manager-level array — the listeners die with the
+  element, and an array outliving them would retain closures over elements that
+  no longer exist.
+  Parking the detacher on the element itself (`button._longPressHintDetach`, as
+  the task options do) is **not** that mistake: it is collected together with
+  the element it belongs to, it matches the local convention for handlers in
+  `taskButtons.js` (`button._accessibilityKeydownHandler`), and it gives a
+  teardown path without a registry. Call it before re-attaching if the same
+  element can be wired twice.
+- **A row of options is not one call site.** Task options are built by two
+  different functions — `setupButtonAccessibility()` for the nine configured
+  buttons and `createCustomizeButton()` for the `+/-` button, which never passes
+  through the first. Wiring only the obvious one silently leaves the least
+  legible glyph in the row unexplained. Assert coverage across the whole row
+  rather than per button (`tests/taskButtons.tests.js`).
 - **Inside a `showModal()` dialog, z-index does not apply.** The dialog renders
   in the browser's top layer, above everything on the page. The helper handles
   this by re-parenting the hint into the open dialog; if you write your own
@@ -548,6 +603,12 @@ whatever was true when the control was wired.
 **Files:** `modules/utils/longPressHint.js`, `styles/components/long-press-hint.css`,
 `tests/longPressHint.tests.js`, and `tests/automated/probes/long-press-hint.cjs`
 (drives the running app to measure placement and the top-layer parenting).
+
+**Surfaces using it:** routine-switcher action row (`routineSwitcher.js`), Quick
+Actions slots (`quickActionsManager.js`, via `onLongPress` — its bubble carries an
+unpin control), and every task option button (`taskButtons.js`). The task-option
+case is the one where suppression is load-bearing rather than merely polite:
+without it, holding `.delete-btn` to ask its name deletes the task.
 
 ---
 

@@ -692,6 +692,13 @@ export const DEFAULT_LABELS = deepFreeze({
         reminderTasksToComplete: 'You have tasks to complete:',
         reminderBackgroundBody: 'You have unfinished tasks in your routine',
         reminderEnabledWithSettings: 'Reminder enabled: {settings}',
+        // Shown instead of the line above when the task's reminder is turned on
+        // while the global "Enable Reminders" switch is still off. The schedule
+        // must NOT be quoted here: startReminders() returns immediately when
+        // customReminders.enabled is false, so nothing would ever fire and
+        // naming a frequency promises a notification that cannot arrive.
+        reminderSelectedGlobalOff: 'Task reminder selected — turn on Enable Reminders to receive notifications',
+        reminderTurnOnReminders: 'Enable Reminders',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
         reminderOpenSettings:    'Reminder Settings',

@@ -147,6 +147,27 @@ export class TaskOptionsVisibilityController {
             btn.tabIndex = visible ? 0 : -1;
         });
 
+        // Sync the trigger's announced state HERE, not at the call sites.
+        //
+        // aria-expanded used to be set only inside taskEvents.revealTaskButtons,
+        // so every other route left the three-dots button announcing a state it
+        // no longer had: `focusout` hid the options and the trigger still read
+        // expanded="true" (reported Oct 2026 — "controls disappear while their
+        // trigger still reports itself as expanded"), and `arrow-move` set
+        // expanded="true" even though canHandle() rejects that caller and the
+        // options never opened. Syncing after the canHandle gate above makes the
+        // attribute follow the visibility that ACTUALLY happened: a rejected
+        // caller returns early and announces nothing.
+        //
+        // In hover mode there is no three-dots button at all (createThreeDotsButton
+        // only builds it when settings.showThreeDots is on), so this is a no-op
+        // there. That mode having no trigger to announce is a separate, pre-existing
+        // gap — do not paper over it by moving aria-expanded onto the task row.
+        const trigger = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
+        if (trigger) {
+            trigger.setAttribute('aria-expanded', visible ? 'true' : 'false');
+        }
+
         return true;
     }
 
