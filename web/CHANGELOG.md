@@ -1,3 +1,9 @@
+## [2.588] - 2026-10-05
+- docs: persona cards say routines and check-ins, not habits
+- docs: marketing says repeatable process, not habit building
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.587] - 2026-10-05
 - TODO(changelog): uncommitted work shipped in this release — describe it here
 

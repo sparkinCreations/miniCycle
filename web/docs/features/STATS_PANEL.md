@@ -160,7 +160,7 @@ Vocabulary themes are unlocked by global cycle count and applied per-routine. Se
 | Theme | Cycles Required | Description |
 |-------|-----------------|-------------|
 | **Classic** | 0 (default) | Standard tasks & cycles terminology |
-| **Habit Tracker** | 5 cycles | Habits & Streaks |
+| **Habit Tracker** | 5 cycles | Habits & Check-ins |
 | **Fitness** | 25 cycles | Workouts & Sessions |
 | **Scholar** | 50 cycles | Study Goals & Study Sessions |
 | **Cleaning** | 75 cycles | Chores & Cleaning Rounds |

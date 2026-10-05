@@ -224,7 +224,7 @@ for match in re.findall(r'<script>(.*?)</script>', content, re.DOTALL):
 - Recurring tasks
 - Due dates and reminders
 - Theme customizer / unlockable themes
-- Gamification (achievements, games, streaks)
+- Gamification (achievements, games, milestone rewards)
 - Import/export (.mcyc files)
 - History tracking
 - Advanced settings

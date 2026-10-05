@@ -534,10 +534,14 @@ is vocab-themable and **no theme's value contains "cycle"**:
 | theme | `cycleActionLabel` | literal-word assertion |
 |---|---|---|
 | classic | `Cycle` | ✅ |
-| habit-tracker | `Complete\nStreak` | ❌ |
+| habit-tracker | `Complete\nCheck-in` | ❌ |
 | fitness | `Complete\nWorkout` | ❌ |
 | scholar | `Complete\nSession` | ❌ |
 | cleaning | `Complete\nSweep` | ❌ |
+
+(habit-tracker's value was `Complete\nStreak` when this was written and is
+`Complete\nCheck-in` now — a themable label's *text* changes, which is exactly
+why an assertion must name its key rather than its wording.)
 
 Two accidents kept it hidden. `getActiveTheme()` falls back to
 `THEME_DEFINITIONS.classic` rather than null, and `classic` happens to leave the

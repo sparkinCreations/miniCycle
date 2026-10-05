@@ -98,7 +98,7 @@ A **cycle** is a named collection of tasks that represent a routine or process. 
 When all tasks in a cycle are checked off:
 - ✅ **Cycle count increments** (tracks how many times you've completed it)
 - 🔄 **Tasks reset to unchecked** (ready for next time)
-- 📊 **Stats update** (completion rate, streaks)
+- 📊 **Stats update** (completion rate, cycle count)
 - 🎉 **Celebration animation** (optional)
 
 This is the core "cycling" concept that makes miniCycle unique!

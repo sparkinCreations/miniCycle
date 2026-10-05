@@ -68,18 +68,25 @@ export const THEME_DEFINITIONS = {
     'habit-tracker': {
         id:          'habit-tracker',
         name:        'Habit Tracker',
-        description: 'Build streaks, track habits',
+        description: 'Track habits, complete check-ins',
         unlockAt:    { cycles: 5 },
         labels: {
             'noun.task':                   { one: 'habit',  other: 'habits'  },
-            'noun.cycle':                  { one: 'streak', other: 'streaks' },
+            // NOT 'streak'. Every other theme names the cycle after ONE completed
+            // session of its activity (workout, study session, clean sweep), and a
+            // cycle really is that: one run of the whole routine. A streak is a run
+            // of CONSECUTIVE sessions, which this app does not track — cycleCount
+            // counts completions, so finishing three times in one day scores three
+            // and skipping a week costs nothing. 'Streak' promised day-over-day
+            // semantics that do not exist, and made the reset read as a loss.
+            'noun.cycle':                  { one: 'check-in', other: 'check-ins' },
             'action.addTask':              'Add habit',
-            'action.completeCycle':        'Complete Streak',
+            'action.completeCycle':        'Complete Check-in',
             'action.clearCompletedTasks':  'Clear Habits',
-            'focusMode.cycleActionLabel':  'Complete\nStreak',
+            'focusMode.cycleActionLabel':  'Complete\nCheck-in',
             'focusMode.clearActionLabel':  'Clear\nHabits',
-            'notify.cycleComplete':        'Day completed! Streak extended!',
-            'help.cycleComplete':          'Streak extended! Habits reset.',
+            'notify.cycleComplete':        'Check-in complete!',
+            'help.cycleComplete':          'Check-in complete! Habits reset.',
             'nav.appSubtitle':             'HABIT TRACKER',
             'nav.tabTask':                 'Habit',
             'focusTask.completeTask':      'Complete habit',
@@ -95,22 +102,22 @@ export const THEME_DEFINITIONS = {
             'empty.noTasksHintSwipe':      'Swipe to Routine to add your first habit',
             'empty.firstStepHint':         'Add the first step of your routine — press the + button to begin',
             'empty.firstStepHintVisible':  'Add the first step of your routine — type it in the bar above to begin',
-            'history.cycleCompleted':      'Streak Extended',
+            'history.cycleCompleted':      'Check-in Completed',
             'history.tasksCleared':        'Habits Cleared',
             'history.clearedTasks':        'Cleared Habits',
-            'history.cycleReset':          'Streak Reset',
+            'history.cycleReset':          'Check-in Reset',
             'history.taskAdded':           'Habit Added',
             'history.taskDeleted':         'Habit Deleted',
             'history.taskEdited':          'Habit Edited',
-            'history.noHistoryHint':       'Complete streaks or clear habits to see history here',
+            'history.noHistoryHint':       'Complete check-ins or clear habits to see history here',
             'history.noClearedHint':       'Habits you clear in To-Do mode will appear here',
-            'achievement.statCycles':      'Streaks',
+            'achievement.statCycles':      'Check-ins',
             'achievement.statCleared':     'Cleared Habits',
-            'achievement.cyclesNeeded':    '{count} streaks',
+            'achievement.cyclesNeeded':    '{count} check-ins',
             'achievement.tasksNeeded':     '{count} cleared habits',
-            'achievement.threshold':       '{cycles} streaks or {tasks} cleared habits',
-            'achievement.badgeTooltip':    '{name}: {cycles} streaks OR {tasks} cleared habits',
-            'achievement.description':     'Complete {cycles} streaks or {tasks} cleared habits',
+            'achievement.threshold':       '{cycles} check-ins or {tasks} cleared habits',
+            'achievement.badgeTooltip':    '{name}: {cycles} check-ins OR {tasks} cleared habits',
+            'achievement.description':     'Complete {cycles} check-ins or {tasks} cleared habits',
         },
         icons: {
             cycleComplete: '👍',
@@ -163,8 +170,8 @@ export const THEME_DEFINITIONS = {
             { level: 'low',    hex: '#1a5c2e', labelKey: 'notify.priorityLow' },
         ],
         preview: {
-            tagline:      'Build streaks, track habits',
-            sampleLabels: ['Habit', 'Streak', 'Complete Day'],
+            tagline:      'Track habits, complete check-ins',
+            sampleLabels: ['Habit', 'Check-in', 'Complete Check-in'],
             sampleIcons:  ['🔥', '👍']
         }
     },

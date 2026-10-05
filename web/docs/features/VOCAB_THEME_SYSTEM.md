@@ -1,6 +1,11 @@
 # Vocabulary Theme System
 
-The vocabulary theme system lets each routine use different terminology — "habit" instead of "task", "streak" instead of "cycle", and so on — without changing any app logic. Labels come from the active theme instead of the defaults.
+The vocabulary theme system lets each routine use different terminology — "habit" instead of "task", "check-in" instead of "cycle", and so on — without changing any app logic. Labels come from the active theme instead of the defaults.
+
+> **Pick a cycle noun that names one completed run** (workout, study session,
+> clean sweep, check-in). habit-tracker used "streak" until Oct 2026 — a streak is
+> a run of *consecutive* runs, which nothing in the app tracks, so the word
+> promised day-over-day semantics that did not exist.
 
 ---
 
@@ -40,11 +45,11 @@ Each theme lives in `THEME_DEFINITIONS` in `themes.js`:
         'action.completeCycle':        'Complete Habits',
         'action.clearCompletedTasks':  'Clear Habits',
         'noun.task':                   { one: 'habit', other: 'habits' },
-        'noun.cycle':                  { one: 'streak', other: 'streaks' },
+        'noun.cycle':                  { one: 'check-in', other: 'check-ins' },
         // Focus-mode action button (bottom-right). Two-line label —
         // verb on top, themed noun below — rendered via CSS attr().
         // Embed `\n` in the string for the line break.
-        'focusMode.cycleActionLabel':  'Complete\nStreak',
+        'focusMode.cycleActionLabel':  'Complete\nCheck-in',
         'focusMode.clearActionLabel':  'Clear\nHabits',
     },
     icons: { cycleComplete: '⚡', celebrate: '🔥' },

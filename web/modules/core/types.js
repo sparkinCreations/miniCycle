@@ -267,9 +267,11 @@
  *  - `achievementsUnlocked` was superseded by the top-level `achievements`
  *    object ({ unlocked: [], seen: {} }), which achievementsManager owns.
  *  - `streaks` was never implemented; its typedef was removed here too, since
- *    it typed nothing. The word appears throughout the habit-tracker vocab
- *    theme, which renames "cycle" to "streak" in UI labels — presentation,
- *    not state.
+ *    it typed nothing. The habit-tracker vocab theme used to rename "cycle" to
+ *    "streak" in UI labels, which made that absence read as a bug: a streak
+ *    implies consecutive days, and nothing counts those. The theme now says
+ *    "check-in" — one completed run of the routine, which is what cycleCount
+ *    actually holds.
  */
 
 /**

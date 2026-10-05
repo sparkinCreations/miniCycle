@@ -21,14 +21,21 @@ miniCycle has **three independent theming layers**. They interact but each can b
 
 ## Layer 1: Vocabulary Themes
 
-Vocabulary themes let each routine use its own terminology. "Add task" becomes "Add habit", "Cycle" becomes "Streak", and so on — without touching any app logic.
+Vocabulary themes let each routine use its own terminology. "Add task" becomes "Add habit", "Cycle" becomes "Check-in", and so on — without touching any app logic.
+
+> A theme's cycle noun must name **one completed run** of the activity — workout,
+> study session, clean sweep, check-in. habit-tracker said "streak" until Oct 2026,
+> which named a run of *consecutive* runs instead, and nothing in the app counts
+> those (see `streaks` in [DATA_SCHEMA_GUIDE.md](../reference/DATA_SCHEMA_GUIDE.md)).
+> It also made the cycle reset read as losing progress at the exact moment
+> `cycleCount` went up.
 
 ### The 5 Themes
 
 | ID | Name | Unlock Threshold | Core Concept |
 |----|------|-----------------|--------------|
 | `classic` | Classic | 0 cycles (default) | Tasks & Cycles |
-| `habit-tracker` | Habit Tracker | 5 cycles | Habits & Streaks |
+| `habit-tracker` | Habit Tracker | 5 cycles | Habits & Check-ins |
 | `fitness` | Fitness | 25 cycles | Workouts & Sessions |
 | `scholar` | Scholar | 50 cycles | Study Goals & Study Sessions |
 | `cleaning` | Cleaning | 75 cycles | Chores & Cleaning Rounds |
@@ -76,13 +83,13 @@ const THEME_DEFINITIONS = {
   'habit-tracker': {
     id: 'habit-tracker',
     name: 'Habit Tracker',
-    description: 'Build streaks, track habits',
+    description: 'Track habits, complete check-ins',
     unlockAt: { cycles: 5 },        // null = always available (Classic only)
     labels: {
       // Overrides for specific label keys (nouns keep { one, other } shape)
       'action.addTask':    'Add habit',
       'noun.task':         { one: 'habit',  other: 'habits'  },
-      'noun.cycle':        { one: 'streak', other: 'streaks' },
+      'noun.cycle':        { one: 'check-in', other: 'check-ins' },
       // ... other overrides
     },
     colorPreset: {

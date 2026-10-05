@@ -171,7 +171,7 @@
         //    achievementsManager reads and writes. See SCHEMA_2_6.md.
         //  • `streaks` — never implemented. types.js declares a `StreakData`
         //    typedef, but no code path writes one. (Searching for "streaks" mostly
-        //    hits the habit-tracker VOCAB THEME, which renames "cycle" to "streak"
+        //    hit the habit-tracker VOCAB THEME, which renamed "cycle" to "streak"
         //    in UI labels — unrelated to state.)
     },
 
