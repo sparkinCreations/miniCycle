@@ -30,14 +30,14 @@
 
 ## What is miniCycle?
 
-miniCycle is a **routine-building task manager** that helps you establish consistent habits and processes. Unlike traditional to-do apps that focus on one-time tasks, miniCycle is designed for **repeating routines** that cycle.
+miniCycle is a **routine-building task manager** for multi-step processes you run more than once. Unlike traditional to-do apps that focus on one-time tasks, miniCycle is designed for **repeating routines** that cycle.
 
 ### Key Differences from To-Do Apps
 
 | Traditional To-Do App | miniCycle |
 |----------------------|-----------|
 | Tasks deleted when done | Tasks reset and repeat |
-| Focus on one-time actions | Focus on routines and habits |
+| Focus on one-time actions | Focus on routines you repeat |
 | Linear progress | Cyclical progress |
 | Task list empties | Task list persists |
 
@@ -45,7 +45,7 @@ miniCycle is a **routine-building task manager** that helps you establish consis
 
 - **Routine-oriented people** who repeat the same tasks regularly
 - **Process followers** who have checklists or procedures
-- **Habit builders** establishing new routines
+- **Anyone starting a new routine** who wants the whole sequence to become automatic
 - **Teams** with recurring workflows
 - Anyone who finds themselves recreating the same to-do list over and over
 
@@ -262,14 +262,14 @@ miniCycle has **three operational modes** to match different workflows. **Mode c
 
 **How it works:**
 - Complete all tasks → cycle **automatically resets**
-- Best for: Daily routines, habits, recurring checklists
+- Best for: Daily routines, shift checklists, recurring procedures
 
 **Example:** Morning routine automatically resets every day when completed.
 
 **Pros:**
 - ✅ Hands-free operation
 - ✅ Encourages consistency
-- ✅ Great for habits
+- ✅ Great for routines you run on a schedule
 
 **Cons:**
 - ⚠️ Can't review completed state (resets immediately)
@@ -730,13 +730,13 @@ Share your themes or use themes from others:
 
 ---
 
-### 📊 For Habit Building
+### 📊 For Making a New Routine Stick
 
-1. **Start with one habit** - Don't overwhelm yourself
-2. **Make it easy** - Lower the barrier (e.g., "Read 1 page")
-3. **Track streaks** - Use stats panel to see progress
+1. **Start with one routine** - Don't overwhelm yourself
+2. **Keep the first version short** - Fewer steps means you actually reach the end and complete the cycle
+3. **Watch your cycle count** - It counts completed *runs* of the whole routine, not day streaks; missing a day costs you nothing
 4. **Celebrate wins** - Review cycle count regularly
-5. **Adjust as needed** - Habits take time to stick
+5. **Add steps once the sequence is automatic** - Grow the routine, don't start big
 
 ---
 

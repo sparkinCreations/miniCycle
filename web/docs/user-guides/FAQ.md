@@ -23,7 +23,7 @@
 
 ### What is miniCycle?
 
-miniCycle is a **privacy-focused routine manager** designed for repeating tasks and habits. Unlike traditional to-do apps where tasks are deleted when complete, miniCycle organizes your tasks into **routines** that **cycle** - they reset and repeat when complete, helping you build consistent habits.
+miniCycle is a **privacy-focused routine manager** designed for multi-step processes you repeat. Unlike traditional to-do apps where tasks are deleted when complete, miniCycle organizes your tasks into **routines** that **cycle** - they reset and repeat when complete, so the same steps come out the same way every time.
 
 ---
 
@@ -33,7 +33,7 @@ miniCycle is a **privacy-focused routine manager** designed for repeating tasks 
 |---------|----------------------|-----------|
 | **Purpose** | One-time tasks | Repeating routines |
 | **Completion** | Tasks deleted | Tasks reset and repeat |
-| **Focus** | Getting things done once | Building consistent habits |
+| **Focus** | Getting things done once | Running the same process reliably |
 | **Progress** | Linear (list empties) | Cyclical (cycle count increases) |
 
 ---
@@ -49,7 +49,7 @@ Yes! miniCycle is free and open-source.
 miniCycle is perfect for:
 - **Routine-oriented people** who repeat the same tasks regularly
 - **Process followers** with checklists or procedures
-- **Habit builders** establishing new routines
+- **Anyone starting a new routine** who wants the whole sequence to become automatic
 - **Teams** with recurring workflows
 - Anyone tired of recreating the same to-do list repeatedly
 

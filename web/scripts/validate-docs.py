@@ -413,9 +413,47 @@ def check_public_surfaces(list_mode):
     # MODE (taskButtons.js): 'Clear on Reset' in the cycle modes, 'Marked for
     # Clearing' in To-Do Mode. The manual invented a third name and kept it for
     # months — a user searching the UI for what the manual called it found nothing.
+    #
+    # The habit-* phrases are POSITIONING claims, not the word "habit". The
+    # product page states the category explicitly — "To-do lists are for one-off
+    # tasks. Habit trackers are for streaks. miniCycle is for routines that never
+    # miss a step." — and the README says "not a daily habit tracker". But
+    # learn_more.html's own meta description and og:description shipped "helps
+    # you build consistent habits", so the Google snippet and the social share
+    # card contradicted the product page (found Oct 2026).
+    #
+    # Only the CLAIM shapes are banned, never the bare word: "Habit Tracker" is a
+    # real unlockable vocabulary theme, the contrast line above is deliberate, and
+    # "health habits you're building" describes the USER's domain rather than the
+    # product's category. Listing phrases keeps all three legitimate.
     forbidden = [('Focus Mode', 'Focus View'),
                  ('Marked for Removal', 'Clear on Reset / Marked for Clearing'),
-                 ('marked for removal', 'clear on reset / marked for clearing')]
+                 ('marked for removal', 'clear on reset / marked for clearing'),
+                 ('build consistent habits', 'a process you repeat / a routine that resets'),
+                 ('building consistent habits', 'repeating a process / running a routine again'),
+                 ('build habits', 'repeat a process'),
+                 ('building habits', 'repeating a process'),
+                 ('habit formation', 'repeatable process'),
+                 ('Habit formation', 'Repeatable process'),
+                 ('recurring habits', 'processes you repeat'),
+                 ('consistent habits', 'a process that comes out the same way every time'),
+                 ('Habit Building', 'Making a New Routine Stick'),
+                 ('habit building', 'making a new routine stick'),
+                 ('Habit builders', 'Anyone starting a new routine'),
+                 ('habit builders', 'anyone starting a new routine'),
+                 ('routines and habits', 'routines you repeat'),
+                 ('tasks and habits', 'multi-step processes you repeat'),
+                 # "habits" listed as a PEER of routines, or as a thing the app is
+                 # good at — both assert the category product.html rejects.
+                 ('routines, habits', 'routines, shift checklists, recurring procedures'),
+                 ('Great for habits', 'Great for routines you run on a schedule')]
+    # pages/ + legal/ are the marketing and manual surfaces. docs/user-guides/ is
+    # added because it is published on the docs site and carries the same
+    # positioning text — FAQ.md, QUICK_REFERENCE.md and USER_GUIDE.md all shipped
+    # "Building consistent habits" / "Habit formation" / a "For Habit Building"
+    # section while product.html defined the product AGAINST habit trackers
+    # (Oct 2026). The rest of docs/ is developer-facing and deliberately NOT
+    # scanned: it discusses competitors and the habit-tracker theme by name.
     surface_files = []
     for d in ('pages', 'legal'):
         droot = os.path.join(WEB, d)
@@ -423,6 +461,10 @@ def check_public_surfaces(list_mode):
             for base, _dirs, files in os.walk(droot):
                 surface_files += [os.path.join(base, f) for f in files
                                   if f.endswith('.html')]
+    guides = os.path.join(WEB, 'docs', 'user-guides')
+    if os.path.isdir(guides):
+        surface_files += [os.path.join(guides, f) for f in os.listdir(guides)
+                          if f.endswith('.md')]
     term_hits = 0
     for f in surface_files:
         text = open(f, encoding='utf-8', errors='replace').read()

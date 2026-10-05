@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
 |------------|-----------|
 | Tasks get deleted when completed | Tasks **reset** when completed |
 | Lists disappear over time | Lists **persist** for routines |
-| One-time usage | **Habit formation** through repetition |
+| One-time usage | **A repeatable process** — the same steps, every run |
 
 **Example:**
 ```javascript
@@ -802,7 +802,7 @@ window.exportDebugData()                 // Debug package
 
 ## 📖 Key Concepts Summary
 
-1. **Task Cycling** - Tasks reset, don't delete (habit formation)
+1. **Task Cycling** - Tasks reset, don't delete (a repeatable process, not a streak)
 2. **AppState** - Centralized state with 600ms debounced saves
 3. **Recurring Tasks** - Template-based, checked every 15s, ONE task per catch-up (cycle-based, not project-based)
 4. **Undo/Redo** - State snapshots with max 50 history
