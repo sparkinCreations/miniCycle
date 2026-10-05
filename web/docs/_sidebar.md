@@ -150,7 +150,7 @@
   * [Lite ↔ Full: .mcyc Import + Adopt Lite Data](future-work/LITE_MCYC_IMPORT_AND_ADOPT_PLAN.md)
   * [Module Deferral Audit](future-work/MODULE_DEFERRAL_AUDIT.md)
   * [Prompt Modal Theme Token Gap](future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md)
-  * [Settings Toggle Latch Gap](future-work/SETTINGS_TOGGLE_LATCH_GAP.md)
+  * [Settings Toggle Latch Gap ✅ closed](future-work/SETTINGS_TOGGLE_LATCH_GAP.md)
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
   * [Schema 2.6 Migration](future-work/SCHEMA_2_6_PLAN.md)
   * [Single-Source Consolidation](future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md)

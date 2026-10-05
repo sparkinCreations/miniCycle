@@ -381,10 +381,18 @@ latches before `if (!settings) return` is dead for that session.
 Measured Oct 2026 on `setupThreeDotsToggle`: the Settings checkbox flipped to
 `checked: true`, `settings.showThreeDots` stayed `false`, the body class never
 applied, and no three-dots button was ever built — with only
-`❌ State data required for three dots toggle` in the console. A survey of
-`settingsUIManager.js` found **13 of 15** setup functions sharing the shape.
-Tracked in
+`❌ State data required for three dots toggle` in the console. Fixed v2.587;
+write-up in
 [SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
+
+**Latching correctly is only half of it — something has to retry.**
+`initAllToggles()` is called **once**, from `settingsManager.init()`, gated on
+`waitForCore()`. If your setup can bail on missing state, the unlatched flag buys
+nothing unless a later call happens. `openSettings()` now re-runs
+`initAllToggles()` for exactly this reason: the user cannot open Settings before
+state exists, and every setup's own guard makes the repeat a no-op. If your
+control lives outside the Settings modal, identify its equivalent retry point
+before you rely on late latching.
 
 Order the function so that every guard that can fire sits **above** the latch:
 
@@ -404,6 +412,7 @@ latch after it.
 
 - [ ] `setupMyToggle()` in `settingsUIManager.js` with idempotency guard
 - [ ] **Guard latches AFTER every early return that could be transient** (state reads)
+- [ ] **A retry path exists** — something calls the setup again once state is ready
 - [ ] Added to `_initialized` object in `settingsUIManager.js`
 - [ ] Called from `initAllToggles()` in `settingsUIManager.js`
 - [ ] Toggle ID added to `DOM_IDS` in `constants.js`

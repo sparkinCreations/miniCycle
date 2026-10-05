@@ -660,9 +660,25 @@ case, not a rare race.
 
 Measured Oct 2026 on `setupThreeDotsToggle`: the Settings checkbox flips to
 `checked: true`, `settings.showThreeDots` stays `false`, no three-dots button is
-ever built, and the only signal is one console line. **13 of 15** setup functions
-in `settingsUIManager.js` share the shape — and the cookbook template taught it.
-Full survey and the testing requirement: [SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
+ever built, and the only signal is one console line. The cookbook template taught
+the shape. Fixed v2.587.
+
+**Two corrections worth carrying, both from getting this wrong first:**
+
+**A latch fix alone may do nothing.** Removing the latch only helps if something
+*retries*. Here `initAllToggles()` ran exactly once, so unlatching changed
+nothing until `openSettings()` was made to re-run it. Measured all four
+combinations — each fix alone still FAILED, only both together passed. When you
+find a latched-too-early guard, find the retry too, or you have fixed half a bug
+and the test for the first half will pass.
+
+**The scan over-reported 13×.** The first survey said 13 of 15 functions; the
+answer was 1. Successive refinements removed false positives: `if (!element)
+return` (permanent, harmless), `if (!state.settings)` *inside handler bodies*
+(runs on interaction, cannot abort wiring), and guards misattributed across
+`export async function` boundaries. A shape-matching scan yields **candidates,
+not findings** — treat the count as an upper bound until each one is executed.
+Full write-up: [SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
 
 **Check:** order the latch below every guard that can fire. A missing *element*
 is usually permanent, so latching past it is harmless; a missing *state* is always

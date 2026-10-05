@@ -3285,6 +3285,79 @@ async function journeyResetRequiresBackup(browser, baseURL) {
     return { name: 'the reset fails closed when no backup was saved', failures };
 }
 
+// ── Journey: a settings toggle works on the session that created the data ───
+//
+// settingsManager.init() calls initAllToggles() ONCE, gated on
+// appInit.waitForCore(). Core-ready is not state-ready: on a first run AppState
+// deliberately holds `data = null` until the choice screen persists a routine,
+// so any setup needing settings bails — and nothing called it again.
+//
+// Two separate defects produced one symptom, and fixing either alone changed
+// nothing (measured Oct 2026):
+//   1. setupThreeDotsToggle latched its idempotency flag ABOVE the state guard,
+//      so a retry could never do anything;
+//   2. nothing retried, so removing the latch alone still left it dead.
+//
+// Symptom: the checkbox flipped (the browser sets `checked` whether or not a
+// handler exists), settings.showThreeDots stayed false, the body class never
+// applied, and zero three-dots buttons rendered — for the whole session.
+//
+// This asserts the STORED value and the rendered effect, never `checked`.
+// A unit test cannot cover it: the failing condition is specifically
+// "setup ran during boot's state-not-ready window, then the user opened
+// Settings", which needs the real boot sequence.
+async function journeyFirstRunSettingToggle(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+
+    try {
+        await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+        await page.waitForTimeout(1200);
+
+        const before = await page.evaluate(() => ({
+            stored: (() => { try { return JSON.parse(localStorage.getItem('miniCycleData')).settings.showThreeDots; } catch (e) { return 'unreadable'; } })(),
+            triggers: document.querySelectorAll('#taskList .task .three-dots-btn').length
+        }));
+        record('three-dots starts off on a fresh routine', before.stored !== true && before.triggers === 0,
+            `fixture already had three-dots on (${JSON.stringify(before)}), so flipping it proves nothing`);
+
+        await openMenu(page).catch(() => {});
+        await clickEl(page, '#open-settings');
+        await page.waitForTimeout(1500);
+
+        const present = await page.evaluate(() => !!document.getElementById('toggle-three-dots'));
+        record('the Show Three Dots toggle is in the Settings modal', present,
+            '#toggle-three-dots not found, so this journey could not exercise it');
+
+        await page.evaluate(() => {
+            const t = document.getElementById('toggle-three-dots');
+            if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.waitForTimeout(2500);
+
+        const after = await page.evaluate(() => ({
+            stored: (() => { try { return JSON.parse(localStorage.getItem('miniCycleData')).settings.showThreeDots; } catch (e) { return 'unreadable'; } })(),
+            bodyClass: document.body.classList.contains('show-three-dots-enabled'),
+            triggers: document.querySelectorAll('#taskList .task .three-dots-btn').length
+        }));
+
+        record('flipping it PERSISTS (not just a checked box)', after.stored === true,
+            `settings.showThreeDots is ${JSON.stringify(after.stored)} after the change event — the toggle's `
+            + 'handler was never attached, so the control is dead for this session');
+        record('flipping it APPLIES (body class)', after.bodyClass === true,
+            'showThreeDots persisted but body.show-three-dots-enabled was not applied');
+        record('flipping it RENDERS (three-dots buttons appear)', after.triggers > 0,
+            `no .three-dots-btn rendered after enabling it (${after.triggers}) — the task list never re-rendered`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+
+    return { name: 'a settings toggle works on the session that created the data', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -3310,6 +3383,7 @@ const JOURNEYS = [
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
+    { name: 'a settings toggle works on the session that created the data', fn: journeyFirstRunSettingToggle },
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
     { name: 'quick actions are writable during a first-run session', fn: journeyFirstRunQuickActions },
     { name: 'imported delete-settings reconcile and KEEP is honoured', fn: journeyImportedKeepOnReset },

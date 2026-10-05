@@ -1,131 +1,110 @@
-# Settings Setup Functions Latch Their Idempotency Guard Before They Succeed
+# The Show-Three-Dots Toggle Was Dead on the Session That Created the Data
 
-> **Status:** 🔴 OPEN — one instance measured, 12 more match the shape, none fixed ·
-> **Severity:** Medium-High — a silently dead control for the whole session, user-facing ·
+> **Status:** ✅ FIXED v2.587 — two defects, both required ·
+> **Severity:** was Medium-High — a silently dead control for a whole session ·
 > **Found:** Oct 2026, while trying to enable three-dots mode for an accessibility test.
 >
-> Not found by a test, a gate, or a review. Found because a toggle refused to
-> work and the reason was two lines apart in the same function.
+> Kept rather than deleted because the *diagnosis* is the reusable part: the first
+> scan said 13 functions were affected, the answer was 1, and the first fix was
+> provably insufficient. Both mistakes are the interesting content.
 
 ---
 
-## The bug
+## What was broken
 
-Every setup function in [`settingsUIManager.js`](../../modules/ui/settingsUIManager.js)
-opens with an idempotency guard. The guard is **latched before the checks that
-can abort the setup**:
+`settingsManager.init()` calls `initAllToggles()` **exactly once**, gated on
+`appInit.waitForCore()`. Core-ready is not state-ready — on a first run
+`AppState` deliberately holds `data = null` until the choice screen persists a
+routine — so `setupThreeDotsToggle()` hit its `if (!settings) return` and bailed.
 
-```javascript
-export function setupThreeDotsToggle() {
-    if (_initialized.threeDotsToggle) return;
-    _initialized.threeDotsToggle = true;        // ← latched here
+Two independent defects then combined:
 
-    const threeDotsToggle = document.getElementById(DOM_IDS.TOGGLE_THREE_DOTS);
-    if (!threeDotsToggle) return;
+1. **The idempotency flag latched above the state guard.** `_initialized.threeDotsToggle = true`
+   ran on entry, so the transient miss became permanent: every later call
+   short-circuited and the change handler was never attached.
+2. **Nothing retried.** `initAllToggles()` ran once, so even with the latch
+   corrected there was no second call to benefit from it.
 
-    const settings = currentSettings();
-    if (!settings) {
-        console.error('State data required for three dots toggle');
-        return;                                  // ← bails, already latched
-    }
-    // ...the change handler is attached BELOW this point...
-}
-```
+Measured on a first-run session: the checkbox flipped to `checked: true`,
+`settings.showThreeDots` stayed `false`, `body.show-three-dots-enabled` never
+applied, zero `.three-dots-btn` rendered. The only signal was one console line.
 
-A missing *element* is usually permanent, so latching past it is harmless. A
-missing *state* is **transient** — and latching past it converts a temporary
-failure into a permanent one. The guard short-circuits every later call, so the
-handler is never attached for the life of the session.
-
-## Why state is reliably missing at that moment
-
-This is not a rare race. `CLAUDE.md` documents it as a contract:
-
-> **core-ready does not mean state-ready.** On a first run `AppState.init()`
-> deliberately returns with `data = null` and `isInitialized = false` … State
-> becomes ready when the first-run choice screen persists a routine.
-
-So on a first run the settings UI initialises while state is deliberately empty,
-every state-dependent setup bails, and all of them latch on the way out.
-
-## Measured
-
-`setupThreeDotsToggle`, first-run boot, Chromium:
-
-| | |
-|---|---|
-| checkbox after click | `checked: true` |
-| `settings.showThreeDots` in storage | **`false`** |
-| `body.show-three-dots-enabled` | **absent** |
-| `.three-dots-btn` elements rendered | **0** |
-| console | `❌ State data required for three dots toggle` |
-
-The control appears to work — it is a checkbox, so it flips — and persists
-nothing, applies nothing. The only signal is one console line nobody is reading.
-
-## Scope
-
-A survey of `settingsUIManager.js` found **13 of 15** setup functions latching
-before a guard that bails on transient state:
-
-`setupSettingsMenu` · `setupMoveArrowsToggle` · `setupThreeDotsToggle` ·
-`setupCompletedDropdownToggle` · `setupHelpWindowToggle` ·
-`setupQuickActionsToggle` · `setupResetRecurringButton` ·
-`setupResetAchievementProgressButton` · `setupRetakeGuidedTourButton` ·
-`setupReducedMotionToggle` · `setupHighContrastToggle` · `setupFontSizeSelect` ·
-`setupNotificationsToggle`
-
-The other two (`setupDebugModeToggle`, `setupClearUndoHistoryButton`) bail only
-on a missing element.
-
-⚠️ **Only `setupThreeDotsToggle` has been reproduced.** The other 12 share the
-shape; each needs its own check, because whether it actually bites depends on
-whether that particular function runs before state is ready. Treat 13 as the
-suspect list, not the confirmed count.
+**The checkbox flipping is why this hid.** The browser sets `checked` on click
+whether or not a handler exists, so the control looked like it worked.
 
 ## The fix
 
-Order every function so the latch sits below everything that can abort:
+**Latch last** in `setupThreeDotsToggle()` — every guard that can abort now sits
+above it. A missing *element* is effectively permanent so latching past it would
+be harmless; a missing *state* never is, and latching last covers both for the
+price of a redundant re-wire attempt.
 
-```javascript
-if (_initialized.x) return;      // already wired
-if (!element) return;            // nothing to wire (permanent)
-if (!state?.settings) return;    // TRANSIENT — must not latch
-_initialized.x = true;           // committed
-// ...attach listeners...
-```
+**Retry on open** — `openSettings()` calls `initAllToggles()`. The user cannot
+reach Settings before state exists, every setup carries its own guard (so it is a
+no-op for anything already wired), and the handler already re-ran
+`loadSettingsCollapsedStates()` per open for the same reason.
 
-If a guard's permanence is unclear, latch after it. Latching late can cost a
-redundant re-wire; latching early costs the feature.
+`setupSettingsMenu()` had already solved this for itself, with the comment
+*"Only lock setup after the live modal path exists so a later retry can recover."*
+The pattern was in the file; it just had not been applied to its neighbours.
 
-The template in
-[HOW_TO_ADD_COOKBOOK.md § New Settings Toggle](../working-on-code/HOW_TO_ADD_COOKBOOK.md)
-**taught this shape** and was corrected in the same pass that filed this doc —
-anything written against the old template will have inherited it.
+⚠️ **Do not instead make `init()` await `AppState.isReady()`.** CLAUDE.md records
+that measured deadlock: state only becomes ready once something writes, and every
+writer is a UI manager waiting on that gate.
 
-## Testing it
+## Proof that both were needed
 
-The hard part is not the fix, it is proving the fix. A test that boots with state
-already ready cannot see this bug at all: the guard latches *after* a successful
-setup and everything works. The failing condition is specifically
-**setup runs → state not ready → setup runs again → state ready**.
+Each fix alone leaves the bug intact. Measured by reverting them independently
+against the journey test:
 
-So a regression test has to:
+| latch moved late | retry on open | result |
+|---|---|---|
+| ✗ | ✗ | FAIL |
+| ✓ | ✗ | FAIL — the retry is the only thing that can use the unlatched flag |
+| ✗ | ✓ | FAIL — the retry returns immediately on the latched flag |
+| ✓ | ✓ | **PASS** |
 
-1. boot to a state-not-ready point (first run, before a routine is persisted);
-2. let the settings UI initialise and bail;
-3. make state ready;
-4. re-run `initAllToggles()`;
-5. assert the control now **persists** — not that it looks checked.
+A fix that passed only the first cell would have read as complete.
 
-Assert the stored value, never the checkbox. `checked` is set by the browser on
-click whether or not a handler exists, which is exactly why this hid.
+## The scan was wrong three times — this is the transferable part
+
+The first survey reported **13 of 15** setup functions affected. The real answer
+is **1**. Three successive refinements removed false positives:
+
+| attempt | reported | why it was wrong |
+|---|---|---|
+| regex: `_initialized` set before any `return` | 13 | counted `if (!element) return` — permanent, harmless to latch past |
+| + classify the guard as state vs element | 11 | matched `if (!state.settings) state.settings = {}` **inside handler bodies** — those run later, on interaction, and cannot abort wiring |
+| + require 4-space (top-level) indentation | 2 | function extents split only on `export function`, so `export async function syncCurrentSettingsToStorage`'s guard was attributed to the setup above it |
+| + split on any top-level function | **1** | matches the one function actually measured failing |
+
+Every error inflated the count. A shape-matching scan over a large file produces
+**candidates, not findings** — the number is an upper bound until each one is
+executed. Writing "13 of 15" into three documents before verifying was the actual
+mistake here, and the same class of error as the rest of this list: trusting a
+signal that could not distinguish the thing it was looking for from something
+that merely resembled it.
+
+## Regression coverage
+
+- `tests/settingsUIManager.tests.js` — the exact sequence (*setup with state
+  missing → state becomes ready → setup again*), asserting the **stored value**,
+  never `checked`. Plus a guard that a second call after a *successful* wire
+  still attaches exactly one listener, so latching late did not become latching
+  never.
+- `tests/automated/run-journey-tests.cjs` — *"a settings toggle works on the
+  session that created the data"*, driving the real boot and asserting all three
+  layers: persisted, body class applied, three-dots buttons rendered.
+
+A unit test alone cannot cover this: the failing condition requires boot's
+state-not-ready window followed by a real Settings open.
 
 ## Related
 
-- [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) — the fault-line this
-  belongs to: a guard that swallows a failure instead of surfacing it.
-- `validate:chains` gates the sibling shape (`?.` on a `required()` dep). There
-  is no gate for "latched before it succeeded" — a static check for
-  `_initialized.* = true` appearing above a `return` in the same function would
-  catch the whole class cheaply.
+- [REVIEW_PATTERNS.md § 18](../reference/REVIEW_PATTERNS.md) — the fault line.
+- [HOW_TO_ADD_COOKBOOK.md § New Settings Toggle](../working-on-code/HOW_TO_ADD_COOKBOOK.md)
+  — the template that taught the latch-on-entry shape, now corrected.
+- No gate covers "latched before it succeeded". A static check for
+  `_initialized.* = true` appearing above a top-level `return` in the same
+  function would catch the class — and, per the table above, would need to
+  respect indentation and `async` function boundaries to be worth having.

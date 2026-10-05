@@ -1,3 +1,7 @@
+## [2.587] - 2026-10-05
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.586] - 2026-10-05
 - TODO(changelog): uncommitted work shipped in this release — describe it here
 

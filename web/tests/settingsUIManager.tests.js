@@ -244,6 +244,101 @@ export async function runSettingsUIManagerTests(resultsDiv) {
     });
 
     // ============================================
+    // 🔁 Setup must survive being called before state is ready
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 Re-wirable after a state-not-ready call</h4>';
+
+    // `core-ready does not mean state-ready`: on a first run AppState.init()
+    // deliberately returns with data = null, so the settings UI can initialise
+    // while currentSettings() is still empty. A setup function that latches its
+    // idempotency flag BEFORE that guard converts the transient miss into a
+    // permanent one — it can never be retried, so the change handler is never
+    // attached and the control is dead for the session.
+    //
+    // This is the sequence that exposes it, and the ONLY one that does:
+    //   setup() with state missing  →  state becomes ready  →  setup() again
+    // A test that boots with state already ready passes either way.
+    //
+    // Measured Oct 2026 before the fix: the checkbox flipped to checked:true,
+    // settings.showThreeDots stayed false, the body class never applied, and zero
+    // three-dots buttons were built. So the assertion reads the STORED value, never
+    // `toggle.checked` — the browser sets `checked` on click whether or not a
+    // handler exists, which is exactly why this looked like it worked.
+    await test('setupThreeDotsToggle still wires up when the first call happened before state was ready', async () => {
+        mod._resetForTesting();
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'toggle-three-dots';   // DOM_IDS.TOGGLE_THREE_DOTS
+        document.body.appendChild(toggle);
+        try {
+            // 1. First run: element present, state NOT ready.
+            mod.setSettingsUIManagerDependencies({
+                AppState: () => ({ isReady: () => false, get: () => null, update: async () => {} }),
+                safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+                showNotification: () => {}
+            });
+            mod.setupThreeDotsToggle();
+
+            // 2. State becomes ready (the first-run choice screen persisted a routine).
+            const live = { settings: { showThreeDots: false } };
+            mod.setSettingsUIManagerDependencies({
+                AppState: () => ({ isReady: () => true, get: () => live, update: async (fn) => fn(live) }),
+                safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+                showNotification: () => {}
+            });
+
+            // 3. Re-run, exactly as initAllToggles() would on the next pass.
+            mod.setupThreeDotsToggle();
+
+            // 4. The handler must now exist AND persist. Assert the stored value.
+            toggle.checked = true;
+            toggle.dispatchEvent(new Event('change', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 60));
+
+            if (live.settings.showThreeDots !== true) {
+                throw new Error('the toggle did not persist showThreeDots after a state-not-ready first call — '
+                    + 'the idempotency flag latched before the state guard, so the change handler was never attached '
+                    + 'and the control is dead for the session');
+            }
+            if (!document.body.classList.contains('show-three-dots-enabled')) {
+                throw new Error('showThreeDots persisted but the body class was not applied, so nothing re-renders');
+            }
+        } finally {
+            toggle.remove();
+            document.body.classList.remove('show-three-dots-enabled');
+        }
+    });
+
+    await test('setupThreeDotsToggle is still idempotent once it HAS wired successfully', () => {
+        mod._resetForTesting();
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox';
+        toggle.id = 'toggle-three-dots';
+        document.body.appendChild(toggle);
+        let attachCount = 0;
+        try {
+            // Latching late must not mean latching never — a second call after a
+            // SUCCESSFUL wire has to be a no-op, or every re-init stacks a handler.
+            mod.setSettingsUIManagerDependencies({
+                AppState: () => ({ isReady: () => true, get: () => ({ settings: { showThreeDots: false } }), update: async () => {} }),
+                safeAddEventListener: (el, ev, fn) => { attachCount++; el.addEventListener(ev, fn); },
+                showNotification: () => {}
+            });
+            mod.setupThreeDotsToggle();
+            mod.setupThreeDotsToggle();
+            mod.setupThreeDotsToggle();
+            if (attachCount !== 1) {
+                throw new Error(`expected exactly one listener attach across three calls, got ${attachCount} — `
+                    + 'the idempotency guard is not holding after a successful wire');
+            }
+        } finally {
+            toggle.remove();
+            document.body.classList.remove('show-three-dots-enabled');
+        }
+    });
+
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
