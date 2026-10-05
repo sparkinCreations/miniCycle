@@ -92,6 +92,12 @@ export class TaskButtons {
 
         const buttonContainer = document.createElement("div");
         buttonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS);
+        // Referent for the three-dots trigger's aria-controls (taskDOM sets the
+        // matching attribute). Per-task because every row has its own options row;
+        // task ids are already unique, so this is too.
+        if (assignedTaskId) {
+            buttonContainer.id = `task-options-${assignedTaskId}`;
+        }
 
         // If three dots mode is enabled, ensure buttons start explicitly HIDDEN via CSS class
         // (base .task-options CSS already has visibility: hidden; this adds explicit force-hidden)
@@ -104,7 +110,7 @@ export class TaskButtons {
         const visibleOptions = currentCycle.taskOptionButtons || this.deps.DEFAULT_TASK_OPTION_BUTTONS || {};
 
         // Always show customize button first
-        const customizeBtn = this.createCustomizeButton();
+        const customizeBtn = this.createCustomizeButton(buttonContainer);
         buttonContainer.appendChild(customizeBtn);
 
         // Button configuration with visibility checks
@@ -130,16 +136,14 @@ export class TaskButtons {
 
     /**
      * Create the customize button (opens task options customization modal)
+     * @param {HTMLElement} buttonContainer - The .task-options row this button joins
      * @returns {HTMLButtonElement} The customize button element
      */
-    createCustomizeButton() {
+    createCustomizeButton(buttonContainer) {
         const button = document.createElement("button");
         button.classList.add(DOM_CLASSES.TASK_BTN, DOM_CLASSES.CUSTOMIZE_BTN);
         button.textContent = "+/-";
         button.setAttribute("type", "button");
-        button.setAttribute("title", getLabel('taskOption.customize'));
-        button.setAttribute("tabindex", "-1");
-        button.setAttribute("aria-label", getLabel('taskOption.customizeAria'));
 
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
 
@@ -160,21 +164,18 @@ export class TaskButtons {
         };
         safeAdd(button, "click", button._clickHandler);
 
-        button._keydownHandler = (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                button.click();
-            }
-        };
-        safeAdd(button, "keydown", button._keydownHandler);
-
-        // Same long-press hint the other task options get. This button is built
-        // here rather than through setupButtonAccessibility(), so it has to be
-        // wired separately — and "+/-" is the least self-explanatory glyph in the
-        // row, so it is the one that needs the hint most.
-        button._longPressHintDetach = attachLongPressHint(button, {
-            getText: () => getLabel('taskOption.customizeAria')
-        });
+        // Routed through the SHARED accessibility setup rather than hand-rolled.
+        // This button used to set its own tabindex/aria-label/title and a
+        // keydown that handled only Enter and Space, which left it as the one
+        // option in the row with no Escape-to-close and no arrow-key movement —
+        // a keyboard user landing on "+/-" could neither leave the row nor
+        // dismiss it. It also missed the long-press hint until it was wired
+        // separately, which is the same omission twice.
+        //
+        // Requires 'customize-btn' in setupButtonAccessibility's ariaLabelKeys,
+        // or the shared path would overwrite the label with the generic
+        // showOptions fallback.
+        this.setupButtonAccessibility(button, DOM_CLASSES.CUSTOMIZE_BTN, buttonContainer);
 
         return button;
     }
@@ -287,6 +288,16 @@ export class TaskButtons {
         safeAdd(button, "keydown", button._accessibilityKeydownHandler);
 
         const ariaLabelKeys = {
+            // createCustomizeButton() routes through here too, so this map is the
+            // single source for every option's name — including the "+/-" button.
+            // The concise `customize` key, not `customizeAria`: the shared path
+            // uses one string for title, aria-label AND the long-press bubble, and
+            // "Add or remove task buttons" serves all three. The longer
+            // customizeAria text reads as a description rather than a name, which
+            // is wordy for a screen reader and overflows the hint bubble. It stays
+            // in defaultLabels (and in LENS_SENSITIVE_KEYS) rather than being
+            // deleted, so vocab themes keep their override point.
+            "customize-btn": 'taskOption.customize',
             "move-up": 'taskOption.moveUp',
             "move-down": 'taskOption.moveDown',
             "recurring-btn": 'taskOption.recurring',

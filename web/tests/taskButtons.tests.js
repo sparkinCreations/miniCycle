@@ -162,6 +162,41 @@ export async function runTaskButtonsTests(resultsDiv) {
         }
     });
 
+    await test('the customize button uses the SHARED accessibility setup, not a hand-rolled copy', () => {
+        const row = buildOptionRow();
+        const customize = row.querySelector('.customize-btn');
+        if (!customize) throw new Error('fixture has no .customize-btn');
+        // _accessibilityKeydownHandler is installed only by setupButtonAccessibility().
+        // Hand-rolling this button left it the one option in the row with no
+        // Escape-to-close and no arrow-key movement — a keyboard user who landed on
+        // "+/-" could neither leave the row nor dismiss it.
+        if (typeof customize._accessibilityKeydownHandler !== 'function') {
+            throw new Error('the customize button has no shared keydown handler, so it has no Escape '
+                + 'and no arrow-key navigation');
+        }
+        const aria = customize.getAttribute('aria-label');
+        const title = customize.getAttribute('title');
+        if (!aria || aria !== title) {
+            throw new Error(`customize aria-label "${aria}" and title "${title}" must be the same string — `
+                + 'the long-press bubble reads the same key');
+        }
+        if (/which task option buttons are visible/.test(aria)) {
+            throw new Error('customize is using the long customizeAria description as its NAME; the concise '
+                + 'taskOption.customize key is the accessible name (and fits the hint bubble)');
+        }
+    });
+
+    await test('the options row carries the id the three-dots trigger points aria-controls at', () => {
+        const row = buildOptionRow();
+        // taskDOM sets aria-controls="task-options-<taskId>" on the trigger; this is
+        // the other half of that pair. If the id scheme changes in one place only,
+        // aria-controls dangles and names nothing.
+        if (row.id !== 'task-options-t1') {
+            throw new Error(`expected the options row id "task-options-t1", got ${JSON.stringify(row.id)} — `
+                + "the trigger's aria-controls would point at nothing");
+        }
+    });
+
     await test('the hint detacher is re-entrant (a rebuilt button does not stack listeners)', () => {
         const row = buildOptionRow();
         const btn = row.querySelector('.delete-btn');

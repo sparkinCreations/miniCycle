@@ -1,3 +1,7 @@
+## [2.586] - 2026-10-05
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.585] - 2026-10-04
 - test: stop the in-app suite downloading a backup, and assert label keys not wording
 - test: let factory-reset journeys past the v2.583 backup gate

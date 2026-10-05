@@ -616,6 +616,34 @@ the attribute, and says so when it did not:
 Same requirement the `announceCase` helper in the same file already states for
 live-region announcements. Pinned by `npm run test:a11y` § E.
 
+### Hover mode having no `aria-expanded` is correct — do not "fix" it
+
+Filed as a gap, then withdrawn on measurement (Oct 2026). In hover mode
+`settings.showThreeDots` is off, `createThreeDotsButton()` never builds a
+trigger, and nothing in the task row carries `aria-expanded`. That reads like a
+hole and is not one: **there is no disclosure control to describe.** `focusin`
+reveals the options and `setVisibility()` makes every visible one tabbable, so
+the reveal is a consequence of focus moving, not of operating a widget.
+
+Real Tab traversal, same fixture, both modes:
+
+```
+hover mode:       customize → priority → edit → delete     (every visible option)
+three-dots mode:  three-dots-btn                           (the trigger only)
+focused-but-INVISIBLE: 0                                   (both modes)
+```
+
+Putting `aria-expanded` on the `<li>` would declare the task row a disclosure
+widget, which it is not, and WCAG 4.1.2 governs actual UI components. The
+correct answer is no attribute.
+
+One near-miss worth recording, because the shape recurs: enumerating
+`element.tabIndex >= 0` inside the row reported four *hidden* buttons as
+keyboard-reachable. They are not — `.hidden { display: none !important }` takes
+an element out of the focus order whatever its tabindex says. **`tabIndex >= 0`
+is not focusability.** Walk the focus order with real `Tab` presses and read
+`document.activeElement`; anything less invents violations.
+
 ## 18. An idempotency latch set before the work succeeds
 
 ```javascript

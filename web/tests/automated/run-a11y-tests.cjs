@@ -519,6 +519,29 @@ async function run() {
                 }
             };
 
+            // aria-controls names WHAT the trigger expands. Audited here because
+            // this is the only place both halves exist: taskDOM sets the attribute,
+            // taskButtons sets the matching id on the options row, and a rename in
+            // either one alone leaves it dangling at nothing.
+            const controls = await ariaPage.evaluate(() => {
+                const t = document.querySelector('#taskList .task');
+                const trig = t?.querySelector('.three-dots-btn');
+                const ac = trig?.getAttribute('aria-controls') || null;
+                const target = ac ? document.getElementById(ac) : null;
+                return { ac, resolves: !!target, isOptionsRow: !!target && target === t.querySelector('.task-options') };
+            });
+            if (!controls.ac) {
+                console.log(`   ${colors.red}❌ task-options trigger — no aria-controls${colors.reset}`);
+                failures.push('task-options trigger: no aria-controls, so aria-expanded announces a state '
+                    + 'without naming what is in it');
+            } else if (!controls.resolves || !controls.isOptionsRow) {
+                console.log(`   ${colors.red}❌ task-options trigger — aria-controls dangles${colors.reset}`);
+                failures.push(`task-options trigger: aria-controls="${controls.ac}" does not resolve to the task's `
+                    + `.task-options row (resolves=${controls.resolves}) — the id scheme changed on one side only`);
+            } else {
+                console.log(`   ${colors.green}✅ aria-controls names the options row (${controls.ac})${colors.reset}`);
+            }
+
             await ariaCase('initial render (all collapsed)', false);
 
             await openMenu();
