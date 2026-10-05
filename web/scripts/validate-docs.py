@@ -446,7 +446,13 @@ def check_public_surfaces(list_mode):
                  # "habits" listed as a PEER of routines, or as a thing the app is
                  # good at — both assert the category product.html rejects.
                  ('routines, habits', 'routines, shift checklists, recurring procedures'),
-                 ('Great for habits', 'Great for routines you run on a schedule')]
+                 ('Great for habits', 'Great for routines you run on a schedule'),
+                 # Domain phrasings. These describe the USER's behaviour rather
+                 # than the product's category, so they read as harmless — but on
+                 # a persona card they are the product's pitch to that persona,
+                 # and they put it back in the habit-tracker aisle.
+                 ('health habits', 'health check-ins / health routines'),
+                 ('study habits', 'a repeatable study routine')]
     # pages/ + legal/ are the marketing and manual surfaces. docs/user-guides/ is
     # added because it is published on the docs site and carries the same
     # positioning text — FAQ.md, QUICK_REFERENCE.md and USER_GUIDE.md all shipped
