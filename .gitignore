@@ -30,3 +30,16 @@ __pycache__/
 
 # macOS/Finder "name 2.ext" duplicate copies — never commit them
 * 2.*
+
+# Scratch output from Claude Code skills/plugins that write into the repo ROOT
+# rather than a scratchpad: the xlsx skill drops outputs/<uuid>/, the pdf-viewer
+# plugin drops tmp/pdfs/, spreadsheet builds drop tmp/spreadsheets/. None of it
+# belongs to miniCycle — it is whatever else was being worked on in this folder.
+#
+# Ignored for the same reason as __pycache__/ above: update-version.sh stages the
+# release with `git add -A`, so anything untracked at the root rides into the
+# release commit and gets pushed public. Measured Oct 8 2026: 1.5 MB of unrelated
+# op-amp lab PNGs and a comparator spreadsheet were sitting here, one release away
+# from being committed.
+outputs/
+tmp/
