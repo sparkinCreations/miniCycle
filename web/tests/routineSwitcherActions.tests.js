@@ -21,6 +21,8 @@
  */
 import { createProtectedTest } from './testHelpers.js';
 
+import { LIMITS } from '../modules/core/constants.js';
+
 export async function runRoutineSwitcherActionsTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
@@ -257,6 +259,26 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         await settle(400);
         if (cycleKeys().length !== 2) throw new Error(`a colliding rename lost a routine: ${cycleKeys()}`);
         if (new Set(cycleKeys()).size !== 2) throw new Error('keys collided');
+        cleanupDom();
+    });
+
+    await test('REGRESSION: an over-long rename warns that the name was truncated', async () => {
+        // sanitizeInput clamps to LIMITS.CYCLE_NAME_CHARACTER; before this the
+        // switcher rename cut the name silently while the title-bar rename warned.
+        const { instance, calls } = setup({ cycles: TWO, selectedKey: 'b', activeRoutineId: 'a' });
+        const limit = LIMITS.CYCLE_NAME_CHARACTER;
+        instance._commitRename('b', 'r'.repeat(limit + 25), 'Beta');
+        await settle(400);
+        const warned = calls.notifications.find(m => /truncated/i.test(m) && m.includes(String(limit)));
+        if (!warned) throw new Error(`expected a "truncated to ${limit}" notification, got: ${JSON.stringify(calls.notifications)}`);
+        cleanupDom();
+    });
+
+    await test('a rename within the limit does NOT warn about truncation', async () => {
+        const { instance, calls } = setup({ cycles: TWO, selectedKey: 'b', activeRoutineId: 'a' });
+        instance._commitRename('b', 'r'.repeat(LIMITS.CYCLE_NAME_CHARACTER), 'Beta');
+        await settle(400);
+        if (calls.notifications.some(m => /truncated/i.test(m))) throw new Error('no truncation warning expected at exactly the limit');
         cleanupDom();
     });
 

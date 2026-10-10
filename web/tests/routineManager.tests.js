@@ -31,6 +31,7 @@ import {
     initRoutineManager,
     getRoutineManager
 } from '../modules/routine/routineManager.js';
+import { LIMITS } from '../modules/core/constants.js';
 
 export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🔄 RoutineManager Tests</h2><h3>Setting up mocks...</h3>';
@@ -483,6 +484,79 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Input should have error class
         if (!input.classList.contains('miniCycle-input-error')) {
             throw new Error('Input should have error class on empty submission');
+        }
+
+        // Colour alone is not feedback — the field must be flagged for AT
+        if (input.getAttribute('aria-invalid') !== 'true') {
+            throw new Error('Input should carry aria-invalid="true" on empty submission');
+        }
+
+        // Typing clears the error state
+        input.value = 'x';
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        if (input.classList.contains('miniCycle-input-error') || input.hasAttribute('aria-invalid')) {
+            throw new Error('Error state should clear once the user types');
+        }
+
+        dialog.remove();
+    });
+
+    await test('showCycleCreationModal announces WHY on empty input (notification, not just a red border)', async () => {
+        const notifications = [];
+        const deps = createValidDeps({
+            showNotification: (msg, type) => { notifications.push({ msg, type }); }
+        });
+
+        const instance = new RoutineManager(deps);
+        instance.showCycleCreationModal();
+
+        const dialog = await fillAndConfirmCreationDialog('', 700);
+        if (!dialog) throw new Error('Dialog should appear');
+
+        const emptyWarning = notifications.find(n => /cannot be empty/i.test(n.msg));
+        if (!emptyWarning) {
+            throw new Error(`Expected an "empty name" notification, got: ${JSON.stringify(notifications.map(n => n.msg))}`);
+        }
+        if (emptyWarning.type !== 'warning') {
+            throw new Error(`Expected a warning (role="alert"), got type "${emptyWarning.type}"`);
+        }
+
+        document.querySelector('.miniCycle-prompt-dialog')?.remove();
+    });
+
+    await test('REGRESSION: over-long routine name is clamped WITH a truncation warning, not silently', async () => {
+        // The create callbacks sanitize (clamp) the name, so previously a
+        // 150-char name was cut to 100 with no feedback — unlike the rename
+        // path, which warns. The limit is the same constant titleManager uses.
+        const notifications = [];
+        const deps = createValidDeps({
+            showNotification: (msg, type) => { notifications.push({ msg, type }); }
+        });
+
+        const instance = new RoutineManager(deps);
+        instance.showCycleCreationModal();
+
+        const limit = LIMITS.CYCLE_NAME_CHARACTER;
+        const longName = 'n'.repeat(limit + 50);
+        await fillAndConfirmCreationDialog(longName, 700);
+        await new Promise(resolve => setTimeout(resolve, 100));
+
+        const truncWarning = notifications.find(n => /truncated/i.test(n.msg));
+        if (!truncWarning) {
+            throw new Error(`Expected a truncation warning, got: ${JSON.stringify(notifications.map(n => n.msg))}`);
+        }
+        if (!truncWarning.msg.includes(String(limit))) {
+            throw new Error(`Truncation warning should name the ${limit}-char limit: ${truncWarning.msg}`);
+        }
+
+        // And the stored name really is clamped to the limit
+        const routines = deps.AppState.get()?.data?.routine || {};
+        const created = Object.values(routines).find(r => typeof r?.title === 'string' && r.title.startsWith('nnnn'));
+        if (!created) {
+            throw new Error('Routine should have been created');
+        }
+        if (created.title.length !== limit) {
+            throw new Error(`Stored name should be ${limit} chars, got ${created.title.length}`);
         }
     });
 

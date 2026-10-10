@@ -17,6 +17,7 @@ import {
     initTaskValidator
 } from '../modules/task/taskValidation.js';
 import { LIMITS } from '../modules/core/constants.js';
+import { GlobalUtils } from '../modules/utils/globalUtils.js';
 
 export async function runTaskValidationTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🔒 TaskValidation Tests</h2><h3>Setting up mocks...</h3>';
@@ -387,6 +388,68 @@ export async function runTaskValidationTests(resultsDiv) {
 
         if (!notificationMessage.includes('100 characters')) {
             throw new Error('Notification should mention character limit');
+        }
+    });
+
+    // ============================================
+    // ✂️ REAL SANITIZER (regression) — the identity mock above can't catch this
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">✂️ Real sanitizer: limit measured before clamping</h4>';
+
+    await test('REGRESSION: over-limit text is rejected with the REAL clamping sanitizer, not silently truncated', () => {
+        // GlobalUtils.sanitizeInput clamps to 100 itself. The validator used to
+        // sanitize first and then compare the already-clamped result against
+        // the limit — never true — so a 101-char task was silently cut to 100
+        // and the "must be 100 characters or less" warning was dead code.
+        let notified = null;
+        const validator = new TaskValidator({
+            sanitizeInput: GlobalUtils.sanitizeInput,
+            showNotification: (msg, type) => { notified = { msg, type }; }
+        });
+
+        const limit = LIMITS.TASK_CHARACTER_INPUT;
+        const result = validator.validateAndSanitizeTaskInput('a'.repeat(limit + 1));
+
+        if (result !== null) {
+            throw new Error(`Expected null for ${limit + 1} chars, got ${JSON.stringify(result).slice(0, 40)}… (${result.length} chars) — silent truncation`);
+        }
+        if (!notified) {
+            throw new Error('Expected the char-limit warning to fire');
+        }
+        if (notified.type !== 'warning' || !notified.msg.includes(String(limit))) {
+            throw new Error(`Expected a warning naming the ${limit}-char limit, got ${notified.type}: ${notified.msg}`);
+        }
+    });
+
+    await test('REGRESSION: exactly-at-limit text still passes with the REAL sanitizer', () => {
+        let notified = false;
+        const validator = new TaskValidator({
+            sanitizeInput: GlobalUtils.sanitizeInput,
+            showNotification: () => { notified = true; }
+        });
+
+        const limit = LIMITS.TASK_CHARACTER_INPUT;
+        const result = validator.validateAndSanitizeTaskInput('b'.repeat(limit));
+
+        if (result === null || result.length !== limit) {
+            throw new Error(`Expected ${limit} chars back, got ${result === null ? 'null' : result.length}`);
+        }
+        if (notified) {
+            throw new Error('No warning expected at exactly the limit');
+        }
+    });
+
+    await test('REGRESSION: surrounding whitespace does not count toward the limit', () => {
+        const validator = new TaskValidator({
+            sanitizeInput: GlobalUtils.sanitizeInput,
+            showNotification: () => {}
+        });
+
+        const limit = LIMITS.TASK_CHARACTER_INPUT;
+        const result = validator.validateAndSanitizeTaskInput('   ' + 'c'.repeat(limit) + '   ');
+
+        if (result === null || result.length !== limit) {
+            throw new Error('Padding-only overflow must be trimmed, not rejected');
         }
     });
 

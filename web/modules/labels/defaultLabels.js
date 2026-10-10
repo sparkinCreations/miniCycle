@@ -488,9 +488,12 @@ export const DEFAULT_LABELS = deepFreeze({
         titleSaveFailed:        'Failed to save title change',
         titleTruncated:         'Title truncated to {limit} characters.',
         renamedTo:              'Renamed to "{name}"',
+        routineNameEmpty:       'Routine name cannot be empty.',
 
         // Validation notifications
         taskCharLimit:          'Task must be {limit} characters or less.',
+        taskTruncated:          'Task truncated to {limit} characters.',
+        taskTextEmpty:          'Task cannot be empty.',
 
         // Quick action notifications
         actionUnavailable:      'Action unavailable. Please try again later.',
@@ -2595,7 +2598,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.storageRefreshFailed',
     'notify.titleTruncated',
     'notify.renamedTo',
+    'notify.routineNameEmpty',
     'notify.taskCharLimit',
+    'notify.taskTruncated',
+    'notify.taskTextEmpty',
     'notify.recoveredRoutine',
     'notify.taskLimitReached',
     'notify.priorityEnabled',

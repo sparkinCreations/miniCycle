@@ -22,6 +22,8 @@ let MenuManager = null;
 let setMenuManagerDependencies = null;
 let initMenuManager = null;
 
+import { LIMITS } from '../modules/core/constants.js';
+
 export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>🎛️ Menu Manager Tests (DI-Pure)</h2><h3>Loading module...</h3>';
 
@@ -498,6 +500,45 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
         if (!newCycleName) {
             throw new Error('New cycle should be created');
+        }
+    });
+
+    test('REGRESSION: duplicating with an over-long name warns that it was truncated (DI)', () => {
+        // The real sanitizeInput clamps to LIMITS.CYCLE_NAME_CHARACTER, so the
+        // copy's name used to be cut silently. Faithful clamping mock here.
+        const limit = LIMITS.CYCLE_NAME_CHARACTER;
+        const notifications = [];
+        let newCycleName = null;
+        const mockFullSchema = {
+            metadata: { totalRoutinesCreated: 1, lastModified: Date.now() },
+            data: { routine: { 'cycle-1': { id: 'cycle-1', title: 'Test Cycle', tasks: [] } } },
+            appState: { activeRoutineId: 'cycle-1' }
+        };
+
+        setMenuManagerDependencies(createMockDeps({
+            AppState: () => ({
+                isReady: () => true,
+                get: () => mockFullSchema,
+                update: (updateFn) => {
+                    const stateCopy = JSON.parse(JSON.stringify(mockFullSchema));
+                    updateFn(stateCopy);
+                    newCycleName = Object.keys(stateCopy.data.routine).find(k => k !== 'cycle-1');
+                }
+            }),
+            showPromptModal: (opts) => opts.callback('d'.repeat(limit + 40)),
+            sanitizeInput: (input, maxLength = limit) => input.trim().substring(0, maxLength),
+            showNotification: (msg, type) => notifications.push({ msg: String(msg), type }),
+            loadMiniCycle: () => {}
+        }));
+        const instance = new MenuManager();
+        instance.hideMainMenu = () => {};
+        instance.saveMiniCycleAsNew();
+
+        const warned = notifications.find(n => /truncated/i.test(n.msg) && n.msg.includes(String(limit)));
+        if (!warned) throw new Error(`expected a truncation warning, got: ${JSON.stringify(notifications.map(n => n.msg))}`);
+        if (warned.type !== 'warning') throw new Error(`expected type "warning", got "${warned.type}"`);
+        if (!newCycleName || newCycleName.length !== limit) {
+            throw new Error(`copy should be stored under a ${limit}-char name, got ${newCycleName ? newCycleName.length : 'none'}`);
         }
     });
 

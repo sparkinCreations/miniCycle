@@ -4,6 +4,7 @@
  */
 
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+import { LIMITS } from '../modules/core/constants.js';
 
 export async function runTaskCRUDTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
@@ -89,6 +90,75 @@ export async function runTaskCRUDTests(resultsDiv) {
             }
         } finally {
             document.body.removeChild(taskInput);
+        }
+    });
+
+    await test('REGRESSION: edit modal flags empty text for AT and warns when a long edit is truncated', async () => {
+        // Mobile edit modal (isTouchDevice → true). Two gaps, both twins of the
+        // routine-creation dialog's: empty text got only a red border (no
+        // aria-invalid, nothing announced), and sanitizeInput clamped a long
+        // edit to the limit silently.
+        const { editTaskImpl } = mod;
+        const limit = LIMITS.TASK_CHARACTER_INPUT;
+        const state = createMockState();
+        const notifications = [];
+
+        const taskItem = document.createElement('div');
+        taskItem.className = 'task';
+        taskItem.dataset.taskId = 'task-1';
+        const label = document.createElement('span');
+        label.className = 'task-text';   // DOM_SELECTORS.TASK_TEXT
+        label.textContent = 'Existing';
+        taskItem.appendChild(label);
+        document.body.appendChild(taskItem);
+
+        const deps = {
+            AppState: createMockAppState(state),
+            // Faithful mock: the real GlobalUtils.sanitizeInput clamps to the limit.
+            sanitizeInput: (t, maxLength = limit) => t.trim().substring(0, maxLength),
+            showNotification: (msg, type) => notifications.push({ msg: String(msg), type }),
+            isTouchDevice: () => true,
+            getBody: () => document.body
+        };
+        setTaskCRUDDependencies(deps);
+
+        try {
+            await editTaskImpl(taskItem, deps);
+            const dialog = document.querySelector('.miniCycle-prompt-dialog');
+            if (!dialog) throw new Error('edit modal should open on a touch device');
+            const input = dialog.querySelector('.miniCycle-prompt-input');
+            const saveBtn = dialog.querySelector('.miniCycle-btn-confirm');
+
+            // 1) Empty text: flagged for AT and explained, dialog stays open
+            input.value = '   ';
+            saveBtn.click();
+            await new Promise(r => setTimeout(r, 50));
+            if (!document.body.contains(dialog)) throw new Error('dialog should stay open on empty text');
+            if (input.getAttribute('aria-invalid') !== 'true') throw new Error('empty text should set aria-invalid="true"');
+            if (!input.classList.contains('miniCycle-input-error')) throw new Error('empty text should add the error class');
+            const emptyWarn = notifications.find(n => /cannot be empty/i.test(n.msg));
+            if (!emptyWarn) throw new Error(`expected an "empty" notification, got: ${JSON.stringify(notifications.map(n => n.msg))}`);
+            if (emptyWarn.type !== 'warning') throw new Error(`expected a warning, got "${emptyWarn.type}"`);
+
+            // 2) Typing clears the error state
+            input.value = 'x';
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            if (input.hasAttribute('aria-invalid') || input.classList.contains('miniCycle-input-error')) {
+                throw new Error('error state should clear once the user types');
+            }
+
+            // 3) Over-long edit: saved clamped, WITH a truncation warning
+            input.value = 't'.repeat(limit + 30);
+            saveBtn.click();
+            await new Promise(r => setTimeout(r, 100));
+            const truncWarn = notifications.find(n => /truncated/i.test(n.msg) && n.msg.includes(String(limit)));
+            if (!truncWarn) throw new Error(`expected a "truncated to ${limit}" warning, got: ${JSON.stringify(notifications.map(n => n.msg))}`);
+            const saved = state.data.routine['cycle-1'].tasks.find(t => t.id === 'task-1');
+            if (!saved || saved.text.length !== limit) throw new Error(`saved text should be ${limit} chars, got ${saved ? saved.text.length : 'none'}`);
+            if (document.body.contains(dialog)) throw new Error('dialog should close after a successful save');
+        } finally {
+            taskItem.remove();
+            document.querySelectorAll('.miniCycle-prompt-dialog').forEach(d => d.remove());
         }
     });
 

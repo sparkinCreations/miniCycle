@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -887,14 +887,34 @@ export class RoutineManager {
         const handleConfirm = () => {
             const value = input.value.trim();
             if (!value) {
+                // Colour alone is not feedback: mark the field invalid for
+                // assistive tech and say why (warning notifications carry
+                // role="alert", so this is announced). Cleared on next input.
                 input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
+                input.setAttribute('aria-invalid', 'true');
+                this.deps.showNotification('⚠️ ' + getLabel('notify.routineNameEmpty'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
                 input.focus();
                 return;
             }
+
+            // onCreateBlank sanitizes (clamps) the name, so the only place the
+            // RAW length is still known is here. Say so, as the rename path does;
+            // otherwise a long name is silently cut to the limit.
+            const nameLimit = LIMITS.CYCLE_NAME_CHARACTER;
+            if (value.length > nameLimit) {
+                this.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: nameLimit } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            }
+
             cleanup();
             dialog.close();
             dialog.remove();
             onCreateBlank(value);
+        };
+
+        // Typing again clears the empty-name error state.
+        const handleInput = () => {
+            input.classList.remove(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
+            input.removeAttribute('aria-invalid');
         };
 
         const handleCancel = () => {
@@ -938,6 +958,7 @@ export class RoutineManager {
         confirmBtn.addEventListener('click', handleConfirm);
         cancelBtn.addEventListener('click', handleCancel);
         input.addEventListener('keydown', handleKeydown);
+        input.addEventListener('input', handleInput);
         dialog.addEventListener('cancel', handleDialogCancel);
         dialog.addEventListener('click', handleBackdropClick);
 
@@ -953,6 +974,7 @@ export class RoutineManager {
             confirmBtn.removeEventListener('click', handleConfirm);
             cancelBtn.removeEventListener('click', handleCancel);
             input.removeEventListener('keydown', handleKeydown);
+            input.removeEventListener('input', handleInput);
             dialog.removeEventListener('cancel', handleDialogCancel);
             dialog.removeEventListener('click', handleBackdropClick);
 
