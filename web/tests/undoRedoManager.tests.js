@@ -2439,6 +2439,104 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (committed !== 2) throw new Error('both updates must reach the underlying update');
     });
 
+    // === RENAME MUST NOT WIPE UNDO (measured Oct 2026) ===
+    // The title-bar rename re-keys the routine in one producer, AppState
+    // notifies subscribers synchronously, and a subscriber's AppState.update
+    // (the "Renamed to" notification saving its position) made the wrapper
+    // capture with the NEW key while the undo system still tracked the OLD
+    // one — the self-heal called onCycleSwitched and both stacks were gone.
+    await test('REGRESSION: a routine rename through the wrapped update relabels the stacks before subscribers run', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.wrappedAppStateUpdate = false;
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'Test Cycle';
+        mockDeps.AppGlobalState.activeUndoStack = [
+            { activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 1, _sig: 'stale' }
+        ];
+        // Faithful AppState: producer runs synchronously on the live tree, then
+        // subscribers are notified synchronously — exactly like appState.update.
+        const live = mockDeps.AppState.get();
+        const subscribers = [];
+        mockDeps.AppState.get = () => live;
+        mockDeps.AppState.subscribe = (key, cb) => subscribers.push(cb);
+        mockDeps.AppState.update = (producer, immediate) => {
+            const before = JSON.parse(JSON.stringify(live));
+            producer(live);
+            subscribers.forEach(cb => cb(live, before));
+            return Promise.resolve();
+        };
+        setUndoRedoManagerDependencies(mockDeps);
+        if (!wrapAppStateForUndo({ isCoreReady: () => true })) throw new Error('wrapper must install');
+
+        // A subscriber that, like the notification system, updates state in
+        // response to the rename — this is what used to trigger the wipe.
+        let subscriberCaptured = false;
+        mockDeps.AppState.subscribe('rename-reactor', (newState, oldState) => {
+            const oldTitle = oldState.data.routine['Test Cycle']?.title;
+            if (oldTitle && !newState.data.routine['Test Cycle']) {
+                subscriberCaptured = true;
+                mockDeps.AppState.update(state => { state.settings = { notificationPosition: { x: 1, y: 1 } }; }, true);
+            }
+        });
+
+        // The rename, as titleManager does it: new key born, old key deleted, active moved.
+        await mockDeps.AppState.update(state => {
+            const routine = state.data.routine['Test Cycle'];
+            state.data.routine['Renamed Cycle'] = { ...routine, title: 'Renamed Cycle' };
+            delete state.data.routine['Test Cycle'];
+            state.appState.activeRoutineId = 'Renamed Cycle';
+        }, false);
+        await new Promise(r => setTimeout(r, 20));
+
+        if (!subscriberCaptured) throw new Error('test setup: the reacting subscriber did not fire');
+        const g = mockDeps.AppGlobalState;
+        if (g.activeCycleIdForUndo !== 'Renamed Cycle') throw new Error(`tracking id should follow the rename, got "${g.activeCycleIdForUndo}"`);
+        if (g.activeUndoStack.length === 0) throw new Error('undo history was wiped by the rename');
+        const stale = g.activeUndoStack.find(s => s.activeCycleId !== 'Renamed Cycle' || s.title !== 'Renamed Cycle');
+        if (stale) throw new Error(`a snapshot still carries the old key: ${JSON.stringify({ id: stale.activeCycleId, title: stale.title })}`);
+        if (g.activeUndoStack.some(s => s._sig === 'stale')) throw new Error('relabel must drop the cached pre-rename signature');
+    });
+
+    await test('a routine DELETE that switches routines is not mistaken for a rename by the wrapper', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        mockDeps.AppGlobalState.wrappedAppStateUpdate = false;
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'Test Cycle';
+        const doomedSnapshot = { activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 1 };
+        mockDeps.AppGlobalState.activeUndoStack = [doomedSnapshot];
+        const live = mockDeps.AppState.get();
+        live.data.routine['Other'] = { title: 'Other', tasks: [], recurringTemplates: {} };
+        mockDeps.AppState.get = () => live;
+        mockDeps.AppState.update = (producer) => { producer(live); return Promise.resolve(); };
+        setUndoRedoManagerDependencies(mockDeps);
+        if (!wrapAppStateForUndo({ isCoreReady: () => true })) throw new Error('wrapper must install');
+
+        // Delete the active routine and land on an EXISTING one.
+        await mockDeps.AppState.update(state => {
+            delete state.data.routine['Test Cycle'];
+            state.appState.activeRoutineId = 'Other';
+        }, true);
+
+        const g = mockDeps.AppGlobalState;
+        if (g.activeCycleIdForUndo === 'Other') throw new Error('a deletion must NOT relabel the dead routine\'s history onto the next routine');
+        if (doomedSnapshot.activeCycleId !== 'Test Cycle') throw new Error('deleted routine\'s snapshots must be left for onCycleDeleted to handle');
+    });
+
+    await test('onCycleRenamed relabels memory SYNCHRONOUSLY, before its IndexedDB round-trip', async () => {
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeCycleIdForUndo = 'Old Name';
+        mockDeps.AppGlobalState.activeUndoStack = [
+            { activeCycleId: 'Old Name', title: 'Old Name', tasks: [], recurringTemplates: {}, timestamp: 1 }
+        ];
+        setUndoRedoManagerDependencies(mockDeps);
+
+        const pending = onCycleRenamed('Old Name', 'New Name');   // deliberately NOT awaited yet
+        const g = mockDeps.AppGlobalState;
+        if (g.activeCycleIdForUndo !== 'New Name') throw new Error('tracking id must move before the first await');
+        if (g.activeUndoStack[0].activeCycleId !== 'New Name') throw new Error('snapshots must be relabeled before the first await');
+        await pending;
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>All Tests Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

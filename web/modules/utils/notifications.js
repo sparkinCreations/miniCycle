@@ -678,12 +678,16 @@ async setDefaultPosition(notificationContainer) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await _deps.appInit?.waitForCore();
 
+        // { system: true }: a notification's screen position is not something the
+        // user undoes, so the undo wrapper must not snapshot this call. It was
+        // also the update that fired right after a routine rename and tripped
+        // the undo system's cycle-mismatch wipe (Oct 2026).
         this.deps.AppState.update((state) => {
             if (state.settings) {
                 state.settings.notificationPosition = { x: defaultX, y: defaultY };
                 state.settings.notificationPositionModified = false; // Mark as default
             }
-        }, true);
+        }, true, { system: true });
     } catch (error) { /* settings-listener setup is best-effort — position falls back to default */ }
 }
   /**
@@ -861,7 +865,7 @@ async setDefaultPosition(notificationContainer) {
           }
           state.settings.notificationPosition = { x, y };
           state.settings.notificationPositionModified = true;
-        }, true); // Immediate save to prevent race conditions
+        }, true, { system: true }); // Immediate save; system: not undo history
 
       } catch (error) {
         console.warn("⚠️ Failed to save notification position:", error);
