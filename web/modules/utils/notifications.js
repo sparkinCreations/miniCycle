@@ -95,16 +95,20 @@ function _safeAddEventListener(element, event, handler, options) {
  * Hand-enumerated cleanup is how the confirmation modal's armed-Enter timer
  * once escaped cancellation and fired callback(true) after dismissal (v2.377).
  */
-function createModalSettler(overlay, callback) {
+function createModalSettler(overlay, callback, getDetail = null) {
   let settled = false;
   const disposers = [];
   const settle = (result) => {
     if (settled) return;
     settled = true;
+    // Read any extra detail (e.g. a checkbox state) BEFORE the overlay is
+    // removed from the DOM, and hand it to the callback as a second argument
+    // existing one-argument callbacks simply ignore.
+    const detail = typeof getDetail === 'function' ? getDetail() : undefined;
     disposers.forEach(d => d());
     overlay.close();
     overlay.remove();
-    callback(result);
+    callback(result, detail);
   };
   return { settle, disposers };
 }
@@ -1494,6 +1498,11 @@ async setDefaultPosition(notificationContainer) {
    *
    * ⚠️ SECURITY: title and message are HTML-escaped by default to prevent XSS.
    * Set trustedHTML: true ONLY if you're passing pre-escaped content.
+   *
+   * Optional `checkbox: { label, checked = false }` adds one labelled checkbox
+   * between the message and the buttons (an opt-in such as "skip the backup").
+   * The callback then receives `{ checked }` as its second argument; callbacks
+   * that take one argument are unaffected.
    */
   showConfirmationModal({
     title = getLabel('notify.confirmAction'),
@@ -1502,7 +1511,8 @@ async setDefaultPosition(notificationContainer) {
     cancelText = getLabel('button.cancel'),
     callback = () => {},
     trustedHTML = false,  // Set to true to skip escaping (DANGEROUS - only for pre-escaped content)
-    destructive = false   // Set to true for delete/remove actions (red confirm button)
+    destructive = false,  // Set to true for delete/remove actions (red confirm button)
+    checkbox = null       // { label: string, checked?: boolean } — optional opt-in row
   }) {
     // ✅ XSS PROTECTION: Escape all user-facing strings by default
     const escape = getEscapeHtml(this.deps);
@@ -1510,6 +1520,11 @@ async setDefaultPosition(notificationContainer) {
     const safeMessage = trustedHTML ? message : escape(message);
     const safeConfirmText = trustedHTML ? confirmText : escape(confirmText);
     const safeCancelText = trustedHTML ? cancelText : escape(cancelText);
+    const hasCheckbox = !!(checkbox && typeof checkbox.label === 'string' && checkbox.label);
+    // Always escaped: the label is app text, never pre-escaped HTML.
+    const checkboxHTML = hasCheckbox
+      ? `<label class="mini-modal-checkbox"><input type="checkbox" class="mini-modal-checkbox-input"${checkbox.checked ? ' checked' : ''}><span>${escape(checkbox.label)}</span></label>`
+      : '';
 
     const overlay = document.createElement("dialog");
     overlay.className = "mini-modal-dialog";
@@ -1523,6 +1538,7 @@ async setDefaultPosition(notificationContainer) {
     modal.innerHTML = `
       <div class="mini-modal-header">${safeTitle}</div>
       <div class="mini-modal-body">${safeMessage}</div>
+      ${checkboxHTML}
       <div class="mini-modal-buttons">
         <button class="btn-cancel">${safeCancelText}</button>
         <button class="btn-confirm${destructive ? ' btn-destructive' : ''}">${safeConfirmText}</button>
@@ -1535,8 +1551,10 @@ async setDefaultPosition(notificationContainer) {
 
     const confirmBtn = modal.querySelector(DOM_SELECTORS.BTN_CONFIRM);
     const cancelBtn = modal.querySelector(DOM_SELECTORS.BTN_CANCEL);
+    const checkboxEl = hasCheckbox ? modal.querySelector(DOM_SELECTORS.MINI_MODAL_CHECKBOX_INPUT) : null;
 
-    const { settle, disposers } = createModalSettler(overlay, callback);
+    const { settle, disposers } = createModalSettler(overlay, callback,
+      hasCheckbox ? () => ({ checked: !!checkboxEl?.checked }) : null);
 
     const focusTimer = setTimeout(() => cancelBtn.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_NEXT_TICK);
     disposers.push(() => clearTimeout(focusTimer));

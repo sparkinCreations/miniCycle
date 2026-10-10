@@ -599,6 +599,80 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         preBlock.remove();
     }
 
+    await test('factory reset: the confirmation offers a "skip the backup" opt-out, unchecked by default', async () => {
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'factory-reset';   // DOM_IDS.FACTORY_RESET
+        document.body.appendChild(resetBtn);
+        let confirmOpts = null;
+        const resetMod = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-skipoffer`);
+        resetMod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {}, reload: () => {} },
+            showNotification: () => {},
+            showConfirmationModal: (opts) => { confirmOpts = opts; opts.callback(false); },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            appInit: { runInitialSetup: async () => {} },
+            closeAllModals: () => {}, hideMainMenu: () => {}, showLoader: () => {}, hideLoader: () => {}
+        });
+        try {
+            resetMod.setupFactoryResetButton();
+            resetBtn.click();
+            if (!confirmOpts) throw new Error('confirmation modal not shown');
+            if (!confirmOpts.checkbox || typeof confirmOpts.checkbox.label !== 'string' || !confirmOpts.checkbox.label) {
+                throw new Error('confirmation should carry a checkbox with a label: ' + JSON.stringify(confirmOpts.checkbox));
+            }
+            if (confirmOpts.checkbox.checked) throw new Error('the skip-backup opt-out must be unchecked by default');
+            if (!/skip/i.test(confirmOpts.checkbox.label) || !/cannot be recovered/i.test(confirmOpts.checkbox.label)) {
+                throw new Error('label should say it skips the backup and that data cannot be recovered: ' + confirmOpts.checkbox.label);
+            }
+        } finally {
+            resetBtn.remove();
+        }
+    });
+
+    await test('factory reset: with the opt-out ticked, the wipe runs WITHOUT saving a backup', async () => {
+        const origSWGetRegs = navigator.serviceWorker && navigator.serviceWorker.getRegistrations;
+        const origCachesKeys = (typeof window.caches !== 'undefined') && window.caches.keys;
+        const origIdbDelete = indexedDB.deleteDatabase;
+        if (origSWGetRegs) navigator.serviceWorker.getRegistrations = async () => [];
+        if (origCachesKeys) window.caches.keys = async () => [];
+        indexedDB.deleteDatabase = () => { const req = {}; setTimeout(() => { if (req.onsuccess) req.onsuccess({}); }, 0); return req; };
+        localStorage.setItem('miniCycleData', JSON.stringify({ x: 1 }));
+        const resetBtn = document.createElement('button');
+        resetBtn.id = 'factory-reset';   // DOM_IDS.FACTORY_RESET
+        document.body.appendChild(resetBtn);
+        const notifications = [];
+        let confirmPromise = null;
+        let pickerCalls = 0;
+        const resetMod = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-skipwipe`);
+        resetMod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {}, reload: () => {} },
+            showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); },
+            // The user ticks "skip the backup" and confirms.
+            showConfirmationModal: (opts) => { confirmPromise = opts.callback(true, { checked: true }); },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            appInit: { runInitialSetup: async () => {} },
+            closeAllModals: () => {}, hideMainMenu: () => {}, showLoader: () => {}, hideLoader: () => {}
+        });
+        try {
+            // If the reset still tried to back up, the picker would be hit (and
+            // its abort would cancel the wipe) — so a wipe proves the skip.
+            const { clicked } = await captureBackupDownloadAsync(() => withSavePicker(async () => { pickerCalls++; throw abortError(); }, async () => {
+                resetMod.setupFactoryResetButton();
+                resetBtn.click();
+                await confirmPromise;
+            }));
+            if (pickerCalls !== 0) throw new Error('skip-backup must not open the Save dialog');
+            if (clicked !== 0) throw new Error('skip-backup must not fall back to a download either');
+            if (localStorage.getItem('miniCycleData') !== null) throw new Error('with the opt-out ticked the data should have been wiped');
+            if (notifications.some(n => n.type === 'error')) throw new Error('no error expected: ' + JSON.stringify(notifications));
+        } finally {
+            indexedDB.deleteDatabase = origIdbDelete;
+            if (origSWGetRegs) navigator.serviceWorker.getRegistrations = origSWGetRegs;
+            if (origCachesKeys) window.caches.keys = origCachesKeys;
+            resetBtn.remove();
+        }
+    });
+
     await test('factory reset: a failed pre-wipe backup blocks the wipe instead of deleting unprotected', async () => {
         // The reset destroys localStorage, sessionStorage, caches AND every app
         // IndexedDB database, so the downloaded file is the ONLY thing that can

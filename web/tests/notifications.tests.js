@@ -668,6 +668,41 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    await test('showConfirmationModal() checkbox option: rendered, unchecked by default, state reaches the callback', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const seen = [];
+        notifications.showConfirmationModal({
+            title: 'Test',
+            checkbox: { label: 'Skip the <safety> step' },   // angle brackets: must be escaped, not rendered
+            callback: (confirmed, detail) => seen.push({ confirmed, detail })
+        });
+        const dialog = document.querySelector('.mini-modal-dialog');
+        const box = dialog.querySelector('.mini-modal-checkbox-input');
+        if (!box) throw new Error('checkbox input not rendered');
+        if (box.checked) throw new Error('checkbox must default to unchecked');
+        const labelText = dialog.querySelector('.mini-modal-checkbox').textContent;
+        if (!labelText.includes('Skip the <safety> step')) throw new Error('label text wrong or HTML-interpreted: ' + labelText);
+        if (dialog.querySelector('.mini-modal-checkbox safety')) throw new Error('label was injected as HTML');
+        box.click();
+        dialog.querySelector('.btn-confirm').click();
+        if (seen.length !== 1) throw new Error('callback should fire once');
+        if (seen[0].confirmed !== true) throw new Error('confirm should pass true');
+        if (!seen[0].detail || seen[0].detail.checked !== true) throw new Error('callback should receive { checked: true } after ticking: ' + JSON.stringify(seen[0].detail));
+    });
+
+    await test('showConfirmationModal() without the checkbox option: no checkbox, callback detail undefined', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const seen = [];
+        notifications.showConfirmationModal({ title: 'Test', callback: (confirmed, detail) => seen.push({ confirmed, detail }) });
+        const dialog = document.querySelector('.mini-modal-dialog');
+        if (dialog.querySelector('.mini-modal-checkbox')) throw new Error('no checkbox row expected');
+        dialog.querySelector('.btn-cancel').click();
+        if (seen.length !== 1 || seen[0].confirmed !== false) throw new Error('cancel should pass false once');
+        if (seen[0].detail !== undefined) throw new Error('detail should be undefined without a checkbox');
+    });
+
     await test('showConfirmationModal() dismissed before Enter-arm delay: callback fires once, later Enter is inert', async () => {
         setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();

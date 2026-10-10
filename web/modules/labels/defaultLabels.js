@@ -977,6 +977,7 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetTitle:        'Factory Reset',
         factoryResetMessage:      'This will DELETE ALL data, settings, and progress. A backup file will be saved first. Are you sure?',
         factoryResetConfirm:      'Delete Everything',
+        factoryResetSkipBackup:   'Skip the backup. I understand my data cannot be recovered.',
         resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
         clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
         removeRecurringMessage:   'Are you sure you want to remove "{name}" from recurring tasks?',
