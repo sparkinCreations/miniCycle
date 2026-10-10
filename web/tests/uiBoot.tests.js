@@ -228,6 +228,47 @@ export async function runUIBootTests(resultsDiv) {
         }
     });
 
+    // ===== ADD-TASK INPUT (measured Oct 2026) =====
+    resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Add-task input</h4>';
+
+    await test('REGRESSION: a REJECTED add leaves the typed text in the input (button and Enter)', async () => {
+        // The handlers cleared the input unconditionally after calling add().
+        // When validation rejected the text (over the character limit) the
+        // warning fired AND the input was wiped, so the user had to retype
+        // everything to trim one word. Success clears via finalizeTaskCreation.
+        const m = await import(((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
+        if (typeof m.attachTaskInputListeners !== 'function') throw new Error('attachTaskInputListeners not exported');
+
+        const input = document.createElement('input');
+        const button = document.createElement('button');
+        document.body.append(input, button);
+        const addCalls = [];
+        const appContextMod = {
+            getTaskApi: () => ({ add: (text) => { addCalls.push(text); return undefined; } }), // rejected
+            getUndoApi: () => null,
+            getStateApi: () => null
+        };
+        try {
+            m.attachTaskInputListeners(null, input, button, appContextMod);
+            const longText = 'x'.repeat(150);
+
+            input.value = longText;
+            button.click();
+            await new Promise(r => setTimeout(r, 20));
+            if (addCalls.length !== 1) throw new Error(`add should be called once via the button, got ${addCalls.length}`);
+            if (input.value !== longText) throw new Error(`button path wiped the input (value now "${input.value.slice(0, 20)}…")`);
+
+            input.value = longText;
+            input.dispatchEvent(new KeyboardEvent('keypress', { key: 'Enter', bubbles: true, cancelable: true }));
+            await new Promise(r => setTimeout(r, 20));
+            if (addCalls.length !== 2) throw new Error(`add should be called via Enter, got ${addCalls.length} calls`);
+            if (input.value !== longText) throw new Error(`Enter path wiped the input (value now "${input.value.slice(0, 20)}…")`);
+        } finally {
+            input.remove();
+            button.remove();
+        }
+    });
+
     await test('stampCopyrightYear fills every [data-copyright-year] with the CURRENT year', async () => {
         const { stampCopyrightYear } = await import(
             ((globalThis.__MC_MODULE_MAP || {})['/modules/boot/uiBoot.js'] || '../modules/boot/uiBoot.js') + '?v=' + Date.now());
