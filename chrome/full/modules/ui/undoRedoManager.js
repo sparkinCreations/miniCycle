@@ -486,7 +486,7 @@ export function wrapAppStateForUndo(appInit) {
         console.warn('⚠️ Undo snapshot wrapper error:', e);
       }
       // Return the Promise from boundUpdate directly (no await needed)
-      return boundUpdate(producer, immediate);
+      return boundUpdate(relabelOnRekey(producer, globalState), immediate);
     };
 
     globalState.wrappedAppStateUpdate = true;
@@ -498,6 +498,50 @@ export function wrapAppStateForUndo(appInit) {
     console.error('❌ Failed to wrap AppState.update:', e);
     return false;
   }
+}
+
+/**
+ * Wrap a producer so a routine RENAME is recognised the instant it happens.
+ *
+ * A rename re-keys the routine (routines[new] = {...old, title}; delete
+ * routines[old]; activeRoutineId = new) inside one producer. AppState then
+ * notifies subscribers SYNCHRONOUSLY, and any of them that calls
+ * AppState.update (the "Renamed to" notification persisting its position did,
+ * measured Oct 2026) makes this wrapper capture a snapshot whose active id is
+ * the NEW key while activeCycleIdForUndo still holds the OLD one. The
+ * capture's self-heal treats that as a routine switch and wipes both stacks —
+ * so renaming a routine erased its undo history every time. onCycleRenamed
+ * could not help: callers invoke it after the awaited update, and it awaited
+ * IndexedDB before touching memory.
+ *
+ * The producer is the only place the rename is unambiguous — old key gone,
+ * new key born, active id moved, all in one call — so the relabel happens
+ * right here, after the producer and before notifyListeners. A deletion that
+ * switches routines fails the "new key did not exist before" test and is left
+ * to onCycleDeleted / onCycleSwitched as before.
+ * @param {Function} producer - The caller's state producer
+ * @param {Object} globalState - AppGlobalState
+ * @returns {Function} producer wrapper with identical return value
+ */
+function relabelOnRekey(producer, globalState) {
+  if (typeof producer !== 'function') return producer;
+  return (state) => {
+    const beforeId = getActiveRoutineId(state);
+    // Snapshot the KEY LIST now: the producer mutates this same routines
+    // object in place, so reading it afterwards would always "find" the new key.
+    const routinesBefore = getRoutines(state);
+    const keysBefore = routinesBefore ? new Set(Object.keys(routinesBefore)) : null;
+    const result = producer(state);
+    const afterId = getActiveRoutineId(state);
+    if (keysBefore && beforeId && afterId && beforeId !== afterId &&
+        globalState.activeCycleIdForUndo === beforeId &&
+        !getRoutine(state, beforeId) && !keysBefore.has(afterId) && getRoutine(state, afterId)) {
+      globalState.activeCycleIdForUndo = afterId;
+      globalState.activeUndoStack = relabelSnapshotsForCycle(globalState.activeUndoStack, afterId);
+      globalState.activeRedoStack = relabelSnapshotsForCycle(globalState.activeRedoStack, afterId);
+    }
+    return result;
+  };
 }
 
 /**
@@ -1377,6 +1421,21 @@ export async function onCycleDeleted(cycleId) {
  * Called by cycleSwitcher when cycle is renamed
  */
 export async function onCycleRenamed(oldCycleId, newCycleId) {
+  // Update in-memory tracking AND relabel the live stacks FIRST, before any
+  // await — they hold the same stale-id snapshots the IDB migration rewrites.
+  // This used to run only after the IndexedDB round-trip; a capture landing in
+  // that window (any AppState.update from a subscriber) saw a tracked id that
+  // no longer existed and self-healed by wiping the stacks. The update wrapper
+  // now relabels during the rename producer itself (relabelOnRekey), so by the
+  // time this runs the ids usually already match; this is the fallback for
+  // callers whose rename did not go through the wrapper.
+  if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
+    _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
+    _deps.AppGlobalState.activeUndoStack =
+      relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
+    _deps.AppGlobalState.activeRedoStack =
+      relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
+  }
 
   try {
     // Cancel any pending write for the OLD id first — otherwise it fires after
@@ -1385,31 +1444,9 @@ export async function onCycleRenamed(oldCycleId, newCycleId) {
 
     // Migrate in IndexedDB
     await renameUndoStackInIndexedDB(oldCycleId, newCycleId);
-
-    // Update in-memory tracking AND relabel the live stacks — they hold the
-    // same stale-id snapshots the IDB migration rewrites; without this, a
-    // rename → Undo in the same session restores the old title into the new
-    // key, and the next persist re-saves stale ids over the migrated record.
-    if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
-      _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
-      _deps.AppGlobalState.activeUndoStack =
-        relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
-      _deps.AppGlobalState.activeRedoStack =
-        relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
-    }
   } catch (e) {
-    // Error boundary for cycle rename
+    // Error boundary for cycle rename — memory is already consistent above.
     console.error('❌ Failed to rename undo stack:', e);
-
-    // Still update in-memory tracking (and relabel) even if IndexedDB fails
-    if (_deps.AppGlobalState.activeCycleIdForUndo === oldCycleId) {
-      _deps.AppGlobalState.activeCycleIdForUndo = newCycleId;
-      _deps.AppGlobalState.activeUndoStack =
-        relabelSnapshotsForCycle(_deps.AppGlobalState.activeUndoStack, newCycleId);
-      _deps.AppGlobalState.activeRedoStack =
-        relabelSnapshotsForCycle(_deps.AppGlobalState.activeRedoStack, newCycleId);
-    }
-
     // Don't notify user - this is an internal operation
   }
 }

@@ -1,3 +1,8 @@
+## [2.590] - 2026-10-10
+- fix(undo): renaming a routine no longer wipes its undo history
+- chore(desktop): sync shell version to 2.589.0 and rebuild installers
+
+
 ## [2.589] - 2026-10-10
 - fix(validation): warn on truncated text and announce empty-name errors
 - chore: ignore root-level skill scratch dirs so git add -A cannot ship them
