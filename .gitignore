@@ -29,7 +29,7 @@ __pycache__/
 *.pyc
 
 # macOS/Finder "name 2.ext" duplicate copies — never commit them
-* 2.*
+* [2-9].*
 
 # Scratch output from Claude Code skills/plugins that write into the repo ROOT
 # rather than a scratchpad: the xlsx skill drops outputs/<uuid>/, the pdf-viewer

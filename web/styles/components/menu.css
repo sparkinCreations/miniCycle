@@ -331,7 +331,14 @@ body.quick-actions-open #quick-actions-window {
 
 .menu-section-grid {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    /* minmax(0, 1fr), not bare 1fr: a 1fr track's floor is its content's
+       min-content width, so a long nowrap label ("Enable Tour Prompts") made
+       its column ~200px and the other ~125px, and the grid ran past the panel
+       edge — `overflow: hidden` then CUT THE WORDS. Which column the long
+       labels land in depends on how many items the build shows (desktop has
+       no Lite Version button), which is why it showed on desktop first.
+       Measured Oct 2026. Equal shrinkable columns + wrapping labels instead. */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--space-1);
     overflow: hidden;
     min-height: 0;
@@ -360,7 +367,13 @@ body.quick-actions-open #quick-actions-window {
     border-radius: var(--radius-2xl);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
-    white-space: nowrap;
+    /* Labels wrap rather than clip (see .menu-section-grid above). min-width: 0
+       lets the flex button honour the shrinkable track instead of its own
+       min-content width. */
+    min-width: 0;
+    white-space: normal;
+    text-align: left;
+    line-height: 1.25;
     text-decoration: none;
 }
 

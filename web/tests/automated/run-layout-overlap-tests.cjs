@@ -290,6 +290,57 @@ function measureDialogOverflow() {
     return { W, results };
 }
 
+function measureMenuClipping() {
+    // Main menu sections lay their buttons out in a 2-column grid. A column
+    // must never be wider than its share of the panel, and no label may be
+    // clipped by the grid's overflow:hidden. Measured both with and without the
+    // Lite Version button, because the item count decides which column the
+    // long labels fall into — the desktop build (no Lite button) clipped
+    // "Check for Updates" / "Enable Tour Prompts" while the web build did not.
+    const menu = document.querySelector('.menu-container');
+    if (!menu) return { missing: true, checked: 0, clipped: [] };
+    const wasVisible = menu.classList.contains('visible');
+    const sections = [...menu.querySelectorAll('.menu-section')];
+    const wasCollapsed = sections.map(s => s.classList.contains('collapsed'));
+    const lite = document.getElementById('menu-lite-version');
+    const liteDisplay = lite ? lite.style.display : null;
+    const clipped = [];
+    let checked = 0;
+    let menuWidth = 0;
+    try {
+        menu.classList.add('visible');
+        sections.forEach(s => s.classList.remove('collapsed'));
+        menuWidth = Math.round(menu.getBoundingClientRect().width);
+        for (const variant of ['lite shown', 'lite hidden']) {
+            if (lite) lite.style.display = variant === 'lite hidden' ? 'none' : '';
+            for (const s of sections) {
+                const grid = s.querySelector('.menu-section-grid');
+                if (!grid) continue;
+                const g = grid.getBoundingClientRect();
+                if (g.width === 0) continue;
+                if (grid.scrollWidth - grid.clientWidth > 1) {
+                    clipped.push({ variant, section: s.dataset.section || '?', label: '(grid)', over: grid.scrollWidth - grid.clientWidth });
+                }
+                for (const b of grid.querySelectorAll('button, .menu-link-button')) {
+                    const r = b.getBoundingClientRect();
+                    if (r.width === 0) continue;
+                    checked++;
+                    const over = Math.round(r.right - g.right);
+                    const inner = b.scrollWidth - b.clientWidth;
+                    if (over > 1 || inner > 1) {
+                        clipped.push({ variant, section: s.dataset.section || '?', label: b.textContent.trim(), over: Math.max(over, inner) });
+                    }
+                }
+            }
+        }
+    } finally {
+        if (lite) lite.style.display = liteDisplay;
+        sections.forEach((s, i) => { if (wasCollapsed[i]) s.classList.add('collapsed'); });
+        if (!wasVisible) menu.classList.remove('visible');
+    }
+    return { checked, clipped, menuWidth };
+}
+
 async function run() {
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
     console.log(`${colors.blue}📐 miniCycle Layout Overlap Regression Tests${colors.reset}`);
@@ -573,6 +624,13 @@ async function run() {
             record(vp, `dialogs fit viewport (${dlg.results.length} checked)`,
                 over.length === 0,
                 over.map(d => `${d.label} width=${d.width} right=${d.right} — ${d.over}px past ${dlg.W}`).join('; '));
+
+            // --- Main menu: no section grid may clip its labels --------------------
+            const menu = await page.evaluate(measureMenuClipping);
+            record(vp, `main menu labels fit their section grids (${menu.checked} buttons, panel ${menu.menuWidth}px)`,
+                !menu.missing && menu.clipped.length === 0,
+                menu.missing ? 'no .menu-container found'
+                    : menu.clipped.map(c => `[${c.variant}] ${c.section}: "${c.label}" ${c.over}px past the grid`).join('; '));
 
             // --- Routine switcher: Close must never leave the screen --------------
             // The picker is taller than a short viewport. It used to solve that by
