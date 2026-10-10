@@ -1799,6 +1799,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Confirmation Dialogs ----
     BTN_CONFIRM: '.btn-confirm',
     BTN_CANCEL: '.btn-cancel',
+    MINI_MODAL_CHECKBOX_INPUT: '.mini-modal-checkbox-input',  // optional checkbox row in showConfirmationModal
     MINI_CYCLE_PROMPT_INPUT: '.miniCycle-prompt-input',
     MINI_CYCLE_BTN_CANCEL: '.miniCycle-btn-cancel',
     MINI_CYCLE_BTN_CONFIRM: '.miniCycle-btn-confirm',

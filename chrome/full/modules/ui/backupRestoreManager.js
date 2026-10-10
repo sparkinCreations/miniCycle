@@ -1450,11 +1450,17 @@ export function setupFactoryResetButton() {
             confirmText: getLabel('modal.factoryResetConfirm'),
             cancelText: getLabel('button.cancel'),
             destructive: true,
-            callback: async (confirmed) => {
+            // Opt-OUT of the safety backup, unchecked by default: the safe path
+            // stays one tap, the unrecoverable path takes a deliberate second
+            // one. For the user wiping a shared or departing device, a forced
+            // backup file is exactly what they wanted gone.
+            checkbox: { label: getLabel('modal.factoryResetSkipBackup'), checked: false },
+            callback: async (confirmed, detail) => {
                 if (!confirmed) {
                     _deps.showNotification(getLabel('notify.factoryResetCancelled'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
                     return;
                 }
+                const skipBackup = detail?.checked === true;
 
                 const prevDisabled = resetBtn.disabled;
                 resetBtn.disabled = true;
@@ -1475,7 +1481,9 @@ export function setupFactoryResetButton() {
                     // (appState.js:174), so it alone answers "is there anything
                     // to lose" — no second read needed.
                     const hasDataToLose = Boolean(getAppStateInstance()?.isReady?.());
-                    if (hasDataToLose) {
+                    // skipBackup is the explicit opt-out ticked on the confirmation;
+                    // fail-closed below still applies whenever a backup IS attempted.
+                    if (hasDataToLose && !skipBackup) {
                         // The user picks where the backup goes (native Save As
                         // where the browser has it; plain download elsewhere).
                         // Closing that dialog means "not now" — stop, delete

@@ -1,3 +1,8 @@
+## [2.592] - 2026-10-10
+- fix(a11y): bulk check/uncheck keep each row's spoken status in step with its box
+- feat(reset): factory reset can skip the safety backup, by explicit opt-out
+
+
 ## [2.591] - 2026-10-10
 - fix(add-task): a rejected add keeps the typed text in the input
 - fix(menu): section grids wrap long labels instead of clipping them

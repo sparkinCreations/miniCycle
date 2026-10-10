@@ -513,6 +513,27 @@ dialog.mini-modal-dialog::backdrop {
     white-space: pre-line;
 }
 
+/* Optional opt-in row between the message and the buttons
+   (showConfirmationModal `checkbox` option — e.g. factory reset's "skip the backup"). */
+.mini-modal-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2);
+    /* The body already leaves --space-6-25 below itself; mirror it below the
+       row so the buttons get the same breathing room they had without it. */
+    margin: 0 0 var(--space-6-25);
+    font-size: var(--font-size-sm);
+    line-height: 1.35;
+    text-align: left;
+    cursor: pointer;
+}
+
+.mini-modal-checkbox input {
+    flex-shrink: 0;
+    margin: 2px 0 0;
+    cursor: pointer;
+}
+
 .mini-modal-buttons {
     display: flex;
     gap: var(--space-3);
