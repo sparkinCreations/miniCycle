@@ -1,3 +1,8 @@
+## [2.591] - 2026-10-10
+- fix(add-task): a rejected add keeps the typed text in the input
+- fix(menu): section grids wrap long labels instead of clipping them
+
+
 ## [2.590] - 2026-10-10
 - fix(undo): renaming a routine no longer wipes its undo history
 - chore(desktop): sync shell version to 2.589.0 and rebuild installers

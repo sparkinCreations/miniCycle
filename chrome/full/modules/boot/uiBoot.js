@@ -286,7 +286,10 @@ export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton,
         console.error('❌ Failed to add task:', e);
         getShowNotification()?.('❌ ' + getLabel('notify.taskAddFailed'), 'error', 3000);
       }
-      taskInput.value = '';
+      // No unconditional clear here. taskDOM.finalizeTaskCreation empties the
+      // input once the task actually exists; clearing regardless wiped the text
+      // whenever validation REJECTED it (over the character limit, task limit
+      // reached) and made the user retype the whole thing just to trim it.
     });
   } else {
     console.warn('⚠️ addTaskButton element not found!');
@@ -318,7 +321,8 @@ export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton,
           console.error('❌ Failed to add task:', e);
           getShowNotification()?.('❌ ' + getLabel('notify.taskAddFailed'), 'error', 3000);
         }
-        taskInput.value = '';
+        // See the button handler above: the success path clears the input in
+        // finalizeTaskCreation; a rejected add must leave the text to edit.
       }
     });
   }
