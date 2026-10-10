@@ -472,7 +472,14 @@ export async function editTaskImpl(taskItem, deps = {}) {
             if (finished) return;
             finished = true;
 
-            const newText = cancelled ? oldText : sanitizeInput(input.value.trim());
+            // sanitizeInput clamps to the task limit; measure the RAW length
+            // first or the cut is silent (the add path's validator had the
+            // same gap — see taskValidation.js).
+            const rawEdited = input.value.trim();
+            const newText = cancelled ? oldText : sanitizeInput(rawEdited);
+            if (!cancelled && rawEdited.length > LIMITS.TASK_CHARACTER_INPUT) {
+                _deps.showNotification?.(getLabel('notify.taskTruncated', { vars: { limit: LIMITS.TASK_CHARACTER_INPUT } }), 'warning', UI_TIMEOUTS.NOTIFICATION_SHORT);
+            }
             input.remove();
             taskLabel.style.display = '';
             if (taskOptions) taskOptions.style.visibility = '';
@@ -610,11 +617,21 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
 
     // ── Event handlers ──
     const handleSave = async () => {
-        const newText = sanitizeInput(input.value.trim());
+        const rawText = input.value.trim();
+        const newText = sanitizeInput(rawText);
         if (!newText) {
+            // Colour alone is not feedback: flag the field for assistive tech
+            // and say why (warnings carry role="alert"). Cleared on next input.
             input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
+            input.setAttribute('aria-invalid', 'true');
+            _deps.showNotification?.(getLabel('notify.taskTextEmpty'), 'warning', UI_TIMEOUTS.NOTIFICATION_SHORT);
             input.focus();
             return;
+        }
+        // sanitizeInput clamps to the task limit; the RAW length is the only
+        // way to know a cut happened, so say so instead of silently shortening.
+        if (rawText.length > LIMITS.TASK_CHARACTER_INPUT) {
+            _deps.showNotification?.(getLabel('notify.taskTruncated', { vars: { limit: LIMITS.TASK_CHARACTER_INPUT } }), 'warning', UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
         cleanup();
         dialog.close();
@@ -661,6 +678,12 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
         if (e.key === 'Enter') { e.preventDefault(); handleSave(); }
     };
 
+    // Typing again clears the empty-text error state.
+    const handleInput = () => {
+        input.classList.remove(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
+        input.removeAttribute('aria-invalid');
+    };
+
     const handleDialogCancel = (e) => {
         e.preventDefault();
         handleCancel();
@@ -674,6 +697,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
     saveBtn.addEventListener('click', handleSave);
     cancelBtn.addEventListener('click', handleCancel);
     input.addEventListener('keydown', handleKeydown);
+    input.addEventListener('input', handleInput);
     dialog.addEventListener('cancel', handleDialogCancel);
     dialog.addEventListener('click', handleBackdropClick);
 
@@ -681,6 +705,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
         saveBtn.removeEventListener('click', handleSave);
         cancelBtn.removeEventListener('click', handleCancel);
         input.removeEventListener('keydown', handleKeydown);
+        input.removeEventListener('input', handleInput);
         dialog.removeEventListener('cancel', handleDialogCancel);
         dialog.removeEventListener('click', handleBackdropClick);
     };

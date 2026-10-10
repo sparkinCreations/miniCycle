@@ -465,6 +465,114 @@ function serializeLiveMiniCycleData(AppState) {
 }
 
 /**
+ * Build the backup file: the live AppState serialized with its metadata (and the
+ * lite-storage snapshot when present), as a Blob plus a safe .json file name.
+ * Snapshots at BUILD time, not click time — a name prompt or a save dialog can
+ * sit open for minutes, and edits made meanwhile belong in the backup.
+ * Returns null (after telling the user) when there is nothing to export.
+ * @param {Object} AppState
+ * @param {string} fileName - requested name; sanitized, `.json` appended if missing
+ * @param {string} defaultName - used when the sanitized name is empty
+ * @returns {{ blob: Blob, name: string } | null}
+ */
+function buildBackupFile(AppState, fileName, defaultName) {
+    AppState.forceSave?.();  // best-effort flush; failures are reported by save()
+    const miniCycleData = serializeLiveMiniCycleData(AppState);
+    if (!miniCycleData) {
+        _deps.showNotification(getLabel('notify.backupNoData'), 'error');
+        return null;
+    }
+    const currentState = AppState.get();
+    const liteStorage = collectLiteStorageSnapshot();
+    const backupData = {
+        schemaVersion: SCHEMA.CURRENT,
+        miniCycleData,
+        backupMetadata: {
+            createdAt: Date.now(),
+            version: _deps.AppMeta?.version || currentState?.metadata?.version || '2.5',
+            schemaVersion: currentState?.metadata?.schemaVersion || SCHEMA.CURRENT,
+            includesLiteStorage: Boolean(liteStorage),
+            source: 'miniCycle App'
+        }
+    };
+    if (liteStorage) {
+        backupData.liteStorage = liteStorage;
+    }
+
+    const safeName = String(fileName || '').replace(/[<>:"/\\|?*]/g, '').trim() || defaultName;
+    const name = safeName.endsWith('.json') ? safeName : `${safeName}.json`;
+    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+    return { blob, name };
+}
+
+/** Tell the user, and record the timestamp the backup-reminder system reads. */
+function markBackupSaved(AppState) {
+    _deps.showNotification('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    AppState.update(state => {
+        if (!state.settings) state.settings = {};
+        state.settings.lastFileBackupTimestamp = Date.now();
+    });
+}
+
+/**
+ * Save a backup where the USER chooses. Uses the File System Access API's native
+ * "Save As" dialog when the browser has it (Chromium, Electron); otherwise, or if
+ * the dialog fails for any reason other than the user closing it, falls back to
+ * the plain download that downloadBackupFile() performs.
+ *
+ * Asynchronous by nature (the dialog), so unlike downloadBackupFile() it reports
+ * three outcomes — the factory reset needs to tell "user said no" apart from
+ * "could not save":
+ *   'saved'      a file was written or handed to the browser
+ *   'cancelled'  the user closed the Save dialog; nothing was written, no fallback
+ *   false        nothing to export, or the export failed
+ *
+ * @param {Object} [options]
+ * @param {string} [options.suggestedName] - file name offered in the dialog (no extension needed)
+ * @returns {Promise<'saved'|'cancelled'|false>}
+ */
+export async function saveBackupFileAs(options = {}) {
+    const AppState = getAppStateInstance();
+    if (!AppState?.isReady?.()) {
+        console.error('AppState required for backup');
+        _deps.showNotification(getLabel('notify.backupNoData'), 'error');
+        return false;
+    }
+    const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
+    const wanted = options.suggestedName || defaultName;
+
+    if (typeof window.showSaveFilePicker === 'function') {
+        let handle = null;
+        try {
+            handle = await window.showSaveFilePicker({
+                suggestedName: wanted.endsWith('.json') ? wanted : `${wanted}.json`,
+                types: [{ description: getLabel('noun.backupFileType'), accept: { 'application/json': ['.json'] } }]
+            });
+        } catch (error) {
+            // AbortError = the user closed the dialog. That is an answer, not a
+            // failure — do NOT fall through to a download they just declined.
+            if (error?.name === 'AbortError') return 'cancelled';
+            console.warn('Save dialog unavailable, falling back to download:', error);
+        }
+        if (handle) {
+            const file = buildBackupFile(AppState, handle.name || wanted, defaultName);
+            if (!file) return false;
+            try {
+                const writable = await handle.createWritable();
+                await writable.write(file.blob);
+                await writable.close();
+                markBackupSaved(AppState);
+                return 'saved';
+            } catch (error) {
+                console.warn('Writing the chosen file failed, falling back to download:', error);
+            }
+        }
+    }
+
+    return downloadBackupFile({ skipNamePrompt: true }) ? 'saved' : false;
+}
+
+/**
  * Download the current app state as a .json backup file.
  * This is the core backup logic extracted for reuse by both the
  * settings backup button and the backup reminder module.
@@ -496,49 +604,17 @@ export function downloadBackupFile(options = {}) {
     // factory reset's pre-wipe safety net depends on this: it must not wipe
     // after an export that quietly produced nothing.
     const createAndDownload = (fileName) => {
-        // Snapshot at download time, not click time — the name prompt can sit
-        // open for minutes, and edits made meanwhile belong in the backup.
-        AppState.forceSave?.();  // see note above — failures are reported by save()
-        const miniCycleData = serializeLiveMiniCycleData(AppState);
-        if (!miniCycleData) {
-            _deps.showNotification(getLabel('notify.backupNoData'), 'error');
-            return false;
-        }
-        const currentState = AppState.get();
-        const liteStorage = collectLiteStorageSnapshot();
-        const backupData = {
-            schemaVersion: SCHEMA.CURRENT,
-            miniCycleData,
-            backupMetadata: {
-                createdAt: Date.now(),
-                version: _deps.AppMeta?.version || currentState?.metadata?.version || '2.5',
-                schemaVersion: currentState?.metadata?.schemaVersion || SCHEMA.CURRENT,
-                includesLiteStorage: Boolean(liteStorage),
-                source: 'miniCycle App'
-            }
-        };
-        if (liteStorage) {
-            backupData.liteStorage = liteStorage;
-        }
+        const file = buildBackupFile(AppState, fileName, defaultName);
+        if (!file) return false;
 
-        const safeName = fileName.replace(/[<>:"/\\|?*]/g, '').trim() || defaultName;
-        const finalName = safeName.endsWith('.json') ? safeName : `${safeName}.json`;
-
-        const backupBlob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-        const backupUrl = URL.createObjectURL(backupBlob);
+        const backupUrl = URL.createObjectURL(file.blob);
         const a = document.createElement('a');
         a.href = backupUrl;
-        a.download = finalName;
+        a.download = file.name;
         a.click();
         URL.revokeObjectURL(backupUrl);
 
-        _deps.showNotification('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
-
-        // Record backup timestamp for backup reminder system
-        AppState.update(state => {
-            if (!state.settings) state.settings = {};
-            state.settings.lastFileBackupTimestamp = Date.now();
-        });
+        markBackupSaved(AppState);
         return true;
     };
 
@@ -1399,13 +1475,28 @@ export function setupFactoryResetButton() {
                     // (appState.js:174), so it alone answers "is there anything
                     // to lose" — no second read needed.
                     const hasDataToLose = Boolean(getAppStateInstance()?.isReady?.());
-                    if (hasDataToLose && !downloadBackupFile({ skipNamePrompt: true })) {
-                        _deps.showNotification(
-                            getLabel('notify.factoryResetBackupFailed'),
-                            'error',
-                            UI_TIMEOUTS.NOTIFICATION_LONG
-                        );
-                        return;
+                    if (hasDataToLose) {
+                        // The user picks where the backup goes (native Save As
+                        // where the browser has it; plain download elsewhere).
+                        // Closing that dialog means "not now" — stop, delete
+                        // nothing, and say so without an error tone.
+                        const saved = await saveBackupFileAs();
+                        if (saved === 'cancelled') {
+                            _deps.showNotification(
+                                getLabel('notify.factoryResetBackupCancelled'),
+                                'info',
+                                UI_TIMEOUTS.NOTIFICATION_LONG
+                            );
+                            return;
+                        }
+                        if (!saved) {
+                            _deps.showNotification(
+                                getLabel('notify.factoryResetBackupFailed'),
+                                'error',
+                                UI_TIMEOUTS.NOTIFICATION_LONG
+                            );
+                            return;
+                        }
                     }
 
                     await runFactoryReset();

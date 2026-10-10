@@ -184,6 +184,29 @@ export function setupSettingsMenu() {
 
     const openSettings = (event) => {
         event.stopPropagation();
+        // Retry any toggle whose setup could not finish earlier.
+        //
+        // settingsManager.init() calls initAllToggles() exactly ONCE, gated on
+        // appInit.waitForCore(). Core-ready is NOT state-ready: on a first run
+        // AppState deliberately holds `data = null` until the choice screen
+        // persists a routine, so a setup that needs settings bails — and nothing
+        // ever called it again. Measured Oct 2026: setupThreeDotsToggle logged
+        // "State data required for three dots toggle" during boot and the toggle
+        // was dead for the whole session (checkbox flipped, nothing persisted).
+        //
+        // Opening Settings is the right retry point: the user cannot reach it
+        // before state exists, and every setup in initAllToggles() carries its own
+        // idempotency guard, so this is a no-op for everything already wired and
+        // completes exactly the ones that failed. It is cheap for the same reason
+        // loadSettingsCollapsedStates() below already runs per open.
+        //
+        // Do NOT instead make init() await AppState.isReady() — CLAUDE.md records
+        // that measured deadlock (state only becomes ready once something writes,
+        // and every writer is a UI manager waiting on that gate).
+        //
+        // Re-entrant via setupSettingsMenu(), which is already latched by the time
+        // this handler can run, so that call returns immediately.
+        initAllToggles();
         // Re-apply section state on every open, not just at setup. In accordion
         // mode the modal must open fully collapsed each time; setting it up once
         // meant the second open still showed whatever was left expanded.
@@ -489,11 +512,10 @@ export function setupMoveArrowsToggle() {
  * Setup three-dots menu toggle
  */
 export function setupThreeDotsToggle() {
-    // ✅ Idempotency guard
+    // ✅ Idempotency guard — see the latch placement note below.
     if (_initialized.threeDotsToggle) {
         return;
     }
-    _initialized.threeDotsToggle = true;
 
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
@@ -509,6 +531,26 @@ export function setupThreeDotsToggle() {
         console.error('State data required for three dots toggle');
         return;
     }
+
+    // ⚠️ LATCH HERE, NOT ON ENTRY. Every guard that can abort this function is
+    // above this line, so reaching it means the wiring really is about to happen.
+    //
+    // This used to sit directly under the guard at the top, which turned the
+    // TRANSIENT failure above into a PERMANENT one: `core-ready does not mean
+    // state-ready`, so on a first run `currentSettings()` is legitimately empty
+    // when the settings UI initialises, this returned early, and the already-set
+    // flag then short-circuited every later call. The change handler was never
+    // attached for the life of the session.
+    //
+    // Measured Oct 2026: the checkbox flipped to checked:true, showThreeDots
+    // stayed false in storage, the body class never applied, zero three-dots
+    // buttons were built — with only the console.error above as a signal. It was
+    // found by hand, not by a gate, because a flipped checkbox looks like success.
+    //
+    // A missing ELEMENT (above) is effectively permanent, so latching past it
+    // would be harmless; a missing STATE never is. Latching last covers both and
+    // costs only a redundant re-wire attempt.
+    _initialized.threeDotsToggle = true;
 
     const threeDotsEnabled = settings.showThreeDots || false;
     threeDotsToggle.checked = threeDotsEnabled;

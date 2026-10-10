@@ -40,7 +40,7 @@
  * @see {@link module:features/statsPanelRewards} - the pattern this follows
  */
 
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
 import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -655,11 +655,18 @@ export class RoutineSwitcherActions {
      * @private
      */
     _commitRename(oldKey, rawNewName, oldName) {
-        const newName = this.m.deps.sanitizeInput(rawNewName.trim());
+        const rawTrimmed = rawNewName.trim();
+        const newName = this.m.deps.sanitizeInput(rawTrimmed);
 
         // If name unchanged or empty, do nothing
         if (!newName || newName === oldName) {
             return;
+        }
+
+        // sanitizeInput clamps to the name limit; say so, as the title-bar
+        // rename (titleManager) does, instead of silently shortening.
+        if (rawTrimmed.length > LIMITS.CYCLE_NAME_CHARACTER) {
+            this.m.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         // Get unique name if there's a collision (but not with self)

@@ -724,6 +724,17 @@ export class TaskDOMManager {
             threeDotsButton.textContent = "⋮";
             threeDotsButton.setAttribute("title", getLabel('taskOption.showOptions'));
             threeDotsButton.setAttribute("aria-label", getLabel('taskOption.showOptions'));
+            // Name the thing this trigger expands. aria-expanded alone says a state
+            // without saying what is in that state. Safe to read dataset here:
+            // createMainTaskElement() set it before this function is called (same
+            // addTask flow, a few lines earlier) — do not move this above that call.
+            //
+            // Honest about the payoff: aria-controls support is uneven (VoiceOver
+            // ignores it, JAWS is partial), so this mostly will not change what
+            // users hear today. It is correct markup and it costs one attribute.
+            if (taskItem?.dataset?.taskId) {
+                threeDotsButton.setAttribute("aria-controls", `task-options-${taskItem.dataset.taskId}`);
+            }
             threeDotsButton.setAttribute("aria-expanded", "false");
 
             // ✅ MEMORY LEAK FIX: Create named handler bound to taskItem

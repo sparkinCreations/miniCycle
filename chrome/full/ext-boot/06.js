@@ -41,17 +41,26 @@
         onboardingDone = !!(parsed && parsed.settings && parsed.settings.onboardingCompleted);
         // OWNING A ROUTINE is the durable "established user" signal that the
         // flags above are not. Boot's createInitialSchema25Data writes
-        // data.cycles = {}, so a fresh user who reloads before choosing still
-        // has ZERO cycles and correctly sees this screen — the reason the
-        // comment above rejects bare "data exists" does not apply to cycles.
+        // data.routine = {}, so a fresh user who reloads before choosing still
+        // has ZERO routines and correctly sees this screen — the reason the
+        // comment above rejects bare "data exists" does not apply to routines.
         // Anyone WITH a routine has used the app, and every action on this
         // screen assumes an empty one (its "restore from backup" invites
         // overwriting live data), so never trap them here because a graduation
         // flag failed to write — app close mid-flow, crash, PWA kill.
         // Aug 2026 lockout: 2 routines + 2 completed cycles, shown this screen
         // on every load with no route back to their own data.
-        var mcCycles = parsed && parsed.data && parsed.data.cycles;
-        hasRoutines = !!(mcCycles && Object.keys(mcCycles).length > 0);
+        //
+        // BOTH schema spellings are read, and that is not belt-and-braces: this
+        // block runs pre-paint, BEFORE schemaMigration26 has touched storage, so
+        // a user arriving from 2.5 still has `data.cycles` at this moment and a
+        // migrated user has `data.routine` (the migration deletes `cycles`).
+        // Reading only `cycles` is how this escape hatch went dead for every 2.6
+        // user from v2.573 until it was caught — the comment above survived the
+        // rename, the code did not. Keep both until 2.5 docs are unreachable.
+        var mcData = parsed && parsed.data;
+        var mcRoutines = mcData && (mcData.routine || mcData.cycles);
+        hasRoutines = !!(mcRoutines && Object.keys(mcRoutines).length > 0);
       } catch (e) { onboardingDone = true; } // unparseable → treat as returning, don't trap
       if (choiceMade || onboardingDone || hasRoutines) return; // decided, mid-flow, or established → normal splash
     }

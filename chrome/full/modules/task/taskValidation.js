@@ -98,16 +98,21 @@ export class TaskValidator {
             return null;
         }
 
-        // Sanitize and trim
-        const taskTextTrimmed = sanitizeFn(taskText.trim());
-        if (!taskTextTrimmed) {
-            console.warn("⚠️ Skipping empty or unsafe task.");
+        // Character limit check — on the RAW trimmed length, before sanitizing.
+        // sanitizeInput (GlobalUtils.normalizeText) clamps to the limit itself,
+        // so checking the sanitized result against the same limit could never
+        // be true: an over-long task was silently cut to 100 characters and the
+        // warning below was dead code. Same bug titleManager fixed for renames.
+        const rawTrimmed = taskText.trim();
+        if (rawTrimmed.length > this.TASK_CHAR_LIMIT) {
+            this.deps.showNotification?.(getLabel('notify.taskCharLimit', { vars: { limit: this.TASK_CHAR_LIMIT } }), 'warning');
             return null;
         }
 
-        // Character limit check
-        if (taskTextTrimmed.length > this.TASK_CHAR_LIMIT) {
-            this.deps.showNotification?.(getLabel('notify.taskCharLimit', { vars: { limit: this.TASK_CHAR_LIMIT } }), 'warning');
+        // Sanitize and trim
+        const taskTextTrimmed = sanitizeFn(rawTrimmed);
+        if (!taskTextTrimmed) {
+            console.warn("⚠️ Skipping empty or unsafe task.");
             return null;
         }
 

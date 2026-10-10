@@ -81,8 +81,14 @@ export class HistoryManager {
         }
 
         // Snapshot the themed label + icon at log time so history preserves
-        // the vocabulary that was active (e.g. "Streak Extended" stays even
+        // the vocabulary that was active (e.g. "Workout Completed" stays even
         // if the user later switches to a different theme).
+        //
+        // This is also why the habit-tracker theme's old "Streak Extended"
+        // wording still appears in EXISTING history for users who had it: those
+        // entries recorded the label that was live when they were written, and
+        // rewriting them would falsify the record. Only new entries use the
+        // corrected "Check-in Completed" vocabulary.
         const labelMap = {
             'cycle_completed': 'history.cycleCompleted',
             'tasks_cleared': 'history.tasksCleared',

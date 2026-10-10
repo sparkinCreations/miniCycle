@@ -51,6 +51,11 @@ let getUniqueCycleName;
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
 
+// Native/ARIA controls inside the switcher that a blank-space click must never be
+// mistaken for (see setupModalClickOutside). Local by design: it describes this
+// modal's markup, not an app-wide selector.
+const INTERACTIVE_CONTROL_SELECTOR = 'button, input, select, textarea, a, label, [role="button"], [contenteditable]';
+
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
     AppMeta: optional(null),
@@ -200,6 +205,13 @@ export class RoutineSwitcher {
 
         switchModal._previousFocus = document.activeElement;
         if (!switchModal.open) switchModal.showModal();
+
+        // Re-arm the blank-click deselect. _cleanup() removes it on every close
+        // (Apr 2026) but until Sep 2026 it was only ever attached in the
+        // constructor — so deselect worked once per page load and died on the
+        // first close. Every other listener the modal needs is (re)wired below
+        // on each open; this one has to be too.
+        this._armDeselectHandler();
 
         // Prevent iOS rubber-band drag on the modal backdrop
         // Allow touchmove only inside scrollable children (routine list, preview)
@@ -612,7 +624,26 @@ export class RoutineSwitcher {
         };
         safeAdd(document, "click", this._clickOutsideHandler);
 
-        // Handle clicks inside modal: close theme picker first, then deselect routine
+        this._armDeselectHandler();
+
+        // Restore focus when dialog closes (including native ESC)
+        const switchModal = this.deps.getModal('routineSwitcher');
+        if (switchModal) {
+            safeAdd(switchModal, "close", () => {
+                this._cleanup();
+                switchModal._previousFocus?.focus({ focusVisible: false });
+            });
+        }
+    }
+
+    /**
+     * Attach the modal-content click handler: close the theme picker first, else
+     * deselect the routine on a blank click. Idempotent — the previous handler is
+     * removed before the new one is added — and called from BOTH the constructor
+     * and switchMiniCycle(), because _cleanup() removes it on close.
+     */
+    _armDeselectHandler() {
+        const safeAdd = this.deps.safeAddEventListener;
         const switchModalContent = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
         if (switchModalContent) {
             // Remove old handler before creating new one
@@ -624,12 +655,15 @@ export class RoutineSwitcher {
                 const clickedActions = event.target.closest(`#${DOM_IDS.SWITCH_ITEMS_ROW}`);
                 const clickedThemePicker = event.target.closest(`#${DOM_IDS.THEME_PICKER_ROW}`);
                 const clickedRecentChip = event.target.closest(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
-                // Check both panel containers (list + preview)
-                const clickedListPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_LEFT);
-                const clickedPreviewPanel = event.target.closest(DOM_SELECTORS.ROUTINE_SWITCHER_RIGHT);
+                // The preview shows the selected routine's own tasks; reading or
+                // scrolling it is not a request to drop the selection.
+                const clickedPreviewWindow = event.target.closest(DOM_SELECTORS.DESKTOP_PREVIEW_WINDOW);
+                // Header controls (search, filter, sort), Open/Import, Close: they
+                // have their own jobs and must not double as a deselect.
+                const clickedControl = event.target.closest(INTERACTIVE_CONTROL_SELECTOR);
 
-                // If clicking on a routine item, actions, or recent chip — let those handlers run
-                if (clickedItem || clickedActions || clickedThemePicker || clickedRecentChip) {
+                // If clicking on a routine item, actions, chip, preview or control — let those handlers run
+                if (clickedItem || clickedActions || clickedThemePicker || clickedRecentChip || clickedPreviewWindow || clickedControl) {
                     return;
                 }
 
@@ -642,24 +676,14 @@ export class RoutineSwitcher {
                     return;
                 }
 
-                // Clicks inside the list or preview panels don't deselect
-                if (clickedListPanel || clickedPreviewPanel) {
-                    return;
-                }
-
-                // Clicked outside all interactive areas — deselect routine
+                // Clicked blank space — anywhere in the modal, INCLUDING the empty
+                // part of the list panel and the preview panel — deselect. From
+                // Mar 22 2026 (d04287ff) to Sep 2026 both panels were excluded
+                // here, which left almost nowhere to click to deselect: the two
+                // panels ARE the modal body.
                 this._deselectRoutine();
             };
             safeAdd(switchModalContent, "click", switchModalContent._clickHandler);
-        }
-
-        // Restore focus when dialog closes (including native ESC)
-        const switchModal = this.deps.getModal('routineSwitcher');
-        if (switchModal) {
-            safeAdd(switchModal, "close", () => {
-                this._cleanup();
-                switchModal._previousFocus?.focus({ focusVisible: false });
-            });
         }
     }
 

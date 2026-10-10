@@ -963,20 +963,47 @@ export class MiniCycleReminders {
 
             if (isActive) {
                 const reminderSettings = state.customReminders || {};
-                const freq = reminderSettings.frequencyValue || 0;
-                const unit = reminderSettings.frequencyUnit || 'hours';
-                const settingsText = freq > 0
-                    ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
-                    : getLabel('notify.reminderCustomSettings');
 
-                const message = `🔔 ${getLabel('notify.reminderEnabledWithSettings', { vars: { settings: settingsText } })}`;
+                // The task's own flag is saved either way — the user's intent is
+                // recorded and takes effect the moment they flip the global switch.
+                // But the MESSAGE must not claim a reminder is running when the
+                // global switch is off: startReminders() returns immediately on
+                // `!remindersSettings.enabled`, so nothing fires. Worse, the
+                // enabled-copy interpolates the stored frequency, promising a
+                // schedule ("Every 1 hours") read from the very object whose
+                // enabled:false makes it inert. The 🔔 button is reachable in this
+                // state because updateReminderButtons() deliberately stopped
+                // gating its visibility on the global setting — it is controlled
+                // by taskOptionButtons customization instead.
+                const remindersGloballyEnabled = reminderSettings.enabled === true;
+
+                let message;
+                let notificationType;
+                let actionLabel;
+                if (remindersGloballyEnabled) {
+                    const freq = reminderSettings.frequencyValue || 0;
+                    const unit = reminderSettings.frequencyUnit || 'hours';
+                    const settingsText = freq > 0
+                        ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
+                        : getLabel('notify.reminderCustomSettings');
+                    message = `🔔 ${getLabel('notify.reminderEnabledWithSettings', { vars: { settings: settingsText } })}`;
+                    notificationType = 'success';
+                    actionLabel = getLabel('notify.reminderOpenSettings');
+                } else {
+                    // 🔕, not 🔔: the actionable truth is that no notification will
+                    // arrive yet. 'info' rather than 'success' for the same reason.
+                    message = `🔕 ${getLabel('notify.reminderSelectedGlobalOff')}`;
+                    notificationType = 'info';
+                    actionLabel = getLabel('notify.reminderTurnOnReminders');
+                }
+
                 const notificationElement = this.deps.showNotification(
                     message,
-                    "success",
+                    notificationType,
                     UI_TIMEOUTS.NOTIFICATION_SLOW,
                     {
                         actionButton: {
-                            label: getLabel('notify.reminderOpenSettings'),
+                            label: actionLabel,
                             onClick: () => this.openRemindersModal()
                         }
                     }

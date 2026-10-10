@@ -22,6 +22,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { getActiveRoutine, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, setAutoClear, syncTaskAutoClear } from '../utils/cycleMode.js';
 import { createIconElement } from '../utils/icons.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 
 // SVG icons for task buttons (Font Awesome style)
 // Colors controlled by CSS via fill="currentColor" - see task-options.css
@@ -91,6 +92,12 @@ export class TaskButtons {
 
         const buttonContainer = document.createElement("div");
         buttonContainer.classList.add(DOM_CLASSES.TASK_OPTIONS);
+        // Referent for the three-dots trigger's aria-controls (taskDOM sets the
+        // matching attribute). Per-task because every row has its own options row;
+        // task ids are already unique, so this is too.
+        if (assignedTaskId) {
+            buttonContainer.id = `task-options-${assignedTaskId}`;
+        }
 
         // If three dots mode is enabled, ensure buttons start explicitly HIDDEN via CSS class
         // (base .task-options CSS already has visibility: hidden; this adds explicit force-hidden)
@@ -103,7 +110,7 @@ export class TaskButtons {
         const visibleOptions = currentCycle.taskOptionButtons || this.deps.DEFAULT_TASK_OPTION_BUTTONS || {};
 
         // Always show customize button first
-        const customizeBtn = this.createCustomizeButton();
+        const customizeBtn = this.createCustomizeButton(buttonContainer);
         buttonContainer.appendChild(customizeBtn);
 
         // Button configuration with visibility checks
@@ -129,16 +136,14 @@ export class TaskButtons {
 
     /**
      * Create the customize button (opens task options customization modal)
+     * @param {HTMLElement} buttonContainer - The .task-options row this button joins
      * @returns {HTMLButtonElement} The customize button element
      */
-    createCustomizeButton() {
+    createCustomizeButton(buttonContainer) {
         const button = document.createElement("button");
         button.classList.add(DOM_CLASSES.TASK_BTN, DOM_CLASSES.CUSTOMIZE_BTN);
         button.textContent = "+/-";
         button.setAttribute("type", "button");
-        button.setAttribute("title", getLabel('taskOption.customize'));
-        button.setAttribute("tabindex", "-1");
-        button.setAttribute("aria-label", getLabel('taskOption.customizeAria'));
 
         const safeAdd = this.deps.safeAddEventListener || ((el, ev, fn) => el.addEventListener(ev, fn));
 
@@ -159,13 +164,18 @@ export class TaskButtons {
         };
         safeAdd(button, "click", button._clickHandler);
 
-        button._keydownHandler = (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                button.click();
-            }
-        };
-        safeAdd(button, "keydown", button._keydownHandler);
+        // Routed through the SHARED accessibility setup rather than hand-rolled.
+        // This button used to set its own tabindex/aria-label/title and a
+        // keydown that handled only Enter and Space, which left it as the one
+        // option in the row with no Escape-to-close and no arrow-key movement —
+        // a keyboard user landing on "+/-" could neither leave the row nor
+        // dismiss it. It also missed the long-press hint until it was wired
+        // separately, which is the same omission twice.
+        //
+        // Requires 'customize-btn' in setupButtonAccessibility's ariaLabelKeys,
+        // or the shared path would overwrite the label with the generic
+        // showOptions fallback.
+        this.setupButtonAccessibility(button, DOM_CLASSES.CUSTOMIZE_BTN, buttonContainer);
 
         return button;
     }
@@ -257,8 +267,20 @@ export class TaskButtons {
                 buttonContainer.querySelectorAll('button.task-btn').forEach(btn => {
                     btn.tabIndex = -1;
                 });
-                // Return focus to task label
                 const taskItem = button.closest(DOM_SELECTORS.TASK);
+                // ⚠️ This path does NOT go through TaskOptionsVisibilityController —
+                // taskButtons has no controller injected (see its createDIModule
+                // list), so it hand-mirrors the three class/tabindex writes above.
+                // That means it must also mirror the aria sync the controller does,
+                // or Escape leaves the trigger announcing expanded="true" over
+                // options that are gone — and this is the KEYBOARD path, i.e. the
+                // users who depend on the announcement most. The invariant is
+                // pinned by the aria-expanded check in `npm run test:a11y`, which
+                // tests the end state rather than any one route, so a future fifth
+                // path cannot reintroduce this silently.
+                taskItem?.querySelector(DOM_SELECTORS.THREE_DOTS_BTN)
+                    ?.setAttribute('aria-expanded', 'false');
+                // Return focus to task label
                 const label = taskItem?.querySelector(DOM_SELECTORS.TASK_TEXT);
                 label?.focus();
             }
@@ -266,6 +288,16 @@ export class TaskButtons {
         safeAdd(button, "keydown", button._accessibilityKeydownHandler);
 
         const ariaLabelKeys = {
+            // createCustomizeButton() routes through here too, so this map is the
+            // single source for every option's name — including the "+/-" button.
+            // The concise `customize` key, not `customizeAria`: the shared path
+            // uses one string for title, aria-label AND the long-press bubble, and
+            // "Add or remove task buttons" serves all three. The longer
+            // customizeAria text reads as a description rather than a name, which
+            // is wordy for a screen reader and overflows the hint bubble. It stays
+            // in defaultLabels (and in LENS_SENSITIVE_KEYS) rather than being
+            // deleted, so vocab themes keep their override point.
+            "customize-btn": 'taskOption.customize',
             "move-up": 'taskOption.moveUp',
             "move-down": 'taskOption.moveDown',
             "recurring-btn": 'taskOption.recurring',
@@ -276,17 +308,47 @@ export class TaskButtons {
             "delete-btn": 'taskOption.delete'
         };
 
-        // Mode-aware label for delete-when-complete button
-        let labelKey = ariaLabelKeys[btnClass];
-        if (btnClass === 'delete-when-complete-btn') {
-            const state = this.deps.AppState?.get?.();
-            const activeCycle = getActiveRoutine(state);
-            const isToDoMode = activeCycle?.deleteCheckedTasks === true;
-            labelKey = isToDoMode ? 'taskOption.markedForClearing' : 'taskOption.clearOnReset';
-        }
-        const label = labelKey ? getLabel(labelKey) : getLabel('taskOption.showOptions');
+        // Resolved through a closure, not computed once, because
+        // attachLongPressHint re-reads the text on EVERY press — the label
+        // follows the locale and, for delete-when-complete, the routine's
+        // current mode. A captured string would show a stale name after a mode
+        // switch that did not rebuild this button.
+        const resolveLabel = () => {
+            let labelKey = ariaLabelKeys[btnClass];
+            if (btnClass === 'delete-when-complete-btn') {
+                const state = this.deps.AppState?.get?.();
+                const activeCycle = getActiveRoutine(state);
+                const isToDoMode = activeCycle?.deleteCheckedTasks === true;
+                labelKey = isToDoMode ? 'taskOption.markedForClearing' : 'taskOption.clearOnReset';
+            }
+            return labelKey ? getLabel(labelKey) : getLabel('taskOption.showOptions');
+        };
+
+        const label = resolveLabel();
         button.setAttribute("aria-label", label);
         button.setAttribute("title", label);
+
+        // Touch users get no hover, so `title` above is invisible to them and an
+        // icon-only task option says nothing about what it does. Long-press is the
+        // natural "what is this?" gesture — and attachLongPressHint also swallows
+        // the click that touchend would otherwise fire, so asking the question
+        // does not perform the action (which, on .delete-btn, would be
+        // destructive). Same primitive and same 500 ms hold as the routine
+        // switcher's action row and the quick-actions tooltip, so one gesture
+        // behaves identically everywhere.
+        //
+        // No conflict with the task row's own long-press (drag / reveal options):
+        // dragDropManager's touchstart handler returns early for any touch inside
+        // .task-options, so this never races it.
+        //
+        // The detacher is parked on the element in the same style as
+        // _accessibilityKeydownHandler above: these buttons are rebuilt on every
+        // render, so the listeners die with the element, and keeping a handle
+        // means an explicit teardown is possible without a registry.
+        if (typeof button._longPressHintDetach === 'function') {
+            button._longPressHintDetach();
+        }
+        button._longPressHintDetach = attachLongPressHint(button, { getText: resolveLabel });
     }
 
     /**

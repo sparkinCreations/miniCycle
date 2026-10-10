@@ -1,3 +1,8 @@
+## [2.589] - 2026-10-10
+- fix(validation): warn on truncated text and announce empty-name errors
+- chore: ignore root-level skill scratch dirs so git add -A cannot ship them
+
+
 ## [2.588] - 2026-10-05
 - docs: persona cards say routines and check-ins, not habits
 - docs: marketing says repeatable process, not habit building

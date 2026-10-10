@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
@@ -672,12 +672,19 @@ export class MenuManager {
                     return;
                 }
 
-                const sanitizedName = this.deps.sanitizeInput(input.trim());
+                const rawName = input.trim();
+                const sanitizedName = this.deps.sanitizeInput(rawName);
 
                 if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
                     this.deps.showNotification("⚠ " + getLabel('notify.invalidName'));
                     return;
+                }
+
+                // sanitizeInput clamps to the name limit; warn as the rename
+                // path does instead of silently shortening the copy's name.
+                if (rawName.length > LIMITS.CYCLE_NAME_CHARACTER) {
+                    this.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
                 }
 
                 // ✅ Get unique name (auto-increment if duplicate)

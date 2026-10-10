@@ -51,6 +51,8 @@ export const DEFAULT_LABELS = deepFreeze({
         chromeWebStore:  'the Chrome Web Store',
         appStore:        'the App Store',
         googlePlay:      'Google Play',
+        desktopDownloadSite: 'minicycleapp.com',
+        backupFileType:  'miniCycle backup',   // file-type description in the native Save dialog
         task:      { one: 'task',    other: 'tasks' },
         cycle:     { one: 'cycle',   other: 'cycles' },
         routine:   { one: 'routine', other: 'routines' },
@@ -486,9 +488,12 @@ export const DEFAULT_LABELS = deepFreeze({
         titleSaveFailed:        'Failed to save title change',
         titleTruncated:         'Title truncated to {limit} characters.',
         renamedTo:              'Renamed to "{name}"',
+        routineNameEmpty:       'Routine name cannot be empty.',
 
         // Validation notifications
         taskCharLimit:          'Task must be {limit} characters or less.',
+        taskTruncated:          'Task truncated to {limit} characters.',
+        taskTextEmpty:          'Task cannot be empty.',
 
         // Quick action notifications
         actionUnavailable:      'Action unavailable. Please try again later.',
@@ -632,6 +637,7 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
         factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
+        factoryResetBackupCancelled: 'Backup not saved, so nothing was deleted.',
         restoreCancelled:        'Restore cancelled.',
         preMigrationRestored:    'Restored the copy from before the update.',
         preMigrationRestoreFailed: 'The copy could not be written back. Nothing was changed.',
@@ -689,6 +695,13 @@ export const DEFAULT_LABELS = deepFreeze({
         reminderTasksToComplete: 'You have tasks to complete:',
         reminderBackgroundBody: 'You have unfinished tasks in your routine',
         reminderEnabledWithSettings: 'Reminder enabled: {settings}',
+        // Shown instead of the line above when the task's reminder is turned on
+        // while the global "Enable Reminders" switch is still off. The schedule
+        // must NOT be quoted here: startReminders() returns immediately when
+        // customReminders.enabled is false, so nothing would ever fire and
+        // naming a frequency promises a notification that cannot arrive.
+        reminderSelectedGlobalOff: 'Task reminder selected — turn on Enable Reminders to receive notifications',
+        reminderTurnOnReminders: 'Enable Reminders',
         reminderCustomSettings:  'Custom settings',
         reminderEveryFrequency:  'Every {freq} {unit}',
         reminderOpenSettings:    'Reminder Settings',
@@ -962,7 +975,7 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
         factoryResetTitle:        'Factory Reset',
-        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. A backup file will be downloaded first. Are you sure?',
+        factoryResetMessage:      'This will DELETE ALL data, settings, and progress. A backup file will be saved first. Are you sure?',
         factoryResetConfirm:      'Delete Everything',
         resetProgressMessage:     'This will reset this routine\'s cycle count and cleared tasks count to 0. History and cleared task entries will NOT be deleted. Global achievement progress will NOT be affected.',
         clearHistoryMessage:      'Are you sure you want to clear all history for this routine?',
@@ -2585,7 +2598,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.storageRefreshFailed',
     'notify.titleTruncated',
     'notify.renamedTo',
+    'notify.routineNameEmpty',
     'notify.taskCharLimit',
+    'notify.taskTruncated',
+    'notify.taskTextEmpty',
     'notify.recoveredRoutine',
     'notify.taskLimitReached',
     'notify.priorityEnabled',

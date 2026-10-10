@@ -381,9 +381,8 @@ export class TaskEvents {
         document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
             if (task !== taskItem) {
                 // Use controller for consistency (use same caller for hide)
+                // aria-expanded is synced inside the controller (taskUI.setVisibility)
                 controller?.hide(task, caller);
-                const otherDotsBtn = task.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
-                if (otherDotsBtn) otherDotsBtn.setAttribute('aria-expanded', 'false');
                 hiddenCount++;
             }
         });
@@ -397,15 +396,16 @@ export class TaskEvents {
             // Hide if already visible (clicking same task again) - but not for arrow moves
             controller?.hide(taskItem, caller);
             newActiveTaskId = null;
-            const dotsBtn = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
-            if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'false');
         } else {
             // Show if hidden (first click or switching tasks)
             controller?.show(taskItem, caller);
             newActiveTaskId = taskId || null;
-            const dotsBtn = taskItem.querySelector(DOM_SELECTORS.THREE_DOTS_BTN);
-            if (dotsBtn) dotsBtn.setAttribute('aria-expanded', 'true');
         }
+        // NOTE: aria-expanded is deliberately NOT set here any more. The
+        // controller owns it (taskUI.setVisibility), which means it can only be
+        // announced when the visibility change was actually permitted. Setting it
+        // here made `arrow-move` claim expanded="true" while canHandle() rejected
+        // that caller and the options stayed shut.
 
         // Update activeTaskId in AppState (state-driven UI)
         const AppState = this.deps.AppState;

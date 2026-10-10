@@ -427,6 +427,15 @@ export class TaskRenderer {
                 taskOptions.querySelectorAll('button.task-btn').forEach(btn => {
                     btn.tabIndex = 0;
                 });
+                // ⚠️ Like the Escape handler in taskButtons.js, this bypasses
+                // TaskOptionsVisibilityController (taskRenderer has no controller
+                // injected) and so must mirror its aria sync too. A re-render
+                // rebuilds the three-dots button at aria-expanded="false"
+                // (taskDOM.createThreeDotsButton), so restoring the options
+                // without this leaves a VISIBLE menu announced as collapsed —
+                // the same defect as the reported one, mirrored.
+                taskElement.querySelector(DOM_SELECTORS.THREE_DOTS_BTN)
+                    ?.setAttribute('aria-expanded', 'true');
             }
         }
 
