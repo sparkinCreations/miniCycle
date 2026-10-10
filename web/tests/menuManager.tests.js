@@ -421,6 +421,52 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('REGRESSION (a11y): clearAllTasks rewrites each row\'s spoken status, not just the checkbox', async () => {
+        // The existing test above supplies no rows (querySelectorAll: () => []),
+        // so it never checked the accessible name. Measured Oct 2026: after
+        // Uncheck All a screen reader still read "Make the bed, Completed" over
+        // an unchecked box until the next re-render.
+        const rows = ['Make the bed', 'Water plants'].map(name => {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.setAttribute('aria-label', `${name}, Completed`);
+            const cb = document.createElement('input'); cb.type = 'checkbox'; cb.checked = true;
+            const span = document.createElement('span'); span.className = 'task-text'; span.textContent = name;
+            li.append(cb, span);
+            document.body.appendChild(li);
+            return li;
+        });
+        const mockFlattenedData = {
+            cycles: { 'cycle-1': { tasks: [
+                { id: 'task-1', text: 'Make the bed', completed: true },
+                { id: 'task-2', text: 'Water plants', completed: true }
+            ] } },
+            activeCycle: 'cycle-1'
+        };
+        setMenuManagerDependencies(createMockDeps({
+            updateCycleData: (id, updateFn) => { const c = { tasks: JSON.parse(JSON.stringify(mockFlattenedData.cycles[id].tasks)) }; updateFn(c); return true; },
+            querySelectorAll: () => rows,
+            updateProgressBar: () => {},
+            updateStatsPanel: () => {},
+            checkCompleteAllButton: () => {},
+            updateUndoRedoButtons: () => {}
+        }));
+        try {
+            const instance = new MenuManager();
+            await instance.clearAllTasks();
+            for (const li of rows) {
+                const label = li.getAttribute('aria-label') || '';
+                const name = li.querySelector('.task-text').textContent;
+                if (li.querySelector('input').checked) throw new Error(`"${name}" checkbox should be unchecked`);
+                if (!/not completed/i.test(label)) throw new Error(`"${name}" spoken status should say "Not completed", got "${label}"`);
+                if (/,\s*completed$/i.test(label)) throw new Error(`"${name}" still announces "Completed": "${label}"`);
+                if (!label.startsWith(name)) throw new Error(`accessible name should keep the task name first, got "${label}"`);
+            }
+        } finally {
+            rows.forEach(li => li.remove());
+        }
+    });
+
     await test('deleteAllTasks removes all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {

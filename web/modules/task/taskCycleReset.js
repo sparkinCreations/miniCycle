@@ -1048,7 +1048,15 @@ export function markAllTasksCompleteImpl(cycleData, taskList, resetTasksFn, deps
         captureCompletionSplit(null, null);
     }
 
-    taskList.querySelectorAll(".task input").forEach(task => task.checked = true);
+    // Check the box AND rewrite the row's spoken status together. The reset
+    // that follows repairs the labels, but for the ~1s until it lands a screen
+    // reader read "Not completed" over a checked box (accessibility audit,
+    // Oct 2026). .task input is kept as the box selector; the label goes on
+    // the row that owns it.
+    taskList.querySelectorAll(".task input").forEach(input => {
+        input.checked = true;
+        applyTaskStatusLabel(input.closest(DOM_SELECTORS.TASK), true);
+    });
 
     // ORDER MATTERS: checkMiniCycle reads completion from AppState, not the
     // checkboxes, so the AppState.update above must already have landed. It has,

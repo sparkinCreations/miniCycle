@@ -589,6 +589,40 @@ export async function runTaskCycleResetTests(resultsDiv) {
         return { taskList, stateObj, calls, deps, cycleData: stateObj.data.routine[cycleId] };
     };
 
+    await test('REGRESSION (a11y): markAllTasksCompleteImpl sets each row\'s spoken status WITH the checkbox, before the reset', async () => {
+        // The reset ~1s later repaired the labels, but in between a screen reader
+        // read "Not completed" over a checked box (accessibility audit, Oct 2026).
+        const h = splitRig([
+            { id: 'a', text: 'Make coffee', completed: false },
+            { id: 'b', text: 'Stretch', completed: false }
+        ]);
+        const rows = h.cycleData.tasks.map(t => {
+            const li = document.createElement('li');
+            li.className = 'task';
+            li.dataset.taskId = t.id;
+            li.setAttribute('aria-label', `${t.text}, Not completed`);
+            const cb = document.createElement('input'); cb.type = 'checkbox';
+            const span = document.createElement('span'); span.className = 'task-text'; span.textContent = t.text;
+            li.append(cb, span);
+            h.taskList.appendChild(li);
+            return li;
+        });
+        try {
+            mod.markAllTasksCompleteImpl(h.cycleData, h.taskList, null, h.deps);
+            // Assert IMMEDIATELY — the deferred reset must not be what fixes it.
+            for (const li of rows) {
+                const name = li.querySelector('.task-text').textContent;
+                const label = li.getAttribute('aria-label') || '';
+                if (!li.querySelector('input').checked) throw new Error(`"${name}" box should be checked`);
+                if (/not completed/i.test(label)) throw new Error(`"${name}" still announces "Not completed" over a checked box: "${label}"`);
+                if (!/,\s*completed$/i.test(label)) throw new Error(`"${name}" spoken status should end with "Completed", got "${label}"`);
+            }
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
     await test('a reset stores the planned template position so the recurring task returns in place', async () => {
         // The producer applies the recurring plan; the plan now carries the index the
         // removed instance sat at. Without this write the watcher appends and the

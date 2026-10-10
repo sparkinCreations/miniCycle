@@ -27,6 +27,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { getRoutines, getRoutine, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
+import { applyTaskStatusLabel } from '../task/taskUtils.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -784,6 +785,11 @@ export class MenuManager {
             if (checkbox) {
                 checkbox.checked = false;
             }
+            // The row's accessible name carries the status ("…, Completed"), and
+            // only applyTaskStatusLabel rewrites it. Unchecking the box alone left
+            // a screen reader saying "Completed" over an unchecked box until the
+            // next re-render (accessibility audit, Oct 2026).
+            applyTaskStatusLabel(taskElement, false);
             // ✅ Remove overdue styling
             taskElement.classList.remove(DOM_CLASSES.OVERDUE_TASK);
         });
