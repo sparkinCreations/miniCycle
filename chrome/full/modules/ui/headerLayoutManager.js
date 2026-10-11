@@ -130,7 +130,9 @@ export function measureFocusChromeBottom() {
     const els = [
         document.querySelector(DOM_SELECTORS.MINI_CYCLE_HEADER_ROW),
         document.querySelector(DOM_SELECTORS.HEADER_LOGO),
-        document.getElementById(DOM_IDS.FOCUS_MODE_EXIT_BTN),
+        // Not #focus-mode-exit-btn: since Oct 2026 it sits in the progress row
+        // BELOW the card, and counting it would drag the chrome bottom under the
+        // card the chrome is meant to clear.
         document.getElementById(DOM_IDS.FOCUS_MODE_MENU_BTN),
     ];
 

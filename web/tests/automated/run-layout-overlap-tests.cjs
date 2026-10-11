@@ -155,7 +155,8 @@ function measureFocus() {
     const chrome = [
         px(document.querySelector('.mini-cycle-header-row')),
         px(document.querySelector('.header-logo')),
-        px(document.getElementById('focus-mode-exit-btn')),
+        // #focus-mode-exit-btn is no longer header chrome (it sits in the
+        // progress row below the card) — mirrors headerLayoutManager.
         px(document.getElementById('focus-mode-menu-btn')),
     ].filter(Boolean);
     const liveChromeBottom = chrome.length ? Math.max(...chrome.map(c => c.bottom)) : null;

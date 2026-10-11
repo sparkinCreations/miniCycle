@@ -350,8 +350,7 @@ body.focus-mode .undo-redo-btn:focus-visible {
     display: none;
 }
 
-body.focus-mode #focus-mode-menu-btn,
-body.focus-mode #focus-mode-exit-btn {
+body.focus-mode #focus-mode-menu-btn {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -375,12 +374,40 @@ body.focus-mode #focus-mode-exit-btn {
 }
 
 body.focus-mode #focus-mode-menu-btn { right: 16px; }
-body.focus-mode #focus-mode-exit-btn { left: 16px; }
 
-/* While the first-run welcome banner is up, hide the upper-left exit
-   button so the user reads the welcome flow first — the 3-dots menu
-   on the right still offers an "Exit Focus View" option for anyone
-   who wants out before dismissing the banner. */
+/* The × exit sits in the progress row's right slot — the same 36px circle,
+   same place, as the eye button that opened Focus View from Home View (the
+   eye button leaves this slot on activate; see .focus-mode-btn below). It
+   was a fixed top-left 52×30 button until Oct 2026; moving it here takes a
+   control out of the header and keeps enter/exit in one spot. The chrome
+   measurers (headerLayoutManager, test:layout) no longer count it. */
+body.focus-mode #focus-mode-exit-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    right: 0;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.12);
+    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
+    font-size: 20px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0;
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    transition: background var(--transition-fast) ease,
+                transform var(--transition-fast) ease;
+}
+
+/* While the first-run welcome banner is up, hide the exit button so the
+   user reads the welcome flow first — the 3-dots menu on the right still
+   offers an "Exit Focus View" option for anyone who wants out before
+   dismissing the banner. */
 body.focus-mode.first-run-welcome-active #focus-mode-exit-btn {
     display: none;
 }
@@ -639,16 +666,14 @@ body.focus-mode .focus-mode-mode-modal {
     outline: none;
 }
 
-/* Mobile: bigger tap targets, position respects safe-area */
+/* Mobile: bigger tap target, position respects safe-area */
 @media (max-width: 1023px) {
-    body.focus-mode #focus-mode-menu-btn,
-    body.focus-mode #focus-mode-exit-btn {
+    body.focus-mode #focus-mode-menu-btn {
         top: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top));
         width: 56px;
         height: var(--focus-btn-height);
     }
     body.focus-mode #focus-mode-menu-btn { right: 12px; }
-    body.focus-mode #focus-mode-exit-btn { left: 12px; }
 
     /* Top-clearance comes from #task-view's max-height (see rule above),
        which is what positions the centred wrapper. Zero the normal-mode
@@ -885,8 +910,10 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
 }
 
 .focus-mode-btn svg {
-    width: 16px;
-    height: 16px;
+    /* 20px, up from 16: the brackets-plus-eye glyph needs the room to read
+       at a glance; the 36px button itself is unchanged. */
+    width: 20px;
+    height: 20px;
 }
 
 /* Active state — fixed to bottom-right of viewport so it's always reachable */

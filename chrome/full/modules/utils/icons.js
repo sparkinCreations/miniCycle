@@ -152,6 +152,11 @@ const ICONS = {
     // viewBox so it scales cleanly at small sizes; matches the SVG used in
     // the main-menu "Enter Focus View" button for visual consistency.
     'expand': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 6V2h4M14 6V2h-4M2 10v4h4M14 10v4h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>',
+    // Focus View entry: the expand brackets with an eye inside. Reads "look at
+    // this, framed" rather than "make bigger" — the Chrome side panel also carries
+    // an open-in-tab glyph, and two expand-shaped icons in one panel invited
+    // mis-taps (Oct 2026). Drawn in the same 16-grid; rendered larger by CSS.
+    'focusEye': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M2 5.5V2h3.5M14 5.5V2h-3.5M2 10.5V14h3.5M14 10.5V14h-3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"/><path d="M3.6 8c1.3-2 2.8-3 4.4-3s3.1 1 4.4 3c-1.3 2-2.8 3-4.4 3S4.9 10 3.6 8z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/><circle cx="8" cy="8" r="1.3" fill="currentColor"/></svg>',
 
     // Compress (inward-pointing brackets) — exit focus mode. Mirrors the
     // expand glyph: corners pulled inward to read as "collapse" / "exit".

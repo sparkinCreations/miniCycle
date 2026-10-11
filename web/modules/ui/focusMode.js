@@ -261,7 +261,13 @@ export class FocusMode {
         this._exitBtn.title = getLabel('focusMode.exitTitle');
         this._exitBtn.setAttribute('aria-label', getLabel('focusMode.exitAria'));
         this._exitBtn.textContent = '×'; // multiplication sign — close affordance
-        body.appendChild(this._exitBtn);
+        // Lives in the progress row's right-hand slot — the exact spot (and size)
+        // the eye button occupies in Home View — so the control that opened
+        // Focus View is where the control that closes it appears. The eye button
+        // vacates that slot on activate (it is reparented to <body> as the
+        // mode-action circle), and CSS shows only one of the two per view.
+        // Used to be a fixed top-left 52×30 button (Oct 2026).
+        (this._progressRow || body).appendChild(this._exitBtn);
     }
 
     /**
@@ -415,7 +421,7 @@ export class FocusMode {
             this._menuBtn.addEventListener('click', this._menuBtnHandler);
         }
 
-        // Exit button (top-left) — single-tap exit
+        // Exit button (progress row, right slot) — single-tap exit
         if (this._exitBtn) {
             this._exitBtnHandler = (e) => {
                 e.stopPropagation();
@@ -1054,7 +1060,7 @@ export class FocusMode {
             body.appendChild(this._button);
             this._button.innerHTML = getIcon('compress');
             // Aria/title now reflect the mode-action role (Cycle/Clear)
-            // since exit is owned by the top-left #focus-mode-exit-btn.
+            // since exit is owned by #focus-mode-exit-btn in the progress row.
             this._updateActionButtonAria();
         }
 
