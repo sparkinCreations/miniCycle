@@ -281,6 +281,38 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         if (result !== 'saved' || clicked !== 1) throw new Error(`expected a download, got result=${JSON.stringify(result)} clicks=${clicked}`);
     });
 
+    await test('Backup All button: opens the Save dialog and skips the in-app name prompt', async () => {
+        let prompts = 0; let pickerCalls = 0;
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {} },
+            showNotification: () => {}, showConfirmationModal: () => {}, showPromptModal: () => { prompts++; },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.598' }
+        });
+        let btn = document.getElementById('backup-mini-cycles');
+        if (!btn) { btn = document.createElement('button'); btn.id = 'backup-mini-cycles'; document.body.appendChild(btn); }
+        mod.setupBackupButton();   // idempotent — binds once for both clicks below
+        const picker = async () => { pickerCalls++; return { name: 'chosen.json', createWritable: async () => ({ write: async () => {}, close: async () => {} }) }; };
+        const { clicked } = await captureBackupDownloadAsync(() => withSavePicker(picker, async () => { btn.click(); await new Promise(r => setTimeout(r, 30)); }));
+        if (pickerCalls !== 1) throw new Error(`the button should open the Save dialog once, opened ${pickerCalls}`);
+        if (prompts !== 0) throw new Error('with a Save dialog the in-app name prompt is a second question — it must not show');
+        if (clicked !== 0) throw new Error('must not ALSO download');
+    });
+
+    await test('Backup All button without a Save dialog: asks for a name in-app, then downloads (unchanged behaviour)', async () => {
+        let promptOpts = null;
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {} },
+            showNotification: () => {}, showConfirmationModal: () => {}, showPromptModal: (opts) => { promptOpts = opts; },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.598' }
+        });
+        const btn = document.getElementById('backup-mini-cycles');
+        const { clicked: before } = await captureBackupDownloadAsync(() => withSavePicker(null, async () => { btn.click(); await new Promise(r => setTimeout(r, 30)); }));
+        if (!promptOpts) throw new Error('without a Save dialog the name prompt must open');
+        if (before !== 0) throw new Error('nothing downloads until the prompt is answered');
+        const { clicked, payloadText } = await captureBackupDownloadAsync(async () => { promptOpts.callback('my-backup'); });
+        if (clicked !== 1 || !payloadText) throw new Error('answering the prompt must download the file');
+    });
+
     await test('factory reset: cancelling the Save dialog deletes nothing and says so without an error tone', async () => {
         const origSWGetRegs = navigator.serviceWorker && navigator.serviceWorker.getRegistrations;
         const origCachesKeys = (typeof window.caches !== 'undefined') && window.caches.keys;

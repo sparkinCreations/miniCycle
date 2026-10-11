@@ -882,6 +882,68 @@ async function journeyTodoStatsSync(browser, baseURL) {
     return { name: 'to-do stats sync', failures };
 }
 
+// ── Journey 7b: Backup All Routines saves where the user chooses ────────────
+//
+// Until Oct 2026 the Settings button went straight to the anchor download, so
+// the file landed wherever the browser puts downloads with no say in it, while
+// the factory reset's safety backup (two buttons down) opened a real Save As
+// dialog. Same writer now. Driven with the SAVE_DIALOG_STUB in both modes: a
+// chosen file gets the backup and the timestamp; a closed dialog writes nothing,
+// records nothing, and does not fall back to a download the user just declined.
+async function journeyBackupButtonSaveAs(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    for (const mode of ['save', 'cancel']) {
+        const { context, page } = await openFresh(browser, baseURL, { saveDialog: mode });
+        try {
+            await page.waitForFunction(() => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return p && Object.keys((p.data && p.data.routine) || {}).length > 0;
+            }, null, { timeout: 25000 });
+            await page.waitForTimeout(1500);
+            await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+            await page.waitForTimeout(800);
+            const stampBefore = await page.evaluate(() => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return (p && p.settings && p.settings.lastFileBackupTimestamp) || null;
+            });
+
+            await openMenu(page).catch(() => {});
+            await clickEl(page, '#open-settings');
+            await page.waitForTimeout(1200);
+            await clickEl(page, '#backup-mini-cycles');
+            await page.waitForTimeout(1500);
+
+            const r = await page.evaluate(() => {
+                const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                return {
+                    calls: window.__saveDialog.calls, bytes: window.__saveDialog.bytes,
+                    stamp: (p && p.settings && p.settings.lastFileBackupTimestamp) || null,
+                    namePrompt: !!document.querySelector('.modal-overlay input[type="text"], .prompt-modal, [data-modal="prompt"]'),
+                };
+            });
+            record(`${mode}: Backup All opens the Save dialog (not a silent download)`, r.calls === 1,
+                `showSaveFilePicker called ${r.calls} time(s)`);
+            record(`${mode}: no in-app name prompt alongside the dialog`, !r.namePrompt,
+                'the name prompt opened as well — two questions for one save');
+            if (mode === 'save') {
+                record('save: the chosen file receives the backup', r.bytes > 500, `${r.bytes} bytes written`);
+                record('save: the backup timestamp is recorded', !!r.stamp && r.stamp !== stampBefore,
+                    `lastFileBackupTimestamp ${JSON.stringify(r.stamp)}`);
+            } else {
+                record('cancel: nothing is written', r.bytes === 0, `${r.bytes} bytes written after a closed dialog`);
+                record('cancel: no timestamp is recorded', r.stamp === stampBefore,
+                    `lastFileBackupTimestamp changed to ${JSON.stringify(r.stamp)} on a cancelled save`);
+            }
+        } catch (e) {
+            console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+            failures.push(`harness error (${mode}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'Backup All saves where the user chooses', failures };
+}
+
 // ── Journey 8: factory reset, twice, with no page reload ────────────────────
 //
 // Factory reset re-initialises IN PLACE. Three things only a repeat run catches:
@@ -3419,6 +3481,7 @@ const JOURNEYS = [
     { name: 'recurring tasks', fn: journeyRecurring },
     { name: 'to-do mode clearing', fn: journeyTodoMode },
     { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
+    { name: 'Backup All saves where the user chooses', fn: journeyBackupButtonSaveAs },
     { name: 'factory reset repeats cleanly', fn: journeyFactoryResetRepeat },
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },

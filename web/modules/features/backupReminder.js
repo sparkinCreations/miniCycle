@@ -28,6 +28,7 @@ const di = createDIModule('BackupReminder', {
     AppState: required(),
     showConfirmationModal: required(),
     showNotification: optional(null),
+    saveBackupFileAs: optional(null),
     downloadBackupFile: optional(null),
 });
 
@@ -162,8 +163,12 @@ function _showReminder() {
         cancelText: getLabel('notify.backupReminderDismiss'),
         callback: (confirmed) => {
             if (confirmed) {
-                // Trigger backup with no name prompt (one-click flow)
-                if (typeof _deps.downloadBackupFile === 'function') {
+                // One-click flow: the native Save As dialog where the browser has
+                // one (it asks for the name itself), else a plain download with
+                // no name prompt — the reminder should cost one tap, not three.
+                if (typeof _deps.saveBackupFileAs === 'function') {
+                    _deps.saveBackupFileAs();
+                } else if (typeof _deps.downloadBackupFile === 'function') {
                     _deps.downloadBackupFile({ skipNamePrompt: true });
                 }
             } else {

@@ -108,7 +108,7 @@ export async function runBackupReminderTests(resultsDiv) {
 
     const DAY = 24 * 60 * 60 * 1000;
 
-    function wire({ settings = {}, cyclesCompleted = 0, totalTasksCompleted = 0, downloadBackupFile } = {}) {
+    function wire({ settings = {}, cyclesCompleted = 0, totalTasksCompleted = 0, downloadBackupFile, saveBackupFileAs } = {}) {
         const state = { settings: { ...settings }, userProgress: { cyclesCompleted, totalTasksCompleted } };
         const modalCalls = [];
         const deps = {
@@ -117,6 +117,7 @@ export async function runBackupReminderTests(resultsDiv) {
             showNotification: () => {},
         };
         if (downloadBackupFile) deps.downloadBackupFile = downloadBackupFile;
+        if (saveBackupFileAs) deps.saveBackupFileAs = saveBackupFileAs;
         mod.setBackupReminderDependencies(deps);
         return { state, modalCalls };
     }
@@ -182,6 +183,16 @@ export async function runBackupReminderTests(resultsDiv) {
         if (w.modalCalls.length !== 1) throw new Error('precondition: reminder should show');
         w.modalCalls[0].callback(true); // user confirms
         if (!dlArgs || dlArgs.skipNamePrompt !== true) throw new Error('confirm should call downloadBackupFile({ skipNamePrompt: true })');
+    });
+
+    await test('confirming the reminder prefers the Save As writer when it is wired', () => {
+        let saveAs = 0; let dl = 0;
+        const w = wire({ settings: { lastBackupReminderShown: 0 }, cyclesCompleted: 3,
+            saveBackupFileAs: () => { saveAs++; }, downloadBackupFile: () => { dl++; } });
+        mod.checkBackupReminderOnBoot();
+        if (w.modalCalls.length !== 1) throw new Error('precondition: reminder should show');
+        w.modalCalls[0].callback(true);
+        if (saveAs !== 1 || dl !== 0) throw new Error(`expected saveBackupFileAs once and no download, got saveAs=${saveAs} download=${dl}`);
     });
 
     await test('dismissing the reminder arms the 7-day dismiss cooldown', () => {

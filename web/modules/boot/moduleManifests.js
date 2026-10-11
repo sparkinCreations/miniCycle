@@ -498,7 +498,7 @@ export const MODULE_MANIFESTS = {
         // (`deps.utils.showChoiceModal = …`) during the early notifications init,
         // which is why the depMappings route resolves but nothing declares it.
         optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
-        provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'shareCurrentRoutine'],
+        provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'saveBackupFileAs', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',
         after: ['menuManager', 'themeManager', 'undoRedoManager']
@@ -825,7 +825,7 @@ export const MODULE_MANIFESTS = {
         path: '../features/backupReminder.js',
         phase: PHASES.FEATURES,
         requires: ['AppState', 'showConfirmationModal'],
-        optionalDeps: ['showNotification', 'downloadBackupFile'],
+        optionalDeps: ['showNotification', 'saveBackupFileAs', 'downloadBackupFile'],
         provides: ['checkBackupReminderOnBoot', 'checkBackupReminderOnCycleComplete', 'checkBackupReminderOnTaskClear'],
         api: 'features',
         optional: true,
