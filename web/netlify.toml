@@ -12,25 +12,10 @@
   node_bundler = "esbuild"
   included_files = ["netlify/functions/**"]
 
-# Domain redirects for minicycleapp.com
-[[redirects]]
-  from = "https://minicycleapp.com/*"
-  to = "https://minicycle.app/product.html"
-  status = 301
-  force = true
-
-[[redirects]]
-  from = "https://www.minicycleapp.com/*"
-  to = "https://minicycle.app/product.html"
-  status = 301
-  force = true
-
-# Alternative www redirect (in case the above doesn't work)
-[[redirects]]
-  from = "http://www.minicycleapp.com/*"
-  to = "https://minicycle.app/product.html"
-  status = 301
-  force = true
+# Domain redirects for minicycleapp.com live in _redirects (which Netlify
+# processes FIRST). Three copies used to sit here pointing at the legacy
+# /product.html — dead rules that disagreed with the file. Path and domain
+# redirects belong in _redirects; this file carries build + headers.
 
 # ═══════════════════════════════════════════════════════════════════════════
 # DOCS SUBDOMAIN (docs.minicycle.app) — same Netlify site, own ORIGIN.

@@ -3,8 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>miniCycle - Complete. Cycle. Repeat.</title>
-    <meta name="description" content="miniCycle is a repeatable multi-step process tool. Routine checklists that reset automatically every time you finish. Built for shift inspections and any routine that repeats. Free, private, works offline.">
+    <title>Reusable Routine Checklist App | miniCycle</title>
+    <meta name="description" content="Create reusable routine checklists that reset when completed. Use miniCycle for inspections, opening procedures, rounds, workouts, and more — free, private, and offline.">
+    <!-- One permanent URL. /pages/product (no extension) also serves this page and
+         the old minicycleapp.com domain redirects here; this tag plus the sitemap
+         and og:url all name the same address so nothing competes with it. -->
+    <link rel="canonical" href="https://minicycle.app/pages/product.html">
     <link rel="icon" type="image/png" href="../assets/images/logo/logo.png">
     <link rel="apple-touch-icon" href="../assets/images/logo/logo.png">
 
@@ -12,14 +16,14 @@
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://minicycle.app/pages/product.html">
     <meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
-    <meta property="og:description" content="A repeatable multi-step process tool. Build your checklist once — it resets every time you finish. Free, private, works offline. No account needed.">
+    <meta property="og:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline. No account needed.">
     <meta property="og:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
     <meta property="og:image:width" content="1600">
     <meta property="og:image:height" content="1200">
     <meta property="og:image:alt" content="miniCycle checklist app shown in light and dark mode across four phone mockups, including the cycle completion moment">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="miniCycle - Routine Checklists That Reset Automatically">
-    <meta name="twitter:description" content="A repeatable multi-step process tool. Build your checklist once — it resets every time you finish. Free, private, works offline.">
+    <meta name="twitter:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline.">
     <meta name="twitter:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
 
     <!-- Preload the image that is actually visible first: .hero-phone-img.active is
@@ -34,11 +38,11 @@
       "@context": "https://schema.org",
       "@type": "SoftwareApplication",
       "name": "miniCycle",
-      "description": "A repeatable multi-step process tool. Build routine checklists once and miniCycle resets them every time you finish. Built for shift inspections and any routine that repeats.",
+      "description": "Reusable checklists for routines and repeatable procedures. Build routine checklists once and miniCycle resets them every time you finish. Built for shift inspections and any routine that repeats.",
       "url": "https://minicycle.app",
       "applicationCategory": "ProductivityApplication",
-      "genre": "Routine Workflow Companion",
-      "keywords": "routine workflow companion, auto-reset cycles, workflow automation, productive routines, cycle-based productivity",
+      "genre": "Routine Checklist App",
+      "keywords": "reusable checklist app, routine checklist, repeating task list, recurring checklist, auto-reset checklist, inspection checklist, opening and closing procedures, lightweight SOP checklist",
       "operatingSystem": "Web Browser, PWA",
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
@@ -266,6 +270,18 @@
         .themes-scroll-track::-webkit-scrollbar-thumb { background: var(--color-primary); border-radius: 2px; }
         .themes-scroll-img { width: 1256px; height: auto; display: block; }
         .themes-scroll-img { width: 1256px; height: auto; display: block; }
+        /* Professional-use bridge + visible FAQ (the FAQ mirrors the FAQPage JSON-LD above —
+           structured data must describe content readers can see). */
+        .uses-section { padding: var(--space-xl) var(--space-sm); background: var(--color-bg); }
+        .uses-desc { max-width: 640px; margin: 0 auto var(--space-sm); color: var(--color-text-muted); font-size: 0.95rem; line-height: 1.7; text-align: center; }
+        .faq-section { padding: var(--space-xl) var(--space-sm); background: var(--color-bg-alt); }
+        .faq-list { max-width: 720px; margin: 0 auto; }
+        .faq-item { background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius); margin-bottom: 0.5rem; padding: 0.8rem 1.2rem; }
+        .faq-item summary { cursor: pointer; font-family: var(--font-heading); font-weight: 600; font-size: 0.95rem; color: var(--color-text-dark); list-style: none; display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary::after { content: '+'; font-weight: 400; color: var(--color-text-light); transition: transform 0.2s ease; }
+        .faq-item[open] summary::after { transform: rotate(45deg); }
+        .faq-item p { margin: 0.6rem 0 0; color: var(--color-text-muted); font-size: 0.9rem; line-height: 1.7; }
         .themes-desc { text-align: center; font-size: 0.9rem; color: var(--color-text-muted); max-width: 500px; margin: 0 auto; line-height: 1.7; }
 
         @media (max-width: 767px) {
@@ -534,7 +550,7 @@
             <a href="../miniCycle.html" class="cta-btn" data-track="app-launch">Try Now</a>
         </div>
         <div class="header-subtitle">
-            <span class="logo-tagline">A repeatable multi-step process tool</span>
+            <span class="logo-tagline">Reusable checklists for routines and repeatable procedures</span>
         </div>
     </header>
 
@@ -546,7 +562,7 @@
             <div class="hero-grid">
                 <div class="hero-text">
                     <h1 class="hero-headline">Routine checklists that reset automatically.</h1>
-                    <p class="hero-sub">Built by an inspector. Works for any routine that repeats. Build it once and miniCycle resets it every time you finish.</p>
+                    <p class="hero-sub">Made by an inspector. Build your checklist once, follow each step, and start fresh when you finish — for inspections, rounds, opening and closing procedures, workouts, study sessions, and any routine you repeat.</p>
                     <div class="hero-ctas">
                         <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
                         <a href="#demos" class="cta-secondary">See It In Action</a>
@@ -726,6 +742,17 @@
         </div>
     </section>
 
+    <!-- Everyday routines → lightweight SOPs. The bridge for professional readers
+         sits one section below the broad message on purpose: "SOP" is a business
+         search term, but the headline must still make sense to someone whose
+         routine is a workout. -->
+    <section class="uses-section">
+        <div class="container">
+            <h2 class="section-title reveal">From everyday routines to lightweight SOPs</h2>
+            <p class="uses-desc reveal">At work, a repeatable checklist might be an inspection, a shift round, or an opening and closing procedure. At home, the same idea is a workout, a study session, or a cleaning routine.</p>
+            <p class="uses-desc reveal">miniCycle gives both the same simple structure: follow the steps, complete the cycle, start fresh next time. For individuals and small operations that don&rsquo;t need process-management software, it also works as a lightweight standard operating procedure (SOP) checklist.</p>
+        </div>
+    </section>
     <!-- Theme Showcase -->
     <section class="themes-section">
         <div class="container">
@@ -1027,6 +1054,26 @@
         </div>
     </section>
 
+    <!-- FAQ — the questions and answers are the same text as the FAQPage JSON-LD in <head>. -->
+    <section id="faq" class="faq-section">
+        <div class="container">
+            <h2 class="section-title reveal">Frequently Asked Questions</h2>
+            <div class="faq-list reveal">
+                <details class="faq-item">
+                    <summary>How do auto-reset cycles work?</summary>
+                    <p>Auto-reset cycles automatically refresh your routine when all tasks are completed. Your cycle count goes up each time. This creates seamless repeating workflows perfect for shift rounds, inspections, and recurring procedures.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Is miniCycle free to use?</summary>
+                    <p>Yes! miniCycle is completely free. No accounts, no subscriptions, no ads. It works in any modern browser and can be installed as a PWA for offline use.</p>
+                </details>
+                <details class="faq-item">
+                    <summary>Can I use miniCycle on my phone?</summary>
+                    <p>Absolutely! miniCycle works on phones, tablets, and desktops. It can be installed as a PWA for an app-like experience and works fully offline.</p>
+                </details>
+            </div>
+        </div>
+    </section>
     <!-- CTA -->
     <section class="cta-section">
         <h2>Your routine is waiting.</h2>
