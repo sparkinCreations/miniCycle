@@ -1,3 +1,7 @@
+## [2.600] - 2026-10-11
+- fix(buttons): the global button hover colour only applies to real pointers
+
+
 ## [2.599] - 2026-10-11
 - fix(backup): the iPhone / Android app saves backups through the share sheet; Task panel hover no longer sticks on touch
 - TODO(changelog): uncommitted work shipped in this release — describe it here
