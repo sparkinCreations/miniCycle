@@ -1,6 +1,6 @@
 # Focus View Layout — the band model
 
-**Status:** current as of v2.473 (Aug 2026)
+**Status:** current as of v2.594 (Oct 2026)
 
 Focus View's task card is not centred in the viewport. It is **anchored to a band**
 whose top and bottom edges are both *measured* from the live chrome at runtime.
@@ -102,6 +102,37 @@ orientation change, and the dots don't resize so the `ResizeObserver` stays
 quiet. `headerLayoutManager` listens for `focusMode:activated` /
 `focusMode:deactivated` for exactly this reason. Remove those listeners and the
 band silently uses the *other* mode's numbers.
+
+---
+
+## Desktop (≥1024px): centred, with a chrome-floor cap
+
+The band model above is scoped to `max-width: 1023px`. At and above 1024px
+`#task-view` is still **centred** (`top: calc(50% - --focus-mode-top-offset)`,
+`translateY(-50%)`) and content-sized, which the desktop layout was signed off
+on. A centred, content-sized box has no top edge of its own: it is
+`centre - height/2`, so a long list on a short window grew the view until the
+input bar rode under the header row (y=76 against a chrome bottom of 80 at
+1100x600, Oct 2026). The card check in the layout suite never saw it because the
+input bar sits *above* the card.
+
+Rather than re-anchor desktop to the band (which would move the signed-off
+desktop position ~30px), the floor is expressed as a **height cap**:
+
+```
+top edge = centre - height/2  ≥  chromeBottom + floor
+   ⇒ height ≤ 2 · (50dvh − offset − chromeBottom − floor)      (--focus-desktop-view-cap)
+```
+
+`--focus-chrome-floor` (5px) is the knob. The cap is `min()`-ed with the tuned
+`100dvh − 150px`, so on a tall window nothing moves; on a short one the list
+(`min-height: 0`, like the mobile block) absorbs the shortage and scrolls, and
+the bottom edge rises by the same amount. It is derived from the *measured*
+`--focus-top-chrome`, not a literal — the same reasoning as the band.
+
+The guard: `focus content keeps 5px from the painted chrome` runs on all 7
+viewports with the sample routine, and again with a 10-task routine on the
+`*-long` viewports (1100x600 is the one where the cap binds).
 
 ---
 

@@ -123,7 +123,11 @@ body.focus-mode #task-view {
        Tunable via --focus-mode-top-offset in variables.css. */
     top: calc(50% - var(--focus-mode-top-offset));
     max-height: calc(100vh - 150px);
-    max-height: calc(100dvh - 150px);
+    /* min(): the tuned cap on tall windows; on short ones the chrome-floor cap
+       (variables.css: --focus-desktop-view-cap) so that centring can never
+       push the input bar / title under the header row. Measured: 1100x600 with
+       13 tasks put the input bar at y=76 against a chrome bottom of 80. */
+    max-height: min(calc(100dvh - 150px), var(--focus-desktop-view-cap));
 }
 
 body.focus-mode #task-view .task-card {
@@ -135,6 +139,19 @@ body.focus-mode #task-view .task-list-container {
     /* Tunable via --focus-task-list-reduction-desktop in variables.css. */
     max-height: calc(100vh - var(--focus-task-list-reduction-desktop));
     max-height: calc(100dvh - var(--focus-task-list-reduction-desktop));
+}
+/* For the cap above to shorten the view, the flex chain down to the list has
+   to be allowed to shrink: a flex item's default min-height is its content
+   size, and the list carries a 200px floor (task-list.css). Without these the
+   capped #task-view simply overflowed (overflow: visible here) and the input
+   bar stayed where it was. The <1024px block sets the list's floor to 0 for the
+   same reason; this is the desktop half of that rule. */
+@media (min-width: 1024px) {
+    body.focus-mode #task-view #task-card-group,
+    body.focus-mode #task-view .task-card,
+    body.focus-mode #task-view .task-list-container {
+        min-height: 0;
+    }
 }
 
 /* Chrome elements fade in/out.

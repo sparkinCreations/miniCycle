@@ -152,6 +152,17 @@ function measureFocus() {
     const px = (el) => { if (!el) return null; const r = el.getBoundingClientRect();
         return r.height > 0 ? { top: Math.round(r.top), bottom: Math.round(r.bottom) } : null; };
     const card = px(document.querySelector('#task-view .task-card'));
+    // The topmost painted content: the input bar when it is visible, else the
+    // title / card. The card alone missed the Oct 2026 desktop collision — the
+    // input bar sits ABOVE it and was the thing under the header row.
+    const contentTops = [
+        px(document.getElementById('task-input-row')),
+        px(document.getElementById('mini-cycle-title')),
+        card,
+    ].filter(Boolean).map(c => c.top);
+    const contentTop = contentTops.length ? Math.min(...contentTops) : null;
+    const chromeFloor = parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue('--focus-chrome-floor')) || 5;
     const chrome = [
         px(document.querySelector('.mini-cycle-header-row')),
         px(document.querySelector('.header-logo')),
@@ -169,6 +180,7 @@ function measureFocus() {
     const tvBottom = tv ? Math.round(tv.getBoundingClientRect().bottom) : null;
     return {
         cardTop: card ? card.top : null,
+        contentTop, chromeFloor,
         liveChromeBottom, publishedVar,
         taskViewBottom: tvBottom,
         // In focus mode #task-view deliberately extends BELOW the nav line —
@@ -500,6 +512,11 @@ async function run() {
                 record(vp, 'focus card clears the painted chrome',
                     f.cardTop >= f.liveChromeBottom - TOL,
                     `card.top ${f.cardTop} < chrome.bottom ${f.liveChromeBottom}`);
+            }
+            if (f.contentTop !== null && f.liveChromeBottom !== null) {
+                record(vp, `focus content keeps ${f.chromeFloor}px from the painted chrome`,
+                    f.contentTop >= f.liveChromeBottom + f.chromeFloor - TOL,
+                    `content.top ${f.contentTop} < chrome.bottom ${f.liveChromeBottom} + ${f.chromeFloor}`);
             }
 
             // The band itself — this is what anchoring #task-view between the
@@ -1153,6 +1170,65 @@ async function run() {
                     const extra = await tp.evaluate(() => document.scrollingElement.scrollHeight - innerHeight);
                     record(vp, 'after Skip: focus view is locked (no page scroll)', extra <= TOL,
                         `page still scrolls ${extra}px after the tour ended`);
+                }
+
+                // ── Focus view, long routine, short desktop window ──────────
+                // At >=1024px #task-view is centred and content-sized
+                // (focus-mode.css), so the chrome floor is only exercised when
+                // the content is tall relative to the window. The main loop's
+                // page has NO routine (fresh storage, choice screen bypassed), so
+                // its focus checks ran against an empty list — which is how the
+                // input bar sat under the header row at 1100x600 with 13 tasks
+                // (Oct 2026) while everything passed. This page has the tour's
+                // routine; lengthen it and re-check on the windows where the cap
+                // binds, plus the tall desktop where it must NOT move anything.
+                const seeded = await tp.evaluate(async () => {
+                    const input = document.getElementById('taskInput');
+                    const add = document.getElementById('addTaskBtn');
+                    if (!input || !add) return -1;
+                    const before = document.querySelectorAll('#taskList li').length;
+                    for (let i = 1; i <= 8; i++) {
+                        input.value = `Layout focus task ${i}`;
+                        input.dispatchEvent(new Event('input', { bubbles: true }));
+                        add.click();
+                        await new Promise(r => setTimeout(r, 120));
+                    }
+                    return document.querySelectorAll('#taskList li').length - before;
+                });
+                record({ name: 'long-routine-seed', width: 0, height: 0 },
+                    'lengthened the tour routine for the focus-view floor checks', seeded >= 8,
+                    `${seeded} task(s) added (expected 8)`);
+                await tp.evaluate(() => {
+                    document.body.classList.add('focus-mode');
+                    document.dispatchEvent(new CustomEvent('focusMode:activated', { detail: {} }));
+                });
+                await tp.waitForTimeout(450);
+
+                const LONG_ROUTINE_VIEWPORTS = [
+                    { name: 'desktop-short-long',   width: 1100, height: 600 },
+                    { name: 'tablet-land-long',     width: 1024, height: 768 },
+                    { name: 'desktop-long',         width: 1280, height: 800 },
+                    { name: 'landscape-short-long', width: 820,  height: 480 },
+                    { name: 'phone-short-long',     width: 375,  height: 560 },
+                ];
+                for (const vp of LONG_ROUTINE_VIEWPORTS) {
+                    await tp.setViewportSize({ width: vp.width, height: vp.height });
+                    await tp.waitForTimeout(500);
+                    console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (focus, 14 tasks)${colors.reset}`);
+                    const f = await tp.evaluate(measureFocus);
+                    record(vp, 'focus chrome var matches the live chrome',
+                        f.liveChromeBottom !== null && Math.abs(f.publishedVar - f.liveChromeBottom) <= TOL,
+                        `--focus-chrome-bottom=${f.publishedVar} vs live ${f.liveChromeBottom}`);
+                    if (f.contentTop !== null && f.liveChromeBottom !== null) {
+                        record(vp, `focus content keeps ${f.chromeFloor}px from the painted chrome`,
+                            f.contentTop >= f.liveChromeBottom + f.chromeFloor - TOL,
+                            `content.top ${f.contentTop} < chrome.bottom ${f.liveChromeBottom} + ${f.chromeFloor}`);
+                    }
+                    if (f.taskViewBottom !== null && f.navLine !== null) {
+                        record(vp, 'focus band clears nav dots',
+                            f.taskViewBottom <= f.navLine + TOL,
+                            `task-view.bottom ${f.taskViewBottom} > navLine ${f.navLine}`);
+                    }
                 }
             } finally {
                 await tourContext.close();
