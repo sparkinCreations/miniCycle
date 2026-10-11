@@ -893,3 +893,25 @@ body.task-drag-active .task:not(.task-dragging):hover {
 .help-window .help-extra {
   margin-top: 4px;
 }
+
+/* ─── Task row width in focus mode ───────────────────────────────────
+   Focus mode widens the list container (96%, up to 840px) but the list
+   itself stayed capped at 500px and rows at the base 360px, so rows sat
+   in a narrow column of a wide panel. Let the list fill the container
+   and rows take 92% of it — same proportion as the normal view. The
+   base .task is content-box: 4px side padding below 1024px, 18px at
+   >=1024px (its desktop block), hence the subtractions. */
+body.focus-mode .task-list {
+  max-width: none;
+}
+
+body.focus-mode .task-list .task {
+  max-width: 85%;
+  max-width: calc(92% - 8px);
+}
+
+@media (min-width: 1024px) {
+  body.focus-mode .task-list .task {
+    max-width: calc(92% - 36px);
+  }
+}

@@ -775,3 +775,22 @@ body.task-drag-active .task:not(.task-dragging):hover {
   margin-top: 4px;
 }
 
+
+/* ─── Task row width in focus mode ───────────────────────────────────
+   Focus mode widens the list to 96% of the popup, but the 24px side
+   padding above (and the shared 500px list / 360px row caps) kept rows
+   narrower than the space. Trim the padding and let rows take 92% of
+   the list. .task is content-box with 4px side padding, hence − 8px. */
+body.focus-mode .task-list-container {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+body.focus-mode .task-list {
+  max-width: none;
+}
+
+body.focus-mode .task-list .task {
+  max-width: 85%;
+  max-width: calc(92% - 8px);
+}
