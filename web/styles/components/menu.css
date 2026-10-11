@@ -1073,8 +1073,9 @@ body.quick-actions-open #quick-actions-window {
    Font Awesome's font-metric resistance. SVG attributes width/height set
    the box; CSS reinforces them in case any global rule tries to override. */
 .menu-primary-action-icon {
-    width: 14px;
-    height: 14px;
+    /* 18px, up from 14: the brackets-plus-eye glyph needs the room to read. */
+    width: 18px;
+    height: 18px;
     flex: 0 0 auto;
     opacity: 0.9;
     display: inline-block;
