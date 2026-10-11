@@ -885,8 +885,10 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
 }
 
 .focus-mode-btn svg {
-    width: 16px;
-    height: 16px;
+    /* 20px, up from 16: the brackets-plus-eye glyph needs the room to read
+       at a glance; the 36px button itself is unchanged. */
+    width: 20px;
+    height: 20px;
 }
 
 /* Active state — fixed to bottom-right of viewport so it's always reachable */

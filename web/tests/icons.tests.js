@@ -68,6 +68,15 @@ export async function runIconsTests(resultsDiv) {
         'scroll'          // Mode Info (toggle, not a collapsible section)
     ];
 
+    await test('focusEye icon exists and combines the expand brackets with an eye', () => {
+        const svg = mod.getIcon('focusEye');
+        if (!svg || !svg.startsWith('<svg')) throw new Error('focusEye should resolve to an SVG');
+        if (!/<circle/.test(svg)) throw new Error('focusEye should draw a pupil (circle)');
+        if ((svg.match(/<path/g) || []).length < 2) throw new Error('focusEye should draw the brackets AND the eye outline');
+        if (!/V2h/.test(svg)) throw new Error('focusEye should keep the corner-bracket geometry of expand');
+        if (mod.getIcon('expand') === svg) throw new Error('expand must stay distinct — it is still used elsewhere');
+    });
+
     await test('Menu section icons are registered in ICONS', () => {
         for (const name of menuSectionIcons) {
             if (!mod.ICONS[name]) {

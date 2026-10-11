@@ -138,7 +138,7 @@ export class FocusMode {
         this._button.className = DOM_CLASSES.FOCUS_MODE_BTN;
         this._button.title = getLabel('focusMode.enterTitle');
         this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
-        this._button.innerHTML = getIcon('expand');
+        this._button.innerHTML = getIcon('focusEye');
 
         // Wrap progress bar and button in a flex row so they stay inline
         const progressContainer = taskView.querySelector(DOM_SELECTORS.PROGRESS_CONTAINER);
@@ -1167,7 +1167,7 @@ export class FocusMode {
         }
 
         if (this._button) {
-            this._button.innerHTML = getIcon('expand');
+            this._button.innerHTML = getIcon('focusEye');
             this._button.title = getLabel('focusMode.enterTitle');
             this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
         }
