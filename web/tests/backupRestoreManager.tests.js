@@ -322,8 +322,8 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         try { return await run(); }
         finally { if (had) globalThis.Capacitor = orig; else delete globalThis.Capacitor; }
     }
-    const nativeStub = ({ onWrite, onShare }) => ({
-        isNativePlatform: () => true, getPlatform: () => 'ios', isPluginAvailable: () => true,
+    const nativeStub = ({ onWrite, onShare, platform = 'ios' }) => ({
+        isNativePlatform: () => true, getPlatform: () => platform, isPluginAvailable: () => true,
         Plugins: {
             Filesystem: { writeFile: async (o) => { onWrite(o); return { uri: 'file:///cache/' + o.path }; }, getUri: async (o) => ({ uri: 'file:///cache/' + o.path }) },
             Share: { share: async (o) => onShare(o) },
@@ -347,6 +347,35 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         if (clicked !== 0) throw new Error('must not ALSO click a download the WebView would drop');
         if (prompts !== 0) throw new Error('the share sheet names and places the file — no in-app name prompt');
         if (!stamped || !notes.includes('success')) throw new Error('a completed share must record the timestamp and say so');
+    });
+
+    await test('Android app: Backup All writes to the public Documents folder — no share sheet — and says where it went', async () => {
+        let written = null; let shared = 0; let stamped = null; const msgs = [];
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: (fn) => { const st = { settings: {} }; fn(st); stamped = st.settings.lastFileBackupTimestamp; } },
+            showNotification: (msg) => { msgs.push(msg); }, showConfirmationModal: () => {}, showPromptModal: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.601' }
+        });
+        const stub = nativeStub({ platform: 'android', onWrite: (o) => { written = o; }, onShare: () => { shared++; } });
+        const { result, clicked } = await captureBackupDownloadAsync(() => withCapacitor(stub, () => withSavePicker(null, () => mod.saveBackupFileAs())));
+        if (result !== 'saved') throw new Error(`expected 'saved', got ${JSON.stringify(result)}`);
+        if (!written || written.directory !== 'DOCUMENTS') throw new Error('expected a write into the public Documents folder, got ' + JSON.stringify(written && { path: written.path, directory: written.directory }));
+        if (shared !== 0) throw new Error('Android must not open the share sheet when the write succeeded');
+        if (clicked !== 0) throw new Error('must not click a download the WebView would drop');
+        if (!stamped) throw new Error('a saved backup records the timestamp');
+        if (!msgs.some(m => m.includes('Documents/') && m.includes(written.path))) throw new Error('the notice must name the file in Documents, got ' + JSON.stringify(msgs));
+    });
+
+    await test('Android app: if Documents refuses the write (Android 10), the share sheet is still offered', async () => {
+        let shared = null;
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {} },
+            showNotification: () => {}, showConfirmationModal: () => {}, showPromptModal: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.601' }
+        });
+        const stub = nativeStub({ platform: 'android', onWrite: (o) => { if (o.directory === 'DOCUMENTS') throw new Error('EACCES'); }, onShare: (o) => { shared = o; } });
+        const { result } = await captureBackupDownloadAsync(() => withCapacitor(stub, () => withSavePicker(null, () => mod.saveBackupFileAs())));
+        if (result !== 'saved' || !shared) throw new Error(`expected the share-sheet fallback, got result=${JSON.stringify(result)} shared=${!!shared}`);
     });
 
     await test('native app: a dismissed share sheet records nothing, says nothing, and reports cancelled to the factory reset', async () => {

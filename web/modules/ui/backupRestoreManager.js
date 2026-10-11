@@ -16,7 +16,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
 // is the destination picker on those platforms — same path the routine export
 // and share already take.
-import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
+import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative } from '../platform/capacitorBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
 // testing modal's IndexedDB restore.
@@ -525,6 +525,24 @@ async function shareBackupNative(AppState, fileName, defaultName) {
     if (!isNativeApp()) return null;
     const file = buildBackupFile(AppState, fileName, defaultName);
     if (!file) return false;
+
+    // Android: "download to device". The share sheet there lists apps, not a
+    // folder, and users read it as being made to share (reported Oct 2026). The
+    // public Documents folder is what a download means on Android, and it shows
+    // up in the Files app. If the write is refused (Android 10 without legacy
+    // storage), the share sheet below is still a way out.
+    if (getNativePlatform() === 'android') {
+        const saved = await saveFileToDocumentsNative({ data: file.text, fileName: file.name });
+        if (saved.handled) {
+            _deps.showNotification('✅ ' + getLabel('notify.backupSavedToDocuments', { vars: { name: file.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            AppState.update(state => {
+                if (!state.settings) state.settings = {};
+                state.settings.lastFileBackupTimestamp = Date.now();
+            });
+            return 'saved';
+        }
+    }
+
     const result = await shareRoutineFileNative({
         data: file.text,
         fileName: file.name,

@@ -416,6 +416,37 @@ export async function shareRoutineFileNative({ data, fileName, title, text }) {
 }
 
 /**
+ * Write a file into the device's PUBLIC Documents folder — the "download to
+ * device" the Android app has no other way to do: its WebView drops
+ * <a download> clicks, and the share sheet offers apps, not a folder. On
+ * Android 11+ an app may create its own files there with no permission; on
+ * Android 10 the plugin needs legacy storage and throws, which the caller
+ * treats as "fall back to the share sheet". iOS has no public Documents folder
+ * in this sense (the sheet's "Save to Files" is the picker there), so callers
+ * gate this on getNativePlatform() === 'android'.
+ *
+ * @returns {Promise<{handled: boolean, uri?: string}>} handled=false when the
+ *   plugin is unavailable or the write failed.
+ */
+export async function saveFileToDocumentsNative({ data, fileName }) {
+    const Filesystem = getPlugin('Filesystem');
+    if (!Filesystem) return { handled: false };
+    try {
+        const write = await Filesystem.writeFile({
+            path: fileName,
+            data,
+            directory: 'DOCUMENTS',
+            encoding: 'utf8',
+            recursive: true,
+        });
+        return { handled: true, uri: write?.uri };
+    } catch (e) {
+        console.warn('[capacitorBridge] writing to Documents failed:', e);
+        return { handled: false };
+    }
+}
+
+/**
  * Share plain text / a URL natively (e.g. "share the app").
  * @returns {Promise<{handled: boolean, cancelled?: boolean}>} (see above)
  */
