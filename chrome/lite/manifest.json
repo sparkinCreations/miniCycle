@@ -3,7 +3,7 @@
   "name": "miniCycle lite",
   "version": "1.0",
   "version_name": "Chrome Edition v1.0",
-  "description": "A simple, lightweight routine manager. Tasks reset on cycle completion.",
+  "description": "A simple, lightweight checklist for routines that repeat. Tasks reset when you finish.",
   "author": "sparkinCreations",
   "homepage_url": "https://minicycleapp.com",
 

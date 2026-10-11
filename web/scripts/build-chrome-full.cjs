@@ -476,7 +476,8 @@ function writeManifestAndBackground(version) {
     name: 'miniCycle: Routine Checklist Manager',
     version,
     version_name: `Chrome Edition v${version}`,
-    description: 'A routine manager. Tasks persist and reset on cycle completion. Stay consistent, unlock themes, and share routines.',
+    // Max 132 chars (Chrome). Same category wording as the product page + store listing.
+    description: 'Reusable checklists for routines that repeat. Build it once — it resets every time you finish. Private, offline, no account.',
     author: 'sparkinCreations',
     homepage_url: 'https://minicycleapp.com',
     // Side Panel API requires Chrome 114+. Pin the floor so older browsers don't
