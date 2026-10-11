@@ -30,6 +30,12 @@ https://minicycle.app/docs/*  https://docs.minicycle.app/:splat  301!
 # live in THIS file; netlify.toml carries the headers.
 /mcyc                   /pages/mcyc-format.html       301
 
+# Short alias for the Lite app (old-device fallback). Both spellings: without
+# the slash Netlify would otherwise hand the bare path to the SPA fallback,
+# with it the directory has no index.
+/lite                   /lite/miniCycle-lite.html     301
+/lite/                  /lite/miniCycle-lite.html     301
+
 # Redirect root to miniCycle.html
 /    /miniCycle.html    200
 
