@@ -39,9 +39,11 @@ export async function runOnboardingDemoTests(resultsDiv) {
     function makeManager({ tasks = [], subscribe = true } = {}) {
         const messages = [];
         const subs = new Map();
+        // autoReset: true — the sample routine is an auto-cycle routine, and
+        // the slide's copy is mode-aware (manual / To-Do read differently).
         const store = {
             appState: { activeRoutineId: 'c1' },
-            data: { routine: { c1: { tasks } } }
+            data: { routine: { c1: { tasks, autoReset: true } } }
         };
         const makeAppState = (backing) => ({
             get: () => backing,
@@ -59,7 +61,7 @@ export async function runOnboardingDemoTests(resultsDiv) {
             swapAppState(newTasks) {
                 AppState = makeAppState({
                     appState: { activeRoutineId: 'c1' },
-                    data: { routine: { c1: { tasks: newTasks } } }
+                    data: { routine: { c1: { tasks: newTasks, autoReset: true } } }
                 });
             },
             _setFirstRunWelcomeMessageText(el, text) { messages.push(text); }
@@ -107,6 +109,61 @@ export async function runOnboardingDemoTests(resultsDiv) {
         // "all done" must differ from "none done" — otherwise the slide is static
         if (seen[3] === seen[1]) throw new Error('the completed state must not reuse the initial message');
         if (seen[2] === seen[1]) throw new Error('the almost-done state must not reuse the initial message');
+    });
+
+    await test('manual cycle mode: the slide names the Complete Cycle button and never claims a cycle completed', () => {
+        // Checking everything in manual mode resets nothing until the button is
+        // pressed — and the button can be pressed at ANY time, which is the
+        // mode's whole point. The auto-mode copy promised a reset and then said
+        // "Cycle complete!" with nothing reset (measured Oct 2026).
+        const cases = [
+            { tasks: [{ completed: false }, { completed: false }, { completed: false }], label: 'start' },
+            { tasks: [{ completed: true }, { completed: false }, { completed: false }], label: 'progress' },
+            { tasks: [{ completed: true }, { completed: true }, { completed: true }], label: 'all checked' }
+        ];
+        const seen = {};
+        for (const c of cases) {
+            const m = makeManager({ tasks: c.tasks });
+            m.store.data.routine.c1.autoReset = false;           // manual cycle
+            const el = container();
+            try { new OnboardingDemo(m)._buildTryItDynamic(el)(); seen[c.label] = m.messages[0]; }
+            finally { el.remove(); }
+        }
+        if (!/Complete Cycle/.test(seen.start) || !/any time/i.test(seen.start)) throw new Error(`start should offer Complete Cycle at any time: "${seen.start}"`);
+        if (!/Complete Cycle/.test(seen.progress)) throw new Error(`progress should mention Complete Cycle: "${seen.progress}"`);
+        if (/cycle complete/i.test(seen['all checked'])) throw new Error(`all-checked must NOT claim the cycle completed in manual mode: "${seen['all checked']}"`);
+        if (!/Complete Cycle/.test(seen['all checked'])) throw new Error(`all-checked should point at the button: "${seen['all checked']}"`);
+    });
+
+    await test('To-Do mode: the slide explains clearing, names the Clear Completed Tasks button, and counts checked tasks', () => {
+        const start = makeManager({ tasks: [{ completed: false }, { completed: false }] });
+        start.store.data.routine.c1.deleteCheckedTasks = true;   // To-Do mode
+        const progress = makeManager({ tasks: [{ completed: true }, { completed: false }] });
+        progress.store.data.routine.c1.deleteCheckedTasks = true;
+        const el1 = container(), el2 = container();
+        try {
+            new OnboardingDemo(start)._buildTryItDynamic(el1)();
+            new OnboardingDemo(progress)._buildTryItDynamic(el2)();
+            const s = start.messages[0], p = progress.messages[0];
+            if (!/To-Do/.test(s) || !/Clear Completed Tasks/.test(s)) throw new Error(`start should name the mode and the button: "${s}"`);
+            if (/reset/i.test(p) || /Complete Cycle/.test(p)) throw new Error(`To-Do copy must not talk about resets or the cycle button: "${p}"`);
+            if (!/1 task checked/.test(p) || !/Clear Completed Tasks/.test(p)) throw new Error(`progress should count checked tasks and point at the button: "${p}"`);
+        } finally { el1.remove(); el2.remove(); }
+    });
+
+    await test('switching mode while the slide is showing repaints with that mode\'s copy', () => {
+        const m = makeManager({ tasks: [{ completed: false }, { completed: false }] });
+        const el = container();
+        try {
+            const cleanup = new OnboardingDemo(m)._buildTryItDynamic(el);
+            const autoCopy = m.messages[0];
+            m.store.data.routine.c1.autoReset = false;            // user switches to manual
+            m.subs.get('firstRunWelcome:tryItProgress')();
+            const manualCopy = m.messages[m.messages.length - 1];
+            if (manualCopy === autoCopy) throw new Error('a mode switch must change the instructions');
+            if (!/Complete Cycle/.test(manualCopy)) throw new Error(`expected manual copy after the switch: "${manualCopy}"`);
+            cleanup();
+        } finally { el.remove(); }
     });
 
     await test('deps are read live off the manager, not captured at construction', () => {

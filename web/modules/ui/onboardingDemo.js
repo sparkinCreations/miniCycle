@@ -23,7 +23,7 @@
  */
 import { DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getCycleMode } from '../utils/cycleMode.js';
 
 export class OnboardingDemo {
     constructor(manager) {
@@ -297,21 +297,48 @@ export class OnboardingDemo {
         const computeRemaining = () => {
             const state = this.m.deps.AppState?.get?.();
             const activeId = getActiveRoutineId(state);
-            const tasks = getRoutine(state, activeId)?.tasks || [];
+            const routine = getRoutine(state, activeId);
+            const tasks = routine?.tasks || [];
             const total = tasks.length;
             const remaining = tasks.filter(t => !t.completed).length;
-            return { total, remaining };
+            // Read the mode on every repaint: the user can switch modes while
+            // this slide is showing, and the instructions must follow.
+            return { total, remaining, mode: getCycleMode(routine) };
         };
 
-        const messageForState = ({ total, remaining }) => {
+        // Button / mode names from their canonical labels, so a rename there
+        // (or a vocabulary lens) reaches this copy.
+        const nameVars = () => ({
+            completeBtn: getLabel('action.completeCycle'),
+            clearBtn:    getLabel('action.clearCompletedTasks'),
+            todoName:    getLabel('mode.todo')
+        });
+
+        const messageForState = ({ total, remaining, mode }) => {
             if (total === 0) return getLabel('firstRunWelcome.tryItMessage');
+            const taskWord = (n) => getLabel('noun.task', { count: n });
+            if (mode === 'todo') {
+                // No cycle to complete: the success is a clear.
+                if (remaining === total) return getLabel('firstRunWelcome.tryItTodoStart', { vars: nameVars() });
+                const checked = total - remaining;
+                return getLabel('firstRunWelcome.tryItTodoProgress', { vars: { ...nameVars(), checked, taskWord: taskWord(checked) } });
+            }
+            if (mode === 'manual') {
+                // Nothing resets until the button is pressed — and it can be
+                // pressed at any time, which is the point of manual mode.
+                if (remaining === total) return getLabel('firstRunWelcome.tryItManualStart', { vars: nameVars() });
+                if (remaining === 0) return getLabel('firstRunWelcome.tryItManualAllChecked', { vars: nameVars() });
+                if (remaining === 1) return getLabel('firstRunWelcome.tryItAlmost');
+                return getLabel('firstRunWelcome.tryItManualProgress', { vars: { ...nameVars(), remaining, taskWord: taskWord(remaining) } });
+            }
+            // Auto cycle — the reset happens by itself.
             if (remaining === 0) return getLabel('firstRunWelcome.tryItComplete');
             if (remaining === total) return getLabel('firstRunWelcome.tryItMessage');
             if (remaining === 1) return getLabel('firstRunWelcome.tryItAlmost');
             return getLabel('firstRunWelcome.tryItProgress', {
                 vars: {
                     remaining,
-                    taskWord: getLabel('noun.task', { count: remaining })
+                    taskWord: taskWord(remaining)
                 }
             });
         };

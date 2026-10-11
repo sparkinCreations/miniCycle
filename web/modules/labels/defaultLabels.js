@@ -1768,11 +1768,24 @@ export const DEFAULT_LABELS = deepFreeze({
         tryItAlmost:       'Almost there — one more! ↓',
         tryItComplete:     '🎉 Cycle complete!',
         tryItUnchecked:    'No worries — finish them in any order.',
+        // Mode-aware variants of the "Try it" slide. The auto-cycle lines above
+        // promise a reset that only auto mode delivers; manual mode needs the
+        // button, and To-Do mode has no cycle at all — it clears instead
+        // (measured Oct 2026: the slide said "Cycle complete!" in manual mode
+        // with nothing reset, and To-Do mode could never reach "All Set!").
+        // Button and mode names come in as vars from their canonical labels.
+        tryItManualStart:      'Check off the sample tasks below, or press {completeBtn} at any time to finish the cycle and reset them ↓',
+        tryItManualProgress:   'Nice — {remaining} {taskWord} left. {completeBtn} finishes the rest whenever you like ↓',
+        tryItManualAllChecked: 'All checked — press {completeBtn} to reset them ↓',
+        tryItTodoStart:        'This routine is in {todoName}: finished tasks clear instead of resetting. Check some off, then press {clearBtn} ↓',
+        tryItTodoProgress:     '{checked} {taskWord} checked — press {clearBtn} when you\'re ready ↓',
         // Slides 5 & 6 — appended dynamically when the user completes their
         // first cycle. Slide 5 celebrates and reveals advanced affordances;
         // slide 6 explains how to graduate from focus view to main view.
         // `|` is a paragraph break in messages, a line break in titles.
         titleCelebration:    'First Cycle Complete!',
+        // To-Do mode never counts a cycle; its first success is a clear.
+        titleCelebrationTodo: 'First Clear Complete!',
         messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click and drag left for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")

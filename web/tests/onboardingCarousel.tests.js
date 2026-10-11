@@ -88,6 +88,34 @@ export async function runOnboardingCarouselTests(resultsDiv) {
         }
     });
 
+    await test('To-Do mode: the first CLEAR pushes the celebration slides (titled "First Clear Complete!"); a cycle still titles "First Cycle Complete!"', () => {
+        // The watcher only looked at cycleCount, which To-Do mode never
+        // increments — so "All Set!" was unreachable there.
+        const run = (routineBefore, routineAfter) => {
+            const subs = new Map();
+            let store = { appState: { activeRoutineId: 'c1' }, data: { routine: { c1: routineBefore } } };
+            const m = makeManager();
+            Object.defineProperty(m, 'deps', { get: () => ({ AppState: { get: () => store, subscribe: (k, fn) => subs.set(k, fn), unsubscribe: (k) => subs.delete(k) }, showCycleCreationModal: () => {} }) });
+            m._firstRunWelcomeSlides = [{ title: '1' }, { title: '2' }, { title: '3' }, { title: 'Try it' }];
+            m._firstRunWelcomeSlideIndex = 3;
+            const c = new OnboardingCarousel(m);
+            c._setupFirstRunWelcomeCycleWatch();
+            store = { appState: { activeRoutineId: 'c1' }, data: { routine: { c1: routineAfter } } };
+            subs.get('firstRunWelcome:cycleCompletion')?.(store);
+            if (m._firstRunWelcomeSlideTimer) clearTimeout(m._firstRunWelcomeSlideTimer);
+            return m._firstRunWelcomeSlides.map(s => s.title);
+        };
+        const todo = run({ tasks: [], deleteCheckedTasks: true, cycleCount: 0, clearedTasks: { totalCleared: 0 } },
+                         { tasks: [], deleteCheckedTasks: true, cycleCount: 0, clearedTasks: { totalCleared: 2 } });
+        if (todo.length !== 6) throw new Error(`a To-Do clear should push slides 5 & 6, got ${todo.length} slides`);
+        if (todo[4] !== 'First Clear Complete!') throw new Error(`To-Do celebration title wrong: "${todo[4]}"`);
+        const cycle = run({ tasks: [], autoReset: true, cycleCount: 0 }, { tasks: [], autoReset: true, cycleCount: 1 });
+        if (cycle[4] !== 'First Cycle Complete!') throw new Error(`cycle celebration title wrong: "${cycle[4]}"`);
+        const autoClear = run({ tasks: [], autoReset: true, cycleCount: 0, clearedTasks: { totalCleared: 0 } },
+                              { tasks: [], autoReset: true, cycleCount: 0, clearedTasks: { totalCleared: 1 } });
+        if (autoClear.length !== 4) throw new Error('a clear in a CYCLE mode must not count as the first success');
+    });
+
     await test('carousel STATE stays on the manager, not on the sub-module', () => {
         // 22 fields, none migrated — the manager's destroy() still clears every
         // timer, observer and handler it always cleared. A field that quietly

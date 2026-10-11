@@ -28,7 +28,7 @@
 import { DOM_CLASSES, DOM_IDS, DOM_SELECTORS, EVENTS, UI_TIMEOUTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getCycleMode } from '../utils/cycleMode.js';
 
 export class OnboardingCarousel {
     constructor(manager) {
@@ -261,16 +261,27 @@ export class OnboardingCarousel {
         if (!activeCycleId) return;
 
         const initialCount = getRoutine(state, activeCycleId)?.cycleCount ?? 0;
+        // To-Do mode never increments cycleCount, so on its own the watcher
+        // could never fire there and the carousel parked on "Try it yourself"
+        // for good. In that mode the first CLEAR is the success.
+        const initialCleared = getRoutine(state, activeCycleId)?.clearedTasks?.totalCleared ?? 0;
 
         this.m._firstRunWelcomeCycleWatchKey = 'firstRunWelcome:cycleCompletion';
         this.m._firstRunWelcomeCycleWatchHandler = (newState) => {
             // One-shot: ignore further updates after celebration fires.
             if (this.m._firstRunWelcomeCelebrationTriggered) return;
-            const newCount = getRoutine(newState, activeCycleId)?.cycleCount ?? 0;
+            const routine = getRoutine(newState, activeCycleId);
+            const newCount = routine?.cycleCount ?? 0;
             if (newCount > initialCount) {
-                this._handleFirstRunWelcomeCycleCompletion();
+                this._handleFirstRunWelcomeCycleCompletion('cycle');
+                return;
+            }
+            const newCleared = routine?.clearedTasks?.totalCleared ?? 0;
+            if (getCycleMode(routine) === 'todo' && newCleared > initialCleared) {
+                this._handleFirstRunWelcomeCycleCompletion('clear');
             }
         };
+
         this.m.deps.AppState.subscribe(
             this.m._firstRunWelcomeCycleWatchKey,
             this.m._firstRunWelcomeCycleWatchHandler
@@ -284,14 +295,17 @@ export class OnboardingCarousel {
      * slide 6 follows naturally after the slide-5 hold expires.
      * @private
      */
-    _handleFirstRunWelcomeCycleCompletion() {
+    _handleFirstRunWelcomeCycleCompletion(kind = 'cycle') {
+        // kind: 'cycle' (auto / manual mode — a completed cycle) or 'clear'
+        // (To-Do mode — the first clear). Only the celebration title differs;
+        // the tips slide and "All Set!" are shared.
         if (this.m._firstRunWelcomeCelebrationTriggered) return;
         if (!this.m._firstRunWelcomeSlides) return;
         this.m._firstRunWelcomeCelebrationTriggered = true;
 
         this.m._firstRunWelcomeSlides.push(
             {
-                title:   getLabel('firstRunWelcome.titleCelebration'),
+                title:   getLabel(kind === 'clear' ? 'firstRunWelcome.titleCelebrationTodo' : 'firstRunWelcome.titleCelebration'),
                 message: getLabel('firstRunWelcome.messageCelebration'),
                 // Hold this slide longer than usual so it doesn't auto-advance
                 // while the app's cycle-completion celebration overlay is
