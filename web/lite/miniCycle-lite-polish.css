@@ -939,6 +939,12 @@ body.focus-mode .task-list .task {
     background-size: 9px 5px !important;
     padding-left: 14px !important;
     padding-right: 20px !important;
+    /* The base sheet caps this at width:90% / max-width:130px, which
+       clipped "Manual Cycle ✔︎↻" once the chevron padding was added.
+       Auto width sizes to the longest option, so the pill stays the
+       same width in every mode. */
+    width: auto !important;
+    max-width: 200px !important;
   }
 }
 
