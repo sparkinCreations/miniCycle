@@ -37,19 +37,11 @@
 //   • Multiple cycles, Recurring tasks, Due dates, Reminders
 //   • Theme unlocks, Gamification, Import/export, Advanced settings
 //
-// Last meaningful update: v2.088 (intentionally static thereafter)
+// Last meaningful update: v2.093 (intentionally static thereafter)
 // © 2026 sparkinCreations - https://sparkincreations.com
 // ================================================================================
 
 // ✅ Global Variables
-var draggedTask = null;
-var touchStartTime = 0;
-var isLongPress = false;
-var touchStartY = 0;
-var touchEndY = 0;
-var holdTimeout = null;
-var moved = false;
-var isDragging = false;
 var hasInteracted = false;
 var undoStack = [];
 var redoStack = [];
@@ -86,8 +78,8 @@ console.log('📱 miniCycle Lite Mode Activated for maximum compatibility!');
 
 
 
-var currentVersion = '2.088';
-var editionLabel = 'Chrome Edition v1.0';
+var currentVersion = '2.093';
+var editionLabel = 'Chrome Edition v1.1';
 
 // ✅ ADD version display function
 function showVersionInfo() {
@@ -189,6 +181,7 @@ console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
   setupMenuSystem();
   setupBasicTheme();
   setupBasicSwipe();
+  setupTaskDragAndDrop(); // ✅ Drag-and-drop task reordering
   setupStatsUpdating();
   setupStatsMenuButton();
   setupEnhancedNavigation(); 
@@ -199,6 +192,8 @@ console.log('🚀 Initializing miniCycle Lite v' + currentVersion + '...');
   setupFocusToggle();
   setupMobileInputOverlay();
   setupAddTaskModal(); // ✅ Add task modal system
+  setupEditTaskModal(); // ✅ Edit task modal (replaces prompt)
+  setupConfirmModal(); // ✅ Confirm modal (replaces confirm)
 
   // ✅ Initial stats update
   setTimeout(function() {
@@ -246,6 +241,12 @@ function initializeBadgeSystem() {
     }
   }
   
+  // ✅ Drop the key the old double-counting cycle check left behind
+  // (updateCyclesCompleted no longer reads or writes it).
+  try {
+    localStorage.removeItem('lastCompletionCheck');
+  } catch (e) { /* storage unavailable — nothing to clean */ }
+
   console.log('🏅 Badge system initialized - Lifetime completed:', getLifetimeCompletedTasks());
 }
 
@@ -530,6 +531,7 @@ function setupModeSelector() {
   // ✅ Set initial values
   if (desktopSelect) desktopSelect.value = savedMode;
   if (mobileSelect) mobileSelect.value = savedMode;
+  updateHelpForMode(savedMode);
   
   // ✅ Create a unified change handler
   function handleModeChange(newMode, sourceSelector) {
@@ -549,6 +551,7 @@ function setupModeSelector() {
     // ✅ Update UI
     updateCompleteAllButtonText();
     checkCompleteAllButton();
+    updateHelpForMode(newMode);
     
     // ✅ Show feedback
     showNotification('Mode changed to: ' + getModeDisplayName(newMode), 'info');
@@ -623,6 +626,33 @@ function getModeDisplayName(mode) {
   }
 }
 
+// ✅ Highlight the help popup's description of the mode in use
+function updateHelpForMode(mode) {
+  var helpWindow = document.getElementById('help-window');
+  if (!helpWindow) return;
+  var items = helpWindow.querySelectorAll('[data-help-mode]');
+  for (var i = 0; i < items.length; i++) {
+    if (items[i].getAttribute('data-help-mode') === mode) {
+      addClass(items[i], 'help-mode-active');
+    } else {
+      removeClass(items[i], 'help-mode-active');
+    }
+  }
+}
+
+// ✅ The button's static aria-label/tooltip described Manual Cycle only, so
+// screen readers announced "Complete all tasks" even when it clears in To-Do
+var COMPLETE_BUTTON_DESCRIPTIONS = {
+  'manual-cycle': {
+    label: 'Complete all tasks, then start a new cycle',
+    tooltip: 'Checks every task; press again to reset the list and count a cycle'
+  },
+  'todo-mode': {
+    label: 'Clear completed tasks',
+    tooltip: 'Removes checked tasks from the list'
+  }
+};
+
 function updateCompleteAllButtonText() {
   if (!completeAllButton || !taskList) return;
   
@@ -647,6 +677,12 @@ function updateCompleteAllButtonText() {
   
   // ✅ Show button for manual and to-do modes
   completeAllButton.style.display = 'block';
+
+  var description = COMPLETE_BUTTON_DESCRIPTIONS[mode === 'todo' ? 'todo-mode' : (mode === 'manual' ? 'manual-cycle' : mode)];
+  if (description) {
+    completeAllButton.setAttribute('aria-label', description.label);
+    completeAllButton.setAttribute('data-tooltip', description.tooltip);
+  }
   
   if (totalTasks === 0) {
     completeAllButton.textContent = getEmptyButtonText(mode);
@@ -1013,10 +1049,17 @@ function setupEnhancedTaskInteraction(taskItem) {
   var touchStartTime = 0;
   
   // ✅ Detect if this is a touch device
+  var rowTouchX = 0;
+  var rowTouchY = 0;
+
 taskItem.addEventListener("touchstart", function(e) {
   if (closestParent(e.target, ".task-options")) return;
   isTouch = true;
   touchStartTime = Date.now();
+  if (e.touches && e.touches.length > 0) {
+    rowTouchX = e.touches[0].clientX;
+    rowTouchY = e.touches[0].clientY;
+  }
 }, false); // ✅ Change from { passive: true } to false
 
   taskItem.addEventListener("touchend", function(e) {
@@ -1024,6 +1067,14 @@ taskItem.addEventListener("touchstart", function(e) {
     if (closestParent(e.target, ".task-options")) return;
 
     var touchDuration = Date.now() - touchStartTime;
+
+    // ✅ A finger that moved was swiping between views or scrolling the
+    // list, not tapping — a quick flick across a row used to toggle it
+    var touch = e.changedTouches && e.changedTouches[0];
+    if (touch && (Math.abs(touch.clientX - rowTouchX) > TAP_MOVE_TOLERANCE ||
+                  Math.abs(touch.clientY - rowTouchY) > TAP_MOVE_TOLERANCE)) {
+      return;
+    }
     
     // ✅ Only handle tap if it's a short touch (not a long press)
     if (touchDuration < 300) {
@@ -1046,6 +1097,8 @@ taskItem.addEventListener("touchstart", function(e) {
       isTouch = false;
     }, 100);
   });
+
+  attachTaskDrag(taskItem); // ✅ Drag-and-drop reordering
 }
 
 // ✅ NEW: Unified function to handle task completion toggle
@@ -1613,9 +1666,18 @@ function updateClearedBadges() {
 function handleTaskCompletionChange(event) {
   var checkbox = event.target;
 
-  // ✅ Save undo state before changing completion (skip if bulk operation)
+  // ✅ Save undo state (skip if bulk operation). This runs on "change", AFTER
+  // the browser has toggled the box, so a plain snapshot already holds the new
+  // state and undo restored it unchanged. Flip this task back to record the
+  // state from before the click.
   if (!isBulkOperation) {
-    saveUndoState(checkbox.checked ? 'complete' : 'uncomplete');
+    var tasksBefore = getCurrentTasksState();
+    var taskItem = closestParent(checkbox, '.task');
+    var taskIndex = taskItem ? Array.prototype.indexOf.call(taskList.children, taskItem) : -1;
+    if (taskIndex !== -1 && tasksBefore[taskIndex]) {
+      tasksBefore[taskIndex].completed = !checkbox.checked;
+    }
+    saveUndoState(checkbox.checked ? 'complete' : 'uncomplete', tasksBefore);
   }
 
   // ✅ If task was just completed (checked), trigger logo glow
@@ -1624,6 +1686,11 @@ function handleTaskCompletionChange(event) {
     
     // ✅ Also increment lifetime completed tasks
     incrementLifetimeCompletedTasks(1);
+  } else if (checkbox && !isBulkOperation) {
+    // ✅ A direct uncheck takes back the completion it counted, so
+    // check → uncheck → check counts once, not twice. Bulk unchecks
+    // (Uncheck All) are skipped: those tasks really were completed.
+    incrementLifetimeCompletedTasks(-1);
   }
   
   // ✅ Check if we're in auto-cycle mode and all tasks are now complete
@@ -1672,10 +1739,10 @@ function getLifetimeCompletedTasks() {
 
 // ✅ NEW function to increment lifetime completed tasks
 function incrementLifetimeCompletedTasks(count) {
-  count = count || 1;
+  if (typeof count !== 'number') count = 1;
   try {
     var currentLifetime = getLifetimeCompletedTasks();
-    var newLifetime = currentLifetime + count;
+    var newLifetime = Math.max(0, currentLifetime + count); // count may be -1 (uncheck)
     localStorage.setItem('miniCycleLiteLifetimeCompleted', newLifetime.toString());
     console.log('📈 Lifetime completed tasks updated:', newLifetime);
     return newLifetime;
@@ -1864,55 +1931,11 @@ function calculateTaskStats() {
 
 // ✅ ENHANCED updateCyclesCompleted function
 function updateCyclesCompleted(stats) {
-  var cyclesCompleted = getCyclesCompletedFromStorage();
-  
-  // ✅ Check if we just completed a cycle
-  if (stats.total > 0 && stats.completed === stats.total) {
-    var lastCompletionCheck = null;
-    try {
-      lastCompletionCheck = localStorage.getItem('lastCompletionCheck');
-    } catch (e) {
-      console.warn('⚠️ Could not read lastCompletionCheck from storage');
-    }
-    
-    var currentTasksString = JSON.stringify(getAllTaskTexts());
-    
-    // ✅ Only count as new cycle if tasks have changed since last completion
-    if (lastCompletionCheck !== currentTasksString) {
-      cyclesCompleted++;
-      saveCyclesCompletedToStorage(cyclesCompleted);
-      
-      try {
-        localStorage.setItem('lastCompletionCheck', currentTasksString);
-      } catch (e) {
-        console.warn('⚠️ Could not save lastCompletionCheck to storage');
-      }
-      
-      // ✅ Celebrate cycle completion
-      setTimeout(function() {
-        showNotification('🎉 Cycle completed! Total cycles: ' + cyclesCompleted, 'success');
-      }, 500);
-    }
-  }
-  
-  updateStatElement('mini-cycle-count', cyclesCompleted);
-}
-
-// ✅ ENHANCED getAllTaskTexts function
-function getAllTaskTexts() {
-  var texts = [];
-  if (!taskList) return texts;
-  
-  var taskItems = taskList.children;
-  
-  for (var i = 0; i < taskItems.length; i++) {
-    var taskText = taskItems[i].querySelector('.task-text');
-    if (taskText && taskText.textContent) {
-      texts.push(taskText.textContent.trim());
-    }
-  }
-  
-  return texts.sort(); // Sort for consistent comparison
+  // ✅ Display only. Cycles are counted in exactly one place, incrementCycleCount(),
+  // which every reset path calls. This function used to ALSO count a cycle whenever
+  // it saw every task checked, so each completed cycle was counted twice
+  // (measured: one auto cycle took the count from 7 to 9).
+  updateStatElement('mini-cycle-count', getCyclesCompletedFromStorage());
 }
 
 // ✅ ENHANCED storage functions with better error handling
@@ -1972,140 +1995,350 @@ function updateStatsDOM(totalTasks, completedTasks, completionRate, cycleCount) 
 // 🔄 ENHANCED SWIPE SUPPORT
 // ==========================================
 
+// ✅ Swipe / drag between Tasks and Stats
+// SWIPE_MIN_DISTANCE: how far a finger/mouse must travel to switch views.
+// TAP_MOVE_TOLERANCE: movement beyond this is a gesture, never a tap — so
+// swiping or scrolling across a task row doesn't also toggle that task.
+var SWIPE_MIN_DISTANCE = 40;
+var TAP_MOVE_TOLERANCE = 10;
+var _suppressNextClick = false;
+
+// Controls a drag must not start on — everything else (task rows, both
+// panels, the background) can start a swipe.
+var SWIPE_EXCLUDED_SELECTOR =
+  'button, input, textarea, select, a, [contenteditable="true"], ' +
+  '.add-task-modal, .feedback-modal, .menu-container, .task-options';
+
 function setupBasicSwipe() {
-  var startX = 0;
-  var startY = 0;
-  var isStatsVisible = false;
   var statsPanel = document.getElementById("stats-panel");
   var taskView = document.getElementById("task-view");
-  var minSwipeDistance = 50;
 
   if (!statsPanel || !taskView) {
     console.log('📱 Swipe disabled - required elements not found');
     return;
   }
 
-document.addEventListener("touchstart", function(e) {
-  if (e.touches && e.touches.length > 0) {
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
+  // ✅ Read the current view from the DOM. A private flag here used to go
+  // stale whenever the Tasks/Stats pill or the arrows switched views, so a
+  // swipe back from Stats was ignored after using them.
+  function isStatsShowing() {
+    return hasClass(statsPanel, 'show');
   }
-}, false); // ✅ Add explicit false if missing
 
-  document.addEventListener("touchend", function(e) {
-    if (e.changedTouches && e.changedTouches.length > 0) {
-      var endX = e.changedTouches[0].clientX;
-      var endY = e.changedTouches[0].clientY;
-      var differenceX = startX - endX;
-      var differenceY = Math.abs(startY - endY);
+  function isExcludedStart(target) {
+    return !!(target && target.nodeType === 1 && closestParent(target, SWIPE_EXCLUDED_SELECTOR));
+  }
 
-      // Only trigger swipe if horizontal movement is greater than vertical
-      if (Math.abs(differenceX) > minSwipeDistance && differenceY < Math.abs(differenceX)) {
-        if (differenceX > 0 && !isStatsVisible) {
-          // Swipe left - show stats
-          showStatsPanel();
-          isStatsVisible = true;
-        } else if (differenceX < 0 && isStatsVisible) {
-          // Swipe right - show tasks
-          showTaskView();
-          isStatsVisible = false;
-        }
-      }
+  // Returns true if the movement was a view-switching swipe.
+  function handleSwipe(differenceX, differenceY) {
+    // A task being dragged to a new position is never a swipe
+    if (_taskDragActive) return false;
+
+    // Must travel far enough, and more sideways than up/down (so scrolling
+    // the list never switches views)
+    if (Math.abs(differenceX) <= SWIPE_MIN_DISTANCE || differenceY >= Math.abs(differenceX)) {
+      return false;
     }
+    if (differenceX > 0 && !isStatsShowing()) {
+      showStatsPanel(); // Swipe/drag left - show stats
+      return true;
+    }
+    if (differenceX < 0 && isStatsShowing()) {
+      showTaskView(); // Swipe/drag right - show tasks
+      return true;
+    }
+    return false;
+  }
+
+  // ✅ Touch
+  var touchStartX = 0;
+  var touchStartY = 0;
+  var touchTracking = false;
+
+  document.addEventListener("touchstart", function(e) {
+    touchTracking = false;
+    if (!e.touches || e.touches.length !== 1) return;
+    if (isExcludedStart(e.target)) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+    touchTracking = true;
   }, false);
 
-  function showStatsPanel() {
-    if (statsPanel && taskView) {
-      statsPanel.className = statsPanel.className.replace(/\bhide\b/g, '') + ' show';
-      taskView.className = taskView.className.replace(/\bshow\b/g, '') + ' hide';
-      updateStats();
-      // ✅ ADD THIS LINE
-      forceNavigationUpdate();
-    }
-  }
+  document.addEventListener("touchend", function(e) {
+    if (!touchTracking || !e.changedTouches || e.changedTouches.length === 0) return;
+    touchTracking = false;
+    handleSwipe(
+      touchStartX - e.changedTouches[0].clientX,
+      Math.abs(touchStartY - e.changedTouches[0].clientY)
+    );
+  }, false);
 
-  // ✅ Desktop mouse drag support
+  // ✅ Desktop mouse drag
   var mouseStartX = 0;
   var mouseStartY = 0;
   var isMouseDragging = false;
-  var dragStartedOutsideTaskList = false;
 
   document.addEventListener('mousedown', function(e) {
-    // Check if click started outside task list and other interactive elements
-    var target = e.target;
-    var isInteractive = false;
-
-    // Walk up the DOM tree to check for interactive elements
-    while (target && target !== document.body) {
-      var tagName = target.tagName ? target.tagName.toLowerCase() : '';
-      var id = target.id || '';
-      var className = target.className || '';
-
-      // Skip if inside task list, modals, menus, buttons, inputs
-      if (tagName === 'button' || tagName === 'input' || tagName === 'textarea' || tagName === 'a' ||
-          id === 'taskList' || id === 'task-view' || id === 'stats-panel' ||
-          id === 'add-task-modal' || id === 'menu-container' ||
-          (typeof className === 'string' && (
-            className.indexOf('task') !== -1 ||
-            className.indexOf('modal') !== -1 ||
-            className.indexOf('menu') !== -1 ||
-            className.indexOf('btn') !== -1
-          ))) {
-        isInteractive = true;
-        break;
-      }
-      target = target.parentNode;
-    }
-
-    if (!isInteractive) {
-      mouseStartX = e.clientX;
-      mouseStartY = e.clientY;
-      isMouseDragging = true;
-      dragStartedOutsideTaskList = true;
-    }
+    if (e.button !== undefined && e.button !== 0) return; // Left button only
+    if (isExcludedStart(e.target)) return;
+    mouseStartX = e.clientX;
+    mouseStartY = e.clientY;
+    isMouseDragging = true;
   }, false);
 
   document.addEventListener('mousemove', function(e) {
-    if (isMouseDragging && dragStartedOutsideTaskList) {
-      // Optional: add visual feedback for dragging
-      e.preventDefault();
+    if (!isMouseDragging) return;
+    // Once it's clearly a drag, stop it from selecting text along the way
+    if (Math.abs(e.clientX - mouseStartX) > TAP_MOVE_TOLERANCE) {
+      try {
+        if (window.getSelection) window.getSelection().removeAllRanges();
+      } catch (err) {}
     }
   }, false);
 
   document.addEventListener('mouseup', function(e) {
-    if (isMouseDragging && dragStartedOutsideTaskList) {
-      var endX = e.clientX;
-      var endY = e.clientY;
-      var differenceX = mouseStartX - endX;
-      var differenceY = Math.abs(mouseStartY - endY);
+    if (!isMouseDragging) return;
+    isMouseDragging = false;
 
-      // Only trigger if horizontal movement is greater than vertical and meets minimum distance
-      if (Math.abs(differenceX) > minSwipeDistance && differenceY < Math.abs(differenceX)) {
-        if (differenceX > 0 && !isStatsVisible) {
-          // Drag left - show stats
-          showStatsPanel();
-          isStatsVisible = true;
-          console.log('🖱️ Mouse drag left - showing stats');
-        } else if (differenceX < 0 && isStatsVisible) {
-          // Drag right - show tasks
-          showTaskView();
-          isStatsVisible = false;
-          console.log('🖱️ Mouse drag right - showing tasks');
-        }
-      }
+    var differenceX = mouseStartX - e.clientX;
+    var differenceY = Math.abs(mouseStartY - e.clientY);
+
+    // A drag that started on a task row and ended on it would otherwise
+    // fire that row's click and toggle the task
+    if (Math.abs(differenceX) > TAP_MOVE_TOLERANCE || differenceY > TAP_MOVE_TOLERANCE) {
+      _suppressNextClick = true;
+      setTimeout(function() { _suppressNextClick = false; }, 0);
     }
 
-    isMouseDragging = false;
-    dragStartedOutsideTaskList = false;
+    handleSwipe(differenceX, differenceY);
   }, false);
+
+  // ✅ Capture phase, so it runs before the task row's own click handler
+  document.addEventListener('click', function(e) {
+    if (_suppressNextClick) {
+      _suppressNextClick = false;
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
 
   // ✅ Cancel drag if mouse leaves window
   document.addEventListener('mouseleave', function() {
     isMouseDragging = false;
-    dragStartedOutsideTaskList = false;
   }, false);
 
   console.log('✅ Swipe support initialized (touch + mouse drag)');
+}
+
+// ==========================================
+// ↕️ DRAG-AND-DROP TASK REORDERING
+// ==========================================
+// Mouse: press a task and move up/down to pick it up (sideways stays a
+//        swipe to Stats).
+// Touch: long-press a task to pick it up — moving before then is a scroll
+//        or a swipe, and a quick tap still toggles it.
+// Rows reorder live as the task passes their midpoints; the list scrolls
+// itself near its top/bottom edge. One drop = one undo step.
+
+var TASK_DRAG_LONG_PRESS_MS = 350; // Touch hold before a task lifts
+var TASK_DRAG_START_DISTANCE = 6;  // Mouse movement before a press becomes a drag
+var TASK_DRAG_EDGE = 40;           // Auto-scroll zone at the list's top/bottom (px)
+
+var _taskDragActive = false;   // Read by the swipe handler
+var _taskDrag = null;          // { item, startTasks, startIndex, lastY, scrollTimer }
+var _taskDragPending = null;   // Mouse press waiting to become a drag
+var _taskDragHoldTimer = null; // Touch long-press timer
+
+function getTaskIndex(taskItem) {
+  return Array.prototype.indexOf.call(taskList.children, taskItem);
+}
+
+function startTaskDrag(taskItem, clientY) {
+  if (!taskList || taskList.children.length < 2) return;
+
+  _taskDragActive = true;
+  _taskDrag = {
+    item: taskItem,
+    startTasks: getCurrentTasksState(), // Pre-move snapshot for undo
+    startIndex: getTaskIndex(taskItem),
+    lastY: clientY,
+    scrollTimer: null
+  };
+
+  hideAllTaskOptions();
+  addClass(taskItem, 'task-dragging');
+  addClass(document.body, 'task-drag-active');
+
+  // ✅ Light haptic tick where supported (Android)
+  try { if (navigator.vibrate) navigator.vibrate(15); } catch (e) {}
+
+  // ✅ Keep scrolling/reordering while the pointer rests near an edge
+  _taskDrag.scrollTimer = setInterval(taskDragAutoScroll, 20);
+}
+
+function moveTaskDrag(clientY) {
+  if (!_taskDrag) return;
+  _taskDrag.lastY = clientY;
+  reorderDraggedTask(clientY);
+}
+
+// Place the dragged row before the first other row whose midpoint is below the pointer.
+function reorderDraggedTask(clientY) {
+  var dragged = _taskDrag.item;
+  var rows = taskList.children;
+
+  for (var i = 0; i < rows.length; i++) {
+    var row = rows[i];
+    if (row === dragged) continue;
+    var rect = row.getBoundingClientRect();
+    if (clientY < rect.top + rect.height / 2) {
+      if (dragged.nextSibling !== row) {
+        taskList.insertBefore(dragged, row);
+      }
+      return;
+    }
+  }
+
+  if (taskList.lastChild !== dragged) {
+    taskList.appendChild(dragged);
+  }
+}
+
+function taskDragAutoScroll() {
+  if (!_taskDrag) return;
+  var container = closestParent(taskList, '.task-list-container');
+  if (!container) return;
+
+  var rect = container.getBoundingClientRect();
+  var y = _taskDrag.lastY;
+  var step = 0;
+
+  if (y < rect.top + TASK_DRAG_EDGE) {
+    step = -Math.ceil((rect.top + TASK_DRAG_EDGE - y) / 4);
+  } else if (y > rect.bottom - TASK_DRAG_EDGE) {
+    step = Math.ceil((y - (rect.bottom - TASK_DRAG_EDGE)) / 4);
+  }
+
+  if (step !== 0) {
+    container.scrollTop += step;
+    reorderDraggedTask(y);
+  }
+}
+
+function endTaskDrag() {
+  if (!_taskDrag) return;
+
+  var drag = _taskDrag;
+  _taskDrag = null;
+  clearInterval(drag.scrollTimer);
+  removeClass(drag.item, 'task-dragging');
+  removeClass(document.body, 'task-drag-active');
+
+  if (getTaskIndex(drag.item) !== drag.startIndex) {
+    saveUndoState('move', drag.startTasks);
+    autoSave();
+    updateMoveButtonsVisibility();
+  }
+
+  // ✅ Cleared after this event finishes bubbling, so the swipe handler's
+  // own touchend/mouseup for this same gesture still sees the drag
+  setTimeout(function() { _taskDragActive = false; }, 0);
+}
+
+function cancelTaskDragHold() {
+  if (_taskDragHoldTimer) {
+    clearTimeout(_taskDragHoldTimer);
+    _taskDragHoldTimer = null;
+  }
+}
+
+// ✅ Per-row: touch long-press + mouse press
+function attachTaskDrag(taskItem) {
+  var holdX = 0;
+  var holdY = 0;
+
+  taskItem.addEventListener('touchstart', function(e) {
+    if (!e.touches || e.touches.length !== 1) return;
+    if (closestParent(e.target, '.task-options')) return;
+    holdX = e.touches[0].clientX;
+    holdY = e.touches[0].clientY;
+    cancelTaskDragHold();
+    _taskDragHoldTimer = setTimeout(function() {
+      _taskDragHoldTimer = null;
+      startTaskDrag(taskItem, holdY);
+    }, TASK_DRAG_LONG_PRESS_MS);
+  }, false);
+
+  // Non-passive so a lifted task can stop the list from scrolling. Old
+  // browsers read the object as useCapture=true, which on the row itself
+  // changes nothing.
+  taskItem.addEventListener('touchmove', function(e) {
+    var touch = e.touches && e.touches[0];
+    if (!touch) return;
+
+    if (_taskDrag && _taskDrag.item === taskItem) {
+      e.preventDefault();
+      moveTaskDrag(touch.clientY);
+      return;
+    }
+
+    // Moved before the long-press finished: it's a scroll or a swipe
+    if (_taskDragHoldTimer &&
+        (Math.abs(touch.clientX - holdX) > TAP_MOVE_TOLERANCE ||
+         Math.abs(touch.clientY - holdY) > TAP_MOVE_TOLERANCE)) {
+      cancelTaskDragHold();
+    }
+  }, { passive: false });
+
+  var endTouch = function() {
+    cancelTaskDragHold();
+    if (_taskDrag && _taskDrag.item === taskItem) endTaskDrag();
+  };
+  taskItem.addEventListener('touchend', endTouch, false);
+  taskItem.addEventListener('touchcancel', endTouch, false);
+
+  // ✅ No long-press menu/callout while holding or dragging a task
+  taskItem.addEventListener('contextmenu', function(e) {
+    if (_taskDrag || _taskDragHoldTimer) e.preventDefault();
+  }, false);
+
+  taskItem.addEventListener('mousedown', function(e) {
+    if (e.button !== undefined && e.button !== 0) return;
+    if (closestParent(e.target, '.task-options')) return;
+    _taskDragPending = { item: taskItem, x: e.clientX, y: e.clientY };
+  }, false);
+}
+
+// ✅ Once: document-level mouse tracking (the pointer leaves the row while dragging)
+function setupTaskDragAndDrop() {
+  document.addEventListener('mousemove', function(e) {
+    if (_taskDrag) {
+      e.preventDefault();
+      moveTaskDrag(e.clientY);
+      return;
+    }
+    if (!_taskDragPending) return;
+
+    var dx = Math.abs(e.clientX - _taskDragPending.x);
+    var dy = Math.abs(e.clientY - _taskDragPending.y);
+    if (dy > TASK_DRAG_START_DISTANCE && dy > dx) {
+      var item = _taskDragPending.item;
+      _taskDragPending = null;
+      startTaskDrag(item, e.clientY);
+    } else if (dx > TASK_DRAG_START_DISTANCE) {
+      _taskDragPending = null; // Sideways: leave it to the swipe handler
+    }
+  }, false);
+
+  document.addEventListener('mouseup', function() {
+    _taskDragPending = null;
+    endTaskDrag();
+  }, false);
+
+  document.addEventListener('mouseleave', function() {
+    _taskDragPending = null;
+    endTaskDrag();
+  }, false);
 }
 
 // ✅ Global showTaskView function (must be outside setupBasicSwipe)
@@ -2150,10 +2383,22 @@ function sanitizeInput(input) {
 function deleteTask(taskItem) {
   if (!taskItem || !taskList) return;
 
+  var taskText = taskItem.querySelector('.task-text');
+
   // ✅ Confirm before deleting
-  if (!confirm('Delete this task?')) {
-    return;
-  }
+  showConfirmModal({
+    title: 'Delete task?',
+    message: taskText ? '\u201C' + taskText.textContent + '\u201D will be removed. You can undo this.' : '',
+    confirmText: 'Delete',
+    danger: true
+  }, function() {
+    removeTaskConfirmed(taskItem);
+  });
+}
+
+function removeTaskConfirmed(taskItem) {
+  // ✅ The task may have gone while the confirm was open
+  if (!taskItem || !taskList || !taskList.contains(taskItem)) return;
 
   // Save state for undo
   saveUndoState('delete');
@@ -2176,21 +2421,262 @@ function deleteTask(taskItem) {
 
 function editTask(taskItem) {
   if (!taskItem) return;
-  
-  var taskText = taskItem.querySelector('.task-text');
-  if (!taskText) return;
-  
-  var currentText = taskText.textContent;
-  var newText = prompt('Edit task:', currentText);
-  
-  if (newText !== null && newText.trim() !== '') {
-    var cleanText = sanitizeInput(newText.trim());
-    if (cleanText !== currentText) {
-      saveUndoState('edit');
-      taskText.textContent = cleanText;
-      autoSave();
-      showNotification("Task updated", "success");
+  if (!taskItem.querySelector('.task-text')) return;
+  openEditTaskModal(taskItem);
+}
+
+// ==========================================
+// ❓ CONFIRM MODAL (replaces the browser confirm)
+// ==========================================
+// Callback-based, because a modal can't block like confirm() does:
+//   showConfirmModal({ title, message, confirmText, cancelText, danger }, onConfirm)
+// onConfirm runs only if the user confirms; cancel/Escape/overlay do nothing.
+// danger: red confirm button, and focus starts on Cancel so a stray Enter
+// can't trigger a destructive action.
+
+var _confirmModalCallback = null;
+var _confirmModalPreviousFocus = null;
+
+function setupConfirmModal() {
+  var modal = document.getElementById('confirm-dialog');
+  if (!modal) {
+    console.log('⚠️ Confirm modal not found');
+    return;
+  }
+
+  var overlay = modal.querySelector('.add-task-modal-overlay');
+  var closeBtn = document.getElementById('close-confirm-dialog');
+  var cancelBtn = document.getElementById('confirm-dialog-cancel');
+  var okBtn = document.getElementById('confirm-dialog-ok');
+
+  if (closeBtn) closeBtn.addEventListener('click', function() { closeConfirmModal(false); });
+  if (cancelBtn) cancelBtn.addEventListener('click', function() { closeConfirmModal(false); });
+  if (overlay) overlay.addEventListener('click', function() { closeConfirmModal(false); });
+  if (okBtn) okBtn.addEventListener('click', function() { closeConfirmModal(true); });
+
+  // ✅ Escape cancels; Tab/Shift+Tab stays inside the modal
+  modal.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      e.preventDefault();
+      closeConfirmModal(false);
+      return;
     }
+    if (e.key === 'Tab' || e.keyCode === 9) {
+      var focusable = modal.querySelectorAll('button:not([disabled])');
+      if (focusable.length === 0) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
+
+function showConfirmModal(options, onConfirm) {
+  options = options || {};
+  var modal = document.getElementById('confirm-dialog');
+  var title = document.getElementById('confirm-dialog-title');
+  var message = document.getElementById('confirm-dialog-message');
+  var okBtn = document.getElementById('confirm-dialog-ok');
+  var cancelBtn = document.getElementById('confirm-dialog-cancel');
+
+  // ✅ Markup missing (shouldn't happen) — fall back to the browser dialog
+  if (!modal || !title || !message || !okBtn || !cancelBtn) {
+    var ok = false;
+    try { ok = confirm((options.title ? options.title + '\n\n' : '') + (options.message || '')); } catch (e) {}
+    if (ok && typeof onConfirm === 'function') onConfirm();
+    return;
+  }
+
+  _confirmModalCallback = typeof onConfirm === 'function' ? onConfirm : null;
+  _confirmModalPreviousFocus = document.activeElement;
+
+  title.textContent = options.title || 'Are you sure?';
+  message.textContent = options.message || '';
+  message.style.display = options.message ? '' : 'none';
+  okBtn.textContent = options.confirmText || 'OK';
+  cancelBtn.textContent = options.cancelText || 'Cancel';
+  if (options.danger) {
+    addClass(okBtn, 'modal-danger-btn');
+  } else {
+    removeClass(okBtn, 'modal-danger-btn');
+  }
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  var focusTarget = options.danger ? cancelBtn : okBtn;
+  setTimeout(function() {
+    try { focusTarget.focus(); } catch (e) {}
+  }, 50);
+}
+
+function closeConfirmModal(confirmed) {
+  var modal = document.getElementById('confirm-dialog');
+  if (!modal || modal.style.display === 'none') return;
+
+  var callback = _confirmModalCallback;
+  _confirmModalCallback = null;
+
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+
+  if (_confirmModalPreviousFocus && _confirmModalPreviousFocus.focus) {
+    try { _confirmModalPreviousFocus.focus(); } catch (e) {}
+  }
+  _confirmModalPreviousFocus = null;
+
+  // ✅ Run after the modal is gone, so the action's own UI (notifications,
+  // the empty state) isn't hidden behind it
+  if (confirmed && callback) {
+    callback();
+  }
+}
+
+// ==========================================
+// ✏️ EDIT TASK MODAL (replaces the browser prompt)
+// ==========================================
+
+var _editingTaskItem = null;
+var _editTaskModalPreviousFocus = null;
+var EDIT_TASK_MAX_LENGTH = 100; // Matches the input's maxlength and the Add Tasks input
+
+function setupEditTaskModal() {
+  var modal = document.getElementById('edit-task-dialog');
+  if (!modal) {
+    console.log('⚠️ Edit task modal not found');
+    return;
+  }
+
+  var input = document.getElementById('editTaskInput');
+  var overlay = modal.querySelector('.add-task-modal-overlay');
+  var closeBtn = document.getElementById('close-edit-task-dialog');
+  var cancelBtn = document.getElementById('cancel-edit-task');
+  var saveBtn = document.getElementById('save-edit-task');
+
+  if (closeBtn) closeBtn.addEventListener('click', function() { closeEditTaskModal(); });
+  if (cancelBtn) cancelBtn.addEventListener('click', function() { closeEditTaskModal(); });
+  if (overlay) overlay.addEventListener('click', function() { closeEditTaskModal(); });
+  if (saveBtn) saveBtn.addEventListener('click', function() { saveEditTaskModal(); });
+
+  if (input) {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' || e.keyCode === 13) {
+        e.preventDefault();
+        saveEditTaskModal();
+      }
+    });
+    // 'input' covers typing and paste; 'keyup' covers browsers without it
+    input.addEventListener('input', updateEditTaskCharCount);
+    input.addEventListener('keyup', updateEditTaskCharCount);
+  }
+
+  // ✅ Escape closes; Tab/Shift+Tab stays inside the modal
+  modal.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.keyCode === 27) {
+      e.preventDefault();
+      closeEditTaskModal();
+      return;
+    }
+    if (e.key === 'Tab' || e.keyCode === 9) {
+      var focusable = modal.querySelectorAll('input:not([type="hidden"]), button:not([disabled])');
+      if (focusable.length === 0) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
+
+function openEditTaskModal(taskItem) {
+  var modal = document.getElementById('edit-task-dialog');
+  var input = document.getElementById('editTaskInput');
+  if (!modal || !input) return;
+
+  _editingTaskItem = taskItem;
+  _editTaskModalPreviousFocus = document.activeElement;
+
+  input.value = taskItem.querySelector('.task-text').textContent;
+  updateEditTaskCharCount();
+
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+
+  // ✅ Focus with the text selected, so typing replaces it and an arrow key
+  // drops the cursor in to tweak it (after the open animation starts)
+  setTimeout(function() {
+    try {
+      input.focus();
+      input.select();
+    } catch (e) {}
+  }, 100);
+}
+
+function closeEditTaskModal() {
+  var modal = document.getElementById('edit-task-dialog');
+  if (!modal) return;
+
+  modal.style.display = 'none';
+  document.body.style.overflow = '';
+  _editingTaskItem = null;
+
+  // ✅ Restore focus to whatever opened the modal
+  if (_editTaskModalPreviousFocus && _editTaskModalPreviousFocus.focus) {
+    try { _editTaskModalPreviousFocus.focus(); } catch (e) {}
+  }
+  _editTaskModalPreviousFocus = null;
+}
+
+function saveEditTaskModal() {
+  var input = document.getElementById('editTaskInput');
+  var taskItem = _editingTaskItem;
+
+  // ✅ The task may have gone while the modal was open (e.g. an auto reset in To-Do mode)
+  if (!input || !taskItem || !taskList || !taskList.contains(taskItem)) {
+    closeEditTaskModal();
+    return;
+  }
+
+  var cleanText = sanitizeInput(input.value);
+  if (cleanText === '') {
+    showNotification('Task name can\'t be empty', 'warning');
+    try { input.focus(); } catch (e) {}
+    return;
+  }
+
+  var taskText = taskItem.querySelector('.task-text');
+  if (taskText && cleanText !== taskText.textContent) {
+    saveUndoState('edit');
+    taskText.textContent = cleanText;
+    autoSave();
+    showNotification('Task updated', 'success');
+  }
+
+  closeEditTaskModal();
+}
+
+function updateEditTaskCharCount() {
+  var input = document.getElementById('editTaskInput');
+  var counter = document.getElementById('edit-task-char-count');
+  if (!input || !counter) return;
+
+  var length = input.value.length;
+  counter.textContent = length + ' / ' + EDIT_TASK_MAX_LENGTH;
+  if (length >= EDIT_TASK_MAX_LENGTH - 10) {
+    addClass(counter, 'edit-task-char-count-warn');
+  } else {
+    removeClass(counter, 'edit-task-char-count-warn');
   }
 }
 
@@ -2198,6 +2684,15 @@ function editTask(taskItem) {
 
 
 // ✅ ADD this new function to check for auto reset
+var pendingAutoResetTimer = null;
+
+function cancelPendingAutoReset() {
+  if (pendingAutoResetTimer) {
+    clearTimeout(pendingAutoResetTimer);
+    pendingAutoResetTimer = null;
+  }
+}
+
 function checkForAutoReset() {
   if (!taskList) return;
   
@@ -2217,13 +2712,18 @@ function checkForAutoReset() {
     var cycleMode = getCurrentCycleMode();
     
     if (cycleMode === 'auto' || cycleMode === 'auto-cycle') {
+      // ✅ One reset per completion: every checkbox change schedules a check,
+      // so without this guard a fast double event could queue two resets.
+      if (pendingAutoResetTimer) return;
+
       console.log('🔄 Auto-cycle mode: All tasks complete, triggering automatic reset...');
       
       // ✅ Brief celebration before reset
       showNotification('🎉 All tasks complete! Auto-resetting...', 'success');
-      
+
       // ✅ Auto reset after short delay for user feedback
-      setTimeout(function() {
+      pendingAutoResetTimer = setTimeout(function() {
+        pendingAutoResetTimer = null;
         resetAllTasks();
         incrementCycleCount();
         showCycleCompletionAnimation();
@@ -2277,6 +2777,16 @@ function checkCompleteAllButton() {
   }
 }
 
+// ✅ IE-compatible class toggle (classList is IE10+)
+function setTaskCompleteClass(taskItem, isComplete) {
+  var hasClass = /(^|\s)task-complete(\s|$)/.test(taskItem.className);
+  if (isComplete && !hasClass) {
+    taskItem.className += " task-complete";
+  } else if (!isComplete && hasClass) {
+    taskItem.className = taskItem.className.replace(/(^|\s)task-complete(\s|$)/g, " ").replace(/^\s+|\s+$/g, "");
+  }
+}
+
 function updateProgressBar() {
   if (!progressBar || !taskList) return;
   
@@ -2285,11 +2795,16 @@ function updateProgressBar() {
   
   for (var i = 0; i < taskList.children.length; i++) {
     var checkbox = taskList.children[i].querySelector("input[type='checkbox']");
-    if (checkbox && checkbox.checked) {
+    var isComplete = !!(checkbox && checkbox.checked);
+    if (isComplete) {
       completedTasks++;
     }
+    // ✅ Mirror completion onto the row so CSS can style it (no :has() on old browsers).
+    // Lives here because every completion path ends in updateProgressBar(), including
+    // the auto-cycle reset, which unchecks silently without a change event.
+    setTaskCompleteClass(taskList.children[i], isComplete);
   }
-  
+
   var percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   progressBar.style.width = percentage + "%";
 }
@@ -2521,9 +3036,9 @@ function handleCompleteAll() {
     if (cycleMode === 'todo' || cycleMode === 'todo-mode') {
       if (completedTasks > 0) {
         deleteCompletedTasks();
-        showNotification("Completed tasks deleted! 🗑️", "success");
+        showNotification("Completed tasks cleared! 🗑️", "success");
       } else {
-        showNotification("No completed tasks to delete", "info");
+        showNotification("No completed tasks to clear", "info");
       }
     } else {
       // ✅ Complete all remaining tasks and trigger glow
@@ -2536,10 +3051,11 @@ function handleCompleteAll() {
         }
       }
 
-      // ✅ Trigger glow if we completed tasks
+      // ✅ Trigger glow if we completed tasks. No lifetime increment here: each
+      // triggered "change" above already counted its task in
+      // handleTaskCompletionChange (adding tasksToComplete again doubled it).
       if (tasksToComplete > 0) {
         triggerLogoGlow();
-        incrementLifetimeCompletedTasks(tasksToComplete);
       }
 
       if (cycleMode !== 'auto' && cycleMode !== 'auto-cycle') {
@@ -2585,7 +3101,7 @@ function handleAllTasksComplete(mode) {
     case 'todo-mode':
       // ✅ TO-DO MODE: Delete all completed tasks
       deleteCompletedTasks();
-      showNotification('🗑️ Completed tasks deleted!', 'success');
+      showNotification('🗑️ Completed tasks cleared!', 'success');
       break;
       
     default:
@@ -2879,12 +3395,15 @@ function setupMenuButtons() {
   var deleteAllBtn = document.getElementById('delete-all-mini-cycle-tasks');
   if (deleteAllBtn) {
     deleteAllBtn.addEventListener('click', function() {
-      var ok = false;
-      try { ok = confirm('Are you sure you want to delete all tasks?'); } catch (e) {}
-      if (ok) {
+      showConfirmModal({
+        title: 'Delete all tasks?',
+        message: 'Every task in this list will be removed. You can undo this.',
+        confirmText: 'Delete All',
+        danger: true
+      }, function() {
         deleteAllTasks();
         closeMenu();
-      }
+      });
     });
   }
 
@@ -2892,12 +3411,14 @@ function setupMenuButtons() {
   var clearCompletedBtn = document.getElementById('clear-mini-cycle-tasks');
   if (clearCompletedBtn) {
     clearCompletedBtn.addEventListener('click', function() {
-      var ok = false;
-      try { ok = confirm('Are you sure you want to uncheck all completed tasks?'); } catch (e) {}
-      if (ok) {
+      showConfirmModal({
+        title: 'Uncheck all tasks?',
+        message: 'All completed tasks will be marked as not done. Your stats stay the same.',
+        confirmText: 'Uncheck All'
+      }, function() {
         clearCompletedTasks();
         closeMenu();
-      }
+      });
     });
   }
   
@@ -2905,13 +3426,16 @@ function setupMenuButtons() {
   var resetStatsBtn = document.getElementById('reset-all-stats');
   if (resetStatsBtn) {
     resetStatsBtn.addEventListener('click', function() {
-      var ok = false;
-      try { ok = confirm('Reset all statistics? This will clear cycles completed, tasks cleared, and all badge progress. This cannot be undone.'); } catch (e) {}
-      if (ok) {
+      showConfirmModal({
+        title: 'Reset all statistics?',
+        message: 'This clears cycles completed, tasks completed, tasks cleared, and all badge progress. This can\'t be undone.',
+        confirmText: 'Reset Stats',
+        danger: true
+      }, function() {
         resetAllStats();
         closeMenu();
         showNotification('📊 All statistics have been reset', 'success');
-      }
+      });
     });
   }
 
@@ -2946,11 +3470,13 @@ function setupMenuButtons() {
   var exitBtn = document.getElementById('exit-mini-cycle');
   if (exitBtn) {
     exitBtn.addEventListener('click', function() {
-      var ok = false;
-      try { ok = confirm('Exit miniCycle? Your data will be saved.'); } catch (e) {}
-      if (ok) {
+      showConfirmModal({
+        title: 'Exit miniCycle?',
+        message: 'Your data is saved.',
+        confirmText: 'Exit'
+      }, function() {
         try { window.close(); } catch (e) {}
-      }
+      });
     });
   }
 
@@ -3029,7 +3555,7 @@ function clearCompletedTasks() {
   if (uncheckedCount > 0) {
     showNotification('Unchecked ' + uncheckedCount + ' completed task' + (uncheckedCount === 1 ? '' : 's'), 'success');
   } else {
-    showNotification('No completed tasks to clear', 'info');
+    showNotification('No completed tasks to uncheck', 'info');
   }
 
   console.log('🔄 Unchecked ' + uncheckedCount + ' completed tasks');
@@ -3065,7 +3591,9 @@ function showCompleteAllAnimation() {
 // ==========================================
 // ↩️ UNDO/REDO SYSTEM
 // ==========================================
-function saveUndoState(action) {
+// tasksOverride: optional pre-change task snapshot, for callers that run
+// after the DOM has already changed (see handleTaskCompletionChange).
+function saveUndoState(action, tasksOverride) {
   if (undoStack.length >= UNDO_LIMIT) {
     undoStack.shift(); // Remove oldest
   }
@@ -3073,7 +3601,8 @@ function saveUndoState(action) {
   var state = {
     action: action,
     timestamp: Date.now(),
-    tasks: getCurrentTasksState()
+    tasks: tasksOverride || getCurrentTasksState(),
+    stats: getStatsState()
   };
   
   undoStack.push(state);
@@ -3081,6 +3610,48 @@ function saveUndoState(action) {
   updateUndoRedoButtons(); // ✅ This should show the buttons
   
   console.log('💾 Undo state saved:', action, 'Stack size:', undoStack.length);
+}
+
+// ✅ Stats live in their own localStorage keys, outside the task list, so a
+// tasks-only snapshot let undo restore the checkboxes while the cycle count,
+// lifetime completions and To-Do cleared count kept their new values.
+// Celebrated-badge lists are included so undoing past a milestone lets it be
+// celebrated again when it is genuinely re-earned.
+var UNDO_STATS_KEYS = [
+  'miniCycleLiteCycles',
+  'miniCycleLiteLifetimeCompleted',
+  'miniCycleLiteToDoDeleted',
+  'miniCycleLite_celebratedBadges',
+  'miniCycleLite_celebratedClearedBadges'
+];
+
+function getStatsState() {
+  var stats = {};
+  try {
+    for (var i = 0; i < UNDO_STATS_KEYS.length; i++) {
+      stats[UNDO_STATS_KEYS[i]] = localStorage.getItem(UNDO_STATS_KEYS[i]);
+    }
+  } catch (e) {
+    console.warn('⚠️ Could not read stats for undo:', e);
+  }
+  return stats;
+}
+
+function restoreStatsState(stats) {
+  if (!stats) return; // Snapshot from before stats were tracked
+  try {
+    for (var i = 0; i < UNDO_STATS_KEYS.length; i++) {
+      var key = UNDO_STATS_KEYS[i];
+      if (stats[key] === null || stats[key] === undefined) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.setItem(key, stats[key]);
+      }
+    }
+  } catch (e) {
+    console.warn('⚠️ Could not restore stats for undo:', e);
+  }
+  updateStats();
 }
 
 function getCurrentTasksState() {
@@ -3144,11 +3715,16 @@ function performUndo() {
     return;
   }
   
+  // ✅ An auto-cycle reset may still be waiting out its celebration delay;
+  // undoing the final check must cancel it, or it fires after the undo.
+  cancelPendingAutoReset();
+
   // Save current state to redo stack
   var currentState = {
     action: 'redo',
     timestamp: Date.now(),
-    tasks: getCurrentTasksState()
+    tasks: getCurrentTasksState(),
+    stats: getStatsState()
   };
   redoStack.push(currentState);
   
@@ -3157,6 +3733,7 @@ function performUndo() {
   
   // Restore previous state
   restoreTasksState(previousState.tasks);
+  restoreStatsState(previousState.stats);
   
   // Update UI
   updateUndoRedoButtons();
@@ -3174,11 +3751,14 @@ function performRedo() {
     return;
   }
   
+  cancelPendingAutoReset();
+
   // Save current state to undo stack
   var currentState = {
     action: 'undo',
     timestamp: Date.now(),
-    tasks: getCurrentTasksState()
+    tasks: getCurrentTasksState(),
+    stats: getStatsState()
   };
   undoStack.push(currentState);
   
@@ -3187,6 +3767,7 @@ function performRedo() {
   
   // Restore next state
   restoreTasksState(nextState.tasks);
+  restoreStatsState(nextState.stats);
   
   // Update UI
   updateUndoRedoButtons();
@@ -3949,6 +4530,7 @@ function showEmptyState() {
         '<h4>💡 Quick Tips:</h4>',
         '<ul class="tips-list">',
           '<li>Tap + Add Tasks to get started</li>',
+          '<li>Press and hold a task, then drag it to reorder</li>',
           '<li>Tap the three dots (⋯) on a task for more options</li>',
           '<li>Use the Menu button to access settings and send feedback</li>',
           '<li>Toggle dark mode with the 🌙 button</li>',

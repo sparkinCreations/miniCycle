@@ -37,11 +37,6 @@ body {
   margin-right: auto;
 }
 
-/* Lift the fixed Undo/Redo bar up off the footer */
-.undo-container {
-  bottom: 70px;
-}
-
 /* The footer holds Undo + the Tasks/Stats pill but had z-index:0, so #task-view
    (z-index:1, position:fixed, ~75% viewport) was eating clicks across this area. */
 #footer-container {
@@ -133,7 +128,7 @@ body.focus-mode #quick-dark-toggle,
 body.focus-mode .footer-links,
 body.focus-mode .add-task-button-container,
 body.focus-mode .navigation-dots,
-body.focus-mode .undo-container {
+body.focus-mode .footer-nav-row {
   display: none !important;
 }
 
@@ -382,3 +377,401 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
   border-color: #ffffff !important;
   transform: none !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   Ported from web/lite/miniCycle-lite-polish.css (Lite 2.093, Oct 2026):
+   component styles only — checkbox, task text, footer row, Edit/Confirm
+   modals, checkbox size, Try Full Version icon, drag-and-drop, help.
+   The web file's viewport-layout rules (panel anchoring, list growth,
+   row widths, arrow gutters) are NOT ported: the popup has its own
+   fixed 400×600 layout above.
+   ════════════════════════════════════════════════════════════════════ */
+/* ─── Completed checkbox ─────────────────────────────────────────────
+   Replaces the old "✔" text glyph (base styles ~line 656), which was
+   nudged into place with top/left offsets and so rendered off-center
+   and differently per device font — some old Androids show it as a
+   colour emoji. The tick is now an inline SVG background: centered by
+   background-position at every checkbox size, no font dependency.
+   Browsers without SVG backgrounds still get the solid green fill.
+   Row state comes from .task-complete, toggled in updateProgressBar()
+   (no :has() on the browsers Lite exists for). */
+.task input[type="checkbox"]:checked {
+  background-color: #3fa34d;
+  border-color: #3fa34d;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.4l2.6 2.6L12 5.6' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80%;
+  -webkit-animation: lite-check-pop 0.28s ease-out;
+  animation: lite-check-pop 0.28s ease-out;
+}
+
+/* Retire the glyph (base sets content on both :after rules). */
+.task input[type="checkbox"]:checked:after {
+  content: none;
+  display: none;
+}
+
+.task input[type="checkbox"]:not(:checked):hover {
+  border-color: #3fa34d;
+}
+
+body.dark-mode .task input[type="checkbox"]:checked {
+  background-color: #34a065;
+  border-color: #34a065;
+}
+
+@-webkit-keyframes lite-check-pop {
+  0%   { -webkit-transform: scale(0.8); }
+  55%  { -webkit-transform: scale(1.14); }
+  100% { -webkit-transform: scale(1); }
+}
+@keyframes lite-check-pop {
+  0%   { transform: scale(0.8); }
+  55%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+/* Done rows step back so what's left stands out. */
+.task .task-text {
+  -webkit-transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.task.task-complete .task-text {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Keyboard ring only — a tap/click no longer leaves a blue outline on
+   the checkbox. Browsers without :focus-visible drop this whole rule
+   and keep the base :focus outline, so keyboard users never lose it. */
+.task input[type="checkbox"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Task text ──────────────────────────────────────────────────────
+   Friendlier, larger task text. The system UI font reads softer than
+   Arial and is what each platform's own apps use; Arial stays as the
+   fallback for old devices with no system-ui alias. The base 480px
+   breakpoint dropped text to 14px — too small to read at a glance on
+   a phone — so mobile now gets 16px, the size iOS/Android treat as
+   body text. Desktop (>=1024px) keeps its own 20px rule. */
+.task .task-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: #2b2f3a;
+}
+
+body.dark-mode .task .task-text {
+  color: #eceef5;
+}
+
+@media (max-width: 480px) {
+  .task .task-text {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .task .task-text {
+    font-size: 20px;
+  }
+}
+
+/* ─── Footer row: [Undo] [Tasks|Stats] [Redo] ────────────────────────
+   Undo/redo used to float in their own fixed container above the pill,
+   where they collided with the Complete All / Clear Completed button.
+   They now share the pill's row. The row takes over the pill's old
+   absolute positioning (bottom 35px, 25px at <=768px — see the
+   UNIFIED Navigation Dots block in miniCycle-lite-styles.css), and the
+   pill drops back into normal flow inside it. Side slots are equal
+   flex:1 columns, so the pill stays dead-center whether undo/redo are
+   shown or hidden. */
+.footer-nav-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 35px;
+  z-index: 1;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.footer-nav-row .navigation-dots {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  -webkit-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+  -webkit-box-flex: 0;
+  -webkit-flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+  flex: 0 0 auto;
+}
+
+.undo-slot,
+.redo-slot {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1 1 0%;
+  -ms-flex: 1 1 0%;
+  flex: 1 1 0%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+/* Slightly wider gap than the 4px between Tasks and Stats. */
+.undo-slot {
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+
+.redo-slot {
+  -webkit-box-pack: start;
+  -webkit-justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+  padding-left: 10px;
+}
+
+/* Same pill style as the Stats button (see .navigation-dots button.dot
+   above), one step smaller so it reads as secondary. !important because the base sheet sizes .undo-redo-btn at three
+   breakpoints, including a larger desktop one. white-space keeps the
+   "(3)" count from wrapping onto a second line. */
+.footer-nav-row .undo-redo-btn {
+  padding: 3px 10px !important;
+  margin: 0 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  -webkit-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+}
+
+.footer-nav-row .undo-redo-btn:hover {
+  background: rgba(0, 0, 0, 0.42) !important;
+  border-color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  .footer-nav-row {
+    bottom: 25px;
+  }
+}
+
+/* On phones the full row (~300px) is wider than the gap between the
+   ❓ and theme corner buttons, which are fixed at bottom: 20px and
+   overlapped Undo/Redo by ~17px each at 375px. Lift them to sit just
+   above the row instead (row top ≈ 56px from the bottom). The space
+   between the progress bar and the footer is empty, so nothing else
+   moves. */
+@media (max-width: 480px) {
+  body:not(.focus-mode) #quick-help-toggle,
+  body:not(.focus-mode) #quick-dark-toggle {
+    bottom: 66px !important;
+  }
+}
+
+
+/* ─── Edit Task modal ────────────────────────────────────────────────
+   #edit-task-dialog reuses the Add Tasks modal classes (.add-task-modal*,
+   .modal-task-input, .done-adding-btn), so only what differs lives here.
+   (The base sheet's .edit-task-modal rules are for an older, unused
+   markup — nothing renders that class.) */
+.edit-task-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-task-actions {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 8px;
+}
+
+.modal-cancel-btn {
+  padding: 10px 20px;
+  background: transparent;
+  color: #444a5a;
+  border: 1px solid #cfd3dc;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-transition: background 0.2s;
+  transition: background 0.2s;
+}
+
+.modal-cancel-btn:hover {
+  background: #eceef3;
+}
+
+body.dark-mode .modal-cancel-btn {
+  color: #e0e2ea;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .modal-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.edit-task-char-count-warn {
+  color: #c0392b !important;
+}
+
+/* ─── Confirm modal ──────────────────────────────────────────────────
+   #confirm-dialog (showConfirmModal in the scripts) reuses the Add Tasks
+   modal shell like the Edit modal does. Narrower than the 450px add
+   modal — it only holds a sentence. pre-line keeps the \n breaks in
+   longer messages (Try Full Version) while textContent keeps it safe. */
+.confirm-dialog-content {
+  max-width: 380px;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #3a3f4d;
+  white-space: pre-line;
+}
+
+body.dark-mode .confirm-dialog-message {
+  color: #dfe1ea;
+}
+
+.add-task-modal-footer.confirm-dialog-footer {
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Destructive confirms (delete, reset) get red instead of green. */
+.done-adding-btn.modal-danger-btn {
+  background: #d63c4a;
+}
+
+.done-adding-btn.modal-danger-btn:hover {
+  background: #b92f3c;
+}
+
+
+/* ─── Checkbox size ──────────────────────────────────────────────────
+   Slightly smaller circles to suit the shorter rows: 24px → 21px on
+   phones/tablets (base rule ~line 2880 of miniCycle-lite-styles.css),
+   32px → 28px on desktop (its >=1024px block). The tick is an 80%
+   background, so it scales with the circle automatically. */
+.task input[type="checkbox"] {
+  width: 21px;
+  height: 21px;
+}
+
+@media (min-width: 1024px) {
+  .task input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+    border-width: 2px;
+  }
+}
+
+/* ─── Try Full Version icon ──────────────────────────────────────────
+   Uses the blue-background app icon (minicycle_logo_icon.png, the same
+   one as the home-screen / manifest icon) so it reads as "the full app".
+   The PNG is 512×410, so cover + a small radius makes it a neat
+   app-icon tile instead of a letterboxed rectangle. Already precached
+   by service-worker.js, so it shows offline too. */
+.menu-icon-logo.menu-icon-app {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+
+/* ─── Drag-and-drop reordering ───────────────────────────────────────
+   .task-dragging is the lifted row (startTaskDrag in the scripts);
+   body.task-drag-active is set for the duration of a drag. */
+
+/* A long-press lifts the task, so it must not also select its text or
+   open the iOS copy callout. Task text is edited through the Edit modal,
+   so nothing is lost. */
+.task {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.task.task-dragging {
+  position: relative;
+  z-index: 5;
+  -webkit-transform: scale(1.03);
+  -ms-transform: scale(1.03);
+  transform: scale(1.03);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  opacity: 0.97;
+  cursor: -webkit-grabbing;
+  cursor: grabbing;
+}
+
+body.task-drag-active,
+body.task-drag-active * {
+  cursor: -webkit-grabbing !important;
+  cursor: grabbing !important;
+}
+
+/* No hover effects on rows the dragged task passes over. */
+body.task-drag-active .task:not(.task-dragging):hover {
+  -webkit-transform: none;
+  -ms-transform: none;
+  transform: none;
+}
+
+/* ─── Help popup ─────────────────────────────────────────────────────
+   Keeps the base sheet's look (translucent blue, inline under the
+   Complete All button). updateHelpForMode() marks the mode in use with
+   .help-mode-active; the other two are just dimmed — no extra colors. */
+.help-window .help-mode {
+  opacity: 0.6;
+}
+
+.help-window .help-mode.help-mode-active {
+  opacity: 1;
+}
+
+.help-window .help-tips {
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.help-window .help-extra {
+  margin-top: 4px;
+}
+
