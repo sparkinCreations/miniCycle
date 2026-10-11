@@ -794,3 +794,34 @@ body.focus-mode .task-list .task {
   max-width: 85%;
   max-width: calc(92% - 8px);
 }
+
+/* ─── Mode selector dropdown chevron ─────────────────────────────────
+   The selector hides the native arrow (appearance: none), so it read as
+   a label, not a menu. Draw a small chevron as an SVG background on the
+   right. !important because the base :hover/:focus rules use the
+   `background` shorthand, which would otherwise wipe the image. Chevron
+   color follows each scheme's text color: white (desktop header), navy
+   (phone/tablet bar), light blue (dark mode). */
+.mode-selector {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='white' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 9px center !important;
+  background-size: 10px 6px !important;
+  padding-left: 20px !important;
+  padding-right: 26px !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-mode-selector-wrapper .mode-selector {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%232c3270' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+    background-position: right 7px center !important;
+    background-size: 9px 5px !important;
+    padding-left: 14px !important;
+    padding-right: 20px !important;
+  }
+}
+
+body.dark-mode .mode-selector,
+body.dark-mode .mobile-mode-selector-wrapper .mode-selector {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23d8e0ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
+}
