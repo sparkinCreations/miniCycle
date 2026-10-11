@@ -81,6 +81,7 @@ export class FocusMode {
         this._menuBtnHandler = null;
         this._exitBtn = null;
         this._exitBtnHandler = null;
+        this._panelChangeHandler = null;
         this._menuClickHandler = null;
         this._menuOutsideClickHandler = null;
         this._modeItem = null;
@@ -271,6 +272,56 @@ export class FocusMode {
     }
 
     /**
+     * Where the eye / × control sits for a carousel panel: BENEATH it, hanging
+     * off its lower-right corner, the way the routine card's progress row holds
+     * it under the card. The routine card's slot is that row; the Task and Stats
+     * panels get a `.panel-action-slot` appended on first use, positioned by CSS
+     * just below the panel's box, right-aligned to it — so it follows the
+     * panel's own height. Empty slots collapse via CSS.
+     * @param {string|null} panelId
+     * @returns {HTMLElement|null}
+     */
+    _panelSlotFor(panelId) {
+        if (!panelId || panelId === DOM_IDS.TASK_VIEW) return this._progressRow;
+        const panel = this.deps.getElementById(panelId);
+        if (!panel) return this._progressRow;
+        let slot = null;
+        for (const child of panel.children) {
+            if (child.classList.contains(DOM_CLASSES.PANEL_ACTION_SLOT)) { slot = child; break; }
+        }
+        if (!slot) {
+            slot = document.createElement('div');
+            slot.className = DOM_CLASSES.PANEL_ACTION_SLOT;
+            panel.appendChild(slot);
+        }
+        return slot;
+    }
+
+    /**
+     * Move the eye and the × into the active panel's slot. One element each —
+     * same id, handlers, ARIA and keyboard behaviour wherever they sit; CSS
+     * decides which of the two is visible (eye in Home View, × in Focus View).
+     * Until Oct 2026 both lived only in the routine card's progress row, so the
+     * Stats and Task panels had no way in or out of Focus View of their own.
+     * @param {string|null} panelId
+     */
+    _placeControls(panelId) {
+        const slot = this._panelSlotFor(panelId);
+        if (!slot) return;
+        for (const el of [this._button, this._exitBtn]) {
+            if (el && el.parentNode !== slot) slot.appendChild(el);
+        }
+    }
+
+    /** The panel the carousel currently shows, read from the DOM. */
+    _activePanelId() {
+        for (const id of [DOM_IDS.FOCUS_TASK_PANEL, DOM_IDS.STATS_PANEL]) {
+            if (this.deps.getElementById(id)?.classList.contains(DOM_CLASSES.SHOW)) return id;
+        }
+        return DOM_IDS.TASK_VIEW;
+    }
+
+    /**
      * Inject a focus-mode-specific hint into the task list's #empty-state.
      * Sits alongside the normal `.empty-state-hint`; CSS scoped to
      * body.focus-mode swaps which one is visible. This avoids racing
@@ -389,6 +440,11 @@ export class FocusMode {
      */
     _attachListeners() {
         if (!this._button) return;
+
+        // Follow the carousel: whichever panel is active hosts the control.
+        this._panelChangeHandler = (e) => this._placeControls(e.detail?.id || null);
+        document.addEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
+        this._placeControls(this._activePanelId());
 
         this._clickHandler = () => {
             // Outside focus mode: toggle to enter focus mode (original behavior)
@@ -1257,6 +1313,10 @@ export class FocusMode {
      * Clean up all event listeners.
      */
     destroy() {
+        if (this._panelChangeHandler) {
+            document.removeEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
+            this._panelChangeHandler = null;
+        }
         if (this._layoutDebugTimer) {
             clearTimeout(this._layoutDebugTimer);
             this._layoutDebugTimer = null;

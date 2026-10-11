@@ -122,6 +122,47 @@ export async function runFocusModeTests(resultsDiv) {
         }
     });
 
+    await test('the eye / × control follows the active carousel panel into the slot beneath it', () => {
+        setupDOMScaffold();
+        const stats = document.createElement('section'); stats.id = 'stats-panel';
+        document.body.appendChild(stats);
+        const taskPanel = document.createElement('section'); taskPanel.id = 'focus-task-panel';
+        const card = document.createElement('div'); card.className = 'focus-task-card';
+        taskPanel.appendChild(card); document.body.appendChild(taskPanel);
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            getBody: () => document.body,
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn)
+        });
+        const fm = new mod.FocusMode();
+        try {
+            fm.init();
+            const eye = document.getElementById('focus-mode-btn');
+            const exit = document.getElementById('focus-mode-exit-btn');
+            if (!eye?.closest('.progress-focus-row') || !exit?.closest('.progress-focus-row')) throw new Error('both controls start in the routine card\'s progress row');
+
+            document.dispatchEvent(new CustomEvent('panelCarousel:changed', { detail: { id: 'stats-panel', changed: true } }));
+            const statsSlot = stats.lastElementChild;
+            if (!statsSlot?.classList.contains('panel-action-slot')) throw new Error('the Stats panel gets a .panel-action-slot as its last row');
+            if (!statsSlot.contains(eye) || !statsSlot.contains(exit)) throw new Error('both controls move into the Stats panel\'s slot');
+
+            document.dispatchEvent(new CustomEvent('panelCarousel:changed', { detail: { id: 'focus-task-panel', changed: true } }));
+            const taskSlot = taskPanel.lastElementChild;
+            if (!taskSlot?.classList.contains('panel-action-slot') || !taskSlot.contains(exit)) throw new Error('the Task panel\'s slot hangs off the panel itself (beneath its card), as its last child');
+            if (card.querySelector('.panel-action-slot')) throw new Error('the slot must not be INSIDE the card');
+            if (statsSlot.childElementCount !== 0) throw new Error('the Stats slot is left empty (it collapses via CSS)');
+
+            document.dispatchEvent(new CustomEvent('panelCarousel:changed', { detail: { id: 'task-view', changed: true } }));
+            if (!eye.closest('.progress-focus-row') || !exit.closest('.progress-focus-row')) throw new Error('back on the routine panel both controls return to the progress row');
+            if (stats.querySelectorAll('.panel-action-slot').length !== 1) throw new Error('a panel gets ONE slot, reused across visits');
+        } finally {
+            fm.destroy();
+            stats.remove(); taskPanel.remove();
+            teardownDOMScaffold();
+        }
+    });
+
     // ============================================
     // Helpers for the menu / mode tests below
     // ============================================

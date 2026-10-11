@@ -1267,6 +1267,57 @@ async function run() {
                         `page still scrolls ${extra}px after the tour ended`);
                 }
 
+                // ── The eye / × control sits at the ACTIVE panel's bottom-right ──
+                // One element each, moved by focusMode into the active panel's
+                // slot (panelCarousel:changed). Before Oct 2026 it lived only in
+                // the routine card's progress row, so Stats and the Task panel
+                // had no way in or out of Focus View of their own. "Bottom-right
+                // of THAT panel": inside the panel's box, within one control's
+                // width of its right edge and within one row of its bottom edge
+                // — a shorter panel puts it higher, by design.
+                const controlPlacement = async (vp, hostSel, boxSel, btnId, label) => {
+                    const r = await tp.evaluate(({ hostSel, boxSel, btnId }) => {
+                        const host = document.querySelector(hostSel); const box = document.querySelector(boxSel); const btn = document.getElementById(btnId);
+                        if (!host || !box || !btn) return null;
+                        const p = box.getBoundingClientRect(); const b = btn.getBoundingClientRect(); const c = getComputedStyle(btn);
+                        const nav = document.getElementById('nav-dots'); const navRect = nav ? nav.getBoundingClientRect() : null;
+                        return { visible: b.width > 0 && c.display !== 'none' && c.visibility !== 'hidden', hostOk: !!btn.closest(hostSel),
+                            below: b.top >= p.bottom - 1, drop: Math.round(b.top - p.bottom), rightOffset: Math.round(p.right - b.right),
+                            navLine: navRect && navRect.height > 0 ? Math.round(navRect.top) : null, bottom: Math.round(b.bottom) };
+                    }, { hostSel, boxSel, btnId });
+                    record(vp, `${label}: control is visible`, !!r && r.visible, 'control hidden or missing');
+                    // BENEATH the panel's box, hanging off its lower-right corner, like the
+                    // routine card (15px drop, right edges aligned) — never inside it.
+                    record(vp, `${label}: control hangs beneath the panel at its lower-right`, !!r && r.hostOk && r.below && r.drop <= 24 && Math.abs(r.rightOffset) <= 6,
+                        r ? `host=${r.hostOk} below=${r.below} drop=${r.drop} rightOffset=${r.rightOffset}` : 'not found');
+                    if (r && r.navLine !== null) {
+                        record(vp, `${label}: control clears the nav dots`, r.bottom <= r.navLine + TOL, `control.bottom ${r.bottom} > navLine ${r.navLine}`);
+                    }
+                };
+                const goDot = async (panelId) => { await tp.evaluate((id) => document.querySelector(`#nav-dots .dot[aria-controls="${id}"]`)?.click(), panelId); await tp.waitForTimeout(600); };
+                for (const vp of [VIEWPORTS[0], VIEWPORTS[4], VIEWPORTS[6]]) {
+                    await tp.setViewportSize({ width: vp.width, height: vp.height });
+                    await tp.waitForTimeout(400);
+                    console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (control follows the panel)${colors.reset}`);
+                    await goDot('stats-panel');
+                    await controlPlacement(vp, '#stats-panel', '#stats-panel', 'focus-mode-exit-btn', 'focus: Stats panel ×');
+                    await goDot('focus-task-panel');
+                    await controlPlacement(vp, '#focus-task-panel', '#focus-task-panel .focus-task-card', 'focus-mode-exit-btn', 'focus: Task panel ×');
+                    await goDot('task-view');
+                    await controlPlacement(vp, '#task-view .progress-focus-row', '#task-view .task-card', 'focus-mode-exit-btn', 'focus: routine card ×');
+                    // Home view: the eye, on the Stats panel too.
+                    await tp.evaluate(() => document.getElementById('focus-mode-exit-btn')?.click());
+                    await tp.waitForTimeout(700);
+                    record(vp, 'the × leaves Focus View', !(await tp.evaluate(() => document.body.classList.contains('focus-mode'))), 'focus-mode still on <body>');
+                    await goDot('stats-panel');
+                    await controlPlacement(vp, '#stats-panel', '#stats-panel', 'focus-mode-btn', 'home: Stats panel eye');
+                    await goDot('task-view');
+                    await controlPlacement(vp, '#task-view .progress-focus-row', '#task-view .task-card', 'focus-mode-btn', 'home: routine card eye');
+                    await tp.evaluate(() => document.getElementById('focus-mode-btn')?.click());
+                    await tp.waitForTimeout(700);
+                    record(vp, 'the eye re-enters Focus View', await tp.evaluate(() => document.body.classList.contains('focus-mode')), 'focus-mode not on <body>');
+                }
+
                 // ── Focus view, SHORT routine: the list background hugs the tasks ──
                 // The band bounds the content; it must not inflate it. The card
                 // group is flex-grow 1 for Home view, so in the band (whose box

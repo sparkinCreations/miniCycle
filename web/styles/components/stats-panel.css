@@ -53,7 +53,9 @@ body:not(.focus-mode) #stats-panel {
     top: calc(50% + (var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))) / 2);
     /* The band alone, like #task-view (app-container.css): the panel is
        content-sized up to it. Was min(63vh, band - 24px) until Oct 2026. */
-    max-height: calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap));
+    max-height: calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap) - var(--panel-control-row));
+    /* Half the control row: the panel + the control beneath it centre on the band together. */
+    margin-top: calc(-0.5 * var(--panel-control-row));
 }
 
 /* FOCUS VIEW: the same band the routine card and the Task panel use — centred
@@ -72,7 +74,18 @@ body.focus-mode #stats-panel {
     max-height: calc(100dvh
                      - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
                      - var(--focus-band-bottom-gap)
-                     - var(--focus-band-top));
+                     - var(--focus-band-top)
+                     - var(--panel-control-row));
+    margin-top: calc(-0.5 * var(--panel-control-row));
+}
+
+/* The control's slot hangs BELOW the panel's box (focus-mode.css
+   .panel-action-slot), so the panel must not clip outside its box. The
+   scroll surface is .stats-panel-content, which has its own overflow, and the
+   padding keeps it inside the rounded corners — the panel-level overflow:
+   hidden in the base rule only ever served the box itself. */
+#stats-panel {
+    overflow: visible;
 }
 
 /* Pinned panel title, v2 (Aug 2026, supersedes the sticky B-05 fix): the

@@ -680,7 +680,10 @@ export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`
  */
 export const EVENTS = Object.freeze({
     FOCUS_MODE_ACTIVATED: 'focusMode:activated',
-    FOCUS_MODE_DEACTIVATED: 'focusMode:deactivated'
+    FOCUS_MODE_DEACTIVATED: 'focusMode:deactivated',
+    /** Dispatched on document by panelCarousel after a panel becomes active:
+        detail = { id, previousId, index, changed }. */
+    PANEL_CAROUSEL_CHANGED: 'panelCarousel:changed'
 });
 
 // ============================================================================
@@ -924,6 +927,11 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Focus Mode (component classes used in JS for createElement.className) ----
     FOCUS_MODE_BTN: 'focus-mode-btn',
     FOCUS_MODE_EXIT_BTN: 'focus-mode-exit-btn',
+    /* The enter / exit Focus View control's (eye / ×) slot BENEATH a carousel
+       panel, hanging off its lower-right corner like the routine card's
+       .progress-focus-row. The Task and Stats panels get it appended by
+       focusMode; the control moves to whichever panel is active. */
+    PANEL_ACTION_SLOT: 'panel-action-slot',
     FOCUS_MODE_MENU: 'focus-mode-menu',
     FOCUS_MODE_MENU_BTN: 'focus-mode-menu-btn',
     FOCUS_MODE_MENU_ITEM: 'focus-mode-menu-item',

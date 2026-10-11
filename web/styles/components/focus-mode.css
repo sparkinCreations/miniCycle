@@ -513,13 +513,21 @@ body.focus-mode.first-run-welcome-active #focus-mode-exit-btn {
     display: none;
 }
 
-body.focus-mode #focus-mode-menu-btn:hover,
 body.focus-mode #focus-mode-menu-btn:focus-visible,
-body.focus-mode #focus-mode-exit-btn:hover,
 body.focus-mode #focus-mode-exit-btn:focus-visible {
     background: rgba(255, 255, 255, 0.22);
     transform: scale(1.05);
 }
+/* Hover only for real pointers — iOS keeps an emulated :hover after a tap
+   (see buttons.css); the × moved onto tappable panels in Oct 2026. */
+@media (hover: hover) and (pointer: fine) {
+    body.focus-mode #focus-mode-menu-btn:hover,
+    body.focus-mode #focus-mode-exit-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+        transform: scale(1.05);
+    }
+}
+
 
 body.focus-mode #focus-mode-menu-btn:active,
 body.focus-mode #focus-mode-exit-btn:active {
@@ -968,6 +976,31 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     max-width: 350px;
 }
 
+/* The eye / × control's slot BENEATH the Task and Stats panels — hanging off
+   the panel's lower-right corner, the way .progress-focus-row holds it under
+   the routine card (same 15px drop, same right alignment). Appended by
+   focusMode to the panel element (which is position: fixed, so this is placed
+   against its box) and never inside its content, so a shorter panel simply
+   puts the control higher. .focus-mode-btn and body.focus-mode
+   #focus-mode-exit-btn are absolute; right: 0 inside it. The Stats panel's
+   band cap reserves --panel-control-row for it (stats-panel.css) so the
+   control still clears the nav dots; the Task panel's wrapper is content-
+   sized and centred, so it just grows. */
+.panel-action-slot {
+    position: absolute;
+    top: calc(100% + var(--space-3-75));
+    right: 0;
+    width: 36px;
+    height: 36px;
+    pointer-events: none;      /* the control inside re-enables its own */
+}
+.panel-action-slot > * {
+    pointer-events: auto;
+}
+.panel-action-slot:empty {
+    display: none;
+}
+
 @media (min-width: 1024px) {
     .progress-focus-row .progress-container {
         width: 75%;
@@ -995,10 +1028,12 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     backdrop-filter: blur(2px);
 }
 
-.focus-mode-btn:hover {
-    background: rgba(255, 255, 255, 0.22);
-    color: var(--pref-panel-text, var(--color-white));
-    transform: scale(1.08);
+@media (hover: hover) and (pointer: fine) {
+    .focus-mode-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+        color: var(--pref-panel-text, var(--color-white));
+        transform: scale(1.08);
+    }
 }
 
 .focus-mode-btn:active {
