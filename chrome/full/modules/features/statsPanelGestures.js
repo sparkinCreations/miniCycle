@@ -284,7 +284,15 @@ export class StatsPanelGestures {
         if (!panel) return;
 
         const banner = this.m.rawDeps.getElementById(DOM_IDS.FIRST_RUN_WELCOME);
-        if (!banner) {
+        // The banner element OUTLIVES the tour: it stays in the DOM while it
+        // fades after Skip / Done, and its rect still reports a bottom edge.
+        // Measuring against that set a shift of up to ~177px on the panel, and
+        // because the shift is an inline custom property it then stuck for the
+        // rest of the session — every later Stats open sat that far down, past
+        // the nav dots on desktop (Oct 2026). The tour's own signal is the body
+        // class, so only an ACTIVE tour counts as a banner to clear.
+        const tourActive = !!this.m.rawDeps.getBody?.()?.classList?.contains(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
+        if (!banner || !tourActive) {
             panel.style.removeProperty('--first-run-welcome-stats-shift');
             return;
         }

@@ -558,15 +558,22 @@ window.addEventListener('appinstalled', function () {
 
 <!-- ✅ Undo/Redo buttons with tooltips -->
 <footer id="footer-container" role="contentinfo">
-  <div id="undo-redo-buttons" class="undo-container" role="toolbar" aria-label="Undo and redo actions">
-    <button id="undo-btn" class="undo-redo-btn" style="display: none;" aria-label="Undo last action" tabindex="0" data-tooltip="Undo your last action">Undo</button>
-    <button id="redo-btn" class="undo-redo-btn" style="display: none;" aria-label="Redo last action" tabindex="0" data-tooltip="Redo your last undone action">Redo</button>
-  </div>
+  <!-- ✅ One footer row: [Undo] [Tasks|Stats] [Redo]
+       The two side slots are equal flex:1 columns, so the pill stays centered
+       whether or not undo/redo are showing (the JS toggles their display). -->
+  <div class="footer-nav-row">
+    <div class="undo-slot">
+      <button id="undo-btn" class="undo-redo-btn" style="display: none;" aria-label="Undo last action" tabindex="0" data-tooltip="Undo your last action">Undo</button>
+    </div>
     <!-- ✅ Navigation dots with tooltips -->
-<div class="navigation-dots" role="tablist" aria-label="View navigation">
-  <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
-  <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
-</div>
+    <div class="navigation-dots" role="tablist" aria-label="View navigation">
+      <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
+      <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
+    </div>
+    <div class="redo-slot">
+      <button id="redo-btn" class="undo-redo-btn" style="display: none;" aria-label="Redo last action" tabindex="0" data-tooltip="Redo your last undone action">Redo</button>
+    </div>
+  </div>
   <ul class="footer-links">
     <li>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener">sparkinCreations</a></li>
     <li>• <a href="../pages/product.html" class="footer-product-link">miniCycle Lite</a> •</li>

@@ -565,6 +565,11 @@
      (Oct 2026). Focus View's equivalents are --focus-card-chrome-gap /
      --focus-band-bottom-gap. */
   --home-band-gap: 16px;
+  /* The eye / × control row that hangs beneath a carousel panel (36px control
+     + a 4px drop, matching the ~3px the routine card's control sits under its
+     card). The Stats panel's band cap subtracts it so the control clears the
+     nav dots. */
+  --panel-control-row: calc(36px + var(--space-1));
   --stats-panel-max-vh: 63vh;               /* stats panel cap on tall viewports */
 
   /* ─── Focus Mode Geometry ──────────────────────────────────────────────

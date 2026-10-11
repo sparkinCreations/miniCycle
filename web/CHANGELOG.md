@@ -1,3 +1,16 @@
+## [2.601] - 2026-10-11
+- chore(tests): refresh the recorded test count
+- refactor(focus): Complete Cycle / Clear is its own fixed button; the eye only enters Focus View
+- fix(focus): the panel control sits a hair under the Stats / Task panel, like the routine card's
+- chore(tests): refresh the recorded test count
+- feat(focus): the eye / × control follows the active panel — beneath the Stats and Task panels at their lower-right
+- feat(backup): the Android app asks where to save a backup with the system Save As dialog
+- fix(stats): the Stats panel is band-anchored in Focus View too, and the tour's banner shift no longer sticks
+- fix(backup): the Android app saves backups to the device's Documents folder instead of opening the share sheet
+- fix(focus): the list background hugs a short routine again instead of stretching to the band
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.600] - 2026-10-11
 - fix(buttons): the global button hover colour only applies to real pointers
 

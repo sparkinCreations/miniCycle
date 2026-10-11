@@ -89,7 +89,7 @@ body.focus-mode #quick-dark-toggle,
 body.focus-mode .footer-links,
 body.focus-mode .add-task-button-container,
 body.focus-mode .navigation-dots,
-body.focus-mode .undo-container,
+body.focus-mode .footer-nav-row,
 body.focus-mode #footer-container {
   display: none !important;
 }
@@ -364,9 +364,9 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
     max-width: 380px !important;
     /* Aggressive cap so the container is visibly shorter — the
        previous 50vh wasn't visibly changing the layout because the
-       natural content height didn't reach it. 280px shows roughly
-       3 tasks before scrolling kicks in. */
-    max-height: 280px !important;
+       natural content height didn't reach it. 320px shows roughly
+       4 tasks (at the 44px row height below) before scrolling. */
+    max-height: 320px !important;
     margin-left: auto !important;
     margin-right: auto !important;
   }
@@ -375,34 +375,22 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
     margin-left: auto !important;
     margin-right: auto !important;
   }
-  /* Push undo/redo above the Tasks/Stats pill. The base lite mobile
-     override puts undo at bottom: 50px; the pill sits at bottom: 25px
-     with ~23px height, so undo overlapped the pill by ~2px. 60px
-     leaves a small ~12px gap — close enough to feel grouped without
-     touching. */
-  body:not(.focus-mode) .undo-container {
-    bottom: 60px !important;
-  }
-  /* Keep "Undo (1)" / "Redo (1)" on a single line. Without this the
-     "(1)" badge wrapped to a second line on narrow viewports, making
-     each button ~46px tall instead of ~28px. */
-  body:not(.focus-mode) .undo-redo-btn {
-    white-space: nowrap !important;
-  }
-  /* Shrink task pills on mobile — base lite .task uses min-height: 50px
-     which rendered at ~56px including the 24px checkbox. Drop to 34px
-     for a more compact list. box-sizing: border-box is required: the
-     base .task uses content-box, so width: 100% + padding overflows
-     the parent .task-list by ~20px (visibly off-center, edge-hugging).
-     max-width: 280px ensures visible breathing room inside the
-     container even on the narrowest viewports (<400px). */
+  /* Task pills on mobile — base lite .task uses min-height: 50px
+     which rendered at ~56px including the 24px checkbox. 44px keeps
+     the list compact while matching the minimum comfortable tap height
+     (34px was compact but cramped once the text grew to 16px).
+     box-sizing: border-box is required: the base .task uses
+     content-box, so width: 100% + padding overflows the parent
+     .task-list by ~20px (visibly off-center, edge-hugging).
+     max-width: 92% (was a fixed 280px) keeps breathing room inside the
+     container on any phone width while giving the text more room. */
   body:not(.focus-mode) .task-list .task,
   body:not(.focus-mode) .task-list li {
     box-sizing: border-box !important;
-    min-height: 34px !important;
-    padding: 4px 10px !important;
-    margin-bottom: 6px !important;
-    max-width: 280px !important;
+    min-height: 44px !important;
+    padding: 6px 12px !important;
+    margin-bottom: 8px !important;
+    max-width: 92% !important;
   }
   /* The three-dots options button defaults to 44px tall (WCAG tap
      target), which forced the task pill to ~52px even with min-height
@@ -413,5 +401,230 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
     min-height: 0 !important;
     padding: 4px 8px !important;
     font-size: 16px !important;
+  }
+}
+
+/* ─── Completed checkbox ─────────────────────────────────────────────
+   Replaces the old "✔" text glyph (base styles ~line 656), which was
+   nudged into place with top/left offsets and so rendered off-center
+   and differently per device font — some old Androids show it as a
+   colour emoji. The tick is now an inline SVG background: centered by
+   background-position at every checkbox size, no font dependency.
+   Browsers without SVG backgrounds still get the solid green fill.
+   Row state comes from .task-complete, toggled in updateProgressBar()
+   (no :has() on the browsers Lite exists for). */
+.task input[type="checkbox"]:checked {
+  background-color: #3fa34d;
+  border-color: #3fa34d;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.4l2.6 2.6L12 5.6' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80%;
+  -webkit-animation: lite-check-pop 0.28s ease-out;
+  animation: lite-check-pop 0.28s ease-out;
+}
+
+/* Retire the glyph (base sets content on both :after rules). */
+.task input[type="checkbox"]:checked:after {
+  content: none;
+  display: none;
+}
+
+.task input[type="checkbox"]:not(:checked):hover {
+  border-color: #3fa34d;
+}
+
+body.dark-mode .task input[type="checkbox"]:checked {
+  background-color: #34a065;
+  border-color: #34a065;
+}
+
+@-webkit-keyframes lite-check-pop {
+  0%   { -webkit-transform: scale(0.8); }
+  55%  { -webkit-transform: scale(1.14); }
+  100% { -webkit-transform: scale(1); }
+}
+@keyframes lite-check-pop {
+  0%   { transform: scale(0.8); }
+  55%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+/* Done rows step back so what's left stands out. */
+.task .task-text {
+  -webkit-transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.task.task-complete .task-text {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Keyboard ring only — a tap/click no longer leaves a blue outline on
+   the checkbox. Browsers without :focus-visible drop this whole rule
+   and keep the base :focus outline, so keyboard users never lose it. */
+.task input[type="checkbox"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Task text ──────────────────────────────────────────────────────
+   Friendlier, larger task text. The system UI font reads softer than
+   Arial and is what each platform's own apps use; Arial stays as the
+   fallback for old devices with no system-ui alias. The base 480px
+   breakpoint dropped text to 14px — too small to read at a glance on
+   a phone — so mobile now gets 16px, the size iOS/Android treat as
+   body text. Desktop (>=1024px) keeps its own 20px rule. */
+.task .task-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: #2b2f3a;
+}
+
+body.dark-mode .task .task-text {
+  color: #eceef5;
+}
+
+@media (max-width: 480px) {
+  .task .task-text {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .task .task-text {
+    font-size: 20px;
+  }
+}
+
+/* ─── Footer row: [Undo] [Tasks|Stats] [Redo] ────────────────────────
+   Undo/redo used to float in their own fixed container above the pill,
+   where they collided with the Complete All / Clear Completed button.
+   They now share the pill's row. The row takes over the pill's old
+   absolute positioning (bottom 35px, 25px at <=768px — see the
+   UNIFIED Navigation Dots block in miniCycle-lite-styles.css), and the
+   pill drops back into normal flow inside it. Side slots are equal
+   flex:1 columns, so the pill stays dead-center whether undo/redo are
+   shown or hidden. */
+.footer-nav-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 35px;
+  z-index: 1;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.footer-nav-row .navigation-dots {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  -webkit-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+  -webkit-box-flex: 0;
+  -webkit-flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+  flex: 0 0 auto;
+}
+
+.undo-slot,
+.redo-slot {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1 1 0%;
+  -ms-flex: 1 1 0%;
+  flex: 1 1 0%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+/* Slightly wider gap than the 4px between Tasks and Stats. */
+.undo-slot {
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+
+.redo-slot {
+  -webkit-box-pack: start;
+  -webkit-justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+  padding-left: 10px;
+}
+
+/* Same pill style as the Stats button (see .navigation-dots button.dot
+   above), one step smaller so it reads as secondary. !important because the base sheet sizes .undo-redo-btn at three
+   breakpoints, including a larger desktop one. white-space keeps the
+   "(3)" count from wrapping onto a second line. */
+.footer-nav-row .undo-redo-btn {
+  padding: 3px 10px !important;
+  margin: 0 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  -webkit-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+}
+
+.footer-nav-row .undo-redo-btn:hover {
+  background: rgba(0, 0, 0, 0.42) !important;
+  border-color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  .footer-nav-row {
+    bottom: 25px;
+  }
+}
+
+/* On phones the full row (~300px) is wider than the gap between the
+   ❓ and theme corner buttons, which are fixed at bottom: 20px and
+   overlapped Undo/Redo by ~17px each at 375px. Lift them to sit just
+   above the row instead (row top ≈ 56px from the bottom). The space
+   between the progress bar and the footer is empty, so nothing else
+   moves. */
+@media (max-width: 480px) {
+  body:not(.focus-mode) #quick-help-toggle,
+  body:not(.focus-mode) #quick-dark-toggle {
+    bottom: 66px !important;
+  }
+}
+
+/* ─── Slide arrows: sit in the gutter, never on the panel ────────────
+   The base sheet pins the arrows at left/right: 5%. From 1024px up the
+   task view grows to 860px (desktop block in miniCycle-lite-styles.css),
+   so at 1024px the panel spans 82–942px while the 62px arrow spanned
+   51–113px — a ~30px overlap. Center each arrow in the empty gutter
+   instead: gutter center = (W − 860) / 4 from the edge, minus half the
+   62px arrow → 25% − 246px. That leaves ≥10px clearance at 1024px and
+   grows with the window. Below 1024px the panel is 550px and the 5%
+   position already clears it (arrows are hidden under 950px). */
+@media (min-width: 1024px) {
+  #slide-right {
+    left: calc(25% - 246px);
+  }
+  #slide-left {
+    right: calc(25% - 246px);
   }
 }

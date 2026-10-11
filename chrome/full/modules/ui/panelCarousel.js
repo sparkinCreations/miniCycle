@@ -22,7 +22,7 @@
  * @module ui/panelCarousel
  */
 
-import { DOM_CLASSES } from '../core/constants.js';
+import { DOM_CLASSES, EVENTS } from '../core/constants.js';
 
 export class PanelCarousel {
     constructor() {
@@ -206,6 +206,13 @@ export class PanelCarousel {
         }
         if (next.onShow) {
             try { next.onShow(ctx); } catch (e) { console.warn(`[panelCarousel] onShow(${next.id}) failed:`, e); }
+        }
+        // Announce for modules that follow the active panel without owning
+        // the carousel — focusMode moves its enter / exit control into the
+        // active panel's slot. Fired after the callbacks so listeners see the
+        // settled classes. `changed` lets them ignore an idempotent re-show.
+        if (typeof document !== 'undefined') {
+            document.dispatchEvent(new CustomEvent(EVENTS.PANEL_CAROUSEL_CHANGED, { detail: ctx }));
         }
         return { id: next.id, index };
     }

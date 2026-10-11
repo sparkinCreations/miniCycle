@@ -193,6 +193,20 @@ body.focus-mode #task-view .task-card,
 body.focus-mode #task-view .task-list-container {
     min-height: 0;
 }
+/* ...and the card group sizes to its CONTENT inside the band instead of
+   growing to fill it. #task-card-group is flex: 1 1 auto (task-view-layout.css,
+   for Home view), and flex-grow consumes the band's free space before
+   justify-content can centre anything — so a two-task routine rendered as tall
+   as an eight-task one, with the list background stretched to the band. Shrink
+   is left intact: a list longer than the band still collapses to fill it
+   exactly and scrolls. This was scoped to <1024px until Oct 2026 (desktop was
+   centred and content-sized then, so it never needed it); when 2.597 made the
+   group grow everywhere for Home view, desktop Focus View stretched: 274px of
+   empty list below three tasks at 1280x800. The layout suite's "focus list
+   hugs a short routine" rows are the guard. */
+body.focus-mode #task-card-group {
+    flex-grow: 0;
+}
 
 
 /* Chrome elements fade in/out.
@@ -499,13 +513,21 @@ body.focus-mode.first-run-welcome-active #focus-mode-exit-btn {
     display: none;
 }
 
-body.focus-mode #focus-mode-menu-btn:hover,
 body.focus-mode #focus-mode-menu-btn:focus-visible,
-body.focus-mode #focus-mode-exit-btn:hover,
 body.focus-mode #focus-mode-exit-btn:focus-visible {
     background: rgba(255, 255, 255, 0.22);
     transform: scale(1.05);
 }
+/* Hover only for real pointers — iOS keeps an emulated :hover after a tap
+   (see buttons.css); the × moved onto tappable panels in Oct 2026. */
+@media (hover: hover) and (pointer: fine) {
+    body.focus-mode #focus-mode-menu-btn:hover,
+    body.focus-mode #focus-mode-exit-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+        transform: scale(1.05);
+    }
+}
+
 
 body.focus-mode #focus-mode-menu-btn:active,
 body.focus-mode #focus-mode-exit-btn:active {
@@ -770,16 +792,11 @@ body.focus-mode .focus-mode-mode-modal {
         margin-top: 0;
     }
 
-    /* Let the card size to its CONTENT inside the band instead of growing to
-       fill it. #task-card-group is flex: 1 1 auto by default, and flex-grow
-       consumes the free space before justify-content can centre anything — so
-       a two-task routine still rendered as tall as an eight-task one, pinned
-       to the band's top edge. Shrink is left intact: a list longer than the
-       band still collapses to fill it exactly, so the full-list geometry is
-       unchanged. */
-    body.focus-mode #task-card-group {
-        flex-grow: 0;
-    }
+    /* The card's "size to CONTENT, do not grow" pin used to live here; it is
+       unscoped now (see the band rule near the top of this file), because
+       desktop joined the band in 2.596 and 2.597 made #task-card-group grow
+       everywhere for Home view — a three-task routine rendered 274px of
+       empty list on desktop until it moved. */
     body.focus-mode #task-view .task-card {
         margin-top: 0;
     }
@@ -959,6 +976,33 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     max-width: 350px;
 }
 
+/* The eye / × control's slot BENEATH the Task and Stats panels — hanging off
+   the panel's lower-right corner, the way .progress-focus-row holds it under
+   the routine card: there the control centres on the progress row and ends up
+   ~3px below the card, so the drop here is --space-1, not the row's 15px
+   margin (that read as a gap, Oct 2026). Same right alignment. Appended by
+   focusMode to the panel element (which is position: fixed, so this is placed
+   against its box) and never inside its content, so a shorter panel simply
+   puts the control higher. .focus-mode-btn and body.focus-mode
+   #focus-mode-exit-btn are absolute; right: 0 inside it. The Stats panel's
+   band cap reserves --panel-control-row for it (stats-panel.css) so the
+   control still clears the nav dots; the Task panel's wrapper is content-
+   sized and centred, so it just grows. */
+.panel-action-slot {
+    position: absolute;
+    top: calc(100% + var(--space-1));
+    right: 0;
+    width: 36px;
+    height: 36px;
+    pointer-events: none;      /* the control inside re-enables its own */
+}
+.panel-action-slot > * {
+    pointer-events: auto;
+}
+.panel-action-slot:empty {
+    display: none;
+}
+
 @media (min-width: 1024px) {
     .progress-focus-row .progress-container {
         width: 75%;
@@ -986,10 +1030,12 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     backdrop-filter: blur(2px);
 }
 
-.focus-mode-btn:hover {
-    background: rgba(255, 255, 255, 0.22);
-    color: var(--pref-panel-text, var(--color-white));
-    transform: scale(1.08);
+@media (hover: hover) and (pointer: fine) {
+    .focus-mode-btn:hover {
+        background: rgba(255, 255, 255, 0.22);
+        color: var(--pref-panel-text, var(--color-white));
+        transform: scale(1.08);
+    }
 }
 
 .focus-mode-btn:active {
@@ -1003,38 +1049,68 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     height: 20px;
 }
 
-/* Active state — fixed to bottom-right of viewport so it's always reachable */
+/* In Focus View the eye has nothing to do (the × beneath the active panel
+   exits), so it hides. Until Oct 2026 it was re-dressed here as the fixed
+   Complete Cycle / Clear button; that is #focus-action-btn below now, its own
+   element under <body>, so following the carousel into a transformed panel
+   can never move it. */
 body.focus-mode .focus-mode-btn {
+    display: none;
+}
+
+/* Focus View's Complete Cycle / Clear button — fixed to the viewport's
+   bottom-right so it's always reachable, whichever panel is showing. Lives
+   directly under <body> (focusMode._createActionButton); a transformed
+   ancestor would become its reference box. */
+#focus-action-btn {
+    display: none;
+}
+body.focus-mode #focus-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     bottom: 50px;
     right: 24px;
     width: 56px;
     height: 56px;
+    padding: 0;
     border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
     color: var(--pref-panel-text, var(--color-white));
+    font-family: inherit;
+    cursor: pointer;
     z-index: var(--z-notification);
     box-shadow: var(--shadow-md);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     /* Allow ::after label to escape below the circle (position: fixed
        creates a containing block for absolutely positioned children). */
     overflow: visible;
 }
-
-/* In focus mode this button is repurposed as the mode-action button
-   (Cycle in manual, Clear in to-do). Hide the original SVG glyph and use
-   ::before for the emoji centered in the circle, with ::after as a
-   floating label positioned just below the circle. */
-body.focus-mode .focus-mode-btn svg {
-    display: none;
+@media (hover: hover) and (pointer: fine) {
+    body.focus-mode #focus-action-btn:hover {
+        background: rgba(255, 255, 255, 0.35);
+        transform: scale(1.05);
+    }
+}
+body.focus-mode #focus-action-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.35);
+}
+body.focus-mode #focus-action-btn:active {
+    transform: scale(0.95);
 }
 
-body.focus-mode .focus-mode-btn::before {
+/* ::before is the mode emoji centered in the circle, ::after the floating
+   caption just below it. */
+body.focus-mode #focus-action-btn::before {
     font-size: 26px;
     line-height: 1;
 }
 
-body.focus-mode .focus-mode-btn::after {
+body.focus-mode #focus-action-btn::after {
     /* Visible label is sourced from the button's data-label attribute,
        which focusMode.js sets via getLabel() — keeps the text on the
        label/vocab-theme system instead of hardcoded in CSS. The \n
@@ -1060,11 +1136,11 @@ body.focus-mode .focus-mode-btn::after {
 
 /* Mode-specific emoji icon — visual affordance, not vocab; stays in CSS.
    Leverages the existing body mode classes set by modeManager. */
-body.focus-mode.manual-cycle-mode .focus-mode-btn::before { content: "↻"; }
-body.focus-mode.todo-mode-mode .focus-mode-btn::before    { content: "🧹"; }
+body.focus-mode.manual-cycle-mode #focus-action-btn::before { content: "↻"; }
+body.focus-mode.todo-mode-mode #focus-action-btn::before    { content: "🧹"; }
 
 /* Auto cycle has no manual action — hide the button entirely. */
-body.focus-mode.auto-cycle-mode .focus-mode-btn {
+body.focus-mode.auto-cycle-mode #focus-action-btn {
     display: none;
 }
 
@@ -1144,19 +1220,11 @@ body.focus-mode #complete-all-and-help-window-container {
        Bumped from env+16 → env+32 so the two-line label below the button
        (Complete\nCycle etc.) doesn't get clipped against the home
        indicator / viewport bottom on devices without env(). */
-    body.focus-mode .focus-mode-btn {
-        position: fixed;
+    body.focus-mode #focus-action-btn {
         bottom: calc(env(safe-area-inset-bottom) + 32px);
         right: 16px;
-        z-index: var(--z-notification);
         width: 44px;
         height: 44px;
-        box-shadow: var(--shadow-md);
-    }
-
-    body.focus-mode .focus-mode-btn svg {
-        width: 20px;
-        height: 20px;
     }
 
     /* Nav-dots text switcher — mobile/iPhone:
