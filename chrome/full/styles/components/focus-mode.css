@@ -302,6 +302,19 @@ body.focus-mode .task-card .mini-cycle-title {
     }
 }
 
+/* The × exit is a 36px circle anchored to the 10px progress row, so it
+   overhangs the row by 13px; with the pill's normal 8px top margin its top
+   edge cut 5px into the circle (measured at 600px, Oct 2026). Home View keeps
+   a 15px gap only because task-view-layout.css nudges the pill down 10px
+   there (body:not(.focus-mode) #help-window). Here it is a MARGIN, not a
+   transform: a transform moved the pill but not the layout, so on short
+   phones (375x560, 390x667) it ran 10px past the band's bottom edge. A
+   margin reflows — the task list (min-height: 0 in Focus View) gives up
+   the 10px — and the pill stays inside the band. */
+body.focus-mode #help-window {
+    margin-top: calc(var(--space-2) + 10px);
+}
+
 /* Undo/redo buttons are reparented to <body> in focus mode (out of the
    hidden footer). Pin them to roughly their normal visual position via
    fixed positioning so they stay reachable without cluttering the view.
