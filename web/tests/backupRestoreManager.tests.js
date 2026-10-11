@@ -313,6 +313,56 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         if (clicked !== 1 || !payloadText) throw new Error('answering the prompt must download the file');
     });
 
+    // Swap globalThis.Capacitor for the duration of `run` — the bridge reads it
+    // through isNativeApp() / isPluginAvailable() / Plugins[name].
+    async function withCapacitor(stub, run) {
+        const had = Object.prototype.hasOwnProperty.call(globalThis, 'Capacitor');
+        const orig = globalThis.Capacitor;
+        globalThis.Capacitor = stub;
+        try { return await run(); }
+        finally { if (had) globalThis.Capacitor = orig; else delete globalThis.Capacitor; }
+    }
+    const nativeStub = ({ onWrite, onShare }) => ({
+        isNativePlatform: () => true, getPlatform: () => 'ios', isPluginAvailable: () => true,
+        Plugins: {
+            Filesystem: { writeFile: async (o) => { onWrite(o); return { uri: 'file:///cache/' + o.path }; }, getUri: async (o) => ({ uri: 'file:///cache/' + o.path }) },
+            Share: { share: async (o) => onShare(o) },
+        },
+    });
+
+    await test('iPhone / Android app: Backup All goes to the share sheet (Save to Files) — no download, no name prompt, timestamp on success', async () => {
+        let prompts = 0; let stamped = null; let written = null; let shared = null; const notes = [];
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(2), forceSave: () => {}, update: (fn) => { const st = { settings: {} }; fn(st); stamped = st.settings.lastFileBackupTimestamp; } },
+            showNotification: (msg, type) => { notes.push(type); }, showConfirmationModal: () => {}, showPromptModal: () => { prompts++; },
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.599' }
+        });
+        const btn = document.getElementById('backup-mini-cycles');
+        const stub = nativeStub({ onWrite: (o) => { written = o; }, onShare: (o) => { shared = o; } });
+        const { clicked } = await captureBackupDownloadAsync(() => withCapacitor(stub, () => withSavePicker(null, async () => { btn.click(); await new Promise(r => setTimeout(r, 50)); })));
+        if (!written || !/^mini-cycle-backup-\d{4}-\d{2}-\d{2}\.json$/.test(written.path)) throw new Error('expected the dated backup written for sharing, got ' + JSON.stringify(written && written.path));
+        const parsed = JSON.parse(written.data);
+        if (!parsed.miniCycleData || parsed.backupMetadata?.version !== '2.599') throw new Error('shared file is not a miniCycle backup');
+        if (!shared || !Array.isArray(shared.files) || shared.files[0] !== 'file:///cache/' + written.path) throw new Error('share sheet did not receive the written file: ' + JSON.stringify(shared));
+        if (clicked !== 0) throw new Error('must not ALSO click a download the WebView would drop');
+        if (prompts !== 0) throw new Error('the share sheet names and places the file — no in-app name prompt');
+        if (!stamped || !notes.includes('success')) throw new Error('a completed share must record the timestamp and say so');
+    });
+
+    await test('native app: a dismissed share sheet records nothing, says nothing, and reports cancelled to the factory reset', async () => {
+        let stamped = false; const notes = [];
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => { stamped = true; } },
+            showNotification: (msg, type) => { notes.push(type); }, showConfirmationModal: () => {}, showPromptModal: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.599' }
+        });
+        const stub = nativeStub({ onWrite: () => {}, onShare: async () => { throw new Error('Share canceled'); } });
+        const { result, clicked } = await captureBackupDownloadAsync(() => withCapacitor(stub, () => withSavePicker(null, () => mod.saveBackupFileAs())));
+        if (result !== 'cancelled') throw new Error(`expected 'cancelled', got ${JSON.stringify(result)} — the reset would wipe without a backup`);
+        if (stamped || notes.includes('success')) throw new Error('a dismissed sheet must not record a timestamp or claim success');
+        if (clicked !== 0) throw new Error('a dismissed sheet must not fall back to a download');
+    });
+
     await test('factory reset: cancelling the Save dialog deletes nothing and says so without an error tone', async () => {
         const origSWGetRegs = navigator.serviceWorker && navigator.serviceWorker.getRegistrations;
         const origCachesKeys = (typeof window.caches !== 'undefined') && window.caches.keys;

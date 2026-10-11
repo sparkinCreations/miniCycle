@@ -12,6 +12,11 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// The iOS / Android app runs in a WebView that does not handle downloads: an
+// <a download> click there goes nowhere. The share sheet (with "Save to Files")
+// is the destination picker on those platforms — same path the routine export
+// and share already take.
+import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
 // testing modal's IndexedDB restore.
@@ -501,8 +506,34 @@ function buildBackupFile(AppState, fileName, defaultName) {
 
     const safeName = String(fileName || '').replace(/[<>:"/\\|?*]/g, '').trim() || defaultName;
     const name = safeName.endsWith('.json') ? safeName : `${safeName}.json`;
-    const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
-    return { blob, name };
+    const text = JSON.stringify(backupData, null, 2);
+    const blob = new Blob([text], { type: 'application/json' });
+    return { blob, name, text };
+}
+
+/**
+ * Inside the native app, hand the backup to the share sheet so the user picks
+ * where it goes ("Save to Files" opens the folder picker on iOS; Drive / Files
+ * on Android). Until Oct 2026 the native app took the download path, which the
+ * WebView silently drops — and then announced "Backup created successfully!"
+ * for a file that was never written.
+ *
+ * @returns {Promise<'saved'|'cancelled'|null>} null = not inside the native app
+ *   or the plugins are unavailable; the caller falls through to its own path.
+ */
+async function shareBackupNative(AppState, fileName, defaultName) {
+    if (!isNativeApp()) return null;
+    const file = buildBackupFile(AppState, fileName, defaultName);
+    if (!file) return false;
+    const result = await shareRoutineFileNative({
+        data: file.text,
+        fileName: file.name,
+        title: getLabel('noun.backupFileType')
+    });
+    if (!result.handled) return null;
+    if (result.cancelled) return 'cancelled';
+    markBackupSaved(AppState);
+    return 'saved';
 }
 
 /** Tell the user, and record the timestamp the backup-reminder system reads. */
@@ -544,6 +575,10 @@ export async function saveBackupFileAs(options = {}) {
     }
     const defaultName = `mini-cycle-backup-${new Date().toISOString().slice(0, 10)}`;
     const wanted = options.suggestedName || defaultName;
+
+    // Native app: the share sheet IS the "where" — no Save dialog, no name prompt.
+    const native = await shareBackupNative(AppState, wanted, defaultName);
+    if (native !== null) return native;
 
     if (typeof window.showSaveFilePicker === 'function') {
         let handle = null;
@@ -608,6 +643,16 @@ export function downloadBackupFile(options = {}) {
     // factory reset's pre-wipe safety net depends on this: it must not wipe
     // after an export that quietly produced nothing.
     const createAndDownload = (fileName) => {
+        // Native app: route through the share sheet instead of a download the
+        // WebView would drop. Async by nature; markBackupSaved runs inside it
+        // only when the sheet was not cancelled. Callers needing the outcome
+        // use saveBackupFileAs(), which awaits the same path.
+        if (isNativeApp()) {
+            shareBackupNative(AppState, fileName, defaultName).catch((e) => {
+                console.warn('Native backup share failed:', e);
+            });
+            return true;
+        }
         const file = buildBackupFile(AppState, fileName, defaultName);
         if (!file) return false;
 
@@ -622,7 +667,9 @@ export function downloadBackupFile(options = {}) {
         return true;
     };
 
-    if (!options.skipNamePrompt && _deps.showPromptModal) {
+    // The name prompt is for the plain-download path only: in the native app the
+    // share sheet names and places the file (Save to Files asks for both).
+    if (!options.skipNamePrompt && _deps.showPromptModal && !isNativeApp()) {
         _deps.showPromptModal({
             title: getLabel('notify.backupNamePrompt'),
             placeholder: getLabel('notify.backupNamePlaceholder'),

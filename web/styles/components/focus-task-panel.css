@@ -138,9 +138,18 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     transition: filter var(--transition-fast) ease, transform var(--transition-fast) ease;
 }
 
-.focus-task-complete-btn:hover,
+/* Hover only where a pointer can hover. iOS emulates :hover on tap and
+   leaves the element in that state until the next tap elsewhere, so on the
+   iPhone / PWA the Complete button stayed brightened after every press (Oct
+   2026). Same guard task-options.css uses. :focus-visible stays unguarded so
+   keyboard users keep the highlight; :active releases on its own. */
 .focus-task-complete-btn:focus-visible {
     filter: brightness(1.08);
+}
+@media (hover: hover) and (pointer: fine) {
+    .focus-task-complete-btn:hover {
+        filter: brightness(1.08);
+    }
 }
 
 .focus-task-complete-btn:active {
@@ -169,9 +178,13 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     transition: opacity var(--transition-fast) ease;
 }
 
-.focus-task-nav-btn:hover,
 .focus-task-nav-btn:focus-visible {
     opacity: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+    .focus-task-nav-btn:hover {
+        opacity: 1;
+    }
 }
 
 .focus-task-nav-btn:disabled {
