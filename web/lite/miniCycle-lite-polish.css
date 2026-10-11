@@ -1199,3 +1199,206 @@ body.dark-mode .mc-toast {
   margin-right: 14px;
   margin-left: 4px;
 }
+
+/* ─── Feedback modal ─────────────────────────────────────────────────
+   Bug: the base sheet's `.close-feedback-modal { position: absolute;
+   top: 15px; right: 20px }` was written for the ✕, but the footer's
+   Cancel button and the overlay carry the same class (so they close the
+   modal too) — Cancel got pulled up onto the ✕. Reset those two, then
+   restyle the whole modal to match the Add Tasks / Edit / Confirm
+   modals: white card, blue gradient header with one ✕, light footer. */
+.feedback-modal .feedback-cancel-btn.close-feedback-modal {
+  position: static;
+  top: auto;
+  right: auto;
+}
+
+.feedback-modal-overlay.close-feedback-modal {
+  top: 0;
+  left: 0;
+  right: auto;
+  padding: 0;
+  background: transparent;
+}
+
+.feedback-modal {
+  background: rgba(0, 0, 0, 0.6);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.feedback-modal-content {
+  background: #ffffff;
+  color: #222222;
+  border-radius: 16px;
+  padding: 0;
+  max-width: 420px;
+  text-align: left;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  -webkit-animation: modalSlideIn 0.3s ease;
+  animation: modalSlideIn 0.3s ease;
+}
+
+.feedback-modal-header {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-pack: justify;
+  -webkit-justify-content: space-between;
+  -ms-flex-pack: justify;
+  justify-content: space-between;
+  margin: 0;
+  padding: 16px 20px;
+  border: none;
+  background-color: #4c79ff;
+  background-image: -webkit-linear-gradient(315deg, #4c79ff, #74c0fc);
+  background-image: linear-gradient(135deg, #4c79ff, #74c0fc);
+}
+
+.feedback-modal-header h3,
+.feedback-modal .feedback-modal-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.feedback-modal .feedback-modal-close.close-feedback-modal {
+  position: static;
+  color: #ffffff;
+  font-size: 28px;
+  font-weight: normal;
+  line-height: 1;
+  padding: 0;
+  opacity: 0.85;
+}
+
+.feedback-modal .feedback-modal-close.close-feedback-modal:hover {
+  color: #ffffff;
+  opacity: 1;
+}
+
+.feedback-modal-body {
+  padding: 18px 20px 4px;
+}
+
+.feedback-modal-body p {
+  margin: 0 0 14px 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #555b6a;
+  text-align: left;
+}
+
+.feedback-modal #feedback-text,
+.feedback-modal input[name="email"] {
+  border: 2px solid #e0e0e0;
+  border-radius: 10px;
+  font-size: 15px;
+  background: #ffffff;
+  color: #222222;
+  margin-bottom: 12px;
+}
+
+.feedback-modal #feedback-text:focus,
+.feedback-modal input[name="email"]:focus {
+  border-color: #4c79ff;
+  outline: none;
+}
+
+.feedback-modal-footer {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  padding: 14px 20px;
+  background: #f8f9fa;
+  border-top: 1px solid #e0e0e0;
+}
+
+.feedback-modal .feedback-cancel-btn {
+  padding: 10px 20px;
+  background: transparent;
+  color: #444a5a;
+  border: 1px solid #cfd3dc;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.feedback-modal .feedback-cancel-btn:hover {
+  background: #eceef3;
+  color: #444a5a;
+}
+
+.feedback-modal #submit-feedback {
+  padding: 10px 24px;
+  min-width: 0;
+  border-radius: 8px;
+  font-size: 15px;
+  background: #4c79ff;
+  box-shadow: 0 4px 12px rgba(76, 121, 255, 0.3);
+}
+
+.feedback-modal #submit-feedback:hover {
+  background: #3a63e0;
+}
+
+.feedback-modal #thank-you-message {
+  color: #222222;
+}
+
+/* Dark mode — same values as the Add Tasks modal's dark theme. */
+body.dark-mode .feedback-modal-content {
+  background: #2a2a3c;
+  color: #e8e8ef;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .feedback-modal-header {
+  background-color: #3a5fcc;
+  background-image: -webkit-linear-gradient(315deg, #3a5fcc, #5a8fd8);
+  background-image: linear-gradient(135deg, #3a5fcc, #5a8fd8);
+}
+
+body.dark-mode .feedback-modal-body p {
+  color: #b8bccb;
+}
+
+body.dark-mode .feedback-modal #feedback-text,
+body.dark-mode .feedback-modal input[name="email"] {
+  background: #32324a;
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #e8e8ef;
+}
+
+body.dark-mode .feedback-modal-footer {
+  background: #22223a;
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .feedback-modal .feedback-cancel-btn {
+  color: #e0e2ea;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .feedback-modal .feedback-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .feedback-modal #thank-you-message {
+  color: #e8e8ef;
+}
