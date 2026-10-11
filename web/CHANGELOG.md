@@ -1,3 +1,8 @@
+## [2.598] - 2026-10-11
+- chore(tests): refresh the recorded test count (new backup tests + journey)
+- feat(backup): Backup All Routines saves where the user chooses
+
+
 ## [2.597] - 2026-10-11
 - fix(first-run): Restore from a backup file works after an in-place factory reset
 - fix(home): a long routine stays inside the band on tablets and desktop instead of overflowing the nav dots

@@ -1703,6 +1703,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
 
         // Backup file download (from deps.ui via settingsManager)
         downloadBackupFile: (...args) => deps.ui?.downloadBackupFile?.(...args),
+        saveBackupFileAs: (...args) => deps.ui?.saveBackupFileAs?.(...args),
 
         // Vocabulary theme manager (from deps.features) - use Proxy for lazy resolution
         vocabThemeManager: new Proxy({}, {

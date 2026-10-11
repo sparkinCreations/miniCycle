@@ -156,6 +156,7 @@ async function loadSubModules(version) {
         setupPreMigrationCopyControls: backupRestoreModule.setupPreMigrationCopyControls,
         neutralizeAppState: backupRestoreModule.neutralizeAppState,
         downloadBackupFile: backupRestoreModule.downloadBackupFile,
+        saveBackupFileAs: backupRestoreModule.saveBackupFileAs,
 
         // Data Sanitizer
         setDataSanitizerDependencies: dataSanitizerModule.setDataSanitizerDependencies,
@@ -584,6 +585,14 @@ export function neutralizeAppState() { _subModules?.neutralizeAppState?.(); }
  * @returns {boolean} True if backup was initiated, false on error
  */
 export function downloadBackupFile(options) { return _subModules?.downloadBackupFile?.(options); }
+
+/**
+ * Save a backup where the user chooses (native Save As dialog when available,
+ * plain download otherwise). See backupRestoreManager.saveBackupFileAs.
+ * @param {Object} [options]
+ * @returns {Promise<'saved'|'cancelled'|false>}
+ */
+export function saveBackupFileAs(options) { return _subModules?.saveBackupFileAs?.(options); }
 
 /**
  * Sanitize imported backup data to prevent XSS and invalid content.

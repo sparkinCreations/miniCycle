@@ -529,6 +529,10 @@ function markBackupSaved(AppState) {
  *
  * @param {Object} [options]
  * @param {string} [options.suggestedName] - file name offered in the dialog (no extension needed)
+ * @param {boolean} [options.fallbackNamePrompt=false] - when there is no Save dialog
+ *   (Safari, iOS, Android, Firefox), ask for a file name in-app before downloading —
+ *   what the Backup All button always did. The native dialog asks for the name
+ *   itself, so with it available the in-app prompt would be a second question.
  * @returns {Promise<'saved'|'cancelled'|false>}
  */
 export async function saveBackupFileAs(options = {}) {
@@ -569,7 +573,7 @@ export async function saveBackupFileAs(options = {}) {
         }
     }
 
-    return downloadBackupFile({ skipNamePrompt: true }) ? 'saved' : false;
+    return downloadBackupFile({ skipNamePrompt: !options.fallbackNamePrompt }) ? 'saved' : false;
 }
 
 /**
@@ -663,8 +667,13 @@ export function setupBackupButton() {
     const backupBtn = document.getElementById(DOM_IDS.BACKUP_MINI_CYCLES);
     if (!backupBtn) return;
 
+    // Save where the user chooses. Until Oct 2026 this went straight to the
+    // anchor download, so the file landed wherever the browser puts downloads
+    // with no say in it — while the factory reset's safety backup, two buttons
+    // down, opened a real Save As dialog. Same writer for both now; browsers
+    // without the dialog keep the name prompt + download they always had.
     backupBtn._clickHandler = () => {
-        downloadBackupFile({ skipNamePrompt: false });
+        saveBackupFileAs({ fallbackNamePrompt: true });
     };
 
     safeAddEventListener(backupBtn, "click", backupBtn._clickHandler);
