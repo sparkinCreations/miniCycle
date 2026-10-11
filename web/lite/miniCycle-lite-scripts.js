@@ -538,6 +538,10 @@ function setupModeSelector() {
     
     // ✅ Save to localStorage
     localStorage.setItem('miniCycleLiteMode', newMode);
+
+    // ✅ Leaving Auto Cycle (or re-selecting it) during the completion
+    // celebration must not let the queued reset run.
+    cancelPendingAutoReset();
     
     // ✅ Sync both selectors
     if (desktopSelect && desktopSelect !== sourceSelector) {
@@ -1680,6 +1684,12 @@ function handleTaskCompletionChange(event) {
     saveUndoState(checkbox.checked ? 'complete' : 'uncomplete', tasksBefore);
   }
 
+  // ✅ Any uncheck (direct or bulk) means the list is no longer complete:
+  // a reset scheduled by the last check must not fire.
+  if (checkbox && !checkbox.checked) {
+    cancelPendingAutoReset();
+  }
+
   // ✅ If task was just completed (checked), trigger logo glow
   if (checkbox && checkbox.checked) {
     triggerLogoGlow();
@@ -2693,6 +2703,19 @@ function cancelPendingAutoReset() {
   }
 }
 
+// ✅ True only while EVERY task is checked and the mode is Auto Cycle —
+// the condition an automatic reset is for. Read from the DOM and the live
+// mode, so a pending reset can confirm the world has not changed under it.
+function allTasksCompleteInAutoMode() {
+  if (!taskList || taskList.children.length === 0) return false;
+  for (var i = 0; i < taskList.children.length; i++) {
+    var cb = taskList.children[i].querySelector("input[type='checkbox']");
+    if (!cb || !cb.checked) return false;
+  }
+  var mode = getCurrentCycleMode();
+  return mode === 'auto' || mode === 'auto-cycle';
+}
+
 function checkForAutoReset() {
   if (!taskList) return;
   
@@ -2724,6 +2747,15 @@ function checkForAutoReset() {
       // ✅ Auto reset after short delay for user feedback
       pendingAutoResetTimer = setTimeout(function() {
         pendingAutoResetTimer = null;
+        // ✅ Re-check before acting: the 1.5 s celebration is long enough to
+        // uncheck a task or switch mode, and a reset + cycle count after
+        // either would be a cycle that was not completed. Undo/redo, a
+        // direct uncheck and a mode change also cancel this timer, but the
+        // timer is the last line of defence.
+        if (!allTasksCompleteInAutoMode()) {
+          console.log('⏭️ Auto-reset skipped: list no longer complete in Auto Cycle mode');
+          return;
+        }
         resetAllTasks();
         incrementCycleCount();
         showCycleCompletionAnimation();
@@ -4120,17 +4152,25 @@ function handleFeedbackSuccess() {
 // ✅ Handle feedback submission error
 function handleFeedbackError() {
   showNotification('Failed to send feedback. Please try again later.', 'error');
-  
+
+  var feedbackForm = document.getElementById('feedback-form');
   var thankYouMessage = document.getElementById('thank-you-message');
+
+  // Hide the form so the error block has its own space (mirrors success path).
+  // Same handler as the Chrome Edition; the .feedback-error-block styles were
+  // already in miniCycle-lite-polish.css but nothing on the web side used them.
+  if (feedbackForm) feedbackForm.style.display = 'none';
+
   if (thankYouMessage) {
+    thankYouMessage.className = 'feedback-error-block';
     thankYouMessage.style.display = 'block';
-    thankYouMessage.textContent = '';
-    thankYouMessage.appendChild(document.createTextNode('Failed to send feedback.'));
-    thankYouMessage.appendChild(document.createElement('br'));
-    thankYouMessage.appendChild(document.createTextNode('Please try again later or contact support.'));
-    thankYouMessage.style.color = 'red';
+    thankYouMessage.style.color = ''; // clear any prior inline color
+    thankYouMessage.innerHTML =
+      '<div class="feedback-error-icon">⚠️</div>' +
+      '<div class="feedback-error-title">Failed to send feedback</div>' +
+      '<div class="feedback-error-body">Please try again later or contact support.</div>';
   }
-  
+
   console.error('❌ Failed to submit feedback');
 }
 
