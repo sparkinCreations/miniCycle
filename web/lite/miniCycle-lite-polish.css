@@ -1132,3 +1132,39 @@ body.dark-mode .mc-toast {
   from { opacity: 0; transform: translateY(-8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ─── Toast position: right below the mode selector ──────────────────
+   Measured: the phone/tablet selector bar is fixed at 90–121px; the
+   desktop header selector sits at 26–62px on the left. The toast's own
+   margin is zeroed so the gap is exactly the 8px built into each top. Phones/tablets center the
+   toast under the centered bar (it was left-aligned from 600px up,
+   overlapping the bar); desktop keeps it left, under the selector. */
+.mc-toast-wrap .mc-toast {
+  margin-top: 0;
+}
+
+@media (min-width: 769px) {
+  .mc-toast-wrap {
+    top: 70px;
+    left: 17px;
+  }
+}
+
+@media (max-width: 768px) {
+  .mc-toast-wrap {
+    top: 129px;
+    left: 50%;
+    right: auto;
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    width: 92%;
+    max-width: 380px;
+  }
+
+  /* iPhones lay the header out with their own measured vars
+     (--header-total / --mode-bar, see body.is-iphone in the base sheet). */
+  body.is-iphone .mc-toast-wrap {
+    top: calc(var(--header-total) + var(--mode-bar) + 8px);
+  }
+}
