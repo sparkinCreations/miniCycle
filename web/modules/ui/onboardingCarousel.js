@@ -548,6 +548,7 @@ export class OnboardingCarousel {
 
         const isLast = this.m._firstRunWelcomeSlideIndex
             === this.m._firstRunWelcomeSlides.length - 1;
+        this._syncFirstRunWelcomeDismissLabel(isLast);
 
         // Replay mode wins over paused — once we reach the end, the user's
         // explicit re-engagement (clicking ↻) is the only way forward.
@@ -724,6 +725,22 @@ export class OnboardingCarousel {
         announce(getLabel('firstRunWelcome.slidePosition', {
             vars: { current: index + 1, total: slides.length, title: String(slide.title || '').replace(/\|/g, ' ') }
         }), { getElementById: (id) => document.getElementById(id) });
+    }
+
+    /**
+     * The corner dismiss button is one control shared by every slide. "Skip"
+     * is right while slides remain; on "All Set!" nothing is left to skip, so
+     * it reads "Done" (copy review, Oct 2026). Looked up by id rather than
+     * stored on the manager so the field inventory stays as it is.
+     * @param {boolean} isLast - whether the current slide is the final one
+     * @private
+     */
+    _syncFirstRunWelcomeDismissLabel(isLast) {
+        const banner = this.m._firstRunWelcomeBanner;
+        const btn = banner?.querySelector?.(`#${DOM_IDS.FIRST_RUN_WELCOME_DISMISS}`);
+        if (!btn) return;
+        btn.textContent = getLabel(isLast ? 'firstRunWelcome.dismissDone' : 'firstRunWelcome.dismiss');
+        btn.setAttribute('aria-label', getLabel(isLast ? 'firstRunWelcome.dismissDoneAria' : 'firstRunWelcome.dismissAria'));
     }
 
     _advanceFirstRunWelcomeSlide() {

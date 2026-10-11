@@ -61,6 +61,33 @@ export async function runOnboardingCarouselTests(resultsDiv) {
         }
     });
 
+    await test('the corner dismiss button says "Skip" until the last slide, then "Done"', () => {
+        const m = makeManager();
+        m._firstRunWelcomeSlides = [{ title: 'One', message: 'a' }, { title: 'Two', message: 'b' }, { title: 'All Set!', message: 'c' }];
+        m._firstRunWelcomeBanner = document.createElement('div');
+        const btn = document.createElement('button');
+        btn.id = 'first-run-welcome-dismiss';   // DOM_IDS.FIRST_RUN_WELCOME_DISMISS
+        btn.textContent = 'Skip';
+        btn.setAttribute('aria-label', 'Skip welcome');
+        m._firstRunWelcomeBanner.appendChild(btn);
+        const c = new OnboardingCarousel(m);
+        try {
+            m._firstRunWelcomeSlideIndex = 0;
+            c._scheduleFirstRunWelcomeAdvance();
+            if (btn.textContent !== 'Skip') throw new Error(`slide 1 should keep "Skip", got "${btn.textContent}"`);
+            if (!/skip/i.test(btn.getAttribute('aria-label'))) throw new Error('slide 1 aria-label should say skip');
+            m._firstRunWelcomeSlideIndex = 2;
+            c._scheduleFirstRunWelcomeAdvance();
+            if (btn.textContent !== 'Done') throw new Error(`last slide should say "Done", got "${btn.textContent}"`);
+            if (!/done/i.test(btn.getAttribute('aria-label'))) throw new Error('last slide aria-label should say done');
+            m._firstRunWelcomeSlideIndex = 1;
+            c._scheduleFirstRunWelcomeAdvance();
+            if (btn.textContent !== 'Skip') throw new Error('replaying back to an earlier slide must restore "Skip"');
+        } finally {
+            if (m._firstRunWelcomeSlideTimer) clearTimeout(m._firstRunWelcomeSlideTimer);
+        }
+    });
+
     await test('carousel STATE stays on the manager, not on the sub-module', () => {
         // 22 fields, none migrated — the manager's destroy() still clears every
         // timer, observer and handler it always cleared. A field that quietly

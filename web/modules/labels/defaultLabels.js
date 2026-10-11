@@ -1778,11 +1778,17 @@ export const DEFAULT_LABELS = deepFreeze({
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
         titleFocusView:      'All Set!',
-        messageFocusView:    'Open the ⋯ menu above to exit {focusName} and enter {homeName} — or create your own routine below.',
+        // The "Create your own routine" button sits right under this line, so
+        // the message no longer repeats it; the view names stay vocabulary
+        // variables so a lens can rename them.
+        messageFocusView:    'Continue in {focusName}, or open ⋯ above for {homeName}.',
         createRoutineCta:    'Create your own routine',
         cycleDemoAria:        'Demonstration: three tasks get completed and the cycle counter advances each time.',
         dismiss:           'Skip',
         dismissAria:       'Skip welcome',
+        // The same corner button on the LAST slide: nothing is left to skip.
+        dismissDone:       'Done',
+        dismissDoneAria:   'Done with welcome',
         pauseAria:         'Pause welcome slides',
         playAria:          'Resume welcome slides',
         replayAria:        'Replay welcome slides',
