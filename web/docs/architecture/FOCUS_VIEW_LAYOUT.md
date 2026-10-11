@@ -170,13 +170,26 @@ and only `npm test` passes, you have not tested it.
 
 ---
 
+## The content has to be allowed to shrink
+
+The band bounds the *wrapper*. For the content to fit it, every flex item on the
+chain down to the list — `#task-card-group`, `.task-card`, `.task-list-container`
+— needs `min-height: 0`, because a flex item's default `min-height: auto` is its
+content height and cannot give. Until Oct 2026 only the list had it, so with the
+list pinned at its `--focus-task-list-reduction-*` cap nothing above it could
+shrink and a long routine overflowed the band: on iPad portrait (834x1112, 19
+tasks, input bar up) the group ended 63px past the band, and the progress row,
+the × and the status pill sat on top of the nav dots. The wrapper checks all
+passed, because the wrapper was fine. The `*-long` rows of the layout suite now
+measure the painted content (progress row + × and help window) against the nav
+line with a long routine and the input bar showing.
+
 ## Known gap
 
-Below roughly 520px of viewport height the content cannot fit the band — the
-card-group's own floor exceeds it — and `#task-view`'s `overflow: hidden` clips
-the help window. At 820x480 it overhangs the band by 29px (versus 59px past the
-**nav dots** before band-anchoring). `min-height: 0` on the focus-mode task list
-recovers part of it.
+Below roughly 520px of viewport height the list shrinks to very little — it now
+absorbs all of the shortage rather than the help window being clipped. At
+820x480 the band is 97 → 324 and the list gets what is left after the title,
+progress row and help window.
 
 Not fixed: deciding what Focus View drops when there is no room (the help window
 is the obvious candidate) is a product decision. The layout suite prints this

@@ -177,6 +177,8 @@ function measureFocus() {
     const nav = document.getElementById('nav-dots');
     const navRect = nav ? nav.getBoundingClientRect() : null;
     const help = px(document.getElementById('help-window'));
+    const progress = px(document.querySelector('.progress-focus-row'));
+    const exitBtn = px(document.getElementById('focus-mode-exit-btn'));
     const tvBottom = tv ? Math.round(tv.getBoundingClientRect().bottom) : null;
     return {
         cardTop: card ? card.top : null,
@@ -190,6 +192,9 @@ function measureFocus() {
         // it is inside the wrapper (unclipped) precisely because the clearance
         // holds; `helpClipped` catches the case where that stops being true.
         helpBottom: help ? help.bottom : null,
+        // The × overhangs the 12px progress row (36px circle, absolutely
+        // positioned), so the row's painted bottom is whichever is lower.
+        progressBottom: Math.max(progress ? progress.bottom : 0, exitBtn ? exitBtn.bottom : 0) || null,
         helpClipped: help && tvBottom !== null ? help.bottom > tvBottom : false,
         navLine: navRect && navRect.height > 0 ? Math.round(navRect.top) : null,
     };
@@ -1204,10 +1209,15 @@ async function run() {
                 });
                 await tp.waitForTimeout(450);
 
+                // Input bar showing: it is part of the band's content and the
+                // iPad report had it up. (Skip restores whatever the tour left.)
+                await tp.evaluate(() => document.body.classList.add('input-bar-visible'));
                 const LONG_ROUTINE_VIEWPORTS = [
                     { name: 'desktop-short-long',   width: 1100, height: 600 },
                     { name: 'tablet-land-long',     width: 1024, height: 768 },
                     { name: 'desktop-long',         width: 1280, height: 800 },
+                    { name: 'tablet-portrait-long', width: 834,  height: 1112 },
+                    { name: 'phone-tall-long',      width: 375,  height: 812 },
                     { name: 'landscape-short-long', width: 820,  height: 480 },
                     { name: 'phone-short-long',     width: 375,  height: 560 },
                 ];
@@ -1228,6 +1238,29 @@ async function run() {
                         record(vp, 'focus band clears nav dots',
                             f.taskViewBottom <= f.navLine + TOL,
                             `task-view.bottom ${f.taskViewBottom} > navLine ${f.navLine}`);
+                    }
+                    // The content has to FIT the band, not just the wrapper: with
+                    // the chain above the list unable to shrink, a long routine
+                    // overflowed the band by 120px on iPad portrait and put the
+                    // progress row, × and status pill over the nav dots (Oct 2026)
+                    // while every wrapper check passed. Below 1024px the wrapper's
+                    // overflow is visible at tablet widths and hidden on phones, so
+                    // measure the painted content: the last thing in the band is
+                    // the help window; the progress row (with the ×) is the one
+                    // above it. Both must end above the nav line. Known-short
+                    // viewports (<520px tall) are reported, not asserted — same
+                    // product call as the main loop.
+                    if (f.navLine !== null && (f.helpBottom !== null || f.progressBottom !== null)) {
+                        const last = Math.max(f.helpBottom || 0, f.progressBottom || 0);
+                        if (vp.height < 520) {
+                            console.log(`   ${colors.yellow}⚠${colors.reset}  ${vp.name.padEnd(26)} `
+                                + `${colors.gray}focus content vs nav dots (known, ${vp.height}px tall): `
+                                + `content.bottom ${last} vs navLine ${f.navLine}${colors.reset}`);
+                        } else {
+                            record(vp, 'focus content (progress row, help window) clears nav dots',
+                                last <= f.navLine + TOL,
+                                `content.bottom ${last} > navLine ${f.navLine}`);
+                        }
                     }
                 }
             } finally {
