@@ -64,7 +64,7 @@ Same rules as above: paste into the dashboard (Store listing → Description) wh
 it changes, and change it HERE first. The short summary is NOT pasted — it is the
 `description` field in `chrome/lite/manifest.json` (132-character limit):
 
-> A quick, reusable checklist for your repeatable routine, right in your toolbar. Auto Cycle, Manual Cycle, and To-Do modes.
+> A quick, reusable checklist for your repeatable routine. Track your progress in cycles. Three modes.
 
 Lite is ONE checklist — say "your routine", never imply multiple saved lists
 (that is the full version's job, pointed to at the end). Button names must match
