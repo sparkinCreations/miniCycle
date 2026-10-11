@@ -941,6 +941,19 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
 
     try {
         await seedViaLearn();   // openFresh already picked "learn"; ensure a routine exists
+        // Reload WITH data, the way a real user arrives at Settings -> Factory
+        // reset. openFresh loaded the page on the choice screen, so the inline
+        // first-run controller in miniCycle.html ran past its gate and bound its
+        // listeners; on a returning-user load it returns early and binds nothing.
+        // Only the second case shows whether the in-place reset leaves the
+        // restore button dead — with the choice-screen load the check below
+        // passed on the broken build too.
+        await page.reload({ waitUntil: 'domcontentloaded' });
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 25000 });
+        await page.waitForTimeout(800);
+        record('page reloaded as a returning user (not on the choice screen)',
+            await page.evaluate(() => !document.documentElement.classList.contains('mc-first-run')),
+            'the reload came up on the choice screen — the data did not persist');
         for (const pass of [1, 2]) {
             await runFactoryReset();
             let armed = true;
@@ -960,6 +973,24 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
                 `${state.cycles} cycle(s) exist — the reset decided instead of asking`);
 
             if (armed) {
+                // "Restore from a backup file" must be live too. Its listener lives
+                // in miniCycle.html's inline controller, which until Oct 2026 bound
+                // it only when the page LOADED on the choice screen — after an
+                // in-place reset the button did nothing until the app was
+                // relaunched. A live button forwards the click to the hidden
+                // file input; that forward is what we observe.
+                const restoreWired = await page.evaluate(() => new Promise((resolve) => {
+                    const input = document.getElementById('first-run-restore-file');
+                    const btn = document.getElementById('first-run-restore');
+                    if (!input || !btn) return resolve(false);
+                    let hit = false;
+                    input.addEventListener('click', (e) => { hit = true; e.preventDefault(); }, { once: true });
+                    btn.click();
+                    setTimeout(() => resolve(hit), 200);
+                }));
+                record(`pass ${pass}: Restore from a backup file is wired after the in-place reset`, restoreWired,
+                    'clicking the restore button did not reach the file input — the inline listener was never bound');
+
                 // The pick must route through the handler the reset bound.
                 await seedViaLearn();
                 const after = await page.evaluate(() => {
