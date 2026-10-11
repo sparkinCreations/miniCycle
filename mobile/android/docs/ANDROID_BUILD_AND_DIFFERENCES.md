@@ -268,6 +268,7 @@ Implemented bridges and where they hook in:
 | **Local notifications** | `@capacitor/local-notifications` | `modules/features/reminders.js` — native send path + permission flow | web `Notification` / SW `showNotification` |
 | **Routine export** (`.mcyc`) | `@capacitor/filesystem`, `@capacitor/share` | `modules/ui/cycleExportManager.js` | File System Access API → anchor download |
 | **Routine / app share** | `@capacitor/share` (+ filesystem for files) | `modules/ui/shareManager.js` | `navigator.share` → download / clipboard |
+| **Backup "Save As"** | app-local `SaveAsPlugin.java` (`ACTION_CREATE_DOCUMENT`), then `@capacitor/filesystem` (Documents), then `@capacitor/share` | `modules/ui/backupRestoreManager.js` → `saveFileAsNative()` / `saveFileToDocumentsNative()` | File System Access API → name prompt + anchor download |
 
 - **Status bar** tracks the app's `dark-mode` class via a `MutationObserver`, so it re-themes
   when the user toggles dark mode.
@@ -276,6 +277,13 @@ Implemented bridges and where they hook in:
 - **Export/share** write the `.mcyc` to the cache dir then open the Android share sheet (which
   includes "Save to Files"), since the WebView can't do an anchor download or the File System
   Access API.
+- **Backup "Save As"** is the one app-local plugin (not from npm): `SaveAsPlugin.java` opens the
+  system create-document dialog so the user picks where the backup goes, writes the text to the
+  chosen URI and resolves `{ saved, uri }` or `{ cancelled }`. It is registered in
+  `MainActivity.onCreate()` **before** `super.onCreate()`, which is when the bridge collects
+  plugins; the web side reaches it as `Capacitor.registerPlugin('SaveAs')` like any other.
+  Without it (iOS, or a failed write) the backup falls back to the public Documents folder,
+  then to the share sheet. `cap sync` does not touch it — it lives in the app's own source set.
 
 Still open (not yet wired):
 

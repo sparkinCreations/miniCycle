@@ -322,9 +322,13 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         try { return await run(); }
         finally { if (had) globalThis.Capacitor = orig; else delete globalThis.Capacitor; }
     }
-    const nativeStub = ({ onWrite, onShare, platform = 'ios' }) => ({
-        isNativePlatform: () => true, getPlatform: () => platform, isPluginAvailable: () => true,
+    const nativeStub = ({ onWrite, onShare, onSaveAs, platform = 'ios' }) => ({
+        isNativePlatform: () => true, getPlatform: () => platform,
+        // The SaveAs plugin is app-local to the Android shell: present only when a
+        // stub supplies it, exactly as isPluginAvailable() reports on device.
+        isPluginAvailable: (name) => name !== 'SaveAs' || typeof onSaveAs === 'function',
         Plugins: {
+            SaveAs: { saveFile: async (o) => onSaveAs(o) },
             Filesystem: { writeFile: async (o) => { onWrite(o); return { uri: 'file:///cache/' + o.path }; }, getUri: async (o) => ({ uri: 'file:///cache/' + o.path }) },
             Share: { share: async (o) => onShare(o) },
         },
@@ -349,7 +353,35 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         if (!stamped || !notes.includes('success')) throw new Error('a completed share must record the timestamp and say so');
     });
 
-    await test('Android app: Backup All writes to the public Documents folder — no share sheet — and says where it went', async () => {
+    await test('Android app: Backup All opens the system Save As dialog; a chosen location gets the backup and the timestamp', async () => {
+        let asked = null; let written = 0; let stamped = null;
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: (fn) => { const st = { settings: {} }; fn(st); stamped = st.settings.lastFileBackupTimestamp; } },
+            showNotification: () => {}, showConfirmationModal: () => {}, showPromptModal: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.601' }
+        });
+        const stub = nativeStub({ platform: 'android', onSaveAs: (o) => { asked = o; return { saved: true, uri: 'content://docs/42' }; }, onWrite: () => { written++; }, onShare: () => { written++; } });
+        const { result, clicked } = await captureBackupDownloadAsync(() => withCapacitor(stub, () => withSavePicker(null, () => mod.saveBackupFileAs())));
+        if (result !== 'saved') throw new Error(`expected 'saved', got ${JSON.stringify(result)}`);
+        if (!asked || !/^mini-cycle-backup-.*\.json$/.test(asked.fileName) || !asked.data.includes('miniCycleData')) throw new Error('the dialog must be offered the dated backup: ' + JSON.stringify(asked && asked.fileName));
+        if (written !== 0 || clicked !== 0) throw new Error('a chosen location must not ALSO write to Documents, share, or download');
+        if (!stamped) throw new Error('a saved backup records the timestamp');
+    });
+
+    await test('Android app: backing out of the Save As dialog is an answer — nothing written anywhere, cancelled reported', async () => {
+        let elsewhere = 0; let stamped = false;
+        mod.setBackupRestoreManagerDependencies({
+            AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => { stamped = true; } },
+            showNotification: () => {}, showConfirmationModal: () => {}, showPromptModal: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn), AppMeta: { version: '2.601' }
+        });
+        const stub = nativeStub({ platform: 'android', onSaveAs: () => ({ cancelled: true }), onWrite: () => { elsewhere++; }, onShare: () => { elsewhere++; } });
+        const { result, clicked } = await captureBackupDownloadAsync(() => withCapacitor(stub, () => withSavePicker(null, () => mod.saveBackupFileAs())));
+        if (result !== 'cancelled') throw new Error(`expected 'cancelled', got ${JSON.stringify(result)} — the factory reset would wipe without a backup`);
+        if (elsewhere !== 0 || clicked !== 0 || stamped) throw new Error('a declined dialog must not fall through to Documents, the share sheet, a download, or a timestamp');
+    });
+
+    await test('Android app without the SaveAs plugin: Backup All writes to the public Documents folder — no share sheet — and says where it went', async () => {
         let written = null; let shared = 0; let stamped = null; const msgs = [];
         mod.setBackupRestoreManagerDependencies({
             AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: (fn) => { const st = { settings: {} }; fn(st); stamped = st.settings.lastFileBackupTimestamp; } },
@@ -366,7 +398,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         if (!msgs.some(m => m.includes('Documents/') && m.includes(written.path))) throw new Error('the notice must name the file in Documents, got ' + JSON.stringify(msgs));
     });
 
-    await test('Android app: if Documents refuses the write (Android 10), the share sheet is still offered', async () => {
+    await test('Android app without the SaveAs plugin: if Documents refuses the write (Android 10), the share sheet is still offered', async () => {
         let shared = null;
         mod.setBackupRestoreManagerDependencies({
             AppState: { isReady: () => true, get: () => makeExportableState(1), forceSave: () => {}, update: () => {} },

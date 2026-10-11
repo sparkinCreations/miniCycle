@@ -16,7 +16,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
 // is the destination picker on those platforms — same path the routine export
 // and share already take.
-import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative } from '../platform/capacitorBridge.js';
+import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative, saveFileAsNative } from '../platform/capacitorBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
 // testing modal's IndexedDB restore.
@@ -526,12 +526,21 @@ async function shareBackupNative(AppState, fileName, defaultName) {
     const file = buildBackupFile(AppState, fileName, defaultName);
     if (!file) return false;
 
-    // Android: "download to device". The share sheet there lists apps, not a
-    // folder, and users read it as being made to share (reported Oct 2026). The
-    // public Documents folder is what a download means on Android, and it shows
-    // up in the Files app. If the write is refused (Android 10 without legacy
-    // storage), the share sheet below is still a way out.
+    // Android, in order of preference:
+    //  1. the system Save As dialog (app-local SaveAs plugin) — the user picks
+    //     the folder, Drive, SD card; a closed dialog is 'cancelled', nothing
+    //     else runs (the reset's safety gate relies on that answer);
+    //  2. the public Documents folder — "download to device", visible in the
+    //     Files app, when the plugin is unavailable or the write failed;
+    //  3. the share sheet below, which lists apps rather than a folder and
+    //     read as "share this" (reported Oct 2026), as the last resort.
     if (getNativePlatform() === 'android') {
+        const picked = await saveFileAsNative({ data: file.text, fileName: file.name });
+        if (picked.handled) {
+            if (picked.cancelled) return 'cancelled';
+            markBackupSaved(AppState);
+            return 'saved';
+        }
         const saved = await saveFileToDocumentsNative({ data: file.text, fileName: file.name });
         if (saved.handled) {
             _deps.showNotification('✅ ' + getLabel('notify.backupSavedToDocuments', { vars: { name: file.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);

@@ -416,6 +416,32 @@ export async function shareRoutineFileNative({ data, fileName, title, text }) {
 }
 
 /**
+ * The system "Save As" dialog (Android: Storage Access Framework create-
+ * document intent), so the user picks WHERE a file goes — any folder, Drive,
+ * SD card. Backed by the app-local SaveAs plugin in the Android shell
+ * (mobile/android/.../SaveAsPlugin.java); not registered on iOS, where
+ * isPluginAvailable('SaveAs') is false and callers use the share sheet.
+ *
+ * @returns {Promise<{handled: boolean, cancelled?: boolean, uri?: string}>}
+ *   handled=false when the plugin is unavailable or the write failed, so the
+ *   caller can fall back; cancelled=true when the user backed out (an answer,
+ *   not a failure — do not fall back to something they just declined).
+ */
+export async function saveFileAsNative({ data, fileName, mimeType = 'application/json' }) {
+    const SaveAs = getPlugin('SaveAs');
+    if (!SaveAs) return { handled: false };
+    try {
+        const result = await SaveAs.saveFile({ data, fileName, mimeType });
+        if (result?.cancelled) return { handled: true, cancelled: true };
+        if (result?.saved) return { handled: true, uri: result.uri };
+        return { handled: false };
+    } catch (e) {
+        console.warn('[capacitorBridge] Save As failed:', e);
+        return { handled: false };
+    }
+}
+
+/**
  * Write a file into the device's PUBLIC Documents folder — the "download to
  * device" the Android app has no other way to do: its WebView drops
  * <a download> clicks, and the share sheet offers apps, not a folder. On
