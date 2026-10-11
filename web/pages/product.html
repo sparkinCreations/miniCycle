@@ -132,6 +132,10 @@
         @media (min-width: 768px) { .header-subtitle { padding: 6px 20px 2px; } }
         .logo-tagline { display: inline-block; font-family: var(--font-heading); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); line-height: 1.2; }
         @media (min-width: 768px) { .logo-tagline { font-size: 0.65rem; letter-spacing: 0.14em; } }
+        /* The tagline shares the header row with the Try Now button on phones (its
+           left edge is ~196px in at 320px wide), so the line must stay short AND
+           single-line: 27 chars measured at 175px; the tighter tracking buys margin. */
+        @media (max-width: 400px) { .logo-tagline { letter-spacing: 0.06em; white-space: nowrap; } }
         .logo-link { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--color-white); }
         .logo-link img { height: 36px; width: auto; }
         .logo-wordmark { height: 28px; width: auto; filter: brightness(0) invert(1); }
@@ -551,7 +555,7 @@
             <a href="../miniCycle.html" class="cta-btn" data-track="app-launch">Try Now</a>
         </div>
         <div class="header-subtitle">
-            <span class="logo-tagline">Reusable checklists for routines and repeatable procedures</span>
+            <span class="logo-tagline">Reusable routine checklists</span>
         </div>
     </header>
 
