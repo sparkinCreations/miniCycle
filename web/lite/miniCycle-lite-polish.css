@@ -1044,3 +1044,91 @@ body.dark-mode .complete-all-btn:hover {
   outline: 2px solid #ffffff;
   outline-offset: 3px;
 }
+
+/* ─── Toast notifications ────────────────────────────────────────────
+   The toast DOM comes from the inline mc-toast script (web) /
+   popup-notifications.js (Chrome) — styled here only, so no inline
+   script (and no CSP hash) changes. Softer slate card, rounder corners,
+   a slide-down entrance, and a small status dot in the same four colors
+   instead of the 6px left bar + emoji icon (emoji render differently on
+   every device). Reduced-motion users get no animation via the base
+   sheet's global prefers-reduced-motion rule. */
+.mc-toast {
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+  background: rgba(28, 31, 44, 0.96);
+  color: #f2f4f8;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-left-width: 1px;
+  border-radius: 14px;
+  padding: 10px 10px 10px 14px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.28), 0 2px 6px rgba(0, 0, 0, 0.18);
+  font: 500 14px/1.35 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-animation: mc-toast-in 0.22s ease-out;
+  animation: mc-toast-in 0.22s ease-out;
+}
+
+.mc-toast.info,
+.mc-toast.success,
+.mc-toast.warning,
+.mc-toast.error {
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Status dot replaces the emoji (hidden with font-size: 0). */
+.mc-toast .mc-toast-icon {
+  -webkit-flex-shrink: 0;
+  -ms-flex-negative: 0;
+  flex-shrink: 0;
+  width: 9px;
+  height: 9px;
+  margin: 0 12px 0 0;
+  border-radius: 50%;
+  font-size: 0;
+  line-height: 0;
+  overflow: hidden;
+  background: #4ea1ff;
+}
+.mc-toast.success .mc-toast-icon { background: #2ecc71; box-shadow: 0 0 0 3px rgba(46, 204, 113, 0.18); }
+.mc-toast.info .mc-toast-icon    { background: #4ea1ff; box-shadow: 0 0 0 3px rgba(78, 161, 255, 0.18); }
+.mc-toast.warning .mc-toast-icon { background: #f1c40f; box-shadow: 0 0 0 3px rgba(241, 196, 15, 0.18); }
+.mc-toast.error .mc-toast-icon   { background: #e74c3c; box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.18); }
+
+.mc-toast .mc-toast-close {
+  -webkit-flex-shrink: 0;
+  -ms-flex-negative: 0;
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  margin-left: 8px;
+  padding: 0;
+  border-radius: 50%;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 18px;
+  line-height: 26px;
+  text-align: center;
+  -webkit-transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.mc-toast .mc-toast-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+/* Dark mode: a touch lighter + stronger edge so it lifts off the dark page. */
+body.dark-mode .mc-toast {
+  background: rgba(44, 47, 64, 0.97);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+@-webkit-keyframes mc-toast-in {
+  from { opacity: 0; -webkit-transform: translateY(-8px); }
+  to   { opacity: 1; -webkit-transform: translateY(0); }
+}
+@keyframes mc-toast-in {
+  from { opacity: 0; transform: translateY(-8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
