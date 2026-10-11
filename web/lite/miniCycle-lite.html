@@ -359,7 +359,7 @@ window.addEventListener('appinstalled', function () {
       <option value="manual-cycle">Manual Cycle ✔︎↻</option>
       <option value="todo-mode">To-Do Mode ✓</option>
     </select>
-    <span id="mode-selector-desc" class="sr-only">Auto Cycle resets tasks automatically, Manual Cycle requires button press, To-Do Mode deletes completed tasks</span>
+    <span id="mode-selector-desc" class="sr-only">Auto Cycle resets tasks automatically when all are checked. Manual Cycle resets them when you press Start New Cycle. To-Do Mode removes checked tasks when you press Clear Completed.</span>
   </div>
   <div class="header-branding">
     <img src="../assets/images/logo/logo.png" alt="miniCycle Logo" class="header-logo" onerror="this.style.display='none';">
@@ -430,7 +430,7 @@ window.addEventListener('appinstalled', function () {
       <!-- ✅ NEW: Try Full Version button -->
       <li>
         <button id="try-full-version" tabindex="0" data-tooltip="Switch to the full-featured miniCycle version (may be slower on older devices)">
-          <img src="../assets/images/logo/logo.png" alt="" aria-hidden="true" class="menu-icon-logo">
+          <img src="../assets/images/logo/minicycle_logo_icon.png" alt="" aria-hidden="true" class="menu-icon-logo menu-icon-app">
           <span>Try Full Version</span>
         </button>
       </li>
@@ -485,17 +485,21 @@ window.addEventListener('appinstalled', function () {
               aria-label="Complete all tasks"
               tabindex="0"
               data-tooltip="Complete all tasks and start a new cycle">Complete All</button>
-      
+
       <div id="help-window" class="help-window" role="complementary" aria-label="Help information">
         <h4>📱 miniCycle Lite</h4>
-        <p>Optimized for maximum compatibility with older devices.</p>
-        <p><strong>Auto mode:</strong> Tasks reset automatically when all complete</p>
-        <p><strong>Manual mode:</strong> Task reset by complete button</p>
-        <p><strong>To-Do mode:</strong> Checked tasks removed by complete button</p>
+        <p>Optimized for older devices.</p>
+        <!-- data-help-mode matches the mode selector values; updateHelpForMode()
+             dims the modes not in use. Button names must match the Complete
+             All button's text (getCompleteButtonText). -->
+        <p class="help-mode" data-help-mode="auto-cycle"><strong>Auto Cycle:</strong> Tasks reset when all are checked</p>
+        <p class="help-mode" data-help-mode="manual-cycle"><strong>Manual Cycle:</strong> Tasks reset with Start New Cycle</p>
+        <p class="help-mode" data-help-mode="todo-mode"><strong>To-Do:</strong> Clear Completed removes checked tasks</p>
+        <p class="help-extra">Completed cycles and cleared tasks earn Stats badges.</p>
+        <p class="help-tips">Hold a task to drag it into place</p>
       </div>
     </div>
   </div>
-
   <!-- ✅ Quick action buttons with tooltips -->
   <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode" tabindex="0" data-tooltip="Switch between light and dark themes">🌓</button>
   <button id="quick-help-toggle" aria-label="Toggle help window" title="Toggle help window" tabindex="0" data-tooltip="Show or hide help information">❓</button>
@@ -558,15 +562,22 @@ window.addEventListener('appinstalled', function () {
 
 <!-- ✅ Undo/Redo buttons with tooltips -->
 <footer id="footer-container" role="contentinfo">
-  <div id="undo-redo-buttons" class="undo-container" role="toolbar" aria-label="Undo and redo actions">
-    <button id="undo-btn" class="undo-redo-btn" style="display: none;" aria-label="Undo last action" tabindex="0" data-tooltip="Undo your last action">Undo</button>
-    <button id="redo-btn" class="undo-redo-btn" style="display: none;" aria-label="Redo last action" tabindex="0" data-tooltip="Redo your last undone action">Redo</button>
-  </div>
+  <!-- ✅ One footer row: [Undo] [Tasks|Stats] [Redo]
+       The two side slots are equal flex:1 columns, so the pill stays centered
+       whether or not undo/redo are showing (the JS toggles their display). -->
+  <div class="footer-nav-row">
+    <div class="undo-slot">
+      <button id="undo-btn" class="undo-redo-btn" style="display: none;" aria-label="Undo last action" tabindex="0" data-tooltip="Undo your last action">Undo</button>
+    </div>
     <!-- ✅ Navigation dots with tooltips -->
-<div class="navigation-dots" role="tablist" aria-label="View navigation">
-  <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
-  <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
-</div>
+    <div class="navigation-dots" role="tablist" aria-label="View navigation">
+      <button class="dot active" data-view="tasks" role="tab" aria-selected="true" aria-controls="task-view" aria-label="Tasks view" tabindex="0" data-tooltip="Switch to tasks view"></button>
+      <button class="dot" data-view="stats" role="tab" aria-selected="false" aria-controls="stats-panel" aria-label="Statistics view" tabindex="0" data-tooltip="Switch to statistics view"></button>
+    </div>
+    <div class="redo-slot">
+      <button id="redo-btn" class="undo-redo-btn" style="display: none;" aria-label="Redo last action" tabindex="0" data-tooltip="Redo your last undone action">Redo</button>
+    </div>
+  </div>
   <ul class="footer-links">
     <li>&copy; 2026 <a href="https://sparkincreations.com" target="_blank" rel="noopener">sparkinCreations</a></li>
     <li>• <a href="../pages/product.html" class="footer-product-link">miniCycle Lite</a> •</li>
@@ -601,6 +612,53 @@ window.addEventListener('appinstalled', function () {
     <div class="add-task-modal-footer">
       <span id="tasks-added-count" class="tasks-added-count"></span>
       <button id="done-adding-tasks" class="done-adding-btn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Edit Task Modal (replaces the browser prompt) — reuses the Add Tasks
+     modal classes so it shares its look, animation and dark mode -->
+<div id="edit-task-dialog" class="add-task-modal" role="dialog" aria-modal="true" aria-labelledby="edit-task-dialog-title" style="display: none;">
+  <div class="add-task-modal-overlay"></div>
+  <div class="add-task-modal-content">
+    <div class="add-task-modal-header">
+      <h3 id="edit-task-dialog-title">Edit Task</h3>
+      <button id="close-edit-task-dialog" class="add-task-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="add-task-modal-body">
+      <label for="editTaskInput" class="sr-only">Task name</label>
+      <input type="text"
+             id="editTaskInput"
+             class="modal-task-input edit-task-input"
+             maxlength="100"
+             autocomplete="off"
+             spellcheck="true">
+    </div>
+    <div class="add-task-modal-footer">
+      <span id="edit-task-char-count" class="tasks-added-count" aria-live="polite"></span>
+      <div class="edit-task-actions">
+        <button id="cancel-edit-task" class="modal-cancel-btn">Cancel</button>
+        <button id="save-edit-task" class="done-adding-btn">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ✅ Confirm Modal (replaces browser confirm) — one dialog for every
+     "are you sure?"; showConfirmModal() fills the title, message and buttons -->
+<div id="confirm-dialog" class="add-task-modal" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title" aria-describedby="confirm-dialog-message" style="display: none;">
+  <div class="add-task-modal-overlay"></div>
+  <div class="add-task-modal-content confirm-dialog-content">
+    <div class="add-task-modal-header">
+      <h3 id="confirm-dialog-title">Are you sure?</h3>
+      <button id="close-confirm-dialog" class="add-task-modal-close" aria-label="Close">&times;</button>
+    </div>
+    <div class="add-task-modal-body">
+      <p id="confirm-dialog-message" class="confirm-dialog-message"></p>
+    </div>
+    <div class="add-task-modal-footer confirm-dialog-footer">
+      <button id="confirm-dialog-cancel" class="modal-cancel-btn">Cancel</button>
+      <button id="confirm-dialog-ok" class="done-adding-btn">OK</button>
     </div>
   </div>
 </div>

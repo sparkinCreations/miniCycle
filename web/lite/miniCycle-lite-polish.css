@@ -89,7 +89,7 @@ body.focus-mode #quick-dark-toggle,
 body.focus-mode .footer-links,
 body.focus-mode .add-task-button-container,
 body.focus-mode .navigation-dots,
-body.focus-mode .undo-container,
+body.focus-mode .footer-nav-row,
 body.focus-mode #footer-container {
   display: none !important;
 }
@@ -356,17 +356,14 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
    container hug the viewport edges and reads as too wide / not
    centered relative to the narrower .task max-width (360px).
    Cap the width so the container has visible breathing room on the
-   sides, and trim max-height so it doesn't take up most of the
-   viewport vertically. Focus-mode rules above override this with
-   their own width: 96% / max-width: 840px. */
+   sides. Height is NOT capped here any more: #task-view is anchored
+   under the mode selector (see "Task view: anchor" below) and its
+   max-height decides how far the list grows before it scrolls.
+   Focus-mode rules above override this with their own width: 96% /
+   max-width: 840px. */
 @media (max-width: 480px) {
   body:not(.focus-mode) .task-list-container {
     max-width: 380px !important;
-    /* Aggressive cap so the container is visibly shorter — the
-       previous 50vh wasn't visibly changing the layout because the
-       natural content height didn't reach it. 280px shows roughly
-       3 tasks before scrolling kicks in. */
-    max-height: 280px !important;
     margin-left: auto !important;
     margin-right: auto !important;
   }
@@ -375,43 +372,524 @@ body.dark-mode #thank-you-message.feedback-error-block .feedback-error-body {
     margin-left: auto !important;
     margin-right: auto !important;
   }
-  /* Push undo/redo above the Tasks/Stats pill. The base lite mobile
-     override puts undo at bottom: 50px; the pill sits at bottom: 25px
-     with ~23px height, so undo overlapped the pill by ~2px. 60px
-     leaves a small ~12px gap — close enough to feel grouped without
-     touching. */
-  body:not(.focus-mode) .undo-container {
-    bottom: 60px !important;
-  }
-  /* Keep "Undo (1)" / "Redo (1)" on a single line. Without this the
-     "(1)" badge wrapped to a second line on narrow viewports, making
-     each button ~46px tall instead of ~28px. */
-  body:not(.focus-mode) .undo-redo-btn {
-    white-space: nowrap !important;
-  }
-  /* Shrink task pills on mobile — base lite .task uses min-height: 50px
-     which rendered at ~56px including the 24px checkbox. Drop to 34px
-     for a more compact list. box-sizing: border-box is required: the
-     base .task uses content-box, so width: 100% + padding overflows
-     the parent .task-list by ~20px (visibly off-center, edge-hugging).
-     max-width: 280px ensures visible breathing room inside the
-     container even on the narrowest viewports (<400px). */
+  /* Task pills on mobile — base lite .task uses min-height: 50px
+     which rendered at ~56px including the 24px checkbox. 42px keeps
+     the list compact (34px was cramped once the text grew to 16px;
+     48px felt tall). The whole row is the tap target for completing a
+     task, so it stays comfortably tappable.
+     box-sizing: border-box is required: the base .task uses
+     content-box, so width: 100% + padding overflows the parent
+     .task-list by ~20px (visibly off-center, edge-hugging).
+     max-width: 92% (was a fixed 280px) keeps breathing room inside the
+     container on any phone width while giving the text more room. */
   body:not(.focus-mode) .task-list .task,
   body:not(.focus-mode) .task-list li {
     box-sizing: border-box !important;
-    min-height: 34px !important;
-    padding: 4px 10px !important;
-    margin-bottom: 6px !important;
-    max-width: 280px !important;
+    min-height: 42px !important;
+    padding: 4px 12px !important;
+    margin-bottom: 8px !important;
+    max-width: 92% !important;
   }
   /* The three-dots options button defaults to 44px tall (WCAG tap
      target), which forced the task pill to ~52px even with min-height
-     above. Trim padding to bring the button closer to ~32px while
-     still being comfortably tappable. */
+     above. Trim padding to bring the button to ~32px (it set the row
+     height at 36px) while staying comfortably tappable. */
   body:not(.focus-mode) .task-list .three-dots-btn {
     height: auto !important;
     min-height: 0 !important;
-    padding: 4px 8px !important;
+    padding: 2px 8px !important;
     font-size: 16px !important;
   }
+}
+
+/* ─── Completed checkbox ─────────────────────────────────────────────
+   Replaces the old "✔" text glyph (base styles ~line 656), which was
+   nudged into place with top/left offsets and so rendered off-center
+   and differently per device font — some old Androids show it as a
+   colour emoji. The tick is now an inline SVG background: centered by
+   background-position at every checkbox size, no font dependency.
+   Browsers without SVG backgrounds still get the solid green fill.
+   Row state comes from .task-complete, toggled in updateProgressBar()
+   (no :has() on the browsers Lite exists for). */
+.task input[type="checkbox"]:checked {
+  background-color: #3fa34d;
+  border-color: #3fa34d;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.4l2.6 2.6L12 5.6' fill='none' stroke='white' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 80%;
+  -webkit-animation: lite-check-pop 0.28s ease-out;
+  animation: lite-check-pop 0.28s ease-out;
+}
+
+/* Retire the glyph (base sets content on both :after rules). */
+.task input[type="checkbox"]:checked:after {
+  content: none;
+  display: none;
+}
+
+.task input[type="checkbox"]:not(:checked):hover {
+  border-color: #3fa34d;
+}
+
+body.dark-mode .task input[type="checkbox"]:checked {
+  background-color: #34a065;
+  border-color: #34a065;
+}
+
+@-webkit-keyframes lite-check-pop {
+  0%   { -webkit-transform: scale(0.8); }
+  55%  { -webkit-transform: scale(1.14); }
+  100% { -webkit-transform: scale(1); }
+}
+@keyframes lite-check-pop {
+  0%   { transform: scale(0.8); }
+  55%  { transform: scale(1.14); }
+  100% { transform: scale(1); }
+}
+
+/* Done rows step back so what's left stands out. */
+.task .task-text {
+  -webkit-transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, color 0.2s ease;
+}
+.task.task-complete .task-text {
+  opacity: 0.55;
+  text-decoration: line-through;
+}
+
+/* Keyboard ring only — a tap/click no longer leaves a blue outline on
+   the checkbox. Browsers without :focus-visible drop this whole rule
+   and keep the base :focus outline, so keyboard users never lose it. */
+.task input[type="checkbox"]:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── Task text ──────────────────────────────────────────────────────
+   Friendlier, larger task text. The system UI font reads softer than
+   Arial and is what each platform's own apps use; Arial stays as the
+   fallback for old devices with no system-ui alias. The base 480px
+   breakpoint dropped text to 14px — too small to read at a glance on
+   a phone — so mobile now gets 16px, the size iOS/Android treat as
+   body text. Desktop (>=1024px) keeps its own 20px rule. */
+.task .task-text {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
+  color: #2b2f3a;
+}
+
+body.dark-mode .task .task-text {
+  color: #eceef5;
+}
+
+@media (max-width: 480px) {
+  .task .task-text {
+    font-size: 16px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .task .task-text {
+    font-size: 20px;
+  }
+}
+
+/* ─── Footer row: [Undo] [Tasks|Stats] [Redo] ────────────────────────
+   Undo/redo used to float in their own fixed container above the pill,
+   where they collided with the Complete All / Clear Completed button.
+   They now share the pill's row. The row takes over the pill's old
+   absolute positioning (bottom 35px, 25px at <=768px — see the
+   UNIFIED Navigation Dots block in miniCycle-lite-styles.css), and the
+   pill drops back into normal flow inside it. Side slots are equal
+   flex:1 columns, so the pill stays dead-center whether undo/redo are
+   shown or hidden. */
+.footer-nav-row {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 35px;
+  z-index: 1;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+  -webkit-align-items: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+.footer-nav-row .navigation-dots {
+  position: static !important;
+  left: auto !important;
+  bottom: auto !important;
+  -webkit-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+  -webkit-box-flex: 0;
+  -webkit-flex: 0 0 auto;
+  -ms-flex: 0 0 auto;
+  flex: 0 0 auto;
+}
+
+.undo-slot,
+.redo-slot {
+  -webkit-box-flex: 1;
+  -webkit-flex: 1 1 0%;
+  -ms-flex: 1 1 0%;
+  flex: 1 1 0%;
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+/* Slightly wider gap than the 4px between Tasks and Stats. */
+.undo-slot {
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  padding-right: 10px;
+}
+
+.redo-slot {
+  -webkit-box-pack: start;
+  -webkit-justify-content: flex-start;
+  -ms-flex-pack: start;
+  justify-content: flex-start;
+  padding-left: 10px;
+}
+
+/* Same pill style as the Stats button (see .navigation-dots button.dot
+   above), one step smaller so it reads as secondary. !important because the base sheet sizes .undo-redo-btn at three
+   breakpoints, including a larger desktop one. white-space keeps the
+   "(3)" count from wrapping onto a second line. */
+.footer-nav-row .undo-redo-btn {
+  padding: 3px 10px !important;
+  margin: 0 !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  line-height: 1 !important;
+  letter-spacing: 0.02em !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 255, 255, 0.55) !important;
+  background: rgba(0, 0, 0, 0.28) !important;
+  color: #ffffff !important;
+  white-space: nowrap !important;
+  -webkit-transform: none !important;
+  -ms-transform: none !important;
+  transform: none !important;
+}
+
+.footer-nav-row .undo-redo-btn:hover {
+  background: rgba(0, 0, 0, 0.42) !important;
+  border-color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  .footer-nav-row {
+    bottom: 25px;
+  }
+}
+
+/* On phones the full row (~300px) is wider than the gap between the
+   ❓ and theme corner buttons, which are fixed at bottom: 20px and
+   overlapped Undo/Redo by ~17px each at 375px. Lift them to sit just
+   above the row instead (row top ≈ 56px from the bottom). The space
+   between the progress bar and the footer is empty, so nothing else
+   moves. */
+@media (max-width: 480px) {
+  body:not(.focus-mode) #quick-help-toggle,
+  body:not(.focus-mode) #quick-dark-toggle {
+    bottom: 66px !important;
+  }
+}
+
+/* ─── Slide arrows: sit in the gutter, never on the panel ────────────
+   The base sheet pins the arrows at left/right: 5%. From 1024px up the
+   task view grows to 860px (desktop block in miniCycle-lite-styles.css),
+   so at 1024px the panel spans 82–942px while the 62px arrow spanned
+   51–113px — a ~30px overlap. Center each arrow in the empty gutter
+   instead: gutter center = (W − 860) / 4 from the edge, minus half the
+   62px arrow → 25% − 246px. That leaves ≥10px clearance at 1024px and
+   grows with the window. Below 1024px the panel is 550px and the 5%
+   position already clears it (arrows are hidden under 950px). */
+@media (min-width: 1024px) {
+  #slide-right {
+    left: calc(25% - 246px);
+  }
+  #slide-left {
+    right: calc(25% - 246px);
+  }
+}
+
+/* ─── Edit Task modal ────────────────────────────────────────────────
+   #edit-task-dialog reuses the Add Tasks modal classes (.add-task-modal*,
+   .modal-task-input, .done-adding-btn), so only what differs lives here.
+   (The base sheet's .edit-task-modal rules are for an older, unused
+   markup — nothing renders that class.) */
+.edit-task-input {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.edit-task-actions {
+  display: -webkit-box;
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  gap: 8px;
+}
+
+.modal-cancel-btn {
+  padding: 10px 20px;
+  background: transparent;
+  color: #444a5a;
+  border: 1px solid #cfd3dc;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  -webkit-transition: background 0.2s;
+  transition: background 0.2s;
+}
+
+.modal-cancel-btn:hover {
+  background: #eceef3;
+}
+
+body.dark-mode .modal-cancel-btn {
+  color: #e0e2ea;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .modal-cancel-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.edit-task-char-count-warn {
+  color: #c0392b !important;
+}
+
+/* ─── Confirm modal ──────────────────────────────────────────────────
+   #confirm-dialog (showConfirmModal in the scripts) reuses the Add Tasks
+   modal shell like the Edit modal does. Narrower than the 450px add
+   modal — it only holds a sentence. pre-line keeps the \n breaks in
+   longer messages (Try Full Version) while textContent keeps it safe. */
+.confirm-dialog-content {
+  max-width: 380px;
+}
+
+.confirm-dialog-message {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+  color: #3a3f4d;
+  white-space: pre-line;
+}
+
+body.dark-mode .confirm-dialog-message {
+  color: #dfe1ea;
+}
+
+.add-task-modal-footer.confirm-dialog-footer {
+  -webkit-box-pack: end;
+  -webkit-justify-content: flex-end;
+  -ms-flex-pack: end;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Destructive confirms (delete, reset) get red instead of green. */
+.done-adding-btn.modal-danger-btn {
+  background: #d63c4a;
+}
+
+.done-adding-btn.modal-danger-btn:hover {
+  background: #b92f3c;
+}
+
+/* ─── Task row height (tablet + desktop) ─────────────────────────────
+   Slightly shorter rows: 56px → 48px. The base .task is content-box,
+   so height = min-height + vertical padding: tablet 50 + 3·2 → 42 + 3·2,
+   desktop (>=1024px block in the base sheet) 44 + 6·2 → 40 + 4·2.
+   Content still fits: tallest item is the 32px ⋯ button.
+   Phones (<=480px) are sized in the mobile block above. */
+.task {
+  min-height: 42px;
+}
+
+@media (min-width: 1024px) {
+  .task {
+    min-height: 40px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+}
+
+/* ─── Checkbox size ──────────────────────────────────────────────────
+   Slightly smaller circles to suit the shorter rows: 24px → 21px on
+   phones/tablets (base rule ~line 2880 of miniCycle-lite-styles.css),
+   32px → 28px on desktop (its >=1024px block). The tick is an 80%
+   background, so it scales with the circle automatically. */
+.task input[type="checkbox"] {
+  width: 21px;
+  height: 21px;
+}
+
+@media (min-width: 1024px) {
+  .task input[type="checkbox"] {
+    width: 28px;
+    height: 28px;
+    border-width: 2px;
+  }
+}
+
+/* ─── Try Full Version icon ──────────────────────────────────────────
+   Uses the blue-background app icon (minicycle_logo_icon.png, the same
+   one as the home-screen / manifest icon) so it reads as "the full app".
+   The PNG is 512×410, so cover + a small radius makes it a neat
+   app-icon tile instead of a letterboxed rectangle. Already precached
+   by service-worker.js, so it shows offline too. */
+.menu-icon-logo.menu-icon-app {
+  width: 22px;
+  height: 22px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+/* ─── Task view: anchor under the mode selector (phones/tablets) ─────
+   At <=768px the base sheet centers #task-view at top:60% with
+   translate(-50%,-50%), so the gap between the mode-selector row and
+   Add Tasks was just leftover space: ~63px with a full list at
+   500×730, far more with only a few tasks. Pin the panel just below
+   the selector row instead (fixed at top:90px, ~31px tall → bottom
+   ~121px), the same approach body.is-iphone already uses with its own
+   measured vars — so iPhones keep that rule, and focus mode keeps its
+   own layout.
+   max-height lets the list grow to fill the screen, stopping just
+   above the bottom controls (the list scrolls past that). Measured
+   from the 128px top:
+     phones  (<=480): ❓/theme buttons sit at bottom:66px, ~40px tall
+                      → panel ends 116px from the bottom → 100vh − 244px
+     tablets (481–768): corner buttons at bottom:20px, ~40px tall
+                      → panel ends 70px from the bottom → 100vh − 198px
+   (68% first is the fallback for browsers without calc().) */
+@media (max-width: 768px) {
+  body:not(.is-iphone):not(.focus-mode) #task-view,
+  body:not(.is-iphone):not(.focus-mode) #task-view.show {
+    top: 128px;
+    -webkit-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    transform: translateX(-50%);
+    max-height: 68%;
+    max-height: calc(100vh - 198px);
+  }
+
+  /* Keep the swipe-to-stats slide-out, minus the old vertical centering. */
+  body:not(.is-iphone):not(.focus-mode) #task-view.hide {
+    -webkit-transform: translate(-200%, 0);
+    -ms-transform: translate(-200%, 0);
+    transform: translate(-200%, 0);
+  }
+
+  /* The base sheet also caps the list itself at 600px, which stopped it
+     short on tall tablets. The panel's max-height above is the limit. */
+  body:not(.is-iphone):not(.focus-mode) .task-list-container {
+    max-height: none;
+  }
+
+  /* 15px above Add Tasks on top of the anchor gap read as too much. */
+  body:not(.is-iphone):not(.focus-mode) .add-task-button-container {
+    padding-top: 6px;
+    padding-bottom: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  body:not(.is-iphone):not(.focus-mode) #task-view,
+  body:not(.is-iphone):not(.focus-mode) #task-view.show {
+    max-height: calc(100vh - 244px);
+  }
+}
+
+/* ─── Task row width (481–1023px) ────────────────────────────────────
+   The base .task caps rows at 360px, which at ~520px wide left them
+   floating in a 468px list with ~50px of empty space each side. Use
+   92% of the list instead — the same proportion phones get in the
+   mobile block above — so rows grow with the screen (≈430px at 520px
+   wide, ≈460px at 768px where the list hits its 500px max). The base
+   .task is content-box with 4px side padding, hence − 8px. Desktop
+   (>=1024px) has its own 760px rule. */
+@media (min-width: 481px) and (max-width: 1023px) {
+  body:not(.focus-mode) .task-list .task {
+    max-width: 85%;
+    max-width: calc(92% - 8px);
+  }
+}
+
+/* ─── Drag-and-drop reordering ───────────────────────────────────────
+   .task-dragging is the lifted row (startTaskDrag in the scripts);
+   body.task-drag-active is set for the duration of a drag. */
+
+/* A long-press lifts the task, so it must not also select its text or
+   open the iOS copy callout. Task text is edited through the Edit modal,
+   so nothing is lost. */
+.task {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+.task.task-dragging {
+  position: relative;
+  z-index: 5;
+  -webkit-transform: scale(1.03);
+  -ms-transform: scale(1.03);
+  transform: scale(1.03);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.28);
+  opacity: 0.97;
+  cursor: -webkit-grabbing;
+  cursor: grabbing;
+}
+
+body.task-drag-active,
+body.task-drag-active * {
+  cursor: -webkit-grabbing !important;
+  cursor: grabbing !important;
+}
+
+/* No hover effects on rows the dragged task passes over. */
+body.task-drag-active .task:not(.task-dragging):hover {
+  -webkit-transform: none;
+  -ms-transform: none;
+  transform: none;
+}
+
+/* ─── Help popup ─────────────────────────────────────────────────────
+   Keeps the base sheet's look (translucent blue, inline under the
+   Complete All button). updateHelpForMode() marks the mode in use with
+   .help-mode-active; the other two are just dimmed — no extra colors. */
+.help-window .help-mode {
+  opacity: 0.6;
+}
+
+.help-window .help-mode.help-mode-active {
+  opacity: 1;
+}
+
+.help-window .help-tips {
+  margin-top: 4px;
+  font-style: italic;
+}
+
+.help-window .help-extra {
+  margin-top: 4px;
 }
