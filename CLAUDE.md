@@ -477,3 +477,4 @@ Seven facade modules load their sub-modules themselves instead of declaring them
 ## LITE VERSION
 
 - `lite/` is a **static, frozen fallback** for old devices — do NOT maintain, update, or sync it
+- Note (Oct 2026): Lite seems to be more popular with users than the full version.
