@@ -841,3 +841,85 @@ body.dark-mode .mobile-mode-selector-wrapper .mode-selector {
 .app-name {
   height: 26px !important;
 }
+
+/* ─── Progress bar gradient ──────────────────────────────────────────
+   Was a flat #82db8c. Now runs from that light green into the checkbox
+   green (#3fa34d), so the fill reads as "growing toward done". The
+   solid color first is the fallback for browsers without gradients;
+   -webkit- covers old Android/iOS. Rounded so the fill's leading edge
+   matches the track. */
+.progress-bar {
+  background-color: #6cc97a;
+  background-image: -webkit-linear-gradient(left, #8fe39a 0%, #3fa34d 100%);
+  background-image: linear-gradient(90deg, #8fe39a 0%, #3fa34d 100%);
+  border-radius: 8px;
+}
+
+/* ─── Complete All / Start New Cycle / Clear Completed button ────────
+   Modern pill in the same green family as before (#08c352): subtle
+   top-to-bottom gradient, soft colored shadow instead of the hard
+   border, and a small lift on hover / press-down on click. The
+   disabled state stays flat gray with no shadow. */
+.complete-all-btn {
+  background-color: #08c352;
+  background-image: -webkit-linear-gradient(top, #22d466 0%, #07a947 100%);
+  background-image: linear-gradient(180deg, #22d466 0%, #07a947 100%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  padding: 12px 26px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(0, 120, 40, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  -webkit-transition: -webkit-transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+}
+
+.complete-all-btn:hover {
+  background-color: #07b74c;
+  background-image: -webkit-linear-gradient(top, #2ade6f 0%, #06a043 100%);
+  background-image: linear-gradient(180deg, #2ade6f 0%, #06a043 100%);
+  -webkit-transform: translateY(-1px);
+  -ms-transform: translateY(-1px);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 120, 40, 0.42), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+}
+
+.complete-all-btn:active {
+  -webkit-transform: translateY(1px);
+  -ms-transform: translateY(1px);
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(0, 120, 40, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.complete-all-btn:disabled,
+.complete-all-btn:disabled:hover {
+  background-color: #8a929a;
+  background-image: none;
+  border-color: transparent;
+  box-shadow: none;
+  -webkit-transform: none;
+  -ms-transform: none;
+  transform: none;
+}
+
+body.dark-mode .complete-all-btn {
+  background-color: #198754;
+  background-image: -webkit-linear-gradient(top, #22a565 0%, #157347 100%);
+  background-image: linear-gradient(180deg, #22a565 0%, #157347 100%);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+body.dark-mode .complete-all-btn:hover {
+  background-image: -webkit-linear-gradient(top, #27b06c 0%, #167a4b 100%);
+  background-image: linear-gradient(180deg, #27b06c 0%, #167a4b 100%);
+}
+
+/* Keyboard focus ring only (browsers without :focus-visible drop this
+   rule and keep the default outline). */
+.complete-all-btn:focus:not(:focus-visible) {
+  outline: none;
+}
+.complete-all-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 3px;
+}
