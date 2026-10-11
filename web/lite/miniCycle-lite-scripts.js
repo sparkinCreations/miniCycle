@@ -1613,18 +1613,9 @@ function updateClearedBadges() {
 function handleTaskCompletionChange(event) {
   var checkbox = event.target;
 
-  // ✅ Save undo state (skip if bulk operation). This runs on "change", AFTER
-  // the browser has toggled the box, so a plain snapshot already holds the new
-  // state and undo restored it unchanged. Flip this task back to record the
-  // state from before the click.
+  // ✅ Save undo state before changing completion (skip if bulk operation)
   if (!isBulkOperation) {
-    var tasksBefore = getCurrentTasksState();
-    var taskItem = closestParent(checkbox, '.task');
-    var taskIndex = taskItem ? Array.prototype.indexOf.call(taskList.children, taskItem) : -1;
-    if (taskIndex !== -1 && tasksBefore[taskIndex]) {
-      tasksBefore[taskIndex].completed = !checkbox.checked;
-    }
-    saveUndoState(checkbox.checked ? 'complete' : 'uncomplete', tasksBefore);
+    saveUndoState(checkbox.checked ? 'complete' : 'uncomplete');
   }
 
   // ✅ If task was just completed (checked), trigger logo glow
@@ -1873,11 +1864,55 @@ function calculateTaskStats() {
 
 // ✅ ENHANCED updateCyclesCompleted function
 function updateCyclesCompleted(stats) {
-  // ✅ Display only. Cycles are counted in exactly one place, incrementCycleCount(),
-  // which every reset path calls. This function used to ALSO count a cycle whenever
-  // it saw every task checked, so each completed cycle was counted twice
-  // (measured: one auto cycle took the count from 7 to 9).
-  updateStatElement('mini-cycle-count', getCyclesCompletedFromStorage());
+  var cyclesCompleted = getCyclesCompletedFromStorage();
+  
+  // ✅ Check if we just completed a cycle
+  if (stats.total > 0 && stats.completed === stats.total) {
+    var lastCompletionCheck = null;
+    try {
+      lastCompletionCheck = localStorage.getItem('lastCompletionCheck');
+    } catch (e) {
+      console.warn('⚠️ Could not read lastCompletionCheck from storage');
+    }
+    
+    var currentTasksString = JSON.stringify(getAllTaskTexts());
+    
+    // ✅ Only count as new cycle if tasks have changed since last completion
+    if (lastCompletionCheck !== currentTasksString) {
+      cyclesCompleted++;
+      saveCyclesCompletedToStorage(cyclesCompleted);
+      
+      try {
+        localStorage.setItem('lastCompletionCheck', currentTasksString);
+      } catch (e) {
+        console.warn('⚠️ Could not save lastCompletionCheck to storage');
+      }
+      
+      // ✅ Celebrate cycle completion
+      setTimeout(function() {
+        showNotification('🎉 Cycle completed! Total cycles: ' + cyclesCompleted, 'success');
+      }, 500);
+    }
+  }
+  
+  updateStatElement('mini-cycle-count', cyclesCompleted);
+}
+
+// ✅ ENHANCED getAllTaskTexts function
+function getAllTaskTexts() {
+  var texts = [];
+  if (!taskList) return texts;
+  
+  var taskItems = taskList.children;
+  
+  for (var i = 0; i < taskItems.length; i++) {
+    var taskText = taskItems[i].querySelector('.task-text');
+    if (taskText && taskText.textContent) {
+      texts.push(taskText.textContent.trim());
+    }
+  }
+  
+  return texts.sort(); // Sort for consistent comparison
 }
 
 // ✅ ENHANCED storage functions with better error handling
@@ -2163,15 +2198,6 @@ function editTask(taskItem) {
 
 
 // ✅ ADD this new function to check for auto reset
-var pendingAutoResetTimer = null;
-
-function cancelPendingAutoReset() {
-  if (pendingAutoResetTimer) {
-    clearTimeout(pendingAutoResetTimer);
-    pendingAutoResetTimer = null;
-  }
-}
-
 function checkForAutoReset() {
   if (!taskList) return;
   
@@ -2191,18 +2217,13 @@ function checkForAutoReset() {
     var cycleMode = getCurrentCycleMode();
     
     if (cycleMode === 'auto' || cycleMode === 'auto-cycle') {
-      // ✅ One reset per completion: every checkbox change schedules a check,
-      // so without this guard a fast double event could queue two resets.
-      if (pendingAutoResetTimer) return;
-
       console.log('🔄 Auto-cycle mode: All tasks complete, triggering automatic reset...');
       
       // ✅ Brief celebration before reset
       showNotification('🎉 All tasks complete! Auto-resetting...', 'success');
-
+      
       // ✅ Auto reset after short delay for user feedback
-      pendingAutoResetTimer = setTimeout(function() {
-        pendingAutoResetTimer = null;
+      setTimeout(function() {
         resetAllTasks();
         incrementCycleCount();
         showCycleCompletionAnimation();
@@ -2256,16 +2277,6 @@ function checkCompleteAllButton() {
   }
 }
 
-// ✅ IE-compatible class toggle (classList is IE10+)
-function setTaskCompleteClass(taskItem, isComplete) {
-  var hasClass = /(^|\s)task-complete(\s|$)/.test(taskItem.className);
-  if (isComplete && !hasClass) {
-    taskItem.className += " task-complete";
-  } else if (!isComplete && hasClass) {
-    taskItem.className = taskItem.className.replace(/(^|\s)task-complete(\s|$)/g, " ").replace(/^\s+|\s+$/g, "");
-  }
-}
-
 function updateProgressBar() {
   if (!progressBar || !taskList) return;
   
@@ -2274,16 +2285,11 @@ function updateProgressBar() {
   
   for (var i = 0; i < taskList.children.length; i++) {
     var checkbox = taskList.children[i].querySelector("input[type='checkbox']");
-    var isComplete = !!(checkbox && checkbox.checked);
-    if (isComplete) {
+    if (checkbox && checkbox.checked) {
       completedTasks++;
     }
-    // ✅ Mirror completion onto the row so CSS can style it (no :has() on old browsers).
-    // Lives here because every completion path ends in updateProgressBar(), including
-    // the auto-cycle reset, which unchecks silently without a change event.
-    setTaskCompleteClass(taskList.children[i], isComplete);
   }
-
+  
   var percentage = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
   progressBar.style.width = percentage + "%";
 }
@@ -3119,9 +3125,7 @@ function showCompleteAllAnimation() {
 // ==========================================
 // ↩️ UNDO/REDO SYSTEM
 // ==========================================
-// tasksOverride: optional pre-change task snapshot, for callers that run
-// after the DOM has already changed (see handleTaskCompletionChange).
-function saveUndoState(action, tasksOverride) {
+function saveUndoState(action) {
   if (undoStack.length >= UNDO_LIMIT) {
     undoStack.shift(); // Remove oldest
   }
@@ -3129,8 +3133,7 @@ function saveUndoState(action, tasksOverride) {
   var state = {
     action: action,
     timestamp: Date.now(),
-    tasks: tasksOverride || getCurrentTasksState(),
-    stats: getStatsState()
+    tasks: getCurrentTasksState()
   };
   
   undoStack.push(state);
@@ -3138,48 +3141,6 @@ function saveUndoState(action, tasksOverride) {
   updateUndoRedoButtons(); // ✅ This should show the buttons
   
   console.log('💾 Undo state saved:', action, 'Stack size:', undoStack.length);
-}
-
-// ✅ Stats live in their own localStorage keys, outside the task list, so a
-// tasks-only snapshot let undo restore the checkboxes while the cycle count,
-// lifetime completions and To-Do cleared count kept their new values.
-// Celebrated-badge lists are included so undoing past a milestone lets it be
-// celebrated again when it is genuinely re-earned.
-var UNDO_STATS_KEYS = [
-  'miniCycleLiteCycles',
-  'miniCycleLiteLifetimeCompleted',
-  'miniCycleLiteToDoDeleted',
-  'miniCycleLite_celebratedBadges',
-  'miniCycleLite_celebratedClearedBadges'
-];
-
-function getStatsState() {
-  var stats = {};
-  try {
-    for (var i = 0; i < UNDO_STATS_KEYS.length; i++) {
-      stats[UNDO_STATS_KEYS[i]] = localStorage.getItem(UNDO_STATS_KEYS[i]);
-    }
-  } catch (e) {
-    console.warn('⚠️ Could not read stats for undo:', e);
-  }
-  return stats;
-}
-
-function restoreStatsState(stats) {
-  if (!stats) return; // Snapshot from before stats were tracked
-  try {
-    for (var i = 0; i < UNDO_STATS_KEYS.length; i++) {
-      var key = UNDO_STATS_KEYS[i];
-      if (stats[key] === null || stats[key] === undefined) {
-        localStorage.removeItem(key);
-      } else {
-        localStorage.setItem(key, stats[key]);
-      }
-    }
-  } catch (e) {
-    console.warn('⚠️ Could not restore stats for undo:', e);
-  }
-  updateStats();
 }
 
 function getCurrentTasksState() {
@@ -3243,16 +3204,11 @@ function performUndo() {
     return;
   }
   
-  // ✅ An auto-cycle reset may still be waiting out its celebration delay;
-  // undoing the final check must cancel it, or it fires after the undo.
-  cancelPendingAutoReset();
-
   // Save current state to redo stack
   var currentState = {
     action: 'redo',
     timestamp: Date.now(),
-    tasks: getCurrentTasksState(),
-    stats: getStatsState()
+    tasks: getCurrentTasksState()
   };
   redoStack.push(currentState);
   
@@ -3261,7 +3217,6 @@ function performUndo() {
   
   // Restore previous state
   restoreTasksState(previousState.tasks);
-  restoreStatsState(previousState.stats);
   
   // Update UI
   updateUndoRedoButtons();
@@ -3279,14 +3234,11 @@ function performRedo() {
     return;
   }
   
-  cancelPendingAutoReset();
-
   // Save current state to undo stack
   var currentState = {
     action: 'undo',
     timestamp: Date.now(),
-    tasks: getCurrentTasksState(),
-    stats: getStatsState()
+    tasks: getCurrentTasksState()
   };
   undoStack.push(currentState);
   
@@ -3295,7 +3247,6 @@ function performRedo() {
   
   // Restore next state
   restoreTasksState(nextState.tasks);
-  restoreStatsState(nextState.stats);
   
   // Update UI
   updateUndoRedoButtons();
