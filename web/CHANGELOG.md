@@ -1,3 +1,9 @@
+## [2.602] - 2026-10-11
+- docs(claude): note that Lite seems more popular with users than the full version
+- feat(lite): modern task UI, drag-to-reorder, in-app modals, and stats/undo fixes
+- revert(lite): restore the Lite app to its 2.600 state — in-progress edits were swept into the 2.601 release commit by mistake
+
+
 ## [2.601] - 2026-10-11
 - chore(tests): refresh the recorded test count
 - refactor(focus): Complete Cycle / Clear is its own fixed button; the eye only enters Focus View
