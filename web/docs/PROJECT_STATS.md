@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.598 |
+| **App Version** | 2.599 |
 | **Lite Version** | 2.092 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 167 |
-| **Total Tests** | 32 |
+| **Total Modules** | 162 |
+| **Total Tests** | 34 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1676 |
+| **JSDoc Blocks** | 1535 |
 | **Documentation Files** | 251 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -38,13 +38,13 @@
 
 | Directory | Count | Purpose |
 |-----------|-------|---------|
-| `boot/` | 9 | Boot sequence, orchestration, module loading |
+| `boot/` | 7 | Boot sequence, orchestration, module loading |
 | `core/` | 8 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 11 | Routine management, switching, migration |
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
-| `ui/` | 47 | Modals, menus, settings, onboarding, gestures |
-| `features/` | 13 | Themes, stats, achievements, history, reminders |
+| `ui/` | 45 | Modals, menus, settings, onboarding, gestures |
+| `features/` | 12 | Themes, stats, achievements, history, reminders |
 | `utils/` | 28 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
@@ -52,7 +52,7 @@
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **167** | |
+| **Total** | **162** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 32 |
+| Total Tests | 34 |
 | Test Files | 151 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

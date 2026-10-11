@@ -1,3 +1,8 @@
+## [2.599] - 2026-10-11
+- fix(backup): the iPhone / Android app saves backups through the share sheet; Task panel hover no longer sticks on touch
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.598] - 2026-10-11
 - chore(tests): refresh the recorded test count (new backup tests + journey)
 - feat(backup): Backup All Routines saves where the user chooses
