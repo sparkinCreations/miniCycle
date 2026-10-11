@@ -905,18 +905,19 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('runInitialSetup still shows onboarding when BOTH graduation flags are false (Reset Onboarding)', async () => {
-        // Reset Onboarding clears onboardingCompleted AND firstRunWelcomeDismissed,
-        // so the deliberate reset path must survive the fix above.
+    await test('runInitialSetup shows onboarding when Reset Onboarding asked for it (marker), once', async () => {
+        // Reset Onboarding clears onboardingCompleted AND firstRunWelcomeDismissed
+        // and sets onboardingResetRequested. The marker is what the gate reads —
+        // cleared flags alone also describe a migrated profile (next test).
         let onboardingShown = false;
-
+        const st = stateOf({
+            cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
+            activeCycle: 'Closing Shift Checklist',
+            reminders: { enabled: false },
+            settings: { onboardingCompleted: false, firstRunWelcomeDismissed: false, focusModeActive: false, onboardingResetRequested: true }
+        });
         setAppInitDependencies({
-            getMiniCycleState: () => stateOf({
-                cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
-                activeCycle: 'Closing Shift Checklist',
-                reminders: { enabled: false },
-                settings: { onboardingCompleted: false, firstRunWelcomeDismissed: false, focusModeActive: false }
-            }),
+            getMiniCycleState: () => st,
             createInitialSchema25Data: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({
@@ -924,12 +925,60 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 armFirstSessionLifecycle: () => {}
             }),
         });
-
         await appInit.runInitialSetup();
-
         if (!onboardingShown) {
             throw new Error('Reset Onboarding must still re-show onboarding');
         }
+        if (st.get().settings.onboardingResetRequested !== false) {
+            throw new Error('the reset marker must be consumed so the refresher shows once, not on every launch');
+        }
+    });
+
+    await test('runInitialSetup boots a migrated / restored profile straight to its routines (both flags false, no reset marker)', async () => {
+        // A profile migrated from schema 2.5 or restored from an old backup has
+        // routines but neither graduation flag. Until Oct 2026 that read as a
+        // reset: a Mac profile with 36 routines got "Welcome to miniCycle!" on
+        // every launch. Graduate it instead.
+        let onboardingShown = false; let armed = false;
+        const st = stateOf({
+            cycles: { 'Closing Shift Checklist': { title: 'Closing Shift Checklist', tasks: [] } },
+            activeCycle: 'Closing Shift Checklist',
+            reminders: { enabled: false },
+            settings: { onboardingCompleted: false, firstRunWelcomeDismissed: false, focusModeActive: false }
+        });
+        setAppInitDependencies({
+            getMiniCycleState: () => st,
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => {},
+            getOnboardingManager: () => ({
+                showOnboarding: () => { onboardingShown = true; },
+                armFirstSessionLifecycle: () => { armed = true; }
+            }),
+        });
+        await appInit.runInitialSetup();
+        if (onboardingShown) throw new Error('an established profile must not be sent back to the Welcome modal');
+        if (armed) throw new Error('Home View boot must not re-arm the first-session lifecycle');
+        if (st.get().settings.onboardingCompleted !== true) throw new Error('the profile must be graduated so later launches do not re-check');
+    });
+
+    await test('runInitialSetup still re-arms the first-session lifecycle when the app closed mid-first-run in Focus View', async () => {
+        let onboardingShown = false; let armed = false;
+        setAppInitDependencies({
+            getMiniCycleState: () => stateOf({
+                cycles: { 'Your First Routine': { title: 'Your First Routine', tasks: [] } },
+                activeCycle: 'Your First Routine',
+                reminders: { enabled: false },
+                settings: { onboardingCompleted: false, firstRunWelcomeDismissed: false, focusModeActive: true }
+            }),
+            createInitialSchema25Data: () => {},
+            showCycleCreationModal: () => {},
+            getOnboardingManager: () => ({
+                showOnboarding: () => { onboardingShown = true; },
+                armFirstSessionLifecycle: () => { armed = true; }
+            }),
+        });
+        await appInit.runInitialSetup();
+        if (onboardingShown || !armed) throw new Error('Focus View mid-first-run must re-arm the banner lifecycle, not show the modal');
     });
 
     await test('runInitialSetup recovers an existing user with no active routine by activating the first one', async () => {

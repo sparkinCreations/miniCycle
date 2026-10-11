@@ -250,6 +250,9 @@ export async function runOnboardingManagerTests(resultsDiv) {
         if (mockState.settings.onboardingCompleted !== false) {
             throw new Error('onboardingCompleted not set to false');
         }
+        if (mockState.settings.onboardingResetRequested !== true) {
+            throw new Error('Reset Onboarding must leave the one-shot marker the boot gate reads — cleared flags alone now mean "migrated profile", not "reset"');
+        }
     });
 
     await test('resetOnboarding handles AppState not ready (DI)', () => {

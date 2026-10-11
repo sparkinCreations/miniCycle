@@ -941,6 +941,10 @@ export class OnboardingManager {
                 state.settings.guidedTourStep = null;
             }
             state.settings.firstRunWelcomeDismissed = false;
+            // Explicit ask. The boot gate shows the refresher modal only for
+            // this marker; cleared flags alone also describe a profile migrated
+            // from old data, which must boot straight to its routines (Oct 2026).
+            state.settings.onboardingResetRequested = true;
         }, true);
 
         // Onboarding is deferred to the next app launch — the boot path in
