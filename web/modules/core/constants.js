@@ -927,6 +927,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Focus Mode (component classes used in JS for createElement.className) ----
     FOCUS_MODE_BTN: 'focus-mode-btn',
     FOCUS_MODE_EXIT_BTN: 'focus-mode-exit-btn',
+    FOCUS_ACTION_BTN: 'focus-action-btn',   /* Focus View's fixed Complete Cycle / Clear button (its own element since Oct 2026) */
     /* The enter / exit Focus View control's (eye / ×) slot BENEATH a carousel
        panel, hanging off its lower-right corner like the routine card's
        .progress-focus-row. The Task and Stats panels get it appended by
@@ -1515,6 +1516,7 @@ export const DOM_IDS = Object.freeze({
     MAIN_MENU_BACKDROP: 'main-menu-backdrop',
     FOCUS_MODE_BTN: 'focus-mode-btn',
     FOCUS_MODE_EXIT_BTN: 'focus-mode-exit-btn',
+    FOCUS_ACTION_BTN: 'focus-action-btn',   /* Focus View's fixed Complete Cycle / Clear button (its own element since Oct 2026) */
     FOCUS_MODE_MENU_BTN: 'focus-mode-menu-btn',
     FOCUS_MODE_MENU: 'focus-mode-menu',
     FOCUS_MODE_MODE_ITEM: 'focus-mode-mode-item',

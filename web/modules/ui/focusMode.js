@@ -82,6 +82,9 @@ export class FocusMode {
         this._exitBtn = null;
         this._exitBtnHandler = null;
         this._panelChangeHandler = null;
+        /** Focus View's fixed Complete Cycle / Clear button — its own element. */
+        this._actionBtn = null;
+        this._actionClickHandler = null;
         this._menuClickHandler = null;
         this._menuOutsideClickHandler = null;
         this._modeItem = null;
@@ -108,6 +111,7 @@ export class FocusMode {
         if (this.initialized) return;
 
         this._createButton();
+        this._createActionButton();
         this._createMenu();
         this._createExitButton();
         this._injectEmptyStateHint();
@@ -152,6 +156,27 @@ export class FocusMode {
         } else {
             taskView.appendChild(this._button);
         }
+    }
+
+    /**
+     * Create Focus View's Complete Cycle / Clear button: a fixed button at the
+     * viewport's bottom-right, appended to <body>. Its OWN element since Oct
+     * 2026 — it used to be the eye button re-dressed by CSS while Focus View
+     * was active, which worked only while the eye sat directly under <body>:
+     * once the eye started following the carousel into the (transformed)
+     * Stats / Task panels, the transform captured the fixed button and it
+     * moved with the panel. Hidden outside Focus View and in Auto Cycle mode
+     * (CSS); the mode-specific emoji and caption come from CSS + data-label.
+     */
+    _createActionButton() {
+        const body = this.deps.getBody();
+        if (!body) return;
+        this._actionBtn = document.createElement('button');
+        this._actionBtn.type = 'button';
+        this._actionBtn.id = DOM_IDS.FOCUS_ACTION_BTN;
+        this._actionBtn.className = DOM_CLASSES.FOCUS_ACTION_BTN;
+        body.appendChild(this._actionBtn);
+        this._updateActionButtonAria();
     }
 
     /**
@@ -446,20 +471,22 @@ export class FocusMode {
         document.addEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
         this._placeControls(this._activePanelId());
 
-        this._clickHandler = () => {
-            // Outside focus mode: toggle to enter focus mode (original behavior)
-            if (!this._active) {
-                this.toggle();
-                return;
-            }
-            // In focus mode: this button is repurposed as the mode action
-            // (Cycle in manual, Clear in to-do). Auto-cycle hides the button
-            // entirely via CSS, so this branch shouldn't run there.
-            const mode = this._getCurrentMode();
-            if (mode === 'auto-cycle') return;
+        this._clickHandler = () => this.toggle();
+
+        // The mode action (Cycle in manual, Clear in to-do) is the action
+        // button's job. Auto Cycle hides it via CSS, so that branch is a guard.
+        this._actionClickHandler = () => {
+            if (this._getCurrentMode() === 'auto-cycle') return;
             const completeAllBtn = this.deps.getElementById(DOM_IDS.COMPLETE_ALL);
             completeAllBtn?.click();
         };
+        if (this._actionBtn) {
+            if (this.deps.safeAddEventListener) {
+                this.deps.safeAddEventListener(this._actionBtn, 'click', this._actionClickHandler);
+            } else {
+                this._actionBtn.addEventListener('click', this._actionClickHandler);
+            }
+        }
 
         const { safeAddEventListener } = this.deps;
         if (safeAddEventListener) {
@@ -714,21 +741,15 @@ export class FocusMode {
     }
 
     /**
-     * Sync the bottom-right .focus-mode-btn's title + aria-label to its
-     * current behavior. Outside focus mode it's the "enter focus mode"
-     * trigger; inside focus mode it's the mode action (Cycle in manual,
-     * Clear in to-do, hidden in auto-cycle). The visible label below the
-     * circle comes from data-label (set here, rendered by CSS attr()),
-     * keeping the text on the label/vocab-theme system.
+     * Sync the fixed action button's (#focus-action-btn) title + aria-label +
+     * caption to the current mode: Cycle in manual, Clear in to-do, hidden in
+     * auto-cycle (CSS). The visible label below the circle comes from
+     * data-label (set here, rendered by CSS attr()), keeping the text on the
+     * label/vocab-theme system. The eye button is no longer involved.
      */
     _updateActionButtonAria(modeOverride) {
-        if (!this._button) return;
-        if (!this._active) {
-            this._button.title = getLabel('focusMode.enterTitle');
-            this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
-            this._button.removeAttribute('data-label');
-            return;
-        }
+        const btn = this._actionBtn;
+        if (!btn) return;
         // The visible label below the circle is rendered via CSS
         // `content: attr(data-label)` so vocab themes can override the
         // value through getLabel() (e.g., Fitness theme could rename
@@ -773,13 +794,13 @@ export class FocusMode {
             }
         }
         if (mode === 'todo-mode') {
-            this._button.title = getLabel('focusMode.clearActionTitle');
-            this._button.setAttribute('aria-label', getLabel('focusMode.clearActionAria'));
-            this._button.setAttribute('data-label', getLabel('focusMode.clearActionLabel'));
+            btn.title = getLabel('focusMode.clearActionTitle');
+            btn.setAttribute('aria-label', getLabel('focusMode.clearActionAria'));
+            btn.setAttribute('data-label', getLabel('focusMode.clearActionLabel'));
         } else if (mode === 'manual-cycle') {
-            this._button.title = getLabel('focusMode.cycleActionTitle');
-            this._button.setAttribute('aria-label', getLabel('focusMode.cycleActionAria'));
-            this._button.setAttribute('data-label', getLabel('focusMode.cycleActionLabel'));
+            btn.title = getLabel('focusMode.cycleActionTitle');
+            btn.setAttribute('aria-label', getLabel('focusMode.cycleActionAria'));
+            btn.setAttribute('data-label', getLabel('focusMode.cycleActionLabel'));
         }
         // auto-cycle: button is hidden via CSS; leave the labels as-is
         // (they'd never be announced because the button has display: none).
@@ -1112,13 +1133,9 @@ export class FocusMode {
             panelLoad.catch?.(e => console.warn('⚠️ FocusMode: focusTaskPanel load failed:', e));
         }
 
-        if (this._button) {
-            body.appendChild(this._button);
-            this._button.innerHTML = getIcon('compress');
-            // Aria/title now reflect the mode-action role (Cycle/Clear)
-            // since exit is owned by #focus-mode-exit-btn in the progress row.
-            this._updateActionButtonAria();
-        }
+        // The eye stays where the carousel put it (hidden by CSS while Focus
+        // View is active); the fixed action button is its own element.
+        this._updateActionButtonAria();
 
         // Lift undo/redo buttons out of the hidden footer so they remain
         // usable in focus mode. Cache origin so deactivate() can restore.
@@ -1228,20 +1245,8 @@ export class FocusMode {
             });
         }
 
-        if (this._button) {
-            this._button.innerHTML = getIcon('focusEye');
-            this._button.title = getLabel('focusMode.enterTitle');
-            this._button.setAttribute('aria-label', getLabel('focusMode.enterAria'));
-        }
-
-        // Reparent button back to progress row after animation completes
+        // After the animation completes:
         setTimeout(() => {
-            if (this._button && this._progressRow) {
-                this._progressRow.appendChild(this._button);
-            } else if (this._button && taskView) {
-                taskView.appendChild(this._button);
-            }
-
             // Restore undo/redo buttons to their original footer location
             const undoRedo = this.deps.getElementById(DOM_IDS.UNDO_REDO_BUTTONS);
             if (undoRedo && this._undoRedoOriginalParent) {
@@ -1322,6 +1327,10 @@ export class FocusMode {
             this._layoutDebugTimer = null;
         }
         this._removeLayoutDebug();
+        if (this._actionBtn && this._actionClickHandler) {
+            this._actionBtn.removeEventListener('click', this._actionClickHandler);
+            this._actionClickHandler = null;
+        }
         if (this._button && this._clickHandler) {
             this._button.removeEventListener('click', this._clickHandler);
         }
@@ -1357,6 +1366,8 @@ export class FocusMode {
         this._menuBtn?.remove();
         this._menu?.remove();
         this._exitBtn?.remove();
+        this._actionBtn?.remove();
+        this._actionBtn = null;
         this._modeModal?.remove();
         this._modeBackdrop?.remove();
         this._emptyStateHint?.remove();

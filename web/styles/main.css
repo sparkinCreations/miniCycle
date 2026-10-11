@@ -253,19 +253,15 @@
         min-height: var(--space-2);
     }
 
-    /* Focus mode toggle — smaller circular button (44px → 30px).
-       Selector scoped to .first-run-welcome-active to match the
-       specificity of focus-mode.css's `body.focus-mode .focus-mode-btn`
-       (0,2,1) which would otherwise win and keep the button at 44px. */
-    body.first-run-welcome-active .focus-mode-btn,
-    body.onboarding-active .focus-mode-btn {
+    /* Focus View's action button (Cycle / Clear) — smaller circle (44px → 30px)
+       while the tour banner is up. The tour runs in Focus View, where this
+       used to be the re-dressed eye button; since Oct 2026 it is its own
+       element, #focus-action-btn. Id + body class outranks focus-mode.css's
+       `body.focus-mode #focus-action-btn`, which would otherwise keep 44px. */
+    body.first-run-welcome-active #focus-action-btn,
+    body.onboarding-active #focus-action-btn {
         width: var(--space-7-5);
         height: var(--space-7-5);
-    }
-    body.first-run-welcome-active .focus-mode-btn svg,
-    body.onboarding-active .focus-mode-btn svg {
-        width: var(--space-3-5);
-        height: var(--space-3-5);
     }
 
     /* Complete-all button — tighter than the 768px override, smaller text. */

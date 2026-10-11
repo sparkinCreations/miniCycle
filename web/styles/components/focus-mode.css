@@ -1049,38 +1049,68 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     height: 20px;
 }
 
-/* Active state — fixed to bottom-right of viewport so it's always reachable */
+/* In Focus View the eye has nothing to do (the × beneath the active panel
+   exits), so it hides. Until Oct 2026 it was re-dressed here as the fixed
+   Complete Cycle / Clear button; that is #focus-action-btn below now, its own
+   element under <body>, so following the carousel into a transformed panel
+   can never move it. */
 body.focus-mode .focus-mode-btn {
+    display: none;
+}
+
+/* Focus View's Complete Cycle / Clear button — fixed to the viewport's
+   bottom-right so it's always reachable, whichever panel is showing. Lives
+   directly under <body> (focusMode._createActionButton); a transformed
+   ancestor would become its reference box. */
+#focus-action-btn {
+    display: none;
+}
+body.focus-mode #focus-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     position: fixed;
     bottom: 50px;
     right: 24px;
     width: 56px;
     height: 56px;
+    padding: 0;
     border-radius: var(--radius-full);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
     color: var(--pref-panel-text, var(--color-white));
+    font-family: inherit;
+    cursor: pointer;
     z-index: var(--z-notification);
     box-shadow: var(--shadow-md);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     /* Allow ::after label to escape below the circle (position: fixed
        creates a containing block for absolutely positioned children). */
     overflow: visible;
 }
-
-/* In focus mode this button is repurposed as the mode-action button
-   (Cycle in manual, Clear in to-do). Hide the original SVG glyph and use
-   ::before for the emoji centered in the circle, with ::after as a
-   floating label positioned just below the circle. */
-body.focus-mode .focus-mode-btn svg {
-    display: none;
+@media (hover: hover) and (pointer: fine) {
+    body.focus-mode #focus-action-btn:hover {
+        background: rgba(255, 255, 255, 0.35);
+        transform: scale(1.05);
+    }
+}
+body.focus-mode #focus-action-btn:focus-visible {
+    background: rgba(255, 255, 255, 0.35);
+}
+body.focus-mode #focus-action-btn:active {
+    transform: scale(0.95);
 }
 
-body.focus-mode .focus-mode-btn::before {
+/* ::before is the mode emoji centered in the circle, ::after the floating
+   caption just below it. */
+body.focus-mode #focus-action-btn::before {
     font-size: 26px;
     line-height: 1;
 }
 
-body.focus-mode .focus-mode-btn::after {
+body.focus-mode #focus-action-btn::after {
     /* Visible label is sourced from the button's data-label attribute,
        which focusMode.js sets via getLabel() — keeps the text on the
        label/vocab-theme system instead of hardcoded in CSS. The \n
@@ -1106,11 +1136,11 @@ body.focus-mode .focus-mode-btn::after {
 
 /* Mode-specific emoji icon — visual affordance, not vocab; stays in CSS.
    Leverages the existing body mode classes set by modeManager. */
-body.focus-mode.manual-cycle-mode .focus-mode-btn::before { content: "↻"; }
-body.focus-mode.todo-mode-mode .focus-mode-btn::before    { content: "🧹"; }
+body.focus-mode.manual-cycle-mode #focus-action-btn::before { content: "↻"; }
+body.focus-mode.todo-mode-mode #focus-action-btn::before    { content: "🧹"; }
 
 /* Auto cycle has no manual action — hide the button entirely. */
-body.focus-mode.auto-cycle-mode .focus-mode-btn {
+body.focus-mode.auto-cycle-mode #focus-action-btn {
     display: none;
 }
 
@@ -1190,19 +1220,11 @@ body.focus-mode #complete-all-and-help-window-container {
        Bumped from env+16 → env+32 so the two-line label below the button
        (Complete\nCycle etc.) doesn't get clipped against the home
        indicator / viewport bottom on devices without env(). */
-    body.focus-mode .focus-mode-btn {
-        position: fixed;
+    body.focus-mode #focus-action-btn {
         bottom: calc(env(safe-area-inset-bottom) + 32px);
         right: 16px;
-        z-index: var(--z-notification);
         width: 44px;
         height: 44px;
-        box-shadow: var(--shadow-md);
-    }
-
-    body.focus-mode .focus-mode-btn svg {
-        width: 20px;
-        height: 20px;
     }
 
     /* Nav-dots text switcher — mobile/iPhone:

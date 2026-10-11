@@ -156,9 +156,45 @@ export async function runFocusModeTests(resultsDiv) {
             document.dispatchEvent(new CustomEvent('panelCarousel:changed', { detail: { id: 'task-view', changed: true } }));
             if (!eye.closest('.progress-focus-row') || !exit.closest('.progress-focus-row')) throw new Error('back on the routine panel both controls return to the progress row');
             if (stats.querySelectorAll('.panel-action-slot').length !== 1) throw new Error('a panel gets ONE slot, reused across visits');
+
+            // The Complete Cycle / Clear button is its OWN element under <body>
+            // (never inside a transformed panel), so following the carousel
+            // can't move it — and the eye follows in Focus View too.
+            const action = document.getElementById('focus-action-btn');
+            if (!action || action.parentNode !== document.body) throw new Error('#focus-action-btn must be a direct child of <body>');
+            fm._active = true;
+            document.dispatchEvent(new CustomEvent('panelCarousel:changed', { detail: { id: 'stats-panel', changed: true } }));
+            if (!statsSlot.contains(exit) || !statsSlot.contains(eye)) throw new Error('in Focus View both the × and the (hidden) eye follow the carousel');
+            if (action.parentNode !== document.body) throw new Error('the action button must not move with the carousel');
+            fm._updateActionButtonAria('todo-mode');
+            if (!action.getAttribute('data-label') || !/clear/i.test(action.getAttribute('aria-label') || '')) throw new Error('the action button carries the mode caption / aria, not the eye: ' + action.getAttribute('aria-label'));
+            if (eye.hasAttribute('data-label') || !/focus/i.test(eye.getAttribute('aria-label') || '')) throw new Error('the eye keeps its enter-Focus-View aria and no caption');
+            fm._active = false;
+            document.dispatchEvent(new CustomEvent('panelCarousel:changed', { detail: { id: 'task-view', changed: true } }));
         } finally {
             fm.destroy();
             stats.remove(); taskPanel.remove();
+            teardownDOMScaffold();
+        }
+    });
+
+    await test('the action button clicks Complete All in manual / to-do mode and does nothing in Auto Cycle', () => {
+        setupDOMScaffold();
+        const completeAll = document.createElement('button'); completeAll.id = 'completeAll';
+        let clicks = 0; completeAll.addEventListener('click', () => { clicks++; });
+        document.body.appendChild(completeAll);
+        const mk = (autoReset, deleteCheckedTasks) => ({ isReady: () => true, get: () => ({ appState: { activeRoutineId: 'c1' }, data: { routine: { c1: { autoReset, deleteCheckedTasks } } }, settings: { focusModeActive: false } }), update: () => {} });
+        const run = (AppState) => {
+            mod.setFocusModeDependencies({ AppState, getElementById: (id) => document.getElementById(id), getBody: () => document.body, safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn) });
+            const fm = new mod.FocusMode();
+            try { fm.init(); document.getElementById('focus-action-btn').click(); } finally { fm.destroy(); }
+        };
+        try {
+            run(mk(false, false)); if (clicks !== 1) throw new Error('manual cycle: expected one Complete All click, got ' + clicks);
+            run(mk(false, true));  if (clicks !== 2) throw new Error('to-do: expected a Clear (Complete All) click');
+            run(mk(true, false));  if (clicks !== 2) throw new Error('auto cycle: the action button must do nothing');
+        } finally {
+            completeAll.remove();
             teardownDOMScaffold();
         }
     });
@@ -189,7 +225,7 @@ export async function runFocusModeTests(resultsDiv) {
         for (const id of [
             'task-view', 'taskList', 'mode-selector',
             'empty-state', 'undo-redo-buttons', 'nav-dots',
-            'focus-mode-btn', 'focus-mode-menu-btn', 'focus-mode-menu',
+            'focus-mode-btn', 'focus-action-btn', 'focus-mode-menu-btn', 'focus-mode-menu',
             'focus-mode-mode-modal', 'focus-mode-mode-modal-backdrop',
             'focus-mode-mode-done-btn'
         ]) {
@@ -828,26 +864,25 @@ export async function runFocusModeTests(resultsDiv) {
         };
     }
 
-    await test('inactive state: clears data-label and uses enter aria', () => {
+    await test('the eye never carries the mode caption; its aria is always enter-Focus-View', () => {
         const { instance, cleanup } = createReadyInstance();
-        instance._active = false;
-        instance._button.setAttribute('data-label', 'leftover');
-        instance._updateActionButtonAria();
-        const hasDataLabel = instance._button.hasAttribute('data-label');
-        const ariaLabel = instance._button.getAttribute('aria-label') || '';
+        instance._active = true;
+        instance._updateActionButtonAria('manual-cycle');
+        const eyeHasCaption = instance._button.hasAttribute('data-label');
+        const eyeAria = instance._button.getAttribute('aria-label') || '';
+        const actionCaption = instance._actionBtn.getAttribute('data-label') || '';
         cleanup();
-        if (hasDataLabel) throw new Error('data-label should be removed when inactive');
-        if (!ariaLabel.toLowerCase().includes('focus')) {
-            throw new Error('aria-label should be the enter-focus label, got: ' + ariaLabel);
-        }
+        if (eyeHasCaption) throw new Error('the caption belongs to #focus-action-btn, not the eye');
+        if (!eyeAria.toLowerCase().includes('focus')) throw new Error('the eye keeps the enter-focus aria, got: ' + eyeAria);
+        if (!actionCaption) throw new Error('the action button should carry the caption');
     });
 
     await test('todo-mode override sets clear labels and themed data-label', () => {
         const { instance, cleanup } = createReadyInstance();
         instance._active = true;
         instance._updateActionButtonAria('todo-mode');
-        const dataLabel = instance._button.getAttribute('data-label') || '';
-        const ariaLabel = instance._button.getAttribute('aria-label') || '';
+        const dataLabel = instance._actionBtn.getAttribute('data-label') || '';
+        const ariaLabel = instance._actionBtn.getAttribute('aria-label') || '';
         cleanup();
         if (dataLabel !== clearLabel()) {
             throw new Error(`todo mode should use the clear label key; expected ${JSON.stringify(clearLabel())}, got ${JSON.stringify(dataLabel)}`);
@@ -862,8 +897,8 @@ export async function runFocusModeTests(resultsDiv) {
         const { instance, cleanup } = createReadyInstance();
         instance._active = true;
         instance._updateActionButtonAria('manual-cycle');
-        const dataLabel = instance._button.getAttribute('data-label') || '';
-        const ariaLabel = instance._button.getAttribute('aria-label') || '';
+        const dataLabel = instance._actionBtn.getAttribute('data-label') || '';
+        const ariaLabel = instance._actionBtn.getAttribute('aria-label') || '';
         cleanup();
         if (dataLabel !== cycleLabel()) {
             throw new Error(`manual-cycle should use the cycle label key; expected ${JSON.stringify(cycleLabel())}, got ${JSON.stringify(dataLabel)}`);
@@ -879,7 +914,7 @@ export async function runFocusModeTests(resultsDiv) {
         instance._active = true;
         document.body.classList.add('todo-mode-mode');
         instance._updateActionButtonAria();
-        const dataLabel = instance._button.getAttribute('data-label') || '';
+        const dataLabel = instance._actionBtn.getAttribute('data-label') || '';
         cleanup();
         if (dataLabel !== clearLabel()) {
             throw new Error(`should read todo-mode from the body class; expected ${JSON.stringify(clearLabel())}, got ${JSON.stringify(dataLabel)}`);
@@ -892,7 +927,7 @@ export async function runFocusModeTests(resultsDiv) {
         // Body says todo, override says manual-cycle — override wins.
         document.body.classList.add('todo-mode-mode');
         instance._updateActionButtonAria('manual-cycle');
-        const dataLabel = instance._button.getAttribute('data-label') || '';
+        const dataLabel = instance._actionBtn.getAttribute('data-label') || '';
         cleanup();
         if (dataLabel !== cycleLabel() || dataLabel === clearLabel()) {
             throw new Error(`override should win over the body class; expected ${JSON.stringify(cycleLabel())}, got ${JSON.stringify(dataLabel)}`);

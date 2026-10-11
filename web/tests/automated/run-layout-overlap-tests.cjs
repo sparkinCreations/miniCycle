@@ -1300,6 +1300,25 @@ async function run() {
                     await tp.setViewportSize({ width: vp.width, height: vp.height });
                     await tp.waitForTimeout(400);
                     console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (control follows the panel)${colors.reset}`);
+                    // The Complete Cycle / Clear action button (#focus-action-btn, its
+                    // own fixed element under <body>) must NOT move with the carousel
+                    // and must sit at the viewport's bottom-right: panels are
+                    // transformed, and a transformed ancestor captures position:
+                    // fixed — which is how the old eye-as-action-button jumped to the
+                    // Stats / Task panel's corner when the eye followed the × (Oct 2026).
+                    await tp.evaluate(() => { const s = document.getElementById('mode-selector'); if (s && s.value !== 'manual-cycle') { s.value = 'manual-cycle'; s.dispatchEvent(new Event('change', { bubbles: true })); } });
+                    await tp.waitForTimeout(500);
+                    const actionRect = () => tp.evaluate(() => { const el = document.getElementById('focus-action-btn'); const b = el?.getBoundingClientRect(); return b && b.width > 0 ? [Math.round(b.left), Math.round(b.top), el.parentNode === document.body, Math.round(innerWidth - b.right), Math.round(innerHeight - b.bottom)] : null; });
+                    await goDot('task-view');
+                    const actionHome = await actionRect();
+                    await goDot('stats-panel');
+                    const actionOnStats = await actionRect();
+                    await goDot('focus-task-panel');
+                    const actionOnTask = await actionRect();
+                    record(vp, 'focus: the action button (Complete Cycle / Clear) stays put across panels, at the viewport\'s bottom-right',
+                        !!actionHome && actionHome[2] && actionHome[3] <= 32 && actionHome[4] <= 64
+                            && JSON.stringify(actionHome) === JSON.stringify(actionOnStats) && JSON.stringify(actionHome) === JSON.stringify(actionOnTask),
+                        `routine ${JSON.stringify(actionHome)} vs stats ${JSON.stringify(actionOnStats)} vs task ${JSON.stringify(actionOnTask)} ([left, top, underBody, fromRight, fromBottom])`);
                     await goDot('stats-panel');
                     await controlPlacement(vp, '#stats-panel', '#stats-panel', 'focus-mode-exit-btn', 'focus: Stats panel ×');
                     await goDot('focus-task-panel');
