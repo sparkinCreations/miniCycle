@@ -31,6 +31,7 @@ import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { normalizeHex } from '../utils/styleValidators.js';
 import { isClickOnNotification } from './modalUtils.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 
 // ============================================================================
 // DEFAULT COLORS
@@ -411,6 +412,11 @@ export class PreferencesManager {
         if (personalizationBtn) {
             personalizationBtn._clickHandler = () => this.openModal();
             safeAdd(personalizationBtn, 'click', personalizationBtn._clickHandler);
+            // Icon-only (🖌️): `title` covers hover; on touch a long press shows
+            // the same label without opening the modal (Oct 2026).
+            attachLongPressHint(personalizationBtn, {
+                getText: () => personalizationBtn.getAttribute('aria-label') || personalizationBtn.title
+            });
         }
 
         // Close button

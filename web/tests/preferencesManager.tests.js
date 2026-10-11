@@ -112,6 +112,37 @@ export async function runPreferencesManagerTests(resultsDiv) {
         } finally { host.remove(); }
     });
 
+    await test('personalization button: a long press shows its label on touch and does not open the modal', async () => {
+        const { UI_TIMEOUTS, DOM_CLASSES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const { resetLongPressHints } = await import(`../modules/utils/longPressHint.js?v=${cacheBuster}`);
+        const host = prefFixture();
+        const btn = document.getElementById('personalization-btn');
+        btn.title = 'Personalize colors'; btn.setAttribute('aria-label', 'Personalization');
+        mod.setPreferencesManagerDependencies({
+            AppState: { get: () => ({ settings: {} }), update: () => {}, isReady: () => true },
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            querySelectorAll: (sel) => document.querySelectorAll(sel),
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            showNotification: () => {}
+        });
+        const instance = new mod.PreferencesManager();
+        let opened = 0; instance.openModal = () => { opened++; };
+        try {
+            instance.setupEventListeners();
+            btn.dispatchEvent(new Event('touchstart', { bubbles: true, cancelable: true }));
+            await new Promise(r => setTimeout(r, UI_TIMEOUTS.LONG_PRESS_HINT + 120));
+            btn.dispatchEvent(new Event('touchend', { bubbles: true, cancelable: true }));
+            btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            const hint = document.getElementById('long-press-hint');
+            if (!hint || !hint.classList.contains(DOM_CLASSES.VISIBLE) || hint.textContent !== 'Personalization') throw new Error('a long press must show "Personalization", got ' + JSON.stringify(hint && hint.textContent));
+            if (opened !== 0) throw new Error('asking what the button does must not open the modal');
+        } finally {
+            host.remove();
+            resetLongPressHints();
+        }
+    });
+
     await test('setupEventListeners bails cleanly when safeAddEventListener is absent', async () => {
         // First branch in the method: without the dep there is nothing safe to do.
         const host = prefFixture();

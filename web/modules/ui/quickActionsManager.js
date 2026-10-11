@@ -1244,6 +1244,15 @@ export class QuickActionsManager {
         if (nextBtn) {
             nextBtn.addEventListener('click', () => this._animatedCycleView('next', panel));
         }
+        // Icon-only arrows: `title` covers hover; on touch a long press shows the
+        // same label (the slots already do this via _addLongPressHandler). Text
+        // is read from the button at press time so a relabel is picked up.
+        for (const arrow of [prevBtn, nextBtn]) {
+            if (!arrow) continue;
+            attachLongPressHint(arrow, {
+                getText: () => arrow.getAttribute('aria-label') || arrow.title
+            });
+        }
 
         // Keyboard arrow navigation between slots
         const slotsContainer = panel.querySelector(DOM_SELECTORS.QUICK_ACTIONS_SLOTS);

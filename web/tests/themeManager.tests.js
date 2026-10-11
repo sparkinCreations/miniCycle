@@ -226,6 +226,40 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
+    await test('quick dark toggle: a long press shows its label on touch and does not toggle', async () => {
+        const { UI_TIMEOUTS, DOM_CLASSES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const { resetLongPressHints } = await import(`../modules/utils/longPressHint.js?v=${cacheBuster}`);
+        const quick = document.createElement('button');
+        quick.id = 'quick-dark-toggle'; quick.title = 'Toggle dark mode'; quick.setAttribute('aria-label', 'Toggle dark mode');
+        document.body.appendChild(quick);
+        const primary = document.createElement('input'); primary.type = 'checkbox'; primary.id = 'darkModeToggle';
+        document.body.appendChild(primary);
+        setThemeManagerDependencies({
+            AppState: { isReady: () => false, get: () => null },
+            getElementById: (id) => document.getElementById(id),
+            getRootElement: () => document.documentElement,
+            getBody: () => document.body,
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn)
+        });
+        try {
+            new ThemeManager().setupQuickDarkToggle();
+            const live = document.getElementById('quick-dark-toggle');   // setup swaps in a clone
+            live.dispatchEvent(new Event('touchstart', { bubbles: true, cancelable: true }));
+            await new Promise(r => setTimeout(r, UI_TIMEOUTS.LONG_PRESS_HINT + 120));
+            live.dispatchEvent(new Event('touchend', { bubbles: true, cancelable: true }));
+            live.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));   // the click a browser fires after touchend
+            const hint = document.getElementById('long-press-hint');
+            if (!hint || !hint.classList.contains(DOM_CLASSES.VISIBLE)) throw new Error('a long press must show the label bubble');
+            if (hint.textContent !== 'Toggle dark mode') throw new Error('bubble should carry the button\'s label, got ' + JSON.stringify(hint.textContent));
+            if (primary.checked) throw new Error('asking what the button does must not toggle dark mode');
+        } finally {
+            document.getElementById('quick-dark-toggle')?.remove();
+            primary.remove();
+            resetLongPressHints();
+            setThemeManagerDependencies({ AppState: env.AppState, safeAddEventListener: null });
+        }
+    });
+
     await test('toggles dark mode off', () => {
         const tm = new ThemeManager();
         document.body.classList.add('dark-mode');

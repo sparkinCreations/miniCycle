@@ -29,6 +29,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTONES } from '../core/constants.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -654,6 +655,12 @@ export class ThemeManager {
                 }
             };
             safeAdd(newQuickToggle, "click", newQuickToggle._clickHandler);
+            // Icon-only (🌙 / ☀️): `title` covers hover; on touch a long press
+            // shows the same label and swallows the click, so asking what the
+            // button does no longer toggles dark mode (Oct 2026).
+            attachLongPressHint(newQuickToggle, {
+                getText: () => newQuickToggle.getAttribute('aria-label') || newQuickToggle.title
+            });
 
         } catch (error) {
             console.warn('⚠️ Quick dark toggle setup failed:', error.message);

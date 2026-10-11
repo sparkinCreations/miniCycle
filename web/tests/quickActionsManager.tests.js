@@ -65,6 +65,41 @@ export async function runQuickActionsManagerTests(resultsDiv) {
         if (typeof instance.init !== 'function') throw new Error('Missing init method');
     });
 
+    await test('Quick Actions ◀ ▶ arrows: a long press shows the label on touch and does not switch views', async () => {
+        const { UI_TIMEOUTS, DOM_CLASSES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        const { resetLongPressHints } = await import(`../modules/utils/longPressHint.js?v=${cacheBuster}`);
+        const panel = document.createElement('div'); panel.id = 'qa-arrow-fixture';
+        panel.innerHTML = '<button class="quick-actions-nav quick-actions-prev" title="Previous view" aria-label="Previous view">◀</button>'
+            + '<button class="quick-actions-nav quick-actions-next" title="Next view" aria-label="Next view">▶</button>'
+            + '<div id="quick-actions-slots" class="quick-actions-slots"></div>';
+        document.body.appendChild(panel);
+        mod.setQuickActionsManagerDependencies({
+            AppState: { get: () => ({ settings: {} }), update: () => {} },
+            showNotification: () => {},
+            safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel)
+        });
+        const instance = new mod.QuickActionsManager();
+        let cycled = 0; instance._animatedCycleView = () => { cycled++; };
+        try {
+            instance._bindPanelEvents('qa-arrow-fixture');
+            const prev = panel.querySelector('.quick-actions-prev');
+            prev.dispatchEvent(new Event('touchstart', { bubbles: true, cancelable: true }));
+            await new Promise(r => setTimeout(r, UI_TIMEOUTS.LONG_PRESS_HINT + 120));
+            prev.dispatchEvent(new Event('touchend', { bubbles: true, cancelable: true }));
+            prev.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+            const hint = document.getElementById('long-press-hint');
+            if (!hint || !hint.classList.contains(DOM_CLASSES.VISIBLE) || hint.textContent !== 'Previous view') throw new Error('a long press must show "Previous view", got ' + JSON.stringify(hint && hint.textContent));
+            if (cycled !== 0) throw new Error('asking what the arrow does must not switch views');
+            prev.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));   // a plain tap later still works
+            await new Promise(r => setTimeout(r, 50));
+        } finally {
+            panel.remove();
+            resetLongPressHints();
+        }
+    });
+
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">⚠️ Error Handling</h4>';
 
