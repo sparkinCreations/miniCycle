@@ -27,7 +27,8 @@
  */
 import { DOM_CLASSES, DOM_IDS, DOM_SELECTORS, EVENTS, UI_TIMEOUTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { announce } from '../utils/announce.js';
+import { getActiveRoutineId, getRoutine, getCycleMode } from '../utils/cycleMode.js';
 
 export class OnboardingCarousel {
     constructor(manager) {
@@ -96,6 +97,7 @@ export class OnboardingCarousel {
         // `|` in the title label is a line break (CSS pre-line + \n).
         title.textContent = this.m._firstRunWelcomeSlides[0].title.replace(/\|/g, '\n');
         this.m._firstRunWelcomeTitleEl = title;
+        this._announceFirstRunWelcomeSlide(0);
 
         // Body is a <div> (not <p>) so it can host inline SVG for render-mode slides.
         const message = document.createElement('div');
@@ -259,16 +261,27 @@ export class OnboardingCarousel {
         if (!activeCycleId) return;
 
         const initialCount = getRoutine(state, activeCycleId)?.cycleCount ?? 0;
+        // To-Do mode never increments cycleCount, so on its own the watcher
+        // could never fire there and the carousel parked on "Try it yourself"
+        // for good. In that mode the first CLEAR is the success.
+        const initialCleared = getRoutine(state, activeCycleId)?.clearedTasks?.totalCleared ?? 0;
 
         this.m._firstRunWelcomeCycleWatchKey = 'firstRunWelcome:cycleCompletion';
         this.m._firstRunWelcomeCycleWatchHandler = (newState) => {
             // One-shot: ignore further updates after celebration fires.
             if (this.m._firstRunWelcomeCelebrationTriggered) return;
-            const newCount = getRoutine(newState, activeCycleId)?.cycleCount ?? 0;
+            const routine = getRoutine(newState, activeCycleId);
+            const newCount = routine?.cycleCount ?? 0;
             if (newCount > initialCount) {
-                this._handleFirstRunWelcomeCycleCompletion();
+                this._handleFirstRunWelcomeCycleCompletion('cycle');
+                return;
+            }
+            const newCleared = routine?.clearedTasks?.totalCleared ?? 0;
+            if (getCycleMode(routine) === 'todo' && newCleared > initialCleared) {
+                this._handleFirstRunWelcomeCycleCompletion('clear');
             }
         };
+
         this.m.deps.AppState.subscribe(
             this.m._firstRunWelcomeCycleWatchKey,
             this.m._firstRunWelcomeCycleWatchHandler
@@ -282,14 +295,17 @@ export class OnboardingCarousel {
      * slide 6 follows naturally after the slide-5 hold expires.
      * @private
      */
-    _handleFirstRunWelcomeCycleCompletion() {
+    _handleFirstRunWelcomeCycleCompletion(kind = 'cycle') {
+        // kind: 'cycle' (auto / manual mode — a completed cycle) or 'clear'
+        // (To-Do mode — the first clear). Only the celebration title differs;
+        // the tips slide and "All Set!" are shared.
         if (this.m._firstRunWelcomeCelebrationTriggered) return;
         if (!this.m._firstRunWelcomeSlides) return;
         this.m._firstRunWelcomeCelebrationTriggered = true;
 
         this.m._firstRunWelcomeSlides.push(
             {
-                title:   getLabel('firstRunWelcome.titleCelebration'),
+                title:   getLabel(kind === 'clear' ? 'firstRunWelcome.titleCelebrationTodo' : 'firstRunWelcome.titleCelebration'),
                 message: getLabel('firstRunWelcome.messageCelebration'),
                 // Hold this slide longer than usual so it doesn't auto-advance
                 // while the app's cycle-completion celebration overlay is
@@ -546,6 +562,7 @@ export class OnboardingCarousel {
 
         const isLast = this.m._firstRunWelcomeSlideIndex
             === this.m._firstRunWelcomeSlides.length - 1;
+        this._syncFirstRunWelcomeDismissLabel(isLast);
 
         // Replay mode wins over paused — once we reach the end, the user's
         // explicit re-engagement (clicking ↻) is the only way forward.
@@ -707,6 +724,39 @@ export class OnboardingCarousel {
      * runs. Schedules the next advance after the swap. Loops back to slide 0.
      * @private
      */
+    /**
+     * Speak "Slide N of M: <title>" through the shared live region. The banner
+     * itself is aria-live, but a changed title alone never said where the
+     * user was in the sequence — the Home View tour announces "1 of 6", the
+     * carousel announced nothing (accessibility audit, Oct 2026).
+     * @param {number} index - zero-based slide index
+     * @private
+     */
+    _announceFirstRunWelcomeSlide(index) {
+        const slides = this.m._firstRunWelcomeSlides;
+        const slide = slides?.[index];
+        if (!slide) return;
+        announce(getLabel('firstRunWelcome.slidePosition', {
+            vars: { current: index + 1, total: slides.length, title: String(slide.title || '').replace(/\|/g, ' ') }
+        }), { getElementById: (id) => document.getElementById(id) });
+    }
+
+    /**
+     * The corner dismiss button is one control shared by every slide. "Skip"
+     * is right while slides remain; on "All Set!" nothing is left to skip, so
+     * it reads "Done" (copy review, Oct 2026). Looked up by id rather than
+     * stored on the manager so the field inventory stays as it is.
+     * @param {boolean} isLast - whether the current slide is the final one
+     * @private
+     */
+    _syncFirstRunWelcomeDismissLabel(isLast) {
+        const banner = this.m._firstRunWelcomeBanner;
+        const btn = banner?.querySelector?.(`#${DOM_IDS.FIRST_RUN_WELCOME_DISMISS}`);
+        if (!btn) return;
+        btn.textContent = getLabel(isLast ? 'firstRunWelcome.dismissDone' : 'firstRunWelcome.dismiss');
+        btn.setAttribute('aria-label', getLabel(isLast ? 'firstRunWelcome.dismissDoneAria' : 'firstRunWelcome.dismissAria'));
+    }
+
     _advanceFirstRunWelcomeSlide() {
         const titleEl = this.m._firstRunWelcomeTitleEl;
         const messageEl = this.m._firstRunWelcomeMessageEl;
@@ -730,6 +780,7 @@ export class OnboardingCarousel {
             }
             // `|` in the title label is a line break (CSS pre-line + \n).
             this.m._firstRunWelcomeTitleEl.textContent = slide.title.replace(/\|/g, '\n');
+            this._announceFirstRunWelcomeSlide(nextIndex);
 
             // Tear down previous body (cancel pending timeouts in render slides).
             if (this.m._firstRunWelcomeBodyCleanup) {

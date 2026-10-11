@@ -1015,6 +1015,16 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     visibility: hidden;
 }
 
+/* Reordering is paused while the search's sort chip is non-default
+   (body.tasks-sorted — set by taskSearch, honoured by dragDropManager).
+   Dim rather than hide: the arrows stay where the user expects them, and a
+   press explains itself with a notification instead of silently doing nothing. */
+body.tasks-sorted #taskList .move-up,
+body.tasks-sorted #taskList .move-down {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
 /* Hide move arrows on completed tasks (order is irrelevant for completed tasks) */
 #taskList .task:has(input[type="checkbox"]:checked) .move-up,
 #taskList .task:has(input[type="checkbox"]:checked) .move-down,

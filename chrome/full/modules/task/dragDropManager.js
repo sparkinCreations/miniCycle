@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -106,6 +106,29 @@ export class DragDropManager {
      */
     _getAppState() {
         return this.deps.AppState;
+    }
+
+    /**
+     * True while the task search has a non-default sort applied.
+     * The sort lives only in the DOM (taskSearch reorders nodes), so the sorted
+     * view has no meaningful "up"/"down": a reorder written through it changed
+     * the REAL routine order while the re-render immediately re-sorted the view,
+     * so nothing visibly moved (arrows) — or the whole order was replaced by the
+     * sort order (drag). Measured Oct 2026.
+     * @returns {boolean}
+     */
+    _isSortActive() {
+        const body = this.deps.getBody?.() || document.body;
+        return !!body?.classList?.contains(DOM_CLASSES.TASKS_SORTED);
+    }
+
+    /** Tell the user why nothing moved, once per attempt. */
+    _notifyReorderPaused() {
+        this.deps.showNotification?.(
+            '⏸️ ' + getLabel('notify.reorderPausedWhileSorted'),
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_SHORT
+        );
     }
 
     /**
@@ -298,6 +321,11 @@ export class DragDropManager {
                 }
 
                 holdTimeout = setTimeout(() => {
+                    // Sorted view: no touch drag either (same reason as dragstart).
+                    if (this._isSortActive()) {
+                        this._notifyReorderPaused();
+                        return;
+                    }
                     isLongPress = true;
                     isTap = false;
                     this.draggedTask = taskElement;
@@ -439,6 +467,12 @@ export class DragDropManager {
                 // Prevent dragging completed tasks in the completed dropdown
                 if (taskElement.closest(`#${DOM_IDS.COMPLETED_TASK_LIST}`)) {
                     event.preventDefault();
+                    return;
+                }
+                // Sorted view: a drop would write the SORT order into the routine.
+                if (this._isSortActive()) {
+                    event.preventDefault();
+                    this._notifyReorderPaused();
                     return;
                 }
 
@@ -622,6 +656,12 @@ export class DragDropManager {
             const taskItem = button.closest(DOM_SELECTORS.TASK);
             if (!taskItem) return;
 
+            // Sorted view: refuse rather than reorder a list the user cannot see move.
+            if (this._isSortActive()) {
+                this._notifyReorderPaused();
+                return;
+            }
+
             // Prevent arrow reordering on completed tasks
             if (taskItem.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)) return;
 
@@ -638,6 +678,9 @@ export class DragDropManager {
             //     produced [B,A,C,D] instead of [A,C,B,D] — it moved A.
             //   - a non-default sort reorders the DOM within the active list:
             //     state [Zebra,Apple,Mango] renders as [Apple,Mango,Zebra].
+            //     (Since Oct 2026 the arrows refuse under a sort — see the
+            //     _isSortActive guard above — because the re-render re-sorted
+            //     the view and the move was correct but invisible.)
             //
             // In a routine manager the task sequence IS the routine, so that was
             // silent corruption of the thing the user built to run repeatedly.

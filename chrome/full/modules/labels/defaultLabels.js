@@ -482,6 +482,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Drag & drop notifications
         reorderFailed:          'Unable to reorder tasks right now',
         reorderError:           'Failed to reorder task',
+        reorderPausedWhileSorted: 'Reordering is paused while sorted. Switch sort to Default to move tasks.',
 
         // Title notifications
         titleEmpty:             'Title cannot be empty. Reverting to previous title.',
@@ -1718,6 +1719,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     firstRunWelcome: {
+        // Spoken position for each carousel slide (the Home View tour already
+        // announces "1 of 6"; the carousel did not — audit, Oct 2026).
+        slidePosition:     'Slide {current} of {total}: {title}',
         title:             'Welcome to miniCycle',
         message:           'A checklist app for repeatable routines. |Complete. Cycle. Repeat.',
         // `|` is a paragraph break — the renderer splits on it so each
@@ -1764,21 +1768,40 @@ export const DEFAULT_LABELS = deepFreeze({
         tryItAlmost:       'Almost there — one more! ↓',
         tryItComplete:     '🎉 Cycle complete!',
         tryItUnchecked:    'No worries — finish them in any order.',
+        // Mode-aware variants of the "Try it" slide. The auto-cycle lines above
+        // promise a reset that only auto mode delivers; manual mode needs the
+        // button, and To-Do mode has no cycle at all — it clears instead
+        // (measured Oct 2026: the slide said "Cycle complete!" in manual mode
+        // with nothing reset, and To-Do mode could never reach "All Set!").
+        // Button and mode names come in as vars from their canonical labels.
+        tryItManualStart:      'Check off the sample tasks below, or press {completeBtn} at any time to finish the cycle and reset them ↓',
+        tryItManualProgress:   'Nice — {remaining} {taskWord} left. {completeBtn} finishes the rest whenever you like ↓',
+        tryItManualAllChecked: 'All checked — press {completeBtn} to reset them ↓',
+        tryItTodoStart:        'This routine is in {todoName}: finished tasks clear instead of resetting. Check some off, then press {clearBtn} ↓',
+        tryItTodoProgress:     '{checked} {taskWord} checked — press {clearBtn} when you\'re ready ↓',
         // Slides 5 & 6 — appended dynamically when the user completes their
         // first cycle. Slide 5 celebrates and reveals advanced affordances;
         // slide 6 explains how to graduate from focus view to main view.
         // `|` is a paragraph break in messages, a line break in titles.
         titleCelebration:    'First Cycle Complete!',
+        // To-Do mode never counts a cycle; its first success is a clear.
+        titleCelebrationTodo: 'First Clear Complete!',
         messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click and drag left for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
         titleFocusView:      'All Set!',
-        messageFocusView:    'Open the ⋯ menu above to exit {focusName} and enter {homeName} — or create your own routine below.',
+        // The "Create your own routine" button sits right under this line, so
+        // the message no longer repeats it; the view names stay vocabulary
+        // variables so a lens can rename them.
+        messageFocusView:    'Continue in {focusName}, or open ⋯ above for {homeName}.',
         createRoutineCta:    'Create your own routine',
         cycleDemoAria:        'Demonstration: three tasks get completed and the cycle counter advances each time.',
         dismiss:           'Skip',
         dismissAria:       'Skip welcome',
+        // The same corner button on the LAST slide: nothing is left to skip.
+        dismissDone:       'Done',
+        dismissDoneAria:   'Done with welcome',
         pauseAria:         'Pause welcome slides',
         playAria:          'Resume welcome slides',
         replayAria:        'Replay welcome slides',

@@ -1,3 +1,13 @@
+## [2.593] - 2026-10-10
+- chore(icons): app and product page use the blue-background favicon; Lite keeps the transparent mark
+- seo(product): SOP clause in the meta description; /lite alias for the Lite app
+- seo(product): one canonical URL, honest sitemap, visible FAQ, category wording
+- feat(onboarding): "Try it yourself" follows the routine's mode; To-Do mode can finish onboarding
+- test(journey): under a sort, the arrow must leave the stored order untouched
+- copy(onboarding): tighter "All Set!" line; corner button reads Done on the last slide
+- fix(ui): bulk actions refresh the status panel; reordering pauses while sorted; carousel announces slide position
+
+
 ## [2.592] - 2026-10-10
 - fix(a11y): bulk check/uncheck keep each row's spoken status in step with its box
 - feat(reset): factory reset can skip the safety backup, by explicit opt-out

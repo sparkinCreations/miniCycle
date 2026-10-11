@@ -61,6 +61,7 @@ const di = createDIModule('MenuManager', {
     updateStatsPanel: optional(null),
     checkCompleteAllButton: optional(null),
     updateUndoRedoButtons: optional(null),
+    updateHelpWindow: optional(null),
     // Arms the undo system before a destructive menu action. Without this,
     // captureStateSnapshot() bails on `isInitializing` and "Delete All" /
     // "Uncheck All" are silently unrecoverable when the user hasn't touched
@@ -147,6 +148,7 @@ export class MenuManager {
             updateStatsPanel: resolvedDeps.updateStatsPanel,
             checkCompleteAllButton: resolvedDeps.checkCompleteAllButton,
             updateUndoRedoButtons: resolvedDeps.updateUndoRedoButtons,
+            updateHelpWindow: resolvedDeps.updateHelpWindow,
             enableUndoSystemOnFirstInteraction: resolvedDeps.enableUndoSystemOnFirstInteraction,
             recurringPanel: resolvedDeps.recurringPanel,
             trackAction: resolvedDeps.trackAction,
@@ -803,6 +805,10 @@ export class MenuManager {
         this.deps.updateProgressBar();
         this.deps.updateStatsPanel();
         this.deps.checkCompleteAllButton();
+        // The status panel ("N tasks remaining") only re-renders on request; without
+        // this it kept the pre-bulk count (audit, Oct 2026: "1 task remaining" after
+        // Uncheck All had cleared everything).
+        this.deps.updateHelpWindow?.();
         // ✅ DI-pure (no window.* fallback)
         if (this.deps.recurringPanel?.updateRecurringPanelButtonVisibility) {
             this.deps.recurringPanel.updateRecurringPanelButtonVisibility();
@@ -895,6 +901,10 @@ export class MenuManager {
                 this.deps.updateProgressBar();
                 this.deps.updateStatsPanel();
                 this.deps.checkCompleteAllButton();
+                // The status panel ("N tasks remaining") only re-renders on request; without
+                // this it kept the pre-bulk count (audit, Oct 2026: "1 task remaining" after
+                // Uncheck All had cleared everything).
+                this.deps.updateHelpWindow?.();
                 // ✅ DI-pure (no window.* fallback)
                 if (this.deps.recurringPanel?.updateRecurringPanelButtonVisibility) {
                     this.deps.recurringPanel.updateRecurringPanelButtonVisibility();

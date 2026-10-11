@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.592">
+<meta name="app-version" content="2.593">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -114,7 +114,9 @@
 <link rel="preload" href="assets/fonts/poppins-600.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="assets/fonts/fonts.css">
 
-<link rel="icon" type="image/png" href="assets/images/logo/taskcycle_logo_blackandwhite_transparent.png" />
+<!-- Blue-background square icon (same art as the PWA / store icons). The transparent
+     black-and-white mark stays the Lite app's favicon on purpose. -->
+<link rel="icon" type="image/png" href="assets/images/logo/pwa-icons/icon-192.png" />
 <link rel="apple-touch-icon" sizes="180x180" href="assets/images/logo/pwa-icons/icon-192.png" />
 <!-- Font Awesome removed - using inline SVG icons instead (see modules/utils/icons.js). fa-* classes are kept as the semantic source and swapped to inline <svg> at runtime by iconInit.js. -->
 
@@ -130,17 +132,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.592" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.592" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.592" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.592" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.592" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.592" as="style">
+<link rel="preload" href="styles/main.css?v=2.593" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.593" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.593" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.593" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.593" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.593" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.592" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.593" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.592"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.593"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -151,7 +153,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.592"></script>
+<script src="./version.js?v=2.593"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -259,7 +261,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.592" defer></script>
+    <script src="boot-sw.js?v=2.593" defer></script>
 
 
 
@@ -1340,7 +1342,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.592"></script>
+ <script type="module" src="miniCycle-main.js?v=2.593"></script>
 
 <script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
