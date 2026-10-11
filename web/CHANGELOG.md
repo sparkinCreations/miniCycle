@@ -1,3 +1,7 @@
+## [2.596] - 2026-10-11
+- feat(focus): desktop Focus View joins the band — the list fills the space to the nav dots
+
+
 ## [2.595] - 2026-10-11
 - fix(focus): a long routine fits the band on tablets and phones instead of overflowing the nav dots
 - TODO(changelog): uncommitted work shipped in this release — describe it here

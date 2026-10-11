@@ -107,52 +107,93 @@ body.focus-mode.focus-mode-menu-open #focus-mode-menu {
     transition: max-height var(--transition-normal) ease;
 }
 
-/* Desktop sizing (mobile/tablet has its own override at max-width: 1023).
-   Task-view is centered (top: 50%, transform: -50%), so the reduction
-   constant is split top + bottom. With 200px the bottom edge sits ~100px
-   from the viewport bottom — clears the bottom controls band where the
-   action button (top ~106px), nav-dots (top ~95px), and undo/redo (top
-   ~80px) live. The task-card / task-list-container constants are bumped
-   in lock-step so the inner-element ratios stay the same as before. */
+/* FOCUS VIEW IS BAND-ANCHORED — AT EVERY WIDTH. See FOCUS_VIEW_LAYOUT.md.
+   The view occupies exactly the space between the painted chrome and the nav
+   dots, so both edges are set by construction and neither can drift:
+       top    = chromeBottom + cardGap          (--focus-band-top)
+       bottom = 100dvh - navDotsClearance - gap
+   Both inputs are MEASURED on the live elements (--focus-chrome-bottom and
+   --nav-dots-clearance, published by headerLayoutManager), which is what makes
+   this hold across surfaces: an in-app browser reports env(safe-area-inset-top)
+   0 where the installed app reports 61, and the chrome that paints is
+   .mini-cycle-header-row, not the ✕ / ⋯ buttons it contains.
+
+   History, because this rule has been wrong in three different ways:
+   - Phones/tablets were centred (top: 50% + 25px) until v2.473; at 820x480 the
+     band is 81 -> 349, centred on 215, against an element centred on 265, so
+     clearing the top forced the bottom past the nav dots.
+   - Desktop stayed centred (top: 50% - 35px, content-sized, list capped at
+     100dvh - 340px) until Oct 2026. That cap was tuned when the help window sat
+     UNDER the card; on desktop it is side-docked, so ~60px was reserved for
+     nothing, and centring could not use the band's edges either: at ~1070x790
+     the content sat 28px under the header and ~90px above the nav dots while
+     the list scrolled. The 5px chrome floor added for it in 2.594 (a symmetric
+     height cap) is subsumed: the band gives --focus-card-chrome-gap (16px) by
+     construction.
+   Reverting any width to centring will reintroduce one of these; the layout
+   suite's focus-view checks (including the `*-long` rows) are the guard. */
 body.focus-mode #task-view {
-    /* Shift the centered task-view up — content drives height (no explicit
-       `height` here) so the bottom edge stays where it naturally lands
-       based on content, and only the top moves higher up the viewport.
-       Three-dots and exit buttons (top: 16px) at the viewport corners
-       don't conflict with the centered task-card (max-width: 50vw).
-       Tunable via --focus-mode-top-offset in variables.css. */
-    top: calc(50% - var(--focus-mode-top-offset));
-    max-height: calc(100vh - 150px);
-    /* min(): the tuned cap on tall windows; on short ones the chrome-floor cap
-       (variables.css: --focus-desktop-view-cap) so that centring can never
-       push the input bar / title under the header row. Measured: 1100x600 with
-       13 tasks put the input bar at y=76 against a chrome bottom of 80. */
-    max-height: min(calc(100dvh - 150px), var(--focus-desktop-view-cap));
+    top: var(--focus-band-top);
+    bottom: calc(var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                 + var(--focus-band-bottom-gap));
+    transform: translateX(-50%);
+    /* top + bottom + height:auto makes the element OCCUPY the band rather
+       than be capped by it. That distinction matters: with only a
+       max-height the element is content-sized, so a short routine sat at
+       the band's top edge with all the slack below it — v2.473's reported
+       "should be more centered". A content-sized box also gives
+       justify-content nothing to distribute. #task-view paints nothing of
+       its own, so filling the band is invisible; the content centres
+       inside it, and a full list fills it exactly. */
+    height: auto;
+    max-height: none;
+    /* Centre the WHOLE group — input bar, card, help window — as one block.
+       `safe` is load-bearing: with content taller than the band the free
+       space goes negative and plain `center` overflows BOTH edges, which
+       put the card back under the header at 820x480. `safe` falls back to
+       flex-start exactly then. On engines that don't support the keyword
+       the declaration is dropped and alignment defaults to flex-start,
+       which is the same conservative outcome, so the floor degrades safely.
+       This must live on the CONTAINER, not as `margin-top: auto` on
+       #task-card-group: an auto margin there absorbs the slack BETWEEN the
+       input bar and the card, pinning the bar to the band's top edge while
+       the card floats down — 141px apart on a two-task routine, against a
+       constant 16px in Home view. */
+    justify-content: safe center;
 }
-
-body.focus-mode #task-view .task-card {
-    max-height: calc(100vh - 230px);
-    max-height: calc(100dvh - 230px);
+/* The carousel's right-exit must keep the band's vertical anchoring.
+   #task-view.hide.hide-right (app-container.css) sets
+   `transform: translate(-50%, -50%)`, and one-id-plus-TWO-classes outranks
+   the one-id-one-class-one-element selector above — so it silently put back
+   the -50% Y the band model removes, and the view slid UP as it slid right:
+   measured translateY 0 -> -294px at 390x844 and 0 -> -385px at 768x1024,
+   with rect.y going 98 -> -196. Reported as "the routine goes to the upper
+   right corner instead of straight across". The `.show` / `.hide` /
+   `.view-toggle-active` variants are one-id-one-class and lose to the rule
+   above on their own, so they need no override. Unscoped since Oct 2026,
+   when desktop joined the band. */
+body.focus-mode #task-view.hide.hide-right {
+    transform: translateX(-50%);
 }
-
+/* Inside the band the LIST is the element that absorbs any shortage: it
+   already scrolls. Two things are needed for that to happen. The card and
+   list must not carry their own viewport-derived caps (the band bounds them;
+   the old desktop caps of 100dvh - 230 / 100dvh - 340 are what left the list
+   short on a tall window). And every flex item on the chain down to the list
+   needs min-height: 0 — a flex item's default min-height is its CONTENT
+   height and cannot give, which is how a long routine overflowed the band
+   on iPad portrait (2.595). The <1024px block below re-caps the list for
+   phones; the band still bounds it there. */
+body.focus-mode #task-view .task-card,
 body.focus-mode #task-view .task-list-container {
-    /* Tunable via --focus-task-list-reduction-desktop in variables.css. */
-    max-height: calc(100vh - var(--focus-task-list-reduction-desktop));
-    max-height: calc(100dvh - var(--focus-task-list-reduction-desktop));
+    max-height: none;
 }
-/* For the cap above to shorten the view, the flex chain down to the list has
-   to be allowed to shrink: a flex item's default min-height is its content
-   size, and the list carries a 200px floor (task-list.css). Without these the
-   capped #task-view simply overflowed (overflow: visible here) and the input
-   bar stayed where it was. The <1024px block sets the list's floor to 0 for the
-   same reason; this is the desktop half of that rule. */
-@media (min-width: 1024px) {
-    body.focus-mode #task-view #task-card-group,
-    body.focus-mode #task-view .task-card,
-    body.focus-mode #task-view .task-list-container {
-        min-height: 0;
-    }
+body.focus-mode #task-view #task-card-group,
+body.focus-mode #task-view .task-card,
+body.focus-mode #task-view .task-list-container {
+    min-height: 0;
 }
+
 
 /* Chrome elements fade in/out.
 
@@ -352,6 +393,22 @@ body.focus-mode #undo-redo-buttons {
         bottom: 58px;
     }
 }
+
+/* Desktop: drop the nav-dots / undo row 25px lower. Focus mode pins the dots
+   at bottom: 65px (phones: 80px, below), a value from when the help window and
+   Complete button sat under the card. The band's bottom edge is MEASURED from
+   the dots (--nav-dots-clearance), so lowering them hands the list the same
+   25px. Undo/redo moves in lock-step to stay on the dots' row. Phones keep
+   theirs — the home indicator and thumb reach are the constraint there. */
+@media (min-width: 1024px) {
+    body.focus-mode #nav-dots {
+        bottom: 40px;
+    }
+    body.focus-mode #undo-redo-buttons {
+        bottom: 25px;
+    }
+}
+
 
 /* Low-key undo/redo styling — reachable but not distracting.
    Brightens on hover / keyboard focus so it's still discoverable. */
@@ -1047,89 +1104,10 @@ body.focus-mode #complete-all-and-help-window-container {
    ============================================================================= */
 
 @media (max-width: 1023px) {
-    /* Focus mode: keep the existing centering math so content sits in
-       the middle of the viewport when there's room. The deliberate
-       top-clearance below the close/menu buttons is enforced via
-       padding-top on #task-view itself — putting it on the parent
-       guarantees the offset applies regardless of whether the input
-       bar is visible (the input bar's `.hidden` state doesn't reliably
-       preserve flex space in this configuration, so we can't rely on
-       margin on #task-input-row alone). */
-    body.focus-mode #task-view {
-        /* BAND-ANCHORED, not centred. The view occupies exactly the space
-           between the painted chrome and the nav dots, so both edges are set
-           by construction and neither can drift:
-
-               top    = chromeBottom + cardGap          (--focus-band-top)
-               bottom = 100dvh - navDotsClearance - gap
-
-           Both inputs are MEASURED on the live elements (--focus-chrome-bottom
-           and --nav-dots-clearance, published by headerLayoutManager), which is
-           what makes this hold across surfaces: an in-app browser reports
-           env(safe-area-inset-top) 0 where the installed app reports 61, and
-           the chrome that paints is .mini-cycle-header-row, not the ✕ / ⋯
-           buttons it contains.
-
-           The previous centred model (top: 50% + 25px with the height derived
-           so the top edge cleared the chrome) assumed 50dvh + 25 sat near the
-           band's centre. At 820x480 the band is 81 -> 349, centred on 215,
-           against an element centred on 265 — so clearing the top forced the
-           bottom past the nav dots. Reverting to centring will reintroduce
-           that; the layout suite's focus-view checks are the guard. */
-        top: var(--focus-band-top);
-        bottom: calc(var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
-                     + var(--focus-band-bottom-gap));
-        transform: translateX(-50%);
-
-        /* top + bottom + height:auto makes the element OCCUPY the band rather
-           than be capped by it. That distinction matters: with only a
-           max-height the element is content-sized, so a short routine sat at
-           the band's top edge with all the slack below it — v2.473's reported
-           "should be more centered". A content-sized box also gives
-           justify-content nothing to distribute. #task-view paints nothing of
-           its own, so filling the band is invisible; the content centres
-           inside it, and a full list still fills it exactly as before. */
-        height: auto;
-        max-height: none;
-
-        /* Centre the WHOLE group — input bar, card, help window — as one block.
-           `safe` is load-bearing: with content taller than the band the free
-           space goes negative and plain `center` overflows BOTH edges, which
-           put the card back under the header at 820x480. `safe` falls back to
-           flex-start exactly then. On engines that don't support the keyword
-           the declaration is dropped and alignment defaults to flex-start,
-           which is the same conservative outcome, so the floor degrades safely.
-
-           This must live on the CONTAINER, not as `margin-top: auto` on
-           #task-card-group: an auto margin there absorbs the slack BETWEEN the
-           input bar and the card, pinning the bar to the band's top edge while
-           the card floats down — 141px apart on a two-task routine, against a
-           constant 16px in Home view. */
-        justify-content: safe center;
-    }
-
-    /* The carousel's right-exit must keep the band's vertical anchoring.
-       #task-view.hide.hide-right (app-container.css) sets
-       `transform: translate(-50%, -50%)`, and one-id-plus-TWO-classes outranks
-       the one-id-one-class-one-element selector above — so it silently put back
-       the -50% Y the band model removes, and the view slid UP as it slid right:
-       measured translateY 0 -> -294px at 390x844 and 0 -> -385px at 768x1024,
-       with rect.y going 98 -> -196. Reported as "the routine goes to the upper
-       right corner instead of straight across".
-
-       main.css already fixes this same collision for `.hide` under
-       first-run-welcome-active / onboarding-active, and says why in as many
-       words: "the -50% Y would yank the view upward and read as a glitch".
-       That override predates the focus Task panel, so the directional
-       hide-right the carousel introduced was never covered.
-
-       Scoped to this media block ON PURPOSE: at >=1024px #task-view really is
-       centred, `.show` and `.hide-right` both measure translateY -196px, and an
-       unconditional X-only override would introduce there the exact jump it
-       removes here. The left exit (toward Stats) already measures flat. */
-    body.focus-mode #task-view.hide.hide-right {
-        transform: translateX(-50%);
-    }
+    /* #task-view's band anchoring (top / bottom / transform / justify-content)
+       and the .hide.hide-right override live in the UNSCOPED rule near the top
+       of this file since Oct 2026 — desktop uses the same band. Only the
+       phone-specific caps below remain here. */
 
     body.focus-mode #task-view .task-card {
         max-height: calc(100dvh - 80px);

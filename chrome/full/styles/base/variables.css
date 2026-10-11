@@ -600,31 +600,17 @@
   --focus-band-top: calc(var(--focus-top-chrome) + var(--focus-card-chrome-gap));
   --focus-band-bottom-gap: 25px;  /* visible gap left above the nav dots */
 
-  /* Task-view upward shift on desktop (used as `top: calc(50% - var(--*))`).
-     Higher values move the centered task-view further up the viewport,
-     freeing space for the title row to sit above the centerline. Capped
-     by the three-dots / exit buttons at top: 16px (height: 30px). */
+  /* Upward shift of the centred task-view. Focus View itself stopped using
+     this in Oct 2026 (band-anchored at every width); only the first-run tour's
+     banner shift (first-run-welcome.css) still keys off it. */
   --focus-mode-top-offset: 35px;
   /* The closest ANY focus-view content (input bar, routine title, card) may
-     come to the painted chrome. Below 1024px the band model holds the card
-     --focus-card-chrome-gap clear by construction. At and above 1024px
-     #task-view is still CENTRED (top: 50% - offset, translateY -50%) and
-     content-sized, so on a short window a long list grew the view until its
-     top edge rode under the header row: input bar at y=76 against a chrome
-     bottom of 80 at 1100x600, and worse the shorter the window (Oct 2026).
-     The top edge is centre - height/2, so the floor becomes a HEIGHT cap:
-        height <= 2 * (50dvh - offset - chromeBottom - floor)
-     which is --focus-desktop-view-cap below. The task list (min-height: 0 in
-     focus view) absorbs the shortage and scrolls; the bottom edge rises by the
-     same amount, so nav-dot clearance only improves. The cap is derived from
-     the MEASURED chrome (--focus-top-chrome), not a literal, for the reasons
-     --focus-top-chrome's own comment gives. On a tall window the content never
-     reaches the cap and nothing moves. */
+     come to the painted chrome. The band gives --focus-card-chrome-gap (16px)
+     by construction at every width since Oct 2026, so this is the FLOOR the
+     layout suite asserts (`focus content keeps 5px from the painted chrome`),
+     not a layout input. It briefly drove a desktop height cap in 2.594, while
+     desktop was still centred; the band made that cap redundant. */
   --focus-chrome-floor: 5px;
-  --focus-desktop-view-cap: calc(100dvh
-                                 - 2 * var(--focus-top-chrome)
-                                 - 2 * var(--focus-mode-top-offset)
-                                 - 2 * var(--focus-chrome-floor));
   /* Focus view's top chrome — the ✕ / ⋯ buttons. These two are the SOURCE:
      the buttons are positioned and sized from them, and everything that has to
      sit clear of the buttons derives from them rather than restating the sum.
@@ -695,12 +681,11 @@
      shortens it by 2N (the element is centred). */
   --focus-card-chrome-gap: 16px;
 
-  /* Task-list-container max-height reduction in focus mode — controls how
-     much the scrollable list shrinks below 100dvh so its bottom edge
-     clears the bottom controls band (action button / nav-dots / undo).
-     Desktop and mobile are separate because their bottom-control layouts
-     differ. Larger value → shorter list, more clearance. */
-  --focus-task-list-reduction-desktop: 340px;
+  /* Task-list-container max-height reduction in focus mode on phones/tablets
+     (<1024px) — how much the scrollable list shrinks below 100dvh. The band
+     bounds the list anyway (the flex chain shrinks), so this only binds on a
+     tall viewport with a long routine. Desktop had its own 340px token until
+     Oct 2026; the band replaced it (the list fills the band). */
   --focus-task-list-reduction-mobile:  310px;
 }
 
