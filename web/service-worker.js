@@ -103,6 +103,7 @@ var CORE = [
   './assets/images/pattern.svg',
   './assets/images/logo/minicycle_logo_icon.png',
   './assets/images/logo/logo.png',
+  './assets/images/logo/pwa-icons/icon-192.png',   // favicon + apple-touch-icon (blue square)
   // Loading tips (shown during boot splash)
   './modules/labels/loading-tips.json',
   // Self-hosted fonts
