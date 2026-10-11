@@ -678,6 +678,9 @@ export class DragDropManager {
             //     produced [B,A,C,D] instead of [A,C,B,D] — it moved A.
             //   - a non-default sort reorders the DOM within the active list:
             //     state [Zebra,Apple,Mango] renders as [Apple,Mango,Zebra].
+            //     (Since Oct 2026 the arrows refuse under a sort — see the
+            //     _isSortActive guard above — because the re-render re-sorted
+            //     the view and the move was correct but invisible.)
             //
             // In a routine manager the task sequence IS the routine, so that was
             // silent corruption of the thing the user built to run repeatedly.

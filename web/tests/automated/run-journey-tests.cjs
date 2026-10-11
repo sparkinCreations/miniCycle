@@ -2051,13 +2051,23 @@ async function journeyArrowReorderMovesTheRightTask(browser, baseURL) {
         record('the move-down arrow on Apple was clickable', pressed2, 'no move-down button found on Apple');
         await page.waitForTimeout(1500);
 
-        // Apple is followed on screen by Mango, so "down" means "put Apple after
-        // Mango" — recorded in the stored order, whatever the sorted view shows.
+        // Contract change (Oct 2026): under a non-default sort the arrows REFUSE.
+        // The previous contract moved Apple after its on-screen neighbour, which
+        // was correct in state but invisible on screen — the re-render re-sorted
+        // the view, so the routine order silently changed with nothing moving.
+        // Now the stored order is untouched and the user is told why
+        // (dragDropManager._isSortActive / DOM_CLASSES.TASKS_SORTED).
         const after2 = await stored();
-        record('under a sort, the arrow reorders the task the user pointed at',
-            JSON.stringify(after2) === '["Zebra","Mango","Apple"]',
-            `expected ["Zebra","Mango","Apple"], got ${JSON.stringify(after2)} — the arrow used the sorted ` +
-            'DOM position as a state index, so it moved the wrong task');
+        record('under a sort, the arrow leaves the stored order untouched',
+            JSON.stringify(after2) === JSON.stringify(state2),
+            `expected the pre-press order ${JSON.stringify(state2)}, got ${JSON.stringify(after2)} — a reorder ` +
+            'written through a sorted view changes the routine with no visible movement');
+        const pausedNotice = await page.evaluate(() =>
+            [...document.querySelectorAll('.notification, [role="status"], [role="alert"]')]
+                .some(n => /paused while sorted/i.test(n.textContent || '')));
+        record('under a sort, pressing an arrow explains that reordering is paused',
+            pausedNotice,
+            'no "Reordering is paused while sorted" notification appeared — a dead control with no explanation');
 
         record('no starved dependencies', page.__diWarnings.length === 0,
             `DI warnings: ${page.__diWarnings.join(' | ')}`);
