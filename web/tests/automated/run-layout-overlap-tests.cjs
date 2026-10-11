@@ -1287,8 +1287,9 @@ async function run() {
                     }, { hostSel, boxSel, btnId });
                     record(vp, `${label}: control is visible`, !!r && r.visible, 'control hidden or missing');
                     // BENEATH the panel's box, hanging off its lower-right corner, like the
-                    // routine card (15px drop, right edges aligned) — never inside it.
-                    record(vp, `${label}: control hangs beneath the panel at its lower-right`, !!r && r.hostOk && r.below && r.drop <= 24 && Math.abs(r.rightOffset) <= 6,
+                    // routine card: a hair below it (1-8px — not touching, not a gap) with
+                    // the right edges aligned — never inside it.
+                    record(vp, `${label}: control hangs just beneath the panel at its lower-right`, !!r && r.hostOk && r.below && r.drop >= 1 && r.drop <= 8 && Math.abs(r.rightOffset) <= 6,
                         r ? `host=${r.hostOk} below=${r.below} drop=${r.drop} rightOffset=${r.rightOffset}` : 'not found');
                     if (r && r.navLine !== null) {
                         record(vp, `${label}: control clears the nav dots`, r.bottom <= r.navLine + TOL, `control.bottom ${r.bottom} > navLine ${r.navLine}`);

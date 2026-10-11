@@ -978,7 +978,9 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
 
 /* The eye / × control's slot BENEATH the Task and Stats panels — hanging off
    the panel's lower-right corner, the way .progress-focus-row holds it under
-   the routine card (same 15px drop, same right alignment). Appended by
+   the routine card: there the control centres on the progress row and ends up
+   ~3px below the card, so the drop here is --space-1, not the row's 15px
+   margin (that read as a gap, Oct 2026). Same right alignment. Appended by
    focusMode to the panel element (which is position: fixed, so this is placed
    against its box) and never inside its content, so a shorter panel simply
    puts the control higher. .focus-mode-btn and body.focus-mode
@@ -988,7 +990,7 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
    sized and centred, so it just grows. */
 .panel-action-slot {
     position: absolute;
-    top: calc(100% + var(--space-3-75));
+    top: calc(100% + var(--space-1));
     right: 0;
     width: 36px;
     height: 36px;
