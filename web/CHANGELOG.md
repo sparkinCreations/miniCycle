@@ -1,3 +1,24 @@
+## [2.603] - 2026-10-11
+- feat(a11y): long-press labels on the Quick Actions arrows, the dark mode toggle and the personalization button
+- chore(release): Lite 2.097 + Chrome Edition 1.4 (rebuilt)
+- fix(lite): a pending auto-reset re-checks before it fires; web feedback error uses the styled block
+- chore(release): Lite 2.096 + Chrome Edition 1.3 (rebuilt)
+- fix(lite): feedback modal — one close control, modern look
+- chore(release): Lite 2.095 + Chrome Edition 1.3
+- feat(lite): high-priority indicator sits on the right, before the ⋯ button
+- docs(chrome-lite): store summary — "Track your progress in cycles. Three modes."
+- chore(release): Lite 2.094 + Chrome Edition 1.2
+- feat(lite): toasts appear 8px below the mode selector
+- feat(lite): modern toast notifications (CSS only)
+- feat(lite): gradient progress bar and modern pill Complete button
+- docs(chrome-lite): new store summary and add the Lite listing to STORE_LISTING.md
+- feat(lite): drop "Routine Manager" — Lite is one checklist, not a manager
+- fix(lite): phone mode selector no longer clips "Manual Cycle" after the chevron
+- feat(lite): dropdown chevron on the mode selector (web + Chrome Edition)
+- fix(lite): task rows use the full width of the list in focus mode (web + Chrome Edition)
+- feat(chrome-lite): port Lite 2.093 to the Chrome Edition popup (v1.1)
+
+
 ## [2.602] - 2026-10-11
 - docs(claude): note that Lite seems more popular with users than the full version
 - feat(lite): modern task UI, drag-to-reorder, in-app modals, and stats/undo fixes
