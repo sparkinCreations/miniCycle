@@ -54,3 +54,49 @@ IN CHROME
 miniCycle opens in Chrome's side panel, so your routine stays visible beside whatever you're working on and you can tick tasks off as you actually do them. Need more room? Open it in a full tab anytime.
 
 Build the routines that build you.
+
+---
+---
+
+# Chrome Web Store listing — miniCycle lite (Chrome Edition)
+
+Same rules as above: paste into the dashboard (Store listing → Description) when
+it changes, and change it HERE first. The short summary is NOT pasted — it is the
+`description` field in `chrome/lite/manifest.json` (132-character limit):
+
+> A quick, reusable checklist for your repeatable routine, right in your toolbar. Auto Cycle, Manual Cycle, and To-Do modes.
+
+Lite is ONE checklist — say "your routine", never imply multiple saved lists
+(that is the full version's job, pointed to at the end). Button names must match
+the Lite UI: Manual Cycle's button is "Start New Cycle".
+
+---
+
+miniCycle Lite is a quick, reusable checklist for routines and repeatable tasks. Keep one checklist in your Chrome toolbar and use it for a morning routine, workout, opening procedure, or any process you repeat.
+
+In Auto Cycle and Manual Cycle modes, completed tasks stay on your checklist and reset for the next run. Auto Cycle resets when you finish every task. Manual Cycle resets when you press Start New Cycle. Prefer a one-off list? Switch to To-Do Mode and clear completed tasks when you're done.
+
+WHAT MAKES IT DIFFERENT
+
+• One checklist, ready to use again and again.
+• Three modes for recurring routines or one-off tasks.
+• Your cycle count and progress help you see each completed run.
+
+FEATURES
+
+• Add, reorder, complete, and clear tasks.
+• Undo and redo task changes.
+• View your cycle count, completion rate, and progress in the Stats panel.
+• Use Focus Mode to expand the checklist and hide app controls.
+• Switch to dark mode.
+• Get quick help or send feedback from the extension.
+
+PRIVACY
+
+Your checklist and progress stay in the extension's local storage on your device. There's no account or sign-in, and no tracking or analytics. If you choose to send feedback, your message is sent through Web3Forms.
+
+LIGHTWEIGHT BY DESIGN
+
+miniCycle Lite keeps repeatable checklists simple and close at hand. Want multiple saved routines, recurring schedules, reminders, priorities, more personalization, or .mcyc import and export? Explore the full version at https://minicycleapp.com
+
+Made by sparkinCreations.
