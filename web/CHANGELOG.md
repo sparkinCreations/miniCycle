@@ -1,3 +1,19 @@
+## [2.594] - 2026-10-10
+- fix(focus): desktop Focus View content keeps 5px clear of the header chrome
+- fix(focus): the status pill clears the × exit by 5px instead of cutting into it
+- feat(focus): the × exit sits where the eye button sits — same slot, same 36px circle
+- feat(menu): the main menu's Focus View entry uses the same eye-in-brackets glyph
+- feat(focus): Focus View button shows an eye inside the expand brackets
+- feat(chrome): full-tab button takes the ×'s slot when the × is absent
+- feat(chrome): "Open in full tab" button moves to the upper left beside Focus View's ×
+- chore(chrome): manifest descriptions use the category wording
+- docs(chrome): version the Web Store description in the repo
+- chore(icons): every public page uses the blue favicon; Lite keeps the transparent mark
+- fix(product): shorter header tagline so it clears the Try Now button on phones
+- fix(redirects): force the /pages/product -> .html rule
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.593] - 2026-10-10
 - chore(icons): app and product page use the blue-background favicon; Lite keeps the transparent mark
 - seo(product): SOP clause in the meta description; /lite alias for the Lite app
