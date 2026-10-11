@@ -39,6 +39,28 @@ export async function runOnboardingCarouselTests(resultsDiv) {
         };
     }
 
+    await test('REGRESSION (a11y): advancing announces "Slide N of M: <title>" through the live region', async () => {
+        document.getElementById('live-region')?.remove();
+        const region = document.createElement('div'); region.id = 'live-region';   // DOM_IDS.LIVE_REGION
+        document.body.appendChild(region);
+        const m = makeManager();
+        m._firstRunWelcomeSlides = [{ title: 'One', message: 'a' }, { title: 'Two|Lines', message: 'b' }, { title: 'Three', message: 'c' }];
+        m._firstRunWelcomeTitleEl = document.createElement('h2');
+        m._firstRunWelcomeMessageEl = document.createElement('div');
+        m._firstRunWelcomeBanner = document.createElement('div');
+        const c = new OnboardingCarousel(m);
+        try {
+            c._advanceFirstRunWelcomeSlide();
+            await new Promise(r => setTimeout(r, 450)); // fade (300ms) + announce's animation frame
+            const spoken = region.textContent;
+            if (!/slide 2 of 3/i.test(spoken)) throw new Error(`expected "Slide 2 of 3", live region says "${spoken}"`);
+            if (!/Two Lines/.test(spoken)) throw new Error(`title should follow the position with | turned into a space, got "${spoken}"`);
+        } finally {
+            if (m._firstRunWelcomeSlideTimer) clearTimeout(m._firstRunWelcomeSlideTimer);
+            region.remove();
+        }
+    });
+
     await test('carousel STATE stays on the manager, not on the sub-module', () => {
         // 22 fields, none migrated — the manager's destroy() still clears every
         // timer, observer and handler it always cleared. A field that quietly

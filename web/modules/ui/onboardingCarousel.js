@@ -27,6 +27,7 @@
  */
 import { DOM_CLASSES, DOM_IDS, DOM_SELECTORS, EVENTS, UI_TIMEOUTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 export class OnboardingCarousel {
@@ -96,6 +97,7 @@ export class OnboardingCarousel {
         // `|` in the title label is a line break (CSS pre-line + \n).
         title.textContent = this.m._firstRunWelcomeSlides[0].title.replace(/\|/g, '\n');
         this.m._firstRunWelcomeTitleEl = title;
+        this._announceFirstRunWelcomeSlide(0);
 
         // Body is a <div> (not <p>) so it can host inline SVG for render-mode slides.
         const message = document.createElement('div');
@@ -707,6 +709,23 @@ export class OnboardingCarousel {
      * runs. Schedules the next advance after the swap. Loops back to slide 0.
      * @private
      */
+    /**
+     * Speak "Slide N of M: <title>" through the shared live region. The banner
+     * itself is aria-live, but a changed title alone never said where the
+     * user was in the sequence — the Home View tour announces "1 of 6", the
+     * carousel announced nothing (accessibility audit, Oct 2026).
+     * @param {number} index - zero-based slide index
+     * @private
+     */
+    _announceFirstRunWelcomeSlide(index) {
+        const slides = this.m._firstRunWelcomeSlides;
+        const slide = slides?.[index];
+        if (!slide) return;
+        announce(getLabel('firstRunWelcome.slidePosition', {
+            vars: { current: index + 1, total: slides.length, title: String(slide.title || '').replace(/\|/g, ' ') }
+        }), { getElementById: (id) => document.getElementById(id) });
+    }
+
     _advanceFirstRunWelcomeSlide() {
         const titleEl = this.m._firstRunWelcomeTitleEl;
         const messageEl = this.m._firstRunWelcomeMessageEl;
@@ -730,6 +749,7 @@ export class OnboardingCarousel {
             }
             // `|` in the title label is a line break (CSS pre-line + \n).
             this.m._firstRunWelcomeTitleEl.textContent = slide.title.replace(/\|/g, '\n');
+            this._announceFirstRunWelcomeSlide(nextIndex);
 
             // Tear down previous body (cancel pending timeouts in render slides).
             if (this.m._firstRunWelcomeBodyCleanup) {

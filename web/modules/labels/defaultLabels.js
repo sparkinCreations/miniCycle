@@ -482,6 +482,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Drag & drop notifications
         reorderFailed:          'Unable to reorder tasks right now',
         reorderError:           'Failed to reorder task',
+        reorderPausedWhileSorted: 'Reordering is paused while sorted. Switch sort to Default to move tasks.',
 
         // Title notifications
         titleEmpty:             'Title cannot be empty. Reverting to previous title.',
@@ -1718,6 +1719,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     firstRunWelcome: {
+        // Spoken position for each carousel slide (the Home View tour already
+        // announces "1 of 6"; the carousel did not — audit, Oct 2026).
+        slidePosition:     'Slide {current} of {total}: {title}',
         title:             'Welcome to miniCycle',
         message:           'A checklist app for repeatable routines. |Complete. Cycle. Repeat.',
         // `|` is a paragraph break — the renderer splits on it so each

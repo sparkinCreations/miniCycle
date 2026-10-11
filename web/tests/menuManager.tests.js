@@ -467,6 +467,36 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('REGRESSION: clearAllTasks and deleteAllTasks refresh the help-window status', async () => {
+        // The status panel ("N tasks remaining") re-renders only when asked.
+        // Both bulk actions refreshed the progress bar, stats and Complete All
+        // button but not the panel, so it kept the pre-bulk count.
+        let refreshes = 0;
+        const mockFlattenedData = {
+            cycles: { 'cycle-1': { title: 'Test Cycle', tasks: [
+                { id: 'task-1', text: 'Task 1', completed: true },
+                { id: 'task-2', text: 'Task 2', completed: false }
+            ] } },
+            activeCycle: 'cycle-1'
+        };
+        setMenuManagerDependencies(createMockDeps({
+            updateCycleData: (id, updateFn) => { const c = { tasks: JSON.parse(JSON.stringify(mockFlattenedData.cycles[id].tasks)) }; updateFn(c); return true; },
+            showConfirmationModal: (opts) => opts.callback(true),
+            querySelectorAll: () => [],
+            updateProgressBar: () => {},
+            updateStatsPanel: () => {},
+            checkCompleteAllButton: () => {},
+            updateUndoRedoButtons: () => {},
+            updateHelpWindow: () => { refreshes++; }
+        }));
+        const instance = new MenuManager();
+        await instance.clearAllTasks();
+        if (refreshes !== 1) throw new Error(`clearAllTasks should refresh the status panel once, got ${refreshes}`);
+        await instance.deleteAllTasks();
+        await new Promise(r => setTimeout(r, 50));
+        if (refreshes !== 2) throw new Error(`deleteAllTasks should refresh the status panel too, got ${refreshes} total`);
+    });
+
     await test('deleteAllTasks removes all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {

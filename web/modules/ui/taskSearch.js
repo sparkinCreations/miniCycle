@@ -457,6 +457,9 @@ function applyFiltersAndSort(query) {
 
     // 1. Apply sort (reorders DOM nodes in the active list)
     applySortToDOM(tasks, taskList, dataFor, themes);
+    // Flag the sorted view so reordering (drag + move arrows) pauses — see
+    // DOM_CLASSES.TASKS_SORTED. Cleared again by Default / resetSearch().
+    deps.getBody?.()?.classList.toggle(DOM_CLASSES.TASKS_SORTED, currentSort !== 'default');
 
     // 2. Apply text + category filter (show/hide each task) to BOTH the active list
     //    AND the completed-tasks dropdown. When that feature is enabled, completed
@@ -565,6 +568,7 @@ export function resetSearch() {
     // Reset filter/sort state
     currentFilter = 'all';
     currentSort = 'default';
+    deps.getBody?.()?.classList.remove(DOM_CLASSES.TASKS_SORTED);
     filterGroupCollapsed = true;
 
     // Reset chip visual state to defaults

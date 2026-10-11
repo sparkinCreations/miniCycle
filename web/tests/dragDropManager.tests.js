@@ -226,6 +226,33 @@ export async function runDragDropManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">↕️ Arrow Button Functionality</h4>';
 
+    test('REGRESSION: handleArrowClick() refuses to reorder while the list is sorted (body.tasks-sorted)', () => {
+        // With a non-default sort the DOM order is the SORT order. The arrow
+        // picked its neighbour from that view and wrote a change into the real
+        // routine order, then the re-render re-sorted the view: nothing visibly
+        // moved while the routine silently changed (measured Oct 2026).
+        const fakeBody = document.createElement('div');
+        fakeBody.classList.add('tasks-sorted');   // DOM_CLASSES.TASKS_SORTED
+        const notifications = [];
+        let updated = false;
+        const state = { appState: { activeRoutineId: 'c1' }, data: { routine: { c1: { tasks: [{ id: 'a', text: 'A' }, { id: 'b', text: 'B' }] } } } };
+        const manager = new DragDropManager({
+            getBody: () => fakeBody,
+            showNotification: (msg, type) => notifications.push({ msg: String(msg), type }),
+            AppState: { isReady: () => true, get: () => state, update: () => { updated = true; } },
+            captureStateSnapshot: () => {}
+        });
+        const li = document.createElement('li'); li.className = 'task'; li.dataset.taskId = 'a';
+        const button = document.createElement('button'); button.className = 'move-down';
+        li.appendChild(button);
+        manager.handleArrowClick(button);   // guard runs synchronously, before any await
+        if (updated) throw new Error('a sorted list must NOT be reordered by the arrows');
+        if (!notifications.some(n => /paused while sorted/i.test(n.msg))) {
+            throw new Error('user should be told reordering is paused: ' + JSON.stringify(notifications));
+        }
+        manager._arrowMoveInProgress = false;
+    });
+
     test('handleArrowClick() requires AppState', () => {
         const manager = new DragDropManager();
         const button = document.createElement('button');

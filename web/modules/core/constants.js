@@ -787,6 +787,11 @@ export const DOM_CLASSES = Object.freeze({
     HELP_WINDOW_SIDE: 'help-window-side',
     ONBOARDING_ACTIVE: 'onboarding-active',
     FOCUS_MODE: 'focus-mode',
+    // On <body> while the task search's sort chip is anything but Default.
+    // The sorted view has no meaningful "up"/"down", and a reorder written
+    // through it silently rewrote the real routine order (measured Oct 2026),
+    // so drag-and-drop and the move arrows pause while it is set.
+    TASKS_SORTED: 'tasks-sorted',
     // Focus task card, empty routine (no tasks at all) — drops the card's
     // chrome so the message sits on the background rather than inside a card
     // wrapped around nothing. NOT the all-done state, which keeps its card.

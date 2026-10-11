@@ -248,6 +248,15 @@ export async function runTaskSearchTests(resultsDiv) {
                     'the captured order was cleared before the restore could use it');
             }
 
+            // --- the sorted view is flagged on <body> for the reorder guard ---
+            list.click('az');
+            if (!document.body.classList.contains('tasks-sorted')) {
+                throw new Error('a non-default sort must set body.tasks-sorted (drag + arrows pause on it)');
+            }
+            list.click('default');
+            if (document.body.classList.contains('tasks-sorted')) {
+                throw new Error('returning to Default must clear body.tasks-sorted');
+            }
             // --- query active: filtering is display:none, so filtered-out rows
             //     stay in the DOM and the restore must still reorder them ---
             list.setQuery('a');           // matches all three (zebra, apple, mango)
