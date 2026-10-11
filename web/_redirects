@@ -16,8 +16,10 @@ https://minicycle.app/docs/*  https://docs.minicycle.app/:splat  301!
 /product.html           /pages/product.html           301
 # Netlify's pretty URLs ALSO serve this page at /pages/product (no extension) — two
 # live addresses for one page. Everything else (old domain, legacy path, og:url,
-# sitemap, canonical) names the .html one, so send the twin there too.
-/pages/product          /pages/product.html           301
+# sitemap, canonical) names the .html one, so send the twin there too. FORCED
+# (301!): pretty-URL resolution matches the file first and an unforced rule is
+# never consulted — measured live after v2.593, the twin still answered 200.
+/pages/product          /pages/product.html           301!
 /learn_more.html        /pages/learn_more.html        301
 /miniCycle-lite.html    /lite/miniCycle-lite.html     301
 /miniCycleGames/*       /games/:splat                 301
