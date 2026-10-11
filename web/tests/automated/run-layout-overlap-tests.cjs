@@ -1227,6 +1227,34 @@ async function run() {
                         `page still scrolls ${extra}px after the tour ended`);
                 }
 
+                // ── Focus view, SHORT routine: the list background hugs the tasks ──
+                // The band bounds the content; it must not inflate it. The card
+                // group is flex-grow 1 for Home view, so in the band (whose box
+                // is the band's full height) anything that does not pin it to
+                // flex-grow 0 stretches the list background over the free space:
+                // 274px of empty list below three tasks at 1280x800 (2.597-2.600,
+                // when the pin was still scoped to <1024px). A list that is FULL
+                // scrolls instead, and then the last task sits below the list's
+                // edge, which passes this check by construction. The six-task
+                // tour routine fits every band here.
+                for (const vp of VIEWPORTS) {
+                    await tp.setViewportSize({ width: vp.width, height: vp.height });
+                    await tp.waitForTimeout(500);
+                    const hug = await tp.evaluate(() => {
+                        const list = document.querySelector('.task-list-container');
+                        const items = document.querySelectorAll('#taskList li');
+                        if (!list || !items.length) return null;
+                        const last = items[items.length - 1].getBoundingClientRect();
+                        const lr = list.getBoundingClientRect();
+                        return { empty: Math.round(lr.bottom - last.bottom), pad: parseFloat(getComputedStyle(list).paddingBottom) || 0, tasks: items.length };
+                    });
+                    if (hug) {
+                        record(vp, `focus list hugs a short routine (${hug.tasks} tasks, no stretched background)`,
+                            hug.empty <= hug.pad + 8 + TOL,
+                            `${hug.empty}px of list below the last task against ${hug.pad}px of padding — the card group is growing to fill the band`);
+                    }
+                }
+
                 // ── Focus view, long routine, short desktop window ──────────
                 // At >=1024px #task-view is centred and content-sized
                 // (focus-mode.css), so the chrome floor is only exercised when

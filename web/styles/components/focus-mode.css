@@ -193,6 +193,20 @@ body.focus-mode #task-view .task-card,
 body.focus-mode #task-view .task-list-container {
     min-height: 0;
 }
+/* ...and the card group sizes to its CONTENT inside the band instead of
+   growing to fill it. #task-card-group is flex: 1 1 auto (task-view-layout.css,
+   for Home view), and flex-grow consumes the band's free space before
+   justify-content can centre anything — so a two-task routine rendered as tall
+   as an eight-task one, with the list background stretched to the band. Shrink
+   is left intact: a list longer than the band still collapses to fill it
+   exactly and scrolls. This was scoped to <1024px until Oct 2026 (desktop was
+   centred and content-sized then, so it never needed it); when 2.597 made the
+   group grow everywhere for Home view, desktop Focus View stretched: 274px of
+   empty list below three tasks at 1280x800. The layout suite's "focus list
+   hugs a short routine" rows are the guard. */
+body.focus-mode #task-card-group {
+    flex-grow: 0;
+}
 
 
 /* Chrome elements fade in/out.
@@ -770,16 +784,11 @@ body.focus-mode .focus-mode-mode-modal {
         margin-top: 0;
     }
 
-    /* Let the card size to its CONTENT inside the band instead of growing to
-       fill it. #task-card-group is flex: 1 1 auto by default, and flex-grow
-       consumes the free space before justify-content can centre anything — so
-       a two-task routine still rendered as tall as an eight-task one, pinned
-       to the band's top edge. Shrink is left intact: a list longer than the
-       band still collapses to fill it exactly, so the full-list geometry is
-       unchanged. */
-    body.focus-mode #task-card-group {
-        flex-grow: 0;
-    }
+    /* The card's "size to CONTENT, do not grow" pin used to live here; it is
+       unscoped now (see the band rule near the top of this file), because
+       desktop joined the band in 2.596 and 2.597 made #task-card-group grow
+       everywhere for Home view — a three-task routine rendered 274px of
+       empty list on desktop until it moved. */
     body.focus-mode #task-view .task-card {
         margin-top: 0;
     }
