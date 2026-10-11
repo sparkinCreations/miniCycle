@@ -543,7 +543,6 @@
      Components: header + mode selector + progress bar + help window + nav dots + margins.
      Increase to shrink the task card; decrease to give it more room. */
   --task-card-offset: 320px;
-  --task-card-offset-with-btn: 380px;     /* When Complete/Clear button is visible */
   --nav-area-height: 55px;                /* Nav dots bottom offset (desktop/base). Mobile reduces it — see RESPONSIVE TOKEN OVERRIDES below. */
   --help-window-clearance: 55px;          /* Help window margin-bottom to clear nav dots */
 
@@ -558,8 +557,14 @@
      overlaps fragile. */
   --header-height-fallback: 110px;          /* fallback for --header-total-height */
   --nav-dots-clearance-fallback: 90px;      /* fallback for --nav-dots-clearance */
-  --task-view-max-reduction: 290px;         /* base #task-view max-height budget */
-  --task-view-max-reduction-mobile: 220px;  /* mobile (≤768px) budget */
+  --task-view-max-reduction-mobile: 220px;  /* mobile (≤768px) budget; tablet/desktop use the band alone */
+  /* Home view, tablet + desktop: clearance between #task-view and each edge of
+     the measured header -> nav-dots band (the box is centred on it). Replaces
+     --task-view-max-reduction (290px) and --task-card-offset-with-btn (380px),
+     the literal budgets that let a long routine overflow the band on iPad
+     (Oct 2026). Focus View's equivalents are --focus-card-chrome-gap /
+     --focus-band-bottom-gap. */
+  --home-band-gap: 16px;
   --stats-panel-max-vh: 63vh;               /* stats panel cap on tall viewports */
 
   /* ─── Focus Mode Geometry ──────────────────────────────────────────────

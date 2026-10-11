@@ -55,12 +55,17 @@
    inside #task-card-group, the wrapper has to forward that flex behavior
    so .task-card still has space to fill/shrink within. Without this, the
    task list stops shrinking on mobile and pushes content off-screen. */
+#task-card-group.task-card-group {
+    flex: 1 1 auto;
+    min-height: 0;
+}
+/* Was scoped to <=768px until Oct 2026. Tablets and desktop had NO shrink
+   chain: a flex item's default min-height is its content height, so the card
+   group could not give, the list stayed at its literal cap, and a long routine
+   overflowed #task-view's band over the nav dots and footer (iPad portrait and
+   landscape, both cycle modes). The band bounds #task-view (app-container.css);
+   this is what lets the content honour it. The rules below stay mobile-only. */
 @media (max-width: 768px) {
-    #task-card-group.task-card-group {
-        flex: 1 1 auto;
-        min-height: 0;
-    }
-
     /* Pre-restructure, .task-card was a direct flex child of #task-view
        and its `margin-top: var(--space-4-5)` (~18px) gave breathing room
        above the WHOLE card area (which then contained the input bar).

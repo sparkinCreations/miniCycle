@@ -374,8 +374,15 @@ input.routine-search-input:focus {
 }
 
 .recent-routine-chip {
-    display: inline-flex;
-    align-items: center;
+    /* inline-block, NOT inline-flex. text-overflow only applies to a block
+       container's inline content; in a flex container the text becomes an
+       anonymous flex item that cannot shrink below its own width, so a long
+       name ran past the padding and was clipped dead at the border with no
+       ellipsis and no right inset ("Inspection Check|", Oct 2026). The chip is
+       a text-only <button>, so a block box is all it needs; the full name is
+       in its title attribute. */
+    display: inline-block;
+    vertical-align: middle;
     padding: var(--space-1) var(--space-3);
     font-size: var(--font-size-sm);
     font-weight: 500;

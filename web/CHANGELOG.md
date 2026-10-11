@@ -1,3 +1,9 @@
+## [2.597] - 2026-10-11
+- fix(first-run): Restore from a backup file works after an in-place factory reset
+- fix(home): a long routine stays inside the band on tablets and desktop instead of overflowing the nav dots
+- fix(switcher): recently-used chips truncate with an ellipsis and keep their right padding
+
+
 ## [2.596] - 2026-10-11
 - feat(focus): desktop Focus View joins the band — the list fills the space to the nav dots
 

@@ -56,13 +56,21 @@
        Also: 100dvh tracks the visible viewport on iPad Safari (vs 100vh
        which includes the area behind the dynamic toolbar). Older browsers
        fall through to the 100vh line. Same pattern as focus-mode.css. */
-    max-height: calc(100vh - var(--task-view-max-reduction) - (env(safe-area-inset-top, 0px) * 2));
-    /* min(): keep the tuned cap on tall viewports; on short ones, cap to the
-       header→nav-dots band so the bottom (help window) never reaches the dots. */
-    max-height: min(
-        calc(100dvh - var(--task-view-max-reduction) - (env(safe-area-inset-top, 0px) * 2)),
-        calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - var(--space-2))
-    );
+    /* THE BAND, AND ONLY THE BAND (tablet + desktop; the <=768px block below
+       keeps its own min() with --task-view-max-reduction-mobile). Until Oct
+       2026 this was min(100dvh - 290px - 2*inset, band - 8px). The literal
+       won on every tablet and desktop size, and the content was not bound to
+       it anyway — there was no shrink chain above 768px, so a long routine
+       simply overflowed: on iPad portrait (834x1112, 15 tasks) the status pill
+       sat 44px into the nav dots in Auto mode and the Complete Cycle button
+       100px into them in Manual mode, with the pill over the footer. With the
+       chain in place (task-view-layout.css / task-list.css) the literal only
+       left dead space: 97px above the dots on iPad portrait, 38px on desktop.
+       --home-band-gap is the clearance at each edge — the box is centred on
+       the band, so the content sits that far below the header and above the
+       nav dots. Same reasoning as Focus View's band (FOCUS_VIEW_LAYOUT.md). */
+    max-height: calc(100vh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap));
+    max-height: calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap));
     min-height: auto;
     transition: left var(--animation-pop) ease-in-out, transform var(--animation-pop) ease-in-out;
     display: flex;

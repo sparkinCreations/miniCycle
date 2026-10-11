@@ -1,4 +1,104 @@
 (function () {
+    // Restore-from-backup. Wired BEFORE the first-run gate below, on every page
+    // load, because the gate is only true when the page LOADED on the choice
+    // screen. A factory reset re-arms that screen in place (no reload), and until
+    // Oct 2026 this block sat after the gate — so after a reset the three choice
+    // buttons worked (backupRestoreManager re-binds those itself) but "Restore
+    // from a backup file" had no listener at all until the app was relaunched.
+    // The button and input are always in the DOM; the listeners are inert while
+    // the screen is hidden, and the sessionStorage hand-off + reload below is
+    // exactly right after an in-place reset too.
+    //
+    // THE APP WRITES TWO DIFFERENT BACKUP FORMATS and both
+    // have to be accepted here:
+    //   • Settings -> Create Backup : { schemaVersion, miniCycleData: "<string>", liteStorage? }
+    //   • pre-boot rescue screen    : { type: 'miniCycle-backup', keys: { ...raw localStorage } }
+    // Until v2.506 this accepted ONLY the second, so every backup a user actually
+    // made was rejected here with "not a valid miniCycle backup" — while the same
+    // file restored fine from Settings. Reported from a phone, not caught by a test.
+    //
+    // Normalizing to ONE internal shape here is deliberate: the sessionStorage
+    // handoff stays single-format, so the pre-load applier in <head> keeps its
+    // single check and cannot drift out of sync with this list of formats.
+    // ES5 only — this is a pre-gate inline script (see the head banner).
+    var restoreBtn = document.getElementById('first-run-restore');
+    var restoreFile = document.getElementById('first-run-restore-file');
+
+    // Only keys the exporters themselves collect are restorable, so a hand-edited
+    // file cannot use this path to write arbitrary localStorage entries.
+    var RESTORE_EXTRA_KEYS = ['lastUsedMiniCycle', 'milestoneUnlocks', 'darkModeEnabled', 'currentTheme'];
+    function isRestorableKey(name) {
+      return name.indexOf('miniCycle') === 0
+          || name.indexOf('__miniCycle') === 0
+          || RESTORE_EXTRA_KEYS.indexOf(name) !== -1;
+    }
+
+    function collectStringKeys(source, into) {
+      var names = Object.keys(source), i, value;
+      for (i = 0; i < names.length; i++) {
+        value = source[names[i]];
+        if (typeof value === 'string' && isRestorableKey(names[i])) {
+          into[names[i]] = value;
+        }
+      }
+      return into;
+    }
+
+    // Returns a localStorage key/value map, or null if this is not a backup we know.
+    function normalizeBackupKeys(parsed) {
+      if (!parsed || typeof parsed !== 'object') return null;
+
+      // Rescue-screen export — already a raw localStorage map.
+      if (parsed.type === 'miniCycle-backup' && parsed.keys
+          && typeof parsed.keys.miniCycleData === 'string') {
+        return collectStringKeys(parsed.keys, {});
+      }
+
+      // Settings export — one stringified payload plus an optional lite snapshot.
+      if (typeof parsed.miniCycleData === 'string') {
+        var keys = { miniCycleData: parsed.miniCycleData };
+        if (parsed.liteStorage && typeof parsed.liteStorage === 'object') {
+          collectStringKeys(parsed.liteStorage, keys);
+        }
+        return keys;
+      }
+
+      return null;
+    }
+
+    if (restoreBtn && restoreFile) {
+      restoreBtn.addEventListener('click', function () { restoreFile.click(); });
+      restoreFile.addEventListener('change', function () {
+        var file = restoreFile.files && restoreFile.files[0];
+        if (!file) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          var parsed = null;
+          try { parsed = JSON.parse(reader.result); } catch (err) { /* invalid JSON — the null check below shows the error */ }
+          var keys = normalizeBackupKeys(parsed);
+          if (!keys) {
+            alert('That file is not a valid miniCycle backup.');
+            restoreFile.value = '';
+            return;
+          }
+          // Hand off via sessionStorage; the NEXT load applies it before any app
+          // code runs. Writing localStorage here would be clobbered by the
+          // running app's save-on-unload during the reload.
+          try {
+            sessionStorage.setItem('miniCycle_pendingRestore', JSON.stringify({
+              type: 'miniCycle-backup',
+              keys: keys
+            }));
+          } catch (err) {
+            alert('Restore failed: ' + err.message);
+            return;
+          }
+          location.reload();
+        };
+        reader.readAsText(file);
+      });
+    }
+
     // The DECISION (and the pending-restore hand-off it depends on) now happens
     // in the head's pre-paint reader, which records it as `mc-first-run` on
     // <html>; critical.css lays the screen out from the first frame. This
@@ -168,94 +268,4 @@
         document.dispatchEvent(new CustomEvent('firstrun:choice', { detail: { choice: value } }));
       } catch (err) { /* CustomEvent constructor unsupported — boot proceeds without the signal */ }
     });
-
-    // Restore-from-backup. THE APP WRITES TWO DIFFERENT BACKUP FORMATS and both
-    // have to be accepted here:
-    //   • Settings -> Create Backup : { schemaVersion, miniCycleData: "<string>", liteStorage? }
-    //   • pre-boot rescue screen    : { type: 'miniCycle-backup', keys: { ...raw localStorage } }
-    // Until v2.506 this accepted ONLY the second, so every backup a user actually
-    // made was rejected here with "not a valid miniCycle backup" — while the same
-    // file restored fine from Settings. Reported from a phone, not caught by a test.
-    //
-    // Normalizing to ONE internal shape here is deliberate: the sessionStorage
-    // handoff stays single-format, so the pre-load applier in <head> keeps its
-    // single check and cannot drift out of sync with this list of formats.
-    // ES5 only — this is a pre-gate inline script (see the head banner).
-    var restoreBtn = document.getElementById('first-run-restore');
-    var restoreFile = document.getElementById('first-run-restore-file');
-
-    // Only keys the exporters themselves collect are restorable, so a hand-edited
-    // file cannot use this path to write arbitrary localStorage entries.
-    var RESTORE_EXTRA_KEYS = ['lastUsedMiniCycle', 'milestoneUnlocks', 'darkModeEnabled', 'currentTheme'];
-    function isRestorableKey(name) {
-      return name.indexOf('miniCycle') === 0
-          || name.indexOf('__miniCycle') === 0
-          || RESTORE_EXTRA_KEYS.indexOf(name) !== -1;
-    }
-
-    function collectStringKeys(source, into) {
-      var names = Object.keys(source), i, value;
-      for (i = 0; i < names.length; i++) {
-        value = source[names[i]];
-        if (typeof value === 'string' && isRestorableKey(names[i])) {
-          into[names[i]] = value;
-        }
-      }
-      return into;
-    }
-
-    // Returns a localStorage key/value map, or null if this is not a backup we know.
-    function normalizeBackupKeys(parsed) {
-      if (!parsed || typeof parsed !== 'object') return null;
-
-      // Rescue-screen export — already a raw localStorage map.
-      if (parsed.type === 'miniCycle-backup' && parsed.keys
-          && typeof parsed.keys.miniCycleData === 'string') {
-        return collectStringKeys(parsed.keys, {});
-      }
-
-      // Settings export — one stringified payload plus an optional lite snapshot.
-      if (typeof parsed.miniCycleData === 'string') {
-        var keys = { miniCycleData: parsed.miniCycleData };
-        if (parsed.liteStorage && typeof parsed.liteStorage === 'object') {
-          collectStringKeys(parsed.liteStorage, keys);
-        }
-        return keys;
-      }
-
-      return null;
-    }
-
-    if (restoreBtn && restoreFile) {
-      restoreBtn.addEventListener('click', function () { restoreFile.click(); });
-      restoreFile.addEventListener('change', function () {
-        var file = restoreFile.files && restoreFile.files[0];
-        if (!file) return;
-        var reader = new FileReader();
-        reader.onload = function () {
-          var parsed = null;
-          try { parsed = JSON.parse(reader.result); } catch (err) { /* invalid JSON — the null check below shows the error */ }
-          var keys = normalizeBackupKeys(parsed);
-          if (!keys) {
-            alert('That file is not a valid miniCycle backup.');
-            restoreFile.value = '';
-            return;
-          }
-          // Hand off via sessionStorage; the NEXT load applies it before any app
-          // code runs. Writing localStorage here would be clobbered by the
-          // running app's save-on-unload during the reload.
-          try {
-            sessionStorage.setItem('miniCycle_pendingRestore', JSON.stringify({
-              type: 'miniCycle-backup',
-              keys: keys
-            }));
-          } catch (err) {
-            alert('Restore failed: ' + err.message);
-            return;
-          }
-          location.reload();
-        };
-        reader.readAsText(file);
-      });
-    }
   })();
