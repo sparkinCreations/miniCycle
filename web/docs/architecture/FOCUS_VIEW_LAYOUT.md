@@ -1,6 +1,6 @@
 # Focus View Layout — the band model
 
-**Status:** current as of v2.594 (Oct 2026)
+**Status:** current as of v2.596 (Oct 2026)
 
 Focus View's task card is not centred in the viewport. It is **anchored to a band**
 whose top and bottom edges are both *measured* from the live chrome at runtime.
@@ -105,34 +105,33 @@ band silently uses the *other* mode's numbers.
 
 ---
 
-## Desktop (≥1024px): centred, with a chrome-floor cap
+## Desktop joined the band (Oct 2026)
 
-The band model above is scoped to `max-width: 1023px`. At and above 1024px
-`#task-view` is still **centred** (`top: calc(50% - --focus-mode-top-offset)`,
-`translateY(-50%)`) and content-sized, which the desktop layout was signed off
-on. A centred, content-sized box has no top edge of its own: it is
-`centre - height/2`, so a long list on a short window grew the view until the
-input bar rode under the header row (y=76 against a chrome bottom of 80 at
-1100x600, Oct 2026). The card check in the layout suite never saw it because the
-input bar sits *above* the card.
+The band rule was scoped to `max-width: 1023px` from v2.473 until Oct 2026; at
+1024px and wider `#task-view` stayed centred (`top: 50% - 35px`, content-sized,
+list capped at `100dvh - 340px`). Two things were wrong with that and both
+showed up as "a lot of unutilised vertical space":
 
-Rather than re-anchor desktop to the band (which would move the signed-off
-desktop position ~30px), the floor is expressed as a **height cap**:
+- the 340px list cap was tuned when the help window sat under the card. On
+  desktop it is side-docked, so ~60px was reserved for nothing;
+- a centred, content-sized box cannot use the band's edges. At ~1070x790 the
+  content sat 28px under the header and ~90px above the nav dots while the
+  list scrolled.
 
-```
-top edge = centre - height/2  ≥  chromeBottom + floor
-   ⇒ height ≤ 2 · (50dvh − offset − chromeBottom − floor)      (--focus-desktop-view-cap)
-```
+A first attempt (2.594) kept centring and added a symmetric height cap so the
+top edge could never ride under the header. That fixed the collision and did
+nothing for the dead space. The band does both: `body.focus-mode #task-view`
+is now the unscoped rule in `focus-mode.css`, `#focus-task-panel` centres on
+the same band at every width, the card / list carry no viewport-derived caps
+(the band bounds them, and the flex chain down to the list has
+`min-height: 0`), and the desktop nav-dots / undo row sits 25px lower
+(`bottom: 40px` / `25px` at ≥1024px), which the measured `--nav-dots-clearance`
+turns into 25px more list.
 
-`--focus-chrome-floor` (5px) is the knob. The cap is `min()`-ed with the tuned
-`100dvh − 150px`, so on a tall window nothing moves; on a short one the list
-(`min-height: 0`, like the mobile block) absorbs the shortage and scrolls, and
-the bottom edge rises by the same amount. It is derived from the *measured*
-`--focus-top-chrome`, not a literal — the same reasoning as the band.
-
-The guard: `focus content keeps 5px from the painted chrome` runs on all 7
-viewports with the sample routine, and again with a 10-task routine on the
-`*-long` viewports (1100x600 is the one where the cap binds).
+`--focus-chrome-floor` (5px) remains as the floor the layout suite asserts; the
+band gives 16px by construction. The `*-long` rows additionally assert that the
+band reaches the nav dots and that a long routine fills it, so a literal cap
+cannot creep back in at any width.
 
 ---
 

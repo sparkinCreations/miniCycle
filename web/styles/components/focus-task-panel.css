@@ -17,10 +17,16 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
 #focus-task-panel {
     position: fixed;
     left: 50%;
-    /* Mirrors #task-view's own base focus centring (focus-mode.css) rather than a
-       bare percentage, so the two carousel panels share one vertical centre. The
-       band override below takes it from here under 1024px. Was `top: 47%`. */
-    top: calc(50% - var(--focus-mode-top-offset));
+    /* Centred on the SAME band #task-view is anchored to (focus-mode.css), so
+       the two carousel panels share one vertical centre at every width. The
+       card is translateY(-50%), so `top` is the band's midpoint. Was `top: 47%`,
+       then `50% - --focus-mode-top-offset` while desktop was still centred
+       (until Oct 2026); the band override used to be scoped to <1024px. */
+    top: calc(var(--focus-band-top)
+              + (100dvh
+                 - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
+                 - var(--focus-band-bottom-gap)
+                 - var(--focus-band-top)) / 2);
     width: min(440px, 92vw);
     transform: translateX(-250%) translateY(-50%);
     opacity: 0;
@@ -230,18 +236,5 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
    already names as known for #task-view, and the same product call: what focus
    view drops when there is no room.
 
-   Scoped to under 1024px BECAUSE THAT IS WHERE #task-view IS BAND-ANCHORED. At
-   and above it #task-view reverts to `top: calc(50% - --focus-mode-top-offset)`,
-   which the base rule above already mirrors — centring the panel on a band the
-   other panel does not use put them 19px apart at 1280x800, against 11px before
-   this change. Matching whatever #task-view does at each breakpoint is the
-   invariant; the band is only how that is expressed below 1024. */
-@media (max-width: 1023px) {
-    body.focus-mode #focus-task-panel {
-        top: calc(var(--focus-band-top)
-                  + (100dvh
-                     - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))
-                     - var(--focus-band-bottom-gap)
-                     - var(--focus-band-top)) / 2);
-    }
-}
+   Since Oct 2026 #task-view is band-anchored at EVERY width, so the base
+   rule above carries this and no breakpoint override is needed. */

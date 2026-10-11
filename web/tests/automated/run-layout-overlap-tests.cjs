@@ -195,6 +195,11 @@ function measureFocus() {
         // The × overhangs the 12px progress row (36px circle, absolutely
         // positioned), so the row's painted bottom is whichever is lower.
         progressBottom: Math.max(progress ? progress.bottom : 0, exitBtn ? exitBtn.bottom : 0) || null,
+        // Last painted content edge WITHOUT the ×'s overhang (help window on
+        // phones/tablets, progress row on desktop where help is side-docked).
+        contentBottom: Math.max(help ? help.bottom : 0, progress ? progress.bottom : 0) || null,
+        bandBottomGap: parseFloat(
+            getComputedStyle(document.documentElement).getPropertyValue('--focus-band-bottom-gap')) || 25,
         helpClipped: help && tvBottom !== null ? help.bottom > tvBottom : false,
         navLine: navRect && navRect.height > 0 ? Math.round(navRect.top) : null,
     };
@@ -1260,6 +1265,21 @@ async function run() {
                             record(vp, 'focus content (progress row, help window) clears nav dots',
                                 last <= f.navLine + TOL,
                                 `content.bottom ${last} > navLine ${f.navLine}`);
+                            // ...and USES the band. A long routine must fill it: the
+                            // band's bottom edge sits --focus-band-bottom-gap above
+                            // the nav line, and the last painted thing must reach
+                            // that edge. Desktop sat ~90px short of the dots until
+                            // Oct 2026 (centred, list capped at 100dvh - 340px);
+                            // this is what stops a literal cap creeping back in at
+                            // any width. The × overhangs the progress row, hence
+                            // the row's own bottom rather than the ×'s.
+                            const bandGap = f.bandBottomGap;
+                            record(vp, 'focus band reaches the nav dots (no dead space)',
+                                f.taskViewBottom >= f.navLine - bandGap - TOL,
+                                `band.bottom ${f.taskViewBottom} is ${f.navLine - f.taskViewBottom}px above the nav line (gap token ${bandGap})`);
+                            record(vp, 'long routine fills the band',
+                                f.contentBottom >= f.taskViewBottom - TOL,
+                                `content.bottom ${f.contentBottom} < band.bottom ${f.taskViewBottom} — the list is capped short of the band`);
                         }
                     }
                 }
