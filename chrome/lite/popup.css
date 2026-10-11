@@ -831,3 +831,13 @@ body.dark-mode .mode-selector,
 body.dark-mode .mobile-mode-selector-wrapper .mode-selector {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23d8e0ff' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") !important;
 }
+
+/* ─── Header name without "ROUTINE MANAGER" ──────────────────────────
+   Lite is a single checklist, so the "Routine Manager" subtitle baked
+   into miniCycle_lite.png over-promised. The header now uses
+   miniCycle_lite_top_half.png (the name only, 819×157). The base sheet
+   sizes .app-name at 55px tall for the two-line image; the name took
+   127/330 of that, so 26px keeps the lettering the same size. */
+.app-name {
+  height: 26px !important;
+}
