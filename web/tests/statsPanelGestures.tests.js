@@ -77,6 +77,45 @@ export async function runStatsPanelGesturesTests(resultsDiv) {
         if (targets[1] !== 'stats-panel') throw new Error('showStatsPanel should goTo stats-panel');
     });
 
+    await test('the welcome-banner shift on the Stats panel is cleared once the tour is no longer active', () => {
+        const panel = document.createElement('div');
+        panel.style.setProperty('--first-run-welcome-stats-shift', '177px');   // left over from the tour
+        const banner = document.createElement('div');                            // still in the DOM, fading out
+        banner.id = 'first-run-welcome';
+        banner.getBoundingClientRect = () => ({ bottom: 240 });
+        const m = makeManager();
+        m.elements.statsPanel = panel;
+        m.rawDeps.getElementById = (id) => (id === 'first-run-welcome' ? banner : null);
+        document.body.classList.remove(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
+        const g = new StatsPanelGestures(m);
+        g._measureWelcomeBannerOverlapForStats();
+        if (panel.style.getPropertyValue('--first-run-welcome-stats-shift') !== '') {
+            throw new Error('a banner that is merely still in the DOM must not keep the panel shifted');
+        }
+    });
+
+    await test('the welcome-banner shift is set only while the tour is active', () => {
+        const panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;top:300px;height:400px;width:10px';
+        document.body.appendChild(panel);
+        const banner = document.createElement('div');
+        banner.id = 'first-run-welcome';
+        banner.getBoundingClientRect = () => ({ bottom: 240 });   // overlaps a natural top of 300 - 200 = 100
+        const m = makeManager();
+        m.elements.statsPanel = panel;
+        m.rawDeps.getElementById = (id) => (id === 'first-run-welcome' ? banner : null);
+        document.body.classList.add(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
+        try {
+            const g = new StatsPanelGestures(m);
+            g._measureWelcomeBannerOverlapForStats();
+            const shift = parseFloat(panel.style.getPropertyValue('--first-run-welcome-stats-shift'));
+            if (!(shift > 0)) throw new Error('an active, overlapping banner must shift the panel; got ' + JSON.stringify(panel.style.getPropertyValue('--first-run-welcome-stats-shift')));
+        } finally {
+            document.body.classList.remove(DOM_CLASSES.FIRST_RUN_WELCOME_ACTIVE);
+            panel.remove();
+        }
+    });
+
     await test('showTaskView without a carousel warns instead of throwing', () => {
         const g = new StatsPanelGestures(makeManager());
         g.carousel = null;

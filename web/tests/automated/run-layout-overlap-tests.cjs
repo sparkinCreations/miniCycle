@@ -605,6 +605,46 @@ async function run() {
                 }
             }
 
+            // --- Stats panel in Focus View ---------------------------------
+            // Had no coverage: Focus View overrode the Home band with `top: 47%`
+            // and a 63vh cap, so an expanded panel ran 233px past the nav dots on
+            // a 1280x800 desktop and into the blurred header row on tall windows
+            // (Oct 2026). Same two edges as the card: the painted chrome and the
+            // nav line, which in Focus View is #nav-dots' measured top.
+            await page.evaluate(() => {
+                const tv = document.getElementById('task-view');
+                const sp = document.getElementById('stats-panel');
+                tv.classList.remove('show'); tv.classList.add('hide');
+                sp.classList.remove('hide'); sp.classList.add('show');
+            });
+            await page.waitForTimeout(450);
+            const fs = await page.evaluate(() => {
+                const sp = document.getElementById('stats-panel').getBoundingClientRect();
+                const nav = document.getElementById('nav-dots');
+                const navRect = nav ? nav.getBoundingClientRect() : null;
+                const chrome = [document.querySelector('.mini-cycle-header-row'), document.querySelector('.header-logo'), document.getElementById('focus-mode-menu-btn')]
+                    .filter(Boolean).map(el => el.getBoundingClientRect()).filter(r => r.height > 0).map(r => r.bottom);
+                return { top: Math.round(sp.top), bottom: Math.round(sp.bottom), chromeBottom: chrome.length ? Math.round(Math.max(...chrome)) : null,
+                    navLine: navRect && navRect.height > 0 ? Math.round(navRect.top) : null,
+                    floor: parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--focus-chrome-floor')) || 5 };
+            });
+            if (fs.chromeBottom !== null) {
+                record(vp, `focus stats panel keeps ${fs.floor}px from the painted chrome`,
+                    fs.top >= fs.chromeBottom + fs.floor - TOL,
+                    `stats.top ${fs.top} < chrome.bottom ${fs.chromeBottom} + ${fs.floor}`);
+            }
+            if (fs.navLine !== null) {
+                record(vp, 'focus stats panel clears nav dots', fs.bottom <= fs.navLine + TOL,
+                    `stats.bottom ${fs.bottom} > navLine ${fs.navLine}`);
+            }
+            await page.evaluate(() => {
+                const tv = document.getElementById('task-view');
+                const sp = document.getElementById('stats-panel');
+                tv.classList.remove('hide'); tv.classList.add('show');
+                sp.classList.remove('show'); sp.classList.add('hide');
+            });
+            await page.waitForTimeout(450);
+
             // Both carousel panels must share ONE vertical centre. #task-view's
             // centring differs by breakpoint (band-anchored below 1024px, centred
             // above), so this compares the panels against EACH OTHER rather than
