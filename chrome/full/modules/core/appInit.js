@@ -590,22 +590,43 @@ class AppInit {
 			return;
 		}
 
-		// Onboarding incomplete but cycles exist — either the user closed the
-		// app mid-first-run (still in Focus View) OR they hit "Reset Onboarding"
-		// in Settings. We split on focusModeActive:
-		//   • Focus View → re-arm the first-session lifecycle so the welcome
-		//     banner reappears and focus-exit / unload finalize onboarding.
-		//   • Home View → show the legacy 3-step welcome modal (the original
-		//     onboarding experience) for a refresher walkthrough.
+		// Onboarding incomplete but cycles exist. Three ways to get here:
+		//   • the user closed the app mid-first-run (still in Focus View) →
+		//     re-arm the first-session lifecycle so the welcome banner reappears
+		//     and focus-exit / unload finalize onboarding;
+		//   • they hit "Reset Onboarding" in Settings → it sets
+		//     onboardingResetRequested alongside clearing the flags; Home View
+		//     shows the legacy 3-step welcome modal as the refresher, once;
+		//   • the profile PREDATES the flags — migrated from schema 2.5 or
+		//     restored from an old backup. Until Oct 2026 this case was read as
+		//     a reset, so a Mac profile with 36 routines got "Welcome to
+		//     miniCycle!" on every launch (noticed as "every update"). Routines
+		//     exist and nobody asked for a refresher: graduate the profile and
+		//     boot normally.
 		if (!hasSeenOnboarding) {
 			const onboardingManager = _deps.getOnboardingManager?.();
 			const focusModeActive = !!settings?.focusModeActive;
-			if (!focusModeActive && onboardingManager?.showOnboarding) {
-				onboardingManager.showOnboarding(cycles, activeCycle, schemaData);
-				return;
+			const resetRequested = !!settings?.onboardingResetRequested;
+			if (!focusModeActive) {
+				const AppState = _deps.getMiniCycleState?.();
+				if (resetRequested && onboardingManager?.showOnboarding) {
+					// One-shot: the modal's own completion sets onboardingCompleted.
+					AppState?.update?.((s) => {
+						if (!s.settings) s.settings = {};
+						s.settings.onboardingResetRequested = false;
+					}, true);
+					onboardingManager.showOnboarding(cycles, activeCycle, schemaData);
+					return;
+				}
+				AppState?.update?.((s) => {
+					if (!s.settings) s.settings = {};
+					s.settings.onboardingCompleted = true;
+				}, true);
+				// Fall through to normal init with the user's routines
+			} else {
+				onboardingManager?.armFirstSessionLifecycle?.();
+				// Fall through to normal init
 			}
-			onboardingManager?.armFirstSessionLifecycle?.();
-			// Fall through to normal init
 		}
 
 		// 🛡️ DATA INTEGRITY CHECK: Ensure valid routines exist

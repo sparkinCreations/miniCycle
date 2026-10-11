@@ -1,3 +1,7 @@
+## [2.604] - 2026-10-11
+- fix(onboarding): a migrated or restored profile boots to its routines instead of the Welcome modal
+
+
 ## [2.603] - 2026-10-11
 - feat(a11y): long-press labels on the Quick Actions arrows, the dark mode toggle and the personalization button
 - chore(release): Lite 2.097 + Chrome Edition 1.4 (rebuilt)
