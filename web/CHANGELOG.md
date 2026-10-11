@@ -1,3 +1,8 @@
+## [2.595] - 2026-10-11
+- fix(focus): a long routine fits the band on tablets and phones instead of overflowing the nav dots
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.594] - 2026-10-10
 - fix(focus): desktop Focus View content keeps 5px clear of the header chrome
 - fix(focus): the status pill clears the × exit by 5px instead of cutting into it

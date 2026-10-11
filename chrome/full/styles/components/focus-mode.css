@@ -1147,6 +1147,20 @@ body.focus-mode #complete-all-and-help-window-container {
            element that should absorb the shortage: it already scrolls. */
         min-height: 0;
     }
+    /* ...but the list can only absorb it if the flex chain ABOVE it may shrink
+       too. #task-card-group and .task-card are flex items with the default
+       min-height: auto, which is their CONTENT height — so with the list pinned
+       at its --focus-task-list-reduction-mobile cap, nothing above it could
+       give, and the group simply overflowed the band (overflow is visible at
+       tablet widths). iPad portrait, 19 tasks, input bar showing: band bottom
+       956, card-group bottom 1019, help window 1037-1078, nav dots at 981 — the
+       progress bar, × and status pill all sat on or below the dots (Oct 2026,
+       surfaced when the × moved into the progress row). Same rule as the
+       desktop half added in 2.594; the band suite's `*-long` rows guard it. */
+    body.focus-mode #task-view #task-card-group,
+    body.focus-mode #task-view .task-card {
+        min-height: 0;
+    }
 
     /* Focus mode: fixed to bottom-right of viewport.
        Bumped from env+16 → env+32 so the two-line label below the button
