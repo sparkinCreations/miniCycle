@@ -411,10 +411,24 @@ orientation / safe-area:
 #task-view {
   top: calc(50% + (var(--header-total-height, var(--header-height-fallback))
                  - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback))) / 2);
-  max-height: min( <tuned cap>,
-    calc(100dvh - var(--header-total-height, …) - var(--nav-dots-clearance, …) - <gap>) );
+  max-height: calc(100dvh - var(--header-total-height, …) - var(--nav-dots-clearance, …)
+                   - 2 * var(--home-band-gap));
 }
 ```
+
+**The cap only works if the content can shrink to it.** `#task-view` is a flex
+column; a flex item's default `min-height: auto` is its content height and
+cannot give. So `#task-card-group`, `.task-card` and `.task-list-container` all
+carry `flex: 1 1 auto; min-height: 0`, at every width, and the list is the thing
+that scrolls. Until Oct 2026 that chain existed only below 768px and the cap
+was `min()`-ed with a literal budget (`--task-view-max-reduction`, 290px) plus
+literal list caps (`100dvh - 385px`, `100dvh - 380 - nav - 30` with the Complete
+button). On iPad the literals were wrong for the taller header: the status pill
+sat 44px into the nav dots in Auto mode and the Complete Cycle button 100px into
+them in Manual mode, in portrait, and the button covered the undo row and footer
+in landscape. The layout suite's `home-*-long` rows now drive a long routine
+through both modes and assert the last painted element clears the nav line and
+the content reaches the band.
 
 > ⚠️ **The fallback is a trap.** `var(--header-total-height, var(--header-height-fallback))`
 > resolves to `110px` whenever the measured variable is **empty** — but the real

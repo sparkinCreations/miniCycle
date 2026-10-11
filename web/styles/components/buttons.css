@@ -295,14 +295,12 @@ body.hide-help-window .help-window {
     }
 }
 
-/* Tablet range - reduce task list to make room for help window */
+/* Tablet range. The list cap and the 80px bottom margin that used to live
+   here were both "clear the nav dots" guesses from before #task-view was bound
+   to the measured band; inside the band they were only dead space (the margin
+   alone cost the list 50px). The band plus the shrink chain do the clearing. */
 @media (min-width: 769px) and (max-width: 1023px) {
-    .task-list-container {
-        max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--help-window-clearance) - 15px);
-    }
-
     .help-window {
-        margin-bottom: calc(var(--help-window-clearance) + 25px);
         font-size: var(--font-size-sm);
         padding: var(--space-2-5);
     }

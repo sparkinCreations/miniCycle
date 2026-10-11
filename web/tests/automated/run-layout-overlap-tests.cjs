@@ -140,6 +140,51 @@ function measureRoutine() {
 }
 
 /**
+ * Home view geometry with CONTENT — the main loop's measureRoutine runs on an
+ * empty routine, so it never saw a long list overflow the band. The last
+ * painted element in the column is whichever of the card, progress bar,
+ * status pill (#help-window, in flow below 1024px) or Complete button sits
+ * lowest; it must clear the nav line, and the box must reach the band.
+ */
+function measureHome() {
+    const px = (el) => { if (!el) return null; const r = el.getBoundingClientRect(); const c = getComputedStyle(el);
+        if (r.height <= 0 || c.display === 'none' || c.visibility === 'hidden' || c.opacity === '0') return null;
+        return { top: Math.round(r.top), bottom: Math.round(r.bottom), mb: parseFloat(c.marginBottom) || 0 }; };
+    const parts = [
+        px(document.querySelector('.task-card')),
+        px(document.querySelector('.progress-container')),
+        px(document.getElementById('help-window')),
+        px(document.getElementById('completeAll')),
+    ].filter(Boolean);
+    const last = parts.reduce((a, b) => (b.bottom > a.bottom ? b : a), parts[0]);
+    const tvEl = document.getElementById('task-view');
+    const tv = tvEl.getBoundingClientRect();
+    // How far the column's content reaches, trailing margins included: the
+    // lowest in-flow child of #task-view plus its margin-bottom. On desktop the
+    // last painted thing is the progress bar or Complete button, but the box
+    // ends 20px lower because #complete-all-and-help-window-container (empty
+    // in Auto mode) carries a margin-bottom — that is content, not dead space.
+    const fill = [...tvEl.children].map((el) => { const c = getComputedStyle(el); if (c.position === 'absolute' || c.position === 'fixed' || c.display === 'none') return null;
+        const r = el.getBoundingClientRect(); return r.bottom + (parseFloat(c.marginBottom) || 0); }).filter((v) => v !== null);
+    const fillBottom = fill.length ? Math.round(Math.max(...fill)) : null;
+    const nav = document.getElementById('nav-dots');
+    const navRect = nav ? nav.getBoundingClientRect() : null;
+    const header = document.querySelector('.fixed-header-container').getBoundingClientRect();
+    const title = document.querySelector('.mini-cycle-title');
+    const gap = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--home-band-gap')) || 16;
+    return {
+        contentBottom: last ? last.bottom : null,
+        fillBottom,
+        taskViewBottom: Math.round(tv.bottom),
+        navLine: navRect && navRect.height > 0 ? Math.round(navRect.top) : null,
+        headerBottom: Math.round(header.bottom),
+        titleTop: title ? Math.round(title.getBoundingClientRect().top) : null,
+        gap,
+        listScrolls: (() => { const l = document.querySelector('.task-list-container'); return l ? l.scrollHeight > l.clientHeight + 1 : false; })(),
+    };
+}
+
+/**
  * Focus view geometry. The card must clear the chrome that actually PAINTS,
  * which is not the same thing as the ✕ / ⋯ buttons: .mini-cycle-header-row
  * carries the backdrop-filter and extends below them at inset 0. Three
@@ -1280,6 +1325,60 @@ async function run() {
                             record(vp, 'long routine fills the band',
                                 f.contentBottom >= f.taskViewBottom - TOL,
                                 `content.bottom ${f.contentBottom} < band.bottom ${f.taskViewBottom} — the list is capped short of the band`);
+                        }
+                    }
+                }
+
+                // ── Home view, long routine, both cycle modes ──────────────
+                // Leave focus view through the real ✕ so the band vars are
+                // re-measured for Home. The main loop's Home checks run on an
+                // empty routine; on iPad with 15 tasks the status pill sat 44px
+                // into the nav dots (Auto) and the Complete Cycle button 100px
+                // into them (Manual), with the pill over the footer — nothing
+                // above 768px could shrink, and the caps were literals (Oct
+                // 2026). Drive both modes through the real mode selector.
+                await tp.evaluate(() => document.getElementById('focus-mode-exit-btn')?.click());
+                await tp.waitForTimeout(600);
+                const HOME_LONG_VIEWPORTS = [
+                    { name: 'home-tablet-portrait-long', width: 834,  height: 1112 },
+                    { name: 'home-tablet-land-long',     width: 1024, height: 768 },
+                    { name: 'home-tablet-land-xl-long',  width: 1112, height: 834 },
+                    { name: 'home-desktop-long',         width: 1280, height: 800 },
+                    { name: 'home-phone-tall-long',      width: 390,  height: 844 },
+                    { name: 'home-phone-short-long',     width: 375,  height: 560 },
+                ];
+                for (const mode of ['auto-cycle', 'manual-cycle']) {
+                    await tp.evaluate((m) => { const sel = document.getElementById('mode-selector'); sel.value = m; sel.dispatchEvent(new Event('change', { bubbles: true })); }, mode);
+                    await tp.waitForTimeout(500);
+                    for (const base of HOME_LONG_VIEWPORTS) {
+                        const vp = { ...base, name: `${base.name}:${mode === 'auto-cycle' ? 'auto' : 'manual'}` };
+                        await tp.setViewportSize({ width: vp.width, height: vp.height });
+                        await tp.evaluate(() => document.body.classList.remove('focus-mode'));
+                        await tp.waitForTimeout(600);
+                        console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (home, 14 tasks)${colors.reset}`);
+                        const hm = await tp.evaluate(measureHome);
+                        record(vp, 'home: a focus-mode leftover is not on <body>',
+                            !(await tp.evaluate(() => document.body.classList.contains('focus-mode'))), 'focus-mode still set');
+                        if (hm.titleTop !== null) {
+                            record(vp, 'home: title clears header', hm.titleTop >= hm.headerBottom - TOL,
+                                `title.top ${hm.titleTop} < header.bottom ${hm.headerBottom}`);
+                        }
+                        if (hm.contentBottom !== null && hm.navLine !== null) {
+                            record(vp, 'home: last painted content (pill / Complete button) clears nav dots',
+                                hm.contentBottom <= hm.navLine + TOL,
+                                `content.bottom ${hm.contentBottom} > navLine ${hm.navLine}`);
+                            if (vp.height >= 520) {
+                                // The box is centred on the band and capped to it, so
+                                // with a long routine its bottom edge sits --home-band-gap
+                                // above the nav line, and the last element (plus its own
+                                // margin) reaches that edge. This is the no-dead-space half.
+                                record(vp, 'home: box reaches the band edge',
+                                    hm.taskViewBottom >= hm.navLine - hm.gap - TOL,
+                                    `task-view.bottom ${hm.taskViewBottom} is ${hm.navLine - hm.taskViewBottom}px above the nav line (gap token ${hm.gap})`);
+                                record(vp, 'home: long routine fills the band',
+                                    hm.fillBottom !== null && hm.fillBottom >= hm.taskViewBottom - TOL,
+                                    `content reaches ${hm.fillBottom} (margins included) < box.bottom ${hm.taskViewBottom} — a literal cap is binding`);
+                            }
                         }
                     }
                 }

@@ -13,6 +13,12 @@
     max-width: 400px;
     display: flex;
     flex-direction: column;
+    /* Shrink chain (see task-view-layout.css): the card gives before anything
+       else in #task-view's column, and its list scrolls. The <=768px block
+       below adds overflow: hidden; desktop keeps overflow visible so the
+       drag handles that float outside the card's edge are not clipped. */
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 /* =============================================================================
@@ -24,8 +30,13 @@
     width: 100%;
     height: auto;
     /* See dvh note on #task-view in app-container.css. */
-    max-height: calc(100vh - 385px); /* Accounts for header + 200px bottom padding */
-    max-height: calc(100dvh - 385px);
+    /* No viewport-derived cap here (was 100dvh - 385px until Oct 2026, and
+       100dvh - 380 - nav - 30 with the Complete button). #task-view is bound to
+       the measured header -> nav-dots band (app-container.css) and the flex
+       chain down to this list has min-height: 0, so the list shrinks to
+       whatever the band leaves and scrolls — at every width, both modes. The
+       literals were tuned for one header height and one mode and overflowed
+       on iPad in the other combinations. */
     min-height: 200px; /* Reserve space to prevent CLS when tasks load from IndexedDB */
     overflow-y: auto;
     background: rgba(255, 255, 255, 0.15);
@@ -41,11 +52,6 @@
     flex: 1 1 auto;
 }
 
-/* Shorter task list when Complete/Clear button is visible — prevents button overlapping nav dots */
-#task-view.complete-btn-visible .task-list-container {
-    max-height: calc(100vh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
-    max-height: calc(100dvh - var(--task-card-offset-with-btn) - var(--nav-area-height) - 30px);
-}
 
 /* Custom scrollbar - water themed */
 .task-list-container::-webkit-scrollbar {
