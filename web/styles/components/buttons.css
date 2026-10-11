@@ -19,8 +19,17 @@ button {
     font-family: inherit;
 }
 
-button:not(.dot):hover {
-    background: var(--theme-button-secondary-hover-bg);
+/* Hover only where a pointer can hover. This rule outranks any one-class
+   button colour (two pseudo-classes beat one class), so it is the one iOS
+   leaves stuck after a tap: touch has no hover, WebKit emulates it on tap and
+   keeps it until the next tap elsewhere — Focus View's Complete Task button
+   stayed recoloured after every press on the iPhone / PWA even after its own
+   hover rule was guarded (Oct 2026). Same guard task-options.css uses;
+   :active and :focus-visible are untouched. */
+@media (hover: hover) and (pointer: fine) {
+    button:not(.dot):hover {
+        background: var(--theme-button-secondary-hover-bg);
+    }
 }
 
 button:active {
