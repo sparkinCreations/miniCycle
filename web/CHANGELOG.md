@@ -1,3 +1,10 @@
+## [2.609] - 2026-10-12
+- feat(due-dates): system notification at 9:00 on the due day
+- feat(reminders): schedule under the switch; "System notifications" in the apps
+- feat(reminders): explain how due-date notices differ from task reminders
+- feat(reminders): say when the next reminder fires, and which tasks it covers
+
+
 ## [2.608] - 2026-10-12
 - fix(drag): split a drop target at its midpoint, not a third
 - refactor(drag): name the touch hold and slop in constants beside the hint hold

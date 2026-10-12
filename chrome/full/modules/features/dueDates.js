@@ -15,7 +15,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, DEFAULT_REMINDERS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, DEFAULT_REMINDERS, LIMITS, DEBOUNCE, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Date-only strings ("YYYY-MM-DD", which is exactly what <input type="date">.value
 // yields) parse as UTC midnight via new Date(). In any negative UTC offset that
@@ -24,7 +24,45 @@ import { getLabel } from '../labels/labelResolver.js';
 // owned the correct local-midnight parser and the recurring subsystem already
 // used it; the due-date paths simply never adopted it. Pure module, no imports.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
-import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+// Pure leaf module (no app imports) — the same static import reminders.js uses.
+import { isNativeApp, scheduleNativeDueDateNotifications, cancelNativeDueDateNotifications } from '../platform/capacitorBridge.js';
+
+/** AppState subscription key for re-planning the due-day system notifications. */
+const DUE_DATE_NOTIFY_SUBSCRIBER = 'dueDates:systemNotifications';
+
+/**
+ * The moments at which a due-day system notification should fire, one per
+ * day that has open dated tasks, across EVERY routine (a due date is a
+ * promise about that task, whichever routine it lives in). A moment is the
+ * due day at `hour` local time; moments already past are dropped — an
+ * overdue task gets the in-app banner on open, never a repeat notification.
+ *
+ * @param {Object|null} state - Schema 2.6 state
+ * @param {number} [now=Date.now()] - epoch ms
+ * @param {number} [hour=LIMITS.DUE_DATE_NOTIFY_HOUR] - local hour on the due day
+ * @returns {Array<{at:number, tasks:string[]}>} ascending by `at`
+ */
+export function computeDueDateNotificationSlots(state, now = Date.now(), hour = LIMITS.DUE_DATE_NOTIFY_HOUR) {
+    const routines = getRoutines(state) || {};
+    const byMoment = new Map();
+    for (const routine of Object.values(routines)) {
+        for (const task of routine?.tasks || []) {
+            if (!task?.dueDate || task.completed) continue;
+            const day = parseDateAsLocal(task.dueDate);
+            if (!day) continue;
+            const at = new Date(day);
+            at.setHours(hour, 0, 0, 0);
+            const ts = at.getTime();
+            if (ts <= now) continue;
+            if (!byMoment.has(ts)) byMoment.set(ts, []);
+            byMoment.get(ts).push(task.text || getLabel('notify.dueDateUnnamed'));
+        }
+    }
+    return [...byMoment.entries()]
+        .sort((a, b) => a[0] - b[0])
+        .map(([at, tasks]) => ({ at, tasks }));
+}
 
 /**
  * Keep a recurring template's due date in step with its live task.
@@ -116,6 +154,7 @@ export class MiniCycleDueDates {
             }
 
             this.setupDueDateSystem();
+            this._subscribeDueDateNotifications();
 
             // ✅ Add hook to check overdue tasks after app is fully ready
             _deps.appInit?.addHook?.('afterApp', async () => {
@@ -130,6 +169,7 @@ export class MiniCycleDueDates {
                 setTimeout(async () => {
                     await this.checkOverdueTasks();
                     this.remindOverdueTasks();
+                    this.syncDueDateNotifications();
                 }, 300);
             });
 
@@ -513,6 +553,116 @@ export class MiniCycleDueDates {
      * Show notification for overdue tasks
      * Checks reminder settings and displays notification if due date reminders are enabled
      */
+    // ============================================
+    // DUE-DAY SYSTEM NOTIFICATIONS
+    // ============================================
+    //
+    // With both "Enable Due Date Notifications" and the system/browser
+    // notifications channel on, every day that has open dated tasks gets ONE
+    // OS-level notification at DUE_DATE_NOTIFY_HOUR listing them. The plan is
+    // recomputed from state after every state write (debounced), so completing,
+    // deleting or re-dating a task, a cycle reset clearing dates, a restore or
+    // an import all simply re-plan — there is no per-path cancel to forget.
+    //
+    // Native: the OS holds the whole set (scheduleNativeDueDateNotifications),
+    // so it delivers with the app closed. Web/desktop: a timer for the next
+    // moment, posted through the service worker like task reminders, so it
+    // delivers only while the page is open — the same caveat reminders carry.
+
+    _state() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        return AppState?.isReady?.() ? AppState.get() : null;
+    }
+
+    _subscribeDueDateNotifications() {
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (!AppState?.subscribe || this._dueDateSubscribed) return;
+        this._onStateForDueDateNotifications = () => {
+            clearTimeout(this._dueDateSyncDebounce);
+            this._dueDateSyncDebounce = setTimeout(() => this.syncDueDateNotifications(), DEBOUNCE.DUE_DATE_NOTIFY_SYNC);
+        };
+        AppState.subscribe(DUE_DATE_NOTIFY_SUBSCRIBER, this._onStateForDueDateNotifications);
+        this._dueDateSubscribed = true;
+    }
+
+    /** Both switches on: due-date notices AND the system/browser channel. */
+    _dueDateNotificationsOn(state) {
+        const settings = state?.customReminders || {};
+        return !!(settings.dueDatesReminders && settings.browserNotifications);
+    }
+
+    /** Web/desktop only: the page may post system notifications. Overridable in tests. */
+    _canPostWebNotifications() {
+        return typeof Notification !== 'undefined' && Notification.permission === 'granted';
+    }
+
+    /**
+     * Title and body for one due-day slot.
+     * @param {{at:number, tasks:string[]}} slot
+     * @returns {{title:string, body:string}}
+     */
+    _dueDateSlotContent(slot) {
+        return {
+            title: getLabel('notify.dueDateNotificationTitle', { count: slot.tasks.length }),
+            body: slot.tasks.map(name => getLabel('notify.dueDateNotificationLine', { vars: { name } })).join('\n')
+        };
+    }
+
+    /**
+     * Re-plan the due-day system notifications from current state.
+     * Idempotent: safe to call on every change.
+     * @returns {void}
+     */
+    syncDueDateNotifications() {
+        clearTimeout(this._dueDateTimerId);
+        this._dueDateTimerId = null;
+        const state = this._state();
+        if (!state || !this._dueDateNotificationsOn(state)) {
+            if (isNativeApp()) cancelNativeDueDateNotifications(LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX);
+            return;
+        }
+        const slots = computeDueDateNotificationSlots(state);
+        if (isNativeApp()) {
+            scheduleNativeDueDateNotifications({
+                items: slots.slice(0, LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX).map(slot => ({ at: slot.at, ...this._dueDateSlotContent(slot) })),
+                maxCount: LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX
+            });
+            return;
+        }
+        if (!this._canPostWebNotifications()) return;
+        const next = slots[0];
+        if (!next) return;
+        // Clamped like reminders.js scheduleNextReminder: setTimeout overflows a
+        // signed 32-bit delay and fires at once, so re-arm until the moment is real.
+        this._dueDateTimerId = setTimeout(() => {
+            this._dueDateTimerId = null;
+            if (Date.now() < next.at) {
+                this.syncDueDateNotifications();
+                return;
+            }
+            this._postDueDateNotification(next).finally(() => this.syncDueDateNotifications());
+        }, Math.min(next.at - Date.now(), LIMITS.MAX_TIMEOUT_MS));
+    }
+
+    /**
+     * Post one due-day slot as a system notification (web/desktop).
+     * @param {{at:number, tasks:string[]}} slot
+     * @returns {Promise<void>}
+     */
+    async _postDueDateNotification(slot) {
+        const { title, body } = this._dueDateSlotContent(slot);
+        try {
+            const registration = await navigator.serviceWorker?.getRegistration();
+            if (registration) {
+                await registration.showNotification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON, tag: SYSTEM_NOTIFICATIONS.TAG_DUE_DATE });
+            } else {
+                new Notification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON });
+            }
+        } catch (e) {
+            console.warn('⚠️ Due-date system notification failed:', e);
+        }
+    }
+
     remindOverdueTasks() {
 
         const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
@@ -611,6 +761,14 @@ export class MiniCycleDueDates {
      */
     destroy() {
         document.removeEventListener("change", this.handleDueDateChange);
+        clearTimeout(this._dueDateTimerId);
+        clearTimeout(this._dueDateSyncDebounce);
+        this._dueDateTimerId = null;
+        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
+        if (this._dueDateSubscribed && AppState?.unsubscribe) {
+            AppState.unsubscribe(DUE_DATE_NOTIFY_SUBSCRIBER, this._onStateForDueDateNotifications);
+        }
+        this._dueDateSubscribed = false;
     }
 
     // ============================================

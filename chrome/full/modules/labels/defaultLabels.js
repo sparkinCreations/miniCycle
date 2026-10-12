@@ -873,6 +873,10 @@ export const DEFAULT_LABELS = deepFreeze({
         dueDateOverdue:          'Overdue Tasks:',
         dueDateDueSoon:          'Task "{name}" is due soon!',
         dueDateUnnamed:          'Unnamed task',
+        // System notification posted at DUE_DATE_NOTIFY_HOUR on a due day
+        // (dueDates.js syncDueDateNotifications); one per day, listing the tasks.
+        dueDateNotificationTitle: { one: '1 task due today', other: '{count} tasks due today' },
+        dueDateNotificationLine:  '~ {name}',
 
         // Routine management notifications
         noRoutineSelected:       'No routine selected for deletion.',
@@ -2043,14 +2047,20 @@ export const DEFAULT_LABELS = deepFreeze({
         title:           'Reminders & Notifications',
         enable:          'Enable Reminders',
         enableDueDate:   'Enable Due Date Notifications',
-        browserNotifications:        'Browser Notifications',
-        browserNotificationsWarning: 'Enabling browser notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are enabled for your browser in your OS settings.',
-        permissionGranted:           'Browser notifications enabled',
-        permissionDenied:            'Notification permission was denied. You can change this in browser settings.',
-        permissionBlocked:           'Browser notifications are blocked for this site. To enable, click the lock icon in the address bar and allow notifications.',
-        permissionUnsupported:       'Browser notifications are not supported on this device',
-        permissionTestFailed:        'Permission was granted but the test notification failed. Your browser may be blocking notifications.',
-        browserNotificationsDisabled: 'Browser notifications disabled',
+        // { browser, app } platform variants: the iOS, Android and desktop apps
+        // post real system notifications, so "browser" is wrong there; on the
+        // web the browser is what asks for permission, so it is the right word.
+        browserNotifications:        { browser: 'Browser Notifications', app: 'System Notifications' },
+        browserNotificationsWarning: {
+            browser: 'Enabling browser notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are enabled for your browser in your OS settings.',
+            app:     'Enabling system notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are allowed for miniCycle in your device settings.'
+        },
+        permissionGranted:           { browser: 'Browser notifications enabled', app: 'System notifications enabled' },
+        permissionDenied:            { browser: 'Notification permission was denied. You can change this in browser settings.', app: 'Notification permission was denied. You can change this in your device settings.' },
+        permissionBlocked:           { browser: 'Browser notifications are blocked for this site. To enable, click the lock icon in the address bar and allow notifications.', app: 'Notifications are blocked for miniCycle. Allow them in your device settings.' },
+        permissionUnsupported:       { browser: 'Browser notifications are not supported on this device', app: 'System notifications are not available on this device' },
+        permissionTestFailed:        { browser: 'Permission was granted but the test notification failed. Your browser may be blocking notifications.', app: 'Permission was granted but the test notification failed. Your system may be blocking notifications for miniCycle.' },
+        browserNotificationsDisabled: { browser: 'Browser notifications disabled', app: 'System notifications disabled' },
         configureTooltip:{ touch: 'Tap to configure reminder settings', pointer: 'Click to configure reminder settings' },
         indefinitely:    'Remind Indefinitely?',
         count:           'Number of Times:',
@@ -2058,7 +2068,33 @@ export const DEFAULT_LABELS = deepFreeze({
         minutes:         'Minutes',
         hours:           'Hours',
         days:            'Days',
-        webOnlyNote:     'On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.'
+        webOnlySummary:  'Reminders on the web',
+        webOnlyNote:     'On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.',
+        bellNote:        'Reminders only cover tasks with the 🔔 button on.',
+        // Folded under Enable Due Date Notifications. Describes dueDates.js as it
+        // is: remindOverdueTasks runs once after boot (afterApp hook) and after a
+        // task is added; the due-soon banner comes from the due-date picker when
+        // the date is within three days; both are in-app banners via
+        // showNotification, never the Notification API or the native series.
+        dueDatesNoteSummary: 'How these differ from task reminders',
+        dueDatesNote:    {
+            browser: 'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with Browser Notifications on, you also get one at 9:00 on the due day while miniCycle is open in a tab.',
+            app:     'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with System Notifications on, you also get one at 9:00 on the due day, even when the app is closed.'
+        },
+
+        // "Next reminder" summary line in the reminders modal (renderNextReminderSummary).
+        // Mirrors the recurring panel's next-occurrence line, worded for reminders.
+        nextUnderMinute:  'Next reminder in less than a minute',
+        nextIn:           'Next reminder in {count} {unit}',
+        nextTomorrow:     'Next reminder tomorrow at {time}',
+        nextWeekday:      'Next reminder {weekday} at {time}',
+        nextDate:         'Next reminder {date} at {time}',
+        nextMinuteUnit:   { one: 'minute', other: 'minutes' },
+        nextHourUnit:     { one: 'hour', other: 'hours' },
+        summaryTasks:     '{count} {taskWord} flagged',
+        summarySent:      '{sent} of {total} sent',
+        summaryNoTasks:   'No tasks have the 🔔 on yet, so nothing will fire.',
+        summaryAllSent:   'All {total} reminders have been sent. Change the schedule to start a new round.'
     },
 
     // ========================================================================

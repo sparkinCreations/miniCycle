@@ -373,6 +373,67 @@ export async function scheduleNativeReminderSeries({ title, body, startAt, inter
     }
 }
 
+// ── 2c. due-day notifications (delivery while the app is closed) ────────────
+//
+// One future-dated local notification per day that has due tasks, in its own
+// reserved id range so the set can be replaced wholesale on every change
+// (complete, delete, re-date, cycle reset, restore, import) without touching
+// the reminder series or the immediate notifications.
+const DUE_DATE_ID_BASE = 200001; // reserved id namespace for due-day notifications
+
+/**
+ * Cancel every pending due-day notification.
+ * @param {number} maxCount  How many slots to clear (LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX).
+ * @returns {Promise<boolean>} true if handled natively; false off-native.
+ */
+export async function cancelNativeDueDateNotifications(maxCount) {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return false;
+    try {
+        const ids = Array.from({ length: maxCount }, (_, i) => ({ id: DUE_DATE_ID_BASE + i }));
+        await LocalNotifications.cancel({ notifications: ids });
+        return true;
+    } catch (e) {
+        console.warn('[capacitorBridge] cancel due-date notifications failed:', e);
+        return false;
+    }
+}
+
+/**
+ * Replace the pending due-day notifications: cancel the old set, then schedule
+ * one per item at its moment. Items are already grouped per day by the caller.
+ *
+ * @param {Object} opts
+ * @param {Array<{at:number, title:string, body:string}>} opts.items  Future moments (epoch ms) with content.
+ * @param {number} opts.maxCount  Cap (also the cancel range).
+ * @returns {Promise<boolean>} true if scheduled natively; false otherwise.
+ */
+export async function scheduleNativeDueDateNotifications({ items, maxCount }) {
+    const LocalNotifications = getPlugin('LocalNotifications');
+    if (!LocalNotifications) return false;
+    try {
+        const perm = await checkNotificationPermission();
+        if (perm !== 'granted') return false;
+        await cancelNativeDueDateNotifications(maxCount);
+        const now = Date.now();
+        const notifications = (items || [])
+            .filter(item => item && item.at > now)
+            .slice(0, maxCount)
+            .map((item, i) => ({
+                id: DUE_DATE_ID_BASE + i,
+                title: item.title,
+                body: item.body,
+                schedule: { at: new Date(item.at), allowWhileIdle: true },
+            }));
+        if (notifications.length === 0) return true; // set cleared, nothing due ahead
+        await LocalNotifications.schedule({ notifications });
+        return true;
+    } catch (e) {
+        console.warn('[capacitorBridge] schedule due-date notifications failed:', e);
+        return false;
+    }
+}
+
 // ── 3. file share / export (.mcyc) ────────────────────────────────────────────
 
 /**

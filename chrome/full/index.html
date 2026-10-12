@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.608">
+<meta name="app-version" content="2.609">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -132,17 +132,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.608" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.608" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.608" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.608" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.608" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.608" as="style">
+<link rel="preload" href="styles/main.css?v=2.609" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.609" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.609" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.609" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.609" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.609" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.608" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.609" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.608"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.609"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -153,7 +153,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.608"></script>
+<script src="./version.js?v=2.609"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -261,7 +261,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.608" defer></script>
+    <script src="boot-sw.js?v=2.609" defer></script>
 
 
 
@@ -695,29 +695,13 @@
         <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title" aria-modal="true">
             <div class="reminders-modal-content has-corner-logo">
                 <h2 id="reminders-modal-title">Reminders & Notifications</h2>
-                <p id="reminders-web-note" class="settings-warning" hidden>On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.</p>
+                <p id="reminders-bell-note" class="settings-warning reminders-bell-note">Reminders only cover tasks with the 🔔 button on.</p>
         
                 <label class="settings-option">
                     <input type="checkbox" id="enableReminders" name="enableReminders" />
                     Enable Reminders
                 </label>
-                <div>
-                    <label class="settings-option">
-                        <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
-                        Enable Due Date Notifications
-                    </label>
-                </div>
-                <div>
-                    <label class="settings-option">
-                        <input type="checkbox" id="browserNotifications" name="browserNotifications" />
-                        Browser Notifications
-                    </label>
-                    <details id="privacyNoticeDetails" class="settings-warning-details">
-                        <summary class="settings-warning-summary">Privacy Notice</summary>
-                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
-                    </details>
-                </div>
-        
+                <p id="reminders-next-summary" class="reminders-next-summary" aria-live="polite" hidden></p>
                 <div id="frequency-section">
                     <label>
                         <input type="checkbox" id="indefiniteCheckbox" name="indefiniteCheckbox" />
@@ -742,6 +726,31 @@
                     </div>
                 </div>
         
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
+                        Enable Due Date Notifications
+                    </label>
+                    <details id="due-dates-note" class="settings-warning-details">
+                        <summary class="settings-warning-summary">How these differ from task reminders</summary>
+                        <p id="due-dates-note-text" class="settings-warning">Due-date notices are banners inside the app: one when miniCycle opens with overdue tasks, and one when you set a due date that is within three days. They cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the schedule below and never reach the system notification center. Only task reminders do that.</p>
+                    </details>
+                </div>
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="browserNotifications" name="browserNotifications" />
+                        Browser Notifications
+                    </label>
+                    <details id="privacyNoticeDetails" class="settings-warning-details">
+                        <summary class="settings-warning-summary">Privacy Notice</summary>
+                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
+                    </details>
+                </div>
+        
+                <details id="reminders-web-note" class="settings-warning-details reminders-web-note" hidden>
+                    <summary class="settings-warning-summary">Reminders on the web</summary>
+                    <p id="reminders-web-note-text" class="settings-warning">On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.</p>
+                </details>
                 <button id="close-reminders-btn" class="settings-btn">Close</button>
             </div>
         </dialog>
@@ -1346,7 +1355,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.608"></script>
+ <script type="module" src="miniCycle-main.js?v=2.609"></script>
 
 <script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

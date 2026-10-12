@@ -7,6 +7,8 @@
  * centralized label registry. It supports:
  * - Noun pluralization ({ one, other } objects)
  * - Device-variant wording ({ touch, pointer } objects — "tap" vs "click")
+ * - Platform-variant wording ({ browser, app } objects — "Browser notifications"
+ *   on the web vs "System notifications" in the iOS, Android and desktop apps)
  * - Variable interpolation ({varName} syntax)
  * - Future: contextual lens overrides
  *
@@ -21,6 +23,10 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DEFAULT_LABELS, LENS_SENSITIVE_KEYS } from './defaultLabels.js';
+// Both are pure leaf modules (they import nothing from the app), so a static
+// import here does not pull the app graph into the label layer.
+import { isNativeApp } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 
 // ============================================================================
 // DI SETUP
@@ -34,8 +40,34 @@ const di = createDIModule('LabelResolver', {
     // Override for device-variant resolution ({ touch, pointer } labels).
     // Injected by tests to force a mode; when absent, the resolver probes the
     // CSS interaction media query itself (see isTouchPrimary).
-    isTouchDevice: optional(null)
+    isTouchDevice: optional(null),
+    // Override for platform-variant resolution ({ browser, app } labels).
+    // Tests only; when absent the resolver asks the platform bridges (see isAppShell).
+    isAppPlatform: optional(null)
 });
+
+/**
+ * Is this one of the packaged apps (iOS, Android, desktop) rather than a
+ * browser tab? Drives { browser, app } label variants: the apps post real OS
+ * notifications (the native series, or Electron's Notification API with the
+ * permission pre-granted), so "browser" is the wrong word on three of the
+ * four platforms; on the web it is the right one, since the browser is what
+ * asks for permission and what the user has to unblock.
+ * @returns {boolean}
+ */
+function isAppShell() {
+    try {
+        const deps = di.resolve();
+        if (typeof deps.isAppPlatform === 'function') return !!deps.isAppPlatform();
+    } catch {
+        // torn-down DI container — fall through to the bridges
+    }
+    try {
+        return isNativeApp() || isDesktopApp();
+    } catch {
+        return false;
+    }
+}
 
 /**
  * Is the PRIMARY input touch? Drives { touch, pointer } label variants
@@ -167,6 +199,15 @@ export function getLabel(key, options = {}) {
     if (typeof label === 'object' && label !== null && ('touch' in label || 'pointer' in label)) {
         const picked = isTouchPrimary() ? label.touch : label.pointer;
         label = picked ?? label.touch ?? label.pointer;
+    }
+
+    // Platform-variant labels: { browser: '…', app: '…' } — wording that names
+    // the shell ("Browser notifications" vs "System notifications"). Same
+    // unwrap rules as the device variants; a variant may itself be a device
+    // variant, so this runs after that unwrap would and before plural/vars.
+    if (typeof label === 'object' && label !== null && ('browser' in label || 'app' in label)) {
+        const picked = isAppShell() ? label.app : label.browser;
+        label = picked ?? label.browser ?? label.app;
     }
 
     // Handle noun pluralization: { one: 'task', other: 'tasks' }
