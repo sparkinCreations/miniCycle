@@ -145,11 +145,6 @@
      These are overridden by theme-manager.js when a theme is applied
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
-  /* Incomplete task checkbox ring. Opaque: the old 60% grey composited to
-     ~1.5:1 over the task surface (WCAG 1.4.11 wants 3:1 for a control's
-     boundary). #7a7f88 is ~3.7:1 on the surface and ~3.4:1 on the ring's own
-     fill. Dark mode and High Contrast set their own. */
-  --checkbox-incomplete-border: #7a7f88;
   /* Footer links sit bare on the page gradient. White cannot reach 4.5:1
      over the light end (#74c0fc) at any opacity, so the default theme uses
      near-black (5.6:1 at the dark end, 10.6:1 at the light end); each
