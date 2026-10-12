@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -71,6 +71,10 @@ export class GesturePanelManager {
             mouseStartX: 0,
             wheelDeltaX: 0,
             isPointerSwiping: false,
+            // A pen stroke in progress. iPadOS and Android also emit touch
+            // events for a stylus, so a pen swipe reached BOTH the pointer path
+            // and the touch path and stepped two panels (measured Oct 2026).
+            penActive: false,
             pointerStartX: 0
         };
 
@@ -209,7 +213,16 @@ export class GesturePanelManager {
     // 📱 TOUCH EVENT HANDLERS
     // ==========================================
 
+    /**
+     * A task row being reordered by long-press (dragDropManager) — a sideways
+     * wobble while dragging used to flip the panel under the drag.
+     */
+    _isTaskDragActive() {
+        return !!document.querySelector(`${DOM_SELECTORS.TASK}.${DOM_CLASSES.DRAGGING}`);
+    }
+
     handleTouchStart(event) {
+        if (this.state.penActive) return;
         if (this.deps.isDraggingNotification()) return;
         if (this.deps.isOverlayActive()) return;
 
@@ -230,8 +243,9 @@ export class GesturePanelManager {
     }
 
     handleTouchMove(event) {
-        if (!this.state.isSwiping || this.deps.isDraggingNotification()) return;
+        if (!this.state.isSwiping || this.state.penActive || this.deps.isDraggingNotification()) return;
         if (this.deps.isOverlayActive()) return;
+        if (this._isTaskDragActive()) { this.state.isSwiping = false; return; }
 
         const moveX = event.touches[0].clientX;
         const difference = this.state.startX - moveX;
@@ -407,6 +421,7 @@ export class GesturePanelManager {
             }
 
             this.state.isPointerSwiping = true;
+            this.state.penActive = true;
             this.state.pointerStartX = event.clientX;
         }
     }
@@ -435,6 +450,7 @@ export class GesturePanelManager {
 
     handlePointerUp() {
         this.state.isPointerSwiping = false;
+        this.state.penActive = false;
     }
 
     // ==========================================

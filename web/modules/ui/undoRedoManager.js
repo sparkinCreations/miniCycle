@@ -466,6 +466,7 @@ export function wrapAppStateForUndo(appInit) {
 
     // Not async - snapshot capture is synchronous, just pass through the Promise
     AppState.update = (producer, immediate, options) => {
+      let refreshButtonsAfterWrite = false;
       try {
         // System-driven mutations (recurring watcher recreations, daily
         // auto-uncheck) pass { system: true } so the no-snapshot intent
@@ -480,13 +481,27 @@ export function wrapAppStateForUndo(appInit) {
           const prev = boundGet();
           if (prev) {
             captureStateSnapshot(prev);
+            refreshButtonsAfterWrite = true;
           }
         }
       } catch (e) {
         console.warn('⚠️ Undo snapshot wrapper error:', e);
       }
       // Return the Promise from boundUpdate directly (no await needed)
-      return boundUpdate(relabelOnRekey(producer, globalState), immediate);
+      const result = boundUpdate(relabelOnRekey(producer, globalState), immediate);
+      // The buttons count stack entries that differ from the CURRENT state, and
+      // captureStateSnapshot refreshes them BEFORE the producer has run — when
+      // the entry just pushed (or the one already on the stack that dedup kept)
+      // still equals the state. Writers that call updateUndoRedoButtons after
+      // their own update never noticed; the first layout drag of a session,
+      // whose pre-drag snapshot is the boot snapshot, left Undo disabled with
+      // the reverting entry sitting right there. Refresh once the write lands.
+      if (refreshButtonsAfterWrite) {
+        Promise.resolve(result).then(() => {
+          try { updateUndoRedoButtons(); } catch { /* buttons are a convenience; the write already landed */ }
+        }, () => { /* a failed write changes nothing the buttons need to show */ });
+      }
+      return result;
     };
 
     globalState.wrappedAppStateUpdate = true;
@@ -682,8 +697,12 @@ export function captureStateSnapshot(state) {
   const now = Date.now();
 
   // Throttle identical snapshots
+  // Both dedup returns still refresh the buttons: the stack may already hold
+  // the entry that reverts this action (the first layout drag of a session
+  // matched the boot snapshot exactly), and nothing else re-enabled Undo.
   if (sig === _deps.AppGlobalState.lastSnapshotSignature &&
       now - _deps.AppGlobalState.lastSnapshotTs < UNDO_MIN_INTERVAL_MS) {
+    updateUndoRedoButtons();
     return;
   }
 
@@ -694,7 +713,7 @@ export function captureStateSnapshot(state) {
   const last = stack[stack.length - 1];
   if (last) {
     const lastSig = last._sig || buildSnapshotSignature(last);
-    if (lastSig === sig) return;
+    if (lastSig === sig) { updateUndoRedoButtons(); return; }
   }
 
   _deps.AppGlobalState.activeUndoStack.push(snapshot);

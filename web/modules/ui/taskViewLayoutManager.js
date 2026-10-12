@@ -1228,19 +1228,7 @@ export class TaskViewLayoutManager {
                         this._saveElementPosition(element, config, false);
                     }
                 } else {
-                    this._endDrag(element);
-                    // Save the dragged element as user-customized.
-                    this._saveElementPosition(element, config, true);
-                    // If this element is an anchor that pulled dependents
-                    // along, save each one with customized=false so they
-                    // reload still "following" — future anchor drags will
-                    // continue to pull them along via offset capture.
-                    if (dragState.followingDeps?.length) {
-                        for (const dep of dragState.followingDeps) {
-                            if (dep.entry?.customized) continue;
-                            this._saveElementPosition(dep.entry.element, dep.entry.config, false);
-                        }
-                    }
+                    this._commitFloatingDrop(element, config, dragState);
                 }
                 // Swallow the synthesized click that follows pointerup so
                 // that handlers on parent elements don't see a stray click.
@@ -1264,28 +1252,58 @@ export class TaskViewLayoutManager {
         // resize / backgrounding) and the normal teardown never fires.
         // Only clears transient drag state; the element keeps its current
         // inline position for the session but isn't persisted as customized.
+        // Force-terminate this drag without a pointerup. The element and its
+        // followers stay where they are AND are persisted as a drop: until Oct
+        // 2026 they were left floating with nothing saved, so the next undo,
+        // refresh or reload silently snapped them home.
         const abortDrag = () => {
             if (!dragState) return;
-            try { handle.releasePointerCapture(dragState.pointerId); } catch { /* ignore */ }
-            if (dragState.started) {
-                if (config.dock) this._hideSnapTarget(config);
-                this._endDrag(element);
-            }
+            const state = dragState;
             dragState = null;
+            try { handle.releasePointerCapture(state.pointerId); } catch { /* ignore */ }
+            if (state.started) {
+                if (config.dock) this._hideSnapTarget(config);
+                this._commitFloatingDrop(element, config, state);
+            }
             if (this._activeDrag === abortDrag) this._activeDrag = null;
         };
+
+        // The browser drops capture without a pointercancel when the handle is
+        // re-appended mid-drag (the host's text is rewritten on every task
+        // render — checkCompleteAllButton), and never delivers the pointerup.
+        // Deferred a tick: a normal pointerup also loses capture, and by the
+        // time this runs that path has already cleared dragState.
+        const onLostCapture = () => { setTimeout(abortDrag, 0); };
 
         handle.addEventListener('pointerdown', onPointerDown);
         handle.addEventListener('pointermove', onPointerMove);
         handle.addEventListener('pointerup', onPointerUp);
-        handle.addEventListener('pointercancel', onPointerUp);
+        // A cancel is not a drop: keep what the user had, do not snap-test it.
+        handle.addEventListener('pointercancel', abortDrag);
+        handle.addEventListener('lostpointercapture', onLostCapture);
 
         this._cleanupFns.set(config.key, () => {
             handle.removeEventListener('pointerdown', onPointerDown);
             handle.removeEventListener('pointermove', onPointerMove);
             handle.removeEventListener('pointerup', onPointerUp);
-            handle.removeEventListener('pointercancel', onPointerUp);
+            handle.removeEventListener('pointercancel', abortDrag);
+            handle.removeEventListener('lostpointercapture', onLostCapture);
         });
+    }
+
+    /**
+     * The element stays where it is as a user-customized position; its docked
+     * followers are persisted as followers so the glue survives reload.
+     */
+    _commitFloatingDrop(element, config, dragState) {
+        this._endDrag(element);
+        this._saveElementPosition(element, config, true);
+        if (dragState?.followingDeps?.length) {
+            for (const dep of dragState.followingDeps) {
+                if (dep.entry?.customized) continue;
+                this._saveElementPosition(dep.entry.element, dep.entry.config, false);
+            }
+        }
     }
 
     _beginDrag(element, config, dragState) {
