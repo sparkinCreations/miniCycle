@@ -8,7 +8,8 @@
 
 import {
     DragDropManager,
-    setDragDropManagerDependencies
+    setDragDropManagerDependencies,
+    mergeVisibleOrder
 } from '../modules/task/dragDropManager.js';
 
 import {
@@ -446,6 +447,27 @@ export async function runDragDropManagerTests(resultsDiv) {
     // 🔀 REARRANGEMENT LOGIC TESTS
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🔀 Rearrangement Logic</h4>';
+
+    test('mergeVisibleOrder() keeps hidden (completed) tasks at their index', () => {
+        // state [A, B(done, in dropdown), C, D]; DOM shows [D, A, C] after a drag.
+        const tasks = [{ id: 'A' }, { id: 'B' }, { id: 'C' }, { id: 'D' }];
+        const out = mergeVisibleOrder(tasks, ['D', 'A', 'C']);
+        if (out.map(t => t.id).join('') !== 'DBAC') throw new Error(`expected DBAC, got ${out.map(t => t.id).join('')}`);
+        if (out[1] !== tasks[1]) throw new Error('hidden task must be the same object');
+    });
+
+    test('mergeVisibleOrder() ignores DOM ids the routine no longer has and keeps every task', () => {
+        const tasks = [{ id: 'A' }, { id: 'B' }, { id: 'C' }];
+        const out = mergeVisibleOrder(tasks, ['C', 'ghost', 'A', 'B']);
+        if (out.map(t => t.id).join('') !== 'CAB') throw new Error(`expected CAB, got ${out.map(t => t.id).join('')}`);
+        if (out.length !== 3) throw new Error('task count changed');
+    });
+
+    test('mergeVisibleOrder() with everything visible is a plain reorder', () => {
+        const tasks = [{ id: 'A' }, { id: 'B' }, { id: 'C' }];
+        const out = mergeVisibleOrder(tasks, ['B', 'C', 'A']);
+        if (out.map(t => t.id).join('') !== 'BCA') throw new Error(`expected BCA, got ${out.map(t => t.id).join('')}`);
+    });
 
     test('handleRearrange() requires draggedTask', () => {
         const manager = new DragDropManager();

@@ -954,6 +954,158 @@ async function journeyBackupButtonSaveAs(browser, baseURL) {
     return { name: 'Backup All saves where the user chooses', failures };
 }
 
+// ── Journey: drag reorder lands where released, reverts when abandoned, and ──
+// ── never moves a hidden task ────────────────────────────────────────────────
+//
+// The drag path (dragDropManager) had no test at all; the arrows journey below
+// covers the other door. Driven with synthetic DragEvents/TouchEvents because
+// the three defects were about TIMING and about rows that are not on screen —
+// Playwright's real-mouse drag coalesces dragover events and cannot hit them.
+// Each check reproduces an Oct 2026 bug:
+//   • the last move ran on a 75ms trailing timer that nothing flushed, so a
+//     release within that window saved the order from one row earlier;
+//   • no dragend handling — Escape left the row moved in the DOM, untouched in
+//     state, and still translucent;
+//   • saving appended every row NOT in #taskList (completed tasks in the
+//     dropdown) to the end of the routine, so any drag reordered them;
+//   • the touch hold was cancelled by one pixel of vertical finger drift.
+async function journeyDragReorder(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // Seed straight into storage and reboot, as the arrows journey does: the
+        // learn flow lands in Focus View with the input bar hidden.
+        const seed = async (texts, opts = {}) => {
+            await page.evaluate(({ texts, opts }) => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = d.data.routine[d.appState.activeRoutineId];
+                c.tasks = texts.map((t, i) => ({
+                    id: 'drag' + i, text: t, completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false,
+                    recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2
+                }));
+                c.recurringTemplates = {};
+                c.autoReset = false;
+                c.deleteCheckedTasks = false;
+                d.settings = d.settings || {};
+                d.settings.showCompletedDropdown = !!opts.dropdown;
+                localStorage.setItem('miniCycleData', JSON.stringify(d));
+            }, { texts, opts });
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            await bootApp(page);
+            await page.waitForTimeout(600);
+        };
+        const SIX = ['Drag A', 'Drag B', 'Drag C', 'Drag D', 'Drag E', 'Drag F'];
+        await seed(SIX);
+        const names = () => page.evaluate(() => ({
+            dom: [...document.querySelectorAll('#taskList .task')].map(t => t.dataset.taskId),
+            state: (() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); const r = p.data.routine[p.appState.activeRoutineId]; return r.tasks.map(t => t.id); })()
+        }));
+        // Synthetic HTML5 drag: dragstart on row `from`, one dragover at `frac` of
+        // row `to`, then after `gap` ms either a drop or a bare dragend.
+        const drag = (from, to, frac, gap, end) => page.evaluate(async ([from, to, frac, gap, end]) => {
+            const rows = () => [...document.querySelectorAll('#taskList .task')];
+            const moved = rows()[from], target = rows()[to];
+            const dt = new DataTransfer();
+            const at = (el, f) => { const r = el.getBoundingClientRect(); return r.top + r.height * f; };
+            moved.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(moved, 0.5) }));
+            target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(target, frac) }));
+            await new Promise(r => setTimeout(r, gap));
+            const movedBeforeEnd = rows().indexOf(moved);
+            if (end === 'drop') {
+                target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(target, frac) }));
+            } else {
+                moved.dispatchEvent(new DragEvent('dragend', { bubbles: true, cancelable: true, dataTransfer: dt }));
+            }
+            await new Promise(r => setTimeout(r, 500));
+            return { movedId: moved.dataset.taskId, targetId: target.dataset.taskId, movedBeforeEnd,
+                dragging: document.querySelectorAll('#taskList .task.dragging').length,
+                dropTarget: document.querySelectorAll('#taskList .task.drop-target').length };
+        }, [from, to, frac, gap, end]);
+
+        const seeded = await names();
+        record('six tasks on screen to drag between', seeded.dom.length >= 6, `${seeded.dom.length} rows`);
+
+        // 1. Release 20ms after the last move: the row must land BELOW the row it
+        //    was released over, in the DOM and in state.
+        let r = await drag(0, 3, 0.8, 20, 'drop');
+        let o = await names();
+        record('quick release: the row lands after the row it was released over (DOM)',
+            o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) + 1,
+            `moved at ${o.dom.indexOf(r.movedId)}, target at ${o.dom.indexOf(r.targetId)} — the pending move was not flushed`);
+        record('quick release: state holds the same order', o.state.join() === o.dom.join(),
+            `state ${o.state.join(',')} vs DOM ${o.dom.join(',')}`);
+        record('quick release: no drag classes left behind', r.dragging === 0 && r.dropTarget === 0,
+            `.dragging ${r.dragging}, .drop-target ${r.dropTarget}`);
+
+        // 2. Escape (dragend with no drop) after the DOM has already moved: the list
+        //    goes back to what state says, with no drag styling left on the row.
+        const beforeEsc = await names();
+        r = await drag(1, 4, 0.8, 200, 'dragend');
+        o = await names();
+        record('abandoned drag: the DOM had moved before Escape', r.movedBeforeEnd !== 1,
+            'the dragover never moved the row, so the revert below proves nothing');
+        record('abandoned drag: the list is back to the saved order', o.dom.join() === beforeEsc.state.join() && o.state.join() === beforeEsc.state.join(),
+            `DOM ${o.dom.join(',')} / state ${o.state.join(',')} / expected ${beforeEsc.state.join(',')}`);
+        record('abandoned drag: no .dragging left on the row', r.dragging === 0, `${r.dragging} rows still .dragging`);
+
+        // 3. Completed dropdown on, task 2 completed (so it leaves #taskList), then a
+        //    drag of another row: the completed task must keep index 1 in state.
+        //    The dropdown is switched on through its own toggle AFTER the reboot:
+        //    seeding the setting into storage right after the drags above raced
+        //    the app's debounced save, which flushed on pagehide over the seed.
+        await page.waitForTimeout(1000);
+        await seed(SIX);
+        await page.evaluate(() => document.getElementById('toggle-completed-dropdown')?.click());
+        await page.waitForTimeout(600);
+        const doneId = await page.evaluate(() => {
+            const row = document.querySelectorAll('#taskList .task')[1];
+            row.querySelector('input[type="checkbox"]').click();
+            return row.dataset.taskId;
+        });
+        await page.waitForTimeout(1200);
+        const parked = await page.evaluate(() => document.querySelectorAll('#completedTaskList .task').length);
+        record('completed dropdown parks the completed row outside #taskList', parked === 1,
+            `${parked} rows in #completedTaskList — the hidden-task case is not being exercised`);
+        const beforeHidden = await names();
+        r = await drag(3, 0, 0.2, 200, 'drop');
+        o = await names();
+        record('a drag never moves a hidden completed task', o.state.indexOf(doneId) === beforeHidden.state.indexOf(doneId),
+            `completed task went from index ${beforeHidden.state.indexOf(doneId)} to ${o.state.indexOf(doneId)}`);
+        record('…and the dragged row still moved', o.state.indexOf(r.movedId) !== beforeHidden.state.indexOf(r.movedId),
+            'the dragged row did not move at all');
+        record('…and every task is still there', o.state.length === beforeHidden.state.length,
+            `${beforeHidden.state.length} -> ${o.state.length} tasks`);
+
+        // 4. Touch: a 2px vertical drift during the hold must still arm the drag.
+        const armed = await page.evaluate(async () => {
+            const row = document.querySelectorAll('#taskList .task')[0];
+            const r = row.getBoundingClientRect();
+            const mk = (type, y) => {
+                const t = new Touch({ identifier: 1, target: row, clientX: r.left + 40, clientY: y, pageX: r.left + 40, pageY: y });
+                return new TouchEvent(type, { touches: type === 'touchend' ? [] : [t], changedTouches: [t], targetTouches: type === 'touchend' ? [] : [t], bubbles: true, cancelable: true });
+            };
+            const y0 = r.top + r.height / 2;
+            row.dispatchEvent(mk('touchstart', y0));
+            await new Promise(res => setTimeout(res, 120));
+            row.dispatchEvent(mk('touchmove', y0 + 2));
+            await new Promise(res => setTimeout(res, 650));
+            const armed = row.classList.contains('dragging');
+            row.dispatchEvent(mk('touchend', y0 + 2));
+            await new Promise(res => setTimeout(res, 400));
+            return { armed, leftover: document.querySelectorAll('#taskList .task.dragging, #taskList .task.drop-target').length };
+        });
+        record('touch: a 2px vertical finger drift during the hold still arms the drag', armed.armed,
+            'the hold was cancelled by sub-threshold vertical drift');
+        record('touch: lifting the finger clears the drag marks', armed.leftover === 0, `${armed.leftover} marks left`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'drag reorder', failures };
+}
+
 // ── Journey 8: factory reset — twice in place, then once with the reload ────
 //
 // Since Oct 2026 the reset ends in a real page load when a network probe
@@ -3539,6 +3691,7 @@ const JOURNEYS = [
     { name: 'a backup made before 2.6 restores from Settings', fn: journeySettingsRestoreAcceptsOlderBackup },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
+    { name: 'drag reorder lands where released, reverts when abandoned, never moves hidden tasks', fn: journeyDragReorder },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },
     { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
