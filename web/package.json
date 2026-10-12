@@ -19,6 +19,8 @@
     "test:meta": "node tests/automated/run-meta-tests.cjs",
     "test:journey": "node tests/automated/run-journey-tests.cjs",
     "test:a11y": "node tests/automated/run-a11y-tests.cjs",
+    "test:lite": "node lite/tests/run-lite-tests.cjs",
+    "test:lite:update": "node lite/tests/run-lite-tests.cjs --update",
     "test:manual": "python3 -m http.server 8080",
     "perf": "node tests/automated/run-performance-benchmarks.cjs",
     "lint": "eslint modules/ service-worker.js miniCycle-main.js boot-sw.js --max-warnings=338",
