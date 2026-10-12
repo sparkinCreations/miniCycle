@@ -27,6 +27,9 @@ import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycle
 // This avoids versioned/unversioned module instance mismatch issues
 
 const di = createDIModule('TaskOptionsCustomizer', {
+    // The shared close route for the main menu (menuManager.hideMainMenu): it
+    // also clears body.main-menu-open, which the menu's blurred backdrop keys on.
+    hideMainMenu: optional(null),
     AppState: optional(null),
     showNotification: optional(null),
     renderTaskList: optional(null),
@@ -236,10 +239,20 @@ export class TaskOptionsCustomizer {
                     const currentCycleId = getActiveRoutineId(state);
 
                     if (currentCycleId) {
-                        // Close the menu first
-                        const menuContainer = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
-                        if (menuContainer) {
-                            menuContainer.classList.remove(DOM_CLASSES.VISIBLE);
+                        // Close the menu first — through its own close route. Stripping
+                        // the menu's class here left body.main-menu-open behind, and the
+                        // menu backdrop (a fixed, blurred, dimmed layer keyed on that
+                        // class) stayed over the whole page after the customizer closed;
+                        // only the hamburger button, lifted above it, stayed crisp
+                        // (reported Oct 2026 on 2.605).
+                        if (this.deps.hideMainMenu) {
+                            this.deps.hideMainMenu();
+                        } else {
+                            const menuContainer = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
+                            if (menuContainer) {
+                                menuContainer.classList.remove(DOM_CLASSES.VISIBLE);
+                            }
+                            document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
                         }
 
                         // Then open the customization modal

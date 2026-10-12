@@ -1130,6 +1130,50 @@ async function journeyDragReorder(browser, baseURL) {
     return { name: 'drag reorder', failures };
 }
 
+// ── Journey: opening the task-options customizer from the main menu clears ──
+// ── the menu backdrop ────────────────────────────────────────────────────────
+//
+// The menu backdrop is a fixed, blurred, dimmed layer keyed on
+// body.main-menu-open. The customizer's menu entry used to hide the menu by
+// stripping the menu's own class, so the body class — and the blur over the
+// whole page — stayed after the customizer closed (reported Oct 2026).
+async function journeyCustomizerClearsMenuBackdrop(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+        await page.waitForTimeout(800);
+        await openMenu(page).catch(() => {});
+        await page.waitForTimeout(400);
+        record('the main menu opened (body.main-menu-open)',
+            await page.evaluate(() => document.body.classList.contains('main-menu-open')),
+            'fixture: the menu never opened');
+        await page.evaluate(() => document.getElementById('menu-task-options')?.click());
+        await page.waitForTimeout(900);
+        record('the customizer opened', await page.evaluate(() => !!document.querySelector('dialog[open]#task-options-customizer-modal')),
+            'no customizer dialog is open');
+        record('…and the menu backdrop class is already gone',
+            await page.evaluate(() => !document.body.classList.contains('main-menu-open')),
+            'body.main-menu-open survived the customizer opening');
+        await page.evaluate(() => document.getElementById('close-task-options-btn')?.click() || document.querySelector('dialog[open] .close-button-fullwidth')?.click());
+        await page.waitForTimeout(800);
+        const after = await page.evaluate(() => ({
+            open: document.querySelectorAll('dialog[open]').length,
+            menuOpen: document.body.classList.contains('main-menu-open'),
+            backdropVisible: (() => { const b = document.querySelector('.main-menu-backdrop'); return !!b && getComputedStyle(b).visibility === 'visible'; })()
+        }));
+        record('after closing: no dialog is open and the page is not blurred',
+            after.open === 0 && !after.menuOpen && !after.backdropVisible,
+            `open dialogs ${after.open}, main-menu-open ${after.menuOpen}, backdrop visible ${after.backdropVisible}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'customizer clears the menu backdrop', failures };
+}
+
 // ── Journey 8: factory reset — twice in place, then once with the reload ────
 //
 // Since Oct 2026 the reset ends in a real page load when a network probe
@@ -3716,6 +3760,7 @@ const JOURNEYS = [
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'drag reorder lands where released, reverts when abandoned, never moves hidden tasks', fn: journeyDragReorder },
+    { name: 'opening the customizer from the menu clears the menu backdrop', fn: journeyCustomizerClearsMenuBackdrop },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },
     { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },
