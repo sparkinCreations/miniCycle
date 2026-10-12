@@ -2337,12 +2337,15 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
                 perCycle: t('per-cycle-count'),
                 routineCycles: t('current-routine-cycle-count'),
                 progressBarExists: !!bar,
-                progressTransform: bar ? (bar.style.transform || '(unset)') : '(no #progressBar)'
+                // Since Oct 2026 the fill is sized by width from the --progress
+                // custom property (0..1) the module publishes; before that it
+                // was an inline transform: scaleX().
+                progressFill: bar ? (bar.style.getPropertyValue('--progress') || '(unset)') : '(no #progressBar)'
             };
         });
 
         // Tick a box so the progress bar is visibly FILLED going in. Without this
-        // the bar reads scaleX(0) before AND after and the assertion below is
+        // the bar reads --progress 0 before AND after and the assertion below is
         // vacuous — it would pass against the very bug it exists to catch.
         await page.evaluate(() => {
             const row = document.getElementById('task-input-row');
@@ -2359,8 +2362,8 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
             before.progressBarExists === true,
             'no #progressBar in the DOM — the selector is wrong and the reset assertion below would be vacuous');
         record('the progress bar is filled before the reset',
-            /scaleX\((?!0\))/.test(before.progressTransform),
-            `progress bar was not filled going in (${before.progressTransform}), so "empty after" proves nothing`);
+            parseFloat(before.progressFill) > 0,
+            `progress bar was not filled going in (${before.progressFill}), so "empty after" proves nothing`);
 
         await runFactoryResetUI(page);
         await page.waitForTimeout(5500);
@@ -2382,9 +2385,9 @@ async function journeyResetClearsRenderedState(browser, baseURL) {
                 routineCycles: after.routineCycles })}`);
 
         record('the progress bar is emptied, not left at the old fill',
-            /^scaleX\(0\)$/.test(after.progressTransform),
-            `the bar still reads ${after.progressTransform} with ${after.taskRows} task rows — it holds its ` +
-            'fill in an INLINE transform, so clearing the task lists does not touch it');
+            parseFloat(after.progressFill) === 0,
+            `the bar still reads ${after.progressFill} with ${after.taskRows} task rows — it holds its ` +
+            'fill in an INLINE --progress property, so clearing the task lists does not touch it');
 
         record('no starved dependencies', page.__diWarnings.length === 0,
             `DI warnings: ${page.__diWarnings.join(' | ')}`);

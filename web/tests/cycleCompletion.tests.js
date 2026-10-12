@@ -705,8 +705,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        if (mockProgressBar.style.transform !== 'scaleX(0)') {
-            throw new Error(`Expected scaleX(0), got ${mockProgressBar.style.transform}`);
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '0') {
+            throw new Error(`Expected --progress 0, got ${JSON.stringify(mockProgressBar.style.getPropertyValue('--progress'))}`);
         }
     });
 
@@ -731,8 +731,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         updateProgressBar();
 
         // The module uses transform: scaleX() instead of width
-        if (mockProgressBar.style.transform !== 'scaleX(0)') {
-            throw new Error(`Expected scaleX(0), got ${mockProgressBar.style.transform}`);
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '0') {
+            throw new Error(`Expected --progress 0, got ${JSON.stringify(mockProgressBar.style.getPropertyValue('--progress'))}`);
         }
     });
 
@@ -753,8 +753,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         updateProgressBar();
 
         // The module uses transform: scaleX() instead of width
-        if (mockProgressBar.style.transform !== 'scaleX(0.5)') {
-            throw new Error(`Expected scaleX(0.5), got ${mockProgressBar.style.transform}`);
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '0.5') {
+            throw new Error(`Expected --progress 0.5, got ${JSON.stringify(mockProgressBar.style.getPropertyValue('--progress'))}`);
         }
     });
 
@@ -773,8 +773,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         updateProgressBar();
 
         // The module uses transform: scaleX() instead of width
-        if (mockProgressBar.style.transform !== 'scaleX(1)') {
-            throw new Error(`Expected scaleX(1), got ${mockProgressBar.style.transform}`);
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '1') {
+            throw new Error(`Expected --progress 1, got ${JSON.stringify(mockProgressBar.style.getPropertyValue('--progress'))}`);
         }
     });
 
@@ -794,8 +794,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        if (mockProgressBar.style.transform !== 'scaleX(0)') {
-            throw new Error(`Expected scaleX(0) from state, got ${mockProgressBar.style.transform}`);
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '0') {
+            throw new Error(`Expected scaleX(0) from state, got ${JSON.stringify(mockProgressBar.style.getPropertyValue('--progress'))}`);
         }
     });
 
@@ -809,8 +809,8 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         updateProgressBar();
 
-        // The module uses transition: transform instead of width
-        if (!mockProgressBar.style.transition.includes('transform')) {
+        // Since Oct 2026 the fill animates its WIDTH (see progress-bar.css)
+        if (!mockProgressBar.style.transition.includes('width')) {
             throw new Error('Should set transition for smooth animation');
         }
     });
@@ -883,10 +883,38 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
 
         checkMiniCycle();
 
-        // The module uses transform: scaleX() instead of width
-        if (mockProgressBar.style.transform !== 'scaleX(0.5)') {
-            throw new Error(`Should update progress bar from state, got ${mockProgressBar.style.transform}`);
+        // Since Oct 2026 the fill is sized by WIDTH from a --progress custom
+        // property (0..1) that progress-bar.css consumes — not transform:
+        // scaleX(), which squashed the rounded end cap and the gradient.
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '0.5') {
+            throw new Error(`Should publish --progress 0.5 from state, got ${JSON.stringify(mockProgressBar.style.getPropertyValue('--progress'))}`);
         }
+        if (mockProgressBar.style.transform) throw new Error('the fill must not be scaled any more');
+        if (mockProgressBar.getAttribute('aria-valuenow') !== '50') throw new Error('aria-valuenow should be 50, got ' + mockProgressBar.getAttribute('aria-valuenow'));
+        if (mockProgressBar.classList.contains('complete')) throw new Error('half done is not complete');
+    });
+
+    await test('updateProgressBar marks 100% with the complete class (one-shot sheen) and clears it below', () => {
+        const mockProgressBar = document.createElement('div');
+        setCycleCompletionDependencies({
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: true }
+            ], { autoReset: false }),
+            getProgressBar: () => mockProgressBar,
+            updateStatsPanel: () => {}
+        });
+        updateProgressBar();
+        if (mockProgressBar.style.getPropertyValue('--progress') !== '1' || mockProgressBar.getAttribute('aria-valuenow') !== '100') throw new Error('100% should publish --progress 1 / aria 100');
+        if (!mockProgressBar.classList.contains('complete')) throw new Error('100% should carry the complete class');
+        setCycleCompletionDependencies({
+            AppState: appStateWithTasks([{ id: 't1', text: 'One', completed: false }], { autoReset: false }),
+            getProgressBar: () => mockProgressBar,
+            updateStatsPanel: () => {}
+        });
+        updateProgressBar();
+        if (mockProgressBar.classList.contains('complete')) throw new Error('dropping below 100% must clear the complete class');
+        if (mockProgressBar.getAttribute('aria-valuenow') !== '0') throw new Error('aria-valuenow should be 0');
     });
 
     await test('checkMiniCycle auto-resets when AppState says every task is complete (rendered checkboxes ignored)', async () => {
