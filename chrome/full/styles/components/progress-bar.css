@@ -4,7 +4,15 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* =============================================================================
-   PROGRESS CONTAINER
+   PROGRESS CONTAINER (the track)
+
+   Oct 2026 restyle. Heights, margins and widths are UNCHANGED on purpose: the
+   Focus View band and the layout suite measure this box. What changed is the
+   surface — a frosted track with a 1px edge and an inset shadow, so it reads
+   as a groove on any background instead of a flat dark strip — and the fill
+   (below). Stats' milestone bar shares .progress-container / .progress-bar;
+   everything new here is scoped to the routine bar's modifier so the Stats
+   panel keeps its own look (stats-panel.css).
    ============================================================================= */
 
 .progress-container {
@@ -22,18 +30,87 @@
     flex-shrink: 0;
 }
 
+.progress-container.progress-container--routine {
+    background: var(--progress-track-bg);
+    border: 1px solid var(--progress-track-border);
+    /* Inset only. An outer 1px highlight under the track read as a seam along
+       the bottom edge (Oct 2026, "the bottom half looks slightly off"). */
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+}
+
 /* =============================================================================
-   PROGRESS BAR
+   PROGRESS BAR (the fill)
+
+   Sized by WIDTH from --progress (0..1), set by cycleCompletion.js — not by
+   transform: scaleX(), which squashed the rounded end cap and compressed the
+   gradient at low values. The fill colour is ONE token, --progress-fill, so
+   the gradient, the glow and the sheen all follow whatever sets it: the
+   personalization colour in the default theme, the theme's own colour in
+   Dark Ocean / Golden Glow / dark mode, --color-success-light otherwise.
    ============================================================================= */
 
 .progress-bar {
+    --progress-fill: var(--theme-progress-bar, var(--color-success-light));
     width: 100%;
     height: 100%;
     min-height: 12px;
-    background: var(--theme-progress-bar, var(--color-success-light));
+    background: var(--progress-fill);
     transform: scaleX(0);
     transform-origin: left;
     transition: transform var(--transition-normal) ease-in-out;
+}
+
+.progress-container--routine .progress-bar {
+    position: relative;
+    width: calc(var(--progress, 0) * 100%);
+    min-width: 0;
+    /* The base rule's min-height (12 / 10 / 8px per breakpoint) equals the
+       track's OUTER height; the fill lives inside a 1px border, so it must
+       size to the inner box or it overflows 1px top and bottom and the
+       clipped bottom corners turn square. */
+    min-height: 0;
+    height: 100%;
+    /* The box carries a 1px border, so the fill sits inside it; inherit the
+       radius so the leading edge is round, and the trailing edge rounds as
+       the fill grows. */
+    border-radius: inherit;
+    transform: none;
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--progress-fill) 72%, white) 0%,
+        var(--progress-fill) 100%
+    );
+    box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 0 10px color-mix(in srgb, var(--progress-fill) 45%, transparent);
+    transition: width var(--transition-normal) ease-out;
+    overflow: hidden;
+}
+
+/* One-shot sheen when the routine reaches 100% — a highlight sweeps across the
+   full bar once. Driven by the `complete` class cycleCompletion.js toggles.
+   --animation-slow collapses to 0ms under prefers-reduced-motion, which
+   leaves the fill static (no sweep) exactly as the other animations do. */
+.progress-container--routine .progress-bar::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        100deg,
+        transparent 20%,
+        rgba(255, 255, 255, 0.55) 50%,
+        transparent 80%
+    );
+    transform: translateX(-120%);
+    pointer-events: none;
+}
+.progress-container--routine .progress-bar.complete::after {
+    animation: progress-sheen var(--animation-slow) ease-out 1;
+}
+@keyframes progress-sheen {
+    to { transform: translateX(120%); }
 }
 
 /* =============================================================================
@@ -47,17 +124,34 @@
 .progress-bar.warning {
     background: var(--theme-warning, var(--color-warning));
 }
+.progress-container--routine .progress-bar.warning {
+    --progress-fill: var(--theme-warning, var(--color-warning));
+}
 
 /* =============================================================================
    CUSTOM PREFERENCE COLORS (Default Theme Only)
+   The personalization colour is the fill token in the default theme; the
+   gradient / glow / sheen derive from it. Dark mode and the colour themes keep
+   their own token (they are not personalizable, as before).
    ============================================================================= */
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-bar {
+    --progress-fill: var(--pref-progress-bar, var(--theme-progress-bar, var(--color-success-light)));
     background: var(--pref-progress-bar, var(--theme-progress-bar, var(--color-success-light)));
 }
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-bar.complete {
     background: var(--pref-progress-bar, var(--theme-progress-bar, var(--color-success-light)));
+}
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-container--routine .progress-bar,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-container--routine .progress-bar.complete {
+    /* the gradient must win over the flat background the two rules above set */
+    background: linear-gradient(
+        90deg,
+        color-mix(in srgb, var(--progress-fill) 72%, white) 0%,
+        var(--progress-fill) 100%
+    );
 }
 
 /* =============================================================================

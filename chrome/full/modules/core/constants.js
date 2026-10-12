@@ -1020,6 +1020,7 @@ export const DOM_CLASSES = Object.freeze({
     TASK_RESETTING: 'task-resetting',
     TASK_CLEARING: 'task-clearing',
     COMPLETED: 'completed',
+    PROGRESS_COMPLETE: 'complete',   /* .progress-bar at 100%: the sheen plays once (progress-bar.css) */
 
     // ---- Pull to Refresh ----
     OPEN: 'open',

@@ -497,8 +497,8 @@ export function animateProgressBarFill() {
         if (progressBar) {
             const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
             const duration = reducedMotion ? '0ms' : '0.2s';
-            progressBar.style.transition = `transform ${duration} ease-out`;
-            progressBar.style.transform = "scaleX(1)";
+            progressBar.style.transition = `width ${duration} ease-out`;
+            progressBar.style.setProperty('--progress', '1');
         }
         setTimeout(resolve, UI_TIMEOUTS.STATS_UPDATE_DELAY); // Wait for animation + small buffer
     });
@@ -513,8 +513,10 @@ export function animateProgressBarEmpty() {
     if (progressBar) {
         const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
         const duration = reducedMotion ? '0ms' : '0.3s';
-        progressBar.style.transition = `transform ${duration} ease-in`;
-        progressBar.style.transform = "scaleX(0)";
+        progressBar.style.transition = `width ${duration} ease-in`;
+        progressBar.style.setProperty('--progress', '0');
+        progressBar.classList.remove(DOM_CLASSES.PROGRESS_COMPLETE);
+        progressBar.setAttribute('aria-valuenow', '0');
         // Clear transition after animation completes (300ms + buffer)
         setTimeout(() => {
             progressBar.style.transition = "";
@@ -544,8 +546,15 @@ export function updateProgressBar() {
     // Add consistent animation for all progress updates
     const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     const duration = reducedMotion ? '0ms' : '0.2s';
-    progressBar.style.transition = `transform ${duration} ease-out`;
-    progressBar.style.transform = `scaleX(${progress / 100})`;
+    // The fill is sized by WIDTH from a --progress custom property (0..1) that
+    // progress-bar.css consumes — not transform: scaleX(). A scaled fill
+    // squashes its rounded end cap and compresses its gradient at low values;
+    // a width keeps both intact at every percentage (Oct 2026 restyle).
+    progressBar.style.transition = `width ${duration} ease-out`;
+    progressBar.style.setProperty('--progress', String(progress / 100));
+    progressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
+    // 100% gets a one-shot sheen (CSS keyframes, off under reduced motion).
+    progressBar.classList.toggle(DOM_CLASSES.PROGRESS_COMPLETE, totalTasks > 0 && completedTasks === totalTasks);
 
     // Clear transition after animation
     setTimeout(() => {

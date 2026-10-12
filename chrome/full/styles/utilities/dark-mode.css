@@ -139,6 +139,9 @@ body.dark-mode:not([data-theme]) {
     --theme-task-completed-text: var(--dark-text-dim);
     --theme-task-border: var(--dark-button-bg);
     --theme-progress-text: #e0e0e0;
+    /* Routine progress bar track (progress-bar.css): a lighter groove on dark surfaces. */
+    --progress-track-bg: rgba(255, 255, 255, 0.10);
+    --progress-track-border: rgba(255, 255, 255, 0.16);
     --theme-stats-text: var(--theme-text-primary);
     --theme-stats-bg: var(--dark-surface-primary);
     --theme-modal-bg: var(--dark-surface-primary);

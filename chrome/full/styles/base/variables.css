@@ -241,6 +241,11 @@
      THEME VARIABLES - Progress
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-progress-track-bg: rgba(0, 0, 0, 0.1);
+  /* Routine progress bar track (progress-bar.css, Oct 2026 restyle). A
+     frosted groove: translucent so the page shows through, with a 1px edge.
+     Dark mode and the colour themes override both below / in themes.css. */
+  --progress-track-bg: rgba(0, 0, 0, 0.22);
+  --progress-track-border: rgba(255, 255, 255, 0.22);
   --theme-progress-fill-bg: var(--color-primary);
   --theme-progress-text: #333333;
 

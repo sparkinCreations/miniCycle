@@ -1,3 +1,8 @@
+## [2.605] - 2026-10-11
+- feat(progress): a modern routine progress bar — frosted track, gradient fill, width-driven, ARIA
+- docs(lite): cleanup plan; build: never publish lite/tests or lite/*.md
+
+
 ## [2.604] - 2026-10-11
 - fix(onboarding): a migrated or restored profile boots to its routines instead of the Welcome modal
 

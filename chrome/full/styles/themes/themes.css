@@ -76,6 +76,8 @@
 
     /* Progress */
     --theme-progress-track-bg:  rgba(255, 255, 255, 0.1);
+    --progress-track-bg:        rgba(255, 255, 255, 0.10);
+    --progress-track-border:    rgba(255, 255, 255, 0.18);
     --theme-progress-fill-bg:   #74c0fc;
     --theme-progress-text:      #e0e0e0;
 
@@ -168,6 +170,8 @@
 
     /* Progress */
     --theme-progress-track-bg:  rgba(78, 205, 196, 0.2);
+    --progress-track-bg:        rgba(78, 205, 196, 0.18);
+    --progress-track-border:    rgba(78, 205, 196, 0.35);
     --theme-progress-fill-bg:   #4ecdc4;
     --theme-progress-text:      #e0f7fa;
 
@@ -260,6 +264,8 @@
 
     /* Progress */
     --theme-progress-track-bg:  rgba(255, 215, 0, 0.2);
+    --progress-track-bg:        rgba(120, 80, 0, 0.18);
+    --progress-track-border:    rgba(255, 215, 0, 0.35);
     --theme-progress-fill-bg:   #d4a700;
     --theme-progress-text:      #4a3d00;
 
