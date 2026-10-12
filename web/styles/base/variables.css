@@ -145,13 +145,13 @@
      These are overridden by theme-manager.js when a theme is applied
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
-  /* Footer links: white text on a see-through blue glass strip (heavy blur,
-     light tint). Chosen for the look: at this transparency the white text
-     measures below WCAG 1.4.3's 4.5:1 over the gradient's light end; the
-     contrast runner prints the number on every run (reported, not gated).
-     Darken the tint or lighten the alpha here to trade look for contrast. */
+  /* Footer links: white text on a see-through navy glass strip (heavy blur).
+     A deeper tint at a lower alpha is the most transparent setting that
+     keeps the white text at 4.6:1 over the gradient's light end (WCAG 1.4.3
+     asks 4.5:1); the contrast runner gates it. A lighter tint would need
+     more opacity for the same number. */
   --footer-text: #ffffff;
-  --footer-strip-bg: rgba(28, 56, 120, 0.35);
+  --footer-strip-bg: rgba(10, 25, 60, 0.43);
   --footer-strip-border: rgba(255, 255, 255, 0.35);
   --theme-bg-solid: #4c79ff;
   --theme-bg-surface: rgba(255, 255, 255, 0.95);

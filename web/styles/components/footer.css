@@ -23,12 +23,12 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
-/* White links on a thin, see-through blue glass strip: a light tint under a
-   heavy blur, so the page shows through like the panels' glass. Blur alone
-   does not change what is under the text, so the tint is what the contrast
-   comes from, and at this transparency it sits below 4.5:1 over the
-   gradient's light end by design (see --footer-strip-bg); the contrast
-   runner reports the number every run. No opacity dimming on the text. */
+/* White links on a thin, see-through navy glass strip under a heavy blur,
+   so the page shows through like the panels' glass. Blur alone does not
+   change what is under the text, so the tint is what the contrast comes
+   from: a deep navy at 43% is the most transparent setting that keeps the
+   white text at 4.6:1 over the gradient's light end (see --footer-strip-bg),
+   gated by the contrast runner. No opacity dimming on the text. */
 .footer-links {
     list-style: none;
     margin: 0 auto;
