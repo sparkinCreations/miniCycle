@@ -138,6 +138,22 @@
         display: none;
     }
 
+    /* Phones: only the copyright line shows, so the glass strip would be a
+       pill around one short caption under the Undo button and the page dots.
+       Drop it; the text carries the contrast via --footer-text-mobile. */
+    #footer-container .footer-links {
+        background: none;
+        border: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+        padding: 0;
+    }
+
+    #footer-container #copyright,
+    #footer-container #copyright a {
+        color: var(--footer-text-mobile, #111111);
+    }
+
     #footer-container #copyright {
         order: 99;
         flex-basis: 100%;

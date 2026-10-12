@@ -1,3 +1,7 @@
+## [2.612] - 2026-10-12
+- style(footer): phones get bare per-theme text, no glass strip
+
+
 ## [2.611] - 2026-10-12
 - fix(footer): the copyright line sits inside the glass strip on phones
 
