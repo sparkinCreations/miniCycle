@@ -144,7 +144,9 @@
         display: flex;
         justify-content: center;
         gap: .3em;
-        margin-top: -10px;
+        /* No negative top margin: it pulled the line up out of the glass
+           strip on phones (Oct 2026). The other items are display:none here,
+           so there is no wrapped row above it to close up against. */
     }
 }
 
