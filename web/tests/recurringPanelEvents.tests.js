@@ -244,6 +244,7 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
             '<div id="recurring-task-list">' +
             '<div class="recurring-task-item" data-task-id="t1" aria-selected="false">' +
             '<input type="checkbox" class="recurring-check">' +
+            '<button class="recurring-pause-btn">p</button>' +
             '<button class="recurring-remove-btn">x</button>' +
             '<span class="label">Task</span>' +
             '</div></div>',
@@ -276,6 +277,24 @@ export async function runRecurringPanelEventsTests(resultsDiv) {
             if (!received) throw new Error('handleRemoveTask not called');
             if (received.tpl !== template) throw new Error('wrong template passed');
             if (received.el !== sandbox.querySelector('.recurring-task-item')) throw new Error('wrong item passed');
+        } finally { unmount(); }
+    });
+
+    await test('Clicking the pause button calls handleTogglePause with template + item, nothing else', () => {
+        const template = { id: 't1', taskText: 'Hi' };
+        const deps = taskListFixture(makeAppState(template));
+        try {
+            let received = null; let removed = false;
+            const cb = {
+                handleTogglePause: (tpl, el) => { received = { tpl, el }; },
+                handleRemoveTask: () => { removed = true; }
+            };
+            mod.setupTaskListDelegation(deps, {}, cb);
+            click(sandbox.querySelector('.recurring-pause-btn'));
+            if (!received) throw new Error('handleTogglePause not called');
+            if (received.tpl !== template) throw new Error('wrong template passed');
+            if (removed) throw new Error('the remove handler must not fire for the pause button');
+            if (sandbox.querySelector('.recurring-task-item').classList.contains('selected')) throw new Error('pause must not select the row');
         } finally { unmount(); }
     });
 

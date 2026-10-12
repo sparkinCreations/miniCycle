@@ -23,7 +23,8 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { priorityFields } from '../utils/priorityLevel.js';
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -38,7 +39,7 @@ import {
     handleConfirmAddRecurring as _handleConfirmAddRecurring
 } from './recurringPanelAddTask.js';
 import { animateDialogClose } from '../utils/dialogClose.js';
-import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { autoClearFields, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
 import {
@@ -129,6 +130,7 @@ export class RecurringPanelManager {
     initEventDelegation() {
         const callbacks = {
             handleRemoveTask: (template, item) => this.handleRemoveTask(template, item),
+            handleTogglePause: (template, item) => this.handleTogglePause(template, item),
             showTaskSummaryPreview: (task) => this.showTaskSummaryPreview(task),
             getSelectedYearlyMonths: () => this.getSelectedYearlyMonths(),
             setPanelMode: (mode) => this.setPanelMode(mode),
@@ -772,9 +774,27 @@ export class RecurringPanelManager {
         removeBtn.setAttribute("aria-label", getLabel('recurring.removeFromRecurring'));
         removeBtn.className = "recurring-remove-btn";
         removeBtn.innerHTML = `<span class="icon recurring-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
+        // Pause / resume. A paused template keeps its settings and schedule but
+        // the watcher does not spawn from it; resuming reschedules from now.
+        const paused = task.paused === true;
+        const pauseBtn = document.createElement("button");
+        const pauseLabel = getLabel(paused ? 'recurring.resumeRecurring' : 'recurring.pauseRecurring');
+        pauseBtn.title = pauseLabel;
+        pauseBtn.setAttribute("aria-label", pauseLabel);
+        pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false");
+        pauseBtn.className = "recurring-pause-btn";
+        pauseBtn.innerHTML = `<span class="icon" aria-hidden="true">${ICONS[paused ? 'play' : 'pause']}</span>`;
+        item.classList.toggle(DOM_CLASSES.RECURRING_PAUSED, paused);
 
         item.appendChild(checkbox);
         item.appendChild(textSpan);
+        if (paused) {
+            const badge = document.createElement("span");
+            badge.className = "recurring-paused-badge";
+            badge.textContent = getLabel('recurring.pausedBadge');
+            item.appendChild(badge);
+        }
+        item.appendChild(pauseBtn);
         item.appendChild(removeBtn);
 
         // ✅ MEMORY LEAK FIX: No listeners added - handled by recurringPanelEvents.js delegation
@@ -787,15 +807,106 @@ export class RecurringPanelManager {
      * @param {Object} task - The task to remove
      * @param {HTMLElement} item - The list item element
      */
+    /**
+     * Pause or resume a recurring template from its panel row.
+     *
+     * Paused: the watcher skips the template; nothing else changes, so the
+     * settings and occurrence count are intact for resume. Resumed: the next
+     * occurrence is computed from NOW — there is no catch-up for occurrences
+     * missed while paused, so a task paused for a month does not come back as
+     * a backlog.
+     * @param {Object} template
+     * @param {HTMLElement} item - The list row (re-rendered afterwards)
+     */
+    async handleTogglePause(template, item) {
+        try {
+            if (!this.deps.AppState.isReady?.()) {
+                this.deps.showNotification(getLabel('notify.appNotReady'), 'error');
+                return;
+            }
+            const state = this.deps.AppState.get();
+            const activeCycleId = getActiveRoutineId(state);
+            if (!activeCycleId) return;
+            const pausing = template.paused !== true;
+            await this.deps.updateAppState(draft => {
+                const tpl = getRoutine(draft, activeCycleId)?.recurringTemplates?.[template.id];
+                if (!tpl) return;
+                tpl.paused = pausing;
+                if (!pausing) {
+                    tpl.nextScheduledOccurrence = this.deps.calculateNextOccurrence(tpl.recurringSettings, Date.now());
+                }
+            }, true);
+            this.deps.showNotification(
+                `${pausing ? '⏸️' : '▶️'} ${getLabel(pausing ? 'notify.recurringPaused' : 'notify.recurringResumed')}`,
+                'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+            await this.updateRecurringPanel();
+            // Keep the user's place: re-focus the same row's toggle after the re-render.
+            const row = this.deps.querySelector(`${DOM_SELECTORS.RECURRING_TASK_ITEM}[data-task-id="${CSS.escape(template.id)}"]`);
+            row?.querySelector(DOM_SELECTORS.RECURRING_PAUSE_BTN)?.focus({ focusVisible: false });
+        } catch (error) {
+            console.error('❌ Error toggling recurring pause:', error);
+            this.deps.showNotification(getLabel('notify.panelUpdateFailed'), 'warning');
+        }
+    }
+
+    /**
+     * The template's recorded slot (where its instances returned to), clamped to
+     * the routine's current length; the end when unknown.
+     * @param {Object} cycle
+     * @param {Object} template
+     * @returns {number}
+     */
+    _restoreIndex(cycle, template) {
+        const end = cycle.tasks.length;
+        return Number.isInteger(template.position) ? Math.min(Math.max(template.position, 0), end) : end;
+    }
+
+    /**
+     * A plain, non-recurring task rebuilt from a template that is being
+     * removed. The same fields the watcher carries onto a recreated instance,
+     * minus everything recurring; no due date (it belonged to an occurrence).
+     * @param {Object} template
+     * @returns {Object}
+     */
+    _buildRestoredTask(template) {
+        return {
+            id: template.id,
+            text: template.text,
+            completed: false,
+            dueDate: null,
+            ...priorityFields(template),
+            remindersEnabled: !!template.remindersEnabled,
+            recurring: false,
+            recurringSettings: {},
+            schemaVersion: 2,
+            ...autoClearFields({ settings: null, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS })
+        };
+    }
+
     handleRemoveTask(task, item) {
+        // Removing the recurrence of a task that is NOT in the list right now
+        // (its last occurrence was cleared) used to lose the task entirely: the
+        // template was the only copy. Offer to put it back as a normal task,
+        // on by default — "stop recurring" is not "throw away".
+        const isInList = (() => {
+            try {
+                const current = this.deps.AppState.get();
+                const routine = getRoutine(current, getActiveRoutineId(current));
+                return !!routine?.tasks?.some(t => t.id === task.id);
+            } catch {
+                return true;   // unknown: do not offer to add a possible duplicate
+            }
+        })();
         this.deps.showConfirmationModal({
             title: getLabel('modal.removeRecurringTitle'),
             message: getLabel('modal.removeRecurringMessage', { vars: { name: task.text } }),
             confirmText: getLabel('modal.removeRecurringConfirm'),
             cancelText: getLabel('button.cancel'),
             destructive: true,
-            callback: async (confirmed) => {
+            checkbox: isInList ? null : { label: getLabel('modal.removeRecurringRestoreTask'), checked: true },
+            callback: async (confirmed, detail) => {
                 if (!confirmed) return;
+                const restoreTask = !isInList && detail?.checked !== false;
 
                 try {
                     // ✅ Use AppState instead of direct localStorage manipulation
@@ -817,8 +928,17 @@ export class RecurringPanelManager {
                     // ✅ Update via shared deactivation helper (immediate save)
                     await this.deps.updateAppState(draft => {
                         const cycle = getRoutine(draft, activeCycleId);
+                        const template = cycle?.recurringTemplates?.[task.id];
                         this.deps.deactivateTaskRecurringState(cycle, task.id);
+                        if (restoreTask && cycle && template && !cycle.tasks.some(t => t.id === task.id)) {
+                            cycle.tasks.splice(
+                                this._restoreIndex(cycle, template),
+                                0,
+                                this._buildRestoredTask(template)
+                            );
+                        }
                     }, true); // ✅ Immediate save when removing recurring from panel
+                    if (restoreTask) this.deps.refreshUIFromState?.();
 
                     this.deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SLOW);
 

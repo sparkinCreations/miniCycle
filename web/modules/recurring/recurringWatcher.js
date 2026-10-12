@@ -322,6 +322,7 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
         // repair); the rest of the fleet keeps spawning.
         try {
             if (taskList.some(t => t.id === template.id)) return;        // already exists
+            if (template.paused === true) return;                        // paused by the user (panel)
             if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
             if (isCountExhausted(template)) return;                      // count limit reached
             if (nowMs < template.nextScheduledOccurrence) return;        // not due yet

@@ -31,7 +31,7 @@ export async function runRecurringTemplateTests(resultsDiv) {
         const required = [
             'id', 'text', 'recurring', 'recurringSettings', 'dueDate', 'priority',
             'remindersEnabled', 'autoClear', 'occurrenceCount', 'lastTriggeredTimestamp',
-            'nextScheduledOccurrence', 'position', 'schemaVersion'
+            'nextScheduledOccurrence', 'position', 'schemaVersion', 'paused'
         ];
         const missing = required.filter(k => !(k in t));
         assert(missing.length === 0, `missing field(s): ${missing.join(', ')}`);
@@ -74,6 +74,9 @@ export async function runRecurringTemplateTests(resultsDiv) {
         assertEq(t.priority, null, 'priority default');
         assertEq(t.dueDate, null, 'dueDate default');
         assertEq(t.remindersEnabled, false, 'remindersEnabled default');
+        assertEq(t.paused, false, 'a template is live until the user pauses it');
+        assertEq(buildRecurringTemplate({ ...base(), paused: true }).paused, true, 'paused kept');
+        assertEq(buildRecurringTemplate({ ...base(), paused: 'yes' }).paused, false, 'only a real true pauses');
         assert(t.autoClear && typeof t.autoClear === 'object',
             'autoClear must be an object, not null');
     });

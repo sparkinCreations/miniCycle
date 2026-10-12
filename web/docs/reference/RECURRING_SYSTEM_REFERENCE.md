@@ -126,7 +126,8 @@ cycle.recurringTemplates["task-123"] = {
   recurringSettings: { /* same as above */ },
   lastTriggeredTimestamp: "2025-01-15T09:00:00Z",
   nextScheduledOccurrence: 1737019200000,  // Unix timestamp for next occurrence
-  position: 1                              // index in cycle.tasks to recreate at (null = append)
+  position: 1,                             // index in cycle.tasks to recreate at (null = append)
+  paused: false                            // true = the watcher skips it until resumed (Oct 2026)
 }
 ```
 **Purpose:** The "master copy" used to recreate the task on schedule. Includes optimization field for fast checking.
@@ -468,6 +469,22 @@ Recurring Tasks
 ```
 
 **This is your "backstage view"** - you can see and control recurring tasks even when they're not currently visible in your task list.
+
+**Pause / resume (Oct 2026).** Each row has a pause toggle. A paused template keeps its settings,
+schedule and occurrence count, but `recurringWatcher` skips it (`template.paused === true`). Resuming
+recomputes `nextScheduledOccurrence` from the moment of resume — there is no catch-up for occurrences
+missed while paused, so a task paused for a month does not come back as a backlog. Re-applying
+settings (`recurringSettingsApplicator`) preserves the flag.
+
+**Remove, with the task put back (Oct 2026).** If the task's instance is not in the list when you
+remove its recurrence (its last occurrence was cleared), the confirmation offers "Put the task back in
+the list as a normal task", on by default: a stop-recurring that would otherwise lose the task
+restores it at the template's recorded `position` as a plain task (no due date, not recurring). If the
+instance is in the list, no checkbox: it stays and simply stops recurring.
+
+**Due dates (Oct 2026).** The template's `dueDate` is kept in step with the task (every due-date
+write syncs it) and is nulled when a cycle reset clears the instance — the date belonged to that
+occurrence. Before this, the date set when recurring was enabled came back on every recurrence.
 
 **Next Occurrence Display:**
 miniCycle shows you when each recurring task will appear next using human-readable formatting:

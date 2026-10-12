@@ -757,6 +757,7 @@ export const DOM_CLASSES = Object.freeze({
     LONG_PRESSED: 'long-pressed',
     REARRANGING: 'rearranging',
     DROP_TARGET: 'drop-target',
+    RECURRING_PAUSED: 'recurring-paused',     // Recurring panel row whose template is paused
     MOVE_UP: 'move-up',
     MOVE_DOWN: 'move-down',
 
@@ -1758,6 +1759,7 @@ export const DOM_SELECTORS = Object.freeze({
     YEARLY_DAYS: '.yearly-days',
     YEARLY_DAY_BOX: '.yearly-day-box',
     RECURRING_REMOVE_BTN: '.recurring-remove-btn',
+    RECURRING_PAUSE_BTN: '.recurring-pause-btn',     // Recurring panel row: pause / resume toggle
     RECURRING_TASK_TEXT: '.recurring-task-text',
     NON_RECURRING_SELECTED: '#non-recurring-tasks li.selected',
     OPEN_RECURRING_SETTINGS: '.open-recurring-settings',

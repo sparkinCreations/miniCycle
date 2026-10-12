@@ -293,6 +293,22 @@ export function setupTaskListDelegation(deps, state, callbacks) {
             return;
         }
 
+        // Handle pause / resume button clicks
+        const pauseBtn = event.target.closest(DOM_SELECTORS.RECURRING_PAUSE_BTN);
+        if (pauseBtn) {
+            event.stopPropagation();
+            const taskId = item.getAttribute("data-task-id");
+            if (taskId && deps.AppState?.isReady?.()) {
+                const currentState = deps.AppState.get();
+                const currentCycle = getRoutine(currentState, getActiveRoutineId(currentState));
+                const template = currentCycle?.recurringTemplates?.[taskId];
+                if (template && callbacks.handleTogglePause) {
+                    callbacks.handleTogglePause(template, item);
+                }
+            }
+            return;
+        }
+
         // Handle remove button clicks
         const removeBtn = event.target.closest(DOM_SELECTORS.RECURRING_REMOVE_BTN);
         if (removeBtn) {
@@ -320,8 +336,8 @@ export function setupTaskListDelegation(deps, state, callbacks) {
     deps.safeAddEventListener(container, "dblclick", (event) => {
         const item = event.target.closest(DOM_SELECTORS.RECURRING_TASK_ITEM);
         if (!item) return;
-        // Don't toggle if double-clicking the remove button
-        if (event.target.closest(DOM_SELECTORS.RECURRING_REMOVE_BTN)) return;
+        // Don't toggle if double-clicking the remove or pause button
+        if (event.target.closest(`${DOM_SELECTORS.RECURRING_REMOVE_BTN}, ${DOM_SELECTORS.RECURRING_PAUSE_BTN}`)) return;
         item.classList.toggle(DOM_CLASSES.CHECKED);
         const checkbox = item.querySelector(DOM_SELECTORS.RECURRING_CHECK);
         if (checkbox) checkbox.checked = item.classList.contains(DOM_CLASSES.CHECKED);

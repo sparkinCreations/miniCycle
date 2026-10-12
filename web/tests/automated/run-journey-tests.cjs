@@ -656,6 +656,75 @@ async function journeyRecurring(browser, baseURL) {
         await bootApp(page);
         record('recurring template survives reload', (await persisted(page)).recurringCount > 0,
             `recurringTemplates=${(await persisted(page)).recurringCount}`);
+
+        // ── Pause / resume from the panel (Oct 2026) ─────────────────────────
+        const template = () => page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = p.data.routine[p.appState.activeRoutineId];
+            const [id, t] = Object.entries(c.recurringTemplates || {})[0] || [];
+            return t ? { id, paused: t.paused === true, next: t.nextScheduledOccurrence, inList: c.tasks.some(x => x.id === id) } : null;
+        });
+        const openPanel = async () => {
+            await page.evaluate(() => document.getElementById('open-recurring-panel')?.click());
+            await page.waitForSelector('#recurring-task-list .recurring-task-item', { state: 'attached', timeout: 10000 });
+            await page.waitForTimeout(300);
+        };
+        await openPanel();
+        const before = await template();
+        await page.evaluate(() => document.querySelector('#recurring-task-list .recurring-task-item .recurring-pause-btn')?.click());
+        await page.waitForTimeout(600);
+        let now = await template();
+        record('pausing from the panel flags the template and leaves its schedule alone',
+            now?.paused === true && now.next === before.next, `paused ${now?.paused}, next ${before?.next} -> ${now?.next}`);
+        record('the paused row says so',
+            await page.evaluate(() => !!document.querySelector('#recurring-task-list .recurring-task-item.recurring-paused .recurring-paused-badge')),
+            'no paused badge on the row');
+        await page.evaluate(() => document.querySelector('#recurring-task-list .recurring-task-item .recurring-pause-btn')?.click());
+        await page.waitForTimeout(600);
+        now = await template();
+        // The recomputed occurrence can equal the old one (a daily task resumed
+        // the same day lands on the same slot), so assert "live and scheduled",
+        // not "changed".
+        record('resuming clears the flag and leaves a scheduled next occurrence',
+            now?.paused === false && Number.isFinite(now.next) && now.next > Date.now() - 60000,
+            `paused ${now?.paused}, next ${before?.next} -> ${now?.next}`);
+        await page.evaluate(() => document.getElementById('close-recurring-panel')?.click());
+        await page.waitForTimeout(400);
+
+        // ── Remove the recurrence of a task that is NOT in the list ──────────
+        // Park the instance out of the list (as a cycle reset would) and keep the
+        // template, then remove from the panel: the prompt must offer to put the
+        // task back, on by default, and confirming restores it as a normal task.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = p.data.routine[p.appState.activeRoutineId];
+            const id = Object.keys(c.recurringTemplates)[0];
+            c.tasks = c.tasks.filter(t => t.id !== id);
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        record('fixture: the recurring task is out of the list, template kept', (await template())?.inList === false, 'the instance is still in the list');
+        await openPanel();
+        await page.evaluate(() => document.querySelector('#recurring-task-list .recurring-task-item .recurring-remove-btn')?.click());
+        await page.waitForSelector('.mini-modal-dialog[open] .mini-modal-checkbox-input', { state: 'attached', timeout: 5000 }).catch(() => {});
+        const prompt = await page.evaluate(() => {
+            const cb = document.querySelector('.mini-modal-dialog[open] .mini-modal-checkbox-input');
+            return { offered: !!cb, checked: !!cb?.checked };
+        });
+        record('removing offers to put the absent task back, checked by default', prompt.offered && prompt.checked,
+            `checkbox offered ${prompt.offered}, checked ${prompt.checked}`);
+        await page.evaluate(() => document.querySelector('.mini-modal-dialog[open] .btn-confirm')?.click());
+        await page.waitForTimeout(800);
+        const after = await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = p.data.routine[p.appState.activeRoutineId];
+            const t = c.tasks.find(x => x.text === 'RECUR me daily');
+            return { templates: Object.keys(c.recurringTemplates || {}).length, back: !!t, recurring: t?.recurring, dueDate: t?.dueDate ?? null };
+        });
+        record('confirming puts the task back as a normal task and drops the template',
+            after.templates === 0 && after.back && after.recurring === false && after.dueDate === null,
+            JSON.stringify(after));
     } catch (e) {
         failures.push(`run error: ${e.message}`);
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);

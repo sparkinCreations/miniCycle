@@ -379,6 +379,122 @@ export async function runRecurringPanelTests(resultsDiv) {
     // ===== FALLBACK METHODS =====
     // NOTE: fallbackDeleteTemplate, fallbackBuildSummary, fallbackConfirmation
     // were removed from RecurringPanelManager. These functions are now handled
+    // ── Pausing and resuming a template ──────────────────────────────────────
+    const pauseRig = ({ paused }) => {
+        const state = {
+            schemaVersion: '2.6',
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: {
+                title: 'C1', tasks: [],
+                recurringTemplates: { r: { id: 'r', text: 'Rent', recurring: true, paused, recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 5, occurrenceCount: 3 } }
+            } } }
+        };
+        const seen = { notices: [] };
+        setupPanelDeps({
+            AppState: { get: () => state, update: (fn) => fn(state), isReady: () => true },
+            updateAppState: async (fn) => fn(state),
+            calculateNextOccurrence: () => 999,
+            showNotification: (msg) => seen.notices.push(String(msg)),
+            querySelector: () => null
+        });
+        return { state, seen };
+    };
+
+    await test('pausing a template flags it and leaves its schedule and progress alone', async () => {
+        const { state } = pauseRig({ paused: false });
+        const panel = new RecurringPanelManager();
+        panel.updateRecurringPanel = async () => {};
+        await panel.handleTogglePause(state.data.routine.c1.recurringTemplates.r, document.createElement('li'));
+        const tpl = state.data.routine.c1.recurringTemplates.r;
+        if (tpl.paused !== true) throw new Error('template should be paused');
+        if (tpl.nextScheduledOccurrence !== 5) throw new Error('pausing must not touch the schedule');
+        if (tpl.occurrenceCount !== 3) throw new Error('pausing must not touch progress');
+    });
+
+    await test('resuming reschedules from now and does not catch up', async () => {
+        const { state, seen } = pauseRig({ paused: true });
+        const panel = new RecurringPanelManager();
+        panel.updateRecurringPanel = async () => {};
+        await panel.handleTogglePause(state.data.routine.c1.recurringTemplates.r, document.createElement('li'));
+        const tpl = state.data.routine.c1.recurringTemplates.r;
+        if (tpl.paused !== false) throw new Error('template should be live again');
+        if (tpl.nextScheduledOccurrence !== 999) throw new Error(`next occurrence should be recomputed from now, got ${tpl.nextScheduledOccurrence}`);
+        if (!seen.notices.some(n => /resumed/i.test(n))) throw new Error('no resume notice');
+    });
+
+    await test('a paused template renders its row paused with a resume control', () => {
+        setupPanelDeps({});
+        const panel = new RecurringPanelManager();
+        const row = panel.createRecurringTaskItem({ id: 'r', text: 'Rent', paused: true }, {});
+        if (!row.classList.contains('recurring-paused')) throw new Error('row not marked paused');
+        const btn = row.querySelector('.recurring-pause-btn');
+        if (!btn) throw new Error('no pause/resume button');
+        if (btn.getAttribute('aria-pressed') !== 'true') throw new Error('resume control should read pressed');
+        if (!row.querySelector('.recurring-paused-badge')) throw new Error('no Paused badge');
+        const live = panel.createRecurringTaskItem({ id: 'x', text: 'Live' }, {});
+        if (live.classList.contains('recurring-paused') || live.querySelector('.recurring-paused-badge')) throw new Error('a live row must not look paused');
+        if (live.querySelector('.recurring-pause-btn')?.getAttribute('aria-pressed') !== 'false') throw new Error('live control should read not pressed');
+    });
+
+    // ── Removing a recurring task whose instance is not in the list ─────────
+    const removeRig = ({ taskInList, checked }) => {
+        const state = {
+            schemaVersion: '2.6',
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: {
+                title: 'C1',
+                tasks: taskInList ? [{ id: 'r', text: 'Rent', completed: false, recurring: true }] : [{ id: 'x', text: 'X', completed: false }],
+                recurringTemplates: { r: { id: 'r', text: 'Rent', recurring: true, priority: 'high', remindersEnabled: true, dueDate: '2026-10-01', position: 0, recurringSettings: { frequency: 'monthly' }, nextScheduledOccurrence: 1 } }
+            } } }
+        };
+        const seen = {};
+        const deps = setupPanelDeps({
+            AppState: { get: () => state, update: (fn) => fn(state), isReady: () => true },
+            updateAppState: async (fn) => fn(state),
+            showConfirmationModal: (options) => { seen.options = options; options.callback(true, options.checkbox ? { checked } : undefined); },
+            deactivateTaskRecurringState: (cycle, id) => { const t = cycle.tasks.find(x => x.id === id); if (t) t.recurring = false; delete cycle.recurringTemplates[id]; },
+            refreshUIFromState: () => { seen.refreshed = true; },
+            querySelector: () => null
+        });
+        return { state, seen, deps };
+    };
+
+    await test('removing a recurrence whose task is absent offers to put the task back, checked by default', async () => {
+        const { state, seen } = removeRig({ taskInList: false, checked: true });
+        const panel = new RecurringPanelManager();
+        panel.handleRemoveTask(state.data.routine.c1.recurringTemplates.r, document.createElement("li"));
+        await new Promise(r => setTimeout(r, 20));
+        if (!seen.options?.checkbox) throw new Error('no checkbox was offered');
+        if (seen.options.checkbox.checked !== true) throw new Error('the checkbox should default to checked');
+        const restored = state.data.routine.c1.tasks.find(t => t.id === 'r');
+        if (!restored) throw new Error('the task was not put back in the list');
+        if (restored.recurring !== false) throw new Error('the restored task must not be recurring');
+        if (restored.dueDate !== null) throw new Error('the restored task must not carry the occurrence due date');
+        if (restored.priority !== 'high') throw new Error(`priority not carried over, got ${restored.priority}`);
+        if (state.data.routine.c1.tasks[0].id !== 'r') throw new Error('the task should return to its recorded slot (0)');
+        if (state.data.routine.c1.recurringTemplates.r) throw new Error('the template should be gone');
+        if (!seen.refreshed) throw new Error('the list should be re-rendered after a restore');
+    });
+
+    await test('unticking the box removes the recurrence without putting the task back', async () => {
+        const { state } = removeRig({ taskInList: false, checked: false });
+        const panel = new RecurringPanelManager();
+        panel.handleRemoveTask(state.data.routine.c1.recurringTemplates.r, document.createElement("li"));
+        await new Promise(r => setTimeout(r, 20));
+        if (state.data.routine.c1.tasks.some(t => t.id === 'r')) throw new Error('the task should not have been added');
+        if (state.data.routine.c1.recurringTemplates.r) throw new Error('the template should be gone');
+    });
+
+    await test('no checkbox when the task is already in the list, and it is never duplicated', async () => {
+        const { state, seen } = removeRig({ taskInList: true, checked: true });
+        const panel = new RecurringPanelManager();
+        panel.handleRemoveTask(state.data.routine.c1.recurringTemplates.r, document.createElement("li"));
+        await new Promise(r => setTimeout(r, 20));
+        if (seen.options?.checkbox) throw new Error('a checkbox was offered although the task is in the list');
+        if (state.data.routine.c1.tasks.filter(t => t.id === 'r').length !== 1) throw new Error('the task was duplicated or lost');
+        if (state.data.routine.c1.tasks[0].recurring !== false) throw new Error('the task should no longer be recurring');
+    });
+
     // by dependency injection (deleteTemplate, buildRecurringSummary, showConfirmationModal).
 
     // ===== STATE MANAGEMENT =====

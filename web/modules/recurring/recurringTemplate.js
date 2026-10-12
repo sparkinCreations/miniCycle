@@ -58,6 +58,8 @@ export const RECURRING_TEMPLATE_SCHEMA_VERSION = 2;
  * @param {Object|null} [fields.autoClear=null] - Per-mode clear map; defaults to the recurring preset
  * @param {number} [fields.occurrenceCount=0]
  * @param {number|null} [fields.lastTriggeredTimestamp=null]
+ * @param {boolean} [fields.paused=false] - A paused template keeps its schedule but
+ *   the watcher never spawns from it; resuming reschedules from the moment of resume
  * @returns {Object} A complete template record
  */
 export function buildRecurringTemplate({
@@ -71,6 +73,7 @@ export function buildRecurringTemplate({
     autoClear = null,
     occurrenceCount = 0,
     lastTriggeredTimestamp = null,
+    paused = false,
     // Index in routine.tasks where a recreated instance should land. Recorded when
     // the instance is removed (cycle reset, To-Do clear) and at activation/import;
     // null means "unknown", and the watcher appends as it always did. Without it
@@ -96,6 +99,7 @@ export function buildRecurringTemplate({
         ...autoClearFields({ settings: autoClear, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
         occurrenceCount,
         lastTriggeredTimestamp,
+        paused: paused === true,
         nextScheduledOccurrence: nextScheduledOccurrence ?? null,
         position: Number.isInteger(position) && position >= 0 ? position : null,
         schemaVersion: RECURRING_TEMPLATE_SCHEMA_VERSION

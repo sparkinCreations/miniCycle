@@ -197,6 +197,14 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(r.added, 0, 'nothing added for finished template');
     });
 
+    await test('catchUp skips a paused template even when it is due', async () => {
+        const as = cycleState({ t1: dueTemplate('t1', { paused: true }) }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(r.added, 0, 'a paused template must not spawn');
+        eq(as.get().data.routine.c1.recurringTemplates.t1.nextScheduledOccurrence, NOW - 1000, 'and its schedule is left untouched for resume');
+    });
+
     await test('catchUp skips template not yet due (future occurrence)', async () => {
         const as = cycleState({ t1: dueTemplate('t1', { nextScheduledOccurrence: NOW + 999999 }) }, []);
         mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
