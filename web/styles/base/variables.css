@@ -153,6 +153,10 @@
   --footer-text: #ffffff;
   --footer-strip-bg: rgba(10, 25, 60, 0.43);
   --footer-strip-border: rgba(255, 255, 255, 0.35);
+  /* Phones show only the copyright line and no strip: one short caption
+     reads quieter bare. Near-black carries the contrast there (4.9:1 at the
+     gradient's light end); the dark themes set a light colour. */
+  --footer-text-mobile: #111111;
   --theme-bg-solid: #4c79ff;
   --theme-bg-surface: rgba(255, 255, 255, 0.95);
   --theme-bg-surface-elevated: #ffffff;

@@ -107,7 +107,7 @@ function measureHandChecks() {
         const bgs = stops.length ? stops : (solid ? [solid] : [WHITE]);
         let worst = Infinity;
         for (const bg of bgs) { const surface = over(band, over(bg, WHITE)); worst = Math.min(worst, ratio(over(text, surface), surface)); }
-        out.push({ name: 'footer link text on its strip over every gradient stop', ratio: worst, min: 4.5 });
+        out.push({ name: 'footer text over every gradient stop (on its strip where one exists)', ratio: worst, min: 4.5 });
     }
     return out;
 }
@@ -168,6 +168,23 @@ async function run() {
                     if (violations.length > 8) console.log(`      ${colors.gray}… ${violations.length - 8} more${colors.reset}`);
                     violations.forEach(v => { if (v.impact === 'serious' || v.impact === 'critical') serious.push(`${label.trim()}: ${v.target}`); });
                 }
+            }
+        }
+        // Phone pass: the footer loses its strip below 768px and the text
+        // carries the contrast on its own, so measure it at a phone width.
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.evaluate((viewOff) => document.body.classList.remove(...viewOff), allViewClasses);
+        for (const theme of THEMES) {
+            await page.evaluate(([themeOff, themeOn]) => {
+                document.body.classList.remove(...themeOff);
+                document.body.classList.add(...themeOn);
+            }, [allThemeClasses, theme.classes]);
+            await page.waitForTimeout(350);
+            const label = `${theme.name} / phone`;
+            for (const m of (await page.evaluate(measureHandChecks)).filter(x => /footer/.test(x.name))) {
+                const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
+                if (m.ratio >= m.min) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
+                else { console.log(`   ${colors.red}❌ ${label} ${line}${colors.reset}`); serious.push(`${label}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
             }
         }
     } catch (e) {
