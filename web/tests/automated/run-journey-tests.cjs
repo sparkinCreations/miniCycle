@@ -1164,6 +1164,22 @@ async function journeyDragReorder(browser, baseURL) {
         record('aiming at the bottom of the first row lands BELOW it',
             o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) + 1,
             `moved at ${o.dom.indexOf(r.movedId)}, first row at ${o.dom.indexOf(r.targetId)}`);
+
+        // 1c. The split is the MIDPOINT: 40% down a row means above it, 60%
+        //     below it. A one-third split (until Oct 2026) put both of these
+        //     "below", so an upward drag had to travel two thirds of a row
+        //     before anything moved while a downward one flipped after one.
+        //     Row 3 as the target keeps the moved row (0) non-adjacent either way.
+        r = await drag(0, 3, 0.4, 200, 'drop');
+        o = await names();
+        record('40% down a middle row lands ABOVE it (midpoint split, not a third)',
+            o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) - 1,
+            `moved at ${o.dom.indexOf(r.movedId)}, target at ${o.dom.indexOf(r.targetId)} — the split is below the midpoint`);
+        r = await drag(0, 3, 0.6, 200, 'drop');
+        o = await names();
+        record('60% down a middle row lands BELOW it',
+            o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) + 1,
+            `moved at ${o.dom.indexOf(r.movedId)}, target at ${o.dom.indexOf(r.targetId)}`);
         // A drag that starts on the ⋯ options must cancel the native drag too.
         const ghost = await page.evaluate(() => {
             const opt = document.querySelector('#taskList .task .task-options');

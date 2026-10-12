@@ -665,9 +665,17 @@ export class DragDropManager {
         // of the first row still landed above it (measured Oct 2026). The
         // general rule already covers both ends: below a last row,
         // `target.nextSibling` is null and insertBefore(…, null) appends.
+        // Midpoint split: the lower half of the row means "after", the upper
+        // half "before". The dragged row takes the slot it moves into, so the
+        // flip point is the only hysteresis — and a split at one third (as it
+        // was until Oct 2026) made it asymmetric: on a 70px row a downward
+        // drag flipped after ~23px of travel into the row, an upward one only
+        // after ~47px, so the list felt reluctant going up. The midpoint makes
+        // both directions equal and cannot oscillate, since the dragged row
+        // sits between the pointer and the row it just passed.
         // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
         try {
-            if (offset > bounding.height / 3) {
+            if (offset > bounding.height / 2) {
                 if (!isNextSiblingDragged) {
                     parent.insertBefore(this.draggedTask, target.nextSibling);
                 }
