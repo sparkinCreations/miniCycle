@@ -145,12 +145,14 @@
      These are overridden by theme-manager.js when a theme is applied
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
-  /* Footer links: white text on a navy glass strip. Bare white cannot reach
-     4.5:1 over the gradient's light end at any opacity, and near-black read
-     as foreign to the blue theme, so the strip supplies the contrast
-     (~10:1 at the light end) while the text stays white on every theme. */
+  /* Footer links: white text on a blue glass strip. Bare white cannot reach
+     4.5:1 over the gradient's light end at any opacity, and blur alone does
+     not change what is under the text, so the strip carries a blue tint just
+     dark enough (~4.8:1 at the light end, measured by the contrast runner)
+     while reading as the same glass as the panels. */
   --footer-text: #ffffff;
-  --footer-strip-bg: rgba(18, 34, 64, 0.82);
+  --footer-strip-bg: rgba(28, 56, 120, 0.55);
+  --footer-strip-border: rgba(255, 255, 255, 0.28);
   --theme-bg-solid: #4c79ff;
   --theme-bg-surface: rgba(255, 255, 255, 0.95);
   --theme-bg-surface-elevated: #ffffff;
