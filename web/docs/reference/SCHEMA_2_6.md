@@ -499,7 +499,7 @@ User-configurable reminder system:
 |-------|------|-------------|
 | `enabled` | boolean | Reminders on/off |
 | `indefinite` | boolean | Repeat reminders forever |
-| `dueDatesReminders` | boolean | Remind about task due dates |
+| `dueDatesReminders` | boolean | Remind about task due dates: in-app banners on open (overdue) and on setting a date within three days; with `browserNotifications` also one system notification per due day at `LIMITS.DUE_DATE_NOTIFY_HOUR` (dueDates.js `syncDueDateNotifications`) |
 | `repeatCount` | number | Number of times to repeat |
 | `frequencyValue` | number | Numeric interval value |
 | `frequencyUnit` | string | "minutes"\|"hours" |

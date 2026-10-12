@@ -17,7 +17,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -814,14 +814,14 @@ export class MiniCycleReminders {
                     if (registration) {
                         await registration.showNotification(getLabel('notify.reminderNotificationTitle'), {
                             body: notificationBody,
-                            icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
-                            tag: 'minicycle-reminder'
+                            icon: SYSTEM_NOTIFICATIONS.ICON,
+                            tag: SYSTEM_NOTIFICATIONS.TAG_REMINDER
                         });
                     } else {
                         // Fallback to basic Notification API
-                        new Notification('miniCycle Reminder', {
+                        new Notification(getLabel('notify.reminderNotificationTitle'), {
                             body: notificationBody,
-                            icon: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png'
+                            icon: SYSTEM_NOTIFICATIONS.ICON
                         });
                     }
                 } catch (e) {

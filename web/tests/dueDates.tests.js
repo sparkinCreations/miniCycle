@@ -15,7 +15,8 @@ import {
 
 import {
     MiniCycleDueDates,
-    setDueDatesDependencies
+    setDueDatesDependencies,
+    computeDueDateNotificationSlots
 } from '../modules/features/dueDates.js';
 
 // The module compares against LOCAL midnight (parseDateAsLocal), so tests must
@@ -638,6 +639,127 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             if (savedData.appState.overdueTaskStates?.['due-today-task']) {
                 throw new Error('a task due today must not be tracked as overdue');
             }
+        });
+
+        // === DUE-DAY SYSTEM NOTIFICATIONS ===
+        resultsDiv.innerHTML += '<h4>🔔 Due-day system notifications</h4>';
+
+        // A fixed "now": Tue 2026-10-13 08:00 local. Due dates are date-only, so
+        // the moment is the due day at the configured hour (9:00 by default).
+        const NOW = new Date(2026, 9, 13, 8, 0, 0).getTime();
+        const at = (y, m, d, h = 9) => new Date(y, m, d, h, 0, 0).getTime();
+        const stateWith = (routines, customReminders = { dueDatesReminders: true, browserNotifications: true }) => ({
+            customReminders, appState: { activeRoutineId: 'r1' }, data: { routine: routines }, settings: {}
+        });
+
+        await test('slots: one per due day at the notify hour, grouped, sorted, across routines', () => {
+            const state = stateWith({
+                r1: { id: 'r1', tasks: [
+                    { id: 'a', text: 'Pay rent', dueDate: '2026-10-14', completed: false },
+                    { id: 'b', text: 'Call Sam', dueDate: '2026-10-13', completed: false }
+                ] },
+                r2: { id: 'r2', tasks: [
+                    { id: 'c', text: 'Water plants', dueDate: '2026-10-14', completed: false }
+                ] }
+            });
+            const slots = computeDueDateNotificationSlots(state, NOW);
+            if (slots.length !== 2) throw new Error(`expected 2 slots, got ${JSON.stringify(slots)}`);
+            if (slots[0].at !== at(2026, 9, 13) || slots[1].at !== at(2026, 9, 14)) throw new Error(`moments wrong: ${JSON.stringify(slots.map(s => new Date(s.at).toString()))}`);
+            if (slots[0].tasks.join() !== 'Call Sam') throw new Error(`today's slot: ${slots[0].tasks}`);
+            if (slots[1].tasks.slice().sort().join() !== 'Pay rent,Water plants') throw new Error(`tomorrow's slot should hold both routines' tasks: ${slots[1].tasks}`);
+        });
+
+        await test('slots: completed tasks and moments already past are left out (no repeat for overdue)', () => {
+            const state = stateWith({ r1: { id: 'r1', tasks: [
+                { id: 'a', text: 'Done one', dueDate: '2026-10-14', completed: true },
+                { id: 'b', text: 'Yesterday', dueDate: '2026-10-12', completed: false },
+                { id: 'c', text: 'Undated', dueDate: null, completed: false },
+                { id: 'd', text: 'Later', dueDate: '2026-10-20', completed: false }
+            ] } });
+            const slots = computeDueDateNotificationSlots(state, NOW);
+            if (slots.length !== 1 || slots[0].tasks.join() !== 'Later') throw new Error(`expected only "Later": ${JSON.stringify(slots)}`);
+        });
+
+        await test('slots: a due day whose hour has passed today is not re-notified', () => {
+            const afterNine = new Date(2026, 9, 13, 9, 30, 0).getTime();
+            const state = stateWith({ r1: { id: 'r1', tasks: [{ id: 'a', text: 'Today', dueDate: '2026-10-13', completed: false }] } });
+            if (computeDueDateNotificationSlots(state, afterNine).length !== 0) throw new Error('9:00 today has passed, so no slot');
+        });
+
+        await test('slots: a nameless task is listed under the unnamed label, never blank', () => {
+            const state = stateWith({ r1: { id: 'r1', tasks: [{ id: 'a', text: '', dueDate: '2026-10-14', completed: false }] } });
+            const slots = computeDueDateNotificationSlots(state, NOW);
+            if (!slots[0] || !slots[0].tasks[0] || !slots[0].tasks[0].trim()) throw new Error(`blank task name in slot: ${JSON.stringify(slots)}`);
+        });
+
+        function wireDueDateNotifications(state) {
+            const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state), subscribe: () => {}, unsubscribe: () => true };
+            const instance = new MiniCycleDueDates({ AppState, showNotification: () => {} });
+            instance._canPostWebNotifications = () => true;
+            return instance;
+        }
+
+        await test('sync: arms one timer for the next due-day moment when both switches are on', () => {
+            const tomorrow = formatLocalDate(new Date(Date.now() + 86400000));
+            const instance = wireDueDateNotifications(stateWith({ r1: { id: 'r1', tasks: [{ id: 'a', text: 'T', dueDate: tomorrow, completed: false }] } }));
+            try {
+                instance.syncDueDateNotifications();
+                if (!instance._dueDateTimerId) throw new Error('no timer armed for a dated task due tomorrow');
+            } finally { instance.destroy(); }
+        });
+
+        await test('sync: does nothing while either switch is off, and clears a timer it had armed', () => {
+            const tomorrow = formatLocalDate(new Date(Date.now() + 86400000));
+            const routines = { r1: { id: 'r1', tasks: [{ id: 'a', text: 'T', dueDate: tomorrow, completed: false }] } };
+            const state = stateWith(routines);
+            const instance = wireDueDateNotifications(state);
+            try {
+                instance.syncDueDateNotifications();
+                if (!instance._dueDateTimerId) throw new Error('fixture: timer should be armed first');
+                state.customReminders = { dueDatesReminders: true, browserNotifications: false };
+                instance.syncDueDateNotifications();
+                if (instance._dueDateTimerId) throw new Error('channel off: the timer should have been cleared');
+                state.customReminders = { dueDatesReminders: false, browserNotifications: true };
+                instance.syncDueDateNotifications();
+                if (instance._dueDateTimerId) throw new Error('due-date notices off: nothing may be armed');
+            } finally { instance.destroy(); }
+        });
+
+        await test('sync: completing the only dated task clears the timer on re-plan', () => {
+            const tomorrow = formatLocalDate(new Date(Date.now() + 86400000));
+            const state = stateWith({ r1: { id: 'r1', tasks: [{ id: 'a', text: 'T', dueDate: tomorrow, completed: false }] } });
+            const instance = wireDueDateNotifications(state);
+            try {
+                instance.syncDueDateNotifications();
+                state.data.routine.r1.tasks[0].completed = true;
+                instance.syncDueDateNotifications();
+                if (instance._dueDateTimerId) throw new Error('a completed task must not keep its notification');
+            } finally { instance.destroy(); }
+        });
+
+        await test('content: title and body come from the labels, one line per task', () => {
+            const instance = wireDueDateNotifications(stateWith({}));
+            try {
+                const one = instance._dueDateSlotContent({ at: 0, tasks: ['Pay rent'] });
+                const two = instance._dueDateSlotContent({ at: 0, tasks: ['Pay rent', 'Call Sam'] });
+                if (!/1 task due today/.test(one.title)) throw new Error(`singular title: "${one.title}"`);
+                if (!/2 tasks due today/.test(two.title)) throw new Error(`plural title: "${two.title}"`);
+                if (two.body.split('\n').length !== 2 || !/Call Sam/.test(two.body)) throw new Error(`body: ${JSON.stringify(two.body)}`);
+            } finally { instance.destroy(); }
+        });
+
+        await test('destroy: unsubscribes and leaves no timer behind', () => {
+            const tomorrow = formatLocalDate(new Date(Date.now() + 86400000));
+            const state = stateWith({ r1: { id: 'r1', tasks: [{ id: 'a', text: 'T', dueDate: tomorrow, completed: false }] } });
+            let unsubscribed = false;
+            const AppState = { isReady: () => true, get: () => state, update: async (fn) => fn(state), subscribe: () => {}, unsubscribe: () => { unsubscribed = true; return true; } };
+            const instance = new MiniCycleDueDates({ AppState, showNotification: () => {} });
+            instance._canPostWebNotifications = () => true;
+            instance._subscribeDueDateNotifications();
+            instance.syncDueDateNotifications();
+            instance.destroy();
+            if (instance._dueDateTimerId) throw new Error('timer survived destroy');
+            if (!unsubscribed) throw new Error('state subscription survived destroy');
         });
 
         // === SUMMARY ===

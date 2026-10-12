@@ -3170,6 +3170,85 @@ async function journeyHelpWindowWraps(browser, baseURL) {
     return { name: 'help window wraps inside its column', failures };
 }
 
+// ── Journey: a due-day system notification fires at 9:00 ─────────────────────
+//
+// With Due Date Notifications AND the system/browser channel on, a task due
+// today gets one OS-level notification at 9:00 (dueDates.js
+// syncDueDateNotifications). Driven with Playwright's fake clock: the page
+// boots at 08:58 with a task due today, the clock is pushed past 9:00, and the
+// service worker's showNotification — the same sink task reminders use — is
+// observed through a prototype stub installed before the page loads. A second
+// push proves the slot is consumed, not repeated.
+async function journeyDueDateSystemNotification(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+    try {
+        await context.addInitScript(() => {
+            window.__sysNotes = [];
+            // Headless Chromium reports Notification.permission as "denied" even
+            // after grantPermissions (verified Oct 2026), so the browser's answer
+            // is stubbed; the app's gate on it is still the code under test.
+            if (typeof Notification !== 'undefined') {
+                Object.defineProperty(Notification, 'permission', { get: () => 'granted', configurable: true });
+            }
+            if (typeof ServiceWorkerRegistration !== 'undefined') {
+                ServiceWorkerRegistration.prototype.showNotification = async function (title, options) {
+                    window.__sysNotes.push({ title, body: options && options.body, tag: options && options.tag });
+                };
+            }
+        });
+        // 08:58 today, local time — two minutes before the notify hour.
+        const start = new Date(); start.setHours(8, 58, 0, 0);
+        await page.clock.install({ time: start });
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 }).catch(() => {});
+        await page.evaluate(() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); if (b && !b.disabled) b.click(); });
+        await page.waitForFunction(() => { try { const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); const c = p && p.data && p.data.routine; return c && Object.keys(c).length > 0; } catch { return false; } }, null, { timeout: 20000 });
+        // Both switches on; the first task is due today.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            p.customReminders = { ...(p.customReminders || {}), enabled: false, dueDatesReminders: true, browserNotifications: true };
+            const r = p.data.routine[p.appState.activeRoutineId];
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            r.tasks[0].dueDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+            r.tasks[0].text = 'Submit the report';
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+        const before = await page.evaluate(() => ({ perm: Notification.permission, notes: window.__sysNotes.length, hour: new Date().getHours(), minute: new Date().getMinutes() }));
+        record('fixture: notification permission is granted and the clock reads 08:5x',
+            before.perm === 'granted' && before.hour === 8 && before.minute >= 58,
+            `fixture: ${JSON.stringify(before)}`);
+        record('nothing is posted before 9:00', before.notes === 0, `${before.notes} notification(s) posted early`);
+
+        await page.clock.fastForward(3 * 60 * 1000); // 08:58 → 09:01
+        await page.waitForTimeout(500);
+        const after = await page.evaluate(() => window.__sysNotes);
+        record('at 9:00 one system notification is posted', after.length === 1, `posted: ${JSON.stringify(after)}`);
+        record('…titled from the label and naming the due task',
+            !!after[0] && /1 task due today/.test(after[0].title) && /Submit the report/.test(after[0].body || ''),
+            `posted: ${JSON.stringify(after[0])}`);
+        record('…with the due-date tag, so repeats collapse in the notification centre',
+            !!after[0] && after[0].tag === 'minicycle-due-date', `tag: ${after[0] && after[0].tag}`);
+
+        await page.clock.fastForward(60 * 60 * 1000); // 09:01 → 10:01
+        await page.waitForTimeout(300);
+        const later = await page.evaluate(() => window.__sysNotes.length);
+        record('the slot is consumed: an hour later nothing more is posted', later === 1, `${later} posted after another hour`);
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'due-day system notification', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -4119,6 +4198,7 @@ const JOURNEYS = [
     { name: 'a badge earned by clearing is not re-advertised in cycle mode', fn: journeyBadgeCrossAxis },
     { name: "a new routine's empty-state hint matches the bar on screen", fn: journeyNewRoutineHintMatchesBar },
     { name: 'the help window wraps inside its column', fn: journeyHelpWindowWraps },
+    { name: 'a due-day system notification fires at 9:00', fn: journeyDueDateSystemNotification },
 ];
 
 async function run() {

@@ -263,6 +263,7 @@ export const DEBOUNCE = Object.freeze({
     UNDO_DB_WRITE: 3000,           // 3s - IndexedDB write debounce for undo
     UNDO_MIN_INTERVAL: 300,        // 300ms - Minimum interval between undo snapshots
     CONCURRENT_MOD_CONFLICT: 1000, // 1s - Threshold for concurrent modification detection
+    DUE_DATE_NOTIFY_SYNC: 250,     // 250ms - Coalesce a burst of state writes before re-planning the due-date system notifications
     SEARCH_RESULT_ANNOUNCE: 500    // 500ms - Wait for typing to settle before announcing a result count. Announcing per keystroke makes a screen reader unusable while typing
 });
 
@@ -292,6 +293,17 @@ export const FREQUENCY_MS = Object.freeze({
     minutes: 60000,
     hours: 3600000,
     days: 86400000
+});
+
+/**
+ * System (OS / browser) notification assets and tags. A tag collapses repeats
+ * of the same kind into one entry in the notification centre.
+ * @constant {Object}
+ */
+export const SYSTEM_NOTIFICATIONS = Object.freeze({
+    ICON: './assets/images/logo/taskcycle_logo_blackandwhite_transparent.png',
+    TAG_REMINDER: 'minicycle-reminder',
+    TAG_DUE_DATE: 'minicycle-due-date'
 });
 
 // ============================================================================
@@ -400,6 +412,8 @@ export const LIMITS = Object.freeze({
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
     LAYOUT_KEY_STEP: 10,                  // px - Task View Layout: how far one arrow key press moves a draggable (Shift = 1px)
     LAYOUT_MIN_VISIBLE_OVERLAP: 40,       // px - Task View Layout: how much of a restored element must stay inside #task-view, so a layout saved on a wider display can never strand it (and its drag handle) out of reach
+    DUE_DATE_NOTIFY_HOUR: 9,              // Local hour on the due day at which a dated task's system notification fires (due dates are date-only)
+    NATIVE_DUE_DATE_SCHEDULE_MAX: 30,     // Max due-day notifications pre-scheduled natively (one per day that has due tasks); also the cancel range
     NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
 

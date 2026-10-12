@@ -873,6 +873,10 @@ export const DEFAULT_LABELS = deepFreeze({
         dueDateOverdue:          'Overdue Tasks:',
         dueDateDueSoon:          'Task "{name}" is due soon!',
         dueDateUnnamed:          'Unnamed task',
+        // System notification posted at DUE_DATE_NOTIFY_HOUR on a due day
+        // (dueDates.js syncDueDateNotifications); one per day, listing the tasks.
+        dueDateNotificationTitle: { one: '1 task due today', other: '{count} tasks due today' },
+        dueDateNotificationLine:  '~ {name}',
 
         // Routine management notifications
         noRoutineSelected:       'No routine selected for deletion.',
@@ -2073,7 +2077,10 @@ export const DEFAULT_LABELS = deepFreeze({
         // the date is within three days; both are in-app banners via
         // showNotification, never the Notification API or the native series.
         dueDatesNoteSummary: 'How these differ from task reminders',
-        dueDatesNote:    'Due-date notices are banners inside the app: one when miniCycle opens with overdue tasks, and one when you set a due date that is within three days. They cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the schedule below and never reach the system notification center. Only task reminders do that.',
+        dueDatesNote:    {
+            browser: 'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with Browser Notifications on, you also get one at 9:00 on the due day while miniCycle is open in a tab.',
+            app:     'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with System Notifications on, you also get one at 9:00 on the due day, even when the app is closed.'
+        },
 
         // "Next reminder" summary line in the reminders modal (renderNextReminderSummary).
         // Mirrors the recurring panel's next-occurrence line, worded for reminders.
