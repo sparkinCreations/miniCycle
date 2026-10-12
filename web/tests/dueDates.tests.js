@@ -221,6 +221,26 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        await test('saveTaskDueDate keeps the recurring template in step (set and clear)', async () => {
+            // The watcher recreates a recurring task from its template; a date
+            // changed or cleared on the task alone came back on the next
+            // occurrence (Oct 2026).
+            const seeded = JSON.parse(localStorage.getItem('miniCycleData'));
+            seeded.data.routine['test-cycle'].recurringTemplates = {
+                'task-1': { id: 'task-1', text: 'Test Task 1', recurring: true, dueDate: '2025-01-01', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1 }
+            };
+            localStorage.setItem('miniCycleData', JSON.stringify(seeded));
+            const instance = new MiniCycleDueDates({ AppState: createMockAppStateForDueDates() });
+
+            await instance.saveTaskDueDate('task-1', '2025-11-15');
+            let tpl = JSON.parse(localStorage.getItem('miniCycleData')).data.routine['test-cycle'].recurringTemplates['task-1'];
+            if (tpl.dueDate !== '2025-11-15') throw new Error(`template should follow the task's new date, got ${tpl.dueDate}`);
+
+            await instance.saveTaskDueDate('task-1', null);
+            tpl = JSON.parse(localStorage.getItem('miniCycleData')).data.routine['test-cycle'].recurringTemplates['task-1'];
+            if (tpl.dueDate !== null) throw new Error(`template should be cleared with the task, got ${tpl.dueDate}`);
+        });
+
         await test('clears due date when set to null', async () => {
             const instance = new MiniCycleDueDates({
                 AppState: createMockAppStateForDueDates()

@@ -490,6 +490,12 @@ function resetTasksData(context, deps) {
                         template.nextScheduledOccurrence = upd.nextScheduledOccurrence;
                         template.lastTriggeredTimestamp = upd.lastTriggeredTimestamp;
                         if (Number.isInteger(upd.position)) template.position = upd.position;
+                        // The due date belonged to the occurrence this reset just
+                        // cleared; the watcher builds the next instance from the
+                        // template, so a date left here came back on every
+                        // recurrence (Oct 2026). Same rule the non-recurring tasks
+                        // below have always had.
+                        if (removedIdSet.has(templateId)) template.dueDate = null;
                     }
                 });
                 cycle.tasks.forEach(task => {

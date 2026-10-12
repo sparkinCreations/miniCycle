@@ -648,6 +648,36 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
+    await test('a reset clears the due date of a recurring template whose instance it removed', async () => {
+        // The date belonged to the cleared occurrence; left on the template it
+        // came back on every recurrence, since the watcher builds the next
+        // instance from the template (Oct 2026). Kept instances keep theirs.
+        const h = splitRig([
+            { id: 'r', text: 'Recurring', completed: true, recurring: true, dueDate: '2026-10-01', autoClear: { cycle: true, todo: true } },
+            { id: 'k', text: 'Kept recurring', completed: true, recurring: true, dueDate: '2026-10-02', autoClear: { cycle: false, todo: true } }
+        ]);
+        h.cycleData.recurringTemplates = {
+            r: { id: 'r', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1, dueDate: '2026-10-01' },
+            k: { id: 'k', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1, dueDate: '2026-10-02' }
+        };
+        h.deps.removeRecurringTasksFromCycle = () => ({
+            removedIds: ['r'], keptIds: ['k'],
+            templateUpdates: {
+                r: { nextScheduledOccurrence: 2, lastTriggeredTimestamp: null, position: 0 },
+                k: { nextScheduledOccurrence: 2, lastTriggeredTimestamp: null, position: 1 }
+            }
+        });
+        try {
+            await mod.resetTasksImpl(h.deps);
+            const templates = h.stateObj.data.routine.c1.recurringTemplates;
+            if (templates.r.dueDate !== null) throw new Error(`removed template should have no due date, got ${templates.r.dueDate}`);
+            if (templates.k.dueDate !== '2026-10-02') throw new Error(`kept template's due date should survive, got ${templates.k.dueDate}`);
+        } finally {
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
     await test('a To-Do clear records where a cleared recurring instance sat', async () => {
         const container = document.createElement('div');
         const taskList = document.createElement('ul');
