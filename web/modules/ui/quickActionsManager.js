@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, EVENTS } from '../core/constants.js';
 
 // Gap between the tooltip's bottom edge and its anchor's top edge
 const TOOLTIP_OFFSET_PX = 10;
@@ -292,6 +292,11 @@ export class QuickActionsManager {
     }
 
     async init() {
+        // Escape with nothing to close drops the long-press tooltip (uiBoot).
+        if (!this._escapeResetHandler) {
+            this._escapeResetHandler = () => this._hideTooltip();
+            document.addEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeResetHandler);
+        }
         if (this._initialized) return;
 
         // Unguarded on purpose (CLAUDE.md #19): appInit is `required()`, so `?.`
@@ -1494,6 +1499,14 @@ export class QuickActionsManager {
         tooltip.className = 'quick-actions-tooltip';
         document.body.appendChild(tooltip);
         this._tooltip = tooltip;
+    }
+
+    /** Boot-retry teardown: the only document-level listener this module owns. */
+    destroy() {
+        if (this._escapeResetHandler) {
+            document.removeEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeResetHandler);
+            this._escapeResetHandler = null;
+        }
     }
 
     _showTooltip(element, actionId, slotIndex, isAutoView) {

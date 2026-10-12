@@ -1174,6 +1174,92 @@ async function journeyCustomizerClearsMenuBackdrop(browser, baseURL) {
     return { name: 'customizer clears the menu backdrop', failures };
 }
 
+// ── Journey: Escape puts transient UI state back ─────────────────────────────
+//
+// With nothing to close, Escape drops every transient state the light-dismiss
+// click would (task option reveals, long-press/drag marks, the body classes
+// behind the menu and +-button backdrops) and tells modules to drop theirs
+// (hover reveals, tooltips, the dropdown). It must NOT run while a dialog is
+// open (the browser closes it) or while a text field has focus (the field owns
+// Escape).
+async function journeyEscapeResetsTransientState(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+        await page.waitForTimeout(800);
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await page.waitForTimeout(400);
+        const litter = () => page.evaluate(() => {
+            document.body.classList.add('main-menu-open', 'quick-actions-open');
+            document.body.style.userSelect = 'none';
+            const task = document.querySelector('#taskList .task');
+            task?.classList.add('long-pressed', 'dragging', 'drop-target');
+            task?.querySelector('.task-options')?.classList.add('task-options-visible');
+            document.getElementById('task-card-group')?.classList.add('tvl-hovered');
+            document.getElementById('quick-actions-menu')?.classList.add('visible');
+        });
+        const leftovers = () => page.evaluate(() => {
+            const task = document.querySelector('#taskList .task');
+            return [
+                document.body.classList.contains('main-menu-open') && 'main-menu-open',
+                document.body.classList.contains('quick-actions-open') && 'quick-actions-open',
+                document.body.style.userSelect === 'none' && 'user-select',
+                task?.classList.contains('long-pressed') && 'long-pressed',
+                task?.classList.contains('dragging') && 'dragging',
+                task?.classList.contains('drop-target') && 'drop-target',
+                task?.querySelector('.task-options')?.classList.contains('task-options-visible') && 'task-options-visible',
+                document.getElementById('task-card-group')?.classList.contains('tvl-hovered') && 'tvl-hovered',
+                document.getElementById('quick-actions-menu')?.classList.contains('visible') && 'dropdown-visible'
+            ].filter(Boolean);
+        });
+
+        await litter();
+        await page.evaluate(() => document.activeElement?.blur?.());
+        record('fixture: transient state is in place', (await leftovers()).length >= 6, `only ${(await leftovers()).join(', ')}`);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        let left = await leftovers();
+        record('Escape with nothing to close clears every transient state', left.length === 0, `left: ${left.join(', ')}`);
+
+        // A focused text field owns Escape: nothing is swept.
+        await page.evaluate(() => { document.getElementById('task-input-row')?.classList.remove('hidden'); });
+        await page.waitForTimeout(200);
+        await litter();
+        await page.focus('#taskInput');
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        left = await leftovers();
+        record('Escape inside a text field leaves transient state alone', left.length >= 6, `swept down to: ${left.join(', ')}`);
+        await page.evaluate(() => document.activeElement?.blur?.());
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        record('…and sweeps once the field is left', (await leftovers()).length === 0, `left: ${(await leftovers()).join(', ')}`);
+
+        // An open dialog: the browser closes it; the sweep stays out of it.
+        await openMenu(page).catch(() => {});
+        await clickEl(page, '#open-settings');
+        await page.waitForTimeout(900);
+        const dialogOpen = await page.evaluate(() => !!document.querySelector('dialog[open]'));
+        record('fixture: a dialog is open', dialogOpen, 'settings dialog did not open');
+        await litter();
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(600);
+        const afterDialog = await page.evaluate(() => ({ open: !!document.querySelector('dialog[open]'), menuOpen: document.body.classList.contains('main-menu-open') }));
+        record('Escape on an open dialog closes the dialog and does not sweep', !afterDialog.open && afterDialog.menuOpen,
+            `dialog open ${afterDialog.open}, main-menu-open ${afterDialog.menuOpen}`);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        record('…the next Escape sweeps', (await leftovers()).length === 0, `left: ${(await leftovers()).join(', ')}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'escape resets transient state', failures };
+}
+
 // ── Journey 8: factory reset — twice in place, then once with the reload ────
 //
 // Since Oct 2026 the reset ends in a real page load when a network probe
@@ -3761,6 +3847,7 @@ const JOURNEYS = [
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'drag reorder lands where released, reverts when abandoned, never moves hidden tasks', fn: journeyDragReorder },
     { name: 'opening the customizer from the menu clears the menu backdrop', fn: journeyCustomizerClearsMenuBackdrop },
+    { name: 'Escape puts transient UI state back', fn: journeyEscapeResetsTransientState },
     { name: 'import never attaches a template to a non-recurring task', fn: journeyImportTemplateTaskCollision },
     { name: 'import keeps recurring templates with no live task', fn: journeyImportKeepsOrphanTemplates },
     { name: 'core (add → persist → cycle → offline)', fn: journeyCore },

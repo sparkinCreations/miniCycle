@@ -56,7 +56,8 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
@@ -199,6 +200,14 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     'click',
     '__miniCycleUiBootTaskButtonsClickHandler',
     handleGlobalClickForTaskButtons
+  );
+
+  // ========== Escape: drop every transient UI state ==========
+  replaceStoredEventListener(
+    document,
+    'keydown',
+    '__miniCycleUiBootEscapeResetHandler',
+    handleGlobalEscapeReset
   );
 
   // ========== Reset Notification Position ==========
@@ -460,6 +469,43 @@ function handleGlobalClickForTaskButtons(event) {
 
   if (isIgnored) return;
 
+  clearTransientTaskState();
+}
+
+/**
+ * Escape as a universal "put it back": when Escape reaches the document with
+ * nothing to close — no open dialog (the browser closes those itself), no
+ * open main menu (menuEscHandler closes it), no text field focused (the
+ * field owns Escape) and no handler having claimed the key — drop every
+ * transient state the light-dismiss click would: task option reveals,
+ * long-press and drag marks, the body classes behind the menu and the
+ * +-button backdrops, long-press hints, a stuck user-select; then tell the
+ * modules that own state only they can see (tooltips, hover reveals, the
+ * +-button dropdown) to drop theirs. The menu backdrop stuck over the page
+ * after the task-options customizer (Oct 2026) is the kind of thing this
+ * recovers from without a reload.
+ */
+function handleGlobalEscapeReset(event) {
+  if (event.key !== 'Escape' || event.defaultPrevented) return;
+  if (document.querySelector('dialog[open]')) return;
+  if (document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE)) return;
+  const active = document.activeElement;
+  if (active && (active.matches('input, textarea, select') || active.isContentEditable)) return;
+
+  clearTransientTaskState();
+  document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN, DOM_CLASSES.QUICK_ACTIONS_OPEN);
+  document.body.style.userSelect = '';
+  hideLongPressHint();
+  document.dispatchEvent(new CustomEvent(EVENTS.UI_ESCAPE_RESET));
+}
+
+/**
+ * The shared sweep behind the light-dismiss click and Escape: task option
+ * buttons back to their resting visibility, every task row stripped of its
+ * long-press / drag / drop marks and (unless the recurring panel is holding a
+ * selection) its selection.
+ */
+function clearTransientTaskState() {
   const threeDotsEnabled = document.body.classList.contains(DOM_CLASSES.SHOW_THREE_DOTS_ENABLED);
 
   // Reset task option button visibility using CSS classes (not inline styles)
@@ -479,7 +525,7 @@ function handleGlobalClickForTaskButtons(event) {
   const recurringPanelOpen = recurringPanel && !recurringPanel.classList.contains(DOM_CLASSES.HIDDEN);
 
   document.querySelectorAll(DOM_SELECTORS.TASK).forEach(task => {
-    task.classList.remove(DOM_CLASSES.LONG_PRESSED, DOM_CLASSES.DRAGGABLE, DOM_CLASSES.DRAGGING);
+    task.classList.remove(DOM_CLASSES.LONG_PRESSED, DOM_CLASSES.DRAGGABLE, DOM_CLASSES.DRAGGING, DOM_CLASSES.DROP_TARGET);
 
     // Keep selections while recurring panel is open
     if (!recurringPanelOpen) {

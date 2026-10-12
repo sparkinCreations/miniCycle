@@ -300,6 +300,14 @@ export class TaskViewLayoutManager {
         document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._focusModeActivated);
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
 
+        // Escape with nothing to close (uiBoot): drop the hover reveals.
+        this._escapeReset = () => {
+            for (const entry of this._registry.values()) {
+                entry.element.classList.remove(DOM_CLASSES.TVL_HOVERED);
+            }
+        };
+        document.addEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeReset);
+
         // iOS drops pointer capture when a PWA window is backgrounded,
         // switched, or resized via Stage Manager / Split View — WITHOUT
         // firing pointerup or pointercancel. That orphans an in-progress
@@ -1745,6 +1753,7 @@ export class TaskViewLayoutManager {
         }
         if (this._focusModeDeactivated) {
             document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
+            document.removeEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeReset);
             this._focusModeDeactivated = null;
         }
 

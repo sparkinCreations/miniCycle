@@ -697,7 +697,14 @@ export const EVENTS = Object.freeze({
     FOCUS_MODE_DEACTIVATED: 'focusMode:deactivated',
     /** Dispatched on document by panelCarousel after a panel becomes active:
         detail = { id, previousId, index, changed }. */
-    PANEL_CAROUSEL_CHANGED: 'panelCarousel:changed'
+    PANEL_CAROUSEL_CHANGED: 'panelCarousel:changed',
+    /** Dispatched on document by uiBoot when Escape was pressed and nothing
+        was closing (no open dialog, no open menu, no text field focused):
+        every module that holds transient UI state — a tooltip, a hover
+        reveal, an open dropdown — drops it. The generic sweep (task option
+        reveals, drag marks, body classes, long-press hints) runs before the
+        event; this is for state only its owner can see. */
+    UI_ESCAPE_RESET: 'ui:escapeReset'
 });
 
 // ============================================================================

@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
@@ -975,6 +975,8 @@ export class ModeManager {
             }
         });
 
+        // Escape with nothing to close (uiBoot) closes the dropdown too.
+        this.deps.safeAddEventListener(document, EVENTS.UI_ESCAPE_RESET, () => setQuickActionsVisible(false));
         // Expose closer for inline-action handlers below (toggle-task-input, create-routine)
         this._closeQuickActionsMenu = () => setQuickActionsVisible(false);
 
