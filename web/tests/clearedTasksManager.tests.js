@@ -153,6 +153,17 @@ export async function runClearedTasksManagerTests(resultsDiv) {
         return { mgr, state, notifications };
     }
 
+    await test('a hostile cleared-entry id cannot break out of its attribute', () => {
+        const { mgr } = freshMgr({ tasks: [], clearedTasks: { entries: [], totalCleared: 0 } });
+        const hostile = '"><img src=x onerror="window.__pwned=1">';
+        const html = mgr._renderEntry({ id: hostile, taskText: 'T', clearedAt: Date.now() });
+        const host = document.createElement('div');
+        host.innerHTML = html;
+        if (host.querySelector('img')) throw new Error('an element was injected through the id');
+        const entry = host.querySelector('.cleared-entry');
+        if (!entry || entry.dataset.id !== hostile) throw new Error('data-id must round-trip the raw id as a value');
+    });
+
     await test('recordClearedTask appends a newest-first entry and bumps totalCleared', () => {
         // Cycle WITHOUT clearedTasks → exercises the lazy init of { entries, totalCleared, autoPruneEnabled }.
         const { mgr } = freshMgr({ tasks: [], deleteCheckedTasks: false });

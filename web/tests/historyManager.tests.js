@@ -72,6 +72,22 @@ export async function runHistoryManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🏗️ Initialization</h4>';
 
+    await test('a hostile cleared-entry id cannot break out of its attribute', () => {
+        setHistoryManagerDependencies({ AppState: createMockAppState(), appInit: createMockAppInit(), showNotification: () => {} });
+        const mgr = new HistoryManager();
+        mgr.selectedTasks = new Set();
+        mgr.isRecreateMode = true;
+        const hostile = '"><img src=x onerror="window.__pwned=1">';
+        const html = mgr._renderClearedEntry({ id: hostile, taskText: 'say "hi"', clearedAt: Date.now() });
+        const host = document.createElement('div');
+        host.innerHTML = html;
+        if (host.querySelector('img')) throw new Error('an element was injected through the id');
+        const entry = host.querySelector('.cleared-entry');
+        if (!entry || entry.dataset.id !== hostile) throw new Error('data-id must round-trip the raw id as a value');
+        if (entry.getAttribute('aria-label') !== 'say "hi"') throw new Error(`aria-label lost its quotes: ${entry.getAttribute('aria-label')}`);
+        if (host.querySelectorAll('.cleared-entry').length !== 1) throw new Error('exactly one entry expected');
+    });
+
     await test('creates instance', () => {
         setHistoryManagerDependencies({
             AppState: createMockAppState(),

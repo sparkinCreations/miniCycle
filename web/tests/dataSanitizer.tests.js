@@ -46,6 +46,31 @@ export async function runDataSanitizerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🧹 sanitizeText</h4>';
 
+    await test('sanitizeImportedData bounds clearedTasks entries (restore path)', () => {
+        // Rendered from their own fields by two managers; a backup could carry
+        // any string as an entry id and it landed in a data-id attribute raw.
+        const data = {
+            schemaVersion: '2.6', metadata: {}, settings: {},
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: {
+                title: 'C1', tasks: [], history: { events: [] },
+                clearedTasks: { entries: [
+                    { id: '"><img src=x onerror=alert(1)>' + 'x'.repeat(200), taskText: '<b>bold</b>', clearedAt: 'yesterday' },
+                    'not an object', null,
+                    { id: 42, taskText: 'fine', clearedAt: 5 }
+                ], totalCleared: 'many' }
+            } } }
+        };
+        const result = sanitizeImportedData({ schemaVersion: '2.6', miniCycleData: JSON.stringify(data) });
+        const ct = JSON.parse(result.miniCycleData).data.routine.c1.clearedTasks;
+        if (ct.entries.length !== 2) throw new Error(`non-object entries should be dropped, got ${ct.entries.length}`);
+        if (ct.entries[0].id.length > 100) throw new Error('id not capped');
+        if (typeof ct.entries[0].clearedAt !== 'number') throw new Error('clearedAt not coerced to a number');
+        if (/<b>/.test(ct.entries[0].taskText)) throw new Error('taskText not sanitized');
+        if (ct.entries[1].id !== '42') throw new Error('id should be stringified');
+        if (ct.totalCleared !== 2) throw new Error(`totalCleared should be repaired, got ${ct.totalCleared}`);
+    });
+
     await test('sanitizeText returns clean text unchanged', () => {
         const result = sanitizeText('Buy groceries');
         if (result !== 'Buy groceries') throw new Error(`Expected "Buy groceries", got "${result}"`);

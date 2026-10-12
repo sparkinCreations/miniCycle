@@ -1205,7 +1205,8 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Modals ----
     REMINDERS_MODAL: 'reminders-modal',
-    REMINDERS_WEB_NOTE: 'reminders-web-note',      // the "web reminders need the app open" line in the reminders modal
+    REMINDERS_WEB_NOTE: 'reminders-web-note',
+    TEST_RUNNER_IFRAME: 'test-runner-iframe',    // the cross-origin test runner frame in the testing modal      // the "web reminders need the app open" line in the reminders modal
     CLOSE_REMINDERS_BTN: 'close-reminders-btn',
     OPEN_REMINDERS_MODAL: 'open-reminders-modal',
     FEEDBACK_MODAL: 'feedback-modal',

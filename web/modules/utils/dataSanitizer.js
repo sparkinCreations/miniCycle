@@ -120,6 +120,24 @@ function sanitizeCycle(cycle) {
         });
     }
 
+    // Cleared-task entries are rendered by clearedTasksManager/historyManager
+    // from their own fields; nothing else normalised them on restore, and a
+    // backup can carry anything as an entry id (Oct 2026). Same bounds the
+    // .mcyc importer applies: text through the sanitizer, id a short string,
+    // clearedAt a number, everything non-object dropped.
+    if (cycle.clearedTasks && typeof cycle.clearedTasks === 'object') {
+        const ct = cycle.clearedTasks;
+        ct.entries = Array.isArray(ct.entries)
+            ? ct.entries.filter(e => e && typeof e === 'object').map(e => {
+                if (e.taskText != null) e.taskText = sanitizeText(String(e.taskText), 500);
+                if (e.id != null) e.id = String(e.id).slice(0, 100);
+                if (typeof e.clearedAt !== 'number') e.clearedAt = Date.now();
+                return e;
+            })
+            : [];
+        if (typeof ct.totalCleared !== 'number') ct.totalCleared = ct.entries.length;
+    }
+
     if (cycle.recurringTemplates && typeof cycle.recurringTemplates === 'object') {
         Object.values(cycle.recurringTemplates).forEach(template => {
             if (!template || typeof template !== 'object') return;

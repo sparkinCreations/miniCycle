@@ -747,10 +747,10 @@ export class HistoryManager {
 
         return `
             <div class="cleared-entry ${isSelected ? 'selected' : ''} ${this.isRecreateMode ? 'selectable' : ''}"
-                 data-id="${entry.id}"
+                 data-id="${this._escapeAttr(entry.id)}"
                  tabindex="0"
                  ${this.isRecreateMode
-                     ? `role="checkbox" aria-checked="${isSelected}" aria-label="${this._escapeHtml(entry.taskText)}"`
+                     ? `role="checkbox" aria-checked="${isSelected}" aria-label="${this._escapeAttr(entry.taskText)}"`
                      : ''}>
                 ${this.isRecreateMode ? `
                     <span class="cleared-entry-checkbox" aria-hidden="true">${isSelected ? '✓' : ''}</span>
@@ -1208,6 +1208,20 @@ export class HistoryManager {
      * @param {string} text
      * @returns {string}
      */
+    /**
+     * Escape for an HTML ATTRIBUTE value. _escapeHtml is a text-node escaper
+     * (textContent → innerHTML) and leaves quotes alone, which is fine between
+     * tags and wrong inside `attr="…"`. Imported backups can carry any string
+     * as an entry id, and that id used to land in data-id raw (Oct 2026).
+     * @param {*} value
+     * @returns {string}
+     */
+    _escapeAttr(value) {
+        return String(value ?? '').replace(/[&<>"']/g, ch => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[ch]);
+    }
+
     _escapeHtml(text) {
         if (text == null) return '';
         const div = document.createElement('div');
