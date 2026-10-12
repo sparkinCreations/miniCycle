@@ -160,7 +160,8 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_DELAY_SHORT: 50,         // 50ms - Focus an element shortly after it appears (inputs/edit fields)
     SAVE_DEFER: 50,                // 50ms - Defer a state save to the next tick so DOM/state settles first
     RESIZE_DEBOUNCE: 150,          // 150ms - Window resize debounce
-    LONG_PRESS_HINT: 500,          // 500ms - Hold an icon-only control this long before its label appears (matches the task drag long-press so one hold feels the same everywhere)
+    TASK_DRAG_LONG_PRESS: 500,     // 500ms - Hold a task row this long on touch before it lifts for reordering. iOS's own long-press is 500ms, Android's 400ms; shorter buys a faster lift at the price of accidental drags mid-scroll, which move data
+    LONG_PRESS_HINT: 500,          // 500ms - Hold an icon-only control this long before its label appears. Equal to TASK_DRAG_LONG_PRESS on purpose: one hold means the same thing everywhere
     LONG_PRESS_CLICK_GUARD: 300,   // 300ms - Window in which the synthetic click after a long-press is swallowed, so asking what an icon does never also does it
     HINT_DISMISS_ARM: 100,         // 100ms - Delay before a shown long-press hint starts listening for the touch that dismisses it, so the press that raised it cannot also close it
     LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
@@ -476,6 +477,7 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
     VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
+    TASK_HOLD_SLOP: 15,            // px, per axis - How far a finger may drift during the TASK_DRAG_LONG_PRESS hold before it is read as a scroll and the hold is cancelled. Wider than the platforms' 8-10px on purpose: a thumb trembles while it waits, and a real scroll clears 15px long before the hold is up
     WHEEL_SCROLL_MIN: 10,          // Minimum wheel scroll to trigger action
     AXIS_DOMINANCE_RATIO: 1.5      // A swipe must exceed the OTHER axis by this factor to count — without it, a thumb arcing during a scroll reads as a sideways swipe
 });

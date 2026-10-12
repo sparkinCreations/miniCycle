@@ -1,3 +1,8 @@
+## [2.608] - 2026-10-12
+- fix(drag): split a drop target at its midpoint, not a third
+- refactor(drag): name the touch hold and slop in constants beside the hint hold
+
+
 ## [2.607] - 2026-10-12
 - fix(menu): Task Options entry reads +/- like the task row and the customizer, not -/+
 - fix(help-window): let a long preamble wrap instead of running past the box
