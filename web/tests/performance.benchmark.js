@@ -133,6 +133,37 @@ export function runPerformanceBenchmarks(resultsDiv) {
         tasks.forEach(task => task.checked = false);
     }, 5);
 
+    // ===== THE STATE UPDATE PATH =====
+    // Every AppState.update() clones the whole document (structuredClone for
+    // the undo snapshot) and every save serialises all of it. The synthetic
+    // cases below time storage alone; this one times what an update actually
+    // costs on a big routine with a long history, which is where scaling
+    // would show first.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 State update path (clone + serialise)</h4>';
+    const bigState = {
+        schemaVersion: '2.6', metadata: { lastModified: Date.now() },
+        appState: { activeRoutineId: 'big' },
+        settings: { theme: 'default' },
+        data: { routine: { big: {
+            title: 'Big', cycleCount: 400,
+            tasks: Array.from({ length: 1000 }, (_, i) => ({ id: `t${i}`, text: `Task ${i}`, completed: i % 3 === 0, dueDate: null, priority: null, recurring: false, autoClear: { cycle: false, todo: true } })),
+            recurringTemplates: {},
+            history: { events: Array.from({ length: 5000 }, (_, i) => ({ type: 'task_completed', ts: 1700000000000 + i * 60000, taskId: `t${i % 1000}` })), maxEvents: 5000 },
+            clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true }
+        } } }
+    };
+    benchmark('Clone a 1,000-task routine with 5,000 history events (undo snapshot)', () => {
+        structuredClone(bigState);
+    }, 20);
+    benchmark('Serialise the same document (one save)', () => {
+        JSON.stringify(bigState);
+    }, 20);
+    benchmark('Clone + mutate + serialise (one real update)', () => {
+        const next = structuredClone(bigState);
+        next.data.routine.big.tasks[500].completed = true;
+        JSON.stringify(next);
+    }, 20);
+
     // ===== LOCALSTORAGE OPERATIONS =====
     resultsDiv.innerHTML += '<h4 class="test-section">💾 localStorage Operations</h4>';
 

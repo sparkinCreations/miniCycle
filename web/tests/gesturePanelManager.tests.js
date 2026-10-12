@@ -351,6 +351,22 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         m.destroy(); // clear the reset timeout
     });
 
+    await test('after a wheel navigation, the flick\'s momentum tail cannot step a second panel', () => {
+        // A trackpad flick keeps emitting deltaX after the threshold; without a
+        // lockout one flick stepped two panels on 120Hz input (Oct 2026).
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; } });
+        const ev = (dx) => ({ deltaX: dx, deltaY: 0, preventDefault() {} });
+        m.handleWheel(ev(250));
+        m.handleWheel(ev(250));        // → navigates
+        m.handleWheel(ev(500));        // momentum tail, inside the lockout
+        m.handleWheel(ev(500));
+        if (shown !== 1) throw new Error(`expected one navigation, got ${shown}`);
+        if (!(m.getState().wheelLockedUntil > Date.now() - 1)) throw new Error('lockout not armed');
+        if (m.getState().wheelDeltaX !== 0) throw new Error('locked-out events must not accumulate');
+        m.destroy();
+    });
+
     await test('tiny horizontal wheel (|deltaX|<10) is ignored', () => {
         const m = makeManager();
         m.handleWheel({ deltaX: 5, deltaY: 0, preventDefault() { throw new Error('should not preventDefault'); } });

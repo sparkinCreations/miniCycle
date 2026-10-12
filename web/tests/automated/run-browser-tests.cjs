@@ -14,6 +14,10 @@ const fs = require('fs');
 const path = require('path');
 const { testTreeFingerprint } = require('../../scripts/test-tree-fingerprint.cjs');
 
+// Set by main() from argv; a filtered (single-module) run must not record its
+// count as the suite total. Declared up here: main() runs before the writer.
+let activeModuleFilter = null;
+
 // Color codes for terminal output
 const colors = {
     reset: '\x1b[0m',
@@ -105,6 +109,7 @@ function parseArgs() {
 
     // Filter out flags, get module filter
     const moduleFilter = args.filter(arg => !arg.startsWith('-'))[0];
+    activeModuleFilter = moduleFilter || null;
 
     if (!moduleFilter) {
         return ALL_MODULES; // Run all
@@ -471,7 +476,13 @@ async function runAllTests() {
 
     console.log(`${colors.blue}${'='.repeat(60)}${colors.reset}\n`);
 
-    writeTestCountManifest(totalTests);
+    // A filtered run counts one module; recording that as THE total made
+    // PROJECT_STATS report 12 tests after a single-module run (Oct 2026).
+    if (activeModuleFilter) {
+        console.log(`${colors.gray}   (partial run — test-count manifest left alone)${colors.reset}`);
+    } else {
+        writeTestCountManifest(totalTests);
+    }
 
     // Exit with proper code for CI/CD
     process.exit(allPassed ? 0 : 1);

@@ -1115,6 +1115,44 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         });
     });
 
+    await test('arrow keys float the card and persist it like a drop; Enter puts it home', async () => {
+        // The handle used to be mouse-only (tabindex -1, no keys): the only
+        // non-mouse recovery was Settings → Reset Home View Layout.
+        const AppState = makeAppState();
+        const fixture = makeFixture();
+        Object.assign(fixture.wrapper.style, { position: 'fixed', top: '150px', left: '100px', width: '640px', height: '550px' });
+        const card = fixture.byId[DOM_IDS.TASK_CARD_GROUP];
+        Object.assign(card.style, { width: '600px', height: '200px' });
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState, getElementById: fixture.getElementById }));
+        const mgr = new TaskViewLayoutManager();
+        try {
+            mgr.init();
+            mgr._shouldApplyLayout = () => true;
+            mgr._syncHandleFocusability();
+            const handle = mgr._handles.get('task-card-group');
+            assertEq(handle.tabIndex, 0, 'the handle must be a tab stop where the feature is live');
+            const config = DRAGGABLES.find(d => d.key === 'task-card-group');
+            const before = card.getBoundingClientRect();
+            mgr._nudge(config, card, 0, 30);
+            mgr._nudge(config, card, 20, 0);
+            assertEq(card.style.position, 'absolute', 'a nudge floats the element');
+            const after = card.getBoundingClientRect();
+            assert(after.top > before.top && after.left > before.left, `moved by the nudges: ${before.left},${before.top} -> ${after.left},${after.top}`);
+            mgr._flushPositionWrites();
+            assert(AppState.state.settings.taskViewLayout?.positions?.['task-card-group']?.customized === true, 'the moved card is persisted as customized');
+            assertEq(mgr._keyboardDock(config, card), true, 'Enter homes a floated self-dock element');
+            assertEq(card.style.position, '', 'back in flow');
+            mgr._flushPositionWrites();
+            assert(!AppState.state.settings.taskViewLayout.positions['task-card-group'], 'saved position dropped when homed');
+            mgr._shouldApplyLayout = () => false;
+            mgr._syncHandleFocusability();
+            assertEq(handle.tabIndex, -1, 'off desktop the handle leaves the tab sequence');
+        } finally {
+            try { mgr.destroy(); } catch { /* teardown must not mask the failure */ }
+            fixture.cleanup();
+        }
+    });
+
     await test('init is idempotent', () => {
         withFixture((mgr) => {
             mgr.init();

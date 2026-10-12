@@ -75,7 +75,8 @@ export class GesturePanelManager {
             // events for a stylus, so a pen swipe reached BOTH the pointer path
             // and the touch path and stepped two panels (measured Oct 2026).
             penActive: false,
-            pointerStartX: 0
+            pointerStartX: 0,
+            wheelLockedUntil: 0
         };
 
         // Configuration thresholds (from centralized constants.js)
@@ -83,6 +84,7 @@ export class GesturePanelManager {
             SWIPE_THRESHOLD: GESTURE.SWIPE_THRESHOLD,
             MOUSE_DRAG_THRESHOLD: GESTURE.MOUSE_DRAG_THRESHOLD,
             WHEEL_RESET_DELAY: UI_TIMEOUTS.WHEEL_RESET_DELAY,
+            WHEEL_NAVIGATE_LOCKOUT: UI_TIMEOUTS.WHEEL_NAVIGATE_LOCKOUT,
             TOUCH_SWIPE_THRESHOLD: GESTURE.TOUCH_SWIPE,
             MOUSE_DRAG_START_THRESHOLD: GESTURE.MOUSE_DRAG_START,
             WHEEL_SCROLL_MIN: GESTURE.WHEEL_SCROLL_MIN,
@@ -363,6 +365,12 @@ export class GesturePanelManager {
         if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return;
         event.preventDefault();
 
+        // One gesture, one step: a trackpad flick keeps emitting momentum
+        // events after the panel has moved; they are swallowed (still
+        // prevented, so the page does not scroll sideways) until the lockout
+        // passes.
+        if (this.state.wheelLockedUntil && Date.now() < this.state.wheelLockedUntil) return;
+
         this.state.wheelDeltaX += event.deltaX;
 
         // Clear previous timeout
@@ -376,9 +384,11 @@ export class GesturePanelManager {
         if (this.state.wheelDeltaX > this.config.SWIPE_THRESHOLD) {
             this._navigate(1);
             this.state.wheelDeltaX = 0;
+            this.state.wheelLockedUntil = Date.now() + this.config.WHEEL_NAVIGATE_LOCKOUT;
         } else if (this.state.wheelDeltaX < -this.config.SWIPE_THRESHOLD) {
             this._navigate(-1);
             this.state.wheelDeltaX = 0;
+            this.state.wheelLockedUntil = Date.now() + this.config.WHEEL_NAVIGATE_LOCKOUT;
         }
 
         // Reset wheel tracking after a delay

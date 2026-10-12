@@ -711,6 +711,14 @@ async setDefaultPosition(notificationContainer) {
         // ✅ Wait for core systems to be ready (AppState + data)
         await _deps.appInit?.waitForCore();
 
+        // Every show() lands here while the position is unmodified; writing the
+        // same default each time was an immediate persist per notification.
+        const stored = this.deps.AppState.get?.()?.settings;
+        if (stored && stored.notificationPositionModified === false &&
+            stored.notificationPosition?.x === defaultX && stored.notificationPosition?.y === defaultY) {
+            return;
+        }
+
         // { system: true }: a notification's screen position is not something the
         // user undoes, so the undo wrapper must not snapshot this call. It was
         // also the update that fired right after a routine rename and tripped

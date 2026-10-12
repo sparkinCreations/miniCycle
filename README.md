@@ -114,13 +114,14 @@ Set per-task reminders with flexible scheduling — minutes, hours, or days — 
   <img src="web/assets/images/screenshots/Example/user-manual/v3/reminders.jpg" alt="Reminders" width="200"/>
 </p>
 
-### Accessibility (WCAG AA)
+### Accessibility (WCAG AA target)
 - Reduced motion support (respects OS preference + manual toggle)
 - High contrast mode
 - Adjustable font sizes (Small, Default, Large, Extra Large)
 - Full keyboard navigation and ARIA labels
 - Focus management and focus trapping in modals
-- Minimum 4.5:1 contrast ratios throughout
+- 4.5:1 contrast targets across themes
+- What is verified automatically: accessible names and keyboard operability of custom controls on the real app surfaces (`npm run test:a11y`). Contrast across themes, zoom, reduced motion and screen-reader behaviour are checked by hand, not by CI.
 
 ### More
 - **Search & Filter** — filter by name, status, priority, due date, or recurring; sort by A-Z, priority, or due date
@@ -180,7 +181,7 @@ All counts are floors — live numbers in [PROJECT_STATS.md](web/docs/PROJECT_ST
 |--------|-------|
 | JavaScript | 90,000+ lines across 135+ modules |
 | CSS | 22,000+ lines across 40+ token-based files |
-| Automated Tests | 3,100+ browser tests in 125+ files (100% pass), plus offline-boot, layout, meta, and journey suites |
+| Automated Tests | 3,500+ browser tests in 125+ files, all passing on every release — a pass rate, not code coverage, which is not measured — plus offline-boot, layout, meta, journey and accessibility suites |
 | Validation Gates | 9 — CSP hashes, HTML, docs links, DI declarations, legacy-read ratchet, inline-script contracts, comment references, ES built-in floor, label registries |
 | DI-Manifested Modules | 55+ with 8 load phases |
 | Label Keys | 1,600+ across 58 categories with theme-aware resolution |

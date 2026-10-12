@@ -558,6 +558,65 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     // The pre-2.5 migration was retired Sep 2026 (SCHEMA_2_6_PLAN.md). A legacy
     // backup file must get the same message as any unreadable file — and must not
     // touch current data. The old branch DELETED miniCycleData before converting.
+    await test('Settings restore survives a refused write (storage full): says so, keeps the old data, re-arms', async () => {
+        // The restore neutralises AppState, then writes the document. A quota
+        // error on that write used to escape the confirmation callback: the
+        // promise never settled, state stayed neutralised, the app sat dead.
+        const previous = JSON.stringify({ schemaVersion: '2.6', data: { routine: {} }, appState: {}, settings: {} });
+        localStorage.setItem('miniCycleData', previous);
+        const inner = JSON.stringify({
+            schemaVersion: '2.6',
+            metadata: { version: '2.5', schemaVersion: '2.6', lastModified: Date.now(), createdAt: Date.now() },
+            settings: { onboardingCompleted: true },
+            data: { routine: { r1: { id: 'r1', title: 'Big', tasks: [], cycleCount: 0,
+                recurringTemplates: {}, history: { events: [], maxEvents: 100 },
+                clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false } } } },
+            appState: { activeRoutineId: 'r1' }, userProgress: {}, achievements: { unlocked: [], seen: {} }
+        });
+        const file = JSON.stringify({ type: 'miniCycle-backup', appVersion: '2.5', exportedAt: new Date().toISOString(), keys: { miniCycleData: inner } });
+        const notes = [];
+        // A separate module instance: setupRestoreButton() wires once per module
+        // (_initialized.restoreButton), and the rescue test above used this one's.
+        const fresh = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-quota`);
+        fresh.setBackupRestoreManagerDependencies({
+            AppState: { get: () => ({}), forceSave: () => {}, reload: async () => {} },
+            showNotification: (msg) => notes.push(String(msg)),
+            showConfirmationModal: ({ callback }) => callback(true),
+            safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts),
+            clearAllUndoHistory: async () => {}
+        });
+        const realSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+            if (key === 'miniCycleData' && value === inner) {
+                const err = new Error('quota'); err.name = 'QuotaExceededError'; throw err;
+            }
+            return realSetItem.call(this, key, value);
+        };
+        const btn = document.createElement('button');
+        btn.id = 'restore-mini-cycles';
+        document.body.appendChild(btn);
+        try {
+            fresh.setupRestoreButton();
+            btn.click();
+            const input = document.getElementById('import-cycle-file-input');
+            if (!input) throw new Error('restore file input was never created');
+            const dt = new DataTransfer();
+            dt.items.add(new File([file], 'full.json', { type: 'application/json' }));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+            for (let i = 0; i < 60 && !notes.some(n => /storage is full/i.test(n)); i++) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            if (!notes.some(n => /storage is full/i.test(n))) throw new Error(`no storage-full notice; notices: ${notes.join(' | ')}`);
+            if (localStorage.getItem('miniCycleData') !== previous) throw new Error('the previous document should be untouched');
+            if (notes.some(n => /restored successfully/i.test(n))) throw new Error('must not claim success');
+        } finally {
+            Storage.prototype.setItem = realSetItem;
+            btn.remove();
+            document.getElementById('import-cycle-file-input')?.remove();
+        }
+    });
+
     await test('Settings restore rejects a pre-2.5 backup without touching current data', async () => {
         // A separate module instance: setupRestoreButton() wires once per module
         // (_initialized.restoreButton), and the test above already used this one's.

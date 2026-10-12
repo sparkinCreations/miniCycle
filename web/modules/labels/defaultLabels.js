@@ -638,6 +638,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backupRestored:          'Backup restored successfully!',
         backupReloading:         'Reloading app to apply changes...',
         backupCorruptData:       'Backup data is corrupt.',
+        restoreStorageFailed:    'The restore could not be saved — storage is full. Nothing was changed. Export a backup, free some space, then try again.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
@@ -2056,7 +2057,8 @@ export const DEFAULT_LABELS = deepFreeze({
         every:           'Every:',
         minutes:         'Minutes',
         hours:           'Hours',
-        days:            'Days'
+        days:            'Days',
+        webOnlyNote:     'On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.'
     },
 
     // ========================================================================
@@ -2358,6 +2360,7 @@ export const DEFAULT_LABELS = deepFreeze({
         dragHandleAddTask:       'Drag handle, add task input',
         dragHandleQuickActions:  'Drag handle, quick actions panel',
         dragHandleStatusBubble:  'Drag handle, status bubble',
+        dragHandleKeys:          'Arrow keys move it, Shift for fine steps, Enter puts it back, Escape leaves.',
         dropToDock:              'Drop to dock'
     },
 

@@ -1301,6 +1301,13 @@ export class MiniCycleReminders {
      */
     wireOpenRemindersModalListener() {
         const openBtn = this.deps.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL);
+        // The browser build has no background scheduler: say so where the
+        // settings are, instead of letting a closed tab's silence look like a bug.
+        const webNote = this.deps.getElementById(DOM_IDS.REMINDERS_WEB_NOTE);
+        if (webNote) {
+            webNote.textContent = getLabel('reminders.webOnlyNote');
+            webNote.hidden = isNativeApp();
+        }
         if (!openBtn) {
             console.warn('⚠️ open-reminders-modal button not found');
             return;
