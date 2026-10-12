@@ -3374,6 +3374,24 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
             return -1;
         };
 
+        // 0. Main menu: keyboard open, traverse, Escape — focus returns to ☰
+        //    AND shows a ring (the close used to pass focusVisible:false).
+        await page.evaluate(() => document.querySelector('.menu-button').focus());
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(500);
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(150);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(450);
+        const menuAfter = await page.evaluate(() => {
+            const a = document.activeElement; const cs = getComputedStyle(a);
+            return { isMenuButton: a.classList.contains('menu-button'), menuOpen: document.getElementById('main-menu').classList.contains('visible'),
+                     focusVisible: a.matches(':focus-visible'), outlineWidth: cs.outlineWidth, outlineStyle: cs.outlineStyle, ring: cs.boxShadow !== 'none' };
+        });
+        record('Main menu: Escape closes it and focus returns to the ☰ button', !menuAfter.menuOpen && menuAfter.isMenuButton, JSON.stringify(menuAfter));
+        record('…and the button shows its focus ring (outline and double-ring box-shadow)',
+            menuAfter.focusVisible && menuAfter.outlineStyle !== 'none' && parseFloat(menuAfter.outlineWidth) > 0 && menuAfter.ring, JSON.stringify(menuAfter));
+
         // 1. Reminders
         await openFromMenu('open-reminders-modal');
         let presses = await escapeOut();
