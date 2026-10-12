@@ -19,7 +19,8 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { isClickOnNotification } from '../ui/modalUtils.js';
+import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import {
     isNativeApp,
@@ -1295,6 +1296,45 @@ export class MiniCycleReminders {
                         return;
                     }
 
+                    // Desktop (Electron): the shell pre-grants the permission, so the
+                    // "already granted" case below would tick the box with no consent
+                    // shown and nothing posted — and macOS only asks the user to allow
+                    // miniCycle the first time a notification is actually posted, which
+                    // was the first reminder, hours later, with nobody looking. Go
+                    // through the confirmation and post the test notification NOW, so
+                    // the system prompt appears while the user is at the screen (on
+                    // Windows the toast itself is the confirmation). Electron cannot
+                    // read the OS's answer, so the toast says where to look if nothing
+                    // appeared.
+                    if (isDesktopApp()) {
+                        const enableDesktop = () => {
+                            try {
+                                new Notification(getLabel('reminders.testNotificationTitle'), {
+                                    body: getLabel('reminders.permissionGranted'), silent: true
+                                });
+                                browserNotificationsCheckbox.checked = true;
+                                this.updateReminderSettings({ browserNotifications: true });
+                                this.deps.showNotification(getLabel('reminders.permissionGrantedDesktop'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                            } catch (testErr) {
+                                console.warn('⚠️ Test notification failed:', testErr);
+                                this.deps.showNotification(getLabel('reminders.permissionTestFailed'), 'warning', UI_TIMEOUTS.NOTIFICATION_SLOW);
+                            }
+                        };
+                        const showConfirmDesktop = this.deps.showConfirmationModal;
+                        if (showConfirmDesktop) {
+                            showConfirmDesktop({
+                                title: getLabel('reminders.browserNotifications'),
+                                message: getLabel('reminders.browserNotificationsWarning'),
+                                confirmText: getLabel('button.enable'),
+                                cancelText: getLabel('button.cancel'),
+                                callback: (confirmed) => { if (confirmed) enableDesktop(); }
+                            });
+                        } else {
+                            enableDesktop();
+                        }
+                        return;
+                    }
+
                     // Case 3: Permission already granted — skip confirmation, just enable
                     if (Notification.permission === 'granted') {
                         browserNotificationsCheckbox.checked = true;
@@ -1323,7 +1363,7 @@ export class MiniCycleReminders {
                                 if (permission === 'granted') {
                                     // Verify with a test notification
                                     try {
-                                        const test = new Notification('miniCycle', { body: getLabel('reminders.permissionGranted'), silent: true });
+                                        const test = new Notification(getLabel('reminders.testNotificationTitle'), { body: getLabel('reminders.permissionGranted'), silent: true });
                                         test.close();
                                         browserNotificationsCheckbox.checked = true;
                                         this.updateReminderSettings({ browserNotifications: true });
@@ -1398,8 +1438,9 @@ export class MiniCycleReminders {
         // Restore focus when dialog closes
         replaceStoredEventListener(remindersModal, "close", "__miniCycleRemindersModalCloseHandler", () => {
             this._stopSummaryRefresh();
-            remindersModal._previousFocus?.focus({ focusVisible: false });
+            restoreFocusAfterClose(remindersModal, { fallbacks: [this.deps.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL)] });
         });
+        installDialogTabWrap(remindersModal);
 
     }
 

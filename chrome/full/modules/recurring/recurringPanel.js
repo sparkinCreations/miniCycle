@@ -39,6 +39,7 @@ import {
     handleConfirmAddRecurring as _handleConfirmAddRecurring
 } from './recurringPanelAddTask.js';
 import { animateDialogClose } from '../utils/dialogClose.js';
+import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 import { autoClearFields, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
@@ -188,10 +189,12 @@ export class RecurringPanelManager {
                 }
             });
 
-            // Restore focus when dialog closes (including native ESC)
+            // Restore focus when dialog closes (including native ESC) — to a
+            // VISIBLE control; the opener is usually a hidden menu item by now.
             this.deps.safeAddEventListener(overlay, "close", () => {
-                overlay._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(overlay, { fallbacks: [this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL)] });
             });
+            installDialogTabWrap(overlay);
 
             // Setup change recurring settings button
             const changeSettingsBtn = this.deps.getElementById(DOM_IDS.CHANGE_RECURRING_SETTINGS);
@@ -602,7 +605,7 @@ export class RecurringPanelManager {
             const overlay = this.deps.getModal('recurringOverlay');
             if (overlay) {
                 await animateDialogClose(overlay);
-                overlay._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(overlay, { fallbacks: [this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL)] });
             }
 
             // Reset specific-dates checkbox so _resetAdvanced() on reopen doesn't hide its label while it's checked
@@ -1005,7 +1008,7 @@ export class RecurringPanelManager {
                         const overlay = this.deps.getModal('recurringOverlay');
                         if (overlay) {
                             animateDialogClose(overlay);
-                            overlay._previousFocus?.focus({ focusVisible: false });
+                            restoreFocusAfterClose(overlay, { fallbacks: [this.deps.getElementById(DOM_IDS.OPEN_RECURRING_PANEL)] });
                         }
                     }
 

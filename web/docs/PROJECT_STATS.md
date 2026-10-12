@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.609 |
+| **App Version** | 2.610 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.5 |
-| **Total Modules** | 162 |
-| **Total Tests** | 4150 |
+| **Total Modules** | 163 |
+| **Total Tests** | 4166 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1551 |
+| **JSDoc Blocks** | 1558 |
 | **Documentation Files** | 251 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -45,14 +45,14 @@
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
 | `ui/` | 45 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 12 | Themes, stats, achievements, history, reminders |
-| `utils/` | 28 | Notifications, device detection, utilities |
+| `utils/` | 29 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 2 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **162** | |
+| **Total** | **163** | |
 
 ---
 
@@ -64,8 +64,8 @@
 | `modules/boot/orchestrator.js` | ~1285 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~770 | Core state & init |
 | `modules/boot/featureBoot.js` | ~622 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1307 | UI handlers |
-| **Total** | **~4034** | |
+| `modules/boot/uiBoot.js` | ~1312 | UI handlers |
+| **Total** | **~4039** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4150 |
+| Total Tests | 4166 |
 | Test Files | 151 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

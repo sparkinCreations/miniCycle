@@ -50,7 +50,7 @@ import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // Import for local use within this module
-import { hasActiveNotifications, isClickOnNotification } from './modalUtils.js';
+import { hasActiveNotifications, isClickOnNotification, restoreFocusAfterClose } from './modalUtils.js';
 
 // Re-export so existing DI consumers that reference modalManager exports still work.
 export { hasActiveNotifications, isClickOnNotification };
@@ -277,7 +277,7 @@ export class ModalManager {
         // Close Modal
         closeFeedbackBtn._clickHandler = () => {
             feedbackModal.close();
-            feedbackModal._previousFocus?.focus({ focusVisible: false });
+            restoreFocusAfterClose(feedbackModal);
         };
         safeAdd(closeFeedbackBtn, "click", closeFeedbackBtn._clickHandler);
 
@@ -285,14 +285,14 @@ export class ModalManager {
         feedbackModal._outsideClickHandler = (event) => {
             if (event.target === feedbackModal && !isClickOnNotification(event)) {
                 feedbackModal.close();
-                feedbackModal._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(feedbackModal);
             }
         };
         safeAdd(feedbackModal, "click", feedbackModal._outsideClickHandler);
 
         // Restore focus when dialog closes (including native ESC)
         safeAdd(feedbackModal, "close", () => {
-            feedbackModal._previousFocus?.focus({ focusVisible: false });
+            restoreFocusAfterClose(feedbackModal);
         });
 
         // Handle Form Submission via AJAX (Prevent Page Refresh)
@@ -343,7 +343,7 @@ export class ModalManager {
                                 thankYouMessage.style.display = "none";
                             }
                             feedbackModal.close();
-                            feedbackModal._previousFocus?.focus({ focusVisible: false });
+                            restoreFocusAfterClose(feedbackModal);
                         }, 2000);
                     } else {
                         this.deps.showNotification("❌ " + getLabel('feedback.errorSend'), "error");
@@ -442,7 +442,7 @@ export class ModalManager {
         if (closeAboutBtn) {
             closeAboutBtn._clickHandler = () => {
                 aboutModal.close();
-                aboutModal._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(aboutModal);
             };
             safeAdd(closeAboutBtn, "click", closeAboutBtn._clickHandler);
             // Keyboard activation for role="button" span (Enter/Space)
@@ -459,14 +459,14 @@ export class ModalManager {
         aboutModal._outsideClickHandler = (event) => {
             if (event.target === aboutModal && !isClickOnNotification(event)) {
                 aboutModal.close();
-                aboutModal._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(aboutModal);
             }
         };
         safeAdd(aboutModal, "click", aboutModal._outsideClickHandler);
 
         // Restore focus when dialog closes (including native ESC)
         safeAdd(aboutModal, "close", () => {
-            aboutModal._previousFocus?.focus({ focusVisible: false });
+            restoreFocusAfterClose(aboutModal);
         });
     }
 
@@ -531,7 +531,7 @@ export class ModalManager {
             "close",
             "__miniCycleRemindersModalCloseHandler",
             () => {
-                remindersModal._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(remindersModal);
             }
         );
     }

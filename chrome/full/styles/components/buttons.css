@@ -399,7 +399,8 @@ body.hide-help-window .help-window {
     display: flex;
     justify-content: flex-start;
     position: absolute;
-    bottom: 50px;
+    /* A 3px gap above the footer's glass strip, which the buttons used to overlap. */
+    bottom: 54px;
     width: 100%;
     z-index: var(--z-content);
     pointer-events: grab;

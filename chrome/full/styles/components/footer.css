@@ -11,7 +11,7 @@
     display: block;
     position: fixed;
     bottom: 18px;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #ffffff);
     text-align: center;
     font-size: 12px;
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -23,17 +23,38 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
+/* White links on a thin, see-through navy glass strip under a heavy blur,
+   so the page shows through like the panels' glass. Blur alone does not
+   change what is under the text, so the tint is what the contrast comes
+   from: a deep navy at 43% is the most transparent setting that keeps the
+   white text at 4.6:1 over the gradient's light end (see --footer-strip-bg),
+   gated by the contrast runner. No opacity dimming on the text. */
+.footer-links {
+    list-style: none;
+    margin: 0 auto;
+    padding: var(--space-0-5, 2px) var(--space-3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    max-width: calc(100% - 2 * var(--space-4));
+    background: var(--footer-strip-bg, rgba(28, 56, 120, 0.55));
+    border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.28));
+    border-radius: var(--radius-full, 999px);
+    backdrop-filter: blur(14px) saturate(1.3);
+    -webkit-backdrop-filter: blur(14px) saturate(1.3);
+}
 #copyright {
     margin: 0;
     line-height: 1.5;
-    opacity: 0.8;
+    opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #ffffff);
 }
 
 #copyright a {
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #ffffff);
     text-decoration: none;
 }
 
@@ -52,10 +73,10 @@
 .footer-item {
     margin: 0;
     line-height: 1.5;
-    opacity: 0.8;
+    opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #ffffff);
     z-index: var(--z-content);
 }
 
@@ -65,7 +86,7 @@
 }
 
 .footer-item a {
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #ffffff);
     text-decoration: none;
 }
 
@@ -79,7 +100,7 @@
 .footer-item button {
     background: none;
     border: none;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #ffffff);
     text-decoration: none;
     cursor: pointer;
     font: inherit;
@@ -131,10 +152,6 @@
    FOOTER LINKS DISPLAY
    ============================================================================= */
 
-.footer-links {
-    display: flex;
-    justify-content: center;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+/* Display, list-style, margin and padding live in the band rule above
+   (.footer-links near the top of this file); a second declaration here used
+   to reset the margin and padding and defeat the band's centring. */

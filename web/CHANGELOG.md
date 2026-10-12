@@ -1,3 +1,17 @@
+## [2.610] - 2026-10-12
+- fix(menu): keyboard focus on the ☰ button is visible again after Escape
+- style(footer): glass strip at 4.6:1 — the most transparent navy that passes
+- style(footer): see-through glass strip with a heavier blur
+- style(undo): lift the undo/redo row 3px clear of the footer strip
+- style(footer): thinner blue glass strip instead of the navy band
+- style(footer): white links on a navy glass strip
+- style(tasks): restore the faint incomplete-checkbox ring
+- style(footer): drop the band; the footer text carries the contrast per theme
+- fix(a11y): focus returns to a visible control, dialogs wrap Tab, 3:1 checkbox ring, readable footer, one reduced-motion answer, Focus View Escape layering
+- fix(reminders): desktop asks for consent and triggers the OS prompt when enabling
+- fix(restore): a refused side-key write no longer leaves the app un-armed
+
+
 ## [2.609] - 2026-10-12
 - feat(due-dates): system notification at 9:00 on the due day
 - feat(reminders): schedule under the switch; "System notifications" in the apps

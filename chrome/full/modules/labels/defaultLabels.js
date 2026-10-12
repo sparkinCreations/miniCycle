@@ -639,6 +639,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backupReloading:         'Reloading app to apply changes...',
         backupCorruptData:       'Backup data is corrupt.',
         restoreStorageFailed:    'The restore could not be saved — storage is full. Nothing was changed. Export a backup, free some space, then try again.',
+        restorePartialSettings:  'Your routines were restored, but some display settings could not be saved — storage is nearly full. Free some space and restore the file again to bring them back.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
@@ -2056,6 +2057,10 @@ export const DEFAULT_LABELS = deepFreeze({
             app:     'Enabling system notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are allowed for miniCycle in your device settings.'
         },
         permissionGranted:           { browser: 'Browser notifications enabled', app: 'System notifications enabled' },
+        // Desktop only: Electron cannot read whether macOS/Windows let the test
+        // notification through, so the toast says where to check.
+        permissionGrantedDesktop:    'System notifications enabled. A test notification was sent — if none appeared, allow miniCycle in your system\'s notification settings.',
+        testNotificationTitle:       'miniCycle',
         permissionDenied:            { browser: 'Notification permission was denied. You can change this in browser settings.', app: 'Notification permission was denied. You can change this in your device settings.' },
         permissionBlocked:           { browser: 'Browser notifications are blocked for this site. To enable, click the lock icon in the address bar and allow notifications.', app: 'Notifications are blocked for miniCycle. Allow them in your device settings.' },
         permissionUnsupported:       { browser: 'Browser notifications are not supported on this device', app: 'System notifications are not available on this device' },

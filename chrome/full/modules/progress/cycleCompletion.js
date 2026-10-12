@@ -49,6 +49,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { areAllTasksComplete, getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -495,7 +496,7 @@ export function animateProgressBarFill() {
     return new Promise(resolve => {
         const progressBar = deps.getProgressBar?.();
         if (progressBar) {
-            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            const reducedMotion = prefersReducedMotion();
             const duration = reducedMotion ? '0ms' : '0.2s';
             progressBar.style.transition = `width ${duration} ease-out`;
             progressBar.style.setProperty('--progress', '1');
@@ -511,7 +512,7 @@ export function animateProgressBarFill() {
 export function animateProgressBarEmpty() {
     const progressBar = deps.getProgressBar?.();
     if (progressBar) {
-        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        const reducedMotion = prefersReducedMotion();
         const duration = reducedMotion ? '0ms' : '0.3s';
         progressBar.style.transition = `width ${duration} ease-in`;
         progressBar.style.setProperty('--progress', '0');
@@ -544,7 +545,7 @@ export function updateProgressBar() {
     const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0;
 
     // Add consistent animation for all progress updates
-    const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    const reducedMotion = prefersReducedMotion();
     const duration = reducedMotion ? '0ms' : '0.2s';
     // The fill is sized by WIDTH from a --progress custom property (0..1) that
     // progress-bar.css consumes — not transform: scaleX(). A scaled fill

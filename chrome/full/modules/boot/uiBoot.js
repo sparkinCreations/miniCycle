@@ -378,7 +378,9 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
         menu._previousFocus = document.activeElement;
         // Focus first focusable element in menu
         const firstFocusable = menu.querySelector('button, [tabindex="0"]');
-        if (firstFocusable) setTimeout(() => firstFocusable.focus({ focusVisible: false }), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
+        // No focusVisible:false: when the menu was opened from the keyboard the
+        // first item must show its ring; a pointer open does not show one anyway.
+        if (firstFocusable) setTimeout(() => firstFocusable.focus(), UI_TIMEOUTS.FOCUS_DELAY_SHORT);
 
         // Show menu guided tour prompt (first open only)
         getUiApi()?.showMenuTourNotification?.();
@@ -398,10 +400,10 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
           const active = document.activeElement;
           if (e.shiftKey && (active === first || !menu.contains(active))) {
             e.preventDefault();
-            last.focus({ focusVisible: false });
+            last.focus();
           } else if (!e.shiftKey && active === last) {
             e.preventDefault();
-            first.focus({ focusVisible: false });
+            first.focus();
           }
         };
         menu.addEventListener('keydown', menu._trapHandler);
@@ -670,7 +672,10 @@ function closeMainMenu(menu, menuButton, { restoreFocus = false } = {}) {
   document.body.classList.remove(DOM_CLASSES.MAIN_MENU_OPEN);
   menuButton?.setAttribute('aria-expanded', 'false');
   teardownMenuListeners(menu);
-  if (restoreFocus) menu._previousFocus?.focus({ focusVisible: false });
+  // Plain focus: this is the keyboard close (Escape), and the user has to
+  // see where they landed. The focusVisible:false hint hid the ring in every
+  // browser that honours it (WCAG 2.4.7; Oct 2026 audit).
+  if (restoreFocus) menu._previousFocus?.focus();
 }
 
 /**

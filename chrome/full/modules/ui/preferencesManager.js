@@ -30,7 +30,7 @@ import { applyHelpWindowVisibility, applyQuickActionsVisibility, loadPanelVisibi
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { normalizeHex } from '../utils/styleValidators.js';
-import { isClickOnNotification } from './modalUtils.js';
+import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from './modalUtils.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
 
 // ============================================================================
@@ -437,8 +437,9 @@ export class PreferencesManager {
 
             // Restore focus when dialog closes (including native ESC)
             safeAdd(this.modal, 'close', () => {
-                this.modal._previousFocus?.focus({ focusVisible: false });
+                restoreFocusAfterClose(this.modal, { fallbacks: [_deps.getElementById(DOM_IDS.OPEN_PREFERENCES)] });
             });
+            installDialogTabWrap(this.modal);
         }
 
         // Open themes button
@@ -951,8 +952,8 @@ export class PreferencesManager {
      */
     closeModal() {
         if (this.modal) {
+            // The dialog's own close event (above) restores focus.
             this.modal.close();
-            this.modal._previousFocus?.focus({ focusVisible: false });
         }
     }
 

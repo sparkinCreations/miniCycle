@@ -21,6 +21,7 @@
  * (`AppState`).
  */
 import { DOM_CLASSES, DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 export class OnboardingSplash {
@@ -209,7 +210,7 @@ export class OnboardingSplash {
         // Reduced motion: the cascade is disabled in CSS, so the title is
         // already sitting there fully visible. Go straight to the hold rather
         // than waiting out a watchdog on a black screen.
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        if (prefersReducedMotion()) {
             startHold();
             return this.m._firstRunSplashDone;
         }
@@ -369,7 +370,7 @@ export class OnboardingSplash {
             return done;
         }
 
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        if (prefersReducedMotion()) {
             startHold();
             return done;
         }
