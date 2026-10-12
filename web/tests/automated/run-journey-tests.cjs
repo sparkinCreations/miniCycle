@@ -3463,6 +3463,83 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
     return { name: 'keyboard focus survives dialogs', failures };
 }
 
+// ── Journey: the + button's first-time shimmer ───────────────────────────────
+//
+// modeManager.setupQuickActionsButton: a user who has not discovered the add
+// action and does not look like a returning user (no completed cycle, one
+// routine) gets the shimmer; the first + press or the first task added
+// through the input bar clears it and saves settings.addTaskDiscovered; a
+// returning user without the flag gets it set silently. Every app ships
+// this same code, so one walk covers all platforms; reduced motion (both
+// the OS query and the app's own switch) must stop the animation.
+async function journeyPlusButtonShimmer(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+    try {
+        const read = () => page.evaluate(() => {
+            const b = document.getElementById('quick-actions-btn');
+            let flag = null; try { flag = JSON.parse(localStorage.getItem('miniCycleData')).settings.addTaskDiscovered ?? null; } catch { flag = null; }
+            return { shimmer: !!b && b.classList.contains('first-time-shimmer'), anim: b ? getComputedStyle(b).animationName : null, flag };
+        });
+        const reload = async () => { await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 }); await bootApp(page); await page.waitForTimeout(1200); };
+
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        let r = await read();
+        record('fresh profile: the + button shimmers before any routine exists', r.shimmer && r.anim === 'shimmer', JSON.stringify(r));
+
+        await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 }).catch(() => {});
+        await page.evaluate(() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); if (b && !b.disabled) b.click(); });
+        await page.waitForFunction(() => document.querySelectorAll('#taskList .task').length > 0, null, { timeout: 20000 });
+        await page.waitForTimeout(1200);
+        r = await read();
+        record('new user with a sample routine: still shimmers (sample tasks do not count as returning)', r.shimmer, JSON.stringify(r));
+
+        await reload();
+        r = await read();
+        record('reload without pressing +: still shimmers', r.shimmer && r.flag === null, JSON.stringify(r));
+
+        await page.evaluate(() => { if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForTimeout(700);
+        await page.evaluate(() => document.getElementById('quick-actions-btn').click());
+        await page.waitForTimeout(900);
+        r = await read();
+        record('the first + press clears the shimmer and saves the discovery flag', !r.shimmer && r.flag === true && r.anim === 'none', JSON.stringify(r));
+
+        await reload();
+        r = await read();
+        record('after a reload it stays off', !r.shimmer && r.flag === true, JSON.stringify(r));
+
+        await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); delete p.settings.addTaskDiscovered; p.data.routine[p.appState.activeRoutineId].cycleCount = 3; localStorage.setItem('miniCycleData', JSON.stringify(p)); });
+        await reload();
+        r = await read();
+        record('a returning user without the flag (cycles completed) never shimmers and gets the flag set silently', !r.shimmer && r.flag === true, JSON.stringify(r));
+
+        // Reduced motion: the app's own switch must stop the animation while
+        // the shimmer class (the highlight) stays.
+        await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); delete p.settings.addTaskDiscovered; p.data.routine[p.appState.activeRoutineId].cycleCount = 0; p.settings.reducedMotion = true; localStorage.setItem('miniCycleData', JSON.stringify(p)); });
+        await reload();
+        r = await read();
+        const rm = await page.evaluate(() => document.documentElement.classList.contains('reduced-motion'));
+        record('fixture: shimmer back on with the app Reduced Motion setting applied', r.shimmer && rm, JSON.stringify({ ...r, reducedMotionClass: rm }));
+        record('Reduced Motion (app setting): the shimmer keeps its highlight but does not animate', r.shimmer && r.anim === 'none', JSON.stringify(r));
+
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); delete p.settings.reducedMotion; localStorage.setItem('miniCycleData', JSON.stringify(p)); });
+        await reload();
+        r = await read();
+        const rm2 = await page.evaluate(() => document.documentElement.classList.contains('reduced-motion'));
+        record('Reduced Motion (OS preference, app setting off): no animation either', r.shimmer && r.anim === 'none' && !rm2, JSON.stringify({ ...r, reducedMotionClass: rm2 }));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'plus button shimmer', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -4415,6 +4492,7 @@ const JOURNEYS = [
     { name: 'a due-day system notification fires at 9:00', fn: journeyDueDateSystemNotification },
     { name: 'a restored backup with hostile cleared-task ids renders inertly', fn: journeyRestoredHostileClearedIdsRenderInertly },
     { name: 'keyboard focus survives every dialog and layer', fn: journeyKeyboardFocusSurvivesDialogs },
+    { name: "the + button's first-time shimmer", fn: journeyPlusButtonShimmer },
 ];
 
 async function run() {
