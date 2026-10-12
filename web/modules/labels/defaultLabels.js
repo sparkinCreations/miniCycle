@@ -2061,6 +2061,13 @@ export const DEFAULT_LABELS = deepFreeze({
         webOnlySummary:  'Reminders on the web',
         webOnlyNote:     'On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.',
         bellNote:        'Reminders only cover tasks with the 🔔 button on.',
+        // Folded under Enable Due Date Notifications. Describes dueDates.js as it
+        // is: remindOverdueTasks runs once after boot (afterApp hook) and after a
+        // task is added; the due-soon banner comes from the due-date picker when
+        // the date is within three days; both are in-app banners via
+        // showNotification, never the Notification API or the native series.
+        dueDatesNoteSummary: 'How these differ from task reminders',
+        dueDatesNote:    'Due-date notices are banners inside the app: one when miniCycle opens with overdue tasks, and one when you set a due date that is within three days. They cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the schedule below and never reach the system notification center. Only task reminders do that.',
 
         // "Next reminder" summary line in the reminders modal (renderNextReminderSummary).
         // Mirrors the recurring panel's next-occurrence line, worded for reminders.

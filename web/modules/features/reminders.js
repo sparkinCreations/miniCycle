@@ -1424,6 +1424,13 @@ export class MiniCycleReminders {
         }
         const bellNote = this.deps.getElementById(DOM_IDS.REMINDERS_BELL_NOTE);
         if (bellNote) bellNote.textContent = getLabel('reminders.bellNote');
+        const dueNote = this.deps.getElementById(DOM_IDS.DUE_DATES_NOTE);
+        if (dueNote) {
+            const summary = dueNote.querySelector('summary');
+            if (summary) summary.textContent = getLabel('reminders.dueDatesNoteSummary');
+            const text = this.deps.getElementById(DOM_IDS.DUE_DATES_NOTE_TEXT);
+            if (text) text.textContent = getLabel('reminders.dueDatesNote');
+        }
         if (!openBtn) {
             console.warn('⚠️ open-reminders-modal button not found');
             return;
