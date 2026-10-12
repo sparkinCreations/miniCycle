@@ -269,12 +269,17 @@ body.hide-help-window .help-window {
     max-width: 100%;
 }
 
-/* Preamble + CTA tail both kept on single lines so when the help-window
-   wraps, the only valid break point is the gap between them — giving a
-   clean preamble-on-line-1 / CTA-on-line-2 split rather than tearing
-   either phrase mid-word. The leading " • " is inside the .cta span so
-   it drops to the second line with the rest of the CTA. */
-.help-window-body,
+/* The CTA tail is kept on a single line so when the help-window wraps,
+   the preferred break point is the gap before it — giving a clean
+   preamble-on-line-1 / CTA-on-line-2 split rather than tearing the CTA
+   mid-phrase. The leading " • " is inside the .cta span so it drops to
+   the second line with the rest of the CTA.
+   The preamble is NOT nowrap: in the 230px desktop column a long one
+   ("Add your first task to get started!" is ~228px at the base font, more
+   at a larger Font Size) has no break opportunity at all and runs past
+   the box (reported Oct 2026). Left free to wrap, it still breaks at the
+   bullet whenever it fits on its own, because the unbreakable CTA forces
+   the same split. */
 .help-window-cta {
     white-space: nowrap;
 }

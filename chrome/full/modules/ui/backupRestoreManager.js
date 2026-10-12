@@ -1048,7 +1048,23 @@ async function processRestoreData(fileContent) {
                         return;
                     }
 
-                    localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
+                    // The write can be refused (QuotaExceededError on a full
+                    // store). AppState is already neutralised above, and until
+                    // Oct 2026 the throw escaped this callback: the outer promise
+                    // never settled, nothing re-armed state, and the app sat
+                    // dead. Ordinary saves route quota errors through
+                    // AppState._handleQuotaError; restore gets its own path.
+                    // setItem is atomic, so on failure storage still holds the
+                    // previous document — reloading from it is the recovery.
+                    try {
+                        localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
+                    } catch (writeErr) {
+                        console.error('❌ Restore could not write the document:', writeErr);
+                        _deps.showNotification(getLabel('notify.restoreStorageFailed'), "error", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
+                        reloadWithLoader('Restore (write failed)');
+                        resolve();
+                        return;
+                    }
                     restoreLiteStorageSnapshot(backupData.liteStorage);
                     restoreExtraStorageKeys(backupData.extraStorageKeys);
                     _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);

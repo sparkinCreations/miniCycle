@@ -293,8 +293,12 @@
     flex-shrink: 0;
     white-space: nowrap;
     padding: 3px 10px;
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    /* A dark tint, not a light one: 20% white over the info-blue notification
+       put white 12px text at 3.6:1 (axe color-contrast, Oct 2026). 22% black
+       over the same blue clears 4.5:1 in every light theme and still reads
+       as a pill. */
+    background: rgba(0, 0, 0, 0.22);
+    border: 1px solid rgba(255, 255, 255, 0.45);
     border-radius: var(--radius-6);
     color: var(--color-white);
     font-size: var(--font-size-xs);
@@ -305,7 +309,7 @@
 }
 
 .notification .notification-action-btn:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.34);
     transform: translateY(-1px);
     opacity: 1;
 }

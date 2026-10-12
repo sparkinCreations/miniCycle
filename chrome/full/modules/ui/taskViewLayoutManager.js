@@ -21,6 +21,11 @@
  *    button in settings.
  *  - Dock/snap zones let an element drop back into normal flex flow.
  *  - Covered by tests/taskViewLayoutManager.tests.js.
+ *  - A drag's write is coalesced for UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW. So
+ *    that a task action inside that window does not land on the undo stack
+ *    BELOW the drag, the undo wrapper announces EVENTS.UNDO_SNAPSHOT_PENDING
+ *    before every user-action snapshot and this module flushes its pending
+ *    writes on it (Oct 2026) — no direct coupling, right order.
  *
  * Saved positions are validated and clamped on apply (`_applySavedPosition`):
  * they are global and stored in pixels, so a layout arranged on a wide display
@@ -222,6 +227,8 @@ export class TaskViewLayoutManager {
         this._handleObservers = new Map();
         /** @type {Map<string, MutationObserver>} Dependents watched for being shown while their anchor floats. */
         this._visibilityObservers = new Map();
+        /** @type {Map<string, object>} Keyboard move sessions by draggable key (see _nudge). */
+        this._keyboardMoves = new Map();
         /** @type {Map<string, HTMLElement>} */
         this._snapIndicators = new Map();
         this._resizeHandler = null;
@@ -300,6 +307,14 @@ export class TaskViewLayoutManager {
         document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._focusModeActivated);
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
 
+        // Another user action is about to be snapshotted: land our coalesced
+        // drag writes first so Undo order matches the order of actions.
+        this._undoSnapshotPending = () => {
+            if (this._flushing || !this._pendingWrites.size) return;
+            this._flushPositionWrites();
+        };
+        document.addEventListener(EVENTS.UNDO_SNAPSHOT_PENDING, this._undoSnapshotPending);
+
         // Escape with nothing to close (uiBoot): drop the hover reveals.
         this._escapeReset = () => {
             for (const entry of this._registry.values()) {
@@ -339,6 +354,7 @@ export class TaskViewLayoutManager {
      * desktop-only drag customizations.
      */
     _clearAllCustomPositions() {
+        this._syncHandleFocusability();
         for (const entry of this._registry.values()) {
             const el = entry.element;
             // Clear inline drag styles for anything that has them — both
@@ -420,6 +436,115 @@ export class TaskViewLayoutManager {
             left: LAYOUT_PLAY_AREA_INSETS.left,
             right: LAYOUT_PLAY_AREA_INSETS.right
         };
+    }
+
+    /**
+     * The dependents that ride along with `element` when it moves, with their
+     * natural offsets captured NOW (while still in flow). Skips independently
+     * placed dependents, DOM descendants (they move with the element anyway)
+     * and anything not rendered — a hidden Add-task row has a 0x0 rect at the
+     * origin, which read as a follower hanging the card's whole page offset
+     * above it and froze the vertical clamp (Oct 2026).
+     * @param {HTMLElement} element
+     * @param {DOMRect} elementRect
+     * @returns {Array<{entry: object, relativeOffsetLeft: number, relativeOffsetTop: number, width: number, height: number}>}
+     */
+    _captureFollowers(element, elementRect) {
+        const followingDeps = [];
+        for (const depEntry of this._getDependentsOf(element.id)) {
+            if (depEntry.customized) continue;
+            if (element.contains(depEntry.element)) continue;
+            const depRect = depEntry.element.getBoundingClientRect();
+            if (depRect.width === 0 && depRect.height === 0) continue;
+            followingDeps.push({
+                entry: depEntry,
+                relativeOffsetLeft: depRect.left - elementRect.left,
+                relativeOffsetTop: depRect.top - elementRect.top,
+                width: depRect.width,
+                height: depRect.height
+            });
+        }
+        return followingDeps;
+    }
+
+    /**
+     * Keyboard counterpart of a drag: move `element` (and its followers) by
+     * (dx, dy) within the play area, persisting like a drop. The first nudge
+     * floats the element exactly as a drag's first move does; later nudges
+     * reuse that session until the handle loses focus (_endKeyboardMove).
+     * Everything a mouse drag can do is reachable this way: arrows move,
+     * Enter docks or homes, Escape leaves the handle.
+     * @param {object} config
+     * @param {HTMLElement} element
+     * @param {number} dx
+     * @param {number} dy
+     */
+    _nudge(config, element, dx, dy) {
+        if (!this._shouldApplyLayout() || !this._wrapper || !this._placeGroup) return;
+        let session = this._keyboardMoves.get(config.key);
+        if (!session || !element.style.position) {
+            const rect = element.getBoundingClientRect();
+            const followingDeps = this._captureFollowers(element, rect);
+            if (config.dock?.self) {
+                const homeEntry = this._registry.get(config.key);
+                if (homeEntry) homeEntry._homeRect = this._measureHomeRect(element);
+            }
+            session = {
+                pointerId: null,
+                startX: rect.left, startY: rect.top, offsetX: 0, offsetY: 0,
+                elementWidth: rect.width, elementHeight: rect.height,
+                seedLeftAbs: rect.left, seedTopAbs: rect.top,
+                wrapperRect: this._wrapper.getBoundingClientRect(),
+                followingDeps,
+                playArea: this._measurePlayArea(),
+                groupInset: this._measureGroupInset(followingDeps, rect),
+                started: true
+            };
+            this._beginDrag(element, config, session);
+            // Not a pointer drag: no drag styling, no page-wide user-select.
+            element.classList.remove(DOM_CLASSES.TVL_DRAGGING);
+            element.style.zIndex = '';
+            try { this.deps.getBody().style.userSelect = ''; } catch { /* ignore */ }
+            this._keyboardMoves.set(config.key, session);
+        }
+        const current = element.getBoundingClientRect();
+        this._placeGroup(element, config, session, current.left + dx, current.top + dy);
+        // Persist as a drop would, without _endDrag (it would blur the handle).
+        this._saveElementPosition(element, config, true);
+        for (const dep of session.followingDeps) {
+            if (dep.entry?.customized) continue;
+            this._saveElementPosition(dep.entry.element, dep.entry.config, false);
+        }
+    }
+
+    /** Enter on a handle: dock / home a floated element, exactly like a drop in the snap zone. */
+    _keyboardDock(config, element) {
+        const entry = this._registry.get(config.key);
+        if (!entry?.customized || !config.dock) return false;
+        const returnedToFlow = this._snapToDock(element, config);
+        if (returnedToFlow) this._clearSavedPosition(config.key);
+        else this._saveElementPosition(element, config, false);
+        this._endKeyboardMove(config, element);
+        return true;
+    }
+
+    /** The handle lost focus or the move was finished: drop the session and its chrome. */
+    _endKeyboardMove(config, element) {
+        if (!this._keyboardMoves.has(config.key)) return;
+        this._keyboardMoves.delete(config.key);
+        if (config.dock) this._hideSnapTarget(config);
+        element.classList.remove(DOM_CLASSES.TVL_SNAP_HOVER);
+    }
+
+    /**
+     * Handles are tab stops only where the feature is live (desktop home view);
+     * elsewhere they stay out of the sequence, as they always were.
+     */
+    _syncHandleFocusability() {
+        const focusable = this._shouldApplyLayout();
+        for (const handle of this._handles.values()) {
+            handle.tabIndex = focusable ? 0 : -1;
+        }
     }
 
     /**
@@ -602,6 +727,9 @@ export class TaskViewLayoutManager {
         // dropped from the undo stack. Done here, not at queue time, so a burst
         // that collapses to nothing never enables undo for no reason.
         this.deps.enableUndoSystemOnFirstInteraction?.();
+        // Our own update re-triggers UNDO_SNAPSHOT_PENDING; the flag keeps the
+        // listener from re-entering while this flush is in flight.
+        this._flushing = true;
         try {
             this.deps.AppState.update((state) => {
                 if (!state.settings) return;
@@ -623,6 +751,8 @@ export class TaskViewLayoutManager {
         } catch (err) {
             console.warn('TaskViewLayoutManager: failed to flush position writes',
                 [...writes.keys()], err);
+        } finally {
+            this._flushing = false;
         }
     }
 
@@ -834,6 +964,7 @@ export class TaskViewLayoutManager {
     }
 
     async _loadAndApplyPositions() {
+        this._syncHandleFocusability();
         try {
             await this.deps.appInit?.waitForCore?.();
         } catch {
@@ -998,16 +1129,16 @@ export class TaskViewLayoutManager {
         const handle = document.createElement('button');
         handle.type = 'button';
         handle.className = DOM_CLASSES.TVL_HANDLE;
-        // tabindex=-1 keeps the handle out of the keyboard tab sequence in
-        // Phase 2. Keyboard repositioning is a future enhancement; for now
-        // the handle is a mouse-only affordance.
+        // A tab stop while the feature is live (desktop home view) — see
+        // _syncHandleFocusability, which flips this at every boundary. Until
+        // Oct 2026 the handle was mouse-only; now arrows move, Enter docks.
         handle.tabIndex = -1;
         const label = getLabel(config.ariaLabelKey);
         handle.setAttribute('aria-label', label);
-        // Native browser tooltip on hover — same content as aria-label so
-        // sighted users get the same "what is this?" hint that screen
-        // reader users get from the aria-label.
-        handle.title = label;
+        handle.setAttribute('aria-description', getLabel('accessibility.dragHandleKeys'));
+        // Native browser tooltip on hover — the label plus the keys, so a
+        // sighted keyboard user learns the same thing the screen reader says.
+        handle.title = `${label}. ${getLabel('accessibility.dragHandleKeys')}`;
         handle.innerHTML = getIcon('drag-handle');
         handle.dataset.tvlKey = config.key;
 
@@ -1047,32 +1178,7 @@ export class TaskViewLayoutManager {
             //   - DOM-descendants of the anchor (they move with the anchor
             //     automatically through the DOM hierarchy, no manual
             //     repositioning needed)
-            const followingDeps = [];
-            const dependents = this._getDependentsOf(element.id);
-            for (const depEntry of dependents) {
-                if (depEntry.customized) continue;
-                if (element.contains(depEntry.element)) continue;
-                const depRect = depEntry.element.getBoundingClientRect();
-                // A hidden dependent (the Add-task row is `hidden` until the user
-                // opens it) has a 0x0 rect at the viewport ORIGIN. Measured from
-                // there, its "offset" is the card's whole distance from the top of
-                // the page, and _measureGroupInset read that as a follower hanging
-                // that far above the card: the clamp's minimum rose past its
-                // maximum and the card could not move vertically at all, while
-                // left/right still worked (Oct 2026: pinned at 287px on an 800px
-                // window with the input bar closed). Nothing invisible overhangs,
-                // and nothing invisible needs pulling along — if it is shown while
-                // the card is still floating, _dockShownDependent glues it on.
-                if (depRect.width === 0 && depRect.height === 0) continue;
-                followingDeps.push({
-                    entry: depEntry,
-                    relativeOffsetLeft: depRect.left - elementRect.left,
-                    relativeOffsetTop: depRect.top - elementRect.top,
-                    // Needed to keep followers inside the play area — see groupInset.
-                    width: depRect.width,
-                    height: depRect.height
-                });
-            }
+            const followingDeps = this._captureFollowers(element, elementRect);
 
             // Self-home dock: capture where the element sits in default flex
             // flow NOW (its "home"), so the snap zone can target it even while
@@ -1141,10 +1247,15 @@ export class TaskViewLayoutManager {
             if (!dragState.started) return;
 
             ev.preventDefault();
+            this._placeGroup(element, config, dragState, ev.clientX - dragState.offsetX, ev.clientY - dragState.offsetY);
+        };
 
-            // Compute new viewport-absolute top-left for the element.
-            const desiredAbsLeft = ev.clientX - dragState.offsetX;
-            const desiredAbsTop = ev.clientY - dragState.offsetY;
+        /**
+         * Put the dragged element (and its followers) at a viewport-absolute
+         * top-left, clamped to the play area. Shared by the pointer drag and the
+         * keyboard nudge, so both obey the same bounds and snap feedback.
+         */
+        this._placeGroup = this._placeGroup || ((element, config, dragState, desiredAbsLeft, desiredAbsTop) => {
 
             // Clamp to the play-area rect so users can't drag elements
             // off-screen or under the header/mode selector/footer. The top and
@@ -1209,7 +1320,7 @@ export class TaskViewLayoutManager {
                     dep.entry.element.style.top = `${targetAbsTop - wrapperRectMove.top}px`;
                 }
             }
-        };
+        });
 
         const onPointerUp = (ev) => {
             if (!dragState || ev.pointerId !== dragState.pointerId) return;
@@ -1283,12 +1394,36 @@ export class TaskViewLayoutManager {
         // time this runs that path has already cleared dragState.
         const onLostCapture = () => { setTimeout(abortDrag, 0); };
 
+        // Keyboard: arrows nudge (Shift = 1px, otherwise LAYOUT_KEY_STEP),
+        // Enter / Space dock or home, Escape leaves the handle.
+        const onKeyDown = (ev) => {
+            if (dragState) return;   // a pointer drag owns the handle right now
+            const step = ev.shiftKey ? 1 : LIMITS.LAYOUT_KEY_STEP;
+            const moves = { ArrowLeft: [-step, 0], ArrowRight: [step, 0], ArrowUp: [0, -step], ArrowDown: [0, step] };
+            if (moves[ev.key]) {
+                ev.preventDefault();
+                this._nudge(config, element, ...moves[ev.key]);
+                return;
+            }
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                if (this._keyboardDock(config, element)) ev.preventDefault();
+                return;
+            }
+            if (ev.key === 'Escape') {
+                ev.preventDefault();
+                handle.blur();
+            }
+        };
+        const onBlur = () => this._endKeyboardMove(config, element);
+
         handle.addEventListener('pointerdown', onPointerDown);
         handle.addEventListener('pointermove', onPointerMove);
         handle.addEventListener('pointerup', onPointerUp);
         // A cancel is not a drop: keep what the user had, do not snap-test it.
         handle.addEventListener('pointercancel', abortDrag);
         handle.addEventListener('lostpointercapture', onLostCapture);
+        handle.addEventListener('keydown', onKeyDown);
+        handle.addEventListener('blur', onBlur);
 
         this._cleanupFns.set(config.key, () => {
             handle.removeEventListener('pointerdown', onPointerDown);
@@ -1296,6 +1431,8 @@ export class TaskViewLayoutManager {
             handle.removeEventListener('pointerup', onPointerUp);
             handle.removeEventListener('pointercancel', abortDrag);
             handle.removeEventListener('lostpointercapture', onLostCapture);
+            handle.removeEventListener('keydown', onKeyDown);
+            handle.removeEventListener('blur', onBlur);
         });
     }
 
@@ -1754,6 +1891,7 @@ export class TaskViewLayoutManager {
         if (this._focusModeDeactivated) {
             document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
             document.removeEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeReset);
+            document.removeEventListener(EVENTS.UNDO_SNAPSHOT_PENDING, this._undoSnapshotPending);
             this._focusModeDeactivated = null;
         }
 

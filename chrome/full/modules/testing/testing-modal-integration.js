@@ -211,7 +211,7 @@ function createTestRunnerModal() {
     // physically isolated from this app's real user data. parentOrigin tells the runner
     // where to postMessage results back to.
     const iframe = document.createElement('iframe');
-    iframe.id = 'test-runner-iframe';
+    iframe.id = DOM_IDS.TEST_RUNNER_IFRAME;
     iframe.className = 'test-runner-iframe';
     iframe.src = `${getTestOrigin()}/tests/module-test-suite.html`
         + `?autorun=true&embedded=true&parentOrigin=${encodeURIComponent(window.location.origin)}`;
@@ -289,8 +289,12 @@ function runAllAutomatedTests() {
 
     const expectedTestOrigin = getTestOrigin();
     const handleTestMessages = (event) => {
-        // Only trust messages from the test-runner origin (cross-origin hardening).
+        // Only trust messages from the test-runner origin (cross-origin hardening),
+        // and only from the frame THIS modal embedded — another page on that
+        // origin could otherwise post a result shape here.
         if (event.origin !== expectedTestOrigin) return;
+        const frame = document.getElementById(DOM_IDS.TEST_RUNNER_IFRAME);
+        if (!frame || event.source !== frame.contentWindow) return;
         if (!event.data || !event.data.type) return;
 
         // Handle progress updates

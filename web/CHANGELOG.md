@@ -1,3 +1,13 @@
+## [2.607] - 2026-10-12
+- fix(menu): Task Options entry reads +/- like the task row and the customizer, not -/+
+- fix(help-window): let a long preamble wrap instead of running past the box
+- test(journeys): make the suite honest on WebKit
+- feat(ci): axe colour-contrast gate, WebKit runs, and undo order for layout drags
+- fix(security): escape cleared-task ids in attribute context, sanitise cleared tasks on restore, bind the test runner to its frame, tighten CSP, clear the audit
+- fix: restore survives a refused write; layout handles work from the keyboard; wheel, notification and documentation findings
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.606] - 2026-10-12
 - feat(recurring): pause and resume a recurring task; removing one that is not in the list offers to put it back
 - fix(recurring): a cleared occurrence's due date does not come back on the next recurrence

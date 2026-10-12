@@ -147,7 +147,8 @@ export const TASK_TIMEOUTS = Object.freeze({
 export const UI_TIMEOUTS = Object.freeze({
     CYCLE_SWITCH_TRANSITION: 300,  // 300ms - Delay during cycle switch
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
-    WHEEL_RESET_DELAY: 15,         // 15ms - Mouse wheel reset delay
+    WHEEL_RESET_DELAY: 200,        // 200ms - horizontal wheel/trackpad accumulation resets after this much silence. Was 15ms, SHORTER than a 60Hz trackpad's ~16.7ms event gap, so each event accumulated alone and flicks rarely reached the threshold
+    WHEEL_NAVIGATE_LOCKOUT: 450,   // 450ms - after a wheel navigation, further horizontal wheel is ignored: one flick's momentum tail used to step a second panel on 120Hz input
     FOCUS_NEXT_TICK: 20,           // 20ms - Focus a control just after a dialog/modal renders
     MODAL_ENTER_ARM_DELAY: 100,    // 100ms - Arm the Enter-anywhere confirm handler after a modal opens (avoids catching the opening keypress)
     IDLE_CALLBACK_FALLBACK: 100,   // 100ms - setTimeout fallback where requestIdleCallback is unavailable
@@ -395,6 +396,7 @@ export const LIMITS = Object.freeze({
     HISTORY_EVENT_TASK_NAMES: 12,
     LAYOUT_DRAG_THRESHOLD: 5,             // px - Task View Layout: pointer travel before drag starts (forgive hover jitter)
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
+    LAYOUT_KEY_STEP: 10,                  // px - Task View Layout: how far one arrow key press moves a draggable (Shift = 1px)
     LAYOUT_MIN_VISIBLE_OVERLAP: 40,       // px - Task View Layout: how much of a restored element must stay inside #task-view, so a layout saved on a wider display can never strand it (and its drag handle) out of reach
     NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
@@ -704,7 +706,13 @@ export const EVENTS = Object.freeze({
         reveal, an open dropdown — drops it. The generic sweep (task option
         reveals, drag marks, body classes, long-press hints) runs before the
         event; this is for state only its owner can see. */
-    UI_ESCAPE_RESET: 'ui:escapeReset'
+    UI_ESCAPE_RESET: 'ui:escapeReset',
+    /** Dispatched on document by the undo wrapper just before it captures the
+        pre-write snapshot for a user action. A module holding coalesced writes
+        of its own (taskViewLayoutManager's drag positions) flushes them on this,
+        so its entry lands on the undo stack BEFORE the action that followed
+        it — the order the user performed them. */
+    UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending'
 });
 
 // ============================================================================
@@ -1203,6 +1211,8 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Modals ----
     REMINDERS_MODAL: 'reminders-modal',
+    REMINDERS_WEB_NOTE: 'reminders-web-note',
+    TEST_RUNNER_IFRAME: 'test-runner-iframe',    // the cross-origin test runner frame in the testing modal      // the "web reminders need the app open" line in the reminders modal
     CLOSE_REMINDERS_BTN: 'close-reminders-btn',
     OPEN_REMINDERS_MODAL: 'open-reminders-modal',
     FEEDBACK_MODAL: 'feedback-modal',
