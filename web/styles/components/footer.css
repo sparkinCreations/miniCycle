@@ -11,7 +11,7 @@
     display: block;
     position: fixed;
     bottom: 18px;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #111111);
     text-align: center;
     font-size: 12px;
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -23,22 +23,21 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
-/* The links sit on a translucent dark band, not bare on the gradient: white
-   at 80% opacity over the gradient's light end was ~1.7:1 (WCAG 1.4.3 wants
-   4.5:1), and no opacity of white can reach that over #74c0fc. Over the band
-   it is ~5.5:1 at the light end and higher at the dark end; the hover
-   opacity bump is gone because the text must be readable before hover. */
+/* The links sit bare on the page gradient, so the TEXT carries the contrast:
+   --footer-text is near-black in the default theme (white at 80% opacity was
+   ~1.7:1 over the gradient's light end, and no opacity of white can reach
+   4.5:1 over #74c0fc), and each theme sets its own. No opacity dimming: the
+   text must be readable before hover. Measured per theme by the contrast
+   runner's footer check. */
 .footer-links {
     list-style: none;
     margin: 0 auto;
+    padding: 0;
     display: flex;
     justify-content: center;
     align-items: center;
     width: fit-content;
     max-width: calc(100% - 2 * var(--space-4));
-    background: rgba(0, 0, 0, 0.45);
-    border-radius: var(--radius-full, 999px);
-    padding: var(--space-1) var(--space-3);
 }
 #copyright {
     margin: 0;
@@ -46,11 +45,11 @@
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #111111);
 }
 
 #copyright a {
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #111111);
     text-decoration: none;
 }
 
@@ -72,7 +71,7 @@
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #111111);
     z-index: var(--z-content);
 }
 
@@ -82,7 +81,7 @@
 }
 
 .footer-item a {
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #111111);
     text-decoration: none;
 }
 
@@ -96,7 +95,7 @@
 .footer-item button {
     background: none;
     border: none;
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--footer-text, #111111);
     text-decoration: none;
     cursor: pointer;
     font: inherit;

@@ -103,7 +103,7 @@ function measureHandChecks() {
         const bgs = stops.length ? stops : (solid ? [solid] : [WHITE]);
         let worst = Infinity;
         for (const bg of bgs) { const surface = over(band, over(bg, WHITE)); worst = Math.min(worst, ratio(over(text, surface), surface)); }
-        out.push({ name: 'footer link text vs its band over every gradient stop', ratio: worst, min: 4.5 });
+        out.push({ name: 'footer link text over every gradient stop', ratio: worst, min: 4.5 });
     }
     return out;
 }

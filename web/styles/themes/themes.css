@@ -19,6 +19,7 @@
 :root[data-theme="dark"] {
     /* Backgrounds */
     --theme-bg-gradient:            linear-gradient(135deg, #1a1a2e, #16213e);
+    --footer-text:                  #ffffff;
     --theme-bg-solid:               #2a2a2a;
     --theme-bg-surface:             rgba(45, 45, 55, 0.95);
     --theme-bg-surface-elevated:    #3a3a4a;
@@ -104,6 +105,7 @@
 :root[data-theme="dark-ocean"] {
     /* Backgrounds */
     --theme-bg-gradient:            linear-gradient(135deg, #1a3a4f, #0c1724);
+    --footer-text:                  #e0f7fa;
     --theme-bg-solid:               #0e1d2f;
     --theme-bg-surface:             rgba(16, 36, 57, 0.95);
     --theme-bg-surface-elevated:    #244d6a;
@@ -198,6 +200,7 @@
 :root[data-theme="golden-glow"] {
     /* Backgrounds */
     --theme-bg-gradient:            linear-gradient(135deg, #fff9e0, #ffe066);
+    --footer-text:                  #4a3d00;
     --theme-bg-solid:               #ffd700;
     --theme-bg-surface:             rgba(255, 251, 230, 0.95);
     --theme-bg-surface-elevated:    #fffbe6;
