@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { prefersReducedMotion } from '../utils/motionPreference.js';
 
 // Coin-flip easter egg: one haptic tick per half rotation of the spun coin
 const HAPTIC_ROTATION_STEP_DEG = 180;
@@ -883,7 +884,7 @@ export class AchievementsManager {
                             animationFrame = requestAnimationFrame(spinWithMomentum);
                         } else {
                             // Ease back to flat
-                            const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                            const reducedMotion = prefersReducedMotion();
                             const easeDuration = reducedMotion ? '0ms' : '0.3s';
                             coin.style.transition = `transform ${easeDuration} ease-out`;
                             const nearestFlat = Math.round(currentRotation / 360) * 360;
@@ -898,7 +899,7 @@ export class AchievementsManager {
                         spinWithMomentum();
                     } else {
                         // Ease back to flat
-                        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                        const reducedMotion = prefersReducedMotion();
                         const easeDuration = reducedMotion ? '0ms' : '0.3s';
                         coin.style.transition = `transform ${easeDuration} ease-out`;
                         coin.style.transform = 'rotateY(0deg)';
@@ -943,7 +944,7 @@ export class AchievementsManager {
                         e.preventDefault();
                         const direction = e.key === 'ArrowRight' ? 1 : -1;
                         currentRotation += direction * 90;
-                        const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+                        const reducedMotion = prefersReducedMotion();
                         coin.style.transition = reducedMotion ? 'none' : 'transform 0.3s ease-out';
                         coin.style.transform = `rotateY(${currentRotation}deg)`;
                         triggerHaptic(5);

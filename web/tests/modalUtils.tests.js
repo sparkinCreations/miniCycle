@@ -198,6 +198,103 @@ export async function runModalUtilsTests(resultsDiv) {
         } finally { removeContainer(); }
     });
 
+    // ── Focus return + tab wrap (WCAG 2.4.3 / 2.4.7, Oct 2026 audit) ─────────
+    resultsDiv.innerHTML += '<h4>🎯 restoreFocusAfterClose</h4>';
+    function makeDialogFixture() {
+        const host = document.createElement('div');
+        host.innerHTML = `
+            <button id="mu-opener">opener</button>
+            <button class="menu-button" id="mu-menu">menu</button>
+            <main id="app-container" tabindex="-1"></main>
+            <dialog id="mu-dialog"><button id="mu-first">first</button><input id="mu-mid"><button id="mu-last">last</button></dialog>`;
+        document.body.appendChild(host);
+        return { host, dialog: host.querySelector('#mu-dialog'), opener: host.querySelector('#mu-opener'), menu: host.querySelector('#mu-menu'), remove: () => host.remove() };
+    }
+    await test('restores focus to the remembered opener when it is still visible', () => {
+        const f = makeDialogFixture();
+        try {
+            f.dialog._previousFocus = f.opener;
+            const landed = mod.restoreFocusAfterClose(f.dialog);
+            if (landed !== f.opener || document.activeElement !== f.opener) throw new Error(`focus landed on ${document.activeElement && document.activeElement.id}`);
+        } finally { f.remove(); }
+    });
+    await test('skips a hidden opener (a closed menu item) and lands on the menu button', () => {
+        const f = makeDialogFixture();
+        try {
+            f.dialog._previousFocus = f.opener;
+            f.opener.style.display = 'none';
+            const landed = mod.restoreFocusAfterClose(f.dialog);
+            if (landed !== f.menu || document.activeElement !== f.menu) throw new Error(`expected the menu button, got ${document.activeElement && document.activeElement.id}`);
+        } finally { f.remove(); }
+    });
+    await test('a caller fallback outranks the menu button', () => {
+        const f = makeDialogFixture();
+        try {
+            f.dialog._previousFocus = null;
+            const fb = document.createElement('button'); fb.id = 'mu-fallback'; f.host.appendChild(fb);
+            const landed = mod.restoreFocusAfterClose(f.dialog, { fallbacks: [fb] });
+            if (landed !== fb) throw new Error(`expected the fallback, got ${document.activeElement && document.activeElement.id}`);
+        } finally { f.remove(); }
+    });
+    await test('never lands inside the dialog that just closed', () => {
+        const f = makeDialogFixture();
+        try {
+            f.dialog._previousFocus = f.dialog.querySelector('#mu-first');
+            f.menu.style.display = 'none';
+            const landed = mod.restoreFocusAfterClose(f.dialog);
+            if (!landed || f.dialog.contains(landed)) throw new Error(`landed inside the closed dialog: ${landed && landed.id}`);
+            if (landed.id !== 'app-container') throw new Error(`expected the main container as last resort, got ${landed.id}`);
+        } finally { f.remove(); }
+    });
+    await test('uses plain focus (no focusVisible:false), so a keyboard close shows the ring', () => {
+        const f = makeDialogFixture();
+        try {
+            let opts = null;
+            f.opener.focus = function (o) { opts = o; HTMLElement.prototype.focus.call(this, o); };
+            f.dialog._previousFocus = f.opener;
+            mod.restoreFocusAfterClose(f.dialog);
+            if (opts && opts.focusVisible === false) throw new Error('focusVisible:false was passed on a close');
+        } finally { f.remove(); }
+    });
+
+    resultsDiv.innerHTML += '<h4>↹ installDialogTabWrap</h4>';
+    const tab = (el, shift) => { const e = new KeyboardEvent('keydown', { key: 'Tab', shiftKey: shift, bubbles: true, cancelable: true }); el.dispatchEvent(e); return e.defaultPrevented; };
+    await test('Shift+Tab on the first control wraps to the last, inside the dialog', () => {
+        const f = makeDialogFixture();
+        try {
+            mod.installDialogTabWrap(f.dialog);
+            f.dialog.show();
+            f.dialog.querySelector('#mu-first').focus();
+            const prevented = tab(document.activeElement, true);
+            if (!prevented || document.activeElement.id !== 'mu-last') throw new Error(`landed on ${document.activeElement.id}, prevented=${prevented}`);
+        } finally { f.dialog.close(); f.remove(); }
+    });
+    await test('Tab on the last control wraps to the first', () => {
+        const f = makeDialogFixture();
+        try {
+            mod.installDialogTabWrap(f.dialog);
+            f.dialog.show();
+            f.dialog.querySelector('#mu-last').focus();
+            const prevented = tab(document.activeElement, false);
+            if (!prevented || document.activeElement.id !== 'mu-first') throw new Error(`landed on ${document.activeElement.id}`);
+        } finally { f.dialog.close(); f.remove(); }
+    });
+    await test('Tab in the middle is left to the browser; a closed dialog is ignored; install is idempotent', () => {
+        const f = makeDialogFixture();
+        try {
+            mod.installDialogTabWrap(f.dialog);
+            const h = f.dialog._tabWrapHandler;
+            mod.installDialogTabWrap(f.dialog);
+            if (f.dialog._tabWrapHandler !== h) throw new Error('a second install replaced the handler');
+            f.dialog.show();
+            f.dialog.querySelector('#mu-mid').focus();
+            if (tab(document.activeElement, false)) throw new Error('mid-dialog Tab must not be intercepted');
+            f.dialog.close();
+            f.dialog.querySelector('#mu-last').focus();
+            if (tab(document.activeElement, false)) throw new Error('a closed dialog must not intercept Tab');
+        } finally { f.remove(); }
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

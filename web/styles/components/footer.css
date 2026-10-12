@@ -23,10 +23,27 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
+/* The links sit on a translucent dark band, not bare on the gradient: white
+   at 80% opacity over the gradient's light end was ~1.7:1 (WCAG 1.4.3 wants
+   4.5:1), and no opacity of white can reach that over #74c0fc. Over the band
+   it is ~5.5:1 at the light end and higher at the dark end; the hover
+   opacity bump is gone because the text must be readable before hover. */
+.footer-links {
+    list-style: none;
+    margin: 0 auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: fit-content;
+    max-width: calc(100% - 2 * var(--space-4));
+    background: rgba(0, 0, 0, 0.45);
+    border-radius: var(--radius-full, 999px);
+    padding: var(--space-1) var(--space-3);
+}
 #copyright {
     margin: 0;
     line-height: 1.5;
-    opacity: 0.8;
+    opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
     color: var(--pref-panel-text, var(--color-white));
@@ -52,7 +69,7 @@
 .footer-item {
     margin: 0;
     line-height: 1.5;
-    opacity: 0.8;
+    opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
     color: var(--pref-panel-text, var(--color-white));
@@ -131,10 +148,6 @@
    FOOTER LINKS DISPLAY
    ============================================================================= */
 
-.footer-links {
-    display: flex;
-    justify-content: center;
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
+/* Display, list-style, margin and padding live in the band rule above
+   (.footer-links near the top of this file); a second declaration here used
+   to reset the margin and padding and defeat the band's centring. */

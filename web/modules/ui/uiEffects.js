@@ -10,6 +10,7 @@
 
 import { createDIModule, required, optional, createFallback } from '../core/diBase.js';
 import { DOM_SELECTORS, Z_INDEX } from '../core/constants.js';
+import { prefersReducedMotion } from '../utils/motionPreference.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -122,7 +123,7 @@ export function triggerLogoScan(duration = 400) {
         document.body.appendChild(scanLine);
 
         // Skip animation frames if user prefers reduced motion
-        if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+        if (prefersReducedMotion()) {
             scanLine.remove();
             return;
         }

@@ -18,6 +18,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -413,7 +414,7 @@ export class PullToRefresh {
         this.indicator.style.transform = 'translateY(10px)';
         this.statusText.textContent = getLabel('pullRefresh.refreshing');
         const isReducedMotion = document.body.classList.contains(DOM_CLASSES.REDUCED_MOTION) ||
-            window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+            prefersReducedMotion();
         if (!isReducedMotion) {
             this.spinnerIcon.style.animation = 'pull-refresh-spin 1s linear infinite';
         }

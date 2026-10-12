@@ -19,7 +19,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, FREQUENCY_MS, LIMITS, DEFAULT_REMINDERS, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { isClickOnNotification } from '../ui/modalUtils.js';
+import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import {
@@ -1438,8 +1438,9 @@ export class MiniCycleReminders {
         // Restore focus when dialog closes
         replaceStoredEventListener(remindersModal, "close", "__miniCycleRemindersModalCloseHandler", () => {
             this._stopSummaryRefresh();
-            remindersModal._previousFocus?.focus({ focusVisible: false });
+            restoreFocusAfterClose(remindersModal, { fallbacks: [this.deps.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL)] });
         });
+        installDialogTabWrap(remindersModal);
 
     }
 

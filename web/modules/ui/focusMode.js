@@ -554,7 +554,12 @@ export class FocusMode {
             this._modeBackdrop.addEventListener('click', this._modeBackdropHandler);
         }
 
-        // Escape priority: mode modal → menu → exit focus mode
+        // Escape priority: mode modal → menu → open task actions → exit focus mode.
+        // Registered in the CAPTURE phase so the task-action check runs before
+        // the handlers that close that layer (taskButtons' keydown, uiBoot's
+        // Escape sweep) have removed its class — otherwise this would see a
+        // clean DOM and exit the view on the same key that closed the actions
+        // (Oct 2026 audit: Escape with actions open left the view).
         this._keyHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (this._modeModalOpen) {
@@ -565,11 +570,14 @@ export class FocusMode {
                 this._closeMenu(true); // restore focus to the trigger button
                 return;
             }
+            // A task's action row is open: that layer owns this Escape. Its own
+            // handlers collapse it and return focus to the task; the view stays.
+            if (this.deps.querySelector(`.${DOM_CLASSES.TASK_OPTIONS_VISIBLE}`)) return;
             if (this._active && !this.deps.querySelector('dialog[open]')) {
                 this.deactivate();
             }
         };
-        document.addEventListener('keydown', this._keyHandler);
+        document.addEventListener('keydown', this._keyHandler, { capture: true });
     }
 
     /**
@@ -1335,7 +1343,7 @@ export class FocusMode {
             this._button.removeEventListener('click', this._clickHandler);
         }
         if (this._keyHandler) {
-            document.removeEventListener('keydown', this._keyHandler);
+            document.removeEventListener('keydown', this._keyHandler, { capture: true });
         }
         if (this._menuBtn && this._menuBtnHandler) {
             this._menuBtn.removeEventListener('click', this._menuBtnHandler);

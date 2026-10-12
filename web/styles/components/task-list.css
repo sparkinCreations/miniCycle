@@ -803,7 +803,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
     height: 22px;
     aspect-ratio: 1/1;
     border-radius: 50%;
-    border: 2px solid rgba(180, 180, 180, 0.6);
+    border: 2px solid var(--checkbox-incomplete-border, #7a7f88);
     background-color: rgba(200, 200, 200, 0.25);
     display: flex;
     align-items: center;
@@ -1220,7 +1220,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-
 /* Checkbox incomplete background - uses custom pref color when set */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
     background-color: var(--pref-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
-    border-color: var(--pref-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
+    border-color: var(--pref-checkbox-incomplete-bg, var(--checkbox-incomplete-border, #7a7f88));
 }
 
 /* Checkbox checked background - uses custom pref color when set */

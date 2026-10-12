@@ -8,6 +8,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { TOUR_DEFINITIONS } from './guidedTourDefinitions.js';
 
@@ -812,7 +813,7 @@ export class GuidedTourManager {
     _prefersReducedMotion() {
         return this.deps.getBody()?.classList?.contains(DOM_CLASSES.REDUCED_MOTION)
             || this.deps.getRootElement()?.classList?.contains(DOM_CLASSES.REDUCED_MOTION)
-            || window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches;
+            || prefersReducedMotion();
     }
 
     /**

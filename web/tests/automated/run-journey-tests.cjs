@@ -3334,6 +3334,117 @@ async function journeyRestoredHostileClearedIdsRenderInertly(browser, baseURL) {
     return { name: 'restored hostile cleared ids', failures };
 }
 
+// ── Journey: keyboard focus survives every dialog and layer (WCAG 2.4.3/2.4.7) ──
+//
+// The Oct 2026 audit's reproductions, as tests: Escape out of Reminders and
+// Recurring must land on a VISIBLE control (the opener is a hidden menu item
+// by then); Shift+Tab from Personalization's first control must stay inside;
+// in Focus View, Escape with a task's actions open closes the actions and
+// keeps the view, and only the next Escape leaves it; and the app's own
+// Reduced Motion switch must stop the progress bar's inline transition.
+async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); });
+        await page.waitForTimeout(600);
+        await page.evaluate(() => { if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForTimeout(800);
+        const active = () => page.evaluate(() => {
+            const a = document.activeElement;
+            const visible = !!a && a !== document.body && (typeof a.checkVisibility === 'function' ? a.checkVisibility({ visibilityProperty: true }) : a.getClientRects().length > 0);
+            const closed = a && a.closest && a.closest('dialog');
+            return { id: a ? (a.id || a.tagName) : null, visible, inClosedDialog: !!(closed && !closed.open), focusVisible: !!a && a.matches(':focus-visible') };
+        });
+        const openFromMenu = async (id) => {
+            await page.evaluate(() => document.querySelector('.menu-button')?.click());
+            await page.waitForTimeout(400);
+            await page.evaluate(() => document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')));
+            await page.evaluate((id) => { const el = document.getElementById(id); el.focus(); el.click(); }, id);
+            await page.waitForTimeout(900);
+        };
+        // Escape until no dialog is open (the first press may dismiss a tour
+        // notification by design); cap at three.
+        const escapeOut = async () => {
+            for (let i = 0; i < 3; i++) {
+                await page.keyboard.press('Escape');
+                await page.waitForTimeout(450);
+                if (!(await page.evaluate(() => !!document.querySelector('dialog[open]')))) return i + 1;
+            }
+            return -1;
+        };
+
+        // 1. Reminders
+        await openFromMenu('open-reminders-modal');
+        let presses = await escapeOut();
+        let a = await active();
+        record('Reminders: Escape closes the dialog', presses > 0, 'the dialog did not close within three presses');
+        record('Reminders: focus lands on a visible control, not body and not inside the closed dialog',
+            a.visible && !a.inClosedDialog, `focus: ${JSON.stringify(a)}`);
+        record('…and the focus ring shows (keyboard close)', a.focusVisible, `focus: ${JSON.stringify(a)}`);
+
+        // 2. Recurring
+        await openFromMenu('open-recurring-panel');
+        presses = await escapeOut();
+        a = await active();
+        record('Recurring: Escape closes the dialog', presses > 0, 'the dialog did not close within three presses');
+        record('Recurring: focus lands on a visible control', a.visible && !a.inClosedDialog, `focus: ${JSON.stringify(a)}`);
+
+        // 3. Personalization: reverse Tab stays inside
+        await openFromMenu('open-preferences');
+        const first = await active();
+        await page.keyboard.press('Shift+Tab');
+        await page.waitForTimeout(200);
+        const wrapped = await page.evaluate(() => { const a = document.activeElement; const d = document.querySelector('dialog[open]'); return { id: a.id || a.tagName, inside: !!(d && d.contains(a)) }; });
+        record('Personalization: Shift+Tab from the first control stays inside the dialog',
+            wrapped.inside && wrapped.id !== 'BODY', `from ${first.id} to ${JSON.stringify(wrapped)}`);
+        presses = await escapeOut();
+        a = await active();
+        record('Personalization: Escape lands on a visible control', presses > 0 && a.visible && !a.inClosedDialog, `focus: ${JSON.stringify(a)}`);
+
+        // 4. Focus View: Escape with task actions open closes the actions, not the view
+        await page.evaluate(() => document.getElementById('focus-mode-btn')?.click());
+        await page.waitForTimeout(900);
+        const inView = await page.evaluate(() => document.body.classList.contains('focus-mode'));
+        await page.evaluate(() => { const t = document.querySelector('.task-text'); t && t.focus(); });
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(500);
+        const actionsOpen = await page.evaluate(() => !!document.querySelector('.task-options-visible'));
+        record('fixture: Focus View on with a task\'s actions open', inView && actionsOpen, `inView=${inView} actionsOpen=${actionsOpen}`);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        const afterFirst = await page.evaluate(() => ({ inView: document.body.classList.contains('focus-mode'), actionsOpen: !!document.querySelector('.task-options-visible'), active: document.activeElement.className || document.activeElement.tagName }));
+        record('Focus View: the first Escape closes the actions and keeps the view',
+            afterFirst.inView && !afterFirst.actionsOpen, JSON.stringify(afterFirst));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(600);
+        const afterSecond = await page.evaluate(() => { const a = document.activeElement; return { inView: document.body.classList.contains('focus-mode'), active: a.id || a.className || a.tagName, visible: a !== document.body && a.checkVisibility({ visibilityProperty: true }) }; });
+        record('Focus View: the second Escape leaves the view and lands on a visible control (what entered it, else its button)',
+            !afterSecond.inView && afterSecond.visible, JSON.stringify(afterSecond));
+
+        // 5. Reduced Motion (the app's own switch) stops the inline progress transition
+        await openSettingsPanel(page);
+        await page.evaluate(() => { const t = document.getElementById('toggle-reduced-motion'); if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true })); } });
+        await page.waitForTimeout(400);
+        await page.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+        const hasClass = await page.evaluate(() => document.documentElement.classList.contains('reduced-motion'));
+        await page.evaluate(() => document.querySelector('#taskList .task input[type="checkbox"]:not(:checked)')?.click());
+        await page.waitForTimeout(60);
+        // Chrome serialises a 0s duration by omitting it, so read the computed duration.
+        const transition = await page.evaluate(() => { const b = document.getElementById('progressBar'); return { inline: b.style.transition, duration: getComputedStyle(b).transitionDuration }; });
+        record('fixture: the Reduced Motion setting applied its class', hasClass, 'html.reduced-motion missing');
+        record('Reduced Motion (app setting): the progress bar gets no timed transition',
+            /^0m?s(,\s*0m?s)*$/.test(transition.duration), `transition: ${JSON.stringify(transition)}`);
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'keyboard focus survives dialogs', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -4285,6 +4396,7 @@ const JOURNEYS = [
     { name: 'the help window wraps inside its column', fn: journeyHelpWindowWraps },
     { name: 'a due-day system notification fires at 9:00', fn: journeyDueDateSystemNotification },
     { name: 'a restored backup with hostile cleared-task ids renders inertly', fn: journeyRestoredHostileClearedIdsRenderInertly },
+    { name: 'keyboard focus survives every dialog and layer', fn: journeyKeyboardFocusSurvivesDialogs },
 ];
 
 async function run() {

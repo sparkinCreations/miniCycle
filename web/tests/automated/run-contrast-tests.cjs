@@ -61,6 +61,53 @@ async function boot(page, baseURL) {
     }
 }
 
+// Runs in the page. Returns [{ name, ratio, min }] for the hand-measured pairs.
+function measureHandChecks() {
+    const parse = (str) => {
+        const m = String(str).match(/rgba?\(([^)]+)\)/);
+        if (m) { const [r, g, b, a = 1] = m[1].split(',').map(Number); return { r, g, b, a: isNaN(a) ? 1 : a }; }
+        const h = String(str).trim().replace('#', '');
+        if (/^[0-9a-f]{6}$/i.test(h)) return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+        return null;
+    };
+    const over = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+    const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+    const ratio = (a, b) => { const la = lum(a), lb = lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
+    const WHITE = { r: 255, g: 255, b: 255, a: 1 };
+    const out = [];
+    const cb = document.querySelector('#taskList .task input[type="checkbox"]:not(:checked)');
+    const row = cb && cb.closest('.task');
+    if (cb && row) {
+        const rowBg = over(parse(getComputedStyle(row).backgroundColor) || WHITE, WHITE);
+        const ring = over(parse(getComputedStyle(cb).borderColor) || WHITE, rowBg);
+        const fill = over(parse(getComputedStyle(cb).backgroundColor) || WHITE, rowBg);
+        // The boundary a user has to see is the control's edge against the row:
+        // either the ring or (when the control is a solid disc, as in dark mode)
+        // its fill must stand out from the surface.
+        out.push({ name: 'checkbox edge vs task surface (ring or fill)', ratio: Math.max(ratio(ring, rowBg), ratio(fill, rowBg)), min: 3 });
+    }
+    const link = document.querySelector('#footer-container .footer-links a');
+    if (link) {
+        // Effective text colour: its colour at the product of ancestor opacities.
+        let opacity = 1;
+        for (let el = link; el && el !== document.body; el = el.parentElement) opacity *= parseFloat(getComputedStyle(el).opacity) || 1;
+        const text = parse(getComputedStyle(link).color) || WHITE; text.a *= opacity;
+        const band = parse(getComputedStyle(link.closest('.footer-links')).backgroundColor) || { r: 0, g: 0, b: 0, a: 0 };
+        // What is painted behind the footer is the body's computed background;
+        // the --theme-bg-gradient token is only a fallback (dark mode paints its
+        // own gradient and leaves the token at the light value).
+        const painted = getComputedStyle(document.body).backgroundImage;
+        const gradient = /gradient/.test(painted) ? painted : getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-gradient');
+        const stops = [...gradient.matchAll(/#[0-9a-f]{6}|rgba?\([^)]+\)/gi)].map(m => parse(m[0])).filter(Boolean);
+        const solid = parse(getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-solid'));
+        const bgs = stops.length ? stops : (solid ? [solid] : [WHITE]);
+        let worst = Infinity;
+        for (const bg of bgs) { const surface = over(band, over(bg, WHITE)); worst = Math.min(worst, ratio(over(text, surface), surface)); }
+        out.push({ name: 'footer link text vs its band over every gradient stop', ratio: worst, min: 4.5 });
+    }
+    return out;
+}
+
 async function run() {
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
     console.log(`${colors.blue}🎨 miniCycle Colour-Contrast Check (axe color-contrast)${colors.reset}`);
@@ -89,11 +136,25 @@ async function run() {
                     document.body.classList.add(...themeOn, ...viewOn);
                 }, [allThemeClasses, theme.classes, allViewClasses, view.classes]);
                 await page.waitForTimeout(350);   // theme transitions settle
+                const label = `${theme.name} / ${view.name}`.padEnd(32);
+                // Two things axe cannot judge, measured by hand (Oct 2026 audit):
+                // the incomplete checkbox's ring (non-text, 3:1 — WCAG 1.4.11)
+                // and the footer links over the page gradient (text, 4.5:1 at
+                // EVERY gradient stop — WCAG 1.4.3). Alpha is composited the
+                // way the screen does it.
+                if (view === VIEWS[0]) {
+                    const measured = await page.evaluate(measureHandChecks);
+                    for (const m of measured) {
+                        const ok = m.ratio >= m.min;
+                        const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
+                        if (ok) console.log(`   ${colors.green}✅${colors.reset} ${label.trim()} ${colors.gray}${line}${colors.reset}`);
+                        else { console.log(`   ${colors.red}❌ ${label.trim()} ${line}${colors.reset}`); serious.push(`${label.trim()}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
+                    }
+                }
                 const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
                 const violations = results.violations.flatMap(v => v.nodes.map(n => ({ impact: n.impact || v.impact, target: n.target.join(' '), summary: (n.failureSummary || '').split('\n').find(l => /contrast/.test(l)) || '' })));
                 const incomplete = results.incomplete.reduce((n, r) => n + r.nodes.length, 0);
                 needsReview += incomplete;
-                const label = `${theme.name} / ${view.name}`.padEnd(32);
                 if (violations.length === 0) {
                     console.log(`   ${colors.green}✅${colors.reset} ${label}${colors.gray} needs review: ${incomplete}${colors.reset}`);
                 } else {

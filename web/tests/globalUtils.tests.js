@@ -558,6 +558,17 @@ export async function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
+    // Reduced motion: the app's own switch (reduced-motion class) must count,
+    // not only the OS media query (WCAG 2.3.3; Oct 2026 audit).
+    await test('prefersReducedMotion is true while the app reduced-motion class is set', () => {
+        document.documentElement.classList.add('reduced-motion');
+        try {
+            if (GlobalUtils.prefersReducedMotion() !== true) throw new Error('class set but predicate false');
+        } finally {
+            document.documentElement.classList.remove('reduced-motion');
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

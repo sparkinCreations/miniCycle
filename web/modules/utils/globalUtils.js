@@ -23,6 +23,7 @@
  */
 
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
+import { prefersReducedMotion } from './motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getAutoClearForMode, getAutoClearSettings } from './cycleMode.js';
 
@@ -559,7 +560,7 @@ export class GlobalUtils {
      * @returns {boolean} True if user prefers reduced motion.
      */
     static prefersReducedMotion() {
-        return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+        return prefersReducedMotion();
     }
 
     /**

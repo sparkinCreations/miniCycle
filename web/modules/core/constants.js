@@ -1126,6 +1126,7 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Menu ----
     MENU_BUTTON: 'menu-button',
+    APP_CONTAINER: 'app-container',       // <main tabindex=-1>: the last-resort focus target after a dialog closes
     CLOSE_MAIN_MENU: 'close-main-menu',
     MAIN_MENU_TITLE: 'main-menu-mini-cycle-title',
     CURRENT_DATE: 'current-date',
