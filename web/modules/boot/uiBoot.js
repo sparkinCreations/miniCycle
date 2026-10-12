@@ -254,21 +254,11 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
  * @param {Object} appContextMod - appContext module (versioned import)
  */
 export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton, appContextMod) {
-  // Dismiss first-time shimmer on the + button when user adds a task
+  // Adding a task through the input bar is a discovery of the add action:
+  // modeManager owns the + button's shimmer and the saved flag, so tell it.
   function dismissFirstTimeShimmer() {
-    const quickActionsBtn = document.getElementById(DOM_IDS.QUICK_ACTIONS_BTN);
-    if (quickActionsBtn?.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
-      quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
-      try {
-        const AppState = appContextMod?.getStateApi?.()?.AppState;
-        AppState?.update?.(state => {
-          if (!state.settings) state.settings = {};
-          state.settings.addTaskDiscovered = true;
-        }, true);
-      } catch {
-        // State API not ready — shimmer class still removed from DOM
-      }
-    }
+    document.getElementById(DOM_IDS.QUICK_ACTIONS_BTN)?.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
+    document.dispatchEvent(new CustomEvent(EVENTS.ADD_TASK_DISCOVERED));
   }
 
   // Add Task Button (Click)

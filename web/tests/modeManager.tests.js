@@ -1071,6 +1071,114 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // === + BUTTON FIRST-TIME SHIMMER (state-driven, Oct 2026) ===
+    resultsDiv.innerHTML += '<h4>✨ First-time shimmer follows state</h4>';
+    const tick = () => new Promise(r => setTimeout(r, 5));
+    function shimmerFixture({ discovered = undefined, cycleCount = 0, routines = 1, ready = true } = {}) {
+        const host = document.createElement('div');
+        host.innerHTML = '<button id="quick-actions-btn" class="quick-actions-btn"></button><div id="quick-actions-menu"></div>';
+        document.body.appendChild(host);
+        const routine = {};
+        for (let i = 0; i < routines; i++) routine['r' + i] = { id: 'r' + i, title: 'R' + i, tasks: [{ id: 't', text: 'x', completed: false }], cycleCount, recurringTemplates: {} };
+        let state = ready ? { settings: discovered === undefined ? {} : { addTaskDiscovered: discovered }, data: { routine }, appState: { activeRoutineId: 'r0' } } : null;
+        const listeners = [];
+        const AppState = {
+            isReady: () => !!state,
+            get: () => state,
+            update: (fn) => { if (!state) return; fn(state); listeners.forEach(l => l(state, state)); },
+            subscribe: (key, cb) => listeners.push(cb),
+            unsubscribe: (key, cb) => { const i = listeners.indexOf(cb); if (i >= 0) listeners.splice(i, 1); return i >= 0; },
+            __become: (next) => { state = next; listeners.forEach(l => l(state, state)); },
+            __listeners: listeners
+        };
+        setModeManagerDependencies(createMockDeps({ AppState, appInit: { waitForCore: async () => {}, addHook: () => {} } }));
+        const manager = new ModeManager();
+        manager.setupQuickActionsButton();
+        const btn = host.querySelector('#quick-actions-btn');
+        return { manager, btn, AppState, flag: () => state?.settings?.addTaskDiscovered, remove: () => { manager.destroy(); host.remove(); } };
+    }
+
+    await test('shimmer: a new user gets it; a returning user does not and gets the flag recorded silently', async () => {
+        const fresh = shimmerFixture();
+        try {
+            if (!fresh.btn.classList.contains('first-time-shimmer')) throw new Error('new user: shimmer missing');
+        } finally { fresh.remove(); }
+        const back = shimmerFixture({ cycleCount: 3 });
+        try {
+            if (back.btn.classList.contains('first-time-shimmer')) throw new Error('returning user: shimmer present');
+            await tick();
+            if (back.flag() !== true) throw new Error('returning user: flag not recorded');
+        } finally { back.remove(); }
+    });
+
+    await test('shimmer: a + press clears it and records the flag EVEN WHEN the class is not on the button', async () => {
+        const f = shimmerFixture();
+        try {
+            f.btn.classList.remove('first-time-shimmer');   // the in-place-reset shape: button out of step
+            f.btn.click();
+            if (f.btn.classList.contains('first-time-shimmer')) throw new Error('class back after press');
+            if (f.flag() !== true) throw new Error('the press did not record the discovery (the old code only saved when the class was present)');
+        } finally { f.remove(); }
+    });
+
+    await test('shimmer: a press while state cannot take the write is recorded once state can', async () => {
+        const f = shimmerFixture({ ready: false });
+        try {
+            if (!f.btn.classList.contains('first-time-shimmer')) throw new Error('empty origin: shimmer should show');
+            f.btn.click();
+            if (f.btn.classList.contains('first-time-shimmer')) throw new Error('press should clear the class');
+            f.AppState.__become({ settings: {}, data: { routine: { r0: { id: 'r0', tasks: [], cycleCount: 0 } } }, appState: { activeRoutineId: 'r0' } });
+            await tick();
+            if (f.flag() !== true) throw new Error('the earlier press was not recorded once state became ready');
+            if (f.btn.classList.contains('first-time-shimmer')) throw new Error('shimmer must not come back after the press');
+        } finally { f.remove(); }
+    });
+
+    await test('shimmer: follows state — set the flag in state and the button loses it; clear it and it returns', async () => {
+        const f = shimmerFixture();
+        try {
+            f.AppState.update(s => { s.settings.addTaskDiscovered = true; });
+            if (f.btn.classList.contains('first-time-shimmer')) throw new Error('flag true in state but shimmer still on');
+            f.AppState.update(s => { delete s.settings.addTaskDiscovered; });
+            if (!f.btn.classList.contains('first-time-shimmer')) throw new Error('flag gone from state but shimmer not back');
+        } finally { f.remove(); }
+    });
+
+    await test('shimmer: an in-place factory reset re-arms it for the next user, even after a press this session', async () => {
+        const f = shimmerFixture();
+        try {
+            f.btn.click();
+            if (f.btn.classList.contains('first-time-shimmer')) throw new Error('press should clear it');
+            f.AppState.__become(null);                      // the reset neutralised state
+            document.dispatchEvent(new CustomEvent('firstrun:rearm'));
+            if (!f.btn.classList.contains('first-time-shimmer')) throw new Error('after the rearm the next user is new: shimmer should be back');
+            f.AppState.__become({ settings: {}, data: { routine: { r0: { id: 'r0', tasks: [], cycleCount: 0 } } }, appState: { activeRoutineId: 'r0' } });
+            await tick();
+            if (f.flag() === true) throw new Error('the pre-reset press must not be recorded for the new user');
+            if (!f.btn.classList.contains('first-time-shimmer')) throw new Error('shimmer should still show for the new user');
+        } finally { f.remove(); }
+    });
+
+    await test('shimmer: a task added through the input bar (ui:addTaskDiscovered) dismisses it', async () => {
+        const f = shimmerFixture();
+        try {
+            document.dispatchEvent(new CustomEvent('ui:addTaskDiscovered'));
+            if (f.btn.classList.contains('first-time-shimmer')) throw new Error('event did not clear the shimmer');
+            if (f.flag() !== true) throw new Error('event did not record the discovery');
+        } finally { f.remove(); }
+    });
+
+    await test('shimmer: destroy unsubscribes from state and drops the document listeners', async () => {
+        const f = shimmerFixture();
+        const before = f.AppState.__listeners.length;
+        f.manager.destroy();
+        if (f.AppState.__listeners.length !== before - 1) throw new Error('state subscription survived destroy');
+        f.btn.classList.remove('first-time-shimmer');
+        document.dispatchEvent(new CustomEvent('firstrun:rearm'));
+        if (f.btn.classList.contains('first-time-shimmer')) throw new Error('rearm listener survived destroy');
+        document.getElementById('quick-actions-btn')?.parentElement?.remove();
+    });
+
     await test('syncTasksToMode repairs missing/invalid maps per key', async () => {
         const deps = createMockDeps();
         deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = { cycle: false, todo: true };

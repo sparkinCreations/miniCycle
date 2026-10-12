@@ -3474,7 +3474,7 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
 // the OS query and the app's own switch) must stop the animation.
 async function journeyPlusButtonShimmer(browser, baseURL) {
     const { failures, record } = makeRecorder();
-    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true, saveDialog: 'save' });
     try {
         const read = () => page.evaluate(() => {
             const b = document.getElementById('quick-actions-btn');
@@ -3514,6 +3514,38 @@ async function journeyPlusButtonShimmer(browser, baseURL) {
         await reload();
         r = await read();
         record('a returning user without the flag (cycles completed) never shimmers and gets the flag set silently', !r.shimmer && r.flag === true, JSON.stringify(r));
+
+        // In-place factory reset (the probe is blocked, so the document stays):
+        // the next user is new and must get the shimmer back, and their first +
+        // press must stick — before Oct 2026 the shimmer was not re-applied, the
+        // press found no class and skipped the save, and the shimmer came back
+        // on the next launch.
+        await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); delete p.settings.addTaskDiscovered; p.data.routine[p.appState.activeRoutineId].cycleCount = 0; localStorage.setItem('miniCycleData', JSON.stringify(p)); });
+        await reload();
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForTimeout(600);
+        await page.evaluate(() => document.getElementById('quick-actions-btn').click());
+        await page.waitForTimeout(600);
+        await page.evaluate(() => document.body.click());
+        await runFactoryResetUI(page);
+        await page.waitForTimeout(5500);
+        r = await read();
+        record('in-place reset: the shimmer is back for the next user', r.shimmer, JSON.stringify(r));
+        await page.waitForFunction(() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); return b && !b.disabled; }, null, { timeout: 20000 });
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+        await page.waitForFunction(() => document.querySelectorAll('#taskList .task').length > 0, null, { timeout: 20000 });
+        await page.waitForTimeout(1500);
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForTimeout(600);
+        r = await read();
+        record('in-place reset: still shimmering after the new user picks a routine', r.shimmer, JSON.stringify(r));
+        await page.evaluate(() => document.getElementById('quick-actions-btn').click());
+        await page.waitForTimeout(900);
+        r = await read();
+        record('in-place reset: the + press clears it AND records the flag', !r.shimmer && r.flag === true, JSON.stringify(r));
+        await reload();
+        r = await read();
+        record('in-place reset: it stays off after the next launch', !r.shimmer && r.flag === true, JSON.stringify(r));
 
         // Reduced motion: the app's own switch must stop the animation while
         // the shimmer class (the highlight) stays.

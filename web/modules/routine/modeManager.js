@@ -18,6 +18,9 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../cor
 import { getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
+/** AppState subscription key for the + button's first-time shimmer. */
+const MODE_MANAGER_SHIMMER_SUBSCRIBER = 'modeManager:firstTimeShimmer';
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -903,6 +906,94 @@ export class ModeManager {
     }
 
     /**
+     * Is the + button's first-time shimmer owed, from state alone? New user =
+     * discovery not recorded, no completed cycle, a single routine (sample
+     * routine tasks do not count). While the origin is empty (choice screen)
+     * the answer is yes.
+     * @returns {{ show: boolean, returning: boolean, discovered: boolean }}
+     */
+    _firstTimeShimmerVerdict() {
+        const state = this.deps.AppState?.get?.() || null;
+        const active = getActiveRoutine(state);
+        const returning = (active?.cycleCount > 0) || Object.keys(getRoutines(state) || {}).length > 1;
+        const discovered = !!state?.settings?.addTaskDiscovered || this._shimmerDismissed === true;
+        return { show: !discovered && !returning, returning, discovered };
+    }
+
+    /**
+     * Put the + button in the state the data says it should be in, and record
+     * the discovery when the data lacks it but the user has plainly made it
+     * (a returning user, or a press earlier in this session that could not be
+     * saved at the time — e.g. on the choice screen, where update() refuses).
+     * Idempotent; safe on every state change.
+     * @returns {void}
+     */
+    _syncFirstTimeShimmer() {
+        const btn = this.deps.getElementById(DOM_IDS.QUICK_ACTIONS_BTN);
+        if (!btn) return;
+        const { show, returning, discovered } = this._firstTimeShimmerVerdict();
+        btn.classList.toggle(DOM_CLASSES.FIRST_TIME_SHIMMER, show);
+        const state = this.deps.AppState?.get?.();
+        const flagMissing = !!state && !state.settings?.addTaskDiscovered;
+        if (flagMissing && (returning || discovered) && this.deps.AppState?.isReady?.()) {
+            // Written off the current turn: this may be running inside a state
+            // change notification, and the write itself notifies.
+            setTimeout(() => this._recordAddTaskDiscovered(), 0);
+        }
+    }
+
+    /** Persist settings.addTaskDiscovered = true if state can take it now. */
+    _recordAddTaskDiscovered() {
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.()) return false;
+        if (AppState.get?.()?.settings?.addTaskDiscovered) return true;
+        AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.addTaskDiscovered = true;
+        }, true);
+        return true;
+    }
+
+    /**
+     * The user has discovered the add action (pressed +, or added a task through
+     * the input bar). Clears the shimmer now and records it; if state cannot
+     * take the write yet, _syncFirstTimeShimmer records it as soon as it can.
+     * @returns {void}
+     */
+    dismissFirstTimeShimmer() {
+        this._shimmerDismissed = true;
+        this.deps.getElementById(DOM_IDS.QUICK_ACTIONS_BTN)?.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
+        this._recordAddTaskDiscovered();
+    }
+
+    /** Listeners that keep the shimmer in step with state; wired once. */
+    _wireFirstTimeShimmer() {
+        if (this._shimmerWired) return;
+        this._shimmerWired = true;
+        this._onStateForShimmer = () => this._syncFirstTimeShimmer();
+        this.deps.AppState?.subscribe?.(MODE_MANAGER_SHIMMER_SUBSCRIBER, this._onStateForShimmer);
+        // After each app (re)init the data may be brand new (first-run pick,
+        // in-place restore or import): re-derive.
+        this.deps.appInit?.addHook?.('afterApp', this._onStateForShimmer);
+        // In-place factory reset: the origin is empty again and whoever picks
+        // next is a new user — forget this session's press.
+        this._onFirstRunRearm = () => { this._shimmerDismissed = false; this._syncFirstTimeShimmer(); };
+        document.addEventListener(EVENTS.FIRST_RUN_REARM, this._onFirstRunRearm);
+        // A task added through the input bar is a discovery too (uiBoot).
+        this._onAddTaskDiscovered = () => this.dismissFirstTimeShimmer();
+        document.addEventListener(EVENTS.ADD_TASK_DISCOVERED, this._onAddTaskDiscovered);
+    }
+
+    /** Remove the shimmer listeners (tests and teardown). */
+    destroy() {
+        if (!this._shimmerWired) return;
+        this.deps.AppState?.unsubscribe?.(MODE_MANAGER_SHIMMER_SUBSCRIBER, this._onStateForShimmer);
+        document.removeEventListener(EVENTS.FIRST_RUN_REARM, this._onFirstRunRearm);
+        document.removeEventListener(EVENTS.ADD_TASK_DISCOVERED, this._onAddTaskDiscovered);
+        this._shimmerWired = false;
+    }
+
+    /**
      * Setup quick actions button and dropdown menu
      * Handles toggle task input and create new routine actions
      */
@@ -918,28 +1009,15 @@ export class ModeManager {
             return;
         }
 
-        // Apply first-time shimmer only for genuinely new users
-        const currentState = this.deps.AppState?.get();
-        const activeCycle = getActiveRoutine(currentState);
-        // Don't count sample routine tasks — new users have tasks from the getting-started routine
-        // Only cycleCount > 0 (completed a cycle) or multiple routines indicate a returning user
-        const isReturningUser = activeCycle?.cycleCount > 0
-            || Object.keys(getRoutines(currentState) || {}).length > 1;
-
-        if (!currentState?.settings?.addTaskDiscovered && !isReturningUser) {
-            quickActionsBtn.classList.add(DOM_CLASSES.FIRST_TIME_SHIMMER);
-            // Shimmer removal handled by:
-            // 1. Click on + button (below in this function)
-            // 2. Task input submit via Add button or Enter key (uiBoot.js attachTaskInputListeners)
-        } else if (!currentState?.settings?.addTaskDiscovered && isReturningUser) {
-            // Returning user without the flag — set it silently
-            if (this.deps.AppState) {
-                this.deps.AppState.update(state => {
-                    if (!state.settings) state.settings = {};
-                    state.settings.addTaskDiscovered = true;
-                }, true);
-            }
-        }
+        // First-time shimmer: derived from STATE, re-derived on every state
+        // change, after each app (re)init, and on an in-place factory reset —
+        // not decided once here. Deciding once left the button out of step
+        // after any in-place re-init (factory reset, restore, import): the
+        // shimmer was not re-applied for the now-new user, so the next + press
+        // found no class, skipped the save, and the shimmer came back on the
+        // next launch — "I have to reopen the app for it to go away" (Oct 2026).
+        this._wireFirstTimeShimmer();
+        this._syncFirstTimeShimmer();
 
         // Single source of truth for quick-actions-menu visibility.
         // Class-only (no inline style) so CSS controls display, plus a body
@@ -956,16 +1034,9 @@ export class ModeManager {
             const isVisible = quickActionsMenu.classList.contains(DOM_CLASSES.VISIBLE);
             setQuickActionsVisible(!isVisible);
 
-            // Remove first-time shimmer on first click
-            if (quickActionsBtn.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
-                quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
-                if (this.deps.AppState) {
-                    this.deps.AppState.update(state => {
-                        if (!state.settings) state.settings = {};
-                        state.settings.addTaskDiscovered = true;
-                    }, true);
-                }
-            }
+            // The press is the discovery, whether or not the class happens to be
+            // on the button right now.
+            this.dismissFirstTimeShimmer();
         });
 
         // Close menu on outside click

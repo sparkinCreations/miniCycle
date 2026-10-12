@@ -10,7 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // The iOS / Android app runs in a WebView that does not handle downloads: an
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
@@ -313,7 +313,7 @@ function rearmFirstRunChoiceScreen() {
     // the use-case one never started. Re-armed this way, the screen came back
     // with both frozen until the app was relaunched. The inline scripts
     // listen for this and restart them.
-    document.dispatchEvent(new CustomEvent('firstrun:rearm'));
+    document.dispatchEvent(new CustomEvent(EVENTS.FIRST_RUN_REARM));
 
     return true;
 }
