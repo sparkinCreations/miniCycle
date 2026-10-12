@@ -154,6 +154,15 @@ const COPY_EXCLUDE = new Set([
 // Every legitimate one lives in scripts/ or tests/, both handled separately, so a
 // .cjs at the web/ root is scratch by definition and must not be published.
 const isRootTooling = (name) => name.endsWith('.cjs');
+// lite/ is copied wholesale, but two kinds of file in it are dev-only and must not
+// be served from minicycle.app/lite/: its test suite (lite/tests/) and its working
+// notes (lite/*.md, e.g. CLEANUP_PLAN.md). Same failure as archive/ above — an
+// allow-by-default copy publishes whatever lands in the folder.
+const LITE_DIR = path.join(WEB, 'lite');
+const isLitePrivate = (src) =>
+  src === path.join(LITE_DIR, 'tests') ||
+  src.startsWith(path.join(LITE_DIR, 'tests') + path.sep) ||
+  (path.dirname(src) === LITE_DIR && src.endsWith('.md'));
 function copyStatic() {
   for (const name of fs.readdirSync(WEB)) {
     if (COPY_EXCLUDE.has(name)) continue;
@@ -163,7 +172,14 @@ function copyStatic() {
       console.log(`⏭  not published: ${name} — a .cjs at the web/ root is tooling, not a site asset`);
       continue;
     }
-    fs.cpSync(path.join(WEB, name), path.join(DIST, name), { recursive: true });
+    fs.cpSync(path.join(WEB, name), path.join(DIST, name), {
+      recursive: true,
+      filter: (src) => {
+        if (!isLitePrivate(src)) return true;
+        console.log(`⏭  not published: ${path.relative(WEB, src)} — Lite dev-only (tests/notes)`);
+        return false;
+      },
+    });
   }
   // modules/ non-JS assets fetched at runtime (e.g. labels/loading-tips.json)
   for (const f of walk(path.join(WEB, 'modules'))) {
