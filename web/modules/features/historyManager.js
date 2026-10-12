@@ -12,7 +12,7 @@ import { getPriorityLevel, getLevelColor, hasPriority } from '../utils/priorityL
 import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
-import { isClickOnNotification } from '../ui/modalUtils.js';
+import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
@@ -337,6 +337,7 @@ export class HistoryManager {
 
         document.body.appendChild(this.modalOverlay);
         this.modalOverlay._previousFocus = document.activeElement;
+        installDialogTabWrap(this.modalOverlay);
         this.modalOverlay.showModal();
 
         // Setup event handlers
@@ -355,7 +356,7 @@ export class HistoryManager {
             const firstFocusable = this.modalOverlay.querySelector(
                 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
             );
-            if (firstFocusable) firstFocusable.focus({ focusVisible: false });
+            if (firstFocusable) firstFocusable.focus();
 
             // Trigger appropriate guided tour
             if (this.activeTab === 'cleared') {
@@ -382,8 +383,10 @@ export class HistoryManager {
     closeModal() {
         if (!this.modalOverlay) return;
 
-        // Restore focus to previously focused element
-        this.modalOverlay._previousFocus?.focus({ focusVisible: false });
+        // Focus is handed back AFTER the dialog leaves the top layer (below):
+        // while it is open the page is inert, so focusing the opener here was
+        // a silent no-op and focus fell to <body> (Oct 2026 audit).
+        const closing = this.modalOverlay;
 
         // Clean up overlay click handler
         if (this._overlayClickHandler) {
@@ -421,10 +424,12 @@ export class HistoryManager {
         this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(20px)';
 
         setTimeout(() => {
-            this.modalOverlay?.remove();
-            this.modalOverlay = null;
+            if (closing.open) closing.close();
+            closing.remove();
+            if (this.modalOverlay === closing) this.modalOverlay = null;
             this.isRecreateMode = false;
             this.selectedTasks.clear();
+            restoreFocusAfterClose(closing, { fallbacks: [document.getElementById(DOM_IDS.HISTORY_BTN)] });
         }, 200);
     }
 

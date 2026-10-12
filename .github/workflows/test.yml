@@ -172,22 +172,6 @@ jobs:
       working-directory: ./web
       run: npm run test:journey
 
-    # Needs a real browser: it drives 12 surfaces and reads the accessibility
-    # tree. It lived in the lint job at first, which states "no browser, no
-    # server" and installs no Playwright binaries — so it failed on a missing
-    # Chromium rather than on anything it was meant to check.
-    - name: Accessibility semantics (custom controls operable + named)
-      working-directory: ./web
-      run: npm run test:a11y
-
-    # Colour contrast via axe (rule color-contrast), per theme and view, on
-    # solid backgrounds. Gated: the baseline was cleaned on 2026-10-12 (the
-    # notification action pill was the only failure), so a new serious
-    # violation fails the run. Text over image backgrounds is reported only.
-    - name: Run colour-contrast gate (axe)
-      working-directory: ./web
-      run: CONTRAST_GATE=1 npm run test:contrast
-
     # miniCycle Lite (web/lite/tests/): behavior only. The visual baselines are
     # font-dependent (made on macOS) and are run locally before CSS changes.
     # Spawns its own server (port 8074) + uses the chromium installed above.
@@ -205,6 +189,43 @@ jobs:
   # WebKit is the second engine this product ships on (the iOS app is a
   # WKWebView). Non-blocking until it has been green for a few releases, then
   # drop continue-on-error. Firefox can follow the same pattern.
+  # Accessibility and contrast in their OWN job, so an unrelated failure earlier
+  # in the test matrix (a service-worker precache miss on 2026-10-12, for one)
+  # cannot skip them: the a11y result for a build must exist whether or not the
+  # rest of that build's run is green.
+  test-a11y:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./web
+      run: npm ci
+
+    - name: Install Playwright browsers
+      working-directory: ./web
+      run: npx playwright install --with-deps chromium
+
+    # Drives 12 surfaces of the real app and reads the accessibility tree.
+    - name: Accessibility semantics (custom controls operable + named)
+      working-directory: ./web
+      run: npm run test:a11y
+
+    # axe color-contrast per theme and view on solid backgrounds, plus the
+    # hand-measured checks (footer over the gradient, phone footer, checkbox
+    # edge reported-only). Gated: a new serious violation fails the run.
+    - name: Run colour-contrast gate (axe)
+      working-directory: ./web
+      run: CONTRAST_GATE=1 npm run test:contrast
+
   test-webkit:
     runs-on: ubuntu-latest
     continue-on-error: true

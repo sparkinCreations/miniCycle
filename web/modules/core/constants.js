@@ -1625,6 +1625,8 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Sample Creation Dialog ----
     SAMPLE_CREATION_INPUT: 'sample-creation-input',
+    ROUTINE_CREATION_TITLE: 'routine-creation-title',   // <h2> naming the creation dialog's name view (aria-labelledby)
+    SAMPLE_CREATION_TITLE: 'sample-creation-title',     // <h2> naming the sample-picker view; the dialog's label follows the active view
     SAMPLE_CREATION_GRID: 'sample-creation-grid'
 });
 

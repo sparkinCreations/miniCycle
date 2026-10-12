@@ -505,6 +505,13 @@ function clearTransientTaskState() {
     action.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
     if (threeDotsEnabled) {
       action.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+      // Mirror what TaskOptionsVisibilityController.setVisibility(false) does
+      // (this boot module has no controller injected): hidden buttons leave
+      // the tab order and the ⋯ trigger stops announcing expanded. Escape with
+      // focus still on the trigger took this path and left aria-expanded="true"
+      // over options that were gone (Oct 2026 audit).
+      action.querySelectorAll('button.task-btn').forEach(btn => { btn.tabIndex = -1; });
+      action.closest(DOM_SELECTORS.TASK)?.querySelector(DOM_SELECTORS.THREE_DOTS_BTN)?.setAttribute('aria-expanded', 'false');
     }
     // Clear any lingering inline styles from legacy code paths
     action.style.opacity = '';

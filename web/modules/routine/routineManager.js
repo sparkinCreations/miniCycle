@@ -17,6 +17,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS, LIMITS }
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -752,6 +753,10 @@ export class RoutineManager {
         dialog.className = 'miniCycle-prompt-dialog';
         dialog.setAttribute('role', 'dialog');
         dialog.setAttribute('aria-modal', 'true');
+        // Named by the active view's heading (set in showNameView/showSampleView);
+        // the opener is remembered so closing can hand focus back (Oct 2026 audit).
+        dialog.setAttribute('aria-labelledby', DOM_IDS.ROUTINE_CREATION_TITLE);
+        dialog._previousFocus = document.activeElement;
 
         const box = document.createElement('div');
         box.className = 'miniCycle-prompt-box';
@@ -762,13 +767,18 @@ export class RoutineManager {
         const nameView = document.createElement('div');
         nameView.className = 'creation-view active';
 
-        const titleEl = document.createElement('div');
+        // A real heading, with an id the dialog is labelled by.
+        const titleEl = document.createElement('h2');
+        titleEl.id = DOM_IDS.ROUTINE_CREATION_TITLE;
         titleEl.className = 'miniCycle-prompt-title';
         titleEl.textContent = getLabel(title);
         nameView.appendChild(titleEl);
 
-        const messageEl = document.createElement('div');
+        // The instruction IS the field's label: a <label for>, so the name
+        // survives when the placeholder disappears on typing.
+        const messageEl = document.createElement('label');
         messageEl.className = 'miniCycle-prompt-message';
+        messageEl.htmlFor = DOM_IDS.SAMPLE_CREATION_INPUT;
         messageEl.textContent = getLabel(message);
         nameView.appendChild(messageEl);
 
@@ -829,7 +839,8 @@ export class RoutineManager {
             backBtn.textContent = getLabel('button.back');
             header.appendChild(backBtn);
 
-            const sampleTitle = document.createElement('div');
+            const sampleTitle = document.createElement('h2');
+            sampleTitle.id = DOM_IDS.SAMPLE_CREATION_TITLE;
             sampleTitle.className = 'sample-list-title';
             sampleTitle.textContent = getLabel('modal.chooseSample');
             header.appendChild(sampleTitle);
@@ -873,12 +884,26 @@ export class RoutineManager {
         const showNameView = () => {
             if (sampleView) sampleView.classList.remove(DOM_CLASSES.ACTIVE);
             nameView.classList.add(DOM_CLASSES.ACTIVE);
+            dialog.setAttribute('aria-labelledby', DOM_IDS.ROUTINE_CREATION_TITLE);
             input.focus();
         };
 
         const showSampleView = () => {
             nameView.classList.remove(DOM_CLASSES.ACTIVE);
             if (sampleView) sampleView.classList.add(DOM_CLASSES.ACTIVE);
+            dialog.setAttribute('aria-labelledby', DOM_IDS.SAMPLE_CREATION_TITLE);
+            // The view changed under the keyboard user: land on Back, the first
+            // control, rather than leaving focus on <body> (Oct 2026 audit).
+            backBtn?.focus();
+        };
+
+        // Every way out hands focus to a visible control: the opener when it is
+        // still rendered (the first-run choice screen is gone by then, the quick
+        // action may be too), else the shared fallbacks.
+        const closeDialog = () => {
+            dialog.close();
+            dialog.remove();
+            restoreFocusAfterClose(dialog);
         };
 
         // =====================================================================
@@ -906,8 +931,7 @@ export class RoutineManager {
             }
 
             cleanup();
-            dialog.close();
-            dialog.remove();
+            closeDialog();
             onCreateBlank(value);
         };
 
@@ -919,8 +943,7 @@ export class RoutineManager {
 
         const handleCancel = () => {
             cleanup();
-            dialog.close();
-            dialog.remove();
+            closeDialog();
 
             if (isOnboarding) {
                 this.preloadGettingStartedCycle();
@@ -987,6 +1010,7 @@ export class RoutineManager {
 
         // Show dialog. Open straight to the sample picker when requested (the
         // first-run "Load a Sample" choice) and samples exist; else the name view.
+        installDialogTabWrap(dialog);
         dialog.showModal();
         if (startInSampleView && samples.length > 0) {
             showSampleView();

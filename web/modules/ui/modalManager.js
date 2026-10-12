@@ -555,11 +555,21 @@ export class ModalManager {
                     // preferences dialog while a tour prompt notification is showing.
                     if (hasNotification && hasOpenModal) {
                         e.preventDefault(); // Block native <dialog> ESC close
+                        // Keyboard focus may be ON the notification (a tour prompt
+                        // sits in the top layer above the dialog, so Shift+Tab
+                        // reaches its Close). Dismissing it then dropped focus on
+                        // <body> (Oct 2026). Put it back inside the dialog.
+                        const focusWasInNotification = [...notifications].some(n => n.contains(document.activeElement));
                         notifications.forEach(notification => {
                             if (notification.querySelector(DOM_SELECTORS.CLOSE_BTN)) {
                                 notification.querySelector(DOM_SELECTORS.CLOSE_BTN).click();
                             }
                         });
+                        if (focusWasInNotification || document.activeElement === document.body) {
+                            const dialog = document.querySelector('dialog[open]');
+                            const first = dialog?.querySelector('button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])');
+                            first?.focus();
+                        }
                         return;
                     }
 

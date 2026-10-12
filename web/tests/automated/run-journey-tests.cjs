@@ -3572,6 +3572,128 @@ async function journeyPlusButtonShimmer(browser, baseURL) {
     return { name: 'plus button shimmer', failures };
 }
 
+// ── Journey: the re-audit's four dialogs and the ⋯ trigger (WCAG 1.3.1/2.4.3/4.1.2) ──
+//
+// 12 Oct 2026 re-audit of 2.612: the routine creation dialog had no accessible
+// name, its field only a placeholder, its sample view left focus on <body>
+// and closing did too; Settings and History let Shift+Tab leave and lost focus
+// on close; Escape on a ⋯ trigger hid the actions but left aria-expanded true.
+async function journeyReauditDialogs(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+    try {
+        const active = () => page.evaluate(() => {
+            const a = document.activeElement;
+            const visible = !!a && a !== document.body && (typeof a.checkVisibility === 'function' ? a.checkVisibility({ visibilityProperty: true }) : a.getClientRects().length > 0);
+            return { id: a ? (a.id || a.className || a.tagName) : null, visible, body: a === document.body };
+        });
+        const openDialog = () => page.evaluate(() => { const d = document.querySelector('dialog[open]'); if (!d) return null; const lb = d.getAttribute('aria-labelledby'); const t = lb && document.getElementById(lb); return { role: d.getAttribute('role'), labelledby: lb, name: t ? t.textContent.trim() : null, titleVisible: !!t && t.checkVisibility() }; });
+
+        // 1a. First-run "Load a Sample": the dialog opens straight into the sample view.
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForFunction(() => { const b = document.querySelector('.first-run-btn[data-choice="sample"]'); return b && !b.disabled; }, null, { timeout: 20000 });
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="sample"]').click());
+        await page.waitForSelector('dialog[open] .sample-list-title', { timeout: 15000 });
+        await page.waitForTimeout(400);
+        let d = await openDialog(); let a = await active();
+        record('first-run sample picker: the dialog is named by its visible "Choose a Sample" heading',
+            !!d && d.labelledby && /choose a sample/i.test(d.name || '') && d.titleVisible, JSON.stringify(d));
+        record('first-run sample picker: focus lands on Back, not <body>', a.visible && !a.body && /sample-back-btn/.test(a.id), JSON.stringify(a));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        a = await active();
+        record('first-run sample picker: Escape hands focus to a visible control', a.visible && !a.body, JSON.stringify(a));
+
+        // Cancelling the onboarding picker preloads the getting-started routine
+        // itself; if a choice screen is still up instead, pick "learn".
+        await page.waitForFunction(() => document.querySelectorAll('#taskList .task').length > 0
+            || (() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); return b && !b.disabled && b.checkVisibility(); })(), null, { timeout: 20000 });
+        await page.evaluate(() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); if (b && !b.disabled && b.checkVisibility() && document.querySelectorAll('#taskList .task').length === 0) b.click(); });
+        await page.waitForFunction(() => document.querySelectorAll('#taskList .task').length > 0, null, { timeout: 20000 });
+        await page.waitForTimeout(1200);
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForTimeout(700);
+
+        // 1b. Quick Actions → Create New Routine: name view.
+        await page.evaluate(() => { document.getElementById('quick-actions-btn').click(); });
+        await page.waitForTimeout(400);
+        await page.evaluate(() => { const b = document.getElementById('create-routine-btn'); b.focus(); b.click(); });
+        await page.waitForSelector('dialog[open] #sample-creation-input', { timeout: 15000 });
+        await page.waitForTimeout(400);
+        d = await openDialog();
+        const field = await page.evaluate(() => { const i = document.getElementById('sample-creation-input'); const l = document.querySelector(`label[for="${i.id}"]`); return { labelled: !!l, labelText: l && l.textContent.trim(), focused: document.activeElement === i }; });
+        record('create routine: the dialog is named by its visible heading', !!d && /routine/i.test(d.name || '') && d.titleVisible, JSON.stringify(d));
+        record('create routine: the name field has a real label, not just a placeholder', field.labelled && !!field.labelText && field.focused, JSON.stringify(field));
+        await page.keyboard.press('Shift+Tab');
+        await page.waitForTimeout(150);
+        const wrapped = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { inside: !!dlg && dlg.contains(document.activeElement), id: document.activeElement.className || document.activeElement.tagName }; });
+        record('create routine: Shift+Tab from the field stays inside the dialog', wrapped.inside, JSON.stringify(wrapped));
+        // A tour prompt may sit above the dialog: the first Escape dismisses it
+        // (by design) and must leave focus INSIDE the dialog, not on <body>.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(450);
+        const afterFirstEsc = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { open: !!dlg, inside: !!dlg && dlg.contains(document.activeElement), body: document.activeElement === document.body }; });
+        record('create routine: an Escape that only dismisses a prompt keeps focus inside the dialog', !afterFirstEsc.open || (afterFirstEsc.inside && !afterFirstEsc.body), JSON.stringify(afterFirstEsc));
+        for (let i = 0; i < 2 && await page.evaluate(() => !!document.querySelector('dialog[open]')); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(450); }
+        a = await active();
+        record('create routine: Escape hands focus to a visible control', a.visible && !a.body, JSON.stringify(a));
+
+        // 2. Settings
+        await page.evaluate(() => document.querySelector('.menu-button')?.click());
+        await page.waitForTimeout(400);
+        await page.evaluate(() => { document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')); const el = document.getElementById('open-settings'); el.focus(); el.click(); });
+        await page.waitForTimeout(1200);
+        const sFirst = await active();
+        await page.keyboard.press('Shift+Tab');
+        await page.waitForTimeout(150);
+        const sWrap = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { inside: !!dlg && dlg.contains(document.activeElement), open: !!dlg, id: document.activeElement.id || document.activeElement.tagName }; });
+        record('Settings: Shift+Tab from the first control stays inside', sWrap.open && sWrap.inside, `from ${sFirst.id} to ${JSON.stringify(sWrap)}`);
+        for (let i = 0; i < 3 && await page.evaluate(() => !!document.querySelector('dialog[open]')); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(450); }
+        a = await active();
+        record('Settings: Escape hands focus to a visible control', a.visible && !a.body, JSON.stringify(a));
+
+        // 3. History
+        await page.evaluate(() => document.getElementById('history-btn')?.click());
+        await page.waitForTimeout(1200);
+        const hFirst = await active();
+        await page.keyboard.press('Shift+Tab');
+        await page.waitForTimeout(150);
+        const hWrap = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { inside: !!dlg && dlg.contains(document.activeElement), open: !!dlg, id: document.activeElement.className || document.activeElement.tagName }; });
+        record('History: Shift+Tab from the first control stays inside', hWrap.open && hWrap.inside, `from ${hFirst.id} to ${JSON.stringify(hWrap)}`);
+        for (let i = 0; i < 3 && await page.evaluate(() => !!document.querySelector('dialog[open]')); i++) { await page.keyboard.press('Escape'); await page.waitForTimeout(450); }
+        await page.waitForTimeout(400); // the close animation hands focus back after it ends
+        a = await active();
+        record('History: after the close animation, focus is on a visible control', a.visible && !a.body, JSON.stringify(a));
+
+        // 4. ⋯ trigger: Escape with focus still on the trigger
+        await openSettingsPanel(page);
+        await page.evaluate(() => { const t = document.getElementById('toggle-three-dots'); if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true })); } });
+        await page.waitForTimeout(500);
+        await page.evaluate(() => document.querySelectorAll('dialog[open]').forEach(dlg => dlg.close()));
+        await page.waitForTimeout(400);
+        const hasDots = await page.evaluate(() => !!document.querySelector('#taskList .task .three-dots-btn'));
+        record('fixture: three-dot triggers rendered', hasDots, 'no .three-dots-btn after enabling the setting');
+        await page.evaluate(() => document.querySelector('#taskList .task .three-dots-btn').focus());
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(400);
+        const opened = await page.evaluate(() => { const b = document.activeElement; return { expanded: b.getAttribute('aria-expanded'), visible: !!b.closest('.task')?.querySelector('.task-options.task-options-visible') }; });
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(400);
+        const closed = await page.evaluate(() => { const b = document.querySelector('#taskList .task .three-dots-btn'); const row = b.closest('.task'); return { expanded: b.getAttribute('aria-expanded'), visible: !!row.querySelector('.task-options.task-options-visible'), stops: [...row.querySelectorAll('.task-options button.task-btn')].filter(x => x.tabIndex !== -1).length }; });
+        record('fixture: Enter on the ⋯ trigger opened the actions', opened.expanded === 'true' && opened.visible, JSON.stringify(opened));
+        record('⋯ trigger: Escape hides the actions AND announces collapsed, with the hidden buttons out of the tab order',
+            closed.expanded === 'false' && !closed.visible && closed.stops === 0, JSON.stringify(closed));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 're-audit dialogs', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -4525,6 +4647,7 @@ const JOURNEYS = [
     { name: 'a restored backup with hostile cleared-task ids renders inertly', fn: journeyRestoredHostileClearedIdsRenderInertly },
     { name: 'keyboard focus survives every dialog and layer', fn: journeyKeyboardFocusSurvivesDialogs },
     { name: "the + button's first-time shimmer", fn: journeyPlusButtonShimmer },
+    { name: 'the re-audit dialogs name themselves, keep Tab, and hand focus back', fn: journeyReauditDialogs },
 ];
 
 async function run() {
