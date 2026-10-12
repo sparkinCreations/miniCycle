@@ -501,7 +501,12 @@ export class DragDropManager {
 
             // 🖱️ **Mouse-based Drag for Desktop (also fires on iOS native DnD)**
             taskElement._dragstartHandler = (event) => {
-                if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
+                // Not from the ⋯ options: cancel the native drag too, or the
+                // browser lifts a ghost of the row that nothing is tracking.
+                if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) {
+                    event.preventDefault();
+                    return;
+                }
 
                 // Prevent dragging completed tasks in the completed dropdown
                 if (taskElement.closest(`#${DOM_IDS.COMPLETED_TASK_LIST}`)) {
@@ -644,8 +649,6 @@ export class DragDropManager {
         this.didDragReorderOccur = true;
 
         // Batch reads: collect all DOM reads before any writes
-        const isLastTask = !target.nextElementSibling;
-        const isFirstTask = !target.previousElementSibling;
         const isNextSiblingDragged = target.nextSibling === this.draggedTask;
         const isPrevSiblingDragged = target.previousSibling === this.draggedTask;
 
@@ -655,22 +658,15 @@ export class DragDropManager {
             this._currentDropTarget = null;
         }
 
+        // The pointer offset decides on EVERY row, the end rows included. Two
+        // special cases used to force "first row → very top, last row → very
+        // bottom" regardless of where the pointer was, so a drop aimed at the
+        // top of the last row still landed below it and one aimed at the bottom
+        // of the first row still landed above it (measured Oct 2026). The
+        // general rule already covers both ends: below a last row,
+        // `target.nextSibling` is null and insertBefore(…, null) appends.
         // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
         try {
-            if (isLastTask && !isNextSiblingDragged) {
-                parent.appendChild(this.draggedTask);
-                this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
-                this._currentDropTarget = this.draggedTask;
-                return;
-            }
-
-            if (isFirstTask && !isPrevSiblingDragged) {
-                parent.insertBefore(this.draggedTask, parent.firstChild);
-                this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
-                this._currentDropTarget = this.draggedTask;
-                return;
-            }
-
             if (offset > bounding.height / 3) {
                 if (!isNextSiblingDragged) {
                     parent.insertBefore(this.draggedTask, target.nextSibling);
@@ -881,10 +877,6 @@ export class DragDropManager {
 
         const AppState = this._getAppState();
         if (AppState?.isReady?.()) {
-            // Capture undo snapshot BEFORE saving new order
-            const currentState = AppState.get();
-            if (currentState) this.deps.captureStateSnapshot?.(currentState);
-
             // Read task order from DOM
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             const taskElements = taskList?.querySelectorAll(DOM_SELECTORS.TASK);
@@ -894,8 +886,18 @@ export class DragDropManager {
                 if (taskId) newTaskOrder.push(taskId);
             });
 
+            // A drag that wandered over a neighbour and came back has moved
+            // nothing: no snapshot, no write, no undo step for it.
+            const currentState = AppState.get();
+            const currentTasks = currentState ? getRoutine(currentState, getActiveRoutineId(currentState))?.tasks : null;
+            const unchanged = Array.isArray(currentTasks) &&
+                mergeVisibleOrder(currentTasks, newTaskOrder).every((t, i) => t === currentTasks[i]);
+
+            // Capture undo snapshot BEFORE saving new order
+            if (currentState && !unchanged) this.deps.captureStateSnapshot?.(currentState);
+
             // Update AppState with new order
-            AppState.update(state => {
+            if (!unchanged) AppState.update(state => {
                 const activeCycleId = getActiveRoutineId(state);
                 if (activeCycleId && getRoutine(state, activeCycleId)) {
                     const tasks = getRoutine(state, activeCycleId).tasks;

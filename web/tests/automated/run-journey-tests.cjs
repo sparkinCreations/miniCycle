@@ -1037,6 +1037,30 @@ async function journeyDragReorder(browser, baseURL) {
         record('quick release: no drag classes left behind', r.dragging === 0 && r.dropTarget === 0,
             `.dragging ${r.dragging}, .drop-target ${r.dropTarget}`);
 
+        // 1b. The end rows obey the pointer like every other row: the top of the
+        //     last row means "above it", the bottom of the first row "below it".
+        //     Two special cases used to force very-top / very-bottom instead.
+        r = await drag(0, 5, 0.2, 200, 'drop');
+        o = await names();
+        record('aiming at the top of the last row lands ABOVE it',
+            o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) - 1,
+            `moved at ${o.dom.indexOf(r.movedId)}, last row at ${o.dom.indexOf(r.targetId)}`);
+        r = await drag(5, 0, 0.8, 200, 'drop');
+        o = await names();
+        record('aiming at the bottom of the first row lands BELOW it',
+            o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) + 1,
+            `moved at ${o.dom.indexOf(r.movedId)}, first row at ${o.dom.indexOf(r.targetId)}`);
+        // A drag that starts on the ⋯ options must cancel the native drag too.
+        const ghost = await page.evaluate(() => {
+            const opt = document.querySelector('#taskList .task .task-options');
+            if (!opt) return null;
+            const ev = new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() });
+            opt.dispatchEvent(ev);
+            return ev.defaultPrevented;
+        });
+        record('a dragstart on the ⋯ options is cancelled (no untracked ghost drag)', ghost === true,
+            ghost === null ? 'no .task-options element found' : 'dragstart was not prevented');
+
         // 2. Escape (dragend with no drop) after the DOM has already moved: the list
         //    goes back to what state says, with no drag styling left on the row.
         const beforeEsc = await names();
