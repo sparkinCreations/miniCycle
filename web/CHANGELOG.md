@@ -1,3 +1,7 @@
+## [2.611] - 2026-10-12
+- fix(footer): the copyright line sits inside the glass strip on phones
+
+
 ## [2.610] - 2026-10-12
 - fix(menu): keyboard focus on the ☰ button is visible again after Escape
 - style(footer): glass strip at 4.6:1 — the most transparent navy that passes
