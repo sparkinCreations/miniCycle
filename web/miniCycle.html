@@ -1529,27 +1529,6 @@
                     Enable Reminders
                 </label>
                 <p id="reminders-next-summary" class="reminders-next-summary" aria-live="polite" hidden></p>
-                <div>
-                    <label class="settings-option">
-                        <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
-                        Enable Due Date Notifications
-                    </label>
-                    <details id="due-dates-note" class="settings-warning-details">
-                        <summary class="settings-warning-summary">How these differ from task reminders</summary>
-                        <p id="due-dates-note-text" class="settings-warning">Due-date notices are banners inside the app: one when miniCycle opens with overdue tasks, and one when you set a due date that is within three days. They cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the schedule below and never reach the system notification center. Only task reminders do that.</p>
-                    </details>
-                </div>
-                <div>
-                    <label class="settings-option">
-                        <input type="checkbox" id="browserNotifications" name="browserNotifications" />
-                        Browser Notifications
-                    </label>
-                    <details id="privacyNoticeDetails" class="settings-warning-details">
-                        <summary class="settings-warning-summary">Privacy Notice</summary>
-                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
-                    </details>
-                </div>
-        
                 <div id="frequency-section">
                     <label>
                         <input type="checkbox" id="indefiniteCheckbox" name="indefiniteCheckbox" />
@@ -1572,6 +1551,27 @@
                             <option value="days">Days</option>
                         </select>
                     </div>
+                </div>
+        
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
+                        Enable Due Date Notifications
+                    </label>
+                    <details id="due-dates-note" class="settings-warning-details">
+                        <summary class="settings-warning-summary">How these differ from task reminders</summary>
+                        <p id="due-dates-note-text" class="settings-warning">Due-date notices are banners inside the app: one when miniCycle opens with overdue tasks, and one when you set a due date that is within three days. They cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the schedule below and never reach the system notification center. Only task reminders do that.</p>
+                    </details>
+                </div>
+                <div>
+                    <label class="settings-option">
+                        <input type="checkbox" id="browserNotifications" name="browserNotifications" />
+                        Browser Notifications
+                    </label>
+                    <details id="privacyNoticeDetails" class="settings-warning-details">
+                        <summary class="settings-warning-summary">Privacy Notice</summary>
+                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
+                    </details>
                 </div>
         
                 <details id="reminders-web-note" class="settings-warning-details reminders-web-note" hidden>

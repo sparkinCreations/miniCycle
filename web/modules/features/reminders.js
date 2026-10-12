@@ -1323,7 +1323,7 @@ export class MiniCycleReminders {
                                 if (permission === 'granted') {
                                     // Verify with a test notification
                                     try {
-                                        const test = new Notification('miniCycle', { body: 'Browser notifications enabled!', silent: true });
+                                        const test = new Notification('miniCycle', { body: getLabel('reminders.permissionGranted'), silent: true });
                                         test.close();
                                         browserNotificationsCheckbox.checked = true;
                                         this.updateReminderSettings({ browserNotifications: true });
@@ -1424,6 +1424,11 @@ export class MiniCycleReminders {
         }
         const bellNote = this.deps.getElementById(DOM_IDS.REMINDERS_BELL_NOTE);
         if (bellNote) bellNote.textContent = getLabel('reminders.bellNote');
+        // "Browser" vs "System" notifications is a platform variant of the label;
+        // the HTML carries the web wording as its fallback.
+        const browserLabel = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS)?.closest('label');
+        const labelText = browserLabel && [...browserLabel.childNodes].reverse().find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
+        if (labelText) labelText.textContent = ` ${getLabel('reminders.browserNotifications')}\n`;
         const dueNote = this.deps.getElementById(DOM_IDS.DUE_DATES_NOTE);
         if (dueNote) {
             const summary = dueNote.querySelector('summary');

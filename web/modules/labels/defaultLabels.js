@@ -2043,14 +2043,20 @@ export const DEFAULT_LABELS = deepFreeze({
         title:           'Reminders & Notifications',
         enable:          'Enable Reminders',
         enableDueDate:   'Enable Due Date Notifications',
-        browserNotifications:        'Browser Notifications',
-        browserNotificationsWarning: 'Enabling browser notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are enabled for your browser in your OS settings.',
-        permissionGranted:           'Browser notifications enabled',
-        permissionDenied:            'Notification permission was denied. You can change this in browser settings.',
-        permissionBlocked:           'Browser notifications are blocked for this site. To enable, click the lock icon in the address bar and allow notifications.',
-        permissionUnsupported:       'Browser notifications are not supported on this device',
-        permissionTestFailed:        'Permission was granted but the test notification failed. Your browser may be blocking notifications.',
-        browserNotificationsDisabled: 'Browser notifications disabled',
+        // { browser, app } platform variants: the iOS, Android and desktop apps
+        // post real system notifications, so "browser" is wrong there; on the
+        // web the browser is what asks for permission, so it is the right word.
+        browserNotifications:        { browser: 'Browser Notifications', app: 'System Notifications' },
+        browserNotificationsWarning: {
+            browser: 'Enabling browser notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are enabled for your browser in your OS settings.',
+            app:     'Enabling system notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are allowed for miniCycle in your device settings.'
+        },
+        permissionGranted:           { browser: 'Browser notifications enabled', app: 'System notifications enabled' },
+        permissionDenied:            { browser: 'Notification permission was denied. You can change this in browser settings.', app: 'Notification permission was denied. You can change this in your device settings.' },
+        permissionBlocked:           { browser: 'Browser notifications are blocked for this site. To enable, click the lock icon in the address bar and allow notifications.', app: 'Notifications are blocked for miniCycle. Allow them in your device settings.' },
+        permissionUnsupported:       { browser: 'Browser notifications are not supported on this device', app: 'System notifications are not available on this device' },
+        permissionTestFailed:        { browser: 'Permission was granted but the test notification failed. Your browser may be blocking notifications.', app: 'Permission was granted but the test notification failed. Your system may be blocking notifications for miniCycle.' },
+        browserNotificationsDisabled: { browser: 'Browser notifications disabled', app: 'System notifications disabled' },
         configureTooltip:{ touch: 'Tap to configure reminder settings', pointer: 'Click to configure reminder settings' },
         indefinitely:    'Remind Indefinitely?',
         count:           'Number of Times:',

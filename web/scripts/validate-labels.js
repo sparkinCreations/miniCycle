@@ -80,12 +80,14 @@ function resolveKey(key) {
         }
         node = node[part];
     }
-    // Three valid leaf shapes: plain string, {one, other} plural object, and
+    // Four valid leaf shapes: plain string, {one, other} plural object,
     // {touch, pointer} device-variant object (the gate's own first draft only
-    // knew two of them — 12 false positives on its first run).
+    // knew two of them — 12 false positives on its first run), and
+    // {browser, app} platform-variant object (Oct 2026).
     return typeof node === 'string' ||
         (node !== null && typeof node === 'object' &&
-            ('one' in node || 'other' in node || 'touch' in node || 'pointer' in node));
+            ('one' in node || 'other' in node || 'touch' in node || 'pointer' in node ||
+                'browser' in node || 'app' in node));
 }
 
 const files = collectFiles();

@@ -421,6 +421,29 @@ export async function runLabelResolverTests(resultsDiv) {
         if (bad.length) throw new Error(`Non-string resolutions: ${bad.map(([k]) => k).join(', ')}`);
     });
 
+    await test('platform-variant label resolves app wording when isAppPlatform → true', () => {
+        setLabelResolverDependencies({ isAppPlatform: () => true });
+        const result = getLabel('reminders.browserNotifications');
+        setLabelResolverDependencies({ isAppPlatform: null });
+        if (result !== 'System Notifications') throw new Error(`Expected app wording, got: ${result}`);
+    });
+    await test('platform-variant label resolves browser wording when isAppPlatform → false', () => {
+        setLabelResolverDependencies({ isAppPlatform: () => false });
+        const result = getLabel('reminders.browserNotifications');
+        setLabelResolverDependencies({ isAppPlatform: null });
+        if (result !== 'Browser Notifications') throw new Error(`Expected browser wording, got: ${result}`);
+    });
+    await test('every platform-variant label in reminders resolves to a string on both sides', () => {
+        const keys = ['reminders.browserNotificationsWarning', 'reminders.permissionGranted', 'reminders.permissionDenied',
+                      'reminders.permissionBlocked', 'reminders.permissionUnsupported', 'reminders.permissionTestFailed',
+                      'reminders.browserNotificationsDisabled'];
+        for (const app of [true, false]) {
+            setLabelResolverDependencies({ isAppPlatform: () => app });
+            const bad = keys.map(k => [k, getLabel(k)]).filter(([, v]) => typeof v !== 'string' || v.includes('object Object'));
+            setLabelResolverDependencies({ isAppPlatform: null });
+            if (bad.length) throw new Error(`Non-string resolutions (app=${app}): ${bad.map(([k]) => k).join(', ')}`);
+        }
+    });
     await test('missing variant side falls back to the other side', () => {
         setLabelResolverDependencies({ isTouchDevice: () => false });
         // modeManualShort has both sides; simulate one-sided by checking fallback logic

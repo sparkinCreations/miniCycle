@@ -1116,11 +1116,14 @@ dialog.reminders-modal[open] {
     color: var(--theme-text-secondary, #666);
 }
 
-/* Frequency Section */
+/* Frequency Section — the schedule, directly under Enable Reminders and its
+   summary line, closed off from the due-date and notification switches below
+   so the three settings read as three blocks. */
 #frequency-section {
-    margin-top: var(--space-2-5);
+    margin: var(--space-2-5) 0;
     border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-border)));
-    padding-top: var(--space-2-5);
+    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-border)));
+    padding: var(--space-2-5) 0;
 }
 
 #repeat-count-row,
