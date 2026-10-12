@@ -3051,6 +3051,78 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
     return { name: "a new routine's empty-state hint matches the bar on screen", failures };
 }
 
+// ── Journey: the help window's message never runs past its box ───────────────
+//
+// On desktop the help window is a 230px side column. Its preamble and CTA
+// are joined with " • "; the CTA is white-space: nowrap so the line breaks at
+// the bullet. The preamble used to be nowrap too, so a long one ("Add your
+// first task to get started!" is wider than the column at the base font) had
+// no break opportunity at all and spilled past the right edge (reported Oct
+// 2026). Both shapes are pinned: a long preamble wraps inside the box, and a
+// short one still breaks at the bullet with the CTA intact on its own line.
+async function journeyHelpWindowWraps(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // A laptop-sized window: the side column is at its 230px cap here,
+        // where the long preamble (~228px at the base font) does not fit.
+        // At the runner's default 1280px the column is wider and fits it.
+        await page.setViewportSize({ width: 1030, height: 790 });
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); });
+        await page.waitForTimeout(800);
+        const measure = () => page.evaluate(() => {
+            const h = document.getElementById('help-window');
+            const p = h && h.querySelector('p');
+            const body = p && p.querySelector('.help-window-body');
+            const cta = p && p.querySelector('.help-window-cta');
+            if (!p || !body) return null;
+            const r = (el) => el.getBoundingClientRect();
+            return {
+                text: p.textContent.replace(/\s+/g, ' ').trim(),
+                helpWidth: Math.round(r(h).width),
+                clientWidth: p.clientWidth, scrollWidth: p.scrollWidth,
+                bodyWidth: Math.round(r(body).width),
+                ctaWidth: cta ? Math.round(r(cta).width) : 0,
+                ctaBelowBody: !!cta && r(cta).top > r(body).top + 2
+            };
+        });
+
+        const short = await measure();
+        record('fixture: the help window is the narrow desktop column', !!short && short.helpWidth <= 240,
+            `help window is ${short && short.helpWidth}px wide — the column case is not being exercised`);
+        record('a short preamble + CTA breaks at the bullet, CTA on its own line',
+            !!short && short.bodyWidth + short.ctaWidth > short.clientWidth && short.ctaBelowBody,
+            `${JSON.stringify(short)} — if the CTA no longer drops as a unit, the nowrap on .help-window-cta is gone`);
+        record('…and nothing runs past the box', !!short && short.scrollWidth <= short.clientWidth + 1,
+            `scrollWidth ${short && short.scrollWidth} > clientWidth ${short && short.clientWidth}`);
+
+        // Empty the routine: the empty-state message has the long preamble.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            p.data.routine[p.appState.activeRoutineId].tasks = [];
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+        await bootApp(page);
+        await page.waitForFunction(() => /first task/i.test(document.querySelector('#help-window p')?.textContent || ''), null, { timeout: 10000 }).catch(() => {});
+        const long = await measure();
+        record('fixture: the empty-routine message is showing', !!long && /first task/i.test(long.text),
+            `help window reads "${long && long.text}"`);
+        record('a preamble wider than the column wraps inside it instead of spilling past the edge',
+            !!long && long.bodyWidth <= long.clientWidth && long.scrollWidth <= long.clientWidth + 1,
+            `${JSON.stringify(long)} — a nowrap preamble has no break opportunity in a 230px column`);
+        record('…and the CTA still sits on its own line', !!long && long.ctaBelowBody,
+            `${JSON.stringify(long)}`);
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'help window wraps inside its column', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -3999,6 +4071,7 @@ const JOURNEYS = [
     { name: 'the reset fails closed when no backup was saved', fn: journeyResetRequiresBackup },
     { name: 'a badge earned by clearing is not re-advertised in cycle mode', fn: journeyBadgeCrossAxis },
     { name: "a new routine's empty-state hint matches the bar on screen", fn: journeyNewRoutineHintMatchesBar },
+    { name: 'the help window wraps inside its column', fn: journeyHelpWindowWraps },
 ];
 
 async function run() {

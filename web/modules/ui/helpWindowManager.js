@@ -618,17 +618,16 @@ export class HelpWindowManager {
         const sizeHtml = parts.size
             ? `<span class="help-window-size"> • 💾 ${escapeHtml(parts.size)}</span>`
             : '';
-        // Wrap the preamble + CTA in their own inline spans with
-        // white-space: nowrap. The browser keeps each span intact, so
-        // when the line wraps the only valid break point is the gap
-        // between the spans — giving a clean preamble-on-line-1 /
-        // CTA-on-line-2 split rather than tearing either phrase
-        // mid-word. The leading " • " is inside the CTA span so it
-        // travels with the CTA when it drops to the second line.
+        // Preamble and CTA get their own inline spans. Only the CTA is
+        // white-space: nowrap (buttons.css), so when the line wraps the
+        // preferred break is the gap before the CTA — a clean
+        // preamble-on-line-1 / CTA-on-line-2 split. The preamble itself
+        // may wrap: in the 230px desktop column a long one has no other
+        // break opportunity and used to run past the box. The leading
+        // " • " is inside the CTA span so it travels with the CTA.
         const bodyHtml = `<span class="help-window-body">${escapeHtml(parts.body)}</span>`;
-        // Leading space lives OUTSIDE the CTA span — that's the only
-        // valid break opportunity between the two nowrap spans, so it's
-        // where the browser wraps when the line is too narrow.
+        // Leading space lives OUTSIDE the CTA span — that is the break
+        // opportunity before the unbreakable CTA.
         const ctaHtml = parts.cta
             ? ` <span class="help-window-cta">• ${escapeHtml(parts.cta)}</span>`
             : '';
