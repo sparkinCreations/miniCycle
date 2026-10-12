@@ -142,7 +142,11 @@ export const DRAGGABLES = [
         elementId: DOM_IDS.TASK_INPUT_ROW,
         ariaLabelKey: 'accessibility.dragHandleAddTask',
         // Handle floats just above the input bar, horizontally centered.
-        handlePosition: 'top-center-above',
+        // outside-left, not above: the row docks at the very top of #task-view, so a
+        // handle floating above it sat under the fixed header and the row could
+        // never be grabbed from home (measured Oct 2026). Same placement as the
+        // card below it, so the two handles line up.
+        handlePosition: 'outside-left',
         // Default home is in #task-view's flex flow above the task card
         // group (input bar is now a true sibling of #task-card-group, no
         // re-parenting needed). Snap zone is the band directly above the
@@ -923,17 +927,43 @@ export class TaskViewLayoutManager {
         // when the cursor was clearly over the card. Manual mouseenter/leave
         // makes the reveal deterministic and side-steps any browser-specific
         // :hover propagation quirks across re-parented siblings.
-        const onMouseEnter = () => element.classList.add(DOM_CLASSES.TVL_HOVERED);
-        const onMouseLeave = () => element.classList.remove(DOM_CLASSES.TVL_HOVERED);
+        //
+        // The hover outlives the cursor by LAYOUT_HANDLE_LEAVE_GRACE: handles
+        // that float OUTSIDE their host (outside-left, top-center-above) sit
+        // across a 6px gap, mouseleave fired in that gap, and a hidden handle
+        // is not hit-testable — so the cursor could never reach it at normal
+        // speed, and never at all under reduced motion (measured Oct 2026).
+        // Entering the handle itself cancels the pending leave.
+        let leaveTimer = null;
+        const cancelLeave = () => { if (leaveTimer) { clearTimeout(leaveTimer); leaveTimer = null; } };
+        const onMouseEnter = () => { cancelLeave(); element.classList.add(DOM_CLASSES.TVL_HOVERED); };
+        const onMouseLeave = (e) => {
+            // The handle is a descendant of the host, so stepping off the handle
+            // onto the host's own body is not a leave: the host never fires a
+            // mouseenter for it (the cursor never left its subtree), and a
+            // timer started here would hide the handle while the cursor sits
+            // on the host.
+            if (e?.relatedTarget && element.contains(e.relatedTarget)) return;
+            cancelLeave();
+            leaveTimer = setTimeout(() => {
+                leaveTimer = null;
+                element.classList.remove(DOM_CLASSES.TVL_HOVERED);
+            }, UI_TIMEOUTS.LAYOUT_HANDLE_LEAVE_GRACE);
+        };
         element.addEventListener('mouseenter', onMouseEnter);
         element.addEventListener('mouseleave', onMouseLeave);
+        handle.addEventListener('mouseenter', onMouseEnter);
+        handle.addEventListener('mouseleave', onMouseLeave);
 
         // Append cleanup for the hover listeners onto the existing key cleanup.
         const existingCleanup = this._cleanupFns.get(config.key);
         this._cleanupFns.set(config.key, () => {
             if (existingCleanup) existingCleanup();
+            cancelLeave();
             element.removeEventListener('mouseenter', onMouseEnter);
             element.removeEventListener('mouseleave', onMouseLeave);
+            handle.removeEventListener('mouseenter', onMouseEnter);
+            handle.removeEventListener('mouseleave', onMouseLeave);
         });
 
         this._registry.set(config.key, { config, element, handleHost, customized: false });
@@ -1531,12 +1561,19 @@ export class TaskViewLayoutManager {
         if (!zone) return false;
         const elementCenterX = elementRect.left + elementRect.width / 2;
         const elementCenterY = elementRect.top + elementRect.height / 2;
-        return (
-            elementCenterX >= zone.left &&
-            elementCenterX <= zone.left + zone.width &&
-            elementCenterY >= zone.top &&
-            elementCenterY <= zone.top + zone.height
-        );
+        const xInZone = elementCenterX >= zone.left && elementCenterX <= zone.left + zone.width;
+        if (!xInZone) return false;
+        // Self-home zones are a band around the element's own home centre:
+        // the centre decides. A zone next to an ANCHOR is a band at the
+        // anchor's edge, and the drag clamp can keep the element's centre from
+        // ever entering it — with a long routine the card fills the band, the
+        // Complete button's zone lies below the band's bottom, and the button
+        // could never be re-docked once floated (measured Oct 2026). For those,
+        // touching the band is enough.
+        if (config.dock.self) {
+            return elementCenterY >= zone.top && elementCenterY <= zone.top + zone.height;
+        }
+        return elementRect.bottom >= zone.top && elementRect.top <= zone.top + zone.height;
     }
 
     /**

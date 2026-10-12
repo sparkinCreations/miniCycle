@@ -28,8 +28,9 @@ export async function runGesturePanelManagerTests(resultsDiv) {
 
     // Touch/pointer/mouse event fakes — only the fields the handlers read.
     const touch = (x, y = 0) => ({ touches: [{ clientX: x, clientY: y }], target: document.body });
-    const mouse = (x) => ({ clientX: x, target: document.body });
-    const pointer = (x, type = 'touch') => ({ clientX: x, pointerType: type, target: document.body });
+    // Like a real left-button press: button 0 on the down, buttons 1 while held.
+    const mouse = (x, extra = {}) => ({ clientX: x, target: document.body, button: 0, buttons: 1, ...extra });
+    const pointer = (x, type = 'touch') => ({ clientX: x, pointerType: type, target: document.body, buttons: 1 });
 
     // ── exports / load checks (kept) ──────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
@@ -255,6 +256,59 @@ export async function runGesturePanelManagerTests(resultsDiv) {
         m.handleMouseMove(mouse(300));       // delta -500 < -400 -> show stats
         if (shown !== 1) throw new Error('stats not shown on left mouse drag');
         if (m.isStatsVisible() !== true) throw new Error('stats flag not set');
+    });
+
+    await test('a right-button press never arms the carousel', () => {
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; } });
+        m.handleMouseDown(mouse(800, { button: 2, buttons: 2 }));
+        m.handleMouseMove(mouse(830, { buttons: 2 }));
+        m.handleMouseMove(mouse(300, { buttons: 2 }));
+        if (shown !== 0) throw new Error('a right-button drag navigated');
+    });
+
+    await test('a move with no button held disarms the press (the mouseup was swallowed)', () => {
+        // A native HTML5 drag of a task row, a right-click menu or a window
+        // switch all end a press without a mouseup; the next hover used to
+        // navigate (Oct 2026).
+        let shown = 0;
+        const m = makeManager({ onShowStatsPanel: () => { shown++; } });
+        m.handleMouseDown(mouse(800));
+        m.handleMouseMove(mouse(300, { buttons: 0 }));
+        if (shown !== 0) throw new Error('an unpressed hover navigated');
+        if (m.getState().mouseStartX !== 0) throw new Error('press still armed after an unpressed move');
+    });
+
+    await test('dragstart / blur abort an armed press', () => {
+        const m = makeManager();
+        m.handleMouseDown(mouse(800));
+        m.handleMouseAbort({ type: 'dragstart' });
+        if (m.getState().mouseStartX !== 0) throw new Error('dragstart did not disarm');
+        m.handleMouseDown(mouse(800));
+        m.handleMouseAbort({ type: 'blur' });
+        if (m.getState().mouseStartX !== 0) throw new Error('blur did not disarm');
+    });
+
+    await test('text selection is only withheld once the press becomes a drag', () => {
+        const m = makeManager();
+        m.handleMouseDown(mouse(800));
+        if (document.body.style.userSelect === 'none') throw new Error('mousedown alone disabled selection');
+        m.handleMouseMove(mouse(830));
+        if (document.body.style.userSelect !== 'none') throw new Error('drag did not disable selection');
+        m.handleMouseUp();
+        if (document.body.style.userSelect === 'none') throw new Error('selection not restored on mouseup');
+    });
+
+    await test('a touch that starts on a control clears a stale swipe arming', () => {
+        const m = makeManager();
+        m.handleTouchStart({ touches: [{ clientX: 300, clientY: 100 }], target: document.body });
+        if (!m.getState().isSwiping) throw new Error('fixture: swipe did not arm');
+        const btn = document.createElement('button');
+        document.body.appendChild(btn);
+        try {
+            m.handleTouchStart({ touches: [{ clientX: 300, clientY: 100 }], target: btn });
+            if (m.getState().isSwiping) throw new Error('a touch on a button left the swipe armed');
+        } finally { btn.remove(); }
     });
 
     await test('mouseStartX=0 short-circuits mousemove (no drag without mousedown)', () => {

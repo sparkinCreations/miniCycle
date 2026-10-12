@@ -498,6 +498,14 @@ dialog.quick-actions-picker-overlay[open] {
     pointer-events: all;
 }
 
+/* A hidden tooltip is opacity 0 with pointer-events none, but the Remove
+   button re-enabled its own pointer events, so after the tooltip faded it
+   kept an invisible 73x28px hit target at its last position that unpinned
+   the slot on a stray tap (measured Oct 2026). */
+.quick-actions-tooltip:not(.visible) .tooltip-remove {
+    pointer-events: none;
+}
+
 /* =============================================================================
    DARK MODE ADJUSTMENTS
    ============================================================================= */

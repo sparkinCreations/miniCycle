@@ -611,6 +611,10 @@ export class MiniCycleNotifications {
    * 🎯 Restore notification position from state
    */
 restoreNotificationPosition(notificationContainer) {
+    // A notification arriving mid-drag used to re-apply the saved position
+    // under the cursor, and if the pointer went up before the next move the
+    // whole drag was lost and the OLD position re-saved.
+    if (this.isDraggingNotification) return;
     try {
         // Straight from AppState; before state is ready there is nothing saved to
         // restore (the legacy loadMiniCycleData wrapper is gone — STATE_TRUTH #25).
@@ -632,8 +636,11 @@ restoreNotificationPosition(notificationContainer) {
             typeof savedPosition.x === 'number' &&
             typeof savedPosition.y === 'number'
         ) {
-            notificationContainer.style.top = `${savedPosition.y}px`;
-            notificationContainer.style.left = `${savedPosition.x}px`;
+            // A position saved on a wide display must not restore off-screen on
+            // a narrow one: it did, and only Settings → reset could recover it.
+            const clamped = this.clampNotificationPosition(savedPosition.x, savedPosition.y, notificationContainer);
+            notificationContainer.style.top = `${clamped.y}px`;
+            notificationContainer.style.left = `${clamped.x}px`;
             notificationContainer.style.right = "auto";
         } else {
             // No user-modified position - set a smart default
@@ -643,6 +650,28 @@ restoreNotificationPosition(notificationContainer) {
         console.warn("⚠️ Failed to apply saved notification position.", posError);
         this.setDefaultPosition(notificationContainer);
     }
+}
+
+/**
+ * Keep at least UI_TIMEOUTS.NOTIFICATION_MIN_VISIBLE px of the panel inside the
+ * viewport on both axes, so whatever was dragged or restored can be grabbed
+ * again. Used on every drag move, on restore, and on resize.
+ * @param {number} x
+ * @param {number} y
+ * @param {HTMLElement} container
+ * @returns {{x: number, y: number}}
+ */
+clampNotificationPosition(x, y, container) {
+    const minVisible = UI_TIMEOUTS.NOTIFICATION_MIN_VISIBLE;
+    const width = container?.offsetWidth || 0;
+    const height = container?.offsetHeight || 0;
+    const maxX = Math.max(0, window.innerWidth - Math.min(width, minVisible));
+    const maxY = Math.max(0, window.innerHeight - Math.min(height, minVisible));
+    const minX = Math.min(0, minVisible - width);
+    return {
+        x: Math.min(Math.max(x, minX), maxX),
+        y: Math.min(Math.max(y, 0), maxY)
+    };
 }
 
 /**
@@ -878,6 +907,28 @@ async setDefaultPosition(notificationContainer) {
 
     // Track cleanup functions for this notification
     const cleanupFunctions = [];
+    // One gesture at a time: a second finger touching the panel used to run its
+    // own pointerdown closure and, on lifting, clear the first finger's drag
+    // state while that finger was still moving the panel.
+    let activePointerId = null;
+    // The per-gesture teardown, replaced each gesture instead of pushed onto
+    // cleanupFunctions — every tap on the panel leaked two closures that way.
+    let activeGestureCleanup = null;
+
+    // A resize (or rotation) can leave a once-valid position off-screen.
+    const onViewportResize = () => {
+      if (this.isDraggingNotification || !notificationContainer.isConnected) return;
+      const left = parseFloat(notificationContainer.style.left);
+      const top = parseFloat(notificationContainer.style.top);
+      if (!Number.isFinite(left) || !Number.isFinite(top)) return;
+      const clamped = this.clampNotificationPosition(left, top, notificationContainer);
+      if (clamped.x !== left || clamped.y !== top) {
+        notificationContainer.style.left = `${clamped.x}px`;
+        notificationContainer.style.top = `${clamped.y}px`;
+      }
+    };
+    window.addEventListener('resize', onViewportResize);
+    cleanupFunctions.push(() => window.removeEventListener('resize', onViewportResize));
 
     // Unified pointer-based drag (mouse + touch + pen).
     //
@@ -897,6 +948,7 @@ async setDefaultPosition(notificationContainer) {
         e.target.matches(selector) || e.target.closest(selector)
       );
       if (isInteractive) return;
+      if (activePointerId !== null) return;
 
       let dragStarted = false;
       const startX = e.clientX;
@@ -924,18 +976,20 @@ async setDefaultPosition(notificationContainer) {
       // Capture the pointer so move/up events fire on the container regardless
       // of where the cursor is — including over inert modal backdrops.
       try { notificationContainer.setPointerCapture(pointerId); } catch { /* capture unsupported — drag still works */ }
+      activePointerId = pointerId;
 
       const onPointerMove = (ev) => {
         if (ev.pointerId !== pointerId) return;
-        const moveDistance = Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY);
+        // Euclidean, not Manhattan: a 3px diagonal jitter (3+3) used to clear
+        // the 5px threshold and turn a click into a drag.
+        const moveDistance = Math.hypot(ev.clientX - startX, ev.clientY - startY);
         if (!dragStarted && moveDistance > dragThreshold) startDrag();
         if (dragStarted) {
           ev.preventDefault();
-          const newY = ev.clientY - offsetY;
-          const newX = ev.clientX - offsetX;
+          const clamped = this.clampNotificationPosition(ev.clientX - offsetX, ev.clientY - offsetY, notificationContainer);
 
-          notificationContainer.style.top = `${newY}px`;
-          notificationContainer.style.left = `${newX}px`;
+          notificationContainer.style.top = `${clamped.y}px`;
+          notificationContainer.style.left = `${clamped.x}px`;
           notificationContainer.style.right = "auto";
         }
       };
@@ -977,19 +1031,35 @@ async setDefaultPosition(notificationContainer) {
         notificationContainer.removeEventListener("pointermove", onPointerMove);
         notificationContainer.removeEventListener("pointerup", endDrag);
         notificationContainer.removeEventListener("pointercancel", endDrag);
+        notificationContainer.removeEventListener("lostpointercapture", onLostCapture);
+        activePointerId = null;
+        activeGestureCleanup = null;
+      };
+
+      // A modal opening or closing mid-drag reparents this container
+      // (NotificationDialogHost), which drops pointer capture WITHOUT a
+      // pointercancel: the pointerup then never arrives and the panel stayed in
+      // drag state — and the panel carousel, which defers to that state, stayed
+      // dead — until the next full drag. End the gesture where it is.
+      const onLostCapture = (ev) => {
+        if (ev.pointerId !== pointerId) return;
+        endDrag(ev);
       };
 
       _safeAddEventListener(notificationContainer, "pointermove", onPointerMove);
       _safeAddEventListener(notificationContainer, "pointerup", endDrag);
       _safeAddEventListener(notificationContainer, "pointercancel", endDrag);
+      _safeAddEventListener(notificationContainer, "lostpointercapture", onLostCapture);
 
-      // Store cleanup for forced cleanup on notification removal
-      cleanupFunctions.push(() => {
+      // Forced teardown on notification removal — one per live gesture.
+      activeGestureCleanup = () => {
         notificationContainer.removeEventListener("pointermove", onPointerMove);
         notificationContainer.removeEventListener("pointerup", endDrag);
         notificationContainer.removeEventListener("pointercancel", endDrag);
+        notificationContainer.removeEventListener("lostpointercapture", onLostCapture);
         try { notificationContainer.releasePointerCapture(pointerId); } catch { /* ignore — capture may already be gone */ }
-      });
+        activePointerId = null;
+      };
     };
 
     _safeAddEventListener(notificationContainer, "pointerdown", pointerDownHandler);
@@ -1005,6 +1075,7 @@ async setDefaultPosition(notificationContainer) {
         pendingSave = null;
       }
       cleanupFunctions.forEach(fn => fn());
+      if (activeGestureCleanup) { activeGestureCleanup(); activeGestureCleanup = null; }
       this._activeListeners.delete(notificationContainer);
     };
 
