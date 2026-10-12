@@ -617,6 +617,71 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         }
     });
 
+    await test('Settings restore survives a refused SIDE-KEY write: the document stays restored, the app re-arms, and it does not claim a full restore', async () => {
+        // The main write is guarded (above). The theme/progress keys a rescue
+        // export carries are written AFTER it; until Oct 2026 a refusal there
+        // escaped the callback the same way — routines already restored, promise
+        // never settled, app left un-armed.
+        const previous = JSON.stringify({ schemaVersion: '2.6', data: { routine: {} }, appState: {}, settings: {} });
+        localStorage.setItem('miniCycleData', previous);
+        localStorage.removeItem('currentTheme');
+        const inner = JSON.stringify({
+            schemaVersion: '2.6',
+            metadata: { version: '2.5', schemaVersion: '2.6', lastModified: Date.now(), createdAt: Date.now() },
+            settings: { onboardingCompleted: true },
+            data: { routine: { r1: { id: 'r1', title: 'Restored', tasks: [], cycleCount: 0,
+                recurringTemplates: {}, history: { events: [], maxEvents: 100 },
+                clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: false } } } },
+            appState: { activeRoutineId: 'r1' }, userProgress: {}, achievements: { unlocked: [], seen: {} }
+        });
+        const file = JSON.stringify({ type: 'miniCycle-backup', appVersion: '2.5', exportedAt: new Date().toISOString(),
+            keys: { miniCycleData: inner, currentTheme: 'dark-ocean' } });
+        const notes = [];
+        let reloaded = 0;
+        const fresh = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-sidekey`);
+        fresh.setBackupRestoreManagerDependencies({
+            AppState: { get: () => ({}), forceSave: () => {}, reload: async () => { reloaded++; } },
+            showNotification: (msg) => notes.push(String(msg)),
+            showConfirmationModal: ({ callback }) => callback(true),
+            safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts),
+            clearAllUndoHistory: async () => {}
+        });
+        const realSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+            if (key === 'currentTheme') {
+                const err = new Error('quota'); err.name = 'QuotaExceededError'; throw err;
+            }
+            return realSetItem.call(this, key, value);
+        };
+        const btn = document.createElement('button');
+        btn.id = 'restore-mini-cycles';
+        document.body.appendChild(btn);
+        try {
+            fresh.setupRestoreButton();
+            btn.click();
+            const input = document.getElementById('import-cycle-file-input');
+            if (!input) throw new Error('restore file input was never created');
+            const dt = new DataTransfer();
+            dt.items.add(new File([file], 'rescue.json', { type: 'application/json' }));
+            input.files = dt.files;
+            input.dispatchEvent(new Event('change'));
+            for (let i = 0; i < 60 && !notes.some(n => /routines were restored/i.test(n)); i++) {
+                await new Promise(r => setTimeout(r, 50));
+            }
+            if (!notes.some(n => /routines were restored, but/i.test(n))) throw new Error(`no partial-restore notice; notices: ${notes.join(' | ')}`);
+            if (notes.some(n => /restored successfully/i.test(n))) throw new Error('must not claim a full restore');
+            if (localStorage.getItem('miniCycleData') !== inner) throw new Error('the restored document should be in storage');
+            if (localStorage.getItem('currentTheme') !== null) throw new Error('the refused key must not have landed');
+            // reloadWithLoader re-arms AppState on a short timer after the notice.
+            for (let i = 0; i < 40 && reloaded === 0; i++) await new Promise(r => setTimeout(r, 50));
+            if (reloaded === 0) throw new Error('the app was never re-armed (AppState.reload not called) — the old dead-app shape');
+        } finally {
+            Storage.prototype.setItem = realSetItem;
+            btn.remove();
+            document.getElementById('import-cycle-file-input')?.remove();
+        }
+    });
+
     await test('Settings restore rejects a pre-2.5 backup without touching current data', async () => {
         // A separate module instance: setupRestoreButton() wires once per module
         // (_initialized.restoreButton), and the test above already used this one's.

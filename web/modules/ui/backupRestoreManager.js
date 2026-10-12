@@ -445,39 +445,66 @@ function rescuePayloadToBackupData(payload) {
 }
 
 /**
- * Write the theme/progress keys a rescue export carries beside miniCycleData.
- * No-op for Create Backup files, which have no such keys.
- * @param {object|undefined} extraStorageKeys
- * @returns {void}
+ * One follow-on write of a restore. These run AFTER the main document is in,
+ * so a refusal here (the same quota error the main write guards against) must
+ * not escape: the document is already restored and the caller still has to
+ * re-arm the app. Returns whether the write landed.
+ * @param {string} key
+ * @param {string} value
+ * @returns {boolean}
  */
-function restoreExtraStorageKeys(extraStorageKeys) {
-    if (!extraStorageKeys || typeof extraStorageKeys !== 'object' || Array.isArray(extraStorageKeys)) {
-        return;
-    }
-    for (const [name, value] of Object.entries(extraStorageKeys)) {
-        if (typeof value === 'string' && isRestorableStorageKey(name)) {
-            localStorage.setItem(name, value);
-        }
+function writeRestoredKey(key, value) {
+    try {
+        localStorage.setItem(key, value);
+        return true;
+    } catch (err) {
+        console.warn(`⚠️ Restore could not write "${key}" (keeping the restored document):`, err);
+        return false;
     }
 }
 
+/**
+ * Write the theme/progress keys a rescue export carries beside miniCycleData.
+ * No-op for Create Backup files, which have no such keys.
+ * @param {object|undefined} extraStorageKeys
+ * @returns {boolean} false when any key could not be written
+ */
+function restoreExtraStorageKeys(extraStorageKeys) {
+    if (!extraStorageKeys || typeof extraStorageKeys !== 'object' || Array.isArray(extraStorageKeys)) {
+        return true;
+    }
+    let ok = true;
+    for (const [name, value] of Object.entries(extraStorageKeys)) {
+        if (typeof value === 'string' && isRestorableStorageKey(name)) {
+            if (!writeRestoredKey(name, value)) ok = false;
+        }
+    }
+    return ok;
+}
+
+/**
+ * @param {object|undefined} liteStorage
+ * @returns {boolean} false when any key could not be written
+ */
 function restoreLiteStorageSnapshot(liteStorage) {
     if (!liteStorage || typeof liteStorage !== 'object' || Array.isArray(liteStorage)) {
-        return;
+        return true;
     }
 
     const restorableEntries = Object.entries(liteStorage).filter(([key, value]) =>
         LITE_STORAGE_KEYS.includes(key) && typeof value === 'string'
     );
     if (restorableEntries.length === 0) {
-        return;
+        return true;
     }
 
     LITE_STORAGE_KEYS.forEach((key) => localStorage.removeItem(key));
 
+    let ok = true;
     restorableEntries.forEach(([key, value]) => {
-        localStorage.setItem(key, value);
+        if (!writeRestoredKey(key, value)) ok = false;
     });
+    return ok;
 }
 
 /**
@@ -1065,9 +1092,19 @@ async function processRestoreData(fileContent) {
                         resolve();
                         return;
                     }
-                    restoreLiteStorageSnapshot(backupData.liteStorage);
-                    restoreExtraStorageKeys(backupData.extraStorageKeys);
-                    _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                    // The document is in. The side keys (Lite snapshot, theme and
+                    // progress keys) are written one by one and never throw past
+                    // here — until Oct 2026 a refusal on one of them escaped this
+                    // callback exactly like the main write used to, with the
+                    // routines already restored and the app left un-armed. Say
+                    // what landed instead of claiming a full restore.
+                    const liteOk = restoreLiteStorageSnapshot(backupData.liteStorage);
+                    const extrasOk = restoreExtraStorageKeys(backupData.extraStorageKeys);
+                    if (liteOk && extrasOk) {
+                        _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                    } else {
+                        _deps.showNotification(getLabel('notify.restorePartialSettings'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
+                    }
 
                     // Re-render UI in place — faster than location.reload() and works offline
                     reloadWithLoader('Restore');

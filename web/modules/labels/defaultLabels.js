@@ -639,6 +639,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backupReloading:         'Reloading app to apply changes...',
         backupCorruptData:       'Backup data is corrupt.',
         restoreStorageFailed:    'The restore could not be saved — storage is full. Nothing was changed. Export a backup, free some space, then try again.',
+        restorePartialSettings:  'Your routines were restored, but some display settings could not be saved — storage is nearly full. Free some space and restore the file again to bring them back.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',

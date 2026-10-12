@@ -3249,6 +3249,91 @@ async function journeyDueDateSystemNotification(browser, baseURL) {
     return { name: 'due-day system notification', failures };
 }
 
+// ── Journey: a restored backup with hostile cleared-task ids renders inertly ──
+//
+// The injection fix has two layers: the sanitizer bounds imported cleared-task
+// ids, and each view escapes them at its attribute sinks. Each layer has a
+// unit test; this is the composed path — a file restored from Settings whose
+// cleared entries carry attribute-breaking ids and markup in their names,
+// then the History modal's Cleared tab rendered in both modes.
+async function journeyRestoredHostileClearedIdsRenderInertly(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const HOSTILE_ID = '"><img src=x onerror="window.__pwned=1">';
+    const HOSTILE_NAME = '<img src=x onerror="window.__pwned=2"> say "hi"';
+    const inner = JSON.stringify({
+        schemaVersion: '2.6',
+        metadata: { version: '2.5', schemaVersion: '2.6', lastModified: Date.now(), createdAt: Date.now() },
+        settings: { onboardingCompleted: true },
+        data: { routine: { r1: { id: 'r1', title: 'Restored Routine', tasks: [], cycleCount: 1,
+            recurringTemplates: {}, history: { events: [], maxEvents: 100 },
+            clearedTasks: { entries: [
+                { id: HOSTILE_ID, taskText: HOSTILE_NAME, clearedAt: Date.now() - 1000 },
+                { id: 'plain-1', taskText: 'Plain chore', clearedAt: Date.now() - 2000 }
+            ], totalCleared: 2, autoPruneEnabled: false } } } },
+        appState: { activeRoutineId: 'r1' }, userProgress: {}, achievements: { unlocked: [], seen: {} }
+    });
+    const file = JSON.stringify({
+        schemaVersion: '2.6', miniCycleData: inner,
+        backupMetadata: { createdAt: Date.now(), version: '2.6', schemaVersion: '2.6', source: 'miniCycle App' }
+    });
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await openSettingsPanel(page);
+        await page.evaluate(() => document.getElementById('restore-mini-cycles')?.click());
+        await page.waitForTimeout(600);
+        await page.setInputFiles('#import-cycle-file-input', { name: 'hostile.json', mimeType: 'application/json', buffer: Buffer.from(file) });
+        await page.waitForTimeout(1500);
+        await confirmDestructive(page);
+        await page.waitForTimeout(3500);
+        const stored = await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData') || '{}');
+            const r = p.data && p.data.routine && p.data.routine.r1;
+            return { title: r && r.title, entries: r && r.clearedTasks && r.clearedTasks.entries.map(e => ({ id: e.id, text: e.taskText })) };
+        });
+        record('fixture: the routine with hostile cleared entries was restored', stored.title === 'Restored Routine' && stored.entries && stored.entries.length === 2,
+            `stored: ${JSON.stringify(stored)}`);
+
+        const inspect = () => page.evaluate(() => {
+            const modal = document.querySelector('.history-modal') || document.body;
+            const entries = [...modal.querySelectorAll('.cleared-entry')];
+            return {
+                entries: entries.length,
+                injectedImgs: modal.querySelectorAll('img[src="x"]').length,
+                pwned: window.__pwned === undefined ? null : window.__pwned,
+                ids: entries.map(e => e.dataset.id),
+                textShowsMarkupAsText: entries.some(e => /<img src=x/.test(e.textContent || '')),
+                labels: entries.map(e => e.getAttribute('aria-label'))
+            };
+        });
+        // Cleared tab, read mode.
+        await page.evaluate(() => document.getElementById('history-btn')?.click());
+        await page.waitForTimeout(1200);
+        await page.evaluate(() => document.querySelector('.history-tab[data-tab="cleared"]')?.click());
+        await page.waitForTimeout(900);
+        const read = await inspect();
+        record('Cleared tab renders both entries', read.entries === 2, `rendered ${read.entries} entries: ${JSON.stringify(read)}`);
+        record('no element was injected through an id or a name, and nothing ran',
+            read.injectedImgs === 0 && read.pwned === null, `injected imgs ${read.injectedImgs}, __pwned ${read.pwned}`);
+        record('the hostile name shows as text, not markup', read.textShowsMarkupAsText === true, `entry text: ${JSON.stringify(read)}`);
+        // Recreate mode: the entries become checkboxes with data-id and aria-label — the attribute sinks.
+        await page.evaluate(() => document.querySelector('.history-action-btn')?.click());
+        await page.waitForTimeout(900);
+        const recreate = await inspect();
+        record('recreate mode still injects nothing and names each entry', recreate.injectedImgs === 0 && recreate.pwned === null
+            && recreate.labels.length === 2 && recreate.labels.every(Boolean),
+            `recreate: ${JSON.stringify(recreate)}`);
+        record('the hostile id round-trips as a data attribute value (bounded, escaped, intact)',
+            recreate.ids.some(id => id && id.startsWith('"><img')), `ids: ${JSON.stringify(recreate.ids)}`);
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'restored hostile cleared ids', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -4199,6 +4284,7 @@ const JOURNEYS = [
     { name: "a new routine's empty-state hint matches the bar on screen", fn: journeyNewRoutineHintMatchesBar },
     { name: 'the help window wraps inside its column', fn: journeyHelpWindowWraps },
     { name: 'a due-day system notification fires at 9:00', fn: journeyDueDateSystemNotification },
+    { name: 'a restored backup with hostile cleared-task ids renders inertly', fn: journeyRestoredHostileClearedIdsRenderInertly },
 ];
 
 async function run() {
