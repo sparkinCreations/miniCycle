@@ -339,10 +339,13 @@ body.hide-help-window .help-window {
         margin: 0;
     }
 
-    /* Reduce task list height to clear footer */
-    .task-list-container {
-        max-height: calc(100vh - 400px);
-    }
+    /* The desktop list cap that lived here (`max-height: calc(100vh - 400px)`,
+       "to clear footer") is gone: #task-view is the measured header -> nav-dots
+       band at >=769px (app-container.css) and the flex chain shrinks the list
+       to it. A fixed-height band box made the literal visible for the first
+       time — the layout suite's home-*-long rows saw a long routine stop 5px
+       short of the band at every desktop size. The FLOATING card (drag-
+       customized) gets its own band-relative cap in task-view-layout.css. */
 }
 
 /* Wider screens */

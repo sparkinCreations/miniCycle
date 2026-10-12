@@ -754,7 +754,7 @@ export const MODULE_MANIFESTS = {
     taskViewLayoutManager: {
         path: '../ui/taskViewLayoutManager.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['AppState', 'appInit', 'enableUndoSystemOnFirstInteraction'],
+        optionalDeps: ['AppState', 'appInit', 'enableUndoSystemOnFirstInteraction', 'showNotification'],
         provides: ['resetTaskViewLayout', 'refreshTaskViewLayout'],
         provideInstance: 'taskViewLayoutManager',
         api: 'ui',

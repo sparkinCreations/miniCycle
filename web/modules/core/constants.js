@@ -431,6 +431,18 @@ export const LAYOUT_DOCK_ZONES = Object.freeze({
     COMPLETE_CYCLE_BTN:  Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 })
 });
 
+/**
+ * Task View Layout: which coordinate frame saved positions were measured in.
+ * Positions are stored as pixels relative to #task-view. Until Oct 2026 that
+ * box hugged its in-flow content and was centred on the band, so its origin
+ * moved every time an element floated out of it or a routine changed length —
+ * a saved position meant something different on every reload. Frame 2 is the
+ * band itself (app-container.css ≥769px: a fixed-height box). Positions with
+ * no frame, or an older one, are discarded on apply rather than restored into
+ * the wrong place.
+ */
+export const LAYOUT_FRAME_VERSION = 2;
+
 export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
     top: 90,        // header + mode pill clearance
     bottom: 90,     // nav-dots + footer clearance

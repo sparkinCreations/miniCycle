@@ -599,6 +599,7 @@ export const DEFAULT_LABELS = deepFreeze({
         positionReset:           'Notification position reset.',
         positionResetFailed:     'Unable to reset position.',
         taskViewLayoutReset:     'Home view layout reset.',
+        taskViewLayoutMigrated:  'This update reset your home view layout. Drag the elements to arrange them again.',
         taskViewLayoutResetFailed: 'Unable to reset home view layout.',
         uiUpdateFailed:          'UI update failed',
 

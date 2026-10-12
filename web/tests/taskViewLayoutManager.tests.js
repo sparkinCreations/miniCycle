@@ -28,7 +28,7 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         getTaskViewLayoutManager,
         initTaskViewLayoutManager
     } = mod;
-    const { DOM_IDS, DOM_CLASSES, EVENTS, LAYOUT_DOCK_ZONES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+    const { DOM_IDS, DOM_CLASSES, EVENTS, LAYOUT_DOCK_ZONES, LAYOUT_FRAME_VERSION } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { DRAGGABLES } = mod;
 
     resultsDiv.innerHTML = '<h2>🧲 TaskViewLayoutManager Tests</h2><h3>Running tests...</h3>';
@@ -627,6 +627,112 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🎯 Applying positions</h4>';
 
+    await test('_applySavedPosition never clamps a follower (customized: false)', () => {
+        // A follower was saved glued to its anchor, within one dock gap of it;
+        // clamping it against the wrapper can only tear it off. Measured: the
+        // Complete button saved just past the band edge came back 38px up INSIDE
+        // the card after a reload.
+        setTaskViewLayoutManagerDependencies(makeDeps());
+        const mgr = new TaskViewLayoutManager();
+        const wrapper = document.createElement('div');
+        Object.assign(wrapper.style, { position: 'fixed', top: '150px', left: '100px', width: '800px', height: '600px' });
+        document.body.appendChild(wrapper);
+        mgr._wrapper = wrapper;
+        const entry = seedEntry(mgr, 'complete-cycle-btn');
+        wrapper.appendChild(entry.element);
+        try {
+            mgr._applySavedPosition('complete-cycle-btn', { left: 10, top: 590, width: 100, customized: false });
+            assertEq(entry.element.style.top, '590px', 'follower top was clamped');
+            assertEq(entry.customized, false, 'follower must stay a follower');
+        } finally {
+            wrapper.remove();
+        }
+    });
+
+    await test('_flushPositionWrites stamps the coordinate frame', () => {
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const el = document.createElement('div');
+        el.style.left = '1px';
+        el.style.top = '2px';
+        mgr._saveElementPosition(el, { key: 'status-bubble' });
+        mgr._flushPositionWrites();
+        assertEq(AppState.state.settings.taskViewLayout.frame, LAYOUT_FRAME_VERSION, 'frame not stamped');
+    });
+
+    await test('_loadAndApplyPositions discards positions saved in an older frame, once, with a notice', async () => {
+        // Before Oct 2026 #task-view hugged its content, so its origin moved
+        // with whatever was in flow; a position saved then means nothing in the
+        // fixed band box. Restoring it would scramble the layout.
+        const AppState = makeAppState({ taskViewLayout: { positions: { 'status-bubble': { left: 5, top: 6, customized: true } } } });
+        const notices = [];
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState, showNotification: (msg) => notices.push(msg) }));
+        const mgr = new TaskViewLayoutManager();
+        mgr._shouldApplyLayout = () => true;
+        const entry = seedEntry(mgr, 'status-bubble');
+
+        await mgr._loadAndApplyPositions();
+
+        assertEq(entry.element.style.position, '', 'legacy position must not be applied');
+        assertEq(Object.keys(AppState.state.settings.taskViewLayout.positions).length, 0, 'legacy positions not cleared');
+        assertEq(AppState.state.settings.taskViewLayout.frame, LAYOUT_FRAME_VERSION, 'frame not stamped after discard');
+        assertEq(notices.length, 1, 'user should be told exactly once');
+        assert(typeof notices[0] === 'string' && notices[0].length > 0, 'notice must be a resolved label');
+
+        // Same frame → applied as before.
+        AppState.state.settings.taskViewLayout.positions = { 'status-bubble': { left: 5, top: 6, customized: true } };
+        await mgr._loadAndApplyPositions();
+        assertEq(entry.element.style.position, 'absolute', 'current-frame position must apply');
+        assertEq(notices.length, 1, 'no second notice');
+    });
+
+    await test('_dockShownDependent glues a dependent to its floating anchor only once it has a box', () => {
+        // The Add-task row is hidden until opened; it is skipped at drag start
+        // (a 0x0 rect at the origin would inflate the group clamp and freeze
+        // the card vertically). When it is shown while the card floats it must
+        // dock to the card, not render at the band centre.
+        const wrapper = document.createElement('div');
+        Object.assign(wrapper.style, { position: 'relative', width: '800px', height: '600px' });
+        document.body.appendChild(wrapper);
+        const anchor = document.createElement('div');
+        anchor.id = DOM_IDS.TASK_CARD_GROUP;
+        Object.assign(anchor.style, { position: 'absolute', left: '100px', top: '200px', width: '300px', height: '150px' });
+        const dep = document.createElement('div');
+        dep.id = DOM_IDS.TASK_INPUT_ROW;
+        Object.assign(dep.style, { width: '200px', height: '44px', display: 'none' });
+        wrapper.append(anchor, dep);
+        const byId = { [DOM_IDS.TASK_CARD_GROUP]: anchor, [DOM_IDS.TASK_INPUT_ROW]: dep };
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState, getElementById: (id) => byId[id] || null }));
+        const mgr = new TaskViewLayoutManager();
+        mgr._wrapper = wrapper;
+        mgr._shouldApplyLayout = () => true;
+        seedEntry(mgr, 'task-card-group', { element: anchor, customized: true });
+        const depEntry = seedEntry(mgr, 'add-task-input', { element: dep });
+        depEntry.config.dock = { relativeToId: DOM_IDS.TASK_CARD_GROUP, side: 'top', tolerancePx: 80 };
+        try {
+            mgr._dockShownDependent('add-task-input');
+            assertEq(dep.style.position, '', 'hidden dependent must be left alone');
+
+            dep.style.display = 'block';
+            mgr._dockShownDependent('add-task-input');
+            assertEq(dep.style.position, 'absolute', 'shown dependent not docked');
+            const gap = anchor.getBoundingClientRect().top - dep.getBoundingClientRect().bottom;
+            assert(gap > 0 && gap < 60, `dependent should sit just above the anchor (gap ${gap})`);
+            mgr._flushPositionWrites();
+            assertEq(AppState.state.settings.taskViewLayout.positions['add-task-input'].customized, false,
+                'docked dependent must persist as a follower');
+
+            // Idempotent: a later class/style mutation must not re-place it.
+            const before = dep.style.top;
+            mgr._dockShownDependent('add-task-input');
+            assertEq(dep.style.top, before, 'already-placed dependent was moved');
+        } finally {
+            wrapper.remove();
+        }
+    });
+
     await test('_applySavedPosition writes absolute inline geometry', () => {
         setTaskViewLayoutManagerDependencies(makeDeps());
         const mgr = new TaskViewLayoutManager();
@@ -673,8 +779,12 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         // 1400x900 viewport.
         setTaskViewLayoutManagerDependencies(makeDeps());
         const mgr = new TaskViewLayoutManager();
-        // _applySavedPosition clamps against the wrapper rect, so give it one.
+        // _applySavedPosition converts through the wrapper rect, so give it one —
+        // fixed inside the viewport like the real #task-view (the results page
+        // scrolls, and a wrapper appended at its end would sit thousands of px
+        // below the play area the clamp is measured against).
         const wrapper = document.createElement('div');
+        Object.assign(wrapper.style, { position: 'fixed', top: '150px', left: '100px' });
         document.body.appendChild(wrapper);
         mgr._wrapper = wrapper;
         const entry = seedEntry(mgr, 'k');
@@ -690,12 +800,14 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
             const wrapperRect = wrapper.getBoundingClientRect();
             assert(Number.isFinite(left) && Number.isFinite(top), 'should still write coordinates');
             assert(left < 9000 && top < 4000, 'position was not clamped at all');
-            // A grabbable strip must remain inside the play area, measured
-            // wrapper-relative so the assertion does not depend on page scroll.
-            assert(left <= wrapperRect.width - 1,
-                `clamped left still outside the play area (${left} vs ${wrapperRect.width})`);
-            assert(top <= wrapperRect.height - 1,
-                `clamped top still outside the play area (${top} vs ${wrapperRect.height})`);
+            // A grabbable strip must remain inside the play area — the viewport
+            // less the chrome, NOT the wrapper box: the help window and Quick
+            // Actions live outside #task-view by default and a wrapper-based
+            // clamp dragged them back to its edge on every reload.
+            assert(wrapperRect.left + left <= window.innerWidth - 1,
+                `clamped left still off-screen (${wrapperRect.left + left} vs ${window.innerWidth})`);
+            assert(wrapperRect.top + top <= window.innerHeight - 1,
+                `clamped top still off-screen (${wrapperRect.top + top} vs ${window.innerHeight})`);
         } finally {
             wrapper.remove();
         }
@@ -706,6 +818,7 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         setTaskViewLayoutManagerDependencies(makeDeps());
         const mgr = new TaskViewLayoutManager();
         const wrapper = document.createElement('div');
+        Object.assign(wrapper.style, { position: 'fixed', top: '150px', left: '100px' });
         document.body.appendChild(wrapper);
         mgr._wrapper = wrapper;
         const entry = seedEntry(mgr, 'k');

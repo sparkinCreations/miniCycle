@@ -43,7 +43,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, LAYOUT_DOCK_ZONES, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, Z_INDEX, LIMITS, LAYOUT_PLAY_AREA_INSETS, LAYOUT_DOCK_ZONES, LAYOUT_FRAME_VERSION, UI_TIMEOUTS, EVENTS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { isTouchDevice } from '../utils/deviceDetection.js';
@@ -61,6 +61,9 @@ const di = createDIModule('TaskViewLayoutManager', {
     // is true, and only taskCRUD/titleManager ever flip it. Without this, drag-saves
     // before the first task action would never produce an undo entry.
     enableUndoSystemOnFirstInteraction: optional(null),
+    // Only for the one-time notice when positions saved in an older coordinate
+    // frame are discarded (see LAYOUT_FRAME_VERSION).
+    showNotification: optional(null),
 });
 
 export function setTaskViewLayoutManagerDependencies(dependencies) {
@@ -213,6 +216,8 @@ export class TaskViewLayoutManager {
         this._cleanupFns = new Map();
         /** @type {Map<string, MutationObserver>} */
         this._handleObservers = new Map();
+        /** @type {Map<string, MutationObserver>} Dependents watched for being shown while their anchor floats. */
+        this._visibilityObservers = new Map();
         /** @type {Map<string, HTMLElement>} */
         this._snapIndicators = new Map();
         this._resizeHandler = null;
@@ -599,6 +604,9 @@ export class TaskViewLayoutManager {
                     if (value === null) delete positions[key];
                     else positions[key] = value;
                 }
+                // Every write is measured in the current frame; stamp it so a
+                // later frame change knows these are safe to restore.
+                state.settings.taskViewLayout.frame = LAYOUT_FRAME_VERSION;
             }, true);
         } catch (err) {
             console.warn('TaskViewLayoutManager: failed to flush position writes',
@@ -664,13 +672,30 @@ export class TaskViewLayoutManager {
         const wrapperRect = this._wrapper?.getBoundingClientRect();
         let left = pos.left;
         let top = pos.top;
-        if (wrapperRect) {
+        // A follower (`customized: false`) was saved glued to its anchor, within
+        // one dock gap of it; the anchor is what gets clamped, so clamping the
+        // follower too can only tear it off. The Complete button saved just
+        // below the band edge came back 38px up inside the card otherwise.
+        const isFollower = pos.customized === false;
+        if (wrapperRect && !isFollower) {
             const rect = el.getBoundingClientRect();
             const width = Number.isFinite(pos.width) ? pos.width : rect.width;
             const height = rect.height;
             const overlap = LIMITS.LAYOUT_MIN_VISIBLE_OVERLAP;
-            left = clamp(pos.left, overlap - width, Math.max(overlap - width, wrapperRect.width - overlap));
-            top = clamp(pos.top, overlap - height, Math.max(overlap - height, wrapperRect.height - overlap));
+            // Bound against the PLAY AREA (the viewport less the measured chrome),
+            // not the wrapper box: the help window and Quick Actions live OUTSIDE
+            // #task-view by default (`left: calc(100% + 30px)` / the left gutter),
+            // so "keep 40px inside the wrapper" pulled them back to its edge on
+            // every reload — the help window dragged to the right came back 45px
+            // left of where it was dropped. The drag clamp is in play-area terms
+            // too, so what a drag allows, a reload now restores.
+            const play = this._measurePlayArea();
+            const minAbsLeft = play.left - width + overlap;
+            const maxAbsLeft = Math.max(minAbsLeft, window.innerWidth - play.right - overlap);
+            const minAbsTop = play.top - height + overlap;
+            const maxAbsTop = Math.max(minAbsTop, window.innerHeight - play.bottom - overlap);
+            left = clamp(wrapperRect.left + pos.left, minAbsLeft, maxAbsLeft) - wrapperRect.left;
+            top = clamp(wrapperRect.top + pos.top, minAbsTop, maxAbsTop) - wrapperRect.top;
         }
 
         el.style.position = 'absolute';
@@ -805,10 +830,44 @@ export class TaskViewLayoutManager {
         if (!this._shouldApplyLayout()) return;
         const positions = this._readPositions();
         if (!positions) return;
+        if (Object.keys(positions).length && this._readLayoutFrame() !== LAYOUT_FRAME_VERSION) {
+            this._discardLegacyPositions();
+            return;
+        }
         for (const [key, pos] of Object.entries(positions)) {
             if (!pos || typeof pos !== 'object') continue;
             this._applySavedPosition(key, pos);
         }
+    }
+
+    _readLayoutFrame() {
+        try {
+            return this.deps.AppState?.get?.()?.settings?.taskViewLayout?.frame ?? null;
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Positions saved before #task-view became a fixed band box were measured
+     * from an origin that moved with the in-flow content (LAYOUT_FRAME_VERSION).
+     * Restoring them into the new frame would put every element somewhere the
+     * user never dragged it, clamped into the band at best. Drop them once and
+     * say so, rather than hand the user a scrambled layout to untangle.
+     */
+    _discardLegacyPositions() {
+        if (!this.deps.AppState?.update) return;
+        try {
+            this.deps.AppState.update((state) => {
+                if (!state.settings?.taskViewLayout) return;
+                state.settings.taskViewLayout.positions = {};
+                state.settings.taskViewLayout.frame = LAYOUT_FRAME_VERSION;
+            }, true);
+        } catch (err) {
+            console.warn('TaskViewLayoutManager: failed to discard legacy positions', err);
+            return;
+        }
+        this.deps.showNotification?.(getLabel('notify.taskViewLayoutMigrated'), 'info');
     }
 
     _register(config, element) {
@@ -846,6 +905,17 @@ export class TaskViewLayoutManager {
         });
         observer.observe(handleHost, { childList: true });
         this._handleObservers.set(config.key, observer);
+
+        // A dependent that was hidden when its anchor was dragged was left out
+        // of the follow (see onPointerDown) and still sits in flex flow. If it
+        // is shown later — the Add-task row opening while the card floats — it
+        // would render at #task-view's centre, nowhere near the card it docks
+        // to. Watch its class/style and glue it on the moment it has a box.
+        if (config.dock?.relativeToId) {
+            const visibilityObserver = new MutationObserver(() => this._dockShownDependent(config.key));
+            visibilityObserver.observe(element, { attributes: true, attributeFilter: ['class', 'style', 'hidden'] });
+            this._visibilityObservers.set(config.key, visibilityObserver);
+        }
 
         // JS-driven hover tracking (replaces CSS :hover-based reveal).
         // CSS :hover proved unreliable when the input bar is re-parented to
@@ -945,6 +1015,17 @@ export class TaskViewLayoutManager {
                 if (depEntry.customized) continue;
                 if (element.contains(depEntry.element)) continue;
                 const depRect = depEntry.element.getBoundingClientRect();
+                // A hidden dependent (the Add-task row is `hidden` until the user
+                // opens it) has a 0x0 rect at the viewport ORIGIN. Measured from
+                // there, its "offset" is the card's whole distance from the top of
+                // the page, and _measureGroupInset read that as a follower hanging
+                // that far above the card: the clamp's minimum rose past its
+                // maximum and the card could not move vertically at all, while
+                // left/right still worked (Oct 2026: pinned at 287px on an 800px
+                // window with the input bar closed). Nothing invisible overhangs,
+                // and nothing invisible needs pulling along — if it is shown while
+                // the card is still floating, _dockShownDependent glues it on.
+                if (depRect.width === 0 && depRect.height === 0) continue;
                 followingDeps.push({
                     entry: depEntry,
                     relativeOffsetLeft: depRect.left - elementRect.left,
@@ -1033,14 +1114,26 @@ export class TaskViewLayoutManager {
             // captured once at drag start.
             const playArea = dragState.playArea;
             const group = dragState.groupInset;
-            const minAbsLeft = playArea.left + group.left;
-            const minAbsTop = playArea.top + group.top;
-            // Math.max keeps max >= min when a group is taller/wider than the play
-            // area; clamp() would otherwise pin to a bound below its own minimum.
-            const maxAbsLeft = Math.max(minAbsLeft,
-                window.innerWidth - dragState.elementWidth - playArea.right - group.right);
-            const maxAbsTop = Math.max(minAbsTop,
-                window.innerHeight - dragState.elementHeight - playArea.bottom - group.bottom);
+            // The anchor is held back by its followers' overhang so the WHOLE
+            // group stays in the play area. When the group is taller (or wider)
+            // than the play area no position satisfies that, and pinning the
+            // anchor at the group's minimum — what Math.max(min, max) used to do —
+            // froze it on that axis: a long routine on a short window could not be
+            // moved up or down at all. Fall back to bounding the anchor ALONE on
+            // that axis, so it still travels the play area and only its followers
+            // may overlap the chrome edges, which is the lesser evil.
+            const axisBounds = (lower, upper, lowerAlone, upperAlone) =>
+                upper >= lower ? [lower, upper] : [lowerAlone, Math.max(lowerAlone, upperAlone)];
+            const [minAbsLeft, maxAbsLeft] = axisBounds(
+                playArea.left + group.left,
+                window.innerWidth - dragState.elementWidth - playArea.right - group.right,
+                playArea.left,
+                window.innerWidth - dragState.elementWidth - playArea.right);
+            const [minAbsTop, maxAbsTop] = axisBounds(
+                playArea.top + group.top,
+                window.innerHeight - dragState.elementHeight - playArea.bottom - group.bottom,
+                playArea.top,
+                window.innerHeight - dragState.elementHeight - playArea.bottom);
 
             const clampedAbsLeft = clamp(desiredAbsLeft, minAbsLeft, maxAbsLeft);
             const clampedAbsTop = clamp(desiredAbsTop, minAbsTop, maxAbsTop);
@@ -1197,6 +1290,30 @@ export class TaskViewLayoutManager {
             element.classList.add(DOM_CLASSES.TVL_CUSTOMIZED);
         }
 
+        // Out of flow, the element is no longer squeezed by #task-view's shrink
+        // chain; the floating card takes its own cap instead (task-view-
+        // layout.css, keyed on TVL_CUSTOMIZED — which is why the class goes on
+        // ABOVE, before this measurement: measured without it, the list opened
+        // to its full content height and the Complete button was offset by a
+        // 937px card that then shrank to 430px). The height captured at
+        // pointerdown and every follower offset below the anchor were measured
+        // against the flow box (Oct 2026: 399px in flow, 460px floating, with
+        // the Add-task row open on an 800px window), so without this the clamp
+        // let the card run over the nav dots and the Complete button rode
+        // along inside it. Re-measure now that it is absolute and capped, move
+        // the followers below it by the change so they keep their gap to its
+        // bottom edge, and re-derive the group overhang from the real box.
+        const floatRect = element.getBoundingClientRect();
+        const grown = floatRect.height - dragState.elementHeight;
+        if (grown !== 0) {
+            for (const dep of dragState.followingDeps) {
+                if (dep.relativeOffsetTop >= dragState.elementHeight) dep.relativeOffsetTop += grown;
+            }
+            dragState.elementHeight = floatRect.height;
+            dragState.groupInset = this._measureGroupInset(dragState.followingDeps, floatRect);
+        }
+
+
         // Pull along any dependents that don't already follow via the DOM
         // hierarchy. Use the natural offsets captured at pointerdown so
         // the visual relationship (e.g., the Complete button's exact gap
@@ -1287,6 +1404,32 @@ export class TaskViewLayoutManager {
             if (entry.element === element) return entry;
         }
         return null;
+    }
+
+    /**
+     * Glue a docked dependent to its floating anchor the moment it becomes
+     * visible. Only acts when every one of these holds: the layout feature is
+     * active, the dependent is docked (not independently placed), its anchor
+     * is customized, it has no inline placement yet (it was hidden when the
+     * anchor was dragged, so onPointerDown skipped it), and it now has a box.
+     * Persisted as a follower, exactly like a dependent that rode along.
+     */
+    _dockShownDependent(key) {
+        const entry = this._registry.get(key);
+        if (!entry || entry.customized || !entry.config.dock?.relativeToId) return;
+        if (!this._shouldApplyLayout()) return;
+        const el = entry.element;
+        if (el.style.position) return;
+        const anchor = this.deps.getElementById(entry.config.dock.relativeToId);
+        const anchorEntry = this._findEntryByElement(anchor);
+        if (!anchor || !anchorEntry?.customized) return;
+        const rect = el.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) return;
+        const anchorRect = anchor.getBoundingClientRect();
+        this._prepDependentForFollow(el);
+        this._positionDependentRelativeToAnchor(
+            el, entry.config.dock, anchorRect.left, anchorRect.top, anchorRect.bottom, anchorRect.width);
+        this._saveElementPosition(el, entry.config, false);
     }
 
     _prepDependentForFollow(dep) {
@@ -1565,6 +1708,11 @@ export class TaskViewLayoutManager {
             try { observer.disconnect(); } catch { /* ignore */ }
         }
         this._handleObservers.clear();
+
+        for (const observer of this._visibilityObservers.values()) {
+            try { observer.disconnect(); } catch { /* ignore */ }
+        }
+        this._visibilityObservers.clear();
 
         for (const indicator of this._snapIndicators.values()) {
             indicator.remove();

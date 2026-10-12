@@ -135,6 +135,37 @@ cannot creep back in at any width.
 
 ---
 
+## Home view's box is the band too (Oct 2026)
+
+Home view (`body:not(.focus-mode)`) centres `#task-view` on the same measured
+band (`app-container.css`), and from Oct 2026 at ≥769px the box has the band's
+**height** (`height: band − 2 × --home-band-gap`, `justify-content: safe
+center`) rather than only a `max-height`. The reason is not visual — content
+centred in a fixed box sits exactly where the content-sized, centred box put it
+— it is the desktop drag-customize feature (`taskViewLayoutManager`). Every
+dragged element is positioned in pixels relative to `#task-view`, and a box that
+hugs its in-flow content moves its origin whenever that content changes: a
+longer routine, the Add-task row opening, or an element floating out of it.
+Measured before the change: followers restored *inside* the card after a reload
+and the Add-task row docked 30px high. A fixed box is a stable frame; saved
+positions carry `taskViewLayout.frame` (`LAYOUT_FRAME_VERSION`) and positions
+from the hugging box are discarded once, with a notice.
+
+Two consequences:
+
+- `#task-card-group` must not **grow** into the band (`flex-grow: 0` at ≥769px)
+  or a short routine's list background stretches to fill it — the same stretch
+  Focus View removed. It still shrinks.
+- a **floating** card is out of the flow, so the band no longer bounds it. It
+  gets `max-height: band − --home-float-travel` (`task-view-layout.css`,
+  ≥1024px) so it fits and still has room to be moved up and down. The old
+  literal desktop list cap in `buttons.css` (`100vh − 400px`) is gone; the
+  fixed box exposed it as binding 5px short of the band.
+
+Focus View is unaffected: its band rule sets `height: auto` and anchors
+`top`/`bottom`. ≤768px keeps the content-sized box; there is no drag feature
+there to anchor.
+
 ## Why centring failed (do not revert to it)
 
 The previous model was `top: calc(50% + 25px)` with a height derived so the top
