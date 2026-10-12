@@ -19,6 +19,9 @@
     "test:meta": "node tests/automated/run-meta-tests.cjs",
     "test:journey": "node tests/automated/run-journey-tests.cjs",
     "test:a11y": "node tests/automated/run-a11y-tests.cjs",
+    "test:contrast": "node tests/automated/run-contrast-tests.cjs",
+    "test:webkit": "PW_BROWSER=webkit node tests/automated/run-browser-tests.cjs",
+    "test:journey:webkit": "PW_BROWSER=webkit node tests/automated/run-journey-tests.cjs",
     "test:lite": "node lite/tests/run-lite-tests.cjs",
     "test:lite:update": "node lite/tests/run-lite-tests.cjs --update",
     "test:manual": "python3 -m http.server 8080",
@@ -67,6 +70,7 @@
   "author": "miniCycle",
   "license": "SEE LICENSE IN LICENSE",
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "esbuild": "^0.28.1",
     "eslint": "^9.39.2",
     "eslint-plugin-security": "^3.0.1",

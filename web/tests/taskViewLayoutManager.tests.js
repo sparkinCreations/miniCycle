@@ -649,6 +649,30 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         }
     });
 
+    await test('a pending drag write is flushed when another action is about to be snapshotted', () => {
+        // Order on the undo stack must follow the order of actions: a task
+        // action inside the coalesce window used to be undone AFTER the drag.
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const fixture = makeFixture();
+        try {
+            mgr.init();
+            const el = document.createElement('div');
+            el.style.left = '1px'; el.style.top = '2px';
+            mgr._saveElementPosition(el, { key: 'status-bubble' });
+            assertEq(AppState.calls.update, 0, 'write should still be coalescing');
+            document.dispatchEvent(new CustomEvent(EVENTS.UNDO_SNAPSHOT_PENDING));
+            assertEq(AppState.calls.update, 1, 'the pending write must land on the announcement');
+            assertEq(mgr._pendingWrites.size, 0, 'queue drained');
+            document.dispatchEvent(new CustomEvent(EVENTS.UNDO_SNAPSHOT_PENDING));
+            assertEq(AppState.calls.update, 1, 'nothing pending → nothing written');
+        } finally {
+            try { mgr.destroy(); } catch { /* teardown must not mask the failure */ }
+            fixture.cleanup();
+        }
+    });
+
     await test('_flushPositionWrites stamps the coordinate frame', () => {
         const AppState = makeAppState();
         setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));

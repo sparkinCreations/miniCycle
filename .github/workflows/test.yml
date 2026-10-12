@@ -180,6 +180,14 @@ jobs:
       working-directory: ./web
       run: npm run test:a11y
 
+    # Colour contrast via axe (rule color-contrast), per theme and view, on
+    # solid backgrounds. Gated: the baseline was cleaned on 2026-10-12 (the
+    # notification action pill was the only failure), so a new serious
+    # violation fails the run. Text over image backgrounds is reported only.
+    - name: Run colour-contrast gate (axe)
+      working-directory: ./web
+      run: CONTRAST_GATE=1 npm run test:contrast
+
     # miniCycle Lite (web/lite/tests/): behavior only. The visual baselines are
     # font-dependent (made on macOS) and are run locally before CSS changes.
     # Spawns its own server (port 8074) + uses the chromium installed above.
@@ -193,3 +201,42 @@ jobs:
     - name: Test summary
       if: always()
       run: echo "✅ Tests completed for Node.js ${{ matrix.node-version }}"
+
+  # WebKit is the second engine this product ships on (the iOS app is a
+  # WKWebView). Non-blocking until it has been green for a few releases, then
+  # drop continue-on-error. Firefox can follow the same pattern.
+  test-webkit:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./web
+      run: npm ci
+
+    - name: Install Playwright WebKit
+      working-directory: ./web
+      run: npx playwright install --with-deps webkit
+
+    - name: Start HTTP server in background
+      working-directory: ./web
+      run: |
+        python3 -m http.server 8080 &
+        sleep 3
+
+    - name: Browser tests on WebKit
+      working-directory: ./web
+      run: npm run test:webkit
+
+    - name: Journeys on WebKit
+      working-directory: ./web
+      run: npm run test:journey:webkit

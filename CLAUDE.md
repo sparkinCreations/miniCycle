@@ -46,6 +46,8 @@ npm run test:layout   # panel-overlap + measured-var guard (7 app viewports) + s
 npm run test:meta     # static: every test must assert and await its async body
 npm run test:journey  # end-to-end user journeys on the real app
 npm run test:a11y     # custom controls must be keyboard-operable and named — the class no label gate can see
+npm run test:contrast # axe color-contrast on the real app, per theme and view (gated at zero serious violations; text over image backgrounds is reported, not judged)
+npm run test:webkit   # the browser suite on WebKit (the iOS app is a WKWebView) — CI runs it non-blocking; test:journey:webkit likewise
 ```
 
 **Adding a new module file? Run `test:sw`.** Its precache drift guard fails when a module

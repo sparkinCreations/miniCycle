@@ -29,7 +29,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 
 // Change description for undo/redo notifications (Pattern 2, pure). Split out
 // Aug 2026. `describeChange` is re-exported from there for tests only; the
@@ -478,6 +478,9 @@ export function wrapAppStateForUndo(appInit) {
         const isSystemCall = options?.system === true;
         // Capture snapshot before update (if core ready and not during undo/redo)
         if (!isSystemCall && appInit?.isCoreReady?.() && !globalState?.isPerformingUndoRedo && boundGet) {
+          // Let a module with coalesced writes of its own land them first, so
+          // the stack reads in the order the user acted (see EVENTS).
+          try { document.dispatchEvent(new CustomEvent(EVENTS.UNDO_SNAPSHOT_PENDING)); } catch { /* no document — nothing to flush */ }
           const prev = boundGet();
           if (prev) {
             captureStateSnapshot(prev);

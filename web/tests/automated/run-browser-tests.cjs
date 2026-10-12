@@ -9,7 +9,14 @@
  *   npm test -- --list           # List all available modules
  */
 
-const { chromium } = require('playwright');
+const playwright = require('playwright');
+// PW_BROWSER=webkit|firefox runs the same suite on another engine (CI runs
+// WebKit non-blocking — the iOS app is a WKWebView, so it is the second engine
+// this product ships on). Default stays Chromium.
+const ENGINE_NAME = (process.env.PW_BROWSER || 'chromium').toLowerCase();
+const engine = playwright[ENGINE_NAME];
+if (!engine) { console.error(`Unknown PW_BROWSER "${ENGINE_NAME}" (chromium | webkit | firefox)`); process.exit(2); }
+const { chromium } = playwright;
 const fs = require('fs');
 const path = require('path');
 const { testTreeFingerprint } = require('../../scripts/test-tree-fingerprint.cjs');
@@ -321,7 +328,7 @@ async function runAllTests() {
 
     // Launch browser
     console.log(`\n${colors.cyan}🌐 Launching browser...${colors.reset}`);
-    const browser = await chromium.launch({
+    const browser = await engine.launch({
         headless: true // Set to false to see browser
     });
 

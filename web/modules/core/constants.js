@@ -706,7 +706,13 @@ export const EVENTS = Object.freeze({
         reveal, an open dropdown — drops it. The generic sweep (task option
         reveals, drag marks, body classes, long-press hints) runs before the
         event; this is for state only its owner can see. */
-    UI_ESCAPE_RESET: 'ui:escapeReset'
+    UI_ESCAPE_RESET: 'ui:escapeReset',
+    /** Dispatched on document by the undo wrapper just before it captures the
+        pre-write snapshot for a user action. A module holding coalesced writes
+        of its own (taskViewLayoutManager's drag positions) flushes them on this,
+        so its entry lands on the undo stack BEFORE the action that followed
+        it — the order the user performed them. */
+    UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending'
 });
 
 // ============================================================================

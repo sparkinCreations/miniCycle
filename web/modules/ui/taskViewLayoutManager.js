@@ -21,11 +21,11 @@
  *    button in settings.
  *  - Dock/snap zones let an element drop back into normal flex flow.
  *  - Covered by tests/taskViewLayoutManager.tests.js.
- *  - Known, accepted: because a drag's write is coalesced for
- *    UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW, a task action performed inside that
- *    window lands on the undo stack BELOW the drag, so Undo reverts the drag
- *    first. Flushing on every foreign AppState.update would couple this module
- *    to the undo wrapper; the half-second window is the trade (Oct 2026).
+ *  - A drag's write is coalesced for UI_TIMEOUTS.LAYOUT_COALESCE_WINDOW. So
+ *    that a task action inside that window does not land on the undo stack
+ *    BELOW the drag, the undo wrapper announces EVENTS.UNDO_SNAPSHOT_PENDING
+ *    before every user-action snapshot and this module flushes its pending
+ *    writes on it (Oct 2026) — no direct coupling, right order.
  *
  * Saved positions are validated and clamped on apply (`_applySavedPosition`):
  * they are global and stored in pixels, so a layout arranged on a wide display
@@ -306,6 +306,14 @@ export class TaskViewLayoutManager {
         };
         document.addEventListener(EVENTS.FOCUS_MODE_ACTIVATED, this._focusModeActivated);
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
+
+        // Another user action is about to be snapshotted: land our coalesced
+        // drag writes first so Undo order matches the order of actions.
+        this._undoSnapshotPending = () => {
+            if (this._flushing || !this._pendingWrites.size) return;
+            this._flushPositionWrites();
+        };
+        document.addEventListener(EVENTS.UNDO_SNAPSHOT_PENDING, this._undoSnapshotPending);
 
         // Escape with nothing to close (uiBoot): drop the hover reveals.
         this._escapeReset = () => {
@@ -719,6 +727,9 @@ export class TaskViewLayoutManager {
         // dropped from the undo stack. Done here, not at queue time, so a burst
         // that collapses to nothing never enables undo for no reason.
         this.deps.enableUndoSystemOnFirstInteraction?.();
+        // Our own update re-triggers UNDO_SNAPSHOT_PENDING; the flag keeps the
+        // listener from re-entering while this flush is in flight.
+        this._flushing = true;
         try {
             this.deps.AppState.update((state) => {
                 if (!state.settings) return;
@@ -740,6 +751,8 @@ export class TaskViewLayoutManager {
         } catch (err) {
             console.warn('TaskViewLayoutManager: failed to flush position writes',
                 [...writes.keys()], err);
+        } finally {
+            this._flushing = false;
         }
     }
 
@@ -1878,6 +1891,7 @@ export class TaskViewLayoutManager {
         if (this._focusModeDeactivated) {
             document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._focusModeDeactivated);
             document.removeEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeReset);
+            document.removeEventListener(EVENTS.UNDO_SNAPSHOT_PENDING, this._undoSnapshotPending);
             this._focusModeDeactivated = null;
         }
 
