@@ -59,6 +59,26 @@
     flex: 1 1 auto;
     min-height: 0;
 }
+/* >=769px #task-view is a fixed-height band box (app-container.css), so a
+   flex-grow of 1 would stretch the card group — and the list background with
+   it — to fill the band on a short routine. Shrink only; the box centres it. */
+@media (min-width: 769px) {
+    #task-card-group.task-card-group {
+        flex-grow: 0;
+    }
+}
+/* A floating (drag-customized) card is out of #task-view's flow, so the band
+   no longer bounds it and the list would open to its full content height — a
+   12-task routine made a card taller than an 800px window. Cap it at the band
+   less --home-float-travel so it fits AND can still be moved up and down; the
+   chain below (.task-card / .task-list-container, min-height: 0) shrinks the
+   list to it. Desktop-only like the drag feature itself. */
+@media (min-width: 1024px) {
+    #task-card-group.tvl-customized {
+        max-height: calc(100vh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap) - var(--home-float-travel));
+        max-height: calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap) - var(--home-float-travel));
+    }
+}
 /* Was scoped to <=768px until Oct 2026. Tablets and desktop had NO shrink
    chain: a flex item's default min-height is its content height, so the card
    group could not give, the list stayed at its literal cap, and a long routine

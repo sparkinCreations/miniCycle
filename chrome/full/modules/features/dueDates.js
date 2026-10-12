@@ -26,6 +26,22 @@ import { getLabel } from '../labels/labelResolver.js';
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
+/**
+ * Keep a recurring template's due date in step with its live task.
+ *
+ * The template is what the watcher recreates the task from, and until Oct
+ * 2026 only recurring activation wrote its due date — so a date changed or
+ * cleared on the task came back on the next occurrence. Priority already
+ * synced this way (taskCRUD); due date was the one field left out.
+ * @param {Object|null|undefined} routine - The draft routine inside AppState.update
+ * @param {string} taskId
+ * @param {string|null} dueDate - '' and undefined are stored as null
+ */
+function syncTemplateDueDate(routine, taskId, dueDate) {
+    const template = routine?.recurringTemplates?.[taskId];
+    if (template) template.dueDate = dueDate || null;
+}
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -164,6 +180,7 @@ export class MiniCycleDueDates {
                     if (taskToUpdate) {
                         taskToUpdate.dueDate = newDueDate;
                     }
+                    syncTemplateDueDate(getRoutine(state, activeCycle), taskId, newDueDate);
                 }
             }, true);
         } catch (error) {
@@ -309,6 +326,7 @@ export class MiniCycleDueDates {
                 if (taskToUpdate) {
                     taskToUpdate.dueDate = dueDateInput.value;
                 }
+                syncTemplateDueDate(getRoutine(state, currentActiveCycle), assignedTaskId, dueDateInput.value);
             }, true);
 
             this.deps.updateStatsPanel();
@@ -455,6 +473,7 @@ export class MiniCycleDueDates {
                 if (taskToUpdate) {
                     taskToUpdate.dueDate = dueDateValue;
                 }
+                syncTemplateDueDate(getRoutine(state, activeCycle), taskId, dueDateValue);
             }, true);
         } catch (error) {
             console.error('❌ Error saving due date:', error);

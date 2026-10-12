@@ -13,7 +13,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, EVENTS } from '../core/constants.js';
 
 // Gap between the tooltip's bottom edge and its anchor's top edge
 const TOOLTIP_OFFSET_PX = 10;
@@ -292,6 +292,11 @@ export class QuickActionsManager {
     }
 
     async init() {
+        // Escape with nothing to close drops the long-press tooltip (uiBoot).
+        if (!this._escapeResetHandler) {
+            this._escapeResetHandler = () => this._hideTooltip();
+            document.addEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeResetHandler);
+        }
         if (this._initialized) return;
 
         // Unguarded on purpose (CLAUDE.md #19): appInit is `required()`, so `?.`
@@ -1325,7 +1330,9 @@ export class QuickActionsManager {
 
         // Find the slots container that is a sibling of the header
         const getSlotsContainer = () => {
-            const panel = element.closest(`${DOM_SELECTORS.QUICK_ACTIONS_PANEL}, ${DOM_SELECTORS.QUICK_ACTIONS_MENU_ROW}`);
+            // The desktop window is #quick-actions-window; `.quick-actions-panel`
+            // matched nothing there, so the header swipe was dead on desktop.
+            const panel = element.closest(`${DOM_SELECTORS.QUICK_ACTIONS_PANEL}, ${DOM_SELECTORS.QUICK_ACTIONS_MENU_ROW}, #${DOM_IDS.QUICK_ACTIONS_WINDOW}`);
             return panel?.querySelector(DOM_SELECTORS.QUICK_ACTIONS_SLOTS);
         };
 
@@ -1394,39 +1401,65 @@ export class QuickActionsManager {
             }
         };
 
-        // Touch events
+        // Touch events. A touch that turns out to be a vertical scroll is
+        // released from the swipe for the rest of the gesture: a scroll that
+        // started on the header and drifted sideways used to cycle the view.
+        let startY = 0;
+        let touchIsScroll = false;
         element.addEventListener('touchstart', (e) => {
             startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            touchIsScroll = false;
         }, { passive: true });
 
         element.addEventListener('touchmove', (e) => {
+            if (touchIsScroll) return;
             const diff = e.touches[0].clientX - startX;
+            const dy = Math.abs(e.touches[0].clientY - startY);
+            if (dy > Math.abs(diff) && dy > threshold / 4) {
+                touchIsScroll = true;
+                releaseDrag(0);
+                return;
+            }
             applyDragOffset(diff);
         }, { passive: true });
 
         element.addEventListener('touchend', (e) => {
+            if (touchIsScroll) return;
             const diff = e.changedTouches[0].clientX - startX;
             releaseDrag(diff);
         }, { passive: true });
 
-        // Desktop: mouse drag on header
+        // A cancelled touch (system gesture, incoming call) never gets a
+        // touchend; the slots stayed translated and faded until the next touch.
+        element.addEventListener('touchcancel', () => {
+            touchIsScroll = false;
+            releaseDrag(0);
+        }, { passive: true });
+
+        // Desktop: mouse drag on header. The move/up listeners live on the
+        // DOCUMENT for the life of one press — on the header alone, a release
+        // outside it left the press armed, so hovering back across the header
+        // dragged the slots with no button down and a later plain click
+        // flipped the view (measured Oct 2026).
+        const onDocMouseMove = (e) => {
+            if (this._swipeStartX === null) return;
+            if (e.buttons === 0) { endMouseSwipe(null); return; }
+            applyDragOffset(e.clientX - this._swipeStartX);
+        };
+        const onDocMouseUp = (e) => endMouseSwipe(e.clientX);
+        const endMouseSwipe = (clientX) => {
+            if (this._swipeStartX === null) return;
+            releaseDrag(clientX === null ? 0 : clientX - this._swipeStartX);
+            this._swipeStartX = null;
+            document.removeEventListener('mousemove', onDocMouseMove);
+            document.removeEventListener('mouseup', onDocMouseUp);
+        };
         element.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return;
             this._swipeStartX = e.clientX;
-        });
-
-        element.addEventListener('mousemove', (e) => {
-            if (this._swipeStartX !== null) {
-                const diff = e.clientX - this._swipeStartX;
-                applyDragOffset(diff);
-            }
-        });
-
-        element.addEventListener('mouseup', (e) => {
-            if (this._swipeStartX !== null) {
-                const diff = e.clientX - this._swipeStartX;
-                releaseDrag(diff);
-                this._swipeStartX = null;
-            }
+            document.addEventListener('mousemove', onDocMouseMove);
+            document.addEventListener('mouseup', onDocMouseUp);
         });
     }
 
@@ -1466,6 +1499,14 @@ export class QuickActionsManager {
         tooltip.className = 'quick-actions-tooltip';
         document.body.appendChild(tooltip);
         this._tooltip = tooltip;
+    }
+
+    /** Boot-retry teardown: the only document-level listener this module owns. */
+    destroy() {
+        if (this._escapeResetHandler) {
+            document.removeEventListener(EVENTS.UI_ESCAPE_RESET, this._escapeResetHandler);
+            this._escapeResetHandler = null;
+        }
     }
 
     _showTooltip(element, actionId, slotIndex, isAutoView) {

@@ -142,6 +142,8 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                             || getAutoClearSettings(existingTemplate)
                             || null,
                         recurringSettings: structuredClone(settings),
+                        // Re-applying settings does not un-pause.
+                        paused: existingTemplate?.paused === true,
                         // Where the task sits now, or the last recorded spot if it is
                         // not currently in the list — recreated instances return there.
                         position: (() => {

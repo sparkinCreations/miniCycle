@@ -1,3 +1,17 @@
+## [2.606] - 2026-10-12
+- feat(recurring): pause and resume a recurring task; removing one that is not in the list offers to put it back
+- fix(recurring): a cleared occurrence's due date does not come back on the next recurrence
+- feat(ui): Escape puts transient UI state back when nothing is open
+- fix(menu): opening the task-options customizer from the main menu no longer leaves the page blurred
+- fix(gestures): pull-to-refresh keeps its scroll container; carousel yields to a task drag and a stylus; layout drags survive capture loss; first layout drag is undoable; coin momentum follows the drag
+- fix(gestures): disarm every press that ends without a mouseup; clamp and keep the notification panel; make layout handles and docks reachable
+- fix(drag): end rows obey the pointer, a drag from the options is cancelled, an in-place drop writes nothing
+- fix(drag): task reorder lands where released, reverts when abandoned, and never moves hidden tasks
+- fix(reset): the start screen's use cases and tips rotate again after an in-place factory reset; finish with a real reload when safe
+- test(lite): Phase 0 safety net — behavior tests + visual baselines in web/lite/tests
+- fix(task-view): the routine card can be dragged up and down again; home view's box is the band
+
+
 ## [2.605] - 2026-10-11
 - feat(progress): a modern routine progress bar — frosted track, gradient fill, width-driven, ARIA
 - docs(lite): cleanup plan; build: never publish lite/tests or lite/*.md

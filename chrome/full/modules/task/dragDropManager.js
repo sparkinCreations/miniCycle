@@ -53,6 +53,31 @@ export function setDragDropManagerDependencies(dependencies) {
 }
 
 /**
+ * Merge the on-screen order of a drag back into the routine without moving
+ * anything that was not on screen.
+ *
+ * Rows that are not in #taskList — completed tasks parked in the dropdown —
+ * used to be appended after the dragged order, so ANY drag moved every hidden
+ * completed task to the end of the routine (measured Oct 2026: task 2 done,
+ * task 5 dragged to the top, the done task went from position 2 to 12). In a
+ * routine manager the sequence is the routine; this keeps every hidden row at
+ * its index and lets the visible rows fill the remaining slots in their new
+ * order. Ids in the DOM that the routine no longer has are ignored.
+ *
+ * @param {Array<{id: string}>} tasks - The routine's tasks, current order
+ * @param {string[]} visibleIdsInDomOrder - Task ids as #taskList now shows them
+ * @returns {Array<{id: string}>} New task array (same objects, new order)
+ */
+export function mergeVisibleOrder(tasks, visibleIdsInDomOrder) {
+    if (!Array.isArray(tasks)) return tasks;
+    const byId = new Map(tasks.map(t => [t.id, t]));
+    const visible = (visibleIdsInDomOrder || []).filter(id => byId.has(id));
+    const visibleSet = new Set(visible);
+    let next = 0;
+    return tasks.map(t => (visibleSet.has(t.id) ? byId.get(visible[next++]) : t));
+}
+
+/**
  * Manages drag-and-drop reordering of tasks in the task list
  */
 export class DragDropManager {
@@ -89,6 +114,10 @@ export class DragDropManager {
 
         // Track current drop target to avoid querySelectorAll in hot paths
         this._currentDropTarget = null;
+
+        // The move handleRearrange has scheduled but not yet applied — the
+        // drop/touchend paths flush it before saving (see _flushPendingRearrange).
+        this._pendingRearrange = null;
 
         // Track if native HTML5 dragstart fired (iOS native DnD).
         // When true, touchcancel should NOT clear this.draggedTask
@@ -165,7 +194,7 @@ export class DragDropManager {
             // Cleanup drag state when page becomes hidden (tab switch, minimize, etc.)
             this._dragVisibilityHandler = () => {
                 if (document.hidden && this.draggedTask) {
-                    this.cleanupDragState();
+                    this._revertUnfinishedDrag();
                 }
             };
             safeAdd(document, 'visibilitychange', this._dragVisibilityHandler);
@@ -173,7 +202,7 @@ export class DragDropManager {
             // Also cleanup on window blur (user clicks outside browser)
             this._dragBlurHandler = () => {
                 if (this.draggedTask) {
-                    this.cleanupDragState();
+                    this._revertUnfinishedDrag();
                 }
             };
             safeAdd(window, 'blur', this._dragBlurHandler);
@@ -291,6 +320,9 @@ export class DragDropManager {
             if (taskElement._dragstartHandler) {
                 taskElement.removeEventListener("dragstart", taskElement._dragstartHandler);
             }
+            if (taskElement._dragendHandler) {
+                taskElement.removeEventListener("dragend", taskElement._dragendHandler);
+            }
             if (taskElement._clickGuardHandler) {
                 taskElement.removeEventListener("click", taskElement._clickGuardHandler);
             }
@@ -332,7 +364,9 @@ export class DragDropManager {
                     isDragging = true;
                     taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
-                    event.preventDefault();
+                    // (No preventDefault here: the touchstart finished dispatching
+                    // 500ms ago, so it would be a no-op. Scroll is blocked by the
+                    // touchmove handler once isDragging is set.)
 
                     // Enable undo system on first user interaction (touch drag path)
                     this.deps.enableUndoSystemOnFirstInteraction?.();
@@ -369,19 +403,17 @@ export class DragDropManager {
                     return;
                 }
 
-                // Before long press activates: cancel if moving too much
+                // Before the long press activates: a real move (a scroll, a
+                // swipe) cancels the hold. Only past the threshold — a second
+                // `deltaY > deltaX` branch used to cancel on ANY vertical drift,
+                // so a finger that settled one pixel downward never armed the
+                // drag while the same drift sideways was tolerated (measured
+                // Oct 2026: 2px down → no drag, 2px across → drag). A scroll
+                // clears 15px long before the 500ms hold is up.
                 if (deltaX > moveThreshold || deltaY > moveThreshold) {
                     clearTimeout(holdTimeout);
                     isLongPress = false;
                     isTap = false;
-                    return;
-                }
-
-                // Allow normal scrolling if moving vertically
-                if (deltaY > deltaX) {
-                    clearTimeout(holdTimeout);
-                    isTap = false;
-                    return;
                 }
             };
             safeAdd(taskElement, "touchmove", taskElement._touchmoveHandler, { passive: false }); // Must be non-passive - calls preventDefault()
@@ -407,14 +439,17 @@ export class DragDropManager {
                 }
 
                 // Save reordered state before clearing drag references (custom touch drag)
-                if (isDragging && this.didDragReorderOccur) {
-                    this.saveDragReorder();
+                if (isDragging) {
+                    this.saveDragReorder();   // flushes a pending move; no-op if nothing moved
                 }
 
                 if (this.draggedTask) {
-                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
+                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING, DOM_CLASSES.DROP_TARGET);
                     this.draggedTask = null;
                 }
+                this._currentDropTarget = null;
+                this._pendingRearrange = null;
+                clearTimeout(this.rearrangeTimeout);
 
                 isDragging = false;
 
@@ -443,15 +478,19 @@ export class DragDropManager {
                     return;
                 }
 
-                // Real cancel (system alert, etc.) — clean up everything
-                if (isDragging && this.didDragReorderOccur) {
+                // Real cancel (system alert, etc.) — keep what the user had
+                // already arranged, then clean up everything
+                if (isDragging) {
                     this.saveDragReorder();
                 }
 
                 if (this.draggedTask) {
-                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);
+                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING, DOM_CLASSES.DROP_TARGET);
                     this.draggedTask = null;
                 }
+                this._currentDropTarget = null;
+                this._pendingRearrange = null;
+                clearTimeout(this.rearrangeTimeout);
 
                 isDragging = false;
                 isLongPress = false;
@@ -462,7 +501,12 @@ export class DragDropManager {
 
             // 🖱️ **Mouse-based Drag for Desktop (also fires on iOS native DnD)**
             taskElement._dragstartHandler = (event) => {
-                if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) return;
+                // Not from the ⋯ options: cancel the native drag too, or the
+                // browser lifts a ghost of the row that nothing is tracking.
+                if (event.target.closest(DOM_SELECTORS.TASK_OPTIONS)) {
+                    event.preventDefault();
+                    return;
+                }
 
                 // Prevent dragging completed tasks in the completed dropdown
                 if (taskElement.closest(`#${DOM_IDS.COMPLETED_TASK_LIST}`)) {
@@ -528,6 +572,19 @@ export class DragDropManager {
             };
             safeAdd(taskElement, "dragstart", taskElement._dragstartHandler);
 
+            // A drag that ends WITHOUT a drop — Escape, released outside the
+            // window, a cancelled iOS native drag. Nothing handled this until Oct
+            // 2026: dragover had already moved the row in the DOM, state was
+            // untouched, and the row kept `.dragging` (translucent, scaled) until
+            // something else re-rendered. dragend also fires after a successful
+            // drop, by which time the drop handler has saved and cleared
+            // draggedTask, so this is a no-op there.
+            taskElement._dragendHandler = () => {
+                if (this.draggedTask !== taskElement) return;
+                this._revertUnfinishedDrag();
+            };
+            safeAdd(taskElement, "dragend", taskElement._dragendHandler);
+
             // 🛡️ Click guard: suppress synthetic click after long-press/drag
             // Browsers fire a click event after touchend — without this guard,
             // the delegated click handler on taskList would toggle the checkbox.
@@ -552,95 +609,105 @@ export class DragDropManager {
     handleRearrange(target, event) {
         if (!target || !this.draggedTask || target === this.draggedTask) return;
 
+        // Fix #33: Handle both mouse events (clientY) and touch events (touches[0].clientY)
+        const clientY = event.clientY ?? event.touches?.[0]?.clientY ?? event.changedTouches?.[0]?.clientY;
+
+        // Trailing debounce: the move is applied REARRANGE_DELAY after the last
+        // dragover/touchmove, which smooths a fast pass over several rows. The
+        // last move is therefore still pending when the user lets go within
+        // that window — drop/touchend must flush it (_flushPendingRearrange) or
+        // the row lands one short of where it was released. Measured Oct 2026:
+        // same target, release 300ms after the last move → lands there; release
+        // 20ms after → does not move at all.
         clearTimeout(this.rearrangeTimeout);
+        this._pendingRearrange = { target, clientY };
+        this.rearrangeTimeout = setTimeout(() => this._applyPendingRearrange(), this.REARRANGE_DELAY);
+    }
 
-        this.rearrangeTimeout = setTimeout(() => {
-            if (!document.contains(target) || !document.contains(this.draggedTask)) return;
+    /**
+     * Apply the move handleRearrange scheduled, now. Called by its timer and by
+     * _flushPendingRearrange when the gesture ends before the timer fires.
+     */
+    _applyPendingRearrange() {
+        clearTimeout(this.rearrangeTimeout);
+        this.rearrangeTimeout = null;
+        const pending = this._pendingRearrange;
+        this._pendingRearrange = null;
+        if (!pending) return;
+        const { target, clientY } = pending;
 
-            const parent = this.draggedTask.parentNode;
-            if (!parent || !target.parentNode) return;
+        if (!document.contains(target) || !this.draggedTask || !document.contains(this.draggedTask)) return;
+        if (target === this.draggedTask) return;
 
-            const bounding = target.getBoundingClientRect();
-            // Fix #33: Handle both mouse events (clientY) and touch events (touches[0].clientY)
-            const clientY = event.clientY ?? event.touches?.[0]?.clientY ?? event.changedTouches?.[0]?.clientY;
-            const offset = clientY - bounding.top;
+        const parent = this.draggedTask.parentNode;
+        if (!parent || !target.parentNode) return;
 
-            // ✅ ALWAYS mark that a reorder occurred (for save on drop)
-            this.didDragReorderOccur = true;
+        const bounding = target.getBoundingClientRect();
+        const offset = clientY - bounding.top;
 
-            // Batch reads: collect all DOM reads before any writes
-            const isLastTask = !target.nextElementSibling;
-            const isFirstTask = !target.previousElementSibling;
-            const isNextSiblingDragged = target.nextSibling === this.draggedTask;
-            const isPrevSiblingDragged = target.previousSibling === this.draggedTask;
+        // ✅ ALWAYS mark that a reorder occurred (for save on drop)
+        this.didDragReorderOccur = true;
 
-            // Clear previous drop target (O(1) instead of querySelectorAll)
-            if (this._currentDropTarget) {
-                this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
-                this._currentDropTarget = null;
+        // Batch reads: collect all DOM reads before any writes
+        const isNextSiblingDragged = target.nextSibling === this.draggedTask;
+        const isPrevSiblingDragged = target.previousSibling === this.draggedTask;
+
+        // Clear previous drop target (O(1) instead of querySelectorAll)
+        if (this._currentDropTarget) {
+            this._currentDropTarget.classList.remove(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = null;
+        }
+
+        // The pointer offset decides on EVERY row, the end rows included. Two
+        // special cases used to force "first row → very top, last row → very
+        // bottom" regardless of where the pointer was, so a drop aimed at the
+        // top of the last row still landed below it and one aimed at the bottom
+        // of the first row still landed above it (measured Oct 2026). The
+        // general rule already covers both ends: below a last row,
+        // `target.nextSibling` is null and insertBefore(…, null) appends.
+        // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
+        try {
+            if (offset > bounding.height / 3) {
+                if (!isNextSiblingDragged) {
+                    parent.insertBefore(this.draggedTask, target.nextSibling);
+                }
+            } else if (!isPrevSiblingDragged) {
+                parent.insertBefore(this.draggedTask, target);
             }
 
-            // ✅ Wrap all DOM manipulation in try-catch to handle race conditions
+            this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
+            this._currentDropTarget = this.draggedTask;
+        } catch (error) {
+            // ✅ Gracefully handle DOM manipulation errors (e.g., NotFoundError during race conditions)
+            console.warn('⚠️ DOM manipulation failed during rearrange (likely race condition):', error.message);
+            // Clear dragging state to prevent stuck UI
+            if (this.draggedTask) {
+                this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.DROP_TARGET);
+            }
+        }
+    }
+
+    /** Apply a still-pending move before the gesture's result is read or saved. */
+    _flushPendingRearrange() {
+        if (this._pendingRearrange) this._applyPendingRearrange();
+    }
+
+    /**
+     * A drag ended without a drop (Escape, released off-window, cancelled native
+     * drag, window blur, tab hidden). The DOM may already show the moved row
+     * while state never changed; put the list back to what state says, and clear
+     * every drag mark. A drop that DID land is handled by the drop/touchend paths.
+     */
+    _revertUnfinishedDrag() {
+        const moved = this.didDragReorderOccur || !!this._pendingRearrange;
+        this.cleanupDragState();
+        if (moved) {
             try {
-                if (isLastTask && !isNextSiblingDragged) {
-                    // ✅ Verify nodes are still valid before DOM manipulation
-                    if (!document.contains(this.draggedTask) || !parent.contains) {
-                        console.warn('⚠️ DOM nodes became invalid before appendChild');
-                        return;
-                    }
-                    parent.appendChild(this.draggedTask);
-                    this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
-                    this._currentDropTarget = this.draggedTask;
-                    return;
-                }
-
-                if (isFirstTask && !isPrevSiblingDragged) {
-                    // ✅ Verify nodes are still valid before DOM manipulation
-                    if (!document.contains(this.draggedTask) || !parent.firstChild) {
-                        console.warn('⚠️ DOM nodes became invalid before insertBefore (first child)');
-                        return;
-                    }
-                    parent.insertBefore(this.draggedTask, parent.firstChild);
-                    this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
-                    this._currentDropTarget = this.draggedTask;
-                    return;
-                }
-
-                if (offset > bounding.height / 3) {
-                    if (!isNextSiblingDragged) {
-                        // ✅ Verify nodes are still valid before DOM manipulation
-                        if (!document.contains(this.draggedTask) || !document.contains(target)) {
-                            console.warn('⚠️ DOM nodes became invalid before insertBefore (next sibling)');
-                            return;
-                        }
-                        parent.insertBefore(this.draggedTask, target.nextSibling);
-                    }
-                } else {
-                    if (!isPrevSiblingDragged) {
-                        // ✅ Verify nodes are still valid before DOM manipulation (line 357 fix)
-                        if (!document.contains(this.draggedTask) || !document.contains(target)) {
-                            console.warn('⚠️ DOM nodes became invalid before insertBefore (target)');
-                            return;
-                        }
-                        parent.insertBefore(this.draggedTask, target);
-                    }
-                }
-
-                // ✅ Final verification before adding class
-                if (this.draggedTask && document.contains(this.draggedTask)) {
-                    this.draggedTask.classList.add(DOM_CLASSES.DROP_TARGET);
-                    this._currentDropTarget = this.draggedTask;
-                }
+                this.deps.refreshUIFromState?.();
             } catch (error) {
-                // ✅ Gracefully handle DOM manipulation errors (e.g., NotFoundError during race conditions)
-                console.warn('⚠️ DOM manipulation failed during rearrange (likely race condition):', error.message);
-                // Clear dragging state to prevent stuck UI
-                if (this.draggedTask) {
-                    this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.DROP_TARGET);
-                }
-                return;
+                console.warn('⚠️ Could not restore the task order after an unfinished drag:', error);
             }
-        }, this.REARRANGE_DELAY);
+        }
     }
 
     /**
@@ -803,14 +870,13 @@ export class DragDropManager {
      * Called from both the HTML5 drop handler (desktop) and touchend (mobile).
      */
     saveDragReorder() {
+        // The last move may still be on its timer — apply it first, or a quick
+        // release saves the order from BEFORE the row the user let go over.
+        this._flushPendingRearrange();
         if (!this.didDragReorderOccur) return;
 
         const AppState = this._getAppState();
         if (AppState?.isReady?.()) {
-            // Capture undo snapshot BEFORE saving new order
-            const currentState = AppState.get();
-            if (currentState) this.deps.captureStateSnapshot?.(currentState);
-
             // Read task order from DOM
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
             const taskElements = taskList?.querySelectorAll(DOM_SELECTORS.TASK);
@@ -820,20 +886,25 @@ export class DragDropManager {
                 if (taskId) newTaskOrder.push(taskId);
             });
 
+            // A drag that wandered over a neighbour and came back has moved
+            // nothing: no snapshot, no write, no undo step for it.
+            const currentState = AppState.get();
+            const currentTasks = currentState ? getRoutine(currentState, getActiveRoutineId(currentState))?.tasks : null;
+            const unchanged = Array.isArray(currentTasks) &&
+                mergeVisibleOrder(currentTasks, newTaskOrder).every((t, i) => t === currentTasks[i]);
+
+            // Capture undo snapshot BEFORE saving new order
+            if (currentState && !unchanged) this.deps.captureStateSnapshot?.(currentState);
+
             // Update AppState with new order
-            AppState.update(state => {
+            if (!unchanged) AppState.update(state => {
                 const activeCycleId = getActiveRoutineId(state);
                 if (activeCycleId && getRoutine(state, activeCycleId)) {
                     const tasks = getRoutine(state, activeCycleId).tasks;
                     if (tasks && newTaskOrder.length > 0) {
-                        const taskMap = new Map(tasks.map(t => [t.id, t]));
-                        const reorderedTasks = newTaskOrder
-                            .map(id => taskMap.get(id))
-                            .filter(Boolean);
-
-                        // Preserve tasks not in DOM (e.g., completed tasks in dropdown)
-                        const missingTasks = tasks.filter(t => !newTaskOrder.includes(t.id));
-                        getRoutine(state, activeCycleId).tasks = [...reorderedTasks, ...missingTasks];
+                        // Hidden rows (completed tasks in the dropdown) keep their
+                        // index — see mergeVisibleOrder for what appending them did.
+                        getRoutine(state, activeCycleId).tasks = mergeVisibleOrder(tasks, newTaskOrder);
                     }
                 }
             }, true); // immediate save
@@ -870,6 +941,7 @@ export class DragDropManager {
         try {
             clearTimeout(this.rearrangeTimeout);
             this.rearrangeTimeout = null;
+            this._pendingRearrange = null;
 
             if (this.draggedTask) {
                 this.draggedTask.classList.remove(DOM_CLASSES.DRAGGING, DOM_CLASSES.REARRANGING);

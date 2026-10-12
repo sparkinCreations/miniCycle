@@ -351,7 +351,7 @@ export const MODULE_MANIFESTS = {
         requires: ['appInit', 'AppState', 'showNotification', 'renderTaskList', 'updateMoveArrowsVisibility', 'startReminders', 'stopReminders', 'DEFAULT_TASK_OPTION_BUTTONS', 'safeAddEventListener', 'getModal'],
         // modeManager is Phase 5 (CYCLE) but taskOptionsCustomizer is Phase 3 - must be lazy
         lazyRequires: ['modeManager'],
-        optionalDeps: ['showTaskOptionsTourNotification'],
+        optionalDeps: ['showTaskOptionsTourNotification', 'hideMainMenu'],
         provides: [],
         provideInstance: 'taskOptionsCustomizer',
         api: 'ui',
@@ -754,7 +754,7 @@ export const MODULE_MANIFESTS = {
     taskViewLayoutManager: {
         path: '../ui/taskViewLayoutManager.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['AppState', 'appInit', 'enableUndoSystemOnFirstInteraction'],
+        optionalDeps: ['AppState', 'appInit', 'enableUndoSystemOnFirstInteraction', 'showNotification'],
         provides: ['resetTaskViewLayout', 'refreshTaskViewLayout'],
         provideInstance: 'taskViewLayoutManager',
         api: 'ui',

@@ -163,6 +163,8 @@ export const UI_TIMEOUTS = Object.freeze({
     LONG_PRESS_CLICK_GUARD: 300,   // 300ms - Window in which the synthetic click after a long-press is swallowed, so asking what an icon does never also does it
     HINT_DISMISS_ARM: 100,         // 100ms - Delay before a shown long-press hint starts listening for the touch that dismisses it, so the press that raised it cannot also close it
     LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
+    LAYOUT_HANDLE_LEAVE_GRACE: 250, // 250ms - Task View Layout: how long a draggable stays "hovered" after the cursor leaves it, so a handle floating outside its edge can be reached across the gap (a hidden handle is not hit-testable, so without this the cursor could never arrive on it)
+    NOTIFICATION_MIN_VISIBLE: 40,  // px - the strip of the notification panel that must stay inside the viewport when it is dragged or restored, so it can always be grabbed again
     SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
     LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
@@ -431,6 +433,18 @@ export const LAYOUT_DOCK_ZONES = Object.freeze({
     COMPLETE_CYCLE_BTN:  Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 })
 });
 
+/**
+ * Task View Layout: which coordinate frame saved positions were measured in.
+ * Positions are stored as pixels relative to #task-view. Until Oct 2026 that
+ * box hugged its in-flow content and was centred on the band, so its origin
+ * moved every time an element floated out of it or a routine changed length —
+ * a saved position meant something different on every reload. Frame 2 is the
+ * band itself (app-container.css ≥769px: a fixed-height box). Positions with
+ * no frame, or an older one, are discarded on apply rather than restored into
+ * the wrong place.
+ */
+export const LAYOUT_FRAME_VERSION = 2;
+
 export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
     top: 90,        // header + mode pill clearance
     bottom: 90,     // nav-dots + footer clearance
@@ -683,7 +697,14 @@ export const EVENTS = Object.freeze({
     FOCUS_MODE_DEACTIVATED: 'focusMode:deactivated',
     /** Dispatched on document by panelCarousel after a panel becomes active:
         detail = { id, previousId, index, changed }. */
-    PANEL_CAROUSEL_CHANGED: 'panelCarousel:changed'
+    PANEL_CAROUSEL_CHANGED: 'panelCarousel:changed',
+    /** Dispatched on document by uiBoot when Escape was pressed and nothing
+        was closing (no open dialog, no open menu, no text field focused):
+        every module that holds transient UI state — a tooltip, a hover
+        reveal, an open dropdown — drops it. The generic sweep (task option
+        reveals, drag marks, body classes, long-press hints) runs before the
+        event; this is for state only its owner can see. */
+    UI_ESCAPE_RESET: 'ui:escapeReset'
 });
 
 // ============================================================================
@@ -736,6 +757,7 @@ export const DOM_CLASSES = Object.freeze({
     LONG_PRESSED: 'long-pressed',
     REARRANGING: 'rearranging',
     DROP_TARGET: 'drop-target',
+    RECURRING_PAUSED: 'recurring-paused',     // Recurring panel row whose template is paused
     MOVE_UP: 'move-up',
     MOVE_DOWN: 'move-down',
 
@@ -1737,6 +1759,7 @@ export const DOM_SELECTORS = Object.freeze({
     YEARLY_DAYS: '.yearly-days',
     YEARLY_DAY_BOX: '.yearly-day-box',
     RECURRING_REMOVE_BTN: '.recurring-remove-btn',
+    RECURRING_PAUSE_BTN: '.recurring-pause-btn',     // Recurring panel row: pause / resume toggle
     RECURRING_TASK_TEXT: '.recurring-task-text',
     NON_RECURRING_SELECTED: '#non-recurring-tasks li.selected',
     OPEN_RECURRING_SETTINGS: '.open-recurring-settings',

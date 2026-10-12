@@ -17,6 +17,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // is the destination picker on those platforms — same path the routine export
 // and share already take.
 import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative, saveFileAsNative } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
 // testing modal's IndexedDB restore.
@@ -101,10 +102,14 @@ const LITE_STORAGE_KEYS = Object.freeze([
  * @param {Object} [options] - Optional behaviour flags
  * @param {boolean} [options.fullReinit=false] - When true, runs appInit.runInitialSetup()
  *   instead of loadMiniCycle(). Used after factory reset to trigger onboarding flow.
+ * @param {boolean} [options.armFirstRunChoice=false] - The choice screen is up and IS the
+ *   loader; leave it alone.
+ * @param {boolean} [options.reloadPageAfter=false] - Once the in-place re-init is done,
+ *   finish with a real page load if one is safe (reloadAfterReset).
  * @returns {void}
  */
 function reloadWithLoader(logContext, options = {}) {
-    const { fullReinit = false, armFirstRunChoice = false } = options;
+    const { fullReinit = false, armFirstRunChoice = false, reloadPageAfter = false } = options;
 
     // Close all open modals and the settings menu BEFORE showing the loader
     _deps.closeAllModals?.();
@@ -200,6 +205,7 @@ function reloadWithLoader(logContext, options = {}) {
             // The copy may have appeared (an older document was just restored and
             // migrated) or gone (factory reset); keep the Settings block truthful.
             refreshPreMigrationCopyControls();
+            if (reloadPageAfter) reloadAfterReset();
         }
     }, 400);
 }
@@ -301,6 +307,63 @@ function rearmFirstRunChoiceScreen() {
         _deps.hideLoader?.();
     }, { once: true });
 
+    // The screen's two rotating lines (the use case under the tagline and the
+    // tip at the bottom) are timers in miniCycle.html's inline scripts that
+    // stop themselves at the user's first pick — and on a returning-user load
+    // the use-case one never started. Re-armed this way, the screen came back
+    // with both frozen until the app was relaunched. The inline scripts
+    // listen for this and restart them.
+    document.dispatchEvent(new CustomEvent('firstrun:rearm'));
+
+    return true;
+}
+
+/**
+ * Whether a page reload after a factory reset will come back up.
+ *
+ * The reset has just unregistered the service worker and emptied the caches,
+ * so a reload is a cold network load; offline it is a blank page, and
+ * `navigator.onLine` is not to be trusted for that (it reports online on iOS
+ * with no connectivity — see UI_TIMEOUTS.SW_READY_WAIT). So: a native or
+ * desktop shell serves the page from its own bundle and can always reload;
+ * on the web, actually fetch something small and uncached and let the answer
+ * decide. `version.js` is the file every load requests anyway.
+ *
+ * The probe is a HEAD request: an unregistered service worker still controls
+ * this page until it navigates, and the worker answers a GET for version.js
+ * itself with a synthetic copy — offline, from memory, 200 OK (measured Oct
+ * 2026: `fromServiceWorker: true` with no network at all, which would have
+ * reloaded an offline PWA into a blank page). The worker ignores non-GET
+ * requests altogether, so a HEAD goes straight to the network or fails
+ * honestly — and the journey suite can intercept it, which it cannot for a
+ * fetch the worker makes on the page's behalf. `_cb=` keeps it unmistakably a
+ * probe, and `no-store` keeps the HTTP cache out of the answer.
+ * @returns {Promise<boolean>}
+ */
+async function canReloadAfterReset() {
+    if (isNativeApp() || isDesktopApp()) return true;
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) return false;
+    try {
+        const res = await fetch(`./version.js?_cb=reset-probe-${Date.now()}`, { method: 'HEAD', cache: 'no-store' });
+        return !!res.ok;
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Finish a factory reset with a real page load when one is safe (see
+ * canReloadAfterReset). The in-place re-init has already put the choice screen
+ * back, so the user is never left on a dead screen if the probe says no — that
+ * path is what an offline iOS PWA gets, and what the reset journey exercises by
+ * blocking the probe. A fresh load is still the honest end state: every
+ * pre-paint decision (mc-first-run, the inline controller, the rotations) runs
+ * exactly as on a new install instead of being re-created by hand.
+ * @returns {Promise<boolean>} true when a reload was issued
+ */
+async function reloadAfterReset() {
+    if (!(await canReloadAfterReset())) return false;
+    window.location.reload();
     return true;
 }
 
@@ -1517,7 +1580,11 @@ export function setupFactoryResetButton() {
 
         // Full re-init. armFirstRunChoice puts the user back on the create /
         // sample / learn screen instead of silently materialising a routine.
-        reloadWithLoader('Factory reset', { fullReinit: true, armFirstRunChoice: rearmFirstRunChoiceScreen() });
+        reloadWithLoader('Factory reset', {
+            fullReinit: true,
+            armFirstRunChoice: rearmFirstRunChoiceScreen(),
+            reloadPageAfter: true
+        });
     };
 
     const showConfirmationModal = _deps.showConfirmationModal;

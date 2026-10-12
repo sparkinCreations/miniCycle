@@ -624,7 +624,9 @@ export class AchievementsManager {
      * Play contextual tap animation on a badge/coin element.
      * Forces reflow so the class re-adds cleanly when tapped in rapid succession,
      * then removes the class on animationend so :hover transforms are restored.
-     * No-ops gracefully under prefers-reduced-motion (duration is 0ms, animationend still fires).
+     * Under prefers-reduced-motion the duration is 0s and animationend does NOT
+     * fire (measured Oct 2026: zero animation events), so the class is dropped
+     * straight away there.
      * @param {HTMLElement} el
      */
     _playBadgeTapAnim(el) {
@@ -635,6 +637,10 @@ export class AchievementsManager {
         el.classList.remove('animate-tap');
         void el.offsetWidth; // force reflow so re-adding class restarts the animation
         el.classList.add('animate-tap');
+        if (!parseFloat(getComputedStyle(el).animationDuration)) {
+            el.classList.remove('animate-tap');
+            return;
+        }
         const onEnd = () => {
             el.classList.remove('animate-tap');
             el.removeEventListener('animationend', onEnd);
@@ -771,11 +777,18 @@ export class AchievementsManager {
                 let isDragging = false;
                 let hasMoved = false;
                 let startX = 0;
+                let lastClientX = 0;
+                let startRotation = 0;
                 let currentRotation = 0;
                 let velocity = 0;
                 let animationFrame = null;
                 let lastHapticRotation = 0;
+                let lastTouchAt = 0;
                 const TAP_THRESHOLD_PX = 5;
+                // A touch tap is followed by compatibility mouse events; those
+                // ran the whole gesture a second time (four animation restarts
+                // and two haptic pulses per tap).
+                const COMPAT_MOUSE_WINDOW_MS = 500;
 
                 // Haptic feedback helper
                 const triggerHaptic = (duration = 10) => {
@@ -785,9 +798,15 @@ export class AchievementsManager {
                 };
 
                 const onStart = (e) => {
+                    if (e.type.includes('touch')) lastTouchAt = Date.now();
+                    else if (Date.now() - lastTouchAt < COMPAT_MOUSE_WINDOW_MS) return;
                     isDragging = true;
                     hasMoved = false;
                     startX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+                    lastClientX = startX;
+                    // Drag from where the coin IS (a keyboard rotation may have
+                    // left it turned) instead of snapping to zero on the first pixel.
+                    startRotation = currentRotation;
                     dragTarget.style.cursor = 'grabbing';
                     coin.style.transition = 'none';
                     lastHapticRotation = currentRotation;
@@ -805,6 +824,9 @@ export class AchievementsManager {
 
                 const onMove = (e) => {
                     if (!isDragging) return;
+                    // The button came up without a mouseup reaching us (window
+                    // switch): a hover is not a drag.
+                    if (e.type === 'mousemove' && e.buttons === 0) { onEnd(); return; }
                     const clientX = e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
                     const deltaX = clientX - startX;
                     if (Math.abs(deltaX) > TAP_THRESHOLD_PX) {
@@ -813,8 +835,13 @@ export class AchievementsManager {
                         // transform from the drag isn't fighting the keyframe.
                         coin.classList.remove('animate-loop');
                     }
-                    velocity = deltaX - (currentRotation % 360);
-                    currentRotation = deltaX * 2; // Multiply for more spin
+                    // Momentum follows the LAST movement, in its direction. It
+                    // used to be `deltaX - (currentRotation % 360)`, which is a
+                    // function of the previous sample, not a velocity — a steady
+                    // drag to the right spun the coin backwards on release.
+                    velocity = (clientX - lastClientX) * 2;
+                    lastClientX = clientX;
+                    currentRotation = startRotation + deltaX * 2; // Multiply for more spin
                     coin.style.transform = `rotateY(${currentRotation}deg)`;
 
                     // Haptic tick every half rotation
@@ -900,6 +927,11 @@ export class AchievementsManager {
                 dragTarget.addEventListener('touchstart', onDragStart, { passive: true });
                 document.addEventListener('touchmove', onMove, { passive: true });
                 document.addEventListener('touchend', onEnd);
+                // An interrupted gesture (cancelled touch, window switch) used
+                // to leave the coin "grabbed": loop class on, grabbing cursor,
+                // and the next stray move spun it.
+                document.addEventListener('touchcancel', onEnd);
+                window.addEventListener('blur', onEnd);
 
                 // Keyboard support (accessibility A7)
                 spinArea.setAttribute('tabindex', '0');
@@ -949,6 +981,8 @@ export class AchievementsManager {
                     dragTarget.removeEventListener('touchstart', onDragStart);
                     document.removeEventListener('touchmove', onMove);
                     document.removeEventListener('touchend', onEnd);
+                    document.removeEventListener('touchcancel', onEnd);
+                    window.removeEventListener('blur', onEnd);
                     spinArea.removeEventListener('keydown', onKeydown);
                     dragTarget.removeEventListener('mouseenter', onMouseEnter);
                     dragTarget.removeEventListener('mouseleave', onMouseLeave);

@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { GESTURE, UI_TIMEOUTS } from '../core/constants.js';
+import { GESTURE, UI_TIMEOUTS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 // ============================================================================
@@ -67,9 +67,14 @@ export class GesturePanelManager {
             isSwiping: false,
             isStatsVisible: false,
             isMouseDragging: false,
+            isMousePressed: false,
             mouseStartX: 0,
             wheelDeltaX: 0,
             isPointerSwiping: false,
+            // A pen stroke in progress. iPadOS and Android also emit touch
+            // events for a stylus, so a pen swipe reached BOTH the pointer path
+            // and the touch path and stepped two panels (measured Oct 2026).
+            penActive: false,
             pointerStartX: 0
         };
 
@@ -124,6 +129,7 @@ export class GesturePanelManager {
             handleMouseDown: this.handleMouseDown.bind(this),
             handleMouseMove: this.handleMouseMove.bind(this),
             handleMouseUp: this.handleMouseUp.bind(this),
+            handleMouseAbort: this.handleMouseAbort.bind(this),
             handlePointerDown: this.handlePointerDown.bind(this),
             handlePointerMove: this.handlePointerMove.bind(this),
             handlePointerUp: this.handlePointerUp.bind(this),
@@ -146,6 +152,11 @@ export class GesturePanelManager {
         safeAdd(document, "touchstart", this.boundHandlers.handleTouchStart, { passive: true });
         safeAdd(document, "touchmove", this.boundHandlers.handleTouchMove, { passive: true });
         safeAdd(document, "touchend", this.boundHandlers.handleTouchEnd, { passive: true });
+        // A cancelled touch (iOS native drag taking a task row, a pinch, a
+        // long-press menu, backgrounding) never gets a touchend; without this
+        // isSwiping stayed armed with a stale startX and the next touch on a
+        // button navigated on its first pixel of movement.
+        safeAdd(document, "touchcancel", this.boundHandlers.handleTouchEnd, { passive: true });
     }
 
     /**
@@ -157,6 +168,15 @@ export class GesturePanelManager {
         safeAdd(document, "mousedown", this.boundHandlers.handleMouseDown);
         safeAdd(document, "mousemove", this.boundHandlers.handleMouseMove);
         safeAdd(document, "mouseup", this.boundHandlers.handleMouseUp);
+        // Every way a press can end WITHOUT a mouseup. A native HTML5 drag
+        // (task rows are draggable, so is the header logo) swallows it, a
+        // right-click's context menu swallows it on macOS, and a window switch
+        // loses it. The press stayed armed through all of them, so the next
+        // unpressed mouse movement flipped panels (measured Oct 2026).
+        safeAdd(document, "dragstart", this.boundHandlers.handleMouseAbort);
+        safeAdd(document, "contextmenu", this.boundHandlers.handleMouseAbort);
+        safeAdd(window, "blur", this.boundHandlers.handleMouseAbort);
+        safeAdd(document, "visibilitychange", this.boundHandlers.handleMouseAbort);
     }
 
     /**
@@ -177,6 +197,7 @@ export class GesturePanelManager {
         safeAdd(document, "pointerdown", this.boundHandlers.handlePointerDown);
         safeAdd(document, "pointermove", this.boundHandlers.handlePointerMove);
         safeAdd(document, "pointerup", this.boundHandlers.handlePointerUp);
+        safeAdd(document, "pointercancel", this.boundHandlers.handlePointerUp);
     }
 
     /**
@@ -192,7 +213,16 @@ export class GesturePanelManager {
     // 📱 TOUCH EVENT HANDLERS
     // ==========================================
 
+    /**
+     * A task row being reordered by long-press (dragDropManager) — a sideways
+     * wobble while dragging used to flip the panel under the drag.
+     */
+    _isTaskDragActive() {
+        return !!document.querySelector(`${DOM_SELECTORS.TASK}.${DOM_CLASSES.DRAGGING}`);
+    }
+
     handleTouchStart(event) {
+        if (this.state.penActive) return;
         if (this.deps.isDraggingNotification()) return;
         if (this.deps.isOverlayActive()) return;
 
@@ -201,6 +231,9 @@ export class GesturePanelManager {
             event.target.closest("button, input, select, textarea, .task-options, .notification, a[href], .quick-actions-window, .quick-actions-header") ||
             ['BUTTON', 'INPUT', 'SELECT', 'TEXTAREA'].includes(event.target.tagName)
         ) {
+            // A touch that starts on a control is not a swipe — and must not
+            // inherit the arming of a previous, cancelled touch either.
+            this.state.isSwiping = false;
             return;
         }
 
@@ -210,8 +243,9 @@ export class GesturePanelManager {
     }
 
     handleTouchMove(event) {
-        if (!this.state.isSwiping || this.deps.isDraggingNotification()) return;
+        if (!this.state.isSwiping || this.state.penActive || this.deps.isDraggingNotification()) return;
         if (this.deps.isOverlayActive()) return;
+        if (this._isTaskDragActive()) { this.state.isSwiping = false; return; }
 
         const moveX = event.touches[0].clientX;
         const difference = this.state.startX - moveX;
@@ -244,6 +278,8 @@ export class GesturePanelManager {
 
     handleMouseDown(event) {
         if (this.deps.isOverlayActive()) return;
+        // Left button only: a right-button drag used to navigate too.
+        if (event.button !== 0) return;
 
         // Exclude interactive elements
         if (
@@ -255,12 +291,21 @@ export class GesturePanelManager {
         }
 
         this.state.isMouseDragging = false;
+        this.state.isMousePressed = true;
         this.state.mouseStartX = event.clientX;
-        document.body.style.userSelect = "none";
+        // user-select is withheld until the press becomes a drag (below): set
+        // here, it made every left mousedown outside a form field disable text
+        // selection page-wide — the Stats numbers could not be selected.
     }
 
     handleMouseMove(event) {
-        if (this.state.mouseStartX === 0) return;
+        if (!this.state.isMousePressed) return;
+        // The button is up but no mouseup reached us (see setupMouseEvents):
+        // this is a hover, not a drag.
+        if (event.buttons === 0) {
+            this.resetMouseDrag();
+            return;
+        }
 
         const deltaX = event.clientX - this.state.mouseStartX;
         const absDelta = Math.abs(deltaX);
@@ -268,6 +313,8 @@ export class GesturePanelManager {
         // Start dragging after threshold is met
         if (!this.state.isMouseDragging && absDelta > this.config.MOUSE_DRAG_START_THRESHOLD) {
             this.state.isMouseDragging = true;
+            document.body.style.userSelect = "none";
+            try { window.getSelection()?.removeAllRanges(); } catch { /* no selection API — nothing to clear */ }
         }
 
         if (this.state.isMouseDragging && absDelta > this.config.MOUSE_DRAG_THRESHOLD) {
@@ -286,8 +333,15 @@ export class GesturePanelManager {
         this.resetMouseDrag();
     }
 
+    /** A press ended without a mouseup, or the page lost the pointer: disarm. */
+    handleMouseAbort(event) {
+        if (event?.type === 'visibilitychange' && !document.hidden) return;
+        if (this.state.isMousePressed) this.resetMouseDrag();
+    }
+
     resetMouseDrag() {
         this.state.isMouseDragging = false;
+        this.state.isMousePressed = false;
         this.state.mouseStartX = 0;
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
@@ -367,6 +421,7 @@ export class GesturePanelManager {
             }
 
             this.state.isPointerSwiping = true;
+            this.state.penActive = true;
             this.state.pointerStartX = event.clientX;
         }
     }
@@ -375,6 +430,11 @@ export class GesturePanelManager {
         // Pen only (see handlePointerDown) — isPointerSwiping is set exclusively
         // for pen, and this guard keeps a stray touch/mouse pointermove out.
         if (!this.state.isPointerSwiping || event.pointerType !== "pen") return;
+        // A hovering pen (lifted after a cancelled stroke) is not swiping.
+        if (event.buttons === 0) {
+            this.state.isPointerSwiping = false;
+            return;
+        }
 
         const moveX = event.clientX;
         const difference = this.state.pointerStartX - moveX;
@@ -390,6 +450,7 @@ export class GesturePanelManager {
 
     handlePointerUp() {
         this.state.isPointerSwiping = false;
+        this.state.penActive = false;
     }
 
     // ==========================================
@@ -564,14 +625,21 @@ export class GesturePanelManager {
         document.removeEventListener("touchstart", this.boundHandlers.handleTouchStart);
         document.removeEventListener("touchmove", this.boundHandlers.handleTouchMove);
         document.removeEventListener("touchend", this.boundHandlers.handleTouchEnd);
+        document.removeEventListener("touchcancel", this.boundHandlers.handleTouchEnd);
         document.removeEventListener("wheel", this.boundHandlers.handleWheel);
         document.removeEventListener("mousedown", this.boundHandlers.handleMouseDown);
         document.removeEventListener("mousemove", this.boundHandlers.handleMouseMove);
         document.removeEventListener("mouseup", this.boundHandlers.handleMouseUp);
+        document.removeEventListener("dragstart", this.boundHandlers.handleMouseAbort);
+        document.removeEventListener("contextmenu", this.boundHandlers.handleMouseAbort);
+        window.removeEventListener("blur", this.boundHandlers.handleMouseAbort);
+        document.removeEventListener("visibilitychange", this.boundHandlers.handleMouseAbort);
         document.removeEventListener("pointerdown", this.boundHandlers.handlePointerDown);
         document.removeEventListener("pointermove", this.boundHandlers.handlePointerMove);
         document.removeEventListener("pointerup", this.boundHandlers.handlePointerUp);
+        document.removeEventListener("pointercancel", this.boundHandlers.handlePointerUp);
         document.removeEventListener("keydown", this.boundHandlers.handleKeydown);
+        this.resetMouseDrag();
 
         // Clear timers
         if (this.wheelTimeout) {

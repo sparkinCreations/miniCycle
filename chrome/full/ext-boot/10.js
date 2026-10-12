@@ -41,6 +41,46 @@
     window.addEventListener('resize', onViewportChange);
     window.addEventListener('orientationchange', onViewportChange);
 
+    var tipPools = null;   // the fetched { firstRun, inApp } pools, kept for a re-arm
+    var rotation = null;
+
+    function stopTipRotation() {
+      if (rotation) { clearInterval(rotation); rotation = null; }
+      window.removeEventListener('resize', onViewportChange);
+      window.removeEventListener('orientationchange', onViewportChange);
+    }
+
+    function startTipRotation(tips) {
+      stopTipRotation();
+      // Same listener reference, so re-adding after a stop never doubles it.
+      window.addEventListener('resize', onViewportChange);
+      window.addEventListener('orientationchange', onViewportChange);
+      var i = Math.floor(Math.random() * tips.length);
+      text.textContent = tips[i];
+      showTip();
+      rotation = setInterval(function() {
+        // Stop rotating once the app has booted (loader is gone) — otherwise this
+        // timer runs forever, mutating a hidden/detached element. uiBoot.js sets
+        // dataset.appLoaded='true' on a successful boot. Exception: while the
+        // first-run choice screen is awaiting a pick, boot may be done but the
+        // loader is still visible — keep the tips rotating.
+        var loaderEl = document.getElementById('app-loader');
+        var awaitingChoice = loaderEl && loaderEl.getAttribute('data-awaiting-choice') === 'true';
+        if (document.documentElement.dataset.appLoaded === 'true' && !awaitingChoice) {
+          stopTipRotation();
+          return;
+        }
+        el.classList.remove('visible');
+        setTimeout(function() {
+          i = (i + 1) % tips.length;
+          text.textContent = tips[i];
+          // Re-measure per tip: a three-line tip collides where a one-line
+          // tip does not, which is visible in the reported screenshots.
+          showTip();
+        }, 400);
+      }, 4000);
+    }
+
     fetch('./modules/labels/loading-tips.json')
       .then(function(r) { return r.json(); })
       .then(function(data) {
@@ -51,35 +91,22 @@
         // #first-run-restore probe tipWouldCollide() already does — that
         // element exists ONLY on the choice screen, so it is a free signal.
         // A missing pool just yields no tips; these are decorative.
+        tipPools = data;
         var onFirstRun = !!document.getElementById('first-run-restore');
         var tips = data && (onFirstRun ? data.firstRun : data.inApp);
         if (!tips || !tips.length) return;
-        var i = Math.floor(Math.random() * tips.length);
-        text.textContent = tips[i];
-        showTip();
-        var rotation = setInterval(function() {
-          // Stop rotating once the app has booted (loader is gone) — otherwise this
-          // timer runs forever, mutating a hidden/detached element. uiBoot.js sets
-          // dataset.appLoaded='true' on a successful boot. Exception: while the
-          // first-run choice screen is awaiting a pick, boot may be done but the
-          // loader is still visible — keep the tips rotating.
-          var loaderEl = document.getElementById('app-loader');
-          var awaitingChoice = loaderEl && loaderEl.getAttribute('data-awaiting-choice') === 'true';
-          if (document.documentElement.dataset.appLoaded === 'true' && !awaitingChoice) {
-            clearInterval(rotation);
-            window.removeEventListener('resize', onViewportChange);
-            window.removeEventListener('orientationchange', onViewportChange);
-            return;
-          }
-          el.classList.remove('visible');
-          setTimeout(function() {
-            i = (i + 1) % tips.length;
-            text.textContent = tips[i];
-            // Re-measure per tip: a three-line tip collides where a one-line
-            // tip does not, which is visible in the reported screenshots.
-            showTip();
-          }, 400);
-        }, 4000);
+        startTipRotation(tips);
       })
       .catch(function() { /* boot tips are decorative — a failed fetch just shows none */ });
+
+    // An in-place factory reset puts the choice screen back WITHOUT a page load
+    // (backupRestoreManager.rearmFirstRunChoiceScreen). The rotation above had
+    // already stopped itself at the user's first pick, so the screen came back
+    // with one frozen tip until the app was relaunched. The reset dispatches
+    // this after re-arming; restart on the first-run pool, which is the only
+    // audience that screen has.
+    document.addEventListener('firstrun:rearm', function () {
+      var tips = tipPools && tipPools.firstRun;
+      if (tips && tips.length) startTipRotation(tips);
+    });
   })();

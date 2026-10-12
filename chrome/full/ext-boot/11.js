@@ -105,23 +105,18 @@
     // controller owns BEHAVIOUR only — reading the class instead of re-deriving
     // it keeps one source of truth and, critically, keeps the reveal out of the
     // post-paint phase where it used to cost ~0.2 CLS.
-    if (!document.documentElement.classList.contains('mc-first-run')) return;
-
-    var loader = document.getElementById('app-loader');
-    var choice = document.getElementById('first-run-choice');
-    if (!loader || !choice) return;
-
-    // Kept for JS that inspects the loader's mode; styling no longer depends on
-    // it (critical.css keys off html.mc-first-run so it applies pre-paint).
-    loader.classList.add('first-run-mode');
-    loader.setAttribute('data-awaiting-choice', 'true');
-    try { performance.mark('mc:firstrun:choiceShown'); } catch (e) { /* Performance API unavailable — marks are diagnostics only */ }
-
     // Rotating use-case line (under the tagline) — same rhythm as the bottom
     // tips: fade out, swap, fade in. Stops once the screen is dismissed.
     // Counterpart list lives in modules/labels/loading-tips.json ("useCases"),
     // which the Welcome Screen reads. Kept inline here because this line must
     // paint before any fetch could resolve — keep the two in sync.
+    //
+    // Defined ABOVE the mc-first-run gate below: an in-place factory reset puts
+    // the choice screen back without a page load (backupRestoreManager
+    // .rearmFirstRunChoiceScreen), on a page that may have loaded as a
+    // returning user — where this controller returned early and this line
+    // never rotated at all; and where it had, the timer had stopped itself at
+    // the first pick. The reset dispatches 'firstrun:rearm'; restart on it.
     var useCases = [
       '✈️ Pre-flight checklists',
       '🩺 Hourly nurse rounds',
@@ -132,14 +127,18 @@
       '💪 Workout circuits',
       '📦 Packing lists you reuse'
     ];
-    var useCaseA = document.getElementById('first-run-usecase-text');
-    var useCaseB = document.getElementById('first-run-usecase-text-b');
-    if (useCaseA && useCaseB) {
+    var ucTimer = null;
+    function startUseCaseRotation() {
+      var loaderEl = document.getElementById('app-loader');
+      var useCaseA = document.getElementById('first-run-usecase-text');
+      var useCaseB = document.getElementById('first-run-usecase-text-b');
+      if (!loaderEl || !useCaseA || !useCaseB) return;
+      if (ucTimer) { clearInterval(ucTimer); ucTimer = null; }
       var uc = 0;
-      var showingA = true;
-      var ucTimer = setInterval(function () {
+      var showingA = useCaseA.classList.contains('is-active') || !useCaseB.classList.contains('is-active');
+      ucTimer = setInterval(function () {
         // Stop when the choice screen is gone (loader dismissed after a pick).
-        if (getComputedStyle(loader).display === 'none') { clearInterval(ucTimer); return; }
+        if (getComputedStyle(loaderEl).display === 'none') { clearInterval(ucTimer); ucTimer = null; return; }
         uc = (uc + 1) % useCases.length;
         var incoming = showingA ? useCaseB : useCaseA;
         var outgoing = showingA ? useCaseA : useCaseB;
@@ -152,6 +151,21 @@
         showingA = !showingA;
       }, 2800);
     }
+    document.addEventListener('firstrun:rearm', startUseCaseRotation);
+
+    if (!document.documentElement.classList.contains('mc-first-run')) return;
+
+    var loader = document.getElementById('app-loader');
+    var choice = document.getElementById('first-run-choice');
+    if (!loader || !choice) return;
+
+    // Kept for JS that inspects the loader's mode; styling no longer depends on
+    // it (critical.css keys off html.mc-first-run so it applies pre-paint).
+    loader.classList.add('first-run-mode');
+    loader.setAttribute('data-awaiting-choice', 'true');
+    try { performance.mark('mc:firstrun:choiceShown'); } catch (e) { /* Performance API unavailable — marks are diagnostics only */ }
+
+    startUseCaseRotation();
     // NOTE: the Lite escape hatch reveal is CSS-driven (animation-delay), NOT a
     // JS timer. A slow boot saturates the main thread, so a setTimeout would be
     // starved until boot finishes — defeating the hint on exactly the devices

@@ -79,6 +79,7 @@ export class PullToRefresh {
         this.handleTouchStart = this.handleTouchStart.bind(this);
         this.handleTouchMove = this.handleTouchMove.bind(this);
         this.handleTouchEnd = this.handleTouchEnd.bind(this);
+        this.handleTouchCancel = this.handleTouchCancel.bind(this);
 
         // Initialize
         this.createIndicator();
@@ -142,6 +143,10 @@ export class PullToRefresh {
         safeAdd(document, 'touchstart', this.handleTouchStart, { passive: true });
         safeAdd(document, 'touchmove', this.handleTouchMove, { passive: false });
         safeAdd(document, 'touchend', this.handleTouchEnd, { passive: true });
+        // A cancelled touch (system gesture, incoming call) never gets a
+        // touchend; without this the indicator stayed pulled down until the
+        // next touchend anywhere.
+        safeAdd(document, 'touchcancel', this.handleTouchCancel, { passive: true });
     }
 
     /**
@@ -151,6 +156,7 @@ export class PullToRefresh {
         document.removeEventListener('touchstart', this.handleTouchStart);
         document.removeEventListener('touchmove', this.handleTouchMove);
         document.removeEventListener('touchend', this.handleTouchEnd);
+        document.removeEventListener('touchcancel', this.handleTouchCancel);
     }
 
     /**
@@ -206,6 +212,7 @@ export class PullToRefresh {
         }
 
         this.startY = e.touches[0].clientY;
+        this.startX = e.touches[0].clientX;
         this.isPulling = true;
     }
 
@@ -286,6 +293,17 @@ export class PullToRefresh {
         // Only then do we prevent default and take over scrolling
         if (!this.isActivated) {
             if (rawPullDistance >= this.activationDistance) {
+                // A sideways swipe with a little downward drift is not a pull:
+                // it used to get its native scroll blocked and the indicator
+                // peeked out. Release the gesture for good.
+                const horizontal = Math.abs(e.touches[0].clientX - (this.startX || 0));
+                if (horizontal > rawPullDistance) {
+                    this.resetIndicator();
+                    this.isPulling = false;
+                    this.isActivated = false;
+                    this.touchStartTarget = null;
+                    return;
+                }
                 this.isActivated = true;
             } else {
                 // Not activated yet - allow normal scroll behavior
@@ -319,6 +337,17 @@ export class PullToRefresh {
             this.resetIndicator();
         }
 
+        this.isPulling = false;
+        this.isActivated = false;
+        this.startY = 0;
+        this.currentY = 0;
+        this.touchStartTarget = null;
+    }
+
+    /** Touch cancelled mid-gesture: hide the indicator, never refresh. */
+    handleTouchCancel() {
+        if (!this.isPulling) return;
+        this.resetIndicator();
         this.isPulling = false;
         this.isActivated = false;
         this.startY = 0;
@@ -363,9 +392,12 @@ export class PullToRefresh {
         this.spinnerIcon.style.transform = 'rotate(0deg)';
         this.statusText.textContent = getLabel('pullRefresh.pull');
 
-        // Reset activation state
+        // Reset activation state. The touch target is NOT cleared here: this
+        // runs on every upward move within a gesture, and clearing it made
+        // isAtTop() forget the scroll container for the rest of that gesture
+        // — scroll up, scroll down, and a refresh fired with the list scrolled
+        // (measured Oct 2026). handleTouchStart/End/Cancel own that field.
         this.isActivated = false;
-        this.touchStartTarget = null;
     }
 
     /**

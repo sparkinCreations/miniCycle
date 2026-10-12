@@ -81,6 +81,29 @@
     pointer-events: none;
 }
 
+/* Tablet + desktop: the box IS the band, not merely capped by it. With only
+   the max-height above, #task-view hugged its in-flow content and was centred
+   on the band, so its origin moved whenever that content changed: a longer
+   routine, the Add-task row opening, or — the case that mattered — one of the
+   desktop drag-customize elements floating out of flow. Those elements are
+   positioned in pixels RELATIVE TO THIS BOX (taskViewLayoutManager), so every
+   such change shifted everything the user had placed, and a position saved on
+   one reload meant something else on the next (Oct 2026: followers restored
+   inside the card, the Add-task row docked 30px high). A fixed-height band box
+   is a stable frame. Visually nothing changes — content centred in the band is
+   where the hugging box already put it — except that the card group must not
+   grow into the new slack (task-view-layout.css). Focus View keeps its own
+   top/bottom-anchored band (`height: auto` in focus-mode.css); <=768px keeps
+   the hugging box, there is no drag feature to anchor. `safe` so content that
+   cannot shrink any further overflows the bottom, not the header. */
+@media (min-width: 769px) {
+    #task-view {
+        height: calc(100vh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap));
+        height: calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - var(--nav-dots-clearance, var(--nav-dots-clearance-fallback)) - 2 * var(--home-band-gap));
+        justify-content: safe center;
+    }
+}
+
 /* Re-enable clicks on task view content */
 #task-view * {
     pointer-events: auto;

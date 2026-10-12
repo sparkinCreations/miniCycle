@@ -101,6 +101,34 @@
     color: var(--color-error);
 }
 
+/* Pause / resume sits beside the remove button, same quiet treatment. */
+.recurring-pause-btn {
+    background: none;
+    border: none;
+    color: var(--color-black);
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.recurring-task-item .recurring-pause-btn:hover {
+    color: var(--color-primary, var(--color-black));
+}
+
+.recurring-task-item.recurring-paused .recurring-task-text {
+    opacity: 0.6;
+}
+
+.recurring-paused-badge {
+    flex-shrink: 0;
+    margin-left: var(--space-1-5);
+    padding: 0 var(--space-1-5);
+    border-radius: var(--radius-sm);
+    background: var(--overlay-light);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
 /* =============================================================================
    RECURRING SETTINGS PANEL
    ============================================================================= */
