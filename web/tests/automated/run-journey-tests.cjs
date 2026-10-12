@@ -173,12 +173,22 @@ async function applySaveDialogStub(context, mode) {
     await context.addInitScript(SAVE_DIALOG_STUB, mode === 'cancel' ? 'cancel' : 'save');
 }
 
+// The factory reset ends in a real page load once a reachability probe for
+// this URL answers (backupRestoreManager.canReloadAfterReset, Oct 2026). Every
+// journey that resets reads its result off the document it reset in, so
+// openFresh blocks the probe by default — that is the in-place path an offline
+// device gets. Journey 8's last pass unroutes it to assert the reload itself.
+// It is a HEAD request on purpose: the service worker answers a GET for
+// version.js itself, and page.route never sees a worker's fetch.
+const RESET_PROBE = '**/version.js?_cb=reset-probe*';
+
 async function openFresh(browser, baseURL, opts = {}) {
     const context = await browser.newContext();
     await context.grantPermissions(['notifications'], { origin: baseURL });
     if (opts.saveDialog) await applySaveDialogStub(context, opts.saveDialog);
     if (opts.initScript) await context.addInitScript(opts.initScript, opts.initArg);
     const page = await context.newPage();
+    await page.route(RESET_PROBE, (r) => r.abort());
     // Collected here and asserted by the caller, so a starved dependency FAILS the
     // journey instead of scrolling past in green output. See diWarnings below.
     page.__diWarnings = [];
@@ -944,9 +954,13 @@ async function journeyBackupButtonSaveAs(browser, baseURL) {
     return { name: 'Backup All saves where the user chooses', failures };
 }
 
-// ── Journey 8: factory reset, twice, with no page reload ────────────────────
+// ── Journey 8: factory reset — twice in place, then once with the reload ────
 //
-// Factory reset re-initialises IN PLACE. Three things only a repeat run catches:
+// Since Oct 2026 the reset ends in a real page load when a network probe
+// (`version.js?_cb=reset-probe`) says one will come back up; the in-place re-arm
+// is what an offline device gets. Passes 1 and 2 block the probe so they
+// exercise the in-place path; pass 3 lets it through and asserts the fresh
+// document. In place, three things only a repeat run catches:
 //   • the choice screen (create / sample / learn) must come back up instead of a
 //     routine being created for the user;
 //   • its buttons must be re-enabled with their ORIGINAL labels — the pick
@@ -956,7 +970,10 @@ async function journeyBackupButtonSaveAs(browser, baseURL) {
 //     static one in miniCycle.html is installed only when the page LOADED on the
 //     choice screen.
 // Also asserts the completion notice is the success one: every cleanup step only
-// warns on failure, so the reset used to claim success unconditionally.
+// warns on failure, so the reset used to claim success unconditionally. And that
+// the screen's two rotating lines (use case, tip) rotate again after the
+// re-arm: both are self-stopping timers in miniCycle.html's inline scripts and
+// the screen came back frozen until the app was relaunched (reported Oct 2026).
 async function journeyFactoryResetRepeat(browser, baseURL) {
     const { failures, record } = makeRecorder();
     // saveDialog: the reset will not wipe without a written backup — see SAVE_DIALOG_STUB.
@@ -1016,12 +1033,39 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
         record('page reloaded as a returning user (not on the choice screen)',
             await page.evaluate(() => !document.documentElement.classList.contains('mc-first-run')),
             'the reload came up on the choice screen — the data did not persist');
+        // openFresh blocks the reachability probe: these two passes are the
+        // in-place path.
+        const rotationSnapshot = () => page.evaluate(() => ({
+            useCase: document.querySelector('.first-run-usecase-text.is-active')?.textContent || '',
+            tip: document.querySelector('.loader-tip-text')?.textContent || ''
+        }));
         for (const pass of [1, 2]) {
             await runFactoryReset();
             let armed = true;
             try { await waitForChoiceScreen(); } catch (e) { armed = false; }
             record(`pass ${pass}: choice screen re-armed with original labels`, armed,
                 'screen absent, or buttons left disabled / showing data-busy text');
+            record(`pass ${pass}: reset stayed in the same document (probe blocked)`,
+                await page.evaluate(() => document.documentElement.dataset.appLoaded === 'true'),
+                'the page reloaded although the reachability probe was blocked');
+
+            if (armed && pass === 1) {
+                // The use case crossfades every 2.8s and the tip every 4s (from a
+                // random tip). Sample every second for 9s and ask whether each
+                // line changed at all — two point samples can land on the same
+                // text by chance, which read as "stuck" once in testing.
+                const seen = { useCase: new Set(), tip: new Set() };
+                for (let k = 0; k < 10; k++) {
+                    const now = await rotationSnapshot();
+                    seen.useCase.add(now.useCase);
+                    seen.tip.add(now.tip);
+                    await page.waitForTimeout(1000);
+                }
+                record('pass 1: the use-case line rotates after the in-place re-arm', seen.useCase.size > 1,
+                    `stuck on "${[...seen.useCase][0]}" — the inline timer was not restarted`);
+                record('pass 1: the bottom tip rotates after the in-place re-arm', seen.tip.size > 1,
+                    `stuck on "${[...seen.tip][0]}" — the inline timer was not restarted`);
+            }
 
             const state = await page.evaluate(() => {
                 const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
@@ -1063,6 +1107,26 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
                     'clicking a choice button did nothing — no handler was bound');
             }
         }
+
+        // Pass 3: the probe answers, so the reset must end in a FRESH document —
+        // every pre-paint decision runs as on a new install. A marker set on the
+        // old window proves the document changed; mc-first-run proves it came
+        // back up on the choice screen (storage is empty).
+        await page.unroute(RESET_PROBE);
+        await page.evaluate(() => { window.__resetOldDocument = 1; });
+        await runFactoryReset();
+        let freshChoiceScreen = false;
+        for (let i = 0; i < 60 && !freshChoiceScreen; i++) {
+            try {
+                freshChoiceScreen = await page.evaluate(() =>
+                    !window.__resetOldDocument
+                    && document.documentElement.classList.contains('mc-first-run')
+                    && [...document.querySelectorAll('.first-run-btn')].every(b => !b.disabled));
+            } catch (e) { /* mid-navigation — the old context is gone, poll again */ }
+            if (!freshChoiceScreen) await page.waitForTimeout(500);
+        }
+        record('pass 3: with the probe reachable the reset ends in a fresh page load on the choice screen',
+            freshChoiceScreen, 'the document never changed, or it did not come back on the choice screen');
 
         record('reset never reported unremovable data', notices.length === 0,
             `saw: ${notices.join(' | ')}`);
