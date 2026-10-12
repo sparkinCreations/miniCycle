@@ -145,14 +145,14 @@
      These are overridden by theme-manager.js when a theme is applied
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
-  /* Footer links: white text on a blue glass strip. Bare white cannot reach
-     4.5:1 over the gradient's light end at any opacity, and blur alone does
-     not change what is under the text, so the strip carries a blue tint just
-     dark enough (~4.8:1 at the light end, measured by the contrast runner)
-     while reading as the same glass as the panels. */
+  /* Footer links: white text on a see-through blue glass strip (heavy blur,
+     light tint). Chosen for the look: at this transparency the white text
+     measures below WCAG 1.4.3's 4.5:1 over the gradient's light end; the
+     contrast runner prints the number on every run (reported, not gated).
+     Darken the tint or lighten the alpha here to trade look for contrast. */
   --footer-text: #ffffff;
-  --footer-strip-bg: rgba(28, 56, 120, 0.55);
-  --footer-strip-border: rgba(255, 255, 255, 0.28);
+  --footer-strip-bg: rgba(28, 56, 120, 0.35);
+  --footer-strip-border: rgba(255, 255, 255, 0.35);
   --theme-bg-solid: #4c79ff;
   --theme-bg-surface: rgba(255, 255, 255, 0.95);
   --theme-bg-surface-elevated: #ffffff;
