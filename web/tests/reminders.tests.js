@@ -756,6 +756,63 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             } finally { w.remove(); dialog.remove(); }
         });
 
+        // === SYSTEM NOTIFICATIONS SWITCH ON THE DESKTOP SHELL ===
+        resultsDiv.innerHTML += '<h4>🖥️ System notifications switch (desktop shell)</h4>';
+
+        // Electron pre-grants the permission, so the web path's "already granted"
+        // shortcut used to tick the box with no consent shown and nothing posted —
+        // and macOS only asks the user to allow the app when a notification is
+        // actually posted. The desktop branch must confirm, then post a test.
+        function wireDesktopSwitch({ confirm }) {
+            const form = buildUnhydratedReminderForm();
+            const state = { customReminders: { enabled: true, browserNotifications: false }, data: { routine: { c1: { tasks: [] } } }, appState: { activeRoutineId: 'c1' } };
+            const notifications = [];
+            const confirmations = [];
+            setRemindersDependencies({
+                AppGlobalState: {},
+                AppState: { isReady: () => true, get: () => state, update: async (fn) => fn(state) },
+                appInit: { waitForCore: async () => {} },
+                showNotification: (msg, type) => { notifications.push({ msg: String(msg), type }); return null; },
+                showConfirmationModal: (opts) => { confirmations.push(opts); opts.callback(confirm); },
+                updateUndoRedoButtons: () => {}
+            });
+            const instance = new MiniCycleReminders();
+            instance.setupReminderInputListeners();
+            const posted = [];
+            const RealNotification = window.Notification;
+            window.Notification = class { static get permission() { return 'granted'; } constructor(title, options) { posted.push({ title, options }); } close() {} };
+            globalThis.miniCycleDesktop = { platform: 'darwin' };
+            const restore = () => { window.Notification = RealNotification; delete globalThis.miniCycleDesktop; form.remove(); };
+            return { form, state, notifications, confirmations, posted, restore };
+        }
+
+        await test('desktop: enabling shows the privacy confirmation, posts a test notification, and names where to look', async () => {
+            const w = wireDesktopSwitch({ confirm: true });
+            try {
+                w.form.browser.checked = true;
+                w.form.browser.dispatchEvent(new Event('change'));
+                await waitForAsyncOperations();
+                if (w.confirmations.length !== 1) throw new Error(`the privacy confirmation was shown ${w.confirmations.length} times (the pre-granted shortcut skipped it)`);
+                if (w.posted.length !== 1) throw new Error(`${w.posted.length} test notification(s) posted — macOS only prompts when one is actually posted`);
+                if (!w.posted[0].options || w.posted[0].options.silent !== true) throw new Error('the test notification should be silent');
+                if (w.form.browser.checked !== true) throw new Error('the box should end up checked');
+                if (w.state.customReminders.browserNotifications !== true) throw new Error('the setting should be saved');
+                if (!w.notifications.some(n => /notification settings/i.test(n.msg))) throw new Error(`the toast must say where to look if nothing appeared: ${JSON.stringify(w.notifications)}`);
+            } finally { w.restore(); }
+        });
+
+        await test('desktop: declining the confirmation posts nothing and leaves the switch off', async () => {
+            const w = wireDesktopSwitch({ confirm: false });
+            try {
+                w.form.browser.checked = true;
+                w.form.browser.dispatchEvent(new Event('change'));
+                await waitForAsyncOperations();
+                if (w.posted.length !== 0) throw new Error('nothing may be posted after a declined confirmation');
+                if (w.form.browser.checked !== false) throw new Error('the box must stay unchecked');
+                if (w.state.customReminders.browserNotifications !== false) throw new Error('the setting must not be saved');
+            } finally { w.restore(); }
+        });
+
         // === PER-TASK REMINDER NOTIFICATION HONESTY ===
         resultsDiv.innerHTML += '<h4>🔔 Per-task reminder: the notification must match what will happen</h4>';
 
