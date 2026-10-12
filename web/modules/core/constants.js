@@ -220,6 +220,7 @@ export const UI_TIMEOUTS = Object.freeze({
     TOUR_RESCHEDULE_DELAY: 3500,          // 3500ms - Delay before re-showing the tour prompt after user dismisses
 
     // Backup reminder notification (per-session prompt to back up data)
+    REMINDERS_SUMMARY_REFRESH: 60000,     // 60000ms - While the reminders modal is open, re-render the "next reminder in N minutes" line this often so it does not go stale
     BACKUP_REMINDER_BOOT: 3000,           // 3000ms - Delay after boot before considering whether to show the backup reminder
     BACKUP_REMINDER_TRIGGER: 2000,        // 2000ms - Delay after trigger event before actually showing the reminder
 
@@ -1214,6 +1215,9 @@ export const DOM_IDS = Object.freeze({
     // ---- Modals ----
     REMINDERS_MODAL: 'reminders-modal',
     REMINDERS_WEB_NOTE: 'reminders-web-note',
+    REMINDERS_WEB_NOTE_TEXT: 'reminders-web-note-text',
+    REMINDERS_BELL_NOTE: 'reminders-bell-note',
+    REMINDERS_NEXT_SUMMARY: 'reminders-next-summary',
     TEST_RUNNER_IFRAME: 'test-runner-iframe',    // the cross-origin test runner frame in the testing modal      // the "web reminders need the app open" line in the reminders modal
     CLOSE_REMINDERS_BTN: 'close-reminders-btn',
     OPEN_REMINDERS_MODAL: 'open-reminders-modal',

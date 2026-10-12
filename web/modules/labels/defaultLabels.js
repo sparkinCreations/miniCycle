@@ -2058,7 +2058,23 @@ export const DEFAULT_LABELS = deepFreeze({
         minutes:         'Minutes',
         hours:           'Hours',
         days:            'Days',
-        webOnlyNote:     'On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.'
+        webOnlySummary:  'Reminders on the web',
+        webOnlyNote:     'On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.',
+        bellNote:        'Reminders only cover tasks with the 🔔 button on.',
+
+        // "Next reminder" summary line in the reminders modal (renderNextReminderSummary).
+        // Mirrors the recurring panel's next-occurrence line, worded for reminders.
+        nextUnderMinute:  'Next reminder in less than a minute',
+        nextIn:           'Next reminder in {count} {unit}',
+        nextTomorrow:     'Next reminder tomorrow at {time}',
+        nextWeekday:      'Next reminder {weekday} at {time}',
+        nextDate:         'Next reminder {date} at {time}',
+        nextMinuteUnit:   { one: 'minute', other: 'minutes' },
+        nextHourUnit:     { one: 'hour', other: 'hours' },
+        summaryTasks:     '{count} {taskWord} flagged',
+        summarySent:      '{sent} of {total} sent',
+        summaryNoTasks:   'No tasks have the 🔔 on yet, so nothing will fire.',
+        summaryAllSent:   'All {total} reminders have been sent. Change the schedule to start a new round.'
     },
 
     // ========================================================================

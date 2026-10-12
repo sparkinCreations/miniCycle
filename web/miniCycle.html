@@ -1522,12 +1522,13 @@
         <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title" aria-modal="true">
             <div class="reminders-modal-content has-corner-logo">
                 <h2 id="reminders-modal-title">Reminders & Notifications</h2>
-                <p id="reminders-web-note" class="settings-warning" hidden>On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.</p>
+                <p id="reminders-bell-note" class="settings-warning reminders-bell-note">Reminders only cover tasks with the 🔔 button on.</p>
         
                 <label class="settings-option">
                     <input type="checkbox" id="enableReminders" name="enableReminders" />
                     Enable Reminders
                 </label>
+                <p id="reminders-next-summary" class="reminders-next-summary" aria-live="polite" hidden></p>
                 <div>
                     <label class="settings-option">
                         <input type="checkbox" id="dueDatesReminders" name="dueDatesReminders" />
@@ -1569,6 +1570,10 @@
                     </div>
                 </div>
         
+                <details id="reminders-web-note" class="settings-warning-details reminders-web-note" hidden>
+                    <summary class="settings-warning-summary">Reminders on the web</summary>
+                    <p id="reminders-web-note-text" class="settings-warning">On the web, reminders fire only while miniCycle is open in a tab. The iOS and Android apps schedule them with the system, so they arrive even when the app is closed.</p>
+                </details>
                 <button id="close-reminders-btn" class="settings-btn">Close</button>
             </div>
         </dialog>

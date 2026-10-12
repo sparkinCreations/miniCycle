@@ -1692,7 +1692,12 @@ async function journeyReminderSettings(browser, baseURL) {
         // already set up and who reaches them from the panel.
         await page.evaluate((cfg) => {
             const p = JSON.parse(localStorage.getItem('miniCycleData'));
-            p.customReminders = cfg;
+            // nextReminderTime as the Enable switch would have set it; without it
+            // startReminders treats the reminder as overdue and fires one at boot.
+            p.customReminders = { ...cfg, nextReminderTime: Date.now() + 45 * 60000, timesReminded: 0 };
+            // One task carries the 🔔 so the summary line has something to schedule.
+            const r = p.data.routine[p.appState.activeRoutineId];
+            if (r?.tasks?.[0]) r.tasks[0].remindersEnabled = true;
             p.settings = p.settings || {};
             p.settings.quickActions = {
                 pinned: ['reminders', null, null, null, null],
@@ -1741,6 +1746,32 @@ async function journeyReminderSettings(browser, baseURL) {
         record('the form is HYDRATED, not at HTML defaults',
             form.dueDates === true && parseInt(form.repeat, 10) === 5 && parseInt(form.freq, 10) === 45,
             `form showed defaults instead of stored settings: ${JSON.stringify(form)}`);
+        // The summary line under the switch says when the next reminder fires,
+        // from state: 45 minutes from boot, 1 task flagged, 0 of 5 sent.
+        const summary = await page.evaluate(() => {
+            const el = document.getElementById('reminders-next-summary');
+            return el ? { hidden: el.hidden, text: el.textContent } : null;
+        });
+        record('the next-reminder summary is shown with reminders on',
+            !!summary && summary.hidden === false && /Next reminder in 4[45] minutes/.test(summary.text),
+            `summary: ${JSON.stringify(summary)} — expected "Next reminder in 44–45 minutes"`);
+        record('…and it counts the flagged task and the capped round',
+            !!summary && /1 task flagged/.test(summary.text) && /0 of 5 sent/.test(summary.text),
+            `summary: ${JSON.stringify(summary)}`);
+        // Switching reminders off hides it; on again brings it back.
+        const toggled = await page.evaluate(async () => {
+            const box = document.getElementById('enableReminders');
+            box.checked = false; box.dispatchEvent(new Event('change', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 600));
+            const off = document.getElementById('reminders-next-summary').hidden;
+            box.checked = true; box.dispatchEvent(new Event('change', { bubbles: true }));
+            await new Promise(r => setTimeout(r, 600));
+            const el = document.getElementById('reminders-next-summary');
+            return { off, on: !el.hidden, text: el.textContent };
+        });
+        record('the summary hides when reminders are switched off and returns when switched on',
+            toggled.off === true && toggled.on === true && /Next reminder in/.test(toggled.text),
+            `toggle: ${JSON.stringify(toggled)}`);
 
         // Now the action that used to destroy everything: expand the Privacy Notice.
         await page.evaluate(() => {

@@ -647,6 +647,115 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
+        // === NEXT-REMINDER SUMMARY (reminders modal) ===
+        resultsDiv.innerHTML += '<h4>🗓️ Next-reminder summary line</h4>';
+
+        // The <p> under "Enable Reminders" that says when the next reminder
+        // fires. It reads STATE, never the form, so these build state directly.
+        function wireSummary({ customReminders, tasks }) {
+            const summary = document.createElement('p');
+            summary.id = 'reminders-next-summary';
+            summary.hidden = true;
+            testContainer.appendChild(summary);
+            const state = {
+                customReminders,
+                appState: { activeRoutineId: 'r1' },
+                data: { routine: { r1: { id: 'r1', title: 'R', tasks } } },
+                settings: {}
+            };
+            const { instance } = wireReminders({ state, appInit: { waitForCore: async () => {} } });
+            return { instance, summary, state, remove: () => summary.remove() };
+        }
+        const FLAGGED = [{ id: 't1', text: 'a', remindersEnabled: true, completed: false }];
+
+        await test('summary: hidden and empty while reminders are off', async () => {
+            const w = wireSummary({ customReminders: { enabled: false, frequencyValue: 30, frequencyUnit: 'minutes' }, tasks: FLAGGED });
+            try {
+                w.instance.renderNextReminderSummary();
+                if (w.summary.hidden !== true) throw new Error('summary should be hidden while reminders are off');
+                if (w.summary.textContent !== '') throw new Error('summary should be empty while reminders are off');
+            } finally { w.remove(); }
+        });
+
+        await test('summary: names the stored next time, the flagged count and the sent count', async () => {
+            const w = wireSummary({
+                customReminders: { enabled: true, indefinite: false, repeatCount: 5, timesReminded: 2, frequencyValue: 45, frequencyUnit: 'minutes', nextReminderTime: Date.now() + 44 * 60000 + 30000 },
+                tasks: [...FLAGGED, { id: 't2', text: 'b', remindersEnabled: true, completed: true }, { id: 't3', text: 'c', remindersEnabled: false, completed: false }]
+            });
+            try {
+                w.instance.renderNextReminderSummary();
+                if (w.summary.hidden) throw new Error('summary should be visible while reminders are on');
+                const t = w.summary.textContent;
+                if (!/Next reminder in 44 minutes/.test(t)) throw new Error(`expected "Next reminder in 44 minutes", got "${t}"`);
+                if (!/1 task flagged/.test(t)) throw new Error(`a completed task and an unflagged task must not count: "${t}"`);
+                if (!/2 of 5 sent/.test(t)) throw new Error(`a capped round shows its progress: "${t}"`);
+            } finally { w.remove(); }
+        });
+
+        await test('summary: an indefinite round shows no sent count', async () => {
+            const w = wireSummary({ customReminders: { enabled: true, indefinite: true, repeatCount: 1, timesReminded: 9, frequencyValue: 2, frequencyUnit: 'hours', nextReminderTime: Date.now() + 2 * 3600000 + 1000 }, tasks: FLAGGED });
+            try {
+                w.instance.renderNextReminderSummary();
+                const t = w.summary.textContent;
+                if (!/Next reminder in 2 hours/.test(t)) throw new Error(`expected hours, got "${t}"`);
+                if (/of .* sent/.test(t)) throw new Error(`indefinite reminders have no round to count: "${t}"`);
+            } finally { w.remove(); }
+        });
+
+        await test('summary: with no stored next time it shows one interval from now, as scheduleNextReminder will arm', async () => {
+            const w = wireSummary({ customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes' }, tasks: FLAGGED });
+            try {
+                w.instance.renderNextReminderSummary();
+                const t = w.summary.textContent;
+                if (!/Next reminder in (29|30) minutes/.test(t)) throw new Error(`expected ~30 minutes, got "${t}"`);
+            } finally { w.remove(); }
+        });
+
+        await test('summary: says so when no task carries the 🔔, instead of promising a time', async () => {
+            const w = wireSummary({ customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes', nextReminderTime: Date.now() + 60000 }, tasks: [{ id: 't1', text: 'a', remindersEnabled: false, completed: false }] });
+            try {
+                w.instance.renderNextReminderSummary();
+                const t = w.summary.textContent;
+                if (w.summary.hidden) throw new Error('the no-task case is shown, not hidden');
+                if (/Next reminder in/.test(t)) throw new Error(`nothing will fire, so no time may be promised: "${t}"`);
+                if (!/No tasks/.test(t)) throw new Error(`expected the no-task explanation, got "${t}"`);
+            } finally { w.remove(); }
+        });
+
+        await test('summary: a finished capped round says so and offers the way to restart', async () => {
+            const w = wireSummary({ customReminders: { enabled: true, indefinite: false, repeatCount: 3, timesReminded: 3, frequencyValue: 30, frequencyUnit: 'minutes', nextReminderTime: Date.now() + 60000 }, tasks: FLAGGED });
+            try {
+                w.instance.renderNextReminderSummary();
+                const t = w.summary.textContent;
+                if (!/All 3 reminders have been sent/.test(t)) throw new Error(`expected the all-sent line, got "${t}"`);
+            } finally { w.remove(); }
+        });
+
+        await test('summary: re-rendered after a reminder fires (sent count and next time move on)', async () => {
+            const w = wireSummary({ customReminders: { enabled: true, indefinite: false, repeatCount: 5, timesReminded: 0, frequencyValue: 10, frequencyUnit: 'minutes', nextReminderTime: Date.now() - 1000, browserNotifications: false }, tasks: FLAGGED });
+            try {
+                w.instance.renderNextReminderSummary();
+                await w.instance.sendReminderNotificationIfNeeded();
+                w.instance.stopReminders();
+                const t = w.summary.textContent;
+                if (!/1 of 5 sent/.test(t)) throw new Error(`the fired reminder should be counted: "${t}"`);
+                if (!/Next reminder in (9|10) minutes/.test(t)) throw new Error(`the next time should be one interval on: "${t}"`);
+            } finally { w.remove(); }
+        });
+
+        await test('summary: the modal refresh tick is cleared on close', async () => {
+            const dialog = document.createElement('dialog');
+            dialog.id = 'reminders-modal';
+            testContainer.appendChild(dialog);
+            const w = wireSummary({ customReminders: { enabled: true, indefinite: true, frequencyValue: 30, frequencyUnit: 'minutes' }, tasks: FLAGGED });
+            try {
+                w.instance._startSummaryRefresh();
+                if (!w.instance._summaryRefreshId) throw new Error('opening should arm the refresh tick');
+                w.instance._stopSummaryRefresh();
+                if (w.instance._summaryRefreshId) throw new Error('closing should clear the refresh tick');
+            } finally { w.remove(); dialog.remove(); }
+        });
+
         // === PER-TASK REMINDER NOTIFICATION HONESTY ===
         resultsDiv.innerHTML += '<h4>🔔 Per-task reminder: the notification must match what will happen</h4>';
 

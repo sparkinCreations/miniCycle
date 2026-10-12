@@ -236,6 +236,7 @@ export class MiniCycleReminders {
 
         // Show tour prompt after modal is open
         this.deps.showRemindersTourNotification?.();
+        this._startSummaryRefresh();
 
         return true;
     }
@@ -245,6 +246,108 @@ export class MiniCycleReminders {
         if (remindersModal?.open) {
             remindersModal.close();
         }
+        this._stopSummaryRefresh();
+    }
+
+    /**
+     * Re-render the "next reminder" line while the modal is open, so "in 45
+     * minutes" does not sit there until the modal is reopened. Cleared on close
+     * (both the Close button and the dialog's own close event reach
+     * _stopSummaryRefresh), so a closed modal owns no timer.
+     */
+    _startSummaryRefresh() {
+        this._stopSummaryRefresh();
+        this._summaryRefreshId = setInterval(() => this.renderNextReminderSummary(), UI_TIMEOUTS.REMINDERS_SUMMARY_REFRESH);
+    }
+
+    _stopSummaryRefresh() {
+        if (this._summaryRefreshId) {
+            clearInterval(this._summaryRefreshId);
+            this._summaryRefreshId = null;
+        }
+    }
+
+    /**
+     * Describe when the next reminder fires, the way the recurring panel's
+     * next-occurrence line does (same buckets: under a minute, minutes, hours,
+     * tomorrow, this week, a date) but worded for reminders.
+     * @param {number} nextTime - epoch ms of the next reminder
+     * @param {number} now - epoch ms
+     * @returns {string}
+     */
+    _describeNextReminder(nextTime, now) {
+        const msUntil = nextTime - now;
+        if (msUntil < FREQUENCY_MS.minutes) return getLabel('reminders.nextUnderMinute');
+        if (msUntil < FREQUENCY_MS.hours) {
+            const count = Math.floor(msUntil / FREQUENCY_MS.minutes);
+            return getLabel('reminders.nextIn', { vars: { count, unit: getLabel('reminders.nextMinuteUnit', { count }) } });
+        }
+        if (msUntil < FREQUENCY_MS.days) {
+            const count = Math.floor(msUntil / FREQUENCY_MS.hours);
+            return getLabel('reminders.nextIn', { vars: { count, unit: getLabel('reminders.nextHourUnit', { count }) } });
+        }
+        const next = new Date(nextTime);
+        const time = next.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+        const tomorrow = new Date(now);
+        tomorrow.setDate(tomorrow.getDate() + 1);
+        if (next.toDateString() === tomorrow.toDateString()) {
+            return getLabel('reminders.nextTomorrow', { vars: { time } });
+        }
+        if (msUntil < 7 * FREQUENCY_MS.days) {
+            const weekday = next.toLocaleDateString(undefined, { weekday: 'long' });
+            return getLabel('reminders.nextWeekday', { vars: { weekday, time } });
+        }
+        const date = next.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+        return getLabel('reminders.nextDate', { vars: { date, time } });
+    }
+
+    /**
+     * Fill the summary line under "Enable Reminders" from state: when the next
+     * reminder fires, how many tasks carry the 🔔, and how many of a capped
+     * round have gone out. Hidden while reminders are off. Reads state, never
+     * the form, so it describes what will actually happen — and says so when
+     * nothing will (no task flagged, or the round is finished), the two cases
+     * where a schedule line alone would be a false promise.
+     *
+     * The time mirrors scheduleNextReminder: a stored nextReminderTime in the
+     * future is the truth; otherwise the timer will be armed one interval from
+     * now, so that is what is shown.
+     * @returns {void}
+     */
+    renderNextReminderSummary() {
+        const summary = this.deps.getElementById(DOM_IDS.REMINDERS_NEXT_SUMMARY);
+        if (!summary) return;
+        const state = this._state();
+        const settings = state?.customReminders;
+        if (!state || !settings?.enabled) {
+            summary.hidden = true;
+            summary.textContent = '';
+            return;
+        }
+        const flagged = (getActiveRoutine(state)?.tasks || [])
+            .filter(t => t.remindersEnabled && !t.completed).length;
+        const timesReminded = settings.timesReminded || 0;
+        const capped = !settings.indefinite;
+        const total = settings.repeatCount || 0;
+        let text;
+        if (flagged === 0) {
+            text = getLabel('reminders.summaryNoTasks');
+        } else if (capped && timesReminded >= total) {
+            text = getLabel('reminders.summaryAllSent', { vars: { total } });
+        } else {
+            const now = Date.now();
+            const multiplier = FREQUENCY_MS[settings.frequencyUnit] || FREQUENCY_MS.minutes;
+            const intervalMs = (settings.frequencyValue || 1) * multiplier;
+            const nextTime = settings.nextReminderTime > now ? settings.nextReminderTime : now + intervalMs;
+            const parts = [
+                this._describeNextReminder(nextTime, now),
+                getLabel('reminders.summaryTasks', { vars: { count: flagged, taskWord: getLabel('noun.task', { count: flagged }) } })
+            ];
+            if (capped) parts.push(getLabel('reminders.summarySent', { vars: { sent: timesReminded, total } }));
+            text = parts.join(' · ');
+        }
+        summary.textContent = text;
+        summary.hidden = false;
     }
 
     /**
@@ -431,6 +534,7 @@ export class MiniCycleReminders {
                 ...patch
             };
         }, true); // immediate save for reminders
+        this.renderNextReminderSummary();
         return true;
     }
 
@@ -499,6 +603,7 @@ export class MiniCycleReminders {
             console.error('❌ AppState not ready for saveRemindersSettings');
             return false;
         }
+        this.renderNextReminderSummary();
 
         return enabled;
     }
@@ -581,6 +686,7 @@ export class MiniCycleReminders {
 
             // Show/hide reminder buttons on load
             this.updateReminderButtons();
+            this.renderNextReminderSummary();
 
         } finally {
             // `toggle` on <details> is queued as a task, so it lands AFTER this
@@ -745,6 +851,7 @@ export class MiniCycleReminders {
             return;
         }
 
+        this.renderNextReminderSummary();
         // Schedule next reminder
         this.scheduleNextReminder();
     }
@@ -1290,6 +1397,7 @@ export class MiniCycleReminders {
 
         // Restore focus when dialog closes
         replaceStoredEventListener(remindersModal, "close", "__miniCycleRemindersModalCloseHandler", () => {
+            this._stopSummaryRefresh();
             remindersModal._previousFocus?.focus({ focusVisible: false });
         });
 
@@ -1303,11 +1411,19 @@ export class MiniCycleReminders {
         const openBtn = this.deps.getElementById(DOM_IDS.OPEN_REMINDERS_MODAL);
         // The browser build has no background scheduler: say so where the
         // settings are, instead of letting a closed tab's silence look like a bug.
+        // It folds like the Privacy Notice: the summary names it, the text is
+        // a tap away. The 🔔 note next to it stays open — it is the one thing a
+        // user who sees no reminder needs to know.
         const webNote = this.deps.getElementById(DOM_IDS.REMINDERS_WEB_NOTE);
         if (webNote) {
-            webNote.textContent = getLabel('reminders.webOnlyNote');
+            const summary = webNote.querySelector('summary');
+            if (summary) summary.textContent = getLabel('reminders.webOnlySummary');
+            const text = this.deps.getElementById(DOM_IDS.REMINDERS_WEB_NOTE_TEXT);
+            if (text) text.textContent = getLabel('reminders.webOnlyNote');
             webNote.hidden = isNativeApp();
         }
+        const bellNote = this.deps.getElementById(DOM_IDS.REMINDERS_BELL_NOTE);
+        if (bellNote) bellNote.textContent = getLabel('reminders.bellNote');
         if (!openBtn) {
             console.warn('⚠️ open-reminders-modal button not found');
             return;

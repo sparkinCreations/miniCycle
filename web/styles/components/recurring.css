@@ -1168,6 +1168,19 @@ dialog.reminders-modal[open] {
     content: '▾ ';
 }
 
+/* The always-open 🔔 note under the modal title, and the folded "on the
+   web" caveat that closes the modal just above its Close button (last so it
+   sits under the schedule fields when reminders are on; hidden on native).
+   Neither sits under a checkbox, so the caveat drops the details'
+   checkbox-aligned indent. */
+.reminders-bell-note {
+    margin: 0 0 var(--space-2-5) 0;
+}
+.reminders-web-note {
+    padding-left: 0;
+    margin: var(--space-2-5) 0 var(--space-2) 0;
+}
+
 /* Privacy/info warning text below settings toggles */
 .settings-warning {
     font-size: var(--font-size-xs);
@@ -1175,6 +1188,19 @@ dialog.reminders-modal[open] {
     margin: var(--space-1) 0 0 0;
     padding: 0;
     line-height: 1.4;
+}
+
+/* "Next reminder in 45 minutes · 3 tasks flagged · 2 of 5 sent" — the
+   reminders modal's counterpart to the recurring panel's next-occurrence
+   line. Hidden (attribute) while reminders are off. */
+.reminders-next-summary {
+    font-size: var(--font-size-sm);
+    line-height: 1.4;
+    margin: var(--space-1-5) 0 0 0;
+    padding: var(--space-1-5) var(--space-2-5);
+    border-left: 3px solid var(--pref-modal-accent, var(--accent-color, #007bff));
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    background: var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.06)));
 }
 
 /* =============================================================================
