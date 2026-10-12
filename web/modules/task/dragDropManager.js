@@ -7,7 +7,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, GESTURE } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -297,7 +297,7 @@ export class DragDropManager {
             let isLongPress = false;
             let isTap = false;
             let preventClick = false;
-            const moveThreshold = 15; // Movement threshold for long press
+            const moveThreshold = GESTURE.TASK_HOLD_SLOP; // finger drift allowed during the hold, per axis
 
             // Use safeAddEventListener
             const safeAdd = this.deps.safeAddEventListener;
@@ -365,7 +365,7 @@ export class DragDropManager {
                     taskElement.classList.add(DOM_CLASSES.DRAGGING);
 
                     // (No preventDefault here: the touchstart finished dispatching
-                    // 500ms ago, so it would be a no-op. Scroll is blocked by the
+                    // a hold ago, so it would be a no-op. Scroll is blocked by the
                     // touchmove handler once isDragging is set.)
 
                     // Enable undo system on first user interaction (touch drag path)
@@ -380,7 +380,7 @@ export class DragDropManager {
                         taskElement.classList.add(DOM_CLASSES.LONG_PRESSED);
                         this.deps.revealTaskButtons?.(taskElement, 'long-press');
                     }
-                }, 500); // Long-press delay (500ms)
+                }, UI_TIMEOUTS.TASK_DRAG_LONG_PRESS);
             };
             safeAdd(taskElement, "touchstart", taskElement._touchstartHandler, { passive: false }); // Must be non-passive - calls preventDefault()
 
@@ -409,7 +409,7 @@ export class DragDropManager {
                 // so a finger that settled one pixel downward never armed the
                 // drag while the same drift sideways was tolerated (measured
                 // Oct 2026: 2px down → no drag, 2px across → drag). A scroll
-                // clears 15px long before the 500ms hold is up.
+                // clears the slop long before the hold is up.
                 if (deltaX > moveThreshold || deltaY > moveThreshold) {
                     clearTimeout(holdTimeout);
                     isLongPress = false;
