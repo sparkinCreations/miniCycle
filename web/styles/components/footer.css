@@ -11,7 +11,7 @@
     display: block;
     position: fixed;
     bottom: 18px;
-    color: var(--footer-text, #111111);
+    color: var(--footer-text, #ffffff);
     text-align: center;
     font-size: 12px;
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -23,21 +23,25 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
-/* The links sit bare on the page gradient, so the TEXT carries the contrast:
-   --footer-text is near-black in the default theme (white at 80% opacity was
-   ~1.7:1 over the gradient's light end, and no opacity of white can reach
-   4.5:1 over #74c0fc), and each theme sets its own. No opacity dimming: the
-   text must be readable before hover. Measured per theme by the contrast
-   runner's footer check. */
+/* White links on a navy glass strip. Bare white at 80% opacity was ~1.7:1
+   over the gradient's light end, and no opacity of white can reach 4.5:1
+   over #74c0fc; the strip gives the text a controlled surface (~10:1) while
+   it stays white, which sits better with the blue theme than dark text did.
+   No opacity dimming: the text must be readable before hover. Measured per
+   theme by the contrast runner's footer check. */
 .footer-links {
     list-style: none;
     margin: 0 auto;
-    padding: 0;
+    padding: var(--space-1-5) var(--space-3-5, 14px);
     display: flex;
     justify-content: center;
     align-items: center;
     width: fit-content;
     max-width: calc(100% - 2 * var(--space-4));
+    background: var(--footer-strip-bg, rgba(18, 34, 64, 0.82));
+    border-radius: var(--radius-full, 999px);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
 }
 #copyright {
     margin: 0;
@@ -45,11 +49,11 @@
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--footer-text, #111111);
+    color: var(--footer-text, #ffffff);
 }
 
 #copyright a {
-    color: var(--footer-text, #111111);
+    color: var(--footer-text, #ffffff);
     text-decoration: none;
 }
 
@@ -71,7 +75,7 @@
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--footer-text, #111111);
+    color: var(--footer-text, #ffffff);
     z-index: var(--z-content);
 }
 
@@ -81,7 +85,7 @@
 }
 
 .footer-item a {
-    color: var(--footer-text, #111111);
+    color: var(--footer-text, #ffffff);
     text-decoration: none;
 }
 
@@ -95,7 +99,7 @@
 .footer-item button {
     background: none;
     border: none;
-    color: var(--footer-text, #111111);
+    color: var(--footer-text, #ffffff);
     text-decoration: none;
     cursor: pointer;
     font: inherit;
