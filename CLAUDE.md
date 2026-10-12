@@ -45,6 +45,7 @@ npm run test:sw       # offline boot + PRECACHE DRIFT GUARD (see below)
 npm run test:layout   # panel-overlap + measured-var guard (7 app viewports) + static-page horizontal-overflow sweep (product.html, 10 widths)
 npm run test:meta     # static: every test must assert and await its async body
 npm run test:journey  # end-to-end user journeys on the real app
+JOURNEY_FILTER="factory reset" npm run test:journey  # only the journeys whose name contains the text
 npm run test:a11y     # custom controls must be keyboard-operable and named — the class no label gate can see
 npm run test:contrast # axe color-contrast on the real app, per theme and view (gated at zero serious violations; text over image backgrounds is reported, not judged)
 npm run test:webkit   # the browser suite on WebKit (the iOS app is a WKWebView) — CI runs it non-blocking; test:journey:webkit likewise

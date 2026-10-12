@@ -38,7 +38,8 @@ const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
     yellow: '\x1b[33m', blue: '\x1b[34m', cyan: '\x1b[36m', gray: '\x1b[90m'
 };
-const PORT = 8079; // dedicated port — distinct from layout(8077)/sw(8078)/app(8080)
+// JOURNEY_PORT overrides it, for a filtered run beside a full one.
+const PORT = Number(process.env.JOURNEY_PORT) || 8079; // dedicated port — distinct from layout(8077)/sw(8078)/app(8080)
 const WEB_ROOT = path.join(__dirname, '..', '..');
 
 // ── In-page helpers (serialized into the browser) ───────────────────────────
@@ -189,11 +190,38 @@ async function applySaveDialogStub(context, mode) {
 // version.js itself, and page.route never sees a worker's fetch.
 const RESET_PROBE = '**/version.js?_cb=reset-probe*';
 
+// WebKit: Playwright cannot intercept a request once a service worker is in
+// the path. The worker ignores non-GET, so the HEAD goes to the network from
+// the worker's side and page.route never sees it (verified Oct 2026: the probe
+// answered 200 with the route armed, and every reset ended in a real reload —
+// which is why the save-dialog stub read 0 bytes and the progress bar read
+// unset: both were sampled off a brand-new document). On that engine the
+// probe is denied from inside the page instead; window.__allowResetProbe lifts
+// it for the pass that asserts the reload.
+const RESET_PROBE_DENY = () => {
+    const realFetch = window.fetch;
+    window.fetch = function (input, init) {
+        const url = typeof input === 'string' ? input : (input && input.url) || '';
+        if (/reset-probe/.test(url) && !window.__allowResetProbe) {
+            return Promise.reject(new TypeError('reset probe denied by the journey harness'));
+        }
+        return realFetch.call(this, input, init);
+    };
+};
+const PROBE_NEEDS_PAGE_GUARD = ENGINE_NAME === 'webkit';
+
+// A check the harness cannot run on this engine. Printed, not recorded: a skip
+// that counted as a pass would hide the gap, and one that counted as a failure
+// would make the non-blocking WebKit job red forever for a harness limit.
+const skipOnEngine = (name, why) =>
+    console.log(`   ${colors.yellow}⏭${colors.reset} ${name} ${colors.gray}— skipped on ${ENGINE_NAME}: ${why}${colors.reset}`);
+
 async function openFresh(browser, baseURL, opts = {}) {
     const context = await browser.newContext();
     await context.grantPermissions(['notifications'], { origin: baseURL });
     if (opts.saveDialog) await applySaveDialogStub(context, opts.saveDialog);
     if (opts.initScript) await context.addInitScript(opts.initScript, opts.initArg);
+    if (PROBE_NEEDS_PAGE_GUARD) await context.addInitScript(RESET_PROBE_DENY);
     const page = await context.newPage();
     await page.route(RESET_PROBE, (r) => r.abort());
     // Collected here and asserted by the caller, so a starved dependency FAILS the
@@ -400,18 +428,28 @@ async function journeyCore(browser, baseURL) {
             }
             return false;
         }, null, { timeout: 20000 }).catch(() => {});
-        await context.setOffline(true);
-        let offlineBooted = false;
-        try {
-            await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
-            await bootApp(page, 25000);
-            offlineBooted = true;
-        } catch { /* recorded below */ }
-        record('app boots offline', offlineBooted, offlineBooted ? '' : 'no appLoaded offline');
-        if (offlineBooted) {
-            record('data intact offline', (await taskCount(page)) === startCount + 2, `count=${await taskCount(page)}`);
+        if (ENGINE_NAME === 'webkit') {
+            // Playwright's WebKit cannot navigate while setOffline(true) is on
+            // ("WebKit encountered an internal error" before the worker is
+            // asked), and a route that aborts everything is refused ahead of
+            // the worker as well — so an offline boot is unobservable here.
+            // The worker itself registers, caches and controls the page on
+            // WebKit (asserted above); the offline boot stays a Chromium check.
+            skipOnEngine('app boots offline', 'Playwright cannot take a WebKit page offline through the service worker');
+        } else {
+            await context.setOffline(true);
+            let offlineBooted = false;
+            try {
+                await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+                await bootApp(page, 25000);
+                offlineBooted = true;
+            } catch { /* recorded below */ }
+            record('app boots offline', offlineBooted, offlineBooted ? '' : 'no appLoaded offline');
+            if (offlineBooted) {
+                record('data intact offline', (await taskCount(page)) === startCount + 2, `count=${await taskCount(page)}`);
+            }
+            await context.setOffline(false);
         }
-        await context.setOffline(false);
     } catch (e) {
         failures.push(`run error: ${e.message}`);
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
@@ -1180,6 +1218,9 @@ async function journeyDragReorder(browser, baseURL) {
         const armed = await page.evaluate(async () => {
             const row = document.querySelectorAll('#taskList .task')[0];
             const r = row.getBoundingClientRect();
+            // WebKit only exposes the Touch/TouchEvent constructors to a touch
+            // context (hasTouch); a mouse context throws "Illegal constructor".
+            try { new Touch({ identifier: 0, target: row }); } catch { return { unsupported: true }; }
             const mk = (type, y) => {
                 const t = new Touch({ identifier: 1, target: row, clientX: r.left + 40, clientY: y, pageX: r.left + 40, pageY: y });
                 return new TouchEvent(type, { touches: type === 'touchend' ? [] : [t], changedTouches: [t], targetTouches: type === 'touchend' ? [] : [t], bubbles: true, cancelable: true });
@@ -1194,9 +1235,14 @@ async function journeyDragReorder(browser, baseURL) {
             await new Promise(res => setTimeout(res, 400));
             return { armed, leftover: document.querySelectorAll('#taskList .task.dragging, #taskList .task.drop-target').length };
         });
-        record('touch: a 2px vertical finger drift during the hold still arms the drag', armed.armed,
-            'the hold was cancelled by sub-threshold vertical drift');
-        record('touch: lifting the finger clears the drag marks', armed.leftover === 0, `${armed.leftover} marks left`);
+        if (armed.unsupported) {
+            skipOnEngine('touch: a 2px vertical finger drift during the hold still arms the drag',
+                'synthetic Touch events need a touch context on this engine');
+        } else {
+            record('touch: a 2px vertical finger drift during the hold still arms the drag', armed.armed,
+                'the hold was cancelled by sub-threshold vertical drift');
+            record('touch: lifting the finger clears the drag marks', armed.leftover === 0, `${armed.leftover} marks left`);
+        }
     } catch (e) {
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
         failures.push(`harness error: ${e.message}`);
@@ -1422,13 +1468,18 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
             tip: document.querySelector('.loader-tip-text')?.textContent || ''
         }));
         for (const pass of [1, 2]) {
+            // A token on the OLD window: appLoaded alone is true on a fresh
+            // document too, so it never caught a reload (it stayed green on
+            // WebKit while every reset there was reloading — Oct 2026).
+            await page.evaluate((pass) => { window.__resetDocToken = pass; }, pass);
             await runFactoryReset();
             let armed = true;
             try { await waitForChoiceScreen(); } catch (e) { armed = false; }
             record(`pass ${pass}: choice screen re-armed with original labels`, armed,
                 'screen absent, or buttons left disabled / showing data-busy text');
             record(`pass ${pass}: reset stayed in the same document (probe blocked)`,
-                await page.evaluate(() => document.documentElement.dataset.appLoaded === 'true'),
+                await page.evaluate((pass) => window.__resetDocToken === pass
+                    && document.documentElement.dataset.appLoaded === 'true', pass),
                 'the page reloaded although the reachability probe was blocked');
 
             if (armed && pass === 1) {
@@ -1495,7 +1546,7 @@ async function journeyFactoryResetRepeat(browser, baseURL) {
         // old window proves the document changed; mc-first-run proves it came
         // back up on the choice screen (storage is empty).
         await page.unroute(RESET_PROBE);
-        await page.evaluate(() => { window.__resetOldDocument = 1; });
+        await page.evaluate(() => { window.__resetOldDocument = 1; window.__allowResetProbe = true; });
         await runFactoryReset();
         let freshChoiceScreen = false;
         for (let i = 0; i < 60 && !freshChoiceScreen; i++) {
@@ -3965,9 +4016,14 @@ async function run() {
     console.log(`${colors.gray}   server on ${srv.url} (web/, real service worker enabled)${colors.reset}`);
 
     const browser = await engine.launch({ headless: true });
+    // JOURNEY_FILTER=<substring> runs only the journeys whose name contains
+    // it (case-insensitive) — for chasing one failure without the full run.
+    const filter = (process.env.JOURNEY_FILTER || '').toLowerCase();
+    const selected = filter ? JOURNEYS.filter(j => j.name.toLowerCase().includes(filter)) : JOURNEYS;
+    if (filter) console.log(`${colors.gray}   JOURNEY_FILTER="${process.env.JOURNEY_FILTER}" → ${selected.length}/${JOURNEYS.length} journeys${colors.reset}`);
     const allFailures = [];
     try {
-        for (const journey of JOURNEYS) {
+        for (const journey of selected) {
             console.log(`\n${colors.cyan}▸ journey: ${journey.name}${colors.reset}`);
             let failures;
             _pagesThisJourney = [];
@@ -3993,7 +4049,7 @@ async function run() {
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
     if (allFailures.length === 0) {
-        console.log(`${colors.green}🎉 All ${JOURNEYS.length} user journeys hold.${colors.reset}`);
+        console.log(`${colors.green}🎉 All ${selected.length} user journeys hold.${colors.reset}`);
         console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}\n`);
         process.exit(0);
     } else {
