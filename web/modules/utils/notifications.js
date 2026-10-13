@@ -871,14 +871,14 @@ async setDefaultPosition(notificationContainer) {
     const THROTTLE_MS = 100;
 
     // Save position to Schema 2.5 via AppState (DI-pure, throttled)
-    const savePositionToSchema25 = async (x, y) => {
+    const savePositionToState = async (x, y) => {
       const now = Date.now();
 
       // Throttle: skip if called too recently
       if (now - lastSaveTime < THROTTLE_MS) {
         // Schedule a final save for the last position
         if (pendingSave) clearTimeout(pendingSave);
-        pendingSave = setTimeout(() => savePositionToSchema25(x, y), THROTTLE_MS);
+        pendingSave = setTimeout(() => savePositionToState(x, y), THROTTLE_MS);
         return;
       }
 
@@ -1012,7 +1012,7 @@ async setDefaultPosition(notificationContainer) {
 
           // Save final position once on drag end (not during movement)
           const finalRect = notificationContainer.getBoundingClientRect();
-          savePositionToSchema25(finalRect.left, finalRect.top);
+          savePositionToState(finalRect.left, finalRect.top);
           if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > dragThreshold) {
             ev.preventDefault();
             ev.stopPropagation();

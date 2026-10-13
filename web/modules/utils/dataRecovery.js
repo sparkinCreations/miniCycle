@@ -205,7 +205,7 @@ export function validateRecoveredData(data) {
  * @param {string} payloadString - Raw JSON string to validate
  * @returns {boolean}
  */
-export function validateSchema25PayloadString(payloadString) {
+export function validateStatePayloadString(payloadString) {
     if (typeof payloadString !== 'string') return false;
     try {
         const parsed = JSON.parse(payloadString);

@@ -497,7 +497,7 @@ export async function runTaskDOMTests(resultsDiv) {
         } finally { host.remove(); }
     });
 
-    await test('createMainTaskElement adds high-priority class when highPriority=true', () => {
+    await test('createMainTaskElement adds high-priority class when hasPriority=true', () => {
         const manager = new TaskDOMManager(getDefaultDeps());
 
         const taskItem = manager.createMainTaskElement('test-id', true, false, {}, {});

@@ -119,7 +119,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             appState: { activeRoutineId: null }
         };
 
-        const isValid = state.validateSchema25Structure(validData);
+        const isValid = state.validateStateStructure(validData);
 
         if (!isValid) {
             throw new Error('Valid schema not recognized');
@@ -134,7 +134,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             appState: { activeRoutineId: null }
         };
 
-        const isValid = state.validateSchema25Structure(invalidData);
+        const isValid = state.validateStateStructure(invalidData);
 
         if (isValid) {
             throw new Error('Invalid schema should be rejected');
@@ -149,7 +149,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             appState: { activeRoutineId: null }
         };
 
-        const isValid = state.validateSchema25Structure(invalidData);
+        const isValid = state.validateStateStructure(invalidData);
 
         if (isValid) {
             throw new Error('Missing cycles should be rejected');
@@ -163,7 +163,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             data: { routine: {} }
         };
 
-        const isValid = state.validateSchema25Structure(invalidData);
+        const isValid = state.validateStateStructure(invalidData);
 
         if (isValid) {
             throw new Error('Missing appState should be rejected');
@@ -172,7 +172,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
 
     await test('handles null data gracefully', () => {
         const state = createStateManager();
-        const isValid = state.validateSchema25Structure(null);
+        const isValid = state.validateStateStructure(null);
 
         if (isValid) {
             throw new Error('Null should not be valid');
@@ -815,7 +815,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         const state = createStateManager();
         const fallback = state.createMinimalFallbackState();
 
-        if (!state.validateSchema25Structure(fallback)) {
+        if (!state.validateStateStructure(fallback)) {
             throw new Error('Fallback state is not valid Schema 2.5');
         }
     });

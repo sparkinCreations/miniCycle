@@ -21,7 +21,7 @@ import { isDesktopApp } from '../platform/desktopBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
 // testing modal's IndexedDB restore.
-import { validateSchema25PayloadString } from '../utils/dataRecovery.js';
+import { validateStatePayloadString } from '../utils/dataRecovery.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -552,7 +552,7 @@ function serializeLiveMiniCycleData(AppState) {
         console.error('Could not serialize in-memory state for backup:', serializeError);
         return null;
     }
-    if (!validateSchema25PayloadString(payload)) {
+    if (!validateStatePayloadString(payload)) {
         console.error('In-memory state failed structure validation for backup');
         return null;
     }
@@ -1068,7 +1068,7 @@ async function processRestoreData(fileContent) {
                     // version cited as motivation but didn't actually test. Reject
                     // the file up front: "file rejected", not "restored, then
                     // recovery mode".
-                    if (!validateSchema25PayloadString(backupData.miniCycleData)) {
+                    if (!validateStatePayloadString(backupData.miniCycleData)) {
                         console.error('miniCycleData failed structural validation');
                         _deps.showNotification(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         resolve();
@@ -1165,7 +1165,7 @@ export function findPreMigrationCopy() {
  * @returns {Object|null} null when the copy is not a readable document
  */
 export function buildPreMigrationBackupPayload(copy) {
-    if (!copy || !validateSchema25PayloadString(copy.raw)) return null;
+    if (!copy || !validateStatePayloadString(copy.raw)) return null;
     const parsed = JSON.parse(copy.raw);
     const schemaVersion = String(parsed.schemaVersion || parsed.metadata?.schemaVersion || SCHEMA.OLDEST_MIGRATABLE);
     return {
@@ -1269,7 +1269,7 @@ export function downloadPreMigrationCopy() {
  */
 export async function restorePreMigrationCopy() {
     const copy = findPreMigrationCopy();
-    if (!copy || !validateSchema25PayloadString(copy.raw)) {
+    if (!copy || !validateStatePayloadString(copy.raw)) {
         _deps.showNotification(getLabel('notify.preMigrationUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
         refreshPreMigrationCopyControls();
         return false;

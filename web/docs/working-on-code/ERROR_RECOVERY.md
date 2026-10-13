@@ -67,7 +67,7 @@ first so nothing is lost.
 Wired into all **three** previously-silent data-loss paths: `reload()` parse-error,
 `_initializeInternal()` parse-error, and `_initializeInternal()` validate-false.
 
-**Salvaged data is adopted only if it then passes the strict `validateSchema25Structure()` validator.**
+**Salvaged data is adopted only if it then passes the strict `validateStateStructure()` validator.**
 Otherwise the existing minimal-fallback runs — but the corrupted bytes are already backed up. On a
 successful repair the user sees `notify.dataRepaired`, **quantified** by how many routines were
 recovered — e.g. *"Recovered 2 routines from unreadable data. A backup of the original was saved in
