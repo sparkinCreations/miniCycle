@@ -1,7 +1,7 @@
 # miniCycle Schema 2.6 Documentation
 
 **Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Last Updated**: September 18, 2026 — Schema 2.6: routines keyed by a generated id under `data.routine`, priority as a level, one `autoClear` map. Audited field-by-field against `createInitialSchema25Data()`, `types.js`, `schemaMigration26.js` and the modules that read/write each field.
+**Last Updated**: September 18, 2026 — Schema 2.6: routines keyed by a generated id under `data.routine`, priority as a level, one `autoClear` map. Audited field-by-field against `createInitialSchemaData()`, `types.js`, `schemaMigration26.js` and the modules that read/write each field.
 
 ## Overview
 
@@ -196,7 +196,7 @@ same function on a clone of the live state and reports what it would do.
     rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
     totalTasksCompleted: 156,              // Lifetime tasks cleared — LIVES HERE, not on metadata
                                            // (read by achievementsManager, backupReminder, undo)
-    // createInitialSchema25Data() seeds only `cyclesCompleted` and
+    // createInitialSchemaData() seeds only `cyclesCompleted` and
     // `rewardMilestones`; `totalTasksCompleted` is written later, on first clear.
     // NOT here, despite older docs listing both:
     //  • `streaks` — never implemented. types.js declares a StreakData typedef,

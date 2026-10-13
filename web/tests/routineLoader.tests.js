@@ -120,7 +120,7 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
             // Reset dependencies for each test (must explicitly set to null)
             setRoutineLoaderDependencies({
                 AppState: null,
-                createInitialSchema25Data: null,
+                createInitialSchemaData: null,
                 addTask: null,
                 updateThemeColor: null,
                 startReminders: null,
@@ -185,7 +185,7 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
 
         setRoutineLoaderDependencies({
             AppState: { isReady: () => false, get: () => null },
-            createInitialSchema25Data: () => { initialDataCreated = true; },
+            createInitialSchemaData: () => { initialDataCreated = true; },
             addTask: () => {}
         });
 

@@ -139,7 +139,7 @@ async function loadSubModules(version) {
         setTaskCompletionDependencies: taskCompletionModule.setTaskCompletionDependencies,
         handleTaskCompletionChangeImpl: taskCompletionModule.handleTaskCompletionChangeImpl,
         saveCurrentTaskOrderImpl: taskCompletionModule.saveCurrentTaskOrderImpl,
-        saveTaskToSchema25Impl: taskCompletionModule.saveTaskToSchema25Impl,
+        saveRoutineToStateImpl: taskCompletionModule.saveRoutineToStateImpl,
 
         // Task Cycle Reset
         setTaskCycleResetDependencies: taskCycleResetModule.setTaskCycleResetDependencies,
@@ -481,12 +481,12 @@ export class TaskCore {
      * @param {Cycle} currentCycle - Current cycle data
      * @returns {void}
      */
-    saveTaskToSchema25(activeCycle, currentCycle) {
-        if (!_subModules?.saveTaskToSchema25Impl) {
-            console.warn('TaskCore: saveTaskToSchema25Impl not loaded');
+    saveRoutineToState(activeCycle, currentCycle) {
+        if (!_subModules?.saveRoutineToStateImpl) {
+            console.warn('TaskCore: saveRoutineToStateImpl not loaded');
             return;
         }
-        return _subModules.saveTaskToSchema25Impl(activeCycle, currentCycle, this.deps);
+        return _subModules.saveRoutineToStateImpl(activeCycle, currentCycle, this.deps);
     }
 
     // ========================================================================
@@ -655,9 +655,9 @@ function saveCurrentTaskOrder() {
  * @param {Cycle} cycleData - Cycle data
  * @returns {void}
  */
-function saveTaskToSchema25(cycleId, cycleData) {
+function saveRoutineToState(cycleId, cycleData) {
     if (!taskCoreInstance) return;
-    return taskCoreInstance.saveTaskToSchema25(cycleId, cycleData);
+    return taskCoreInstance.saveRoutineToState(cycleId, cycleData);
 }
 
 /**
@@ -690,7 +690,7 @@ export {
     toggleTaskPriority,
     handleTaskCompletionChange,
     saveCurrentTaskOrder,
-    saveTaskToSchema25,
+    saveRoutineToState,
     resetTasks,
     handleCompleteAllTasks
 };

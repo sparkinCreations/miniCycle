@@ -95,7 +95,7 @@ const di = createDIModule('DueDates', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, saveTaskToSchema25: Function|null, AppState: Object|null, AppMeta: Object|null}} */
+/** @type {{appInit: Object|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, saveRoutineToState: Function|null, AppState: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];

@@ -273,7 +273,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
  * @param {Object} deps - Resolved dependencies
  * @returns {void}
  */
-export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
+export function saveRoutineToStateImpl(activeCycle, currentCycle, deps = {}) {
     const AppState = deps.AppState || _deps.AppState;
 
     if (AppState.isReady()) {
@@ -287,7 +287,7 @@ export function saveTaskToSchema25Impl(activeCycle, currentCycle, deps = {}) {
             console.error('❌ AppState save failed:', error);
         }
     } else {
-        console.warn('⚠️ AppState not ready for saveTaskToSchema25 - state may be lost');
+        console.warn('⚠️ AppState not ready for saveRoutineToState - state may be lost');
     }
 }
 

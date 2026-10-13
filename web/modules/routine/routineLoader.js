@@ -33,7 +33,7 @@ import { announce } from '../utils/announce.js';
 const di = createDIModule('RoutineLoader', {
   appInit: optional(null),
   AppState: optional(null),
-  createInitialSchema25Data: optional(null),
+  createInitialSchemaData: optional(null),
   addTask: optional(null),
   updateThemeColor: optional(null),
   startReminders: optional(null),
@@ -54,7 +54,7 @@ const di = createDIModule('RoutineLoader', {
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{appInit: Object|null, AppState: Object|null, createInitialSchema25Data: Function|null, addTask: Function|null, updateThemeColor: Function|null, startReminders: Function|null, catchUpMissedRecurringTasks: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, updateStatsPanel: Function|null, syncAllTasksWithMode: Function|null, taskToAddTaskOptions: Function|null, updateSearchVisibility: Function|null, syncModeFromToggles: Function|null, completedTasksManager: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, createInitialSchemaData: Function|null, addTask: Function|null, updateThemeColor: Function|null, startReminders: Function|null, catchUpMissedRecurringTasks: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, updateMainMenuHeader: Function|null, updateStatsPanel: Function|null, syncAllTasksWithMode: Function|null, taskToAddTaskOptions: Function|null, updateSearchVisibility: Function|null, syncModeFromToggles: Function|null, completedTasksManager: Object|null}} */
 const _deps = new Proxy({}, {
   get(_, prop) {
     return di.resolve()[prop];
@@ -116,7 +116,7 @@ async function loadMiniCycle() {
 
   if (!state) {
     console.error('❌ No state data found');
-    _deps.createInitialSchema25Data?.();
+    _deps.createInitialSchemaData?.();
     return;
   }
 

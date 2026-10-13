@@ -44,7 +44,7 @@ cause is a fixture shaped unlike production data:
 - `taskValidation.tests.js` pinned `TASK_LIMIT === 100`, a hardcoded value that had
   silently diverged from the importer's limit.
 
-**Check:** build fixtures from the real creation path (`createInitialSchema25Data`,
+**Check:** build fixtures from the real creation path (`createInitialSchemaData`,
 `createOrUpdateTaskData`) rather than inventing a shape; assert the **source**
 (`x === LIMITS.FOO`) rather than the value; and confirm every new test **fails
 without the fix** — revert, see red with the expected message, restore. A test

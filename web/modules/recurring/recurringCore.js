@@ -187,7 +187,7 @@ export let handleRecurringTaskActivation = null;
 /** @type {?Function} Deactivate recurring scheduling on a task */
 export let handleRecurringTaskDeactivation = null;
 /** @type {?Function} Apply recurring settings to a Schema 2.5 task object */
-export let applyRecurringToTaskSchema25 = null;
+export let applyRecurringToTask = null;
 /** @type {?Function} Delete a recurring template from a cycle */
 export let deleteRecurringTemplate = null;
 /** @type {?Function} Remove all recurring tasks from a cycle */
@@ -305,7 +305,7 @@ async function loadSubModules(version) {
         // Populate exports - Activation
         handleRecurringTaskActivation = activation.handleRecurringTaskActivation;
         handleRecurringTaskDeactivation = activation.handleRecurringTaskDeactivation;
-        applyRecurringToTaskSchema25 = activation.applyRecurringToTaskSchema25;
+        applyRecurringToTask = activation.applyRecurringToTask;
         deleteRecurringTemplate = activation.deleteRecurringTemplate;
         removeRecurringTasksFromCycle = activation.removeRecurringTasksFromCycle;
         handleRecurringTasksAfterReset = activation.handleRecurringTasksAfterReset;
@@ -413,7 +413,7 @@ export async function setRecurringCoreDependencies(overrides = {}) {
         // Activation
         handleRecurringTaskActivation,
         handleRecurringTaskDeactivation,
-        applyRecurringToTaskSchema25,
+        applyRecurringToTask,
         deleteRecurringTemplate,
         removeRecurringTasksFromCycle,
         handleRecurringTasksAfterReset,

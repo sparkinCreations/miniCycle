@@ -46,7 +46,7 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
     // app ever writes. Tests asserted on those invented fields and so passed
     // while the real code was broken: validateSchema's cycle check could never
     // fire on real data, and showAppInfo silently fell through to the schema
-    // version. Keep this honest to what createInitialSchema25Data produces.
+    // version. Keep this honest to what createInitialSchemaData produces.
     function cleanState() {
         return {
             schemaVersion: '2.6',

@@ -86,7 +86,7 @@ export async function runRecurringIntegrationTests(resultsDiv) {
 
             // Clean up other global functions
             const globalFunctions = [
-                'applyRecurringToTaskSchema25',
+                'applyRecurringToTask',
                 'handleRecurringTaskActivation',
                 'handleRecurringTaskDeactivation',
                 'deleteRecurringTemplate',
@@ -462,7 +462,7 @@ export async function runRecurringIntegrationTests(resultsDiv) {
     // === GLOBAL FUNCTION AVAILABILITY TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🌐 Global Functions</h4>';
 
-    await test('exposes applyRecurringToTaskSchema25', async () => {
+    await test('exposes applyRecurringToTask', async () => {
         const mockAppState = {
             get: () => ({
                 schemaVersion: "2.6",

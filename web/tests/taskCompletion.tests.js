@@ -8,7 +8,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runTaskCompletionTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/task/taskCompletion.js?v=${cacheBuster}`);
-    const { setTaskCompletionDependencies, saveTaskToSchema25Impl, handleTaskCompletionChangeImpl } = mod;
+    const { setTaskCompletionDependencies, saveRoutineToStateImpl, handleTaskCompletionChangeImpl } = mod;
 
     resultsDiv.innerHTML = '<h2>TaskCompletion Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -48,27 +48,27 @@ export async function runTaskCompletionTests(resultsDiv) {
         if (typeof setTaskCompletionDependencies !== 'function') throw new Error('DI setter missing');
     });
 
-    await test('saveTaskToSchema25Impl is exported', () => {
-        if (typeof saveTaskToSchema25Impl !== 'function') throw new Error('saveTaskToSchema25Impl missing');
+    await test('saveRoutineToStateImpl is exported', () => {
+        if (typeof saveRoutineToStateImpl !== 'function') throw new Error('saveRoutineToStateImpl missing');
     });
 
     // ============================================
-    resultsDiv.innerHTML += '<h4 class="test-section">💾 saveTaskToSchema25Impl</h4>';
+    resultsDiv.innerHTML += '<h4 class="test-section">💾 saveRoutineToStateImpl</h4>';
 
-    await test('saveTaskToSchema25Impl updates state (bumps lastModified)', () => {
+    await test('saveRoutineToStateImpl updates state (bumps lastModified)', () => {
         const state = createMockState();
         state.metadata.lastModified = 0;   // reset so we can see the impl set it
         const deps = { AppState: createMockAppState(state) };
 
         const cycle = state.data.routine['cycle-1'];
-        saveTaskToSchema25Impl('cycle-1', cycle, deps);
+        saveRoutineToStateImpl('cycle-1', cycle, deps);
 
         // The impl's update callback sets metadata.lastModified (taskCompletion.js). createMockState
         // pre-set it to Date.now(), so the old `if (!lastModified)` was already true before the call.
-        if (!state.metadata.lastModified) throw new Error('saveTaskToSchema25Impl should set metadata.lastModified');
+        if (!state.metadata.lastModified) throw new Error('saveRoutineToStateImpl should set metadata.lastModified');
     });
 
-    await test('saveTaskToSchema25Impl persists the passed cycle into state', () => {
+    await test('saveRoutineToStateImpl persists the passed cycle into state', () => {
         const state = createMockState();
         const deps = { AppState: createMockAppState(state) };
 
@@ -76,7 +76,7 @@ export async function runTaskCompletionTests(resultsDiv) {
         // the impl actually WROTE it. The old test mutated state.data.routine['cycle-1'] directly
         // (same reference) and read it back — a tautology that passes even with deps = {}.
         const newCycle = { title: 'Test', tasks: [{ id: 'task-1', text: 'Rewritten', completed: false }] };
-        saveTaskToSchema25Impl('cycle-1', newCycle, deps);
+        saveRoutineToStateImpl('cycle-1', newCycle, deps);
 
         const saved = state.data.routine['cycle-1'];
         if (saved !== newCycle) throw new Error('impl should assign the passed cycle into state');
@@ -89,11 +89,11 @@ export async function runTaskCompletionTests(resultsDiv) {
     // AppState is required() on the completion path (STATE_TRUTH_MIGRATION #15). A wiring
     // miss used to skip the save silently — the checkbox moved, nothing was stored, no
     // message. It must now fail where it happens.
-    await test('saveTaskToSchema25Impl throws when AppState is not wired (no silent skipped save)', () => {
+    await test('saveRoutineToStateImpl throws when AppState is not wired (no silent skipped save)', () => {
         setTaskCompletionDependencies({ AppState: null });
         let message = null;
         try {
-            saveTaskToSchema25Impl('cycle-1', { tasks: [] }, {});
+            saveRoutineToStateImpl('cycle-1', { tasks: [] }, {});
         } catch (error) {
             message = error.message;
         }
@@ -124,11 +124,11 @@ export async function runTaskCompletionTests(resultsDiv) {
         }
     });
 
-    await test('saveTaskToSchema25Impl handles null cycle', () => {
+    await test('saveRoutineToStateImpl handles null cycle', () => {
         const state = createMockState();
         const mockAS = createMockAppState(state);
         // Should not throw
-        saveTaskToSchema25Impl('cycle-1', null, { AppState: mockAS });
+        saveRoutineToStateImpl('cycle-1', null, { AppState: mockAS });
     });
 
     // ============================================

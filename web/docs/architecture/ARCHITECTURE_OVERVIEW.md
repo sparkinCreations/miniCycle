@@ -393,7 +393,7 @@ const { createStateManager } = await import(withV('../core/appState.js'));
 AppState = createStateManager({
     showNotification,
     storage: localStorage,
-    createInitialData: migrationMod.createInitialSchema25Data,
+    createInitialData: migrationMod.createInitialSchemaData,
     AppMeta: deps.core.AppMeta
 });
 deps.core.AppState = AppState;                     // shared deps container

@@ -1147,7 +1147,7 @@
             } else if (moduleKey === 'migrationManager') {
                 const mod = await import(`../modules/routine/migrationManager.js?v=${cacheBuster}`);
                 window.setMigrationManagerDependencies = mod.setMigrationManagerDependencies;
-                window.createInitialSchema25Data = mod.createInitialSchema25Data;
+                window.createInitialSchemaData = mod.createInitialSchemaData;
                 window.initAppWithAutoMigration = mod.initAppWithAutoMigration;
             } else if (moduleKey === 'dueDates') {
                 const mod = await import(`../modules/features/dueDates.js?v=${cacheBuster}`);
@@ -1506,7 +1506,7 @@
                 } else if (moduleName === 'migrationManager') {
                     const mod = await import(`../modules/routine/migrationManager.js?v=${cacheBuster}`);
                     window.setMigrationManagerDependencies = mod.setMigrationManagerDependencies;
-                    window.createInitialSchema25Data = mod.createInitialSchema25Data;
+                    window.createInitialSchemaData = mod.createInitialSchemaData;
                     window.initAppWithAutoMigration = mod.initAppWithAutoMigration;
                     currentModule = 'migrationManager';
                     resultsDiv.innerHTML = '<p>✅ MigrationManager loaded. Click "Run Tests" to begin.</p>';
