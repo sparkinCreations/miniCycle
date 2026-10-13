@@ -48,7 +48,7 @@
     --theme-input-placeholder:      #888888;
 
     /* Button */
-    --theme-button-primary-bg:          #4c79ff;
+    --theme-button-primary-bg:          #3a5fc7;   /* white text on #4c79ff was 3.8:1; this is ~5.8:1 */
     --theme-button-primary-text:        #ffffff;
     --theme-button-primary-hover-bg:    #5a87ff;
     --theme-button-secondary-bg:        #4a4a5a;

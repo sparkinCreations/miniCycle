@@ -208,7 +208,9 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Button
      ═══════════════════════════════════════════════════════════════════════════ */
-  --theme-button-primary-bg: var(--color-primary);
+  /* Darker than --color-primary (#4c79ff, 3.8:1 with white): white text on
+     #3a5fc7 measures ~5.8:1 (WCAG 1.4.3). Every primary button inherits it. */
+  --theme-button-primary-bg: #3a5fc7;
   --theme-button-primary-text: #ffffff;
   --theme-button-primary-hover-bg: var(--color-primary-dark);
   --theme-button-secondary-bg: #e0e0e0;

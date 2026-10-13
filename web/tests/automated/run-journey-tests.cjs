@@ -3453,6 +3453,11 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
         record('fixture: the Reduced Motion setting applied its class', hasClass, 'html.reduced-motion missing');
         record('Reduced Motion (app setting): the progress bar gets no timed transition',
             /^0m?s(,\s*0m?s)*$/.test(transition.duration), `transition: ${JSON.stringify(transition)}`);
+        // Literal durations too, not only token-timed ones: the onboarding
+        // animations used to keep running under the app switch (Oct 2026).
+        const literal = await page.evaluate(() => { const el = document.createElement('div'); el.style.animation = 'shimmer 2s ease-in-out infinite'; el.style.transition = 'opacity 0.3s'; document.body.appendChild(el); const cs = getComputedStyle(el); const r = { animationDuration: cs.animationDuration, iterations: cs.animationIterationCount, transitionDuration: cs.transitionDuration }; el.remove(); return r; });
+        record('Reduced Motion (app setting): an animation with a literal duration does not run either',
+            /^0s$/.test(literal.animationDuration) && literal.iterations === '1' && /^0s$/.test(literal.transitionDuration), JSON.stringify(literal));
         record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
     } catch (e) {
         failures.push(`run error: ${e.message}`);

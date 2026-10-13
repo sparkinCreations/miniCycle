@@ -39,9 +39,14 @@ const THEMES = [
     { name: 'high contrast', classes: ['high-contrast'] },
     { name: 'high contrast + dark', classes: ['high-contrast', 'dark-mode'] }
 ];
+// `activate` runs in the page after the classes are applied, for views that
+// need a click to come on screen (axe skips what is not rendered on screen —
+// the Focus View Task panel lives on the carousel's first tab and its
+// "Complete task" button went unmeasured until Oct 2026).
 const VIEWS = [
     { name: 'home', classes: [] },
-    { name: 'focus view', classes: ['focus-mode'] }
+    { name: 'focus view', classes: ['focus-mode'] },
+    { name: 'focus task panel', classes: ['focus-mode'], activate: () => document.querySelector('.focus-task-dot')?.click() }
 ];
 
 async function boot(page, baseURL) {
@@ -90,6 +95,15 @@ function measureHandChecks() {
         // visible in every run rather than disappearing into a pass.
         out.push({ name: 'checkbox edge vs task surface (ring or fill)', ratio: Math.max(ratio(ring, rowBg), ratio(fill, rowBg)), min: 3, reportOnly: 'design choice, see WCAG 1.4.11' });
     }
+    // Focus View's "Complete task" button (on the Task panel): its text used to
+    // be hard-coded white over each theme's primary button colour (Oct 2026).
+    const complete = document.querySelector('.focus-task-complete-btn');
+    if (complete && complete.checkVisibility()) {
+        const cs = getComputedStyle(complete);
+        const bg = over(parse(cs.backgroundColor) || WHITE, WHITE);
+        const text = over(parse(cs.color) || WHITE, bg);
+        out.push({ name: 'Focus View "Complete task" button text vs its background', ratio: ratio(text, bg), min: 4.5 });
+    }
     const link = document.querySelector('#footer-container .footer-links a');
     if (link) {
         // Effective text colour: its colour at the product of ancestor opacities.
@@ -134,11 +148,13 @@ async function run() {
         const allThemeClasses = [...new Set(THEMES.flatMap(t => t.classes))];
         const allViewClasses = [...new Set(VIEWS.flatMap(v => v.classes))];
         for (const theme of THEMES) {
+            const handReported = new Set();
             for (const view of VIEWS) {
                 await page.evaluate(([themeOff, themeOn, viewOff, viewOn]) => {
                     document.body.classList.remove(...themeOff, ...viewOff);
                     document.body.classList.add(...themeOn, ...viewOn);
                 }, [allThemeClasses, theme.classes, allViewClasses, view.classes]);
+                if (view.activate) { await page.evaluate(view.activate); await page.waitForTimeout(600); }
                 await page.waitForTimeout(350);   // theme transitions settle
                 const label = `${theme.name} / ${view.name}`.padEnd(32);
                 // Two things axe cannot judge, measured by hand (Oct 2026 audit):
@@ -146,8 +162,11 @@ async function run() {
                 // and the footer links over the page gradient (text, 4.5:1 at
                 // EVERY gradient stop — WCAG 1.4.3). Alpha is composited the
                 // way the screen does it.
-                if (view === VIEWS[0]) {
-                    const measured = await page.evaluate(measureHandChecks);
+                {
+                    // Every view, each check reported once per theme (the first
+                    // view that renders the element wins).
+                    const measured = (await page.evaluate(measureHandChecks)).filter(m => !handReported.has(m.name));
+                    measured.forEach(m => handReported.add(m.name));
                     for (const m of measured) {
                         const ok = m.ratio >= m.min;
                         const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
