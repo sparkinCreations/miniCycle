@@ -225,7 +225,15 @@ function measureFocus() {
     const progress = px(document.querySelector('.progress-focus-row'));
     const exitBtn = px(document.getElementById('focus-mode-exit-btn'));
     const tvBottom = tv ? Math.round(tv.getBoundingClientRect().bottom) : null;
+    // Undo button: unhide it for the measurement (it only shows with history).
+    const undoEl = document.getElementById('undo-btn');
+    const undoWasHidden = !!undoEl && undoEl.hidden;
+    if (undoEl) undoEl.hidden = false;
+    const undo = px(undoEl);
+    if (undoEl) undoEl.hidden = undoWasHidden;
     return {
+        undo, viewportHeight: window.innerHeight,
+        navHeight: navRect ? Math.round(navRect.height) : 0,
         cardTop: card ? card.top : null,
         contentTop, chromeFloor,
         liveChromeBottom, publishedVar,
@@ -577,6 +585,22 @@ async function run() {
             // The band itself — this is what anchoring #task-view between the
             // chrome and the nav dots actually guarantees, and it holds on every
             // viewport including the ones too short to fit their own content.
+            if (f.undo && f.navLine !== null) {
+                // The undo/redo row lives on the nav-dots row in focus mode and
+                // must be fully on screen: at desktop widths it used to hang
+                // 3px off the bottom edge (Oct 2026).
+                record(vp, 'focus undo button is fully inside the viewport',
+                    f.undo.bottom <= f.viewportHeight - 2 && f.undo.top >= 0,
+                    `undo ${f.undo.top}–${f.undo.bottom}, viewport ${f.viewportHeight}`);
+                // Phones keep the undo row BELOW the dots on purpose (thumb reach,
+                // home indicator); from 769px up it shares the dots' row.
+                if (vp.width >= 769) {
+                    const dotsBottom = f.navLine + f.navHeight;
+                    record(vp, 'focus undo button sits on the nav-dots row',
+                        f.undo.top < dotsBottom + 4 && f.undo.bottom > f.navLine - 4,
+                        `undo ${f.undo.top}–${f.undo.bottom}, dots ${f.navLine}–${dotsBottom}`);
+                }
+            }
             if (f.taskViewBottom !== null && f.navLine !== null) {
                 record(vp, 'focus band clears nav dots',
                     f.taskViewBottom <= f.navLine + TOL,
