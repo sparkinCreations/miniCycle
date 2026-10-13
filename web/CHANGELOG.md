@@ -1,3 +1,7 @@
+## [2.615] - 2026-10-13
+- fix(focus): the undo/redo row sits on the nav-dots row on desktop instead of hanging off the bottom edge
+
+
 ## [2.614] - 2026-10-13
 - fix(a11y): "Complete task" button at 5.8:1 in every theme; the app's Reduced Motion switch stops every animation
 - feat(focus): tell returning users once that the × to leave Focus View moved
