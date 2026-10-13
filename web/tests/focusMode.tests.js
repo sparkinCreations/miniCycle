@@ -665,6 +665,54 @@ export async function runFocusModeTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">📍 "The × moved" one-time notice</h4>';
+
+    // The × to leave Focus View moved from the top-left corner to under the
+    // routine list in v2.594 (2026-10-10). A user whose data predates that knew
+    // the old spot and is told once; new data never is; and once told, never again.
+    const BEFORE_MOVE = Date.UTC(2026, 8, 1);   // 1 Sep 2026
+    const AFTER_MOVE = Date.UTC(2026, 10, 1);   // 1 Nov 2026
+    function enterFocusWith({ createdAt, seen }) {
+        setupDOMScaffold();
+        const notificationCalls = [];
+        const AppState = createMockAppState({ metadata: { createdAt }, settings: { focusModeActive: false, onboardingCompleted: true, ...(seen ? { focusExitMovedNoticeSeen: true } : {}) } });
+        mod.setFocusModeDependencies({
+            AppState,
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showNotification: (msg, type, duration) => { notificationCalls.push({ msg, type, duration }); }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        instance.activate(true);
+        const moved = notificationCalls.filter(n => /has moved/i.test(n.msg));
+        const flag = AppState.get().settings.focusExitMovedNoticeSeen;
+        instance.deactivate();
+        instance.destroy();
+        teardownDOMScaffold();
+        return { moved, flag };
+    }
+    await test('a user whose data predates the move is told once, and the flag is saved', () => {
+        const r = enterFocusWith({ createdAt: BEFORE_MOVE });
+        if (r.moved.length !== 1) throw new Error(`expected one notice, got ${r.moved.length}`);
+        if (r.flag !== true) throw new Error('the seen flag was not saved');
+    });
+    await test('a user whose data postdates the move is never told, but the flag is still set so it cannot fire later', () => {
+        const r = enterFocusWith({ createdAt: AFTER_MOVE });
+        if (r.moved.length !== 0) throw new Error('a new user has nothing to relearn');
+        if (r.flag !== true) throw new Error('the flag should be set silently');
+    });
+    await test('once seen, it never comes back', () => {
+        const r = enterFocusWith({ createdAt: BEFORE_MOVE, seen: true });
+        if (r.moved.length !== 0) throw new Error('the notice repeated');
+    });
+    await test('the notice is shown on a restored (silent) entry too — that is the first entry after updating', () => {
+        const r = enterFocusWith({ createdAt: BEFORE_MOVE });
+        if (r.moved.length !== 1) throw new Error('silent activation (session restore) must still show it once');
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">🔕 Deactivate Notification Gating</h4>';
 
     /**

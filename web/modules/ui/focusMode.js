@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -1121,6 +1121,33 @@ export class FocusMode {
      *        coincide today, and inferring intent from an unrelated flag is how
      *        that quietly stops being true.
      */
+    /**
+     * Tell a returning user, once, that the × to leave Focus View moved from
+     * the top-left corner to under the routine list (v2.594). Only users whose
+     * data predates the move ever knew the old spot; everyone else, and anyone
+     * who has seen this, gets the flag set silently so it never fires. A
+     * notification, not a modal: it points, it has a close, it does not block
+     * the view the user just entered. Shown on the first entry after the
+     * update, including a restored session at boot.
+     * @returns {boolean} true if the notice was shown
+     */
+    _maybeShowExitMovedNotice() {
+        const AppState = this.deps.AppState;
+        const state = AppState?.get?.();
+        if (!state || state.settings?.focusExitMovedNoticeSeen) return false;
+        const createdAt = Number(state.metadata?.createdAt) || 0;
+        const knewTheOldSpot = createdAt > 0 && createdAt < LAYOUT_CHANGES.FOCUS_EXIT_MOVED_AT;
+        if (AppState.isReady?.()) {
+            AppState.update(s => {
+                if (!s.settings) s.settings = {};
+                s.settings.focusExitMovedNoticeSeen = true;
+            }, true);
+        }
+        if (!knewTheOldSpot) return false;
+        this.deps.showNotification?.(getLabel('focusMode.exitMovedNotice'), 'info', UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
+        return true;
+    }
+
     activate(silent = false, restoring = false) {
         if (this._active) return;
         this._active = true;
@@ -1197,6 +1224,7 @@ export class FocusMode {
         if (!silent) {
             this.deps.showNotification?.(getLabel('focusMode.activated'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
+        this._maybeShowExitMovedNotice();
 
         document.dispatchEvent(new CustomEvent(EVENTS.FOCUS_MODE_ACTIVATED, {
             detail: { restoring }

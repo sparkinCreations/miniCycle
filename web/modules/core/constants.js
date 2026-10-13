@@ -374,6 +374,16 @@ export const DEFAULT_REMINDERS = Object.freeze({
     frequencyUnit: "minutes"
 });
 
+/**
+ * Moments a one-time "this moved" notice is keyed to. A user whose data
+ * predates the moment used the old layout and gets told once; data created
+ * after it never does. Epoch ms, UTC.
+ * @constant {Object}
+ */
+export const LAYOUT_CHANGES = Object.freeze({
+    FOCUS_EXIT_MOVED_AT: Date.UTC(2026, 9, 10)  // v2.594: the × to leave Focus View moved from the top-left corner to under the routine list, bottom right (866ee77f)
+});
+
 export const LIMITS = Object.freeze({
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack

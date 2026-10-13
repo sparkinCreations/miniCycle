@@ -3694,6 +3694,69 @@ async function journeyReauditDialogs(browser, baseURL) {
     return { name: 're-audit dialogs', failures };
 }
 
+// ── Journey: the one-time "the × moved" notice in Focus View ─────────────────
+//
+// v2.594 moved the × to leave Focus View from the top-left corner to under
+// the routine list. A user whose data predates that sees one closable notice
+// on their first entry to Focus View after updating, never again; a user
+// whose data is newer never sees it at all.
+async function journeyFocusExitMovedNotice(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const seeded = () => page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); return { createdAt: p.metadata && p.metadata.createdAt, seen: p.settings && p.settings.focusExitMovedNoticeSeen }; });
+        const enterFocus = async () => {
+            await page.evaluate(() => { if (!document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+            await page.waitForTimeout(900);
+        };
+        const notices = () => page.evaluate(() => [...document.querySelectorAll('.notification')].filter(n => /has moved/i.test(n.textContent)).map(n => ({ text: n.textContent.trim().slice(0, 60), closable: !!n.querySelector('.close-btn') })));
+        const leaveFocus = async () => { await page.evaluate(() => { if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click(); }); await page.waitForTimeout(700); };
+
+        // openFresh's routine was created just now: a NEW user.
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click(); });
+        await page.waitForTimeout(800);
+        await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); delete p.settings.focusExitMovedNoticeSeen; localStorage.setItem('miniCycleData', JSON.stringify(p)); });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 }); await bootApp(page); await page.waitForTimeout(800);
+        await page.evaluate(() => { if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click(); });
+        await page.waitForTimeout(600);
+        await enterFocus();
+        let seen = await notices();
+        record('a user whose data postdates the move never sees the notice', seen.length === 0, JSON.stringify(seen));
+        await leaveFocus();
+
+        // Make the data predate the move, clear the flag: an EXISTING user.
+        await page.evaluate(() => { const p = JSON.parse(localStorage.getItem('miniCycleData')); p.metadata.createdAt = Date.UTC(2026, 8, 1); delete p.settings.focusExitMovedNoticeSeen; localStorage.setItem('miniCycleData', JSON.stringify(p)); });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 }); await bootApp(page); await page.waitForTimeout(800);
+        await page.evaluate(() => { if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click(); });
+        await page.waitForTimeout(600);
+        const before = await seeded();
+        await enterFocus();
+        seen = await notices();
+        record('fixture: data predates the move and the flag is clear', before.createdAt === Date.UTC(2026, 8, 1) && !before.seen, JSON.stringify(before));
+        record('an existing user sees the notice on entering Focus View, and it has a close', seen.length === 1 && seen[0].closable, JSON.stringify(seen));
+        const after = await seeded();
+        record('…and the seen flag is saved', after.seen === true, JSON.stringify(after));
+        await page.evaluate(() => document.querySelectorAll('.notification .close-btn').forEach(b => b.click()));
+        // The closed notice animates out; wait until it has left the DOM so a
+        // leftover is not mistaken for a repeat.
+        await page.waitForFunction(() => ![...document.querySelectorAll('.notification')].some(n => /has moved/i.test(n.textContent)), null, { timeout: 10000 }).catch(() => {});
+        await leaveFocus();
+        await enterFocus();
+        seen = await notices();
+        record('re-entering Focus View does not show it again', seen.length === 0, JSON.stringify(seen));
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 }); await bootApp(page); await page.waitForTimeout(900);
+        seen = await notices();
+        record('nor does a restored Focus View session after a reload', seen.length === 0, JSON.stringify(seen));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'focus exit moved notice', failures };
+}
+
 // ── Journey: the Complete Cycle button survives every task moving to the dropdown ──
 // Reproduced Sep 2026 (STATE_TRUTH_MIGRATION #1): checkCompleteAllButton counted
 // `#taskList.children`, and with the completed dropdown on, every finished row
@@ -4648,6 +4711,7 @@ const JOURNEYS = [
     { name: 'keyboard focus survives every dialog and layer', fn: journeyKeyboardFocusSurvivesDialogs },
     { name: "the + button's first-time shimmer", fn: journeyPlusButtonShimmer },
     { name: 'the re-audit dialogs name themselves, keep Tab, and hand focus back', fn: journeyReauditDialogs },
+    { name: 'the one-time "the × moved" notice in Focus View', fn: journeyFocusExitMovedNotice },
 ];
 
 async function run() {
