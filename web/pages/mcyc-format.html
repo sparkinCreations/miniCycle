@@ -822,7 +822,8 @@ pipx run check-jsonschema \
                     Files carry a task-level <code>schemaVersion</code> of <code>2</code>. The app's own data
                     schema moved from 2.5 to 2.6 in September 2026 (priority became a level, the clear setting
                     one map); the file format followed, and the importer still reads every older file, including
-                    the 2.5 spellings and pre-2.5 layouts.
+                    the 2.5 spellings and pre-2.5 layouts. The exporter wrote both spellings during a
+                    transition window (September 19 to October 13, 2026) and now writes only the 2.6 fields.
                 </p>
                 <p>
                     Our intent for anything built on this: existing files keep importing. New fields may be

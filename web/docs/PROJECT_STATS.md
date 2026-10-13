@@ -20,7 +20,7 @@
 |--------|-------|
 | **App Version** | 2.615 |
 | **Lite Version** | 2.097 (frozen) |
-| **Schema Version** | 2.5 |
+| **Schema Version** | 2.6 |
 | **Total Modules** | 163 |
 | **Total Tests** | 3913 |
 | **Test Pass Rate** | 100% |
