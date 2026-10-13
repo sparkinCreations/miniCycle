@@ -1,3 +1,9 @@
+## [2.614] - 2026-10-13
+- fix(a11y): "Complete task" button at 5.8:1 in every theme; the app's Reduced Motion switch stops every animation
+- feat(focus): tell returning users once that the × to leave Focus View moved
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.613] - 2026-10-12
 - fix(a11y): re-audit fixes — named creation dialog, Settings and History focus, ⋯ Escape state; a11y CI in its own job
 - fix(sw): precache motionPreference.js (the offline test caught the new module missing from the dev precache list)

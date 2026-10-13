@@ -1669,3 +1669,25 @@ body.high-contrast.dark-mode .sort-chip.active {
 body.high-contrast.dark-mode .filter-sort-divider {
     background: var(--dark-border-subtle);
 }
+
+/* =============================================================================
+   REDUCED MOTION — the app's own switch
+   settingsUIManager puts `reduced-motion` on <html> and <body>. The timing
+   tokens go to 0ms (variables.css), which covers every token-timed effect —
+   but anything with a literal duration (the onboarding and first-run
+   animations, the tour demos) only listened to the OS media query, so the
+   switch left them running (Oct 2026 audit). This mirrors what the OS
+   preference does in each component, once, for everything: no running
+   animation, no timed transition, no smooth scroll.
+   ============================================================================= */
+html.reduced-motion *,
+html.reduced-motion *::before,
+html.reduced-motion *::after,
+body.reduced-motion *,
+body.reduced-motion *::before,
+body.reduced-motion *::after {
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    scroll-behavior: auto !important;
+}

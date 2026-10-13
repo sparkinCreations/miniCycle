@@ -130,7 +130,9 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     font-size: var(--font-size-md);
     font-weight: 600;
     font-family: inherit;
-    color: var(--color-white);
+    /* The theme's own button text, not hard-coded white: Dark Ocean and
+       Golden Glow pair light button backgrounds with dark text (Oct 2026). */
+    color: var(--theme-button-primary-text, var(--color-white));
     background: var(--theme-button-primary-bg, var(--color-primary));
     border: none;
     border-radius: var(--radius-full);

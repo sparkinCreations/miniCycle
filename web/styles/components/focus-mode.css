@@ -408,18 +408,23 @@ body.focus-mode #undo-redo-buttons {
     }
 }
 
-/* Desktop: drop the nav-dots / undo row 25px lower. Focus mode pins the dots
-   at bottom: 65px (phones: 80px, below), a value from when the help window and
-   Complete button sat under the card. The band's bottom edge is MEASURED from
-   the dots (--nav-dots-clearance), so lowering them hands the list the same
-   25px. Undo/redo moves in lock-step to stay on the dots' row. Phones keep
-   theirs — the home indicator and thumb reach are the constraint there. */
-@media (min-width: 1024px) {
-    body.focus-mode #nav-dots {
-        bottom: 40px;
-    }
+/* Tablets and desktop: the undo/redo row sits ON the nav-dots row
+   (Routine | Stats), centred on it. The container is 0px tall and the buttons
+   extend DOWNWARD from its edge, so the old "bottom: 25px" put them at 25px
+   to -3px — cut off at the viewport edge (Oct 2026). The dots sit at
+   bottom: 65px (the "drop them to 40px" rule that lived here was dead: the
+   general 65px rule later in this file won), so the dots' centre is about
+   84px up; the buttons are centred on the container edge there, the same
+   way the phone layout centres them on the dots. Phones keep theirs — the
+   home indicator and thumb reach are the constraint there. */
+@media (min-width: 769px) {
     body.focus-mode #undo-redo-buttons {
-        bottom: 25px;
+        bottom: 84px;
+    }
+    body.focus-mode .undo-redo-btn {
+        top: 0;
+        bottom: auto;
+        transform: translateY(-50%);
     }
 }
 

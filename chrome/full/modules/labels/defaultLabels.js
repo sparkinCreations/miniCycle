@@ -1667,6 +1667,7 @@ export const DEFAULT_LABELS = deepFreeze({
         enterTitle:     'Hide distractions and focus on tasks',
         exit:           'Exit Focus View',
         exitTitle:      'Return to Home View',
+        exitMovedNotice: 'The × to leave Focus View has moved: it now sits at the bottom right, just under the routine list.',
         enterAria:      'Enter Focus View — hides header, navigation, and other UI elements',
         exitAria:       'Exit Focus View — return to Home View',
         activated:      'Focus View activated',
