@@ -572,6 +572,8 @@ decided:
    expected early-to-mid October 2026. The importer's 2.5 readers and the pinned 2.5 schema
    stay; only the exporter and the two doc notes change. Exit criteria and the exact edit list
    live in `docs/reference/MCYC_FILE_FORMAT.md` ("Closing the dual-write window").
+   **Closed Oct 13 2026:** `mcycPayload.js` writes only `priority` + `autoClear`; readers and the
+   pinned 2.5 schema unchanged; `mcycPayload.tests.js` now asserts the pair is absent.
    *Version gates (Sep 2026):* every restore / import / sanitize gate outside the shape owners
    now asks `isSupportedStoredVersion()` (`utils/schemaVersion.js`) — true from
    `SCHEMA.OLDEST_MIGRATABLE` (`'2.5'`, which stays put) up to `SCHEMA.CURRENT` — instead of

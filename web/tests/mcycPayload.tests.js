@@ -5,8 +5,8 @@
  * The single .mcyc payload builder (drift-review D-02 — replaced three
  * hand-rolled copies that had silently diverged). Asserts:
  *   - includeHistory flag controls history/clearedTasks presence
- *   - priorityColor and autoUncheckDaily survive the trip (the two fields
- *     the old copies dropped)
+ *   - priority (as a level) and autoUncheckDaily survive the trip (the two
+ *     fields the old copies dropped); the 2.5 pair is no longer written
  *   - retired defaultRecurTime is stripped from exports (even from legacy
  *     stored settings that still carry it)
  *   - live cycle data is never mutated
@@ -65,17 +65,17 @@ export async function runMcycPayloadTests(resultsDiv) {
         if (payload.clearedTasks?.entries?.[0]?.taskText !== 'secret task') throw new Error('clearedTasks should round-trip');
     });
 
-    await test('priority survives, and the 2.5 pair is dual-written for older readers', () => {
+    await test('priority survives as a level, and the 2.5 pair is no longer written', () => {
         const payload = buildMcycPayload('my-cycle', makeCycle(), { includeHistory: false });
         const t = payload.tasks[0];
         if (t.priority !== 'high') throw new Error(`priority lost: got ${t.priority}`);
-        // SCHEMA_2_6_PLAN.md ".mcyc": the lagging platform builds read the 2.5 pair,
-        // colour = the level's default swatch.
-        if (t.highPriority !== true || t.priorityColor !== '#dc3545') {
-            throw new Error(`2.5 pair not dual-written: ${t.highPriority} ${t.priorityColor}`);
+        // Dual-write window closed Oct 13 2026 (MCYC_FILE_FORMAT.md "Closing the
+        // dual-write window"): a 2.6 export carries ONLY the 2.6 spellings.
+        for (const legacy of ['highPriority', 'priorityColor', 'deleteWhenCompleteSettings', 'deleteWhenComplete']) {
+            if (legacy in t) throw new Error(`2.5 field still written: ${legacy}`);
         }
-        if (!t.autoClear || !t.deleteWhenCompleteSettings || typeof t.deleteWhenComplete !== 'boolean') {
-            throw new Error('autoClear and its 2.5 pair must both be written');
+        if (!t.autoClear || typeof t.autoClear.cycle !== 'boolean' || typeof t.autoClear.todo !== 'boolean') {
+            throw new Error('autoClear must be written as a per-mode map');
         }
     });
 

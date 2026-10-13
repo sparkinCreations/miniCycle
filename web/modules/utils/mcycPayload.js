@@ -15,9 +15,9 @@
  */
 
 
-import { getPriorityLevel, hasPriority, getLevelColor } from './priorityLevel.js';
-import { DEFAULT_PRIORITY_SWATCHES, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
-import { getAutoClearMode, getAutoClearSettings, resolveAutoClear } from './cycleMode.js';
+import { getPriorityLevel } from './priorityLevel.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { getAutoClearSettings } from './cycleMode.js';
 
 /**
  * Build a .mcyc export/share payload from a cycle record.
@@ -31,7 +31,6 @@ import { getAutoClearMode, getAutoClearSettings, resolveAutoClear } from './cycl
  * @returns {Object} JSON-serializable .mcyc payload
  */
 export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
-    const mode = getAutoClearMode(cycle);
     const payload = {
         name: cycleKey,
         title: cycle.title || 'New Routine',
@@ -57,21 +56,16 @@ export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
                 text: task.text || '',
                 completed: task.completed || false,
                 dueDate: task.dueDate || null,
+                // Format 2.6 only. The 2.5 pair (highPriority + priorityColor,
+                // deleteWhenCompleteSettings + deleteWhenComplete) was dual-written
+                // from Sep 19 to Oct 13 2026 while the platform builds caught up;
+                // the window closed per MCYC_FILE_FORMAT.md "Closing the dual-write
+                // window". The importer still READS every 2.5 spelling, permanently.
                 priority: getPriorityLevel(task),
-                // DUAL-WRITTEN 2.5 fields (SCHEMA_2_6_PLAN.md, ".mcyc"): the Android,
-                // iOS and Chrome builds are on-demand snapshots that lag the web app,
-                // and a 2.5 reader falls to defaults on the fields it does not know.
-                // The colour is the level's default swatch. Drop these only when
-                // every shipped platform build reads 2.6.
-                highPriority: hasPriority(task),
-                priorityColor: hasPriority(task) ? getLevelColor(getPriorityLevel(task), DEFAULT_PRIORITY_SWATCHES) : null,
                 remindersEnabled: task.remindersEnabled || false,
                 recurring: task.recurring || false,
                 recurringSettings: settings,
                 autoClear: autoClearMap,
-                // Dual-written 2.5 pair, see above; the mirror is the routine's current mode.
-                deleteWhenCompleteSettings: autoClearMap,
-                deleteWhenComplete: resolveAutoClear({ settings: autoClearMap, mode, defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS }),
                 schemaVersion: task.schemaVersion || 2
             };
         }),

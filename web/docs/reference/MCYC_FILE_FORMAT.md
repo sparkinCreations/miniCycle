@@ -28,11 +28,16 @@ not an internal convention that can be revised by editing this file:
 **Format versions.** 2.5 (`/schema/mcyc-2.5.schema.json`, immutable) stores priority as a
 flag plus a colour and the clear setting as a map plus a derived mirror. **2.6 (Sep 2026,
 `/schema/mcyc-2.6.schema.json`)** stores priority as a LEVEL (`priority`) and the clear
-setting as one open map (`autoClear`). Every 2.5 spelling is still read — permanently — and
-the exporter writes both spellings for as long as older platform builds are in use, so a file
-from either side imports on the other. When both are present the 2.6 field wins.
+setting as one open map (`autoClear`). Every 2.5 spelling is still read — permanently. The
+exporter wrote both spellings from Sep 19 to Oct 13 2026 while older platform builds were in
+use; since then it writes only the 2.6 fields. When both are present on import the 2.6 field wins.
 
-**Closing the dual-write window (decided Sep 19, 2026).** The extra pair protects exactly one
+**Dual-write window CLOSED Oct 13, 2026.** `utils/mcycPayload.js` now writes only the 2.6 spellings
+(`priority`, `autoClear`); the importer's 2.5 readers (`getLegacyPriorityLevel`,
+`deleteWhenCompleteSettings`) and the pinned 2.5 schema are untouched — those are the compatibility
+promise, not the transition. The decision record that led here is kept below as written.
+
+*Closing the dual-write window (decided Sep 19, 2026).* The extra pair protects exactly one
 case: a file written by a current build and opened by a reader that knows only the 2.5
 spelling, which still imports but loses priority and clear settings to their defaults. Web
 cannot be that reader (the service worker keeps it current), Lite does not import `.mcyc`, and

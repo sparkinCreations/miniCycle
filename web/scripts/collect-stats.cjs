@@ -127,9 +127,12 @@ function readLiteVersion() {
 }
 
 function readSchemaVersion() {
-    const abs = p('modules', 'core', 'appState.js');
+    // SCHEMA.CURRENT in core/constants.js is the single source of truth; appState.js
+    // stopped carrying a literal when it switched to SCHEMA.CURRENT (Sep 2026), which
+    // left the old appState regex matching nothing.
+    const abs = p('modules', 'core', 'constants.js');
     if (!fs.existsSync(abs)) return 'unknown';
-    const m = fs.readFileSync(abs, 'utf8').match(/schemaVersion:\s*["']([\d.]+)["']/);
+    const m = fs.readFileSync(abs, 'utf8').match(/export const SCHEMA = Object\.freeze\(\{\s*CURRENT:\s*["']([\d.]+)["']/);
     return m ? m[1] : 'unknown';
 }
 
