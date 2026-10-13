@@ -624,7 +624,7 @@ mock. `appInit` keeps the flat `{ cycles, activeCycle, reminders, settings }` sh
 now checks the newer-build block BEFORE the corruption modal (the wrapper's storage parse used
 to hand a newer document back as if it were adoptable), and its "no active routine" recovery
 called `AppState.load()`, a method that does not exist — it now re-reads state. `dueDates`'
-input handler also stopped mutating the live task and calling the legacy `saveTaskToSchema25`
+input handler also stopped mutating the live task and calling the legacy `saveRoutineToState`
 writer; it writes inside `update()`.*
 
 *✅ Side effect removed, same day: `loadMiniCycleData()` now returns null on an empty origin

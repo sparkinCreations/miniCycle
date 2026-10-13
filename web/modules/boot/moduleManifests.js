@@ -124,7 +124,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/notifications.js',
         phase: PHASES.CORE_UTILS,
         requires: ['appInit', 'GlobalUtils'],
-        optionalDeps: ['applyRecurringToTaskSchema25', 'openRecurringSettingsPanelForTask', 'updateRecurringPanel', 'vocabThemeManager'],
+        optionalDeps: ['applyRecurringToTask', 'openRecurringSettingsPanelForTask', 'updateRecurringPanel', 'vocabThemeManager'],
         provides: ['showNotification', 'showConfirmationModal', 'showPromptModal'],
         api: 'utils'
     },
@@ -295,7 +295,7 @@ export const MODULE_MANIFESTS = {
         // guards them with `|| null` for exactly that reason — declaring them `requires`
         // would assert an availability that does not hold when the sub-modules are built.
         optionalDeps: [
-            'saveTaskToSchema25', 'showNotification', 'taskCore',
+            'saveRoutineToState', 'showNotification', 'taskCore',
             'DEFAULT_TASK_OPTION_BUTTONS', 'addTask', 'checkCompleteAllButton',
             'checkMiniCycle', 'checkOverdueTasks', 'createDueDateInput',
             'enableDragAndDropOnTask', 'enableUndoSystemOnFirstInteraction',
@@ -702,7 +702,7 @@ export const MODULE_MANIFESTS = {
             'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'updateUndoRedoButtons',
             'refreshUIFromState', 'helpWindowManager', 'recurringCore',
             'showConfirmationModal', 'showPromptModal'],
-        provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
+        provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveRoutineToState', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
         after: ['taskDOM', 'cycleCompletion', 'recurringIntegration']
@@ -712,7 +712,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState'],
-        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchemaData', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']

@@ -762,7 +762,7 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
             storage: { setItem: (k, v) => { written[k] = v; }, getItem: (k) => written[k] ?? null },
             now: () => 1723000000000
         });
-        mm.createInitialSchema25Data();
+        mm.createInitialSchemaData();
         if (!written.miniCycleData) throw new Error('factory wrote no miniCycleData');
         return JSON.parse(written.miniCycleData);
     };

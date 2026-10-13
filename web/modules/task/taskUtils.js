@@ -49,14 +49,14 @@ const di = createDIModule('TaskUtils', {
     remindOverdueTasks: optional(null),
     enableDragAndDropOnTask: optional(null),
     updateMoveArrowsVisibility: optional(null),
-    saveTaskToSchema25: optional(null),
+    saveRoutineToState: optional(null),
     // Needed to stamp nextScheduledOccurrence on templates created here.
     // Forwarded from taskDOM (facade sub-module); see the template literal below.
     calculateNextOccurrence: optional(null)
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, generateId: Function|null, remindOverdueTasks: Function|null, enableDragAndDropOnTask: Function|null, updateMoveArrowsVisibility: Function|null, saveTaskToSchema25: Function|null}} */
+/** @type {{AppState: Object|null, generateId: Function|null, remindOverdueTasks: Function|null, enableDragAndDropOnTask: Function|null, updateMoveArrowsVisibility: Function|null, saveRoutineToState: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -65,7 +65,7 @@ const _deps = new Proxy({}, {
 
 /**
  * Set dependencies for TaskUtils wrapper functions
- * @param {Object} dependencies - { AppState, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility, saveTaskToSchema25 }
+ * @param {Object} dependencies - { AppState, generateId, remindOverdueTasks, enableDragAndDropOnTask, updateMoveArrowsVisibility, saveRoutineToState }
  */
 export function setTaskUtilsDependencies(dependencies) {
     di.setDependencies(dependencies);
@@ -200,11 +200,11 @@ export class TaskUtils {
      * only by aliasing, could clobber newer state with the stale copy in the
      * not-ready window, and never marked state dirty by itself.
      * @param {Object} taskContext - Task context from loadTaskContext
-     * @param {Function} saveTaskToSchema25 - Legacy fallback persister (used only when AppState unavailable)
+     * @param {Function} saveRoutineToState - Legacy fallback persister (used only when AppState unavailable)
      * @param {Object} [AppState] - State manager; when ready, creation commits through its producer
      * @returns {Object} - Task data object
      */
-    static createOrUpdateTaskData(taskContext, saveTaskToSchema25, AppState) {
+    static createOrUpdateTaskData(taskContext, saveRoutineToState, AppState) {
         const {
             cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
             priority, remindersEnabled, recurring, recurringSettings,
@@ -279,7 +279,7 @@ export class TaskUtils {
                             cycle.recurringTemplates[assignedTaskId] = templateData;
                         }
                     }, true); // immediate save - required for stats panel to read correct data
-                } else if (saveTaskToSchema25) {
+                } else if (saveRoutineToState) {
                     // Legacy fallback (AppState unavailable — early boot/tests):
                     // mutate the context refs and persist wholesale, as before.
                     currentCycle.tasks.push(existingTask);
@@ -287,9 +287,9 @@ export class TaskUtils {
                         if (!currentCycle.recurringTemplates) currentCycle.recurringTemplates = {};
                         currentCycle.recurringTemplates[assignedTaskId] = templateData;
                     }
-                    saveTaskToSchema25(activeCycle, currentCycle);
+                    saveRoutineToState(activeCycle, currentCycle);
                 } else {
-                    console.warn('⚠️ Neither AppState nor saveTaskToSchema25 available - task not persisted');
+                    console.warn('⚠️ Neither AppState nor saveRoutineToState available - task not persisted');
                 }
             } else if (templateData && !currentCycle.recurringTemplates?.[assignedTaskId]) {
                 // Load path renders from state — templates already exist there.
@@ -401,10 +401,10 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 }
 
 function createOrUpdateTaskData(taskContext) {
-    const saveTaskToSchema25 = _deps.saveTaskToSchema25;
+    const saveRoutineToState = _deps.saveRoutineToState;
     // AppState enables the producer path (one-door creation); the save fn is
     // only the legacy fallback for when AppState isn't ready.
-    return TaskUtils.createOrUpdateTaskData(taskContext, saveTaskToSchema25, _deps.AppState);
+    return TaskUtils.createOrUpdateTaskData(taskContext, saveRoutineToState, _deps.AppState);
 }
 
 // ============================================

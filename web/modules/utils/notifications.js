@@ -54,7 +54,7 @@ const di = createDIModule('Notifications', {
   generateHashId: optional(null),
   GlobalUtils: optional(null),
   escapeHtml: optional(null),
-  applyRecurringToTaskSchema25: optional(null),
+  applyRecurringToTask: optional(null),
   updateRecurringPanel: optional(null),
   openRecurringSettingsPanelForTask: optional(null),
   safeAddEventListener: optional(null),
@@ -62,7 +62,7 @@ const di = createDIModule('Notifications', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, generateHashId: Function|null, GlobalUtils: Object|null, escapeHtml: Function|null, applyRecurringToTaskSchema25: Function|null, updateRecurringPanel: Function|null, openRecurringSettingsPanelForTask: Function|null, safeAddEventListener: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, generateHashId: Function|null, GlobalUtils: Object|null, escapeHtml: Function|null, applyRecurringToTask: Function|null, updateRecurringPanel: Function|null, openRecurringSettingsPanelForTask: Function|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
   get(_, prop) {
     return di.resolve()[prop];
@@ -1273,8 +1273,8 @@ async setDefaultPosition(notificationContainer) {
         const activeCycleId = getActiveRoutineId(state);
 
         // Apply recurring settings (DI-pure)
-        if (this.deps.applyRecurringToTaskSchema25) {
-          await this.deps.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
+        if (this.deps.applyRecurringToTask) {
+          await this.deps.applyRecurringToTask(taskId, { frequency: newFrequency });
         }
 
         // Re-read fresh state after update (state var above is pre-update snapshot)

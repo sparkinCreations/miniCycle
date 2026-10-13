@@ -484,7 +484,7 @@ export class OnboardingManager {
         document.body.classList.add(DOM_CLASSES.ONBOARDING_ACTIVE);
 
         // ✅ FIX: Use passed schemaData if available (avoids race condition on initial load)
-        // AppState may not be ready yet when createInitialSchema25Data just created the data
+        // AppState may not be ready yet when createInitialSchemaData just created the data
         let currentState = schemaData;
         if (!currentState) {
             if (!this.deps.AppState?.isReady?.()) {

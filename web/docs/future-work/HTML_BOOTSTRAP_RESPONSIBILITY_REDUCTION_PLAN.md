@@ -233,7 +233,7 @@ and the `firstrun:choice` event.
      `localStorage` / `sessionStorage` key names.
    - Assert each one resolves against the current schema. The fresh-install shape
      in [`migrationManager.js`](../../modules/routine/migrationManager.js)
-     (`createInitialSchema25Data`) plus `SCHEMA.CURRENT` are the authority; a path
+     (`createInitialSchemaData`) plus `SCHEMA.CURRENT` are the authority; a path
      present in neither is a failure.
    - Allow a deliberate dual-read (2.5 + 2.6, which the first-run reader needs
      because it runs before migration) only when the block carries an explicit

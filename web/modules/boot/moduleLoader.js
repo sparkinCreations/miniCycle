@@ -1474,7 +1474,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         addTask: (...args) => deps.task?.addTask?.(...args),
         resetTasks: (...args) => deps.task?.resetTasks?.(...args),
         handleTaskCompletionChange: (...args) => deps.task?.handleTaskCompletionChange?.(...args),
-        saveTaskToSchema25: (...args) => deps.task?.saveTaskToSchema25?.(...args),
+        saveRoutineToState: (...args) => deps.task?.saveRoutineToState?.(...args),
         taskToAddTaskOptions: (...args) => deps.task?.taskToAddTaskOptions?.(...args),
 
         // Task button container and click handler (from taskDOM)
@@ -1553,14 +1553,14 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Provided by dataValidator module — utils API category
         DataValidator: () => deps.utils?.DataValidator,
         // Registered by coreBoot at deps.core (migration module export) — utils/cycle kept as legacy fallbacks
-        createInitialSchema25Data: (...args) => (deps.core?.createInitialSchema25Data || deps.utils?.createInitialSchema25Data || deps.cycle?.createInitialSchema25Data)?.(...args),
+        createInitialSchemaData: (...args) => (deps.core?.createInitialSchemaData || deps.utils?.createInitialSchemaData || deps.cycle?.createInitialSchemaData)?.(...args),
 
         // ─── Boot/init helpers ───
         // Method on appInit instance — modules use it as a top-level dep instead of accessing appInit.waitForCore()
         waitForCore: (...args) => deps.core?.appInit?.waitForCore?.(...args),
 
         // ─── Recurring system functions (provided by recurringCore / recurringPanel) ───
-        applyRecurringToTaskSchema25: (...args) => deps.recurring?.core?.applyRecurringToTaskSchema25?.(...args),
+        applyRecurringToTask: (...args) => deps.recurring?.core?.applyRecurringToTask?.(...args),
         openRecurringSettingsPanelForTask: (...args) => deps.recurring?.panel?.openRecurringSettingsPanelForTask?.(...args),
         calculateNextOccurrence: (...args) => deps.recurring?.core?.calculateNextOccurrence?.(...args),
 

@@ -608,7 +608,7 @@ AppState.update() ← Both write here
 1. User clicks 🔁 button
    → taskEvents.js handles click
 
-2. Call applyRecurringToTaskSchema25(taskId, settings)
+2. Call applyRecurringToTask(taskId, settings)
    → recurringCore.js:1495
 
 3. Core updates AppState:
@@ -715,7 +715,7 @@ await import(`./modules/recurring/recurringIntegration.js?v=${APP_VERSION}`);
 
 **`/modules/task/taskEvents.js`** - Task UI Event Handlers
 - Handles clicks on recurring button (🔁)
-- Calls `applyRecurringToTaskSchema25()` from recurringCore
+- Calls `applyRecurringToTask()` from recurringCore
 - Manages task options menu interactions
 
 **`/modules/boot/orchestrator.js`** - Main Application
@@ -792,7 +792,7 @@ Below are the core functions with their file locations and line numbers (as of v
 
 #### Toggle Recurring On
 **Location:** `/modules/recurringCore.js` (lines 1495-1583)
-**Function:** `applyRecurringToTaskSchema25(taskId, newSettings)`
+**Function:** `applyRecurringToTask(taskId, newSettings)`
 ```javascript
 function handleRecurringTaskActivation(task, taskContext) {
   // 1. Mark task as recurring

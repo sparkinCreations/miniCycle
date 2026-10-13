@@ -328,12 +328,12 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
  * @param {Object} newSettings - New recurring settings to apply
  * @returns {Promise<void>}
  */
-export async function applyRecurringToTaskSchema25(taskId, newSettings) {
+export async function applyRecurringToTask(taskId, newSettings) {
     assertInjected('AppState', Deps.AppState);
     assertInjected('updateAppState', Deps.updateAppState);
 
     if (!Deps.AppState?.isReady?.()) {
-        console.warn('⚠️ AppState not ready for applyRecurringToTaskSchema25');
+        console.warn('⚠️ AppState not ready for applyRecurringToTask');
         return;
     }
 
@@ -341,19 +341,19 @@ export async function applyRecurringToTaskSchema25(taskId, newSettings) {
     const activeCycleId = getActiveRoutineId(state);
 
     if (!activeCycleId) {
-        console.error('❌ No active cycle found for applyRecurringToTaskSchema25');
+        console.error('❌ No active cycle found for applyRecurringToTask');
         return;
     }
 
     const cycleData = getRoutine(state, activeCycleId);
     if (!cycleData) {
-        console.error('❌ Cycle data not found for applyRecurringToTaskSchema25');
+        console.error('❌ Cycle data not found for applyRecurringToTask');
         return;
     }
 
     const task = cycleData.tasks.find(t => t.id === taskId);
     if (!task) {
-        console.error('❌ Task not found for applyRecurringToTaskSchema25:', taskId);
+        console.error('❌ Task not found for applyRecurringToTask:', taskId);
         return;
     }
 

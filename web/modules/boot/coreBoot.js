@@ -314,7 +314,7 @@ export async function initCoreBoot(deps, versionSuffix = null) {
   const migrationMod = await import(withV('../routine/migrationManager.js'));
 
   deps.core.migrationMod = migrationMod;
-  deps.core.createInitialSchema25Data = migrationMod.createInitialSchema25Data;
+  deps.core.createInitialSchemaData = migrationMod.createInitialSchemaData;
   deps.core.initAppWithAutoMigration = migrationMod.initAppWithAutoMigration;
 
   // ✅ Boot entry + fresh-install factory accessible via deps.core - no window.* exposure.
@@ -393,7 +393,7 @@ export async function initAppState(deps, showNotification) {
       // silently swallowed — the trap that hid the sample-view option (July 2026).
       // The getter-style wrappers below (loadMiniCycle, updateReminderButtons, …)
       // return a function/value and must NOT take args.
-      createInitialSchema25Data: (...args) => migrationMod.createInitialSchema25Data?.(...args),
+      createInitialSchemaData: (...args) => migrationMod.createInitialSchemaData?.(...args),
       showCycleCreationModal: (...args) => appContextMod.getCycleApi?.()?.create?.(...args),
       getOnboardingManager: () => appContextMod.getUiApi?.()?.onboardingManager || null,
       getMiniCycleState: () => deps.core.AppState || null,
@@ -441,7 +441,7 @@ export async function initAppState(deps, showNotification) {
   AppState = createStateManager({
     showNotification: showNotification || (() => {}),
     storage: localStorage,
-    createInitialData: migrationMod.createInitialSchema25Data,
+    createInitialData: migrationMod.createInitialSchemaData,
     AppMeta: deps.core.AppMeta  // Use deps, not window.*
   });
 
@@ -715,7 +715,7 @@ async function runFallbackInitialSetup(deps) {
   console.warn('⚠️ appInit.runInitialSetup not available - using fallback initialization');
 
   try {
-    const createData = deps.core.createInitialSchema25Data;
+    const createData = deps.core.createInitialSchemaData;
 
     const readState = () => (AppState?.isReady?.() ? AppState.get() : null);
     let state = readState();

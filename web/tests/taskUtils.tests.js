@@ -256,7 +256,7 @@ export async function runTaskUtilsTests(resultsDiv) {
         // into addTask), so a restored recurring task comes back with its
         // recurrence permanently dead.
         //
-        // Driven through the legacy commit branch (no AppState, saveTaskToSchema25
+        // Driven through the legacy commit branch (no AppState, saveRoutineToState
         // present) so the template lands on the context's own cycle object and can
         // be inspected directly.
         const WHEN = 1786000000000;

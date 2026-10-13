@@ -19,7 +19,7 @@ harness-correct tests, plan ordering.
 
 ## What 2.5 actually looks like
 
-Measured from `createInitialSchema25Data()` in `modules/routine/migrationManager.js:100`.
+Measured from `createInitialSchemaData()` in `modules/routine/migrationManager.js:100`.
 The stored document is **flat**. There is no `miniCycle` wrapper key:
 
 ```javascript
@@ -281,7 +281,7 @@ Entry points after the pre-2.5 retirement (Sep 2026) — the 2.6 step hangs here
 | Function | Role |
 |---|---|
 | `initAppWithAutoMigration()` | boot-time entry every user passes through; today it only runs setup |
-| `createInitialSchema25Data()` | fresh-install shape |
+| `createInitialSchemaData()` | fresh-install shape |
 
 **The migration itself is written (Sep 2026) and not yet wired:**
 `modules/routine/schemaMigration26.js` — `migrateSchema_2_5_to_2_6(doc, { makeId, now, swatchSets })`,
@@ -319,7 +319,7 @@ which was wrong in one place: `fixTaskValidationIssues()` was listed as "not leg
 but it only read and rewrote `miniCycleStorage`, so it went too (with its boot call and its
 `appContext` / `stateApi` slots). What changed:
 
-- **Kept:** `initAppWithAutoMigration()` (setup + ready only) and `createInitialSchema25Data()`.
+- **Kept:** `initAppWithAutoMigration()` (setup + ready only) and `createInitialSchemaData()`.
 - **Removed:** detection, the transform and dry run, the auto/force paths, the migration
   backups and their pruning, rollback, "legacy fallback mode", `migrationFacade.js` and its
   tests, the `performSchema25Migration` DI route (manifests, `CORE_DEPS`, depMappings,
@@ -359,7 +359,7 @@ each:
    every assertion on a stored name reviewed by hand, not regexed.
 3. **Shape owners** — `core/appState.js` (`validateStateStructure` -> a 2.6 structure
    check, `createMinimalFallbackState`, `_ensureMetadata`, `totalRoutinesCreated`),
-   `routine/migrationManager.js` (`createInitialSchema25Data` writes 2.6; boot entry runs
+   `routine/migrationManager.js` (`createInitialSchemaData` writes 2.6; boot entry runs
    `migrateSchema_2_5_to_2_6` on an `older` document AFTER an automatic backup, with
    `GlobalUtils.generateId('routine')` as the id maker — the same one the dry-run tool uses),
    `core/dataAccess.js` (the `loadMiniCycleData` wrapper's `{cycles, activeCycle}` keys are
@@ -581,7 +581,7 @@ decided:
    constant and no gate; a 2.5 backup restored into a 2.6 build is accepted and left to the boot
    migration. Still literal on purpose, because they write the 2.5 SHAPE and the wiring must
    rewrite them: `appState.validateStateStructure` / `createMinimalFallbackState` /
-   `_ensureMetadata`, and `migrationManager.createInitialSchema25Data`.
+   `_ensureMetadata`, and `migrationManager.createInitialSchemaData`.
 5. **`mcycPayload` / `cycleExportManager` write the 2.6 fields and, during a transition window,
    the 2.5 fields too — decided Sep 2026.** The published promise only says unknown keys must
    not error, so an older app reading a new file falls back to defaults and silently loses the
@@ -732,7 +732,7 @@ risky stored-format change small and last.
    Still showing a stored hex: the history and cleared-task dots (`historyManager`,
    `clearedTasksManager`). They render archived entries and move to levels with the 2.6 migration.
 5. **Retire the pre-2.5 migration** — ✅ *done Sep 2026.* `migrationManager.js` keeps only the
-   boot entry (`initAppWithAutoMigration`, now setup only) and `createInitialSchema25Data`.
+   boot entry (`initAppWithAutoMigration`, now setup only) and `createInitialSchemaData`.
    Legacy keys are left untouched, a legacy backup file gets the normal "Invalid file format"
    message, and no new UI was added. Details and the audit in *Migration seam*; pinned by
    `migrationManager.tests.js`, `backupRestoreManager.tests.js` and the *pre-2.5 leftovers are

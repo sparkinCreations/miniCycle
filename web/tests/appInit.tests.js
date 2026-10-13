@@ -585,7 +585,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         // Set up minimal dependencies to prevent errors
         setAppInitDependencies({
             getMiniCycleState: () => stateOf({ cycles: {}, activeCycle: null, reminders: {}, settings: {} }),
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({}),
         });
@@ -860,7 +860,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 reminders: { enabled: false },
                 settings: {}
             }),
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({
                 showOnboarding: () => { onboardingShown = true; }
@@ -890,7 +890,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 reminders: { enabled: false },
                 settings: { onboardingCompleted: false, firstRunWelcomeDismissed: true }
             }),
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({
                 showOnboarding: () => { onboardingShown = true; },
@@ -918,7 +918,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         });
         setAppInitDependencies({
             getMiniCycleState: () => st,
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({
                 showOnboarding: () => { onboardingShown = true; },
@@ -948,7 +948,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         });
         setAppInitDependencies({
             getMiniCycleState: () => st,
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({
                 showOnboarding: () => { onboardingShown = true; },
@@ -970,7 +970,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
                 reminders: { enabled: false },
                 settings: { onboardingCompleted: false, firstRunWelcomeDismissed: false, focusModeActive: true }
             }),
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => {},
             getOnboardingManager: () => ({
                 showOnboarding: () => { onboardingShown = true; },
@@ -995,7 +995,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
 
         setAppInitDependencies({
             getMiniCycleState: () => appState,
-            createInitialSchema25Data: () => {},
+            createInitialSchemaData: () => {},
             showCycleCreationModal: () => { cycleModalShown = true; },
             showNotification: () => {},
             getOnboardingManager: () => ({}),

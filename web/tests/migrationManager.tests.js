@@ -93,7 +93,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
 
         let thrown = false;
         try {
-            MigrationManager.createInitialSchema25Data();
+            MigrationManager.createInitialSchemaData();
         } catch (error) {
             if (error.message.includes('missing required dependency')) {
                 thrown = true;
@@ -116,7 +116,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
 
         let thrown = false;
         try {
-            MigrationManager.createInitialSchema25Data();
+            MigrationManager.createInitialSchemaData();
         } catch (error) {
             if (error.message.includes('missing required dependency')) {
                 thrown = true;
@@ -141,7 +141,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 
@@ -160,7 +160,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
         const requiredKeys = ['metadata', 'settings', 'data', 'appState', 'userProgress', 'customReminders'];
@@ -182,7 +182,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 
@@ -204,7 +204,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 
@@ -223,7 +223,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 
@@ -245,7 +245,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = localStorage.getItem('miniCycleData');
 
@@ -264,7 +264,7 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
             document: document
         });
 
-        MigrationManager.createInitialSchema25Data();
+        MigrationManager.createInitialSchemaData();
 
         const data = JSON.parse(localStorage.getItem('miniCycleData'));
 

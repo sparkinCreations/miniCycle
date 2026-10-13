@@ -291,7 +291,7 @@ export async function initRecurringModules(options = {}) {
 
         // Build convenience objects for direct access (use coreFunctions for loaded values)
         const recurringCoreAPI = {
-            applyRecurringSettings: coreFunctions.applyRecurringToTaskSchema25,
+            applyRecurringSettings: coreFunctions.applyRecurringToTask,
             handleActivation: coreFunctions.handleRecurringTaskActivation,
             handleDeactivation: coreFunctions.handleRecurringTaskDeactivation,
             deleteTemplate: coreFunctions.deleteRecurringTemplate,
@@ -377,7 +377,7 @@ export function testRecurringIntegration(recurringModules = null) {
 
     // Test 2: Core module loaded
     try {
-        tests.coreLoaded = recurringModules?.core && typeof recurringModules.core.applyRecurringToTaskSchema25 === 'function';
+        tests.coreLoaded = recurringModules?.core && typeof recurringModules.core.applyRecurringToTask === 'function';
     } catch (e) { /* probe failed — flag stays falsy */ }
 
     // Test 3: Panel loaded

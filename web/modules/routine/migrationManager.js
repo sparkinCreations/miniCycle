@@ -2,7 +2,7 @@
  * 🔄 miniCycle Migration Manager (DI-Pure)
  *
  * Owns the boot entry every user passes through (initAppWithAutoMigration) and the
- * fresh-install data shape (createInitialSchema25Data).
+ * fresh-install data shape (createInitialSchemaData).
  *
  * The pre-2.5 migration that used to live here — legacy-key detection, the
  * transform, its backups, rollback, "legacy fallback mode" and the task-repair pass
@@ -83,7 +83,7 @@ function assertInjected(name, value) {
  *
  * @public
  */
-export function createInitialSchema25Data() {
+export function createInitialSchemaData() {
     assertInjected('storage', _deps.storage);
     assertInjected('now', _deps.now);
 

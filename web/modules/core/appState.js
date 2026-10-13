@@ -104,7 +104,7 @@ class MiniCycleState {
             showNotification: mergedDeps.showNotification || (() => {}),
             storage: mergedDeps.storage || localStorage,
             loadInitialData: mergedDeps.loadInitialData || (() => null),
-            // Wired by coreBoot to migrationManager.createInitialSchema25Data, but
+            // Wired by coreBoot to migrationManager.createInitialSchemaData, but
             // nothing in this class ever calls it — and that function writes
             // miniCycleData to storage rather than returning it, so a caller would
             // get undefined anyway. Kept as a pass-through so the boot wiring stays
@@ -211,7 +211,7 @@ class MiniCycleState {
     }
 
     /**
-     * Reload data from localStorage (used after createInitialSchema25Data)
+     * Reload data from localStorage (used after createInitialSchemaData)
      * Unlike init(), this will reload even if already initialized
      * @returns {Schema25Data|null} The loaded data or null if not found/invalid
      */

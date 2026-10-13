@@ -150,7 +150,7 @@ A small number of current depMappings entries do non-trivial things — they're 
 
 - **Validated lazy wrappers**: `closeAllModals: createValidatedWrapper(...)` — adds runtime validation
 - **Aliased / nested access**: `isModalOpen: () => deps.ui?.modalManager?.isModalOpen?.()` — calls a method on a nested instance
-- **Multi-source resolution**: `createInitialSchema25Data` now falls back across **three** sources (`deps.core || deps.utils || deps.cycle` — grown from two since this plan was written; multi-source entries accrete). Others: `sanitizeInput`, `removeRecurringTasksFromCycle`, `hideMainMenu`
+- **Multi-source resolution**: `createInitialSchemaData` now falls back across **three** sources (`deps.core || deps.utils || deps.cycle` — grown from two since this plan was written; multi-source entries accrete). Others: `sanitizeInput`, `removeRecurringTasksFromCycle`, `hideMainMenu`
 - **Special call signatures**: e.g., partial application, default args, the `deferredInvoke`-based `unlockMiniGame`
 - **No provider module at all**: the DOM-helper CORE_DEPS wrap `document` directly — must stay static overrides
 
