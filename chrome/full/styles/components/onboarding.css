@@ -829,6 +829,8 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-prompt-title {
+    /* An <h2> since Oct 2026 (it names the dialog); keep the old block metrics. */
+    margin-top: 0;
     font-size: 1.4rem;
     font-weight: bold;
     margin-bottom: var(--space-2-5);
@@ -837,6 +839,8 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .miniCycle-prompt-message {
+    /* A <label for> since Oct 2026 (it names the field); keep it a block. */
+    display: block;
     font-size: 1rem;
     margin-bottom: var(--space-3-75);
     color: var(--theme-input-border);
@@ -969,6 +973,8 @@ dialog.miniCycle-prompt-dialog::backdrop {
 }
 
 .sample-list-title {
+    /* An <h2> since Oct 2026 (it names the sample view); no heading margins. */
+    margin: 0;
     font-size: var(--font-size-lg);
     font-weight: 700;
     color: rgba(255, 255, 255, 0.9);

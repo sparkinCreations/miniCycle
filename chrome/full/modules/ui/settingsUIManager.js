@@ -26,7 +26,7 @@ import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
-import { isClickOnNotification } from './modalUtils.js';
+import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from './modalUtils.js';
 import { getRoutine, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -225,14 +225,16 @@ export function setupSettingsMenu() {
         _deps.hideMainMenu?.();
     };
 
+    // Focus goes to a VISIBLE control on close: the opener is a menu item the
+    // menu has hidden by then (the native path's close event does the work).
+    const settingsFallbacks = () => [document.getElementById(DOM_IDS.OPEN_SETTINGS)];
     const closeSettings = () => {
         if (isNativeDialog && settingsModal.open) {
             settingsModal.close();
-            settingsModal._previousFocus?.focus({ focusVisible: false });
         } else if (!isNativeDialog) {
             settingsModal.style.display = 'none';
             settingsModal.classList.add(DOM_CLASSES.HIDDEN);
-            settingsModal._previousFocus?.focus({ focusVisible: false });
+            restoreFocusAfterClose(settingsModal, { fallbacks: settingsFallbacks() });
         }
     };
 
@@ -255,8 +257,9 @@ export function setupSettingsMenu() {
 
     // Restore focus when dialog closes (including native ESC)
     replaceStoredEventListener(settingsModal, "close", "__miniCycleSettingsModalCloseHandler", () => {
-        settingsModal._previousFocus?.focus({ focusVisible: false });
+        restoreFocusAfterClose(settingsModal, { fallbacks: settingsFallbacks() });
     });
+    installDialogTabWrap(settingsModal);
 
     // Setup collapsible sections
     setupSettingsCollapsibleSections();

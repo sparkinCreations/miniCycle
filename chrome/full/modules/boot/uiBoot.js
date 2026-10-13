@@ -254,21 +254,11 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
  * @param {Object} appContextMod - appContext module (versioned import)
  */
 export function attachTaskInputListeners(_GlobalUtils, taskInput, addTaskButton, appContextMod) {
-  // Dismiss first-time shimmer on the + button when user adds a task
+  // Adding a task through the input bar is a discovery of the add action:
+  // modeManager owns the + button's shimmer and the saved flag, so tell it.
   function dismissFirstTimeShimmer() {
-    const quickActionsBtn = document.getElementById(DOM_IDS.QUICK_ACTIONS_BTN);
-    if (quickActionsBtn?.classList.contains(DOM_CLASSES.FIRST_TIME_SHIMMER)) {
-      quickActionsBtn.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
-      try {
-        const AppState = appContextMod?.getStateApi?.()?.AppState;
-        AppState?.update?.(state => {
-          if (!state.settings) state.settings = {};
-          state.settings.addTaskDiscovered = true;
-        }, true);
-      } catch {
-        // State API not ready — shimmer class still removed from DOM
-      }
-    }
+    document.getElementById(DOM_IDS.QUICK_ACTIONS_BTN)?.classList.remove(DOM_CLASSES.FIRST_TIME_SHIMMER);
+    document.dispatchEvent(new CustomEvent(EVENTS.ADD_TASK_DISCOVERED));
   }
 
   // Add Task Button (Click)
@@ -515,6 +505,13 @@ function clearTransientTaskState() {
     action.classList.remove(DOM_CLASSES.TASK_OPTIONS_VISIBLE);
     if (threeDotsEnabled) {
       action.classList.add(DOM_CLASSES.TASK_OPTIONS_FORCE_HIDDEN);
+      // Mirror what TaskOptionsVisibilityController.setVisibility(false) does
+      // (this boot module has no controller injected): hidden buttons leave
+      // the tab order and the ⋯ trigger stops announcing expanded. Escape with
+      // focus still on the trigger took this path and left aria-expanded="true"
+      // over options that were gone (Oct 2026 audit).
+      action.querySelectorAll('button.task-btn').forEach(btn => { btn.tabIndex = -1; });
+      action.closest(DOM_SELECTORS.TASK)?.querySelector(DOM_SELECTORS.THREE_DOTS_BTN)?.setAttribute('aria-expanded', 'false');
     }
     // Clear any lingering inline styles from legacy code paths
     action.style.opacity = '';

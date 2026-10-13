@@ -729,7 +729,9 @@ export const EVENTS = Object.freeze({
         of its own (taskViewLayoutManager's drag positions) flushes them on this,
         so its entry lands on the undo stack BEFORE the action that followed
         it — the order the user performed them. */
-    UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending'
+    UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending',
+    FIRST_RUN_REARM: 'firstrun:rearm',          // backupRestoreManager after an IN-PLACE factory reset: the choice screen is back, the origin is empty again (inline rotators and the + shimmer re-arm on it)
+    ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered' // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
 });
 
 // ============================================================================
@@ -1623,6 +1625,8 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Sample Creation Dialog ----
     SAMPLE_CREATION_INPUT: 'sample-creation-input',
+    ROUTINE_CREATION_TITLE: 'routine-creation-title',   // <h2> naming the creation dialog's name view (aria-labelledby)
+    SAMPLE_CREATION_TITLE: 'sample-creation-title',     // <h2> naming the sample-picker view; the dialog's label follows the active view
     SAMPLE_CREATION_GRID: 'sample-creation-grid'
 });
 

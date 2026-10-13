@@ -1,3 +1,10 @@
+## [2.613] - 2026-10-12
+- fix(a11y): re-audit fixes — named creation dialog, Settings and History focus, ⋯ Escape state; a11y CI in its own job
+- fix(sw): precache motionPreference.js (the offline test caught the new module missing from the dev precache list)
+- fix(shimmer): the + button's first-time shimmer follows state; a press always sticks
+- test(journeys): the + button's first-time shimmer, start to finish
+
+
 ## [2.612] - 2026-10-12
 - style(footer): phones get bare per-theme text, no glass strip
 
