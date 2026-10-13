@@ -243,7 +243,7 @@ settings.priorityColor = '#b8860b'     →      settings.defaultPriority = 'medi
   `highPriority` / `priorityColor` and converts them with the rule above.
 - **UI:** picker swatches are labelled High / Medium / Low (colour still shown), the accessible
   name states the level, and "Priority First" sorts high → medium → low → none from state.
-- **The gate:** `validateSchema25Structure()` must accept the new shape, exactly as for the
+- **The gate:** `validateStateStructure()` must accept the new shape, exactly as for the
   renames.
 
 ### Transitional helpers (Sep 2026)
@@ -357,7 +357,7 @@ each:
    the rest is a scripted rename (`cycles:` -> `routine:`, `activeCycleId` ->
    `activeRoutineId`, the priority pair -> `priority`, the clear pair -> `autoClear`) with
    every assertion on a stored name reviewed by hand, not regexed.
-3. **Shape owners** — `core/appState.js` (`validateSchema25Structure` -> a 2.6 structure
+3. **Shape owners** — `core/appState.js` (`validateStateStructure` -> a 2.6 structure
    check, `createMinimalFallbackState`, `_ensureMetadata`, `totalRoutinesCreated`),
    `routine/migrationManager.js` (`createInitialSchema25Data` writes 2.6; boot entry runs
    `migrateSchema_2_5_to_2_6` on an `older` document AFTER an automatic backup, with
@@ -388,10 +388,10 @@ each:
 
 ## The gate you must not miss
 
-**`appState.validateSchema25Structure()` (`modules/core/appState.js`) decides whether
+**`appState.validateStateStructure()` (`modules/core/appState.js`) decides whether
 stored data is adopted at all.** It is called from first load, corruption recovery, cross-tab
 foreign writes, save-time conflict checks, and restore — list every call site with
-`grep -rn "validateSchema25Structure(" web/modules` when the work starts rather than trusting a
+`grep -rn "validateStateStructure(" web/modules` when the work starts rather than trusting a
 count here.
 
 If it is not taught about 2.6, every 2.6 payload is rejected as invalid and the app behaves
@@ -580,7 +580,7 @@ decided:
    `=== '2.5'`, and the backup-metadata fallbacks write `SCHEMA.CURRENT`. So the bump moves ONE
    constant and no gate; a 2.5 backup restored into a 2.6 build is accepted and left to the boot
    migration. Still literal on purpose, because they write the 2.5 SHAPE and the wiring must
-   rewrite them: `appState.validateSchema25Structure` / `createMinimalFallbackState` /
+   rewrite them: `appState.validateStateStructure` / `createMinimalFallbackState` /
    `_ensureMetadata`, and `migrationManager.createInitialSchema25Data`.
 5. **`mcycPayload` / `cycleExportManager` write the 2.6 fields and, during a transition window,
    the 2.5 fields too — decided Sep 2026.** The published promise only says unknown keys must
@@ -854,7 +854,7 @@ as the small part and the audit of the surfaces above as the real work.
 
 | Risk | Mitigation |
 |---|---|
-| `validateSchema25Structure` not updated → all 2.6 data rejected as invalid | Update it and every call site in the same change; add a journey booting a migrated payload |
+| `validateStateStructure` not updated → all 2.6 data rejected as invalid | Update it and every call site in the same change; add a journey booting a migrated payload |
 | Reconciler removed during the sweep before the field collapse lands | Do not touch `routineLoader.js:320` until `autoClear` is single-field; journey *"imported delete-settings reconcile and KEEP is honoured"* fails loudly if it goes |
 | Frozen `schema/mcyc-2.5.schema.json` edited | It is a published external contract — add 2.6 beside it, never edit it |
 | Backups in IndexedDB and the two rescue-screen formats still hold 2.5 | Restore must migrate on read, not assume the current version |
@@ -876,7 +876,7 @@ as the small part and the audit of the surfaces above as the real work.
 ## Success criteria
 
 - [x] 2.5 data migrates with zero loss, verified on a real backup — v2.573 (Sep 19 2026): MJ's desktop and phone data (7 routines / 178 tasks and 7 / 68 with 27 flagged) migrated on first open with no issues reported; a seeded 2.5 document driven through the LIVE build by Playwright came up re-keyed, converted and rendered with one pre-migration copy
-- [x] `validateSchema25Structure` (or its successor) accepts 2.6 at every call site
+- [x] `validateStateStructure` (or its successor) accepts 2.6 at every call site
 - [x] `autoClear` is a single field; no mirror remains; `taskCycleReset` reads via the resolver
 - [x] `schema/mcyc-2.5.schema.json` byte-identical; `schema/mcyc-2.6.schema.json` published;
       format page lists both
@@ -938,7 +938,7 @@ Recorded so the same errors are not reintroduced. The pre-Aug-2026 version of th
 - **Conflated the document `schemaVersion` string with the per-task integer.**
 - **Specified `.mcyc` auto-migration and a user notification for Rename B**, which does not
   affect the file format — and said nothing about Rename A, which does.
-- **Never mentioned `validateSchema25Structure`**, the gate that decides whether data loads.
+- **Never mentioned `validateStateStructure`**, the gate that decides whether data loads.
 - **Listed six files to update**; the real surface is in the inventory above.
 - **Used Jest examples** that cannot run in this repo.
 - **Estimated 2–3 days** on that six-file premise.

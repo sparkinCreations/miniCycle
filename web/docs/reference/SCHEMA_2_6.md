@@ -555,7 +555,7 @@ back and re-renders in place — the reload migrates it again with the *current*
 build's migration, which is the point when the original one went wrong, and keeps a
 fresh copy of the same bytes; *Delete the copy* removes it. Pinned by the *the
 pre-migration copy is usable from Settings* journey. The same change made
-`validateSchema25PayloadString` admit the 2.5 layout: from v2.573 to v2.574 the
+`validateStatePayloadString` admit the 2.5 layout: from v2.573 to v2.574 the
 Settings restore had rejected every backup file made before 2.6 as corrupt while the
 version check beside it admitted 2.5 (*a backup made before 2.6 restores from
 Settings* journey). Every restore entry point now clears undo history before writing

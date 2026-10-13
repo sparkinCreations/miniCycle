@@ -205,7 +205,7 @@ function fallbackConfirmModal(config) {
  * @param {Object} [deps={}] - Dependency overrides
  * @returns {Promise<Task|undefined>} Created task or undefined on failure
  * @example
- * await addTaskImpl('Buy groceries', { highPriority: true }, deps);
+ * await addTaskImpl('Buy groceries', { priority: 'high' }, deps);
  */
 export async function addTaskImpl(taskText, options = {}, deps = {}) {
     const {
@@ -301,7 +301,8 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         // Load and validate data context
         const loadContextFn = deps.loadTaskContext || _deps.loadTaskContext;
         const taskContext = loadContextFn?.(validatedInput, taskId, {
-            completed, dueDate, priority: priorityLevel, highPriority: priorityLevel !== null,
+            // hasPriority is the DOM's on/off view of the level (class, aria-pressed); the level itself is `priority`.
+            completed, dueDate, priority: priorityLevel, hasPriority: priorityLevel !== null,
             remindersEnabled, recurring, recurringSettings,
             deleteWhenComplete, autoClear: autoClear ?? deleteWhenCompleteSettings
         }, isLoading);

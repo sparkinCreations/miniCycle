@@ -419,7 +419,7 @@ export async function runTaskEventsTests(resultsDiv) {
         const taskContext = {
             settings: { showThreeDots: false },
             priority: 'high',
-            highPriority: true   // taskCRUD derives this on/off flag for the DOM from the level
+            hasPriority: true    // taskCRUD derives this on/off flag for the DOM from the level
         };
 
         events.setupTaskInteractions(taskElements, taskContext);

@@ -26,7 +26,7 @@ Replace the last-write-wins branch in `save()` — the `isForeignWrite` branch (
 ~:730-768; the timestamp-diff comparison is now only its fallback) — with a real merge that
 preserves both contexts' non-conflicting changes, then still notifies subscribers + warns only on
 true field-level collisions. Note the branch already runs a
-`validateSchema25Structure(storedData)` pre-check before adopting stored data — any merge result
+`validateStateStructure(storedData)` pre-check before adopting stored data — any merge result
 must clear at least that same bar.
 
 ## Why it's hard (and why it's deferred, not done)

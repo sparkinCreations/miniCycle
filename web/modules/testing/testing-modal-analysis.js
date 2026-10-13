@@ -96,7 +96,7 @@ export function runFullAnalysis() {
     appendToTestResults("TASK ANALYSIS\n");
     appendToTestResults("-".repeat(30) + "\n");
 
-    let highPriorityTasks = 0;
+    let prioritizedTasks = 0;
     let tasksWithDueDates = 0;
     let overdueTasks = 0;
     let tasksWithReminders = 0;
@@ -105,7 +105,7 @@ export function runFullAnalysis() {
 
     Object.values(cycles).forEach(cycle => {
         cycle.tasks?.forEach(task => {
-            if (hasPriority(task)) highPriorityTasks++;
+            if (hasPriority(task)) prioritizedTasks++;
             if (task.dueDate) {
                 tasksWithDueDates++;
                 if ((parseDateAsLocal(task.dueDate) || new Date(task.dueDate)) < today) overdueTasks++;
@@ -117,7 +117,7 @@ export function runFullAnalysis() {
         });
     });
 
-    appendToTestResults(`- High Priority: ${highPriorityTasks}\n`);
+    appendToTestResults(`- High Priority: ${prioritizedTasks}\n`);
     appendToTestResults(`- With Due Dates: ${tasksWithDueDates}\n`);
     appendToTestResults(`- Overdue: ${overdueTasks}\n`);
     appendToTestResults(`- With Reminders: ${tasksWithReminders}\n`);

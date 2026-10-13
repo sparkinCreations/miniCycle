@@ -152,7 +152,7 @@ function sanitizeCycle(cycle) {
     }
 }
 
-function sanitizeSchema25State(state) {
+function sanitizeState(state) {
     const cycles = getRoutines(state) || state?.cycles;
     if (!cycles || typeof cycles !== 'object') {
         return;
@@ -283,7 +283,7 @@ export function sanitizeImportedData(backupData) {
     if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
         try {
             const data = JSON.parse(backupData.miniCycleData);
-            sanitizeSchema25State(data);
+            sanitizeState(data);
 
             // Write sanitized data back
             backupData.miniCycleData = JSON.stringify(data);

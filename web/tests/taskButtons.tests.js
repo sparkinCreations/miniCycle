@@ -127,7 +127,7 @@ export async function runTaskButtonsTests(resultsDiv) {
             settings: { showThreeDots: false },
             remindersEnabled: false, remindersEnabledGlobal: false,
             assignedTaskId: 't1', currentCycle: state.data.routine.c1,
-            recurring: false, highPriority: false
+            recurring: false, hasPriority: false
         });
     }
 

@@ -61,7 +61,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     }
 
     // Helper to create Schema 2.5 compliant mock data
-    // appState.validateSchema25Structure requires schemaVersion at root level
+    // appState.validateStateStructure requires schemaVersion at root level
     function createSchema25MockData() {
         const baseData = createMockData();
         return {
@@ -326,57 +326,57 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
     // === SCHEMA VALIDATION ===
     resultsDiv.innerHTML += '<h4 class="test-section">📋 Schema Validation</h4>';
 
-    await test('validateSchema25Structure method exists', () => {
+    await test('validateStateStructure method exists', () => {
         const stateManager = createStateManager();
-        if (typeof stateManager.validateSchema25Structure !== 'function') {
-            throw new Error('validateSchema25Structure should be a function');
+        if (typeof stateManager.validateStateStructure !== 'function') {
+            throw new Error('validateStateStructure should be a function');
         }
     });
 
-    await test('validateSchema25Structure validates correct data', () => {
+    await test('validateStateStructure validates correct data', () => {
         const stateManager = createStateManager();
         const validData = createSchema25MockData();
 
-        const result = stateManager.validateSchema25Structure(validData);
+        const result = stateManager.validateStateStructure(validData);
         if (result !== true) {
             throw new Error('Should validate correct Schema 2.5 data');
         }
     });
 
-    await test('validateSchema25Structure rejects invalid schemaVersion', () => {
+    await test('validateStateStructure rejects invalid schemaVersion', () => {
         const stateManager = createStateManager();
         const invalidData = createSchema25MockData();
         invalidData.schemaVersion = '1.0';
 
-        const result = stateManager.validateSchema25Structure(invalidData);
+        const result = stateManager.validateStateStructure(invalidData);
         if (result !== false) {
             throw new Error('Should reject wrong schema version');
         }
     });
 
-    await test('validateSchema25Structure rejects missing data property', () => {
+    await test('validateStateStructure rejects missing data property', () => {
         const stateManager = createStateManager();
         const invalidData = { schemaVersion: '2.6', appState: {} };
 
-        const result = stateManager.validateSchema25Structure(invalidData);
+        const result = stateManager.validateStateStructure(invalidData);
         if (result) {
             throw new Error('Should reject missing data property');
         }
     });
 
-    await test('validateSchema25Structure rejects missing appState', () => {
+    await test('validateStateStructure rejects missing appState', () => {
         const stateManager = createStateManager();
         const invalidData = { schemaVersion: '2.6', data: { routine: {} } };
 
-        const result = stateManager.validateSchema25Structure(invalidData);
+        const result = stateManager.validateStateStructure(invalidData);
         if (result) {
             throw new Error('Should reject missing appState');
         }
     });
 
-    await test('validateSchema25Structure rejects null', () => {
+    await test('validateStateStructure rejects null', () => {
         const stateManager = createStateManager();
-        const result = stateManager.validateSchema25Structure(null);
+        const result = stateManager.validateStateStructure(null);
         if (result) {
             throw new Error('Should reject null');
         }
@@ -690,7 +690,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         stateManager.data.metadata.lastModified = ourTs;
         stateManager.data.settings.theme = 'ours-and-valid';
 
-        // Newer but missing schemaVersion → fails validateSchema25Structure.
+        // Newer but missing schemaVersion → fails validateStateStructure.
         localStorage.setItem('miniCycleData', JSON.stringify({
             metadata: { lastModified: ourTs + 5000 },
             settings: { theme: 'corrupt-newer' },

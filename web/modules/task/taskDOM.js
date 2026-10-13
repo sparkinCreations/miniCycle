@@ -551,7 +551,7 @@ export class TaskDOMManager {
      */
     createTaskDOMElements(taskContext, taskData) {
         const {
-            assignedTaskId, taskTextTrimmed, highPriority, priority, recurring,
+            assignedTaskId, taskTextTrimmed, hasPriority, priority, recurring,
             recurringSettings, settings, autoResetEnabled, currentCycle, autoClear
         } = taskContext;
 
@@ -566,7 +566,7 @@ export class TaskDOMManager {
         }
 
         // Create main task element
-        const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, autoClear);
+        const taskItem = this.createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle, autoClear);
 
         // Apply per-task priority color via CSS custom property (more reliable than borderLeftColor
         // because it doesn't conflict with the border-left shorthand in the stylesheet).
@@ -617,13 +617,13 @@ export class TaskDOMManager {
     /**
      * Create main task element (li)
      */
-    createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenCompleteSettings = null) {
+    createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle, autoClear = null) {
         const taskItem = document.createElement("li");
         taskItem.classList.add(DOM_CLASSES.TASK);
         taskItem.setAttribute("draggable", "true");
         taskItem.dataset.taskId = assignedTaskId;
 
-        if (highPriority) {
+        if (hasPriority) {
             taskItem.classList.add(DOM_CLASSES.HIGH_PRIORITY);
         }
 
@@ -652,11 +652,11 @@ export class TaskDOMManager {
         const currentMode = isToDoMode ? 'todo' : 'cycle';
 
         // Validate and initialize settings if missing
-        const validSettings = deleteWhenCompleteSettings &&
-            typeof deleteWhenCompleteSettings === 'object' &&
-            typeof deleteWhenCompleteSettings.cycle === 'boolean' &&
-            typeof deleteWhenCompleteSettings.todo === 'boolean'
-            ? deleteWhenCompleteSettings
+        const validSettings = autoClear &&
+            typeof autoClear === 'object' &&
+            typeof autoClear.cycle === 'boolean' &&
+            typeof autoClear.todo === 'boolean'
+            ? autoClear
             : { cycle: false, todo: true }; // Use defaults if invalid
 
         // ✅ Decide active deleteWhenComplete strictly from settings when possible
@@ -1543,12 +1543,12 @@ function createTaskDOMElements(taskContext, taskData) {
     return taskDOMManager.createTaskDOMElements(taskContext, taskData);
 }
 
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
+function createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle) {
     if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return document.createElement('li');
     }
-    return taskDOMManager.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
+    return taskDOMManager.createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle);
 }
 
 function createThreeDotsButton(taskItem, settings) {

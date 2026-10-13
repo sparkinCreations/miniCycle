@@ -115,7 +115,7 @@
     },
 
     ui: {                                    // ⚠️ OPTIONAL — created on demand, not part of
-                                             // the minimal valid shape (validateSchema25Structure
+                                             // the minimal valid shape (validateStateStructure
                                              // requires only schemaVersion, data.routine, appState)
         moveArrowsVisible: false,
         activeTaskId: null                   // Task ID whose options panel is open

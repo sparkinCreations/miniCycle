@@ -463,7 +463,7 @@ export class TaskEvents {
         // Instead, call initEventDelegation() once during app initialization
 
         // Setup priority button state
-        this.setupPriorityButtonState(buttonContainer, taskContext.highPriority);
+        this.setupPriorityButtonState(buttonContainer, taskContext.hasPriority);
 
         // Setup hover interactions based on three dots setting
         this.setupTaskHoverInteractions(taskItem, settings);
@@ -498,12 +498,12 @@ export class TaskEvents {
     /**
      * Setup priority button state
      * @param {HTMLElement} buttonContainer - Button container element
-     * @param {boolean} highPriority - Whether task is high priority
+     * @param {boolean} hasPriority - Whether the task has a priority level set (any level)
      * @returns {void}
      */
-    setupPriorityButtonState(buttonContainer, highPriority) {
+    setupPriorityButtonState(buttonContainer, hasPriority) {
         const priorityButton = buttonContainer.querySelector(DOM_SELECTORS.PRIORITY_BTN);
-        if (highPriority && priorityButton) {
+        if (hasPriority && priorityButton) {
             priorityButton.classList.add(DOM_CLASSES.PRIORITY_ACTIVE);
             priorityButton.setAttribute("aria-pressed", "true");
         }
