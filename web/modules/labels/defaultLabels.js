@@ -385,9 +385,15 @@ export const DEFAULT_LABELS = deepFreeze({
         taskInputHiddenFocus:   'Task input hidden. Press the ⋯ menu above to show it again.',
         // Shown once when a first-run user lands in Focus View after choosing
         // "Create My First Routine" / "Load a Sample". Names the ⋯ menu on
-        // purpose — exiting is the excuse to make them discover the menu that
-        // holds every focus-mode action.
-        focusViewFirstRun:      'To keep things simple, we start you in Focus View. Press the ⋯ menu to exit.',
+        // purpose — it is the one place that holds every focus-mode action,
+        // including Exit Focus View. The last sentence teaches that toasts are
+        // draggable and the position persists, at the one moment the default
+        // spot sits over the task input. Device-variant: the touch gesture
+        // starts with a press-and-hold, the pointer gesture is a plain drag.
+        focusViewFirstRun:      {
+            touch:   'You\'re in Focus View. Everything else is in the ⋯ menu. Press and hold to drag this message anywhere, and the app will remember its location.',
+            pointer: 'You\'re in Focus View. Everything else is in the ⋯ menu. Drag this message anywhere and the app will remember its location.'
+        },
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
         featureUnavailable:     'Feature temporarily unavailable',
