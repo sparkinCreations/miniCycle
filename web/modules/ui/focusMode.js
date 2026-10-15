@@ -286,7 +286,10 @@ export class FocusMode {
         this._exitBtn.className = DOM_CLASSES.FOCUS_MODE_EXIT_BTN;
         this._exitBtn.title = getLabel('focusMode.exitTitle');
         this._exitBtn.setAttribute('aria-label', getLabel('focusMode.exitAria'));
-        this._exitBtn.textContent = '×'; // multiplication sign — close affordance
+        // The inward-pointing brackets mirror the focusEye glyph that opened the
+        // view, so enter/exit read as one toggle. It was a bare × until Oct 2026,
+        // which read as "close" — the same glyph every toast uses to dismiss.
+        this._exitBtn.innerHTML = getIcon('compress');
         // Lives in the progress row's right-hand slot — the exact spot (and size)
         // the eye button occupies in Home View — so the control that opened
         // Focus View is where the control that closes it appears. The eye button
@@ -1122,7 +1125,7 @@ export class FocusMode {
      *        that quietly stops being true.
      */
     /**
-     * Tell a returning user, once, that the × to leave Focus View moved from
+     * Tell a returning user, once, that the button to leave Focus View moved from
      * the top-left corner to under the routine list (v2.594). Only users whose
      * data predates the move ever knew the old spot; everyone else, and anyone
      * who has seen this, gets the flag set silently so it never fires. A
