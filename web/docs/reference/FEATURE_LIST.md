@@ -267,7 +267,7 @@ Create tasks that automatically appear on a schedule.
 ### Backup System
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Automatic Backups | IndexedDB snapshot on every app open (keeps last 5); the daily store exists but is not scheduled | `storage/backupManager.js` |
+| Automatic Backups | IndexedDB snapshot on every app open and whenever the app is hidden (keeps last 5, skipped when unchanged), plus one daily copy (keeps last 10) | `storage/backupManager.js` |
 | Automatic backups list | Settings → Data Management → Show automatic backups: newest snapshots, named as automatic, each restorable | `ui/backupRestoreManager.js` |
 | Manual Backups | Create backups on demand | `storage/backupManager.js` |
 | Backup Restore | Restore from any backup point | `ui/backupRestoreManager.js` |

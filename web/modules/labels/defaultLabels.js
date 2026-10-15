@@ -1381,10 +1381,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // device. Every string says they are automatic, not files the user saved.
         autoBackupsShow:        'Show automatic backups',
         autoBackupsHide:        'Hide automatic backups',
-        autoBackupsNote:        'miniCycle saves a snapshot of your data on this device each time you open the app and keeps the newest few here. They are automatic backups, not files you saved, and they go with the app if its storage is cleared. Restoring one replaces your current data; a safety copy is saved first.',
+        autoBackupsNote:        'miniCycle saves a snapshot of your data on this device each time you open or leave the app, plus one copy a day, and keeps the newest few here. They are automatic backups, not files you saved, and they go with the app if its storage is cleared. Restoring one replaces your current data; a safety copy is saved first.',
         autoBackupsEmpty:       'No automatic backups yet. One is saved the next time you open the app.',
         autoBackupsListLabel:   'Automatic backups',
         autoBackupKindSession:  'Automatic backup, saved when the app opened',
+        autoBackupKindSessionHide: 'Automatic backup, saved when you left the app',
         autoBackupKindManual:   'Safety copy, saved before a restore or reset',
         autoBackupKindAuto:     'Automatic backup, daily',
         autoBackupMeta:         '{date} · {count} {routines} · {size} KB',

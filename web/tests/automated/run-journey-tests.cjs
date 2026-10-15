@@ -4358,6 +4358,57 @@ function legacy25Document() {
     };
 }
 
+// ── Journey: a snapshot is taken when the app is hidden ──────────────────────
+// uiBoot takes a session snapshot on open AND whenever the app is hidden, so a
+// long session is not unprotected until the next open; an unchanged state adds
+// nothing (it would only push an older, different copy out of the store).
+async function journeySnapshotOnHide(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.waitForTimeout(2500);
+        const readSessions = () => page.evaluate(() => new Promise((res, rej) => {
+            const r = indexedDB.open('miniCycle_backups');
+            r.onsuccess = () => {
+                const db = r.result;
+                try {
+                    const q = db.transaction('session_backups', 'readonly').objectStore('session_backups').getAll();
+                    q.onsuccess = () => { db.close(); res(q.result.sort((a, b) => b.timestamp - a.timestamp).map(b => ({ trigger: b.metadata && b.metadata.trigger, tasks: Object.values(b.data.data.routine)[0].tasks.map(t => t.text) }))); };
+                    q.onerror = () => { db.close(); rej(q.error); };
+                } catch (e) { db.close(); rej(e); }
+            };
+            r.onerror = () => rej(r.error);
+        }));
+        const atOpen = await readSessions();
+        record('the open snapshot exists and is marked as taken on open', atOpen.length >= 1 && atOpen[0].trigger === 'open', JSON.stringify(atOpen.map(s => s.trigger)));
+
+        await addTask(page, 'Typed before leaving');
+        await page.waitForTimeout(800);
+        await page.evaluate(() => {
+            Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => 'hidden' });
+            document.dispatchEvent(new Event('visibilitychange'));
+        });
+        await page.waitForFunction(() => new Promise((res) => {
+            const r = indexedDB.open('miniCycle_backups');
+            r.onsuccess = () => { const db = r.result; const q = db.transaction('session_backups').objectStore('session_backups').getAll(); q.onsuccess = () => { db.close(); res(q.result.some(b => b.metadata && b.metadata.trigger === 'hide')); }; q.onerror = () => { db.close(); res(false); }; };
+            r.onerror = () => res(false);
+        }), null, { timeout: 8000 }).catch(() => {});
+        const afterHide = await readSessions();
+        record('hiding the app took a second snapshot, marked as taken on hide', afterHide.length === atOpen.length + 1 && afterHide[0].trigger === 'hide', JSON.stringify(afterHide.map(s => s.trigger)));
+        record('the hide snapshot holds the task typed during the session', !!afterHide[0] && afterHide[0].tasks.includes('Typed before leaving'), JSON.stringify(afterHide[0] && afterHide[0].tasks));
+
+        await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+        await page.waitForTimeout(1500);
+        const again = await readSessions();
+        record('hiding again with nothing changed adds no snapshot', again.length === afterHide.length, `${again.length} vs ${afterHide.length}`);
+        await page.evaluate(() => { delete document.visibilityState; });
+        record('no DI warnings during the journey', page.__diWarnings.length === 0, page.__diWarnings.join(' | '));
+    } finally {
+        await context.close();
+    }
+    return { name: 'a snapshot is taken when the app is hidden', failures };
+}
+
 // ── Journey: automatic backups in Settings ───────────────────────────────────
 // Settings → Data Management → "Show automatic backups" lists the session
 // snapshot BackupManager took on this app open, names it as automatic, and
@@ -4756,6 +4807,7 @@ const JOURNEYS = [
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
+    { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
     { name: 'a settings toggle works on the session that created the data', fn: journeyFirstRunSettingToggle },
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },

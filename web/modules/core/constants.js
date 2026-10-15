@@ -713,6 +713,13 @@ export const STORAGE_KEYS = Object.freeze({
  */
 export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`;
 
+/**
+ * Why a session snapshot was taken (stored on the record as metadata.trigger):
+ * on app open, or when the app was hidden (tab switched, window minimised, app
+ * backgrounded). backupManager writes it; Settings → automatic backups reads it.
+ */
+export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
+
 // ============================================================================
 // CUSTOM EVENT NAMES — Single source of truth for document.dispatchEvent
 // ============================================================================

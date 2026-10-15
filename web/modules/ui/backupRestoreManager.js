@@ -10,7 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS, APP_VERSION, LIMITS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS, APP_VERSION, LIMITS, BACKUP_TRIGGERS } from '../core/constants.js';
 import { getRoutines } from '../utils/cycleMode.js';
 import { getLabel } from '../labels/labelResolver.js';
 // The iOS / Android app runs in a WebView that does not handle downloads: an
@@ -1140,9 +1140,15 @@ async function processRestoreData(fileContent, options = {}) {
 
 const AUTO_BACKUP_KIND_LABELS = Object.freeze({
     session: 'settings.autoBackupKindSession',
+    sessionHide: 'settings.autoBackupKindSessionHide',
     manual:  'settings.autoBackupKindManual',
     auto:    'settings.autoBackupKindAuto'
 });
+
+function autoBackupKindLabel(item) {
+    if (item.type === 'session' && item.trigger === BACKUP_TRIGGERS.HIDE) return AUTO_BACKUP_KIND_LABELS.sessionHide;
+    return AUTO_BACKUP_KIND_LABELS[item.type] || AUTO_BACKUP_KIND_LABELS.session;
+}
 
 function formatSnapshotDate(timestamp) {
     try {
@@ -1155,10 +1161,13 @@ function formatSnapshotDate(timestamp) {
 /**
  * The newest automatic backups across the session, manual and daily stores,
  * newest first. The test store is left out: it holds pre-test-run copies.
+ * Records that hold the SAME document (the open snapshot and the daily copy
+ * taken a moment later carry one modified stamp) collapse into one row, the
+ * session entry preferred, so the list never shows one state twice.
  * `key` is what the store is keyed by (the timestamp, or the id for manual
  * backups), so it can be handed straight back to BackupManager.
  * @param {number} [limit]
- * @returns {Promise<Array<{type: string, key: (number|string), timestamp: number, routines: number, size: number}>>}
+ * @returns {Promise<Array<{type: string, key: (number|string), timestamp: number, trigger: (string|undefined), routines: number, size: number}>>}
  */
 export async function listRecentAutoBackups(limit = LIMITS.AUTO_BACKUPS_SHOWN) {
     const BackupManager = _deps.BackupManager?.();
@@ -1168,13 +1177,22 @@ export async function listRecentAutoBackups(limit = LIMITS.AUTO_BACKUPS_SHOWN) {
         type,
         key: type === 'manual' ? b.id : b.timestamp,
         timestamp: Number(b.timestamp),
+        trigger: b.metadata?.trigger,
+        stamp: b.data?.metadata?.lastModified,
         routines: typeof b.metadata?.cycleCount === 'number'
             ? b.metadata.cycleCount
             : Object.keys((b.data && getRoutines(b.data)) || {}).length,
         size: b.metadata?.size || 0
     }));
+    const seenStamps = new Set();
     return [...describe(session, 'session'), ...describe(manual, 'manual'), ...describe(auto, 'auto')]
         .filter((b) => Number.isFinite(b.timestamp))
+        .filter((b) => {
+            if (!b.stamp) return true;
+            if (seenStamps.has(b.stamp)) return false;
+            seenStamps.add(b.stamp);
+            return true;
+        })
         .sort((a, b) => b.timestamp - a.timestamp)
         .slice(0, limit);
 }
@@ -1192,7 +1210,7 @@ function renderAutoBackupsList(items) {
         meta.className = DOM_CLASSES.AUTO_BACKUP_META;
         const kind = document.createElement('span');
         kind.className = DOM_CLASSES.AUTO_BACKUP_KIND;
-        kind.textContent = getLabel(AUTO_BACKUP_KIND_LABELS[item.type] || AUTO_BACKUP_KIND_LABELS.session);
+        kind.textContent = getLabel(autoBackupKindLabel(item));
         const when = document.createElement('span');
         when.className = DOM_CLASSES.AUTO_BACKUP_WHEN;
         const date = formatSnapshotDate(item.timestamp);

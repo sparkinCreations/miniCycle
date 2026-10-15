@@ -750,9 +750,9 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     const abRows = () => [...abList.querySelectorAll('li')];
     const abSettle = async (pred) => { for (let i = 0; i < 40 && !pred(); i++) await new Promise(r => setTimeout(r, 50)); };
 
-    const abDoc = (title) => ({
+    const abDoc = (title, stamp = 2) => ({
         schemaVersion: '2.6',
-        metadata: { version: '2.6', schemaVersion: '2.6', createdAt: 1, lastModified: 2 },
+        metadata: { version: '2.6', schemaVersion: '2.6', createdAt: 1, lastModified: stamp },
         settings: { onboardingCompleted: true },
         data: { routine: { r1: { id: 'r1', title, tasks: [], cycleCount: 0, recurringTemplates: {}, history: { events: [], maxEvents: 100 }, clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true } } } },
         appState: { activeRoutineId: 'r1' },
@@ -788,15 +788,19 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     try {
         await test('automatic backups: the block starts hidden; the toggle opens it, lists newest first, and names every row as automatic', async () => {
             const bm = fakeBackupManager({
-                session: [{ timestamp: 1000, data: abDoc('Old'), metadata: { cycleCount: 1, size: 2048 } }, { timestamp: 3000, data: abDoc('New'), metadata: { cycleCount: 2, size: 4096 } }],
-                manual:  [{ id: 'manual_2000', timestamp: 2000, data: abDoc('Safety'), metadata: { size: 1024 } }],
-                test:    [{ timestamp: 9000, data: abDoc('Test'), metadata: { size: 1 } }]
+                session: [{ timestamp: 1000, data: abDoc('Old', 10), metadata: { cycleCount: 1, size: 2048 } }, { timestamp: 3000, data: abDoc('New', 30), metadata: { cycleCount: 2, size: 4096 } }],
+                manual:  [{ id: 'manual_2000', timestamp: 2000, data: abDoc('Safety', 20), metadata: { size: 1024 } }],
+                // The daily copy of the SAME document as the newest open snapshot (one
+                // modified stamp) must collapse into that row, not show twice.
+                auto:    [{ timestamp: 3001, data: abDoc('New', 30), metadata: { size: 4096 } }],
+                test:    [{ timestamp: 9000, data: abDoc('Test', 90), metadata: { size: 1 } }]
             });
             wireAb(bm);
             mod.setupAutoBackupsControls();
             if (!abPanel.hidden) throw new Error('the list is visible before the button is pressed');
             const items = await mod.listRecentAutoBackups();
-            if (items.map(i => i.timestamp).join(',') !== '3000,2000,1000') throw new Error('not newest first / test store leaked: ' + JSON.stringify(items.map(i => i.timestamp)));
+            if (items.map(i => i.timestamp).join(',') !== '3000,2000,1000') throw new Error('not newest first / test store leaked / daily duplicate not collapsed: ' + JSON.stringify(items.map(i => `${i.type}@${i.timestamp}`)));
+            if (items[0].type !== 'session') throw new Error('the collapsed row should be the session entry, got ' + items[0].type);
             if (items[1].type !== 'manual' || items[1].key !== 'manual_2000') throw new Error('manual snapshot is not keyed by its id: ' + JSON.stringify(items[1]));
             if (items[2].routines !== 1 || items[1].routines !== 1) throw new Error('routine counts wrong (metadata count and fallback count): ' + JSON.stringify(items.map(i => i.routines)));
             abToggle.click();

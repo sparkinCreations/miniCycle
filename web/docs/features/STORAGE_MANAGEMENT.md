@@ -102,9 +102,9 @@ The quota gates below govern **user-initiated** growth. Several system writers s
 | Writer | Cap | Constant |
 |---|---|---|
 | Corrupted-data snapshots (`miniCycleData_corrupted_<ts>`) | 3 | `LIMITS.MAX_CORRUPT_BACKUPS` |
-| IndexedDB snapshots (`miniCycle_backups`): session store, written 1s after every app open once a routine exists | 5 | `backupManager.js` `MAX_SESSION_BACKUPS` |
+| IndexedDB snapshots (`miniCycle_backups`): session store, written 1s after every app open and whenever the app is hidden (`visibilitychange` / `pagehide`), skipped when nothing changed since the last snapshot | 5 | `backupManager.js` `MAX_SESSION_BACKUPS` |
 | IndexedDB snapshots: manual store (the safety copy taken before a restore or reset, and the Testing modal's on-demand copies) | 50 | `backupManager.js` `MAX_MANUAL_BACKUPS` |
-| IndexedDB snapshots: daily store (`createAutoBackup` — nothing in the app calls it today, only its tests) | 10 | `backupManager.js` `MAX_AUTO_BACKUPS` |
+| IndexedDB snapshots: daily store (`createAutoBackup`): one per 24h, attempted at open and on hide, skipped when nothing changed | 10 | `backupManager.js` `MAX_AUTO_BACKUPS` |
 | Undo cache | 20 snapshots **and** ~1MB byte cap (sheds oldest; real bytes = length×2, matching the quota meter's UTF-16 convention) | `LIMITS.UNDO_STACK` + `LIMITS.UNDO_CACHE_MAX_BYTES` (v2.343) |
 
 Since Oct 2026 the newest few IndexedDB snapshots (`LIMITS.AUTO_BACKUPS_SHOWN`) are listed under Settings →

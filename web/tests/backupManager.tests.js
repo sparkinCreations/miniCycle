@@ -366,6 +366,78 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // === SESSION SNAPSHOTS (open / hide) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🕘 Session snapshots: open vs hide, unchanged-state skip</h4>';
+
+    const newestSession = async () => (await backupManager.listAllBackups()).session[0] || null;
+    const touchedState = () => {
+        const mock = createMockAppStateWithData();
+        const st = mock.get();
+        st.metadata = { ...(st.metadata || {}), lastModified: Date.now() + Math.floor(Math.random() * 1000) };
+        return { mock, st };
+    };
+
+    await test('createSessionBackup: a hide snapshot is written even inside the 5-minute gap and carries its trigger', async () => {
+        const { mock, st } = touchedState();
+        setBackupManagerDependencies({ AppState: mock });
+        const first = await backupManager.createSessionBackup({ reason: 'hide' });
+        if (!first) throw new Error('the first hide snapshot was not written');
+        const a = await newestSession();
+        if (!a || a.metadata?.trigger !== 'hide') throw new Error('the snapshot does not carry trigger=hide: ' + JSON.stringify(a && a.metadata));
+        st.metadata.lastModified += 1;
+        const second = await backupManager.createSessionBackup({ reason: 'hide' });
+        if (!second) throw new Error('a changed state inside the gap was not snapshotted on hide');
+        const b = await newestSession();
+        if (!b || b.timestamp === a.timestamp) throw new Error('no new record after the second hide');
+    });
+
+    await test('createSessionBackup: nothing changed since the last snapshot → skipped, on open and on hide', async () => {
+        const { mock } = touchedState();
+        setBackupManagerDependencies({ AppState: mock });
+        if (!(await backupManager.createSessionBackup({ reason: 'hide' }))) throw new Error('setup snapshot not written');
+        const before = await newestSession();
+        if (await backupManager.createSessionBackup({ reason: 'hide' })) throw new Error('an unchanged state was snapshotted on hide');
+        if (await backupManager.createSessionBackup({ reason: 'open' })) throw new Error('an unchanged state was snapshotted on open');
+        if (await backupManager.createSessionBackup()) throw new Error('an unchanged state was snapshotted by the default call');
+        const after = await newestSession();
+        if (after.timestamp !== before.timestamp) throw new Error('a record was written for an unchanged state');
+    });
+
+    await test('createSessionBackup: on open, a changed state inside the 5-minute gap is still skipped (burst guard)', async () => {
+        const { mock, st } = touchedState();
+        setBackupManagerDependencies({ AppState: mock });
+        if (!(await backupManager.createSessionBackup({ reason: 'hide' }))) throw new Error('setup snapshot not written');
+        st.metadata.lastModified += 1;
+        if (await backupManager.createSessionBackup({ reason: 'open' })) throw new Error('open inside the 5-minute gap wrote a snapshot');
+        if (!(await backupManager.createSessionBackup({ reason: 'hide' }))) throw new Error('the same change was then refused on hide');
+    });
+
+    await test('createSessionBackup: concurrent calls (pagehide + visibilitychange) share one write', async () => {
+        const { mock } = touchedState();
+        setBackupManagerDependencies({ AppState: mock });
+        const t0 = Date.now();
+        const [a, b] = await Promise.all([
+            backupManager.createSessionBackup({ reason: 'hide' }),
+            backupManager.createSessionBackup({ reason: 'hide' })
+        ]);
+        if (!a || !b) throw new Error('both callers should resolve with the shared result, got ' + a + '/' + b);
+        const { session } = await backupManager.listAllBackups();
+        const written = session.filter(s => s.timestamp >= t0).length;
+        if (written !== 1) throw new Error('expected exactly one record from the pair, got ' + written);
+    });
+
+    await test('createAutoBackup: an unchanged state since the last daily copy is skipped', async () => {
+        const { mock } = touchedState();
+        setBackupManagerDependencies({ AppState: mock });
+        // Whether or not the 24h gate lets the first call through, the second call
+        // sees an identical state and must not write.
+        await backupManager.createAutoBackup();
+        const { auto: before } = await backupManager.listAllBackups();
+        if (await backupManager.createAutoBackup()) throw new Error('an unchanged state wrote a daily copy');
+        const { auto: after } = await backupManager.listAllBackups();
+        if (after.length !== before.length) throw new Error('the daily store changed for an unchanged state');
+    });
+
     // === STATISTICS TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">📊 Statistics</h4>';
 
