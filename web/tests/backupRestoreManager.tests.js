@@ -737,6 +737,141 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     resultsDiv.innerHTML += '<h4 class="test-section">🏭 Factory Reset</h4>';
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🕘 Automatic backups (Settings → Data Management)</h4>';
+
+    const abBlock = document.createElement('div');
+    abBlock.innerHTML = '<button id="auto-backups-toggle" aria-expanded="false"><span class="auto-backups-toggle-label">Show</span></button>'
+        + '<div id="auto-backups" hidden><ul id="auto-backups-list"></ul><p id="auto-backups-empty" hidden></p></div>';
+    document.body.appendChild(abBlock);
+    const abToggle = document.getElementById('auto-backups-toggle');
+    const abPanel = document.getElementById('auto-backups');
+    const abList = document.getElementById('auto-backups-list');
+    const abEmpty = document.getElementById('auto-backups-empty');
+    const abRows = () => [...abList.querySelectorAll('li')];
+    const abSettle = async (pred) => { for (let i = 0; i < 40 && !pred(); i++) await new Promise(r => setTimeout(r, 50)); };
+
+    const abDoc = (title) => ({
+        schemaVersion: '2.6',
+        metadata: { version: '2.6', schemaVersion: '2.6', createdAt: 1, lastModified: 2 },
+        settings: { onboardingCompleted: true },
+        data: { routine: { r1: { id: 'r1', title, tasks: [], cycleCount: 0, recurringTemplates: {}, history: { events: [], maxEvents: 100 }, clearedTasks: { entries: [], totalCleared: 0, autoPruneEnabled: true } } } },
+        appState: { activeRoutineId: 'r1' },
+        userProgress: {},
+        achievements: { unlocked: [], seen: {} }
+    });
+    // A BackupManager double with the real store keying (timestamp; id for manual)
+    // and the real portable payload shape.
+    const fakeBackupManager = (stores) => {
+        const portable = (b) => ({ schemaVersion: '2.6', miniCycleData: JSON.stringify(b.data), backupMetadata: { createdAt: b.timestamp, version: '2.6', schemaVersion: '2.6', includesLiteStorage: false, source: 'test' } });
+        const bm = {
+            manualCreated: [],
+            listAllBackups: async () => ({ auto: stores.auto || [], manual: stores.manual || [], session: stores.session || [], test: stores.test || [] }),
+            restoreBackup: async (id, type, { format } = {}) => {
+                const b = (stores[type] || []).find(x => (type === 'manual' ? x.id : x.timestamp) === id);
+                if (!b) throw new Error('Backup not found: ' + id);
+                return format === 'portable' ? portable(b) : b.data;
+            },
+            createManualBackup: async (name) => { bm.manualCreated.push(name); return true; }
+        };
+        return bm;
+    };
+    const wireAb = (bm, over = {}) => mod.setBackupRestoreManagerDependencies({
+        AppState: { isReady: () => true, get: () => ({}), forceSave: () => {}, reload: () => {}, update: () => {}, saveTimeout: null },
+        showNotification: () => {},
+        showConfirmationModal: ({ callback }) => callback(true),
+        safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
+        BackupManager: () => bm,
+        AppMeta: { version: String(cacheBuster) },
+        ...over
+    });
+
+    try {
+        await test('automatic backups: the block starts hidden; the toggle opens it, lists newest first, and names every row as automatic', async () => {
+            const bm = fakeBackupManager({
+                session: [{ timestamp: 1000, data: abDoc('Old'), metadata: { cycleCount: 1, size: 2048 } }, { timestamp: 3000, data: abDoc('New'), metadata: { cycleCount: 2, size: 4096 } }],
+                manual:  [{ id: 'manual_2000', timestamp: 2000, data: abDoc('Safety'), metadata: { size: 1024 } }],
+                test:    [{ timestamp: 9000, data: abDoc('Test'), metadata: { size: 1 } }]
+            });
+            wireAb(bm);
+            mod.setupAutoBackupsControls();
+            if (!abPanel.hidden) throw new Error('the list is visible before the button is pressed');
+            const items = await mod.listRecentAutoBackups();
+            if (items.map(i => i.timestamp).join(',') !== '3000,2000,1000') throw new Error('not newest first / test store leaked: ' + JSON.stringify(items.map(i => i.timestamp)));
+            if (items[1].type !== 'manual' || items[1].key !== 'manual_2000') throw new Error('manual snapshot is not keyed by its id: ' + JSON.stringify(items[1]));
+            if (items[2].routines !== 1 || items[1].routines !== 1) throw new Error('routine counts wrong (metadata count and fallback count): ' + JSON.stringify(items.map(i => i.routines)));
+            abToggle.click();
+            await abSettle(() => abRows().length === 3);
+            if (abPanel.hidden || abToggle.getAttribute('aria-expanded') !== 'true') throw new Error('the panel did not open with aria-expanded');
+            if (!/hide/i.test(abToggle.textContent)) throw new Error('the button label did not flip to Hide: ' + abToggle.textContent);
+            const rows = abRows();
+            if (rows.length !== 3) throw new Error('expected 3 rows, got ' + rows.length);
+            if (!/automatic/i.test(rows[0].textContent) || !/safety/i.test(rows[1].textContent)) throw new Error('rows do not say what they are: ' + rows.map(r => r.textContent).join(' | '));
+            if (!/1 routine\b/.test(rows[2].textContent) || !/2 routines/.test(rows[0].textContent)) throw new Error('routine counts are not pluralised in the rows: ' + rows.map(r => r.textContent).join(' | '));
+            const restore = rows[0].querySelector('button');
+            if (!restore || restore.dataset.type !== 'session' || restore.dataset.key !== '3000') throw new Error('the Restore button does not carry the store key');
+            if (!/automatic backup/i.test(restore.getAttribute('aria-label') || '')) throw new Error('the Restore button has no accessible name naming the automatic backup');
+            if (!abEmpty.hidden) throw new Error('the empty note shows beside rows');
+            abToggle.click();
+            if (!abPanel.hidden || abToggle.getAttribute('aria-expanded') !== 'false') throw new Error('the second press did not hide the panel');
+        });
+
+        await test('automatic backups: with nothing stored the list is empty and the empty note shows', async () => {
+            wireAb(fakeBackupManager({}));
+            abToggle.click();
+            await abSettle(() => !abEmpty.hidden);
+            if (abRows().length !== 0) throw new Error('rows rendered with nothing stored');
+            if (abEmpty.hidden) throw new Error('the empty note is hidden');
+            abToggle.click();
+        });
+
+        await test('automatic backups: restore confirms with the snapshot date, saves a safety copy, writes the document, re-renders', async () => {
+            const ts = Date.UTC(2026, 9, 1, 9, 30);
+            const bm = fakeBackupManager({ session: [{ timestamp: ts, data: abDoc('From snapshot'), metadata: { cycleCount: 1, size: 100 } }] });
+            localStorage.setItem('miniCycleData', JSON.stringify(abDoc('Current')));
+            const confirms = [];
+            let rendered = false;
+            wireAb(bm, {
+                showConfirmationModal: ({ title, message, callback }) => { confirms.push({ title, message }); callback(true); },
+                loadMiniCycle: () => { rendered = true; }
+            });
+            const handed = await mod.restoreAutoBackup('session', String(ts));
+            if (!handed) throw new Error('restore reported that the snapshot could not be loaded');
+            const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+            if (stored?.data?.routine?.r1?.title !== 'From snapshot') throw new Error('the snapshot was not written back: ' + JSON.stringify(stored?.data?.routine?.r1?.title));
+            if (confirms.length < 1 || !/automatic backup/i.test(confirms[0].title) || !/2026/.test(confirms[0].message)) throw new Error('the confirmation does not name the automatic backup and its date: ' + JSON.stringify(confirms[0]));
+            if (bm.manualCreated.length !== 1) throw new Error('expected one safety copy before the restore, got ' + bm.manualCreated.length);
+            await abSettle(() => rendered);
+            if (!rendered) throw new Error('the in-place reload did not run');
+        });
+
+        await test('automatic backups: a declined confirmation changes nothing', async () => {
+            const bm = fakeBackupManager({ session: [{ timestamp: 7000, data: abDoc('From snapshot'), metadata: { size: 100 } }] });
+            const current = JSON.stringify(abDoc('Current'));
+            localStorage.setItem('miniCycleData', current);
+            wireAb(bm, { showConfirmationModal: ({ callback }) => callback(false) });
+            await mod.restoreAutoBackup('session', '7000');
+            if (localStorage.getItem('miniCycleData') !== current) throw new Error('current data changed after a decline');
+            if (bm.manualCreated.length !== 0) throw new Error('a safety copy was taken for a declined restore');
+        });
+
+        await test('automatic backups: a snapshot that cannot be loaded is reported and nothing is written', async () => {
+            const current = JSON.stringify(abDoc('Current'));
+            localStorage.setItem('miniCycleData', current);
+            const notes = [];
+            wireAb(fakeBackupManager({}), { showNotification: (m) => notes.push(m) });
+            const handed = await mod.restoreAutoBackup('session', '404');
+            if (handed) throw new Error('restore claimed success for a missing snapshot');
+            if (localStorage.getItem('miniCycleData') !== current) throw new Error('current data changed');
+            if (!notes.some(n => /automatic backup/i.test(n))) throw new Error('no notification named the automatic backup: ' + JSON.stringify(notes));
+        });
+    } finally {
+        abBlock.remove();
+        // The DI setters MERGE descriptors, so the fake BackupManager would otherwise
+        // leak into the groups below (the pre-migration restore expects none).
+        mod.setBackupRestoreManagerDependencies({ BackupManager: null });
+    }
+
+    // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">🗂️ Pre-migration copy (Settings → Data Management)</h4>';
 
     const PRE_PREFIX = 'miniCycleData_pre-migration_';   // PRE_MIGRATION_BACKUP_PREFIX

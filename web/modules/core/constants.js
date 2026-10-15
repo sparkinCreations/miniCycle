@@ -411,6 +411,7 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
+    AUTO_BACKUPS_SHOWN: 8,               // Newest IndexedDB snapshots listed under Settings → Data Management → automatic backups
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     // Max task names stored on ONE history event's completion breakdown (per
     // side). Names are user text, so this is a STORAGE cap, not a display one:
@@ -925,6 +926,14 @@ export const DOM_CLASSES = Object.freeze({
     // House class for a modal's primary/close action: full-width, --color-primary.
     // Used by the reminders, settings and preferences modals.
     SETTINGS_BTN: 'settings-btn',
+    SETTINGS_BTN_GHOST: 'settings-btn-ghost',
+    AUTO_BACKUPS_TOGGLE_LABEL: 'auto-backups-toggle-label',
+    AUTO_BACKUPS_LIST: 'auto-backups-list',
+    AUTO_BACKUP_ITEM: 'auto-backup-item',
+    AUTO_BACKUP_META: 'auto-backup-meta',
+    AUTO_BACKUP_KIND: 'auto-backup-kind',
+    AUTO_BACKUP_WHEN: 'auto-backup-when',
+    AUTO_BACKUP_RESTORE: 'auto-backup-restore',
     // ---- Welcome Screen (modules/ui/titleScreen.js) ----
     // NOTE: deliberately NOT reusing .first-run-choice. critical.css hides it
     // with `html:not(.mc-first-run) .first-run-choice { display: none }`, and a
@@ -1234,6 +1243,12 @@ export const DOM_IDS = Object.freeze({
     PRE_MIGRATION_DOWNLOAD: 'pre-migration-download',
     PRE_MIGRATION_RESTORE: 'pre-migration-restore',
     PRE_MIGRATION_DELETE: 'pre-migration-delete',
+    // Automatic backups (Settings → Data Management): the disclosure button and
+    // the list of IndexedDB snapshots BackupManager keeps (backupRestoreManager).
+    AUTO_BACKUPS_TOGGLE: 'auto-backups-toggle',
+    AUTO_BACKUPS: 'auto-backups',
+    AUTO_BACKUPS_LIST: 'auto-backups-list',
+    AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
     FACTORY_RESET: 'factory-reset',
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',

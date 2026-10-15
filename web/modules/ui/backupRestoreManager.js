@@ -10,7 +10,8 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS, APP_VERSION, LIMITS } from '../core/constants.js';
+import { getRoutines } from '../utils/cycleMode.js';
 import { getLabel } from '../labels/labelResolver.js';
 // The iOS / Android app runs in a WebView that does not handle downloads: an
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
@@ -74,7 +75,8 @@ const _initialized = {
     backupButton: false,
     restoreButton: false,
     resetButton: false,
-    preMigration: false
+    preMigration: false,
+    autoBackups: false
 };
 
 const LITE_STORAGE_KEYS = Object.freeze([
@@ -942,7 +944,7 @@ export function setupRestoreButton() {
  * @param {string} fileContent - Raw file content
  * @returns {Promise<void>}
  */
-async function processRestoreData(fileContent) {
+async function processRestoreData(fileContent, options = {}) {
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
@@ -995,8 +997,8 @@ async function processRestoreData(fileContent) {
 
     return new Promise((resolve) => {
         showConfirmationModal({
-            title: getLabel('modal.restoreBackupTitle'),
-            message: getLabel('modal.restoreBackupMessage'),
+            title: options.title || getLabel('modal.restoreBackupTitle'),
+            message: options.message || getLabel('modal.restoreBackupMessage'),
             confirmText: getLabel('modal.restoreBackupConfirm'),
             cancelText: getLabel('button.cancel'),
             destructive: true,
@@ -1122,6 +1124,186 @@ async function processRestoreData(fileContent) {
             }
         });
     });
+}
+
+// ============================================================================
+// AUTOMATIC BACKUPS (Settings → Data Management)
+// ============================================================================
+// BackupManager keeps a snapshot of the state document in IndexedDB on every
+// app open (the session store, newest five), plus the safety copies taken before
+// a restore or reset (the manual store) and the daily store. Until Oct 2026 the
+// only way to see or restore any of them was the Testing modal under Advanced.
+// This block lists the newest few under a disclosure button and restores one
+// through the same pipeline as Restore All Routines (processRestoreData), so
+// the confirmation, the safety copy and the in-place reload are identical. Every
+// string names them as the app's automatic backups, not files the user saved.
+
+const AUTO_BACKUP_KIND_LABELS = Object.freeze({
+    session: 'settings.autoBackupKindSession',
+    manual:  'settings.autoBackupKindManual',
+    auto:    'settings.autoBackupKindAuto'
+});
+
+function formatSnapshotDate(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    } catch {
+        return new Date(timestamp).toString();
+    }
+}
+
+/**
+ * The newest automatic backups across the session, manual and daily stores,
+ * newest first. The test store is left out: it holds pre-test-run copies.
+ * `key` is what the store is keyed by (the timestamp, or the id for manual
+ * backups), so it can be handed straight back to BackupManager.
+ * @param {number} [limit]
+ * @returns {Promise<Array<{type: string, key: (number|string), timestamp: number, routines: number, size: number}>>}
+ */
+export async function listRecentAutoBackups(limit = LIMITS.AUTO_BACKUPS_SHOWN) {
+    const BackupManager = _deps.BackupManager?.();
+    if (!BackupManager?.listAllBackups) return [];
+    const { auto = [], manual = [], session = [] } = await BackupManager.listAllBackups();
+    const describe = (list, type) => list.map((b) => ({
+        type,
+        key: type === 'manual' ? b.id : b.timestamp,
+        timestamp: Number(b.timestamp),
+        routines: typeof b.metadata?.cycleCount === 'number'
+            ? b.metadata.cycleCount
+            : Object.keys((b.data && getRoutines(b.data)) || {}).length,
+        size: b.metadata?.size || 0
+    }));
+    return [...describe(session, 'session'), ...describe(manual, 'manual'), ...describe(auto, 'auto')]
+        .filter((b) => Number.isFinite(b.timestamp))
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, limit);
+}
+
+function renderAutoBackupsList(items) {
+    const list = document.getElementById(DOM_IDS.AUTO_BACKUPS_LIST);
+    const empty = document.getElementById(DOM_IDS.AUTO_BACKUPS_EMPTY);
+    if (!list) return;
+    list.textContent = '';
+    for (const item of items) {
+        const li = document.createElement('li');
+        li.className = DOM_CLASSES.AUTO_BACKUP_ITEM;
+
+        const meta = document.createElement('div');
+        meta.className = DOM_CLASSES.AUTO_BACKUP_META;
+        const kind = document.createElement('span');
+        kind.className = DOM_CLASSES.AUTO_BACKUP_KIND;
+        kind.textContent = getLabel(AUTO_BACKUP_KIND_LABELS[item.type] || AUTO_BACKUP_KIND_LABELS.session);
+        const when = document.createElement('span');
+        when.className = DOM_CLASSES.AUTO_BACKUP_WHEN;
+        const date = formatSnapshotDate(item.timestamp);
+        when.textContent = getLabel('settings.autoBackupMeta', { vars: {
+            date,
+            count: item.routines,
+            routines: getLabel('noun.routine', { count: item.routines }),
+            size: Math.max(1, Math.round(item.size / 1024))
+        } });
+        meta.append(kind, when);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `${DOM_CLASSES.SETTINGS_BTN} ${DOM_CLASSES.SETTINGS_BTN_GHOST} ${DOM_CLASSES.AUTO_BACKUP_RESTORE}`;
+        btn.textContent = getLabel('settings.autoBackupRestore');
+        btn.setAttribute('aria-label', getLabel('settings.autoBackupRestoreAria', { vars: { date } }));
+        btn.dataset.type = item.type;
+        btn.dataset.key = String(item.key);
+
+        li.append(meta, btn);
+        list.appendChild(li);
+    }
+    if (empty) empty.hidden = items.length > 0;
+}
+
+/**
+ * Re-list the snapshots while the block is open. Safe to call at any time.
+ * @returns {Promise<Array>} the items rendered (empty while the block is hidden)
+ */
+export async function refreshAutoBackupsList() {
+    const block = document.getElementById(DOM_IDS.AUTO_BACKUPS);
+    if (!block || block.hidden) return [];
+    let items = [];
+    try {
+        items = await listRecentAutoBackups();
+    } catch (e) {
+        console.warn('Could not list the automatic backups:', e);
+        _deps.showNotification(getLabel('notify.autoBackupsListFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+    }
+    renderAutoBackupsList(items);
+    return items;
+}
+
+/**
+ * Wire the disclosure button and the list's Restore buttons. Idempotent.
+ * @returns {void}
+ */
+export function setupAutoBackupsControls() {
+    if (_initialized.autoBackups) return;
+    const toggle = document.getElementById(DOM_IDS.AUTO_BACKUPS_TOGGLE);
+    const block = document.getElementById(DOM_IDS.AUTO_BACKUPS);
+    const list = document.getElementById(DOM_IDS.AUTO_BACKUPS_LIST);
+    if (!toggle || !block || !list) return;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('BackupRestoreManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.autoBackups = true;
+
+    const labelSpan = toggle.querySelector(`.${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}`);
+    safeAddEventListener(toggle, 'click', () => {
+        const open = block.hidden;
+        block.hidden = !open;
+        toggle.setAttribute('aria-expanded', String(open));
+        if (labelSpan) labelSpan.textContent = getLabel(open ? 'settings.autoBackupsHide' : 'settings.autoBackupsShow');
+        if (open) refreshAutoBackupsList();
+    });
+
+    safeAddEventListener(list, 'click', (e) => {
+        const btn = e.target.closest?.(`.${DOM_CLASSES.AUTO_BACKUP_RESTORE}`);
+        if (!btn || !list.contains(btn)) return;
+        restoreAutoBackup(btn.dataset.type, btn.dataset.key);
+    });
+}
+
+/**
+ * Hand one snapshot to the restore pipeline. The confirmation names the date
+ * the backup was taken; the pipeline then takes the safety copy, writes the
+ * document and re-renders in place, exactly as a restored file would.
+ * @param {string} type - 'session' | 'manual' | 'auto'
+ * @param {string|number} key - the store key from listRecentAutoBackups
+ * @returns {Promise<boolean>} false when the snapshot could not be loaded;
+ *   true once it was handed to the pipeline (the user may still decline there)
+ */
+export async function restoreAutoBackup(type, key) {
+    const BackupManager = _deps.BackupManager?.();
+    if (!BackupManager?.restoreBackup) {
+        _deps.showNotification(getLabel('notify.autoBackupsUnavailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        return false;
+    }
+    const identifier = type === 'manual' ? String(key) : Number(key);
+    let payload = null;
+    try {
+        payload = await BackupManager.restoreBackup(identifier, type, { format: 'portable' });
+    } catch (e) {
+        console.warn('The automatic backup could not be loaded:', e);
+    }
+    if (!payload || typeof payload.miniCycleData !== 'string') {
+        _deps.showNotification(getLabel('notify.autoBackupUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        refreshAutoBackupsList();
+        return false;
+    }
+    const date = formatSnapshotDate(payload.backupMetadata?.createdAt || identifier);
+    await processRestoreData(JSON.stringify(payload), {
+        title: getLabel('modal.autoBackupRestoreTitle'),
+        message: getLabel('modal.autoBackupRestoreMessage', { vars: { date } })
+    });
+    refreshAutoBackupsList();
+    return true;
 }
 
 // ============================================================================

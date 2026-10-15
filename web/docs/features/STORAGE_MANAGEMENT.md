@@ -102,7 +102,15 @@ The quota gates below govern **user-initiated** growth. Several system writers s
 | Writer | Cap | Constant |
 |---|---|---|
 | Corrupted-data snapshots (`miniCycleData_corrupted_<ts>`) | 3 | `LIMITS.MAX_CORRUPT_BACKUPS` |
+| IndexedDB snapshots (`miniCycle_backups`): session store, written 1s after every app open once a routine exists | 5 | `backupManager.js` `MAX_SESSION_BACKUPS` |
+| IndexedDB snapshots: manual store (the safety copy taken before a restore or reset, and the Testing modal's on-demand copies) | 50 | `backupManager.js` `MAX_MANUAL_BACKUPS` |
+| IndexedDB snapshots: daily store (`createAutoBackup` — nothing in the app calls it today, only its tests) | 10 | `backupManager.js` `MAX_AUTO_BACKUPS` |
 | Undo cache | 20 snapshots **and** ~1MB byte cap (sheds oldest; real bytes = length×2, matching the quota meter's UTF-16 convention) | `LIMITS.UNDO_STACK` + `LIMITS.UNDO_CACHE_MAX_BYTES` (v2.343) |
+
+Since Oct 2026 the newest few IndexedDB snapshots (`LIMITS.AUTO_BACKUPS_SHOWN`) are listed under Settings →
+Data Management → **Show automatic backups**, every row named as an automatic backup rather than a file the user
+saved, each with its own Restore that runs the same pipeline as Restore All Routines (`backupRestoreManager.js`,
+`restoreAutoBackup`). Before that the only way to see or restore one was the Testing modal under Advanced.
 
 The pre-2.5 migration's backups (`pre_migration_backup_`, `migration_backup_`, `auto_migration_backup_`) are no
 longer written: that migration was retired Sep 2026 (`docs/future-work/SCHEMA_2_6_PLAN.md`). The factory reset still

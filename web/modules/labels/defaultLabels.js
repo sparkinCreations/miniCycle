@@ -651,6 +651,9 @@ export const DEFAULT_LABELS = deepFreeze({
         preMigrationDeleted:     'The copy from before the update was deleted.',
         preMigrationDownloaded:  'Downloaded the copy from before the update.',
         preMigrationUnreadable:  'The saved copy could not be read.',
+        autoBackupUnreadable:    'That automatic backup could not be read. Nothing was changed.',
+        autoBackupsListFailed:   'The automatic backups could not be listed.',
+        autoBackupsUnavailable:  'Automatic backups are not available on this device.',
 
         // Import/export notifications
         fileTooLarge:            'File too large. Maximum size is 10MB.',
@@ -982,6 +985,8 @@ export const DEFAULT_LABELS = deepFreeze({
         preMigrationDeleteTitle:    'Delete the copy from before the update',
         preMigrationDeleteMessage:  'This removes the copy saved on {date}. You will not be able to go back to it.',
         preMigrationDeleteConfirm:  'Delete',
+        autoBackupRestoreTitle:     'Restore an automatic backup',
+        autoBackupRestoreMessage:   'Your current routines, settings and progress will be replaced by the automatic backup miniCycle saved on {date}. Anything changed since then will be lost. A safety copy is saved first.',
         restoreNoSafetyBackupTitle:   'No Safety Backup',
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
@@ -1372,6 +1377,19 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreAll:           'Restore All Routines',
         // The copy AppState kept before a schema migration (Settings → Data Management)
         preMigrationCopyDesc: 'A copy of your data from before the update on {date} is kept on this device.',
+        // Automatic backups: the IndexedDB snapshots BackupManager keeps on this
+        // device. Every string says they are automatic, not files the user saved.
+        autoBackupsShow:        'Show automatic backups',
+        autoBackupsHide:        'Hide automatic backups',
+        autoBackupsNote:        'miniCycle saves a snapshot of your data on this device each time you open the app and keeps the newest few here. They are automatic backups, not files you saved, and they go with the app if its storage is cleared. Restoring one replaces your current data; a safety copy is saved first.',
+        autoBackupsEmpty:       'No automatic backups yet. One is saved the next time you open the app.',
+        autoBackupsListLabel:   'Automatic backups',
+        autoBackupKindSession:  'Automatic backup, saved when the app opened',
+        autoBackupKindManual:   'Safety copy, saved before a restore or reset',
+        autoBackupKindAuto:     'Automatic backup, daily',
+        autoBackupMeta:         '{date} · {count} {routines} · {size} KB',
+        autoBackupRestore:      'Restore',
+        autoBackupRestoreAria:  'Restore the automatic backup from {date}',
         preMigrationDownload: 'Download the copy',
         preMigrationRestore:  'Restore the copy',
         preMigrationDelete:   'Delete the copy',

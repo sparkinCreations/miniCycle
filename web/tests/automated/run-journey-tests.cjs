@@ -4358,6 +4358,61 @@ function legacy25Document() {
     };
 }
 
+// ── Journey: automatic backups in Settings ───────────────────────────────────
+// Settings → Data Management → "Show automatic backups" lists the session
+// snapshot BackupManager took on this app open, names it as automatic, and
+// restoring it puts the data back to what it was at open.
+async function journeyAutoBackupsInSettings(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const seeded = await taskCount(page);
+        // The session backup fires 1s after UI boot (uiBoot) once a routine exists;
+        // openFresh seeded one, so give it time to land before changing anything.
+        await page.waitForTimeout(2500);
+        await addTask(page, 'Added after the snapshot');
+        await page.waitForTimeout(800);
+        record('a task was added after the snapshot', (await taskCount(page)) === seeded + 1, `${await taskCount(page)} rows, ${seeded} at open`);
+
+        await openSettingsPanel(page);
+        await page.evaluate(() => document.querySelectorAll('.settings-section.collapsed').forEach(s => s.classList.remove('collapsed')));
+        const hasToggle = await page.evaluate(() => { const b = document.getElementById('auto-backups-toggle'); if (!b) return false; b.click(); return true; });
+        record('the Data section has a "Show automatic backups" button', hasToggle, 'no #auto-backups-toggle in the settings modal');
+        await page.waitForFunction(() => document.querySelectorAll('#auto-backups-list li').length > 0, null, { timeout: 8000 }).catch(() => {});
+        const panel = await page.evaluate(() => ({
+            expanded: document.getElementById('auto-backups-toggle')?.getAttribute('aria-expanded'),
+            label: document.getElementById('auto-backups-toggle')?.textContent.trim(),
+            note: document.querySelector('#auto-backups .settings-note')?.textContent || '',
+            rows: [...document.querySelectorAll('#auto-backups-list li')].map(li => ({ text: li.textContent, type: li.querySelector('button')?.dataset.type, aria: li.querySelector('button')?.getAttribute('aria-label') }))
+        }));
+        record('the panel opens with aria-expanded and a Hide label', panel.expanded === 'true' && /hide/i.test(panel.label || ''), `expanded=${panel.expanded} label=${panel.label}`);
+        record('the note says these are automatic backups, not files the user saved', /automatic backups/i.test(panel.note) && /not files you saved/i.test(panel.note), panel.note);
+        record('the session snapshot from this app open is listed first', panel.rows.length >= 1 && panel.rows[0].type === 'session', `rows: ${JSON.stringify(panel.rows)}`);
+        record('the row and its Restore button both say "automatic backup"', panel.rows.length >= 1 && /automatic backup/i.test(panel.rows[0].text) && /automatic backup/i.test(panel.rows[0].aria || ''), `row: ${JSON.stringify(panel.rows[0])}`);
+
+        await page.evaluate(() => document.querySelector('#auto-backups-list li button')?.click());
+        await page.waitForTimeout(700);
+        const dialogText = await page.evaluate(() => {
+            const btn = document.querySelector('button.btn-confirm.btn-destructive');
+            const box = btn && btn.closest('dialog, .modal, [role="dialog"], .confirmation-modal');
+            return box ? box.textContent.replace(/\s+/g, ' ') : '';
+        });
+        record('the confirmation names the automatic backup and its date', /automatic backup/i.test(dialogText) && /20\d\d/.test(dialogText), `dialog: ${dialogText.slice(0, 160)}`);
+        await confirmDestructive(page);
+        await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n, seeded, { timeout: 15000 }).catch(() => {});
+        await page.waitForTimeout(500);
+        record('restoring put the data back to the snapshot (the added task is gone)', (await taskCount(page)) === seeded, `${await taskCount(page)} rows vs ${seeded} at open`);
+        const stored = await page.evaluate(() => {
+            try { const p = JSON.parse(localStorage.getItem('miniCycleData')); const r = p.data.routine[p.appState.activeRoutineId]; return r.tasks.map(t => t.text); } catch (e) { return null; }
+        });
+        record('storage no longer holds the task added after the snapshot', Array.isArray(stored) && !stored.includes('Added after the snapshot'), `stored: ${JSON.stringify(stored)}`);
+        record('no DI warnings during the journey', page.__diWarnings.length === 0, page.__diWarnings.join(' | '));
+    } finally {
+        await context.close();
+    }
+    return { name: 'automatic backups are listed and restorable from Settings', failures };
+}
+
 async function openSettingsPanel(page) {
     await page.evaluate(() => document.querySelector('.menu-button')?.click());
     await page.waitForTimeout(600);
@@ -4700,6 +4755,7 @@ const JOURNEYS = [
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
+    { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
     { name: 'a settings toggle works on the session that created the data', fn: journeyFirstRunSettingToggle },
     { name: 'first-run state contract (core-ready \u2260 state-ready)', fn: journeyFirstRunStateContract },
