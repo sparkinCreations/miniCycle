@@ -1,3 +1,14 @@
+## [2.616] - 2026-10-15
+- feat(backups): daily backup file in a device folder on desktop and Android
+- feat(backups): snapshot when the app is hidden, schedule the daily copy, skip unchanged state
+- feat(settings): list the automatic backups under Data Management, each restorable
+- chore(schema): finish the 2.5 → 2.6 sweep in comments, samples and docs
+- docs(a11y): accessibility statement rewritten for WCAG 2.2 and what is actually tested; High Contrast checkbox ring wins
+- refactor(di): rename the three Schema25-suffixed DI names to what they do
+- refactor(schema): drop 2.5 names from internal helpers and the DOM priority flag
+- feat(mcyc): close the 2.5 dual-write window in the .mcyc exporter
+
+
 ## [2.615] - 2026-10-13
 - fix(focus): the undo/redo row sits on the nav-dots row on desktop instead of hanging off the bottom edge
 
