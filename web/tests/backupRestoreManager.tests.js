@@ -741,7 +741,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
 
     const abBlock = document.createElement('div');
     abBlock.innerHTML = '<button id="auto-backups-toggle" aria-expanded="false"><span class="auto-backups-toggle-label">Show</span></button>'
-        + '<div id="auto-backups" hidden><ul id="auto-backups-list"></ul><p id="auto-backups-empty" hidden></p></div>';
+        + '<div id="auto-backups" hidden><p id="auto-backups-folder-note" hidden></p><ul id="auto-backups-list"></ul><p id="auto-backups-empty" hidden></p></div>';
     document.body.appendChild(abBlock);
     const abToggle = document.getElementById('auto-backups-toggle');
     const abPanel = document.getElementById('auto-backups');
@@ -781,6 +781,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         showConfirmationModal: ({ callback }) => callback(true),
         safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
         BackupManager: () => bm,
+        BackupFolder: null,
         AppMeta: { version: String(cacheBuster) },
         ...over
     });
@@ -858,6 +859,58 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             if (bm.manualCreated.length !== 0) throw new Error('a safety copy was taken for a declined restore');
         });
 
+        await test('automatic backups: daily files from the device folder are listed as files, with the folder named, and restore through the pipeline', async () => {
+            const bm = fakeBackupManager({ session: [{ timestamp: 1000, data: abDoc('Snapshot', 10), metadata: { cycleCount: 1, size: 100 } }] });
+            const fileDoc = JSON.stringify({ schemaVersion: '2.6', miniCycleData: JSON.stringify(abDoc('From file', 77)), backupMetadata: { createdAt: Date.UTC(2026, 9, 14, 8, 0), version: '2.6', schemaVersion: '2.6', includesLiteStorage: false, source: 'miniCycle App', automatic: true } });
+            const folder = {
+                isAvailable: () => true,
+                describeFolder: async () => 'Documents/miniCycle Backups',
+                listBackupFiles: async () => [{ name: 'miniCycle-auto-backup-2026-10-14.json', size: fileDoc.length, timestamp: Date.UTC(2026, 9, 14, 8, 0) }],
+                readBackupFile: async (name) => { if (name !== 'miniCycle-auto-backup-2026-10-14.json') throw new Error('ENOENT'); return fileDoc; }
+            };
+            localStorage.setItem('miniCycleData', JSON.stringify(abDoc('Current')));
+            const confirms = [];
+            wireAb(bm, { BackupFolder: () => folder, showConfirmationModal: ({ title, message, callback }) => { confirms.push({ title, message }); callback(true); } });
+            const items = await mod.listRecentAutoBackups();
+            const fileRow = items.find(i => i.type === 'file');
+            if (!fileRow || fileRow.key !== 'miniCycle-auto-backup-2026-10-14.json') throw new Error('the daily file is not listed: ' + JSON.stringify(items));
+            if (items[0].type !== 'file') throw new Error('the newer file should sort first, got ' + items[0].type);
+            abToggle.click();
+            await abSettle(() => abRows().length === 2);
+            const row = abRows().find(li => li.querySelector('button')?.dataset.type === 'file');
+            if (!row || !/backup file/i.test(row.textContent) || !/miniCycle Backups/.test(row.textContent)) throw new Error('the file row does not say it is a file in the folder: ' + (row && row.textContent));
+            const note = document.getElementById('auto-backups-folder-note');
+            if (!note || note.hidden || !/miniCycle Backups/.test(note.textContent) || !/nothing leaves the device/i.test(note.textContent)) throw new Error('the folder note is missing or wrong: ' + (note && note.textContent));
+            abToggle.click();
+            const handed = await mod.restoreAutoBackup('file', 'miniCycle-auto-backup-2026-10-14.json');
+            if (!handed) throw new Error('restore reported the file could not be read');
+            const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+            if (stored?.data?.routine?.r1?.title !== 'From file') throw new Error('the file was not restored: ' + JSON.stringify(stored?.data?.routine?.r1?.title));
+            if (!confirms.length || !/backup file/i.test(confirms[0].title) || !/miniCycle Backups/.test(confirms[0].message) || !/2026/.test(confirms[0].message)) throw new Error('the confirmation does not name the file, its folder and date: ' + JSON.stringify(confirms[0]));
+            if (bm.manualCreated.length !== 1) throw new Error('no safety copy before the file restore');
+        });
+
+        await test('automatic backups: without a device folder the folder note stays hidden and no file rows appear', async () => {
+            const bm = fakeBackupManager({ session: [{ timestamp: 1000, data: abDoc('Snapshot', 10), metadata: { cycleCount: 1, size: 100 } }] });
+            wireAb(bm, { BackupFolder: () => ({ isAvailable: () => false, listBackupFiles: async () => [{ name: 'miniCycle-auto-backup-2026-10-14.json', size: 1, timestamp: 1 }] }) });
+            const items = await mod.listRecentAutoBackups();
+            if (items.some(i => i.type === 'file')) throw new Error('file rows listed although the folder is unavailable');
+            abToggle.click();
+            await abSettle(() => abRows().length === 1);
+            if (!document.getElementById('auto-backups-folder-note').hidden) throw new Error('the folder note shows without a folder');
+            abToggle.click();
+        });
+
+        await test('automatic backups: a daily file that cannot be read is reported and nothing is written', async () => {
+            const current = JSON.stringify(abDoc('Current'));
+            localStorage.setItem('miniCycleData', current);
+            const notes = [];
+            wireAb(fakeBackupManager({}), { BackupFolder: () => ({ isAvailable: () => true, describeFolder: async () => 'X', listBackupFiles: async () => [], readBackupFile: async () => { throw new Error('ENOENT'); } }), showNotification: (m) => notes.push(m) });
+            if (await mod.restoreAutoBackup('file', 'miniCycle-auto-backup-2026-01-01.json')) throw new Error('claimed success for a missing file');
+            if (localStorage.getItem('miniCycleData') !== current) throw new Error('current data changed');
+            if (!notes.some(n => /backup file/i.test(n))) throw new Error('no notification named the backup file: ' + JSON.stringify(notes));
+        });
+
         await test('automatic backups: a snapshot that cannot be loaded is reported and nothing is written', async () => {
             const current = JSON.stringify(abDoc('Current'));
             localStorage.setItem('miniCycleData', current);
@@ -872,7 +925,7 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         abBlock.remove();
         // The DI setters MERGE descriptors, so the fake BackupManager would otherwise
         // leak into the groups below (the pre-migration restore expects none).
-        mod.setBackupRestoreManagerDependencies({ BackupManager: null });
+        mod.setBackupRestoreManagerDependencies({ BackupManager: null, BackupFolder: null });
     }
 
     // ============================================

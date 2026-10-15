@@ -955,6 +955,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <button id="${DOM_IDS.AUTO_BACKUPS_TOGGLE}" class="settings-btn settings-btn-ghost" aria-expanded="false" aria-controls="${DOM_IDS.AUTO_BACKUPS}"><i class="fas fa-history"></i> <span class="${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}">${getLabel('settings.autoBackupsShow')}</span></button>
                         <div id="${DOM_IDS.AUTO_BACKUPS}" class="settings-subsection" hidden>
                             <p class="settings-note">${getLabel('settings.autoBackupsNote')}</p>
+                            <p id="${DOM_IDS.AUTO_BACKUPS_FOLDER_NOTE}" class="settings-note" hidden></p>
                             <ul id="${DOM_IDS.AUTO_BACKUPS_LIST}" class="${DOM_CLASSES.AUTO_BACKUPS_LIST}" aria-label="${getLabel('settings.autoBackupsListLabel')}"></ul>
                             <p id="${DOM_IDS.AUTO_BACKUPS_EMPTY}" class="settings-note" hidden>${getLabel('settings.autoBackupsEmpty')}</p>
                         </div>

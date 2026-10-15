@@ -497,7 +497,7 @@ export const MODULE_MANIFESTS = {
         // entry because featureBoot assigns it directly
         // (`deps.utils.showChoiceModal = …`) during the early notifications init,
         // which is why the depMappings route resolves but nothing declares it.
-        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
+        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'BackupFolder', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'saveBackupFileAs', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -844,6 +844,17 @@ export const MODULE_MANIFESTS = {
         api: 'storage',
         optional: true,
         singleton: true
+    },
+
+    backupFolder: {
+        path: '../storage/backupFolder.js',
+        phase: PHASES.TESTING,
+        requires: ['AppState'],
+        provides: ['backupFolder'],
+        api: 'storage',
+        optional: true,
+        singleton: true,
+        after: ['backupManager']
     },
 
     testingModal: {

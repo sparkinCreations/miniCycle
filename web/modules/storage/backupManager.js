@@ -71,7 +71,7 @@ const LITE_STORAGE_KEYS = Object.freeze([
     STORAGE_KEYS.LITE_FOCUS_MODE
 ]);
 
-function collectLiteStorageSnapshot() {
+export function collectLiteStorageSnapshot() {
     const liteStorage = {};
     let hasLiteData = false;
 

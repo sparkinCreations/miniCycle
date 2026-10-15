@@ -654,6 +654,7 @@ export const DEFAULT_LABELS = deepFreeze({
         autoBackupUnreadable:    'That automatic backup could not be read. Nothing was changed.',
         autoBackupsListFailed:   'The automatic backups could not be listed.',
         autoBackupsUnavailable:  'Automatic backups are not available on this device.',
+        autoBackupFileUnreadable: 'That backup file could not be read. Nothing was changed.',
 
         // Import/export notifications
         fileTooLarge:            'File too large. Maximum size is 10MB.',
@@ -987,6 +988,8 @@ export const DEFAULT_LABELS = deepFreeze({
         preMigrationDeleteConfirm:  'Delete',
         autoBackupRestoreTitle:     'Restore an automatic backup',
         autoBackupRestoreMessage:   'Your current routines, settings and progress will be replaced by the automatic backup miniCycle saved on {date}. Anything changed since then will be lost. A safety copy is saved first.',
+        autoBackupFileRestoreTitle:   'Restore a backup file',
+        autoBackupFileRestoreMessage: 'Your current routines, settings and progress will be replaced by the backup file miniCycle saved on {date} in {folder}. Anything changed since then will be lost. A safety copy is saved first.',
         restoreNoSafetyBackupTitle:   'No Safety Backup',
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
@@ -1388,6 +1391,9 @@ export const DEFAULT_LABELS = deepFreeze({
         autoBackupKindSessionHide: 'Automatic backup, saved when you left the app',
         autoBackupKindManual:   'Safety copy, saved before a restore or reset',
         autoBackupKindAuto:     'Automatic backup, daily',
+        autoBackupKindFile:     'Backup file in {folder}',
+        autoBackupFileMeta:     '{date} · {size} KB',
+        autoBackupsFolderNote:  'A backup file is also written once a day to {folder} on this device. Those files stay even if the app is removed or its storage is cleared, and nothing leaves the device.',
         autoBackupMeta:         '{date} · {count} {routines} · {size} KB',
         autoBackupRestore:      'Restore',
         autoBackupRestoreAria:  'Restore the automatic backup from {date}',

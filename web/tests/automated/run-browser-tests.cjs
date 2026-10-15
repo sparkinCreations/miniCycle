@@ -45,7 +45,7 @@ const ALL_MODULES = [
     'gamesManager', 'onboardingManager', 'guidedTourManager', 'modalManager', 'menuManager', 'settingsManager',
     'completedTasksManager', 'pullToRefresh', 'taskCore', 'taskValidation', 'taskUtils', 'recurringTemplate', 'taskRenderer',
     'taskEvents', 'taskDOM', 'taskOptionsCustomizer', 'taskUI', 'taskInteractions', 'uiEffects',
-    'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'cycleCompletion',
+    'xss-vulnerability', 'errorHandler', 'testingModal', 'backupManager', 'backupFolder', 'cycleCompletion',
     'dataValidator', 'appInit', 'appState', 'helpWindowManager', 'constants', 'basicPluginSystem',
     'accessibility', 'stress', 'coreBoot', 'uiBoot', 'featureBoot',
     'labelResolver', 'defaultLabels', 'diBase', 'themes',

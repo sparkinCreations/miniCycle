@@ -1574,6 +1574,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // ─── Storage / backup ───
         // Returns the backupManager INSTANCE (matches statsPanelManager / completedTasksManager pattern)
         BackupManager: () => deps.storage?.backupManager,
+        // The device backup-folder INSTANCE (desktop / Android daily files)
+        BackupFolder: () => deps.storage?.backupFolder,
 
         // ─── Settings ───
         resetDefaultRecurringSettings: (...args) => deps.ui?.settingsManager?.resetDefaultRecurringSettings?.(...args),

@@ -107,10 +107,19 @@ The quota gates below govern **user-initiated** growth. Several system writers s
 | IndexedDB snapshots: daily store (`createAutoBackup`): one per 24h, attempted at open and on hide, skipped when nothing changed | 10 | `backupManager.js` `MAX_AUTO_BACKUPS` |
 | Undo cache | 20 snapshots **and** ~1MB byte cap (sheds oldest; real bytes = length×2, matching the quota meter's UTF-16 convention) | `LIMITS.UNDO_STACK` + `LIMITS.UNDO_CACHE_MAX_BYTES` (v2.343) |
 
+**Daily backup files on the device (desktop, Android).** `storage/backupFolder.js` writes one backup FILE per
+local day — the same JSON the Backup button writes — to a folder the user can see: `Documents/miniCycle Backups`
+on desktop (through the shell's IPC, `desktop/src/backupFiles.js`) and the public `Documents/miniCycle` folder on
+Android (Filesystem plugin). Written on app open and whenever the app is hidden, rewritten through the day only when
+the state changed, newest `LIMITS.BACKUP_FOLDER_KEEP` (7) kept. Unlike the IndexedDB snapshots these survive an
+uninstall and a cleared storage, and nothing leaves the device. No adapter on the web or on iOS (the iOS folder would
+be invisible until the Files keys are in the plist), so there every call is a no-op.
+
 Since Oct 2026 the newest few IndexedDB snapshots (`LIMITS.AUTO_BACKUPS_SHOWN`) are listed under Settings →
 Data Management → **Show automatic backups**, every row named as an automatic backup rather than a file the user
 saved, each with its own Restore that runs the same pipeline as Restore All Routines (`backupRestoreManager.js`,
-`restoreAutoBackup`). Before that the only way to see or restore one was the Testing modal under Advanced.
+`restoreAutoBackup`). The daily files are listed in the same panel as "Backup file in <folder>", restorable the
+same way (`restoreBackupFolderFile`). Before that the only way to see or restore one was the Testing modal under Advanced.
 
 The pre-2.5 migration's backups (`pre_migration_backup_`, `migration_backup_`, `auto_migration_backup_`) are no
 longer written: that migration was retired Sep 2026 (`docs/future-work/SCHEMA_2_6_PLAN.md`). The factory reset still

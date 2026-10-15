@@ -9,6 +9,7 @@
   "main": "src/main.js",
   "//": "The web payload (www/) is GENERATED from web/ by web/scripts/build-desktop-www.cjs. Never hand-edit www/. The version field is APP_VERSION plus a trailing .0 (electron-builder requires semver; the app uses two parts), synced by web/scripts/update-version.sh --desktop. See docs/DESKTOP_BUILD_AND_DIFFERENCES.md.",
   "scripts": {
+    "test": "node --test test/backupFiles.test.js",
     "build:www": "node ../web/scripts/build-desktop-www.cjs",
     "start": "npm run build:www && electron .",
     "smoke": "npm run build:www && MINICYCLE_SMOKE=dist/smoke.png electron .",

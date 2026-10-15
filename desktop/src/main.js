@@ -38,9 +38,10 @@
 
 'use strict';
 
-const { app, BrowserWindow, Menu, protocol, shell, session, dialog } = require('electron');
+const { app, BrowserWindow, Menu, protocol, shell, session, dialog, ipcMain } = require('electron');
 const fs = require('fs');
 const path = require('path');
+const { registerBackupIpc } = require('./backupFiles.js');
 
 const APP_SCHEME = 'app';
 const APP_HOST = 'minicycle';
@@ -138,6 +139,8 @@ function isExternal(url) {
 }
 
 function createWindow() {
+    // The daily backup files (Documents/miniCycle Backups) — see backupFiles.js.
+    registerBackupIpc({ ipcMain, app, fs, path });
     const win = new BrowserWindow({
         width: WINDOW.width,
         height: WINDOW.height,
@@ -277,6 +280,8 @@ function runSmoke(win) {
                     title: document.title,
                     version: String(globalThis.APP_VERSION || ''),
                     desktop: !!(globalThis.miniCycleDesktop && globalThis.miniCycleDesktop.platform),
+                    backupsApi: !!(globalThis.miniCycleDesktop && globalThis.miniCycleDesktop.backups && typeof globalThis.miniCycleDesktop.backups.write === 'function'),
+                    backupsFolder: await (globalThis.miniCycleDesktop && globalThis.miniCycleDesktop.backups ? globalThis.miniCycleDesktop.backups.folder() : Promise.resolve(null)).catch(() => null),
                     origin: location.origin,
                     online: navigator.onLine,
                     storage: await navigator.storage.estimate().then((e) => ({ quotaMB: Math.round(e.quota / 1048576), usageKB: Math.round(e.usage / 1024) }), () => null),
@@ -287,6 +292,7 @@ function runSmoke(win) {
                 }))()`);
                 console.log(`[smoke] ${JSON.stringify(state)}`);
                 if (!state.desktop) return fail('preload global missing — the app cannot tell it is on desktop');
+                if (!state.backupsApi || !state.backupsFolder) return fail('backups IPC missing — the daily backup file cannot be written');
                 if (!state.version) return fail('APP_VERSION not published — version.js did not load');
                 if (SMOKE_OFFLINE && state.liveReachable) return fail('offline emulation is not in effect — the live site was reachable');
                 const image = await win.webContents.capturePage();

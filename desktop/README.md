@@ -52,6 +52,14 @@ desktop/
 └── dist/                  # installers + smoke.png (gitignored)
 ```
 
+## Daily backup files
+
+The shell exposes one function group on `globalThis.miniCycleDesktop.backups` (preload.js → IPC → `src/backupFiles.js`):
+the web app writes one JSON backup per day to `~/Documents/miniCycle Backups`, lists them, reads one back for a
+restore and removes the oldest (keeps 7). The main process accepts only daily-backup file names inside that folder
+and writes through a temp file + rename. `npm test` runs the node tests for it; the smoke run fails if the IPC is
+missing.
+
 ## What v1 is, and is not
 
 - **Is:** one window, native menu, native save/open dialogs for `.mcyc` files, OS notifications

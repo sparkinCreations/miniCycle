@@ -1293,6 +1293,8 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
       if (!backupManager?.createSessionBackup) return;
       await backupManager.createSessionBackup({ reason });
       await backupManager.createAutoBackup?.();
+      // Desktop / Android: the daily backup FILE in the device folder (no-op elsewhere).
+      await deps.storage?.backupFolder?.writeDailyBackupFile?.({ reason });
     } catch (error) {
       console.warn('⚠️ Automatic snapshot failed (non-critical):', error);
     }

@@ -268,6 +268,7 @@ var BOOT_CRITICAL = [
   './modules/features/historyManager.js',
   // Storage
   './modules/storage/backupManager.js',
+  './modules/storage/backupFolder.js',
   './modules/storage/storagePersistence.js',
   // Labels - statically imported by boot modules, required for offline
   './modules/labels/labelResolver.js',

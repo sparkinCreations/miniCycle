@@ -34,6 +34,7 @@ const di = createDIModule('BackupRestoreManager', {
     showConfirmationModal: required(),
     safeAddEventListener: required(),
     BackupManager: optional(null),  // For safety backups before restore
+    BackupFolder: optional(null),   // Daily backup files in the device folder (desktop / Android)
     AppMeta: optional(null),  // For version info
     loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
     showLoader: optional(null),  // Loading overlay from uiBoot
@@ -1142,7 +1143,8 @@ const AUTO_BACKUP_KIND_LABELS = Object.freeze({
     session: 'settings.autoBackupKindSession',
     sessionHide: 'settings.autoBackupKindSessionHide',
     manual:  'settings.autoBackupKindManual',
-    auto:    'settings.autoBackupKindAuto'
+    auto:    'settings.autoBackupKindAuto',
+    file:    'settings.autoBackupKindFile'
 });
 
 function autoBackupKindLabel(item) {
@@ -1167,11 +1169,15 @@ function formatSnapshotDate(timestamp) {
  * `key` is what the store is keyed by (the timestamp, or the id for manual
  * backups), so it can be handed straight back to BackupManager.
  * @param {number} [limit]
- * @returns {Promise<Array<{type: string, key: (number|string), timestamp: number, trigger: (string|undefined), routines: number, size: number}>>}
+ * Daily files from the device folder (desktop / Android) are listed too, as
+ * `type: 'file'` keyed by file name; they are a separate tier and never collapse
+ * into a snapshot row.
+ * @returns {Promise<Array<{type: string, key: (number|string), timestamp: number, trigger: (string|undefined), routines: (number|null), size: number}>>}
  */
 export async function listRecentAutoBackups(limit = LIMITS.AUTO_BACKUPS_SHOWN) {
+    const files = await listBackupFolderItems();
     const BackupManager = _deps.BackupManager?.();
-    if (!BackupManager?.listAllBackups) return [];
+    if (!BackupManager?.listAllBackups) return files;
     const { auto = [], manual = [], session = [] } = await BackupManager.listAllBackups();
     const describe = (list, type) => list.map((b) => ({
         type,
@@ -1194,10 +1200,25 @@ export async function listRecentAutoBackups(limit = LIMITS.AUTO_BACKUPS_SHOWN) {
             return true;
         })
         .sort((a, b) => b.timestamp - a.timestamp)
-        .slice(0, limit);
+        .slice(0, limit)
+        .concat(files)
+        .sort((a, b) => b.timestamp - a.timestamp);
 }
 
-function renderAutoBackupsList(items) {
+async function listBackupFolderItems() {
+    const BackupFolder = _deps.BackupFolder?.();
+    if (!BackupFolder?.isAvailable?.() || !BackupFolder.listBackupFiles) return [];
+    try {
+        return (await BackupFolder.listBackupFiles()).map((f) => ({
+            type: 'file', key: f.name, timestamp: f.timestamp, trigger: undefined, stamp: undefined, routines: null, size: f.size
+        }));
+    } catch (e) {
+        console.warn('Could not list the backup folder:', e);
+        return [];
+    }
+}
+
+function renderAutoBackupsList(items, { folder = null } = {}) {
     const list = document.getElementById(DOM_IDS.AUTO_BACKUPS_LIST);
     const empty = document.getElementById(DOM_IDS.AUTO_BACKUPS_EMPTY);
     if (!list) return;
@@ -1210,16 +1231,19 @@ function renderAutoBackupsList(items) {
         meta.className = DOM_CLASSES.AUTO_BACKUP_META;
         const kind = document.createElement('span');
         kind.className = DOM_CLASSES.AUTO_BACKUP_KIND;
-        kind.textContent = getLabel(autoBackupKindLabel(item));
+        kind.textContent = getLabel(autoBackupKindLabel(item), { vars: { folder: folder || '' } });
         const when = document.createElement('span');
         when.className = DOM_CLASSES.AUTO_BACKUP_WHEN;
         const date = formatSnapshotDate(item.timestamp);
-        when.textContent = getLabel('settings.autoBackupMeta', { vars: {
-            date,
-            count: item.routines,
-            routines: getLabel('noun.routine', { count: item.routines }),
-            size: Math.max(1, Math.round(item.size / 1024))
-        } });
+        const size = Math.max(1, Math.round(item.size / 1024));
+        when.textContent = item.type === 'file'
+            ? getLabel('settings.autoBackupFileMeta', { vars: { date, size } })
+            : getLabel('settings.autoBackupMeta', { vars: {
+                date,
+                count: item.routines,
+                routines: getLabel('noun.routine', { count: item.routines }),
+                size
+            } });
         meta.append(kind, when);
 
         const btn = document.createElement('button');
@@ -1244,14 +1268,28 @@ export async function refreshAutoBackupsList() {
     const block = document.getElementById(DOM_IDS.AUTO_BACKUPS);
     if (!block || block.hidden) return [];
     let items = [];
+    let folder = null;
     try {
+        folder = await describeBackupFolder();
         items = await listRecentAutoBackups();
     } catch (e) {
         console.warn('Could not list the automatic backups:', e);
         _deps.showNotification(getLabel('notify.autoBackupsListFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
-    renderAutoBackupsList(items);
+    const folderNote = document.getElementById(DOM_IDS.AUTO_BACKUPS_FOLDER_NOTE);
+    if (folderNote) {
+        folderNote.hidden = !folder;
+        if (folder) folderNote.textContent = getLabel('settings.autoBackupsFolderNote', { vars: { folder } });
+    }
+    renderAutoBackupsList(items, { folder });
     return items;
+}
+
+/** The device folder's user-facing location, or null where there is none. */
+async function describeBackupFolder() {
+    const BackupFolder = _deps.BackupFolder?.();
+    if (!BackupFolder?.isAvailable?.()) return null;
+    return (await BackupFolder.describeFolder?.()) || null;
 }
 
 /**
@@ -1298,6 +1336,7 @@ export function setupAutoBackupsControls() {
  *   true once it was handed to the pipeline (the user may still decline there)
  */
 export async function restoreAutoBackup(type, key) {
+    if (type === 'file') return restoreBackupFolderFile(key);
     const BackupManager = _deps.BackupManager?.();
     if (!BackupManager?.restoreBackup) {
         _deps.showNotification(getLabel('notify.autoBackupsUnavailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
@@ -1319,6 +1358,40 @@ export async function restoreAutoBackup(type, key) {
     await processRestoreData(JSON.stringify(payload), {
         title: getLabel('modal.autoBackupRestoreTitle'),
         message: getLabel('modal.autoBackupRestoreMessage', { vars: { date } })
+    });
+    refreshAutoBackupsList();
+    return true;
+}
+
+/**
+ * Hand one daily file from the device folder to the restore pipeline.
+ * @param {string} name - the file name from listRecentAutoBackups
+ * @returns {Promise<boolean>} false when the file could not be read
+ */
+export async function restoreBackupFolderFile(name) {
+    const BackupFolder = _deps.BackupFolder?.();
+    if (!BackupFolder?.readBackupFile) {
+        _deps.showNotification(getLabel('notify.autoBackupsUnavailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        return false;
+    }
+    let text = null;
+    try {
+        text = await BackupFolder.readBackupFile(name);
+    } catch (e) {
+        console.warn('The backup file could not be read:', e);
+    }
+    if (typeof text !== 'string' || !text) {
+        _deps.showNotification(getLabel('notify.autoBackupFileUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        refreshAutoBackupsList();
+        return false;
+    }
+    let createdAt = 0;
+    try { createdAt = Number(JSON.parse(text)?.backupMetadata?.createdAt) || 0; } catch { /* the pipeline reports an unreadable file */ }
+    const date = formatSnapshotDate(createdAt || Date.now());
+    const folder = (await describeBackupFolder()) || '';
+    await processRestoreData(text, {
+        title: getLabel('modal.autoBackupFileRestoreTitle'),
+        message: getLabel('modal.autoBackupFileRestoreMessage', { vars: { date, folder } })
     });
     refreshAutoBackupsList();
     return true;

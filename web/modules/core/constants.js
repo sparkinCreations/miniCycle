@@ -412,6 +412,7 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     AUTO_BACKUPS_SHOWN: 8,               // Newest IndexedDB snapshots listed under Settings → Data Management → automatic backups
+    BACKUP_FOLDER_KEEP: 7,               // Daily backup files kept in the device folder (storage/backupFolder.js) — one per day
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     // Max task names stored on ONE history event's completion breakdown (per
     // side). Names are user text, so this is a STORAGE cap, not a display one:
@@ -719,6 +720,20 @@ export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`
  * backgrounded). backupManager writes it; Settings → automatic backups reads it.
  */
 export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
+
+/**
+ * The daily backup FILE the native shells write to a folder on the device
+ * (storage/backupFolder.js): desktop → Documents/<DESKTOP_DIR> through the
+ * shell's IPC (the folder name is also spelled in desktop/src/backupFiles.js —
+ * the shell is a separate package); Android → the public Documents/<ANDROID_DIR>
+ * folder through the Filesystem plugin. One file per local day.
+ */
+export const BACKUP_FOLDER = Object.freeze({
+    DESKTOP_DIR: 'miniCycle Backups',
+    ANDROID_DIR: 'miniCycle',
+    FILE_PREFIX: 'miniCycle-auto-backup-',
+    FILE_PATTERN: /^miniCycle-auto-backup-\d{4}-\d{2}-\d{2}\.json$/
+});
 
 // ============================================================================
 // CUSTOM EVENT NAMES — Single source of truth for document.dispatchEvent
@@ -1256,6 +1271,7 @@ export const DOM_IDS = Object.freeze({
     AUTO_BACKUPS: 'auto-backups',
     AUTO_BACKUPS_LIST: 'auto-backups-list',
     AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
+    AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
     FACTORY_RESET: 'factory-reset',
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',
