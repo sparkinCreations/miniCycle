@@ -538,7 +538,7 @@ export class HelpWindowManager {
         const completedTasks = document.querySelectorAll(DOM_SELECTORS.TASK_INPUT_CHECKED).length;
         const remaining = totalTasks - completedTasks;
 
-        // Get cycle count, cleared tasks, mode, and size from Schema 2.5 (DI-pure, no window.* fallbacks)
+        // Get cycle count, cleared tasks, mode, and size from the state document (DI-pure, no window.* fallbacks)
         let cycleCount = 0;
         let clearedTasksCount = 0;
         let isToDoMode = false;

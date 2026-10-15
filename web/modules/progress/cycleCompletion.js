@@ -15,7 +15,7 @@
  *
  * **Available data at hook point:**
  * - `actualNewCount` - The new cycle count for this routine
- * - `cycleData.title` - The routine name (Schema 2.5 has no `name` field)
+ * - `cycleData.title` - The routine name (the state document has no `name` field)
  * - `globalCyclesCompleted` - Total cycles across ALL routines
  * - `totalTasksCompleted` - Total tasks completed (for OR-based achievements)
  *
@@ -412,7 +412,7 @@ export function incrementCycleCount(miniCycleName, savedMiniCycles, completionSp
     if (typeof deps.logHistoryEvent === 'function') {
         const details = {
             cycleCount: actualNewCount,
-            // Schema 2.5 names the field `title`; there is no `name`, so this
+            // The state document names the field `title`; there is no `name`, so this
             // read was always undefined and every event logged the cycle ID.
             // Harmless to date only because nothing renders cycleName (the one
             // other use is a local in shareManager, which already reads .title).

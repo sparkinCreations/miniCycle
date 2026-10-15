@@ -8,7 +8,7 @@
  * - Integration with auto-reset mode
  * - Due date reminder notifications
  * - Persistence across sessions
- * - Integration with Schema 2.5 data structure
+ * - Integration with the Schema 2.6 state document
  *
  * @module dueDates
  */
@@ -522,7 +522,7 @@ export class MiniCycleDueDates {
 
         this.checkOverdueTasks(taskItem);
 
-        // ✅ Load Due Date Notification Setting from Schema 2.5
+        // ✅ Load Due Date Notification Setting from state
         const remindersSettings = reminders || {};
         const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
 

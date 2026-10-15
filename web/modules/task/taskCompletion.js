@@ -265,7 +265,7 @@ export async function saveCurrentTaskOrderImpl(deps = {}) {
 }
 
 /**
- * Save task data to Schema 2.5 storage
+ * Save task data to state
  * ✅ Use AppState only (no localStorage fallback) - DI-pure
  *
  * @param {string} activeCycle - The cycle ID to save

@@ -186,7 +186,7 @@ export let resetWatcherState = null;
 export let handleRecurringTaskActivation = null;
 /** @type {?Function} Deactivate recurring scheduling on a task */
 export let handleRecurringTaskDeactivation = null;
-/** @type {?Function} Apply recurring settings to a Schema 2.5 task object */
+/** @type {?Function} Apply recurring settings to a Schema 2.6 task object */
 export let applyRecurringToTask = null;
 /** @type {?Function} Delete a recurring template from a cycle */
 export let deleteRecurringTemplate = null;

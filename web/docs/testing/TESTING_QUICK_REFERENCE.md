@@ -207,9 +207,9 @@ test('descriptive test name', () => {
 ```javascript
 test('processes data correctly', () => {
     const mockData = {
-        metadata: { version: '2.5' },
+        metadata: { version: '2.6' },
         settings: { theme: 'default' },
-        cycles: {}
+        data: { routine: {} }
     };
 
     const result = MyModule.processData(mockData);
@@ -288,7 +288,7 @@ resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 function createMockData() {
     return {
         metadata: {
-            version: "2.5",
+            version: "2.6",
             lastModified: Date.now()
         },
         settings: {
@@ -296,9 +296,9 @@ function createMockData() {
             darkMode: false
         },
         data: {
-            cycles: {
-                'cycle-123': {
-                    name: 'Test Cycle',
+            routine: {
+                'routine-123': {
+                    title: 'Test Cycle',
                     tasks: [],
                     cycleCount: 5,
                     autoReset: true
@@ -306,7 +306,7 @@ function createMockData() {
             }
         },
         appState: {
-            activeCycleId: 'cycle-123',
+            activeRoutineId: 'routine-123',
             currentMode: 'auto-cycle'
         },
         userProgress: {
@@ -626,19 +626,19 @@ test('async operation', async () => {
 
 ### Complete Mock Data Pattern
 
-**Create full Schema 2.5 structures (not partial):**
+**Create full Schema 2.6 structures (not partial):**
 
 ```javascript
 // ❌ Incomplete mock - tests might fail unexpectedly
-const mockData = { cycles: {} };
+const mockData = { routine: {} };
 
-// ✅ Complete Schema 2.5 mock
+// ✅ Complete Schema 2.6 mock
 const mockSchemaData = {
     metadata: {
-        version: "2.5",
+        version: "2.6",
         lastModified: Date.now(),
         createdAt: Date.now(),
-        schemaVersion: "2.5"
+        schemaVersion: "2.6"
     },
     settings: {
         theme: 'default',
@@ -647,16 +647,16 @@ const mockSchemaData = {
         unlockedFeatures: []
     },
     data: {
-        cycles: {
-            'cycle1': {
-                id: 'cycle1',
-                name: 'Test Cycle',
+        routine: {
+            'routine-1': {
+                id: 'routine-1',
+                title: 'Test Cycle',
                 tasks: []
             }
         }
     },
     appState: {
-        activeCycleId: 'cycle1'
+        activeRoutineId: 'routine-1'
     },
     userProgress: {
         cyclesCompleted: 0,
@@ -726,7 +726,7 @@ test('rolls back on update error', async () => {
 
 ---
 
-### Schema 2.5 Testing Pattern 🗄️
+### Schema 2.6 Testing Pattern 🗄️
 
 **Critical lesson from RoutineSwitcher tests: Always test data access paths**
 
@@ -742,14 +742,14 @@ test('updatePreview works', async () => {
     // No assertion - passes even though implementation is broken
 });
 
-// ✅ CORRECT - Complete test with real Schema 2.5 structure
+// ✅ CORRECT - Complete test with real Schema 2.6 structure
 test('updatePreview generates task preview', async () => {
-    // Use COMPLETE Schema 2.5 mock
+    // Use COMPLETE Schema 2.6 mock
     const schemaData = {
-        metadata: { version: "2.5", lastModified: Date.now() },
+        metadata: { version: "2.6", lastModified: Date.now() },
         data: {  // ← Critical: data wrapper
-            cycles: {  // ← Cycles nested under data
-                'Morning Routine': {
+            routine: {  // ← Routines nested under data, keyed by generated id
+                'routine-1': {
                     title: 'Morning Routine',
                     tasks: [
                         { id: 'task-1', text: 'Wake up', completed: false }
@@ -757,7 +757,7 @@ test('updatePreview generates task preview', async () => {
                 }
             }
         },
-        appState: { activeCycleId: 'Morning Routine' }
+        appState: { activeRoutineId: 'routine-1' }
     };
 
     localStorage.setItem('miniCycleData', JSON.stringify(schemaData));
@@ -784,14 +784,14 @@ test('updatePreview generates task preview', async () => {
 ```
 
 **Key Testing Principles:**
-1. **Use complete Schema 2.5 structures** - Don't mock partial data
+1. **Use complete Schema 2.6 structures** - Don't mock partial data
 2. **Test actual data paths** - Verify `schemaData.data.routine`, not shortcuts
 3. **Assert meaningful output** - Don't just check that code runs
 4. **Test with real DOM** - Create actual elements, not mocks
 5. **Verify all branches** - Test success AND error paths
 
 **Real Impact:**
-- RoutineSwitcher tests found Schema 2.5 bug in first run (4/22 tests failed)
+- RoutineSwitcher tests found a data-shape bug in first run (4/22 tests failed)
 - Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.routine`
 - Single fix: `const cycles = schemaData.data?.routine || {};`
 - All 22 tests passed after fix - **100% success rate**
@@ -818,7 +818,7 @@ test('updatePreview generates task preview', async () => {
 | Testing async code | `async test() { await ... }` |
 | Modifying global state | Save in `try`, restore in `finally` |
 | Testing console capture | Save console methods at suite level |
-| Mocking data | Use complete Schema 2.5 structure |
+| Mocking data | Use complete Schema 2.6 structure |
 | Testing errors | Verify rollback and error handling |
 | localStorage tests | Save all keys, clear, restore in finally |
 

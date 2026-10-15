@@ -211,7 +211,7 @@
   <g data-box="1">
     <rect x="190.0" y="604.5" width="183.5" height="84.6" rx="10" fill="#ffffff" stroke="#d5dbe8" filter="url(#shadow)"/>
     <text x="202.0" y="627.3" font-size="12" font-weight="700" fill="#1b2540">AppState</text>
-    <text x="202.0" y="644.8" xml:space="preserve" font-size="11" fill="#2a3550">single Schema 2.5 document</text>
+    <text x="202.0" y="644.8" xml:space="preserve" font-size="11" fill="#2a3550">single Schema 2.6 document</text>
     <text x="202.0" y="659.7" xml:space="preserve" font-size="10.5" fill="#6b7893">get() live ref · update() only</text>
     <text x="202.0" y="674.4" xml:space="preserve" font-size="10.5" fill="#6b7893">writer</text>
   </g>

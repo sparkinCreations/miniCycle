@@ -1,7 +1,7 @@
 /**
  * miniCycle State Management Module
  *
- * Central state manager for the application using Schema 2.5 format.
+ * Central state manager for the application using the Schema 2.6 document.
  * Handles loading, updating, and persisting state to localStorage with
  * debounced saves, subscriber notifications, and concurrent modification detection.
  *
@@ -76,7 +76,7 @@ export function setAppStateDependencies(dependencies) {
 /**
  * Central state manager for miniCycle application
  *
- * Manages Schema 2.5 state with:
+ * Manages the Schema 2.6 state document with:
  * - Debounced localStorage persistence
  * - Subscriber pattern for reactive updates
  * - Concurrent modification detection
@@ -324,7 +324,7 @@ class MiniCycleState {
             // Note: Interrupted test recovery is handled by coreBoot.js BEFORE appState loads
             // This ensures localStorage already has the correct data when we read it here
 
-            // ✅ Check if Schema 2.5 data already exists
+            // ✅ Check if a stored document already exists
             let existingData = null;
             let stored = null;
             try {
@@ -756,7 +756,7 @@ class MiniCycleState {
     }
 
     /**
-     * Validate that data conforms to Schema 2.5 structure
+     * Validate that data conforms to the state document structure (Schema 2.6)
      * @param {Object} data - Data to validate
      * @returns {boolean} True for the CURRENT stored shape (SCHEMA.CURRENT, 2.6)
      * @private
@@ -780,7 +780,7 @@ class MiniCycleState {
     
     /**
      * Create minimal fallback state for recovery scenarios
-     * @returns {Schema25Data} Minimal valid Schema 2.5 state
+     * @returns {Schema25Data} Minimal valid state for SCHEMA.CURRENT
      * @private
      */
     createMinimalFallbackState() {

@@ -164,19 +164,19 @@ await test('async operation', async () => {
 });
 ```
 
-### Test with Mock Data (Schema 2.5)
+### Test with Mock Data (Schema 2.6)
 
 ```javascript
 await test('processes data correctly', () => {
     const mockData = {
-        metadata: { version: '2.5', lastModified: Date.now() },
+        metadata: { version: '2.6', lastModified: Date.now() },
         settings: { theme: 'default', darkMode: false },
         data: {
-            cycles: {
-                'cycle1': { id: 'cycle1', name: 'Test', tasks: [] }
+            routine: {
+                'routine-1': { id: 'routine-1', title: 'Test', tasks: [] }
             }
         },
-        appState: { activeCycleId: 'cycle1' }
+        appState: { activeRoutineId: 'routine-1' }
     };
 
     const result = MyModule.processData(mockData);
@@ -260,8 +260,8 @@ resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Error Handling</h4>';
 |----------|---------|
 | `setupTestEnvironment()` | Creates complete mock environment with AppState, notifications, etc. |
 | `createProtectedTest(resultsDiv, passed, total)` | Returns test runner with localStorage backup/restore |
-| `createMockAppState()` | Creates Schema 2.5 compliant AppState mock |
-| `createMockSchemaData()` | Returns complete Schema 2.5 data structure |
+| `createMockAppState()` | Creates Schema 2.6 compliant AppState mock |
+| `createMockSchemaData()` | Returns complete Schema 2.6 data structure |
 
 ## 🔧 testContext.js Functions (helpers/)
 
@@ -402,7 +402,7 @@ const browser = await chromium.launch({
 7. **Test error handling** - Not just happy paths
 8. **Keep tests independent** - Don't rely on execution order
 9. **Inject all dependencies** - Use set*Dependencies() functions
-10. **Use complete Schema 2.5 mocks** - Partial mocks cause false failures
+10. **Use complete Schema 2.6 mocks** - Partial mocks cause false failures
 
 ---
 
@@ -427,15 +427,15 @@ function createTestDOM() {
 }
 ```
 
-### Complete Schema 2.5 Mock Pattern
+### Complete Schema 2.6 Mock Pattern
 
 ```javascript
 const mockSchemaData = {
     metadata: {
-        version: "2.5",
+        version: "2.6",
         lastModified: Date.now(),
         createdAt: Date.now(),
-        schemaVersion: "2.5"
+        schemaVersion: "2.6"
     },
     settings: {
         theme: 'default',
@@ -444,16 +444,16 @@ const mockSchemaData = {
         unlockedFeatures: []
     },
     data: {
-        cycles: {
-            'cycle1': {
-                id: 'cycle1',
-                name: 'Test Cycle',
+        routine: {
+            'routine-1': {
+                id: 'routine-1',
+                title: 'Test Cycle',
                 tasks: []
             }
         }
     },
     appState: {
-        activeCycleId: 'cycle1'
+        activeRoutineId: 'routine-1'
     },
     userProgress: {
         cyclesCompleted: 0,

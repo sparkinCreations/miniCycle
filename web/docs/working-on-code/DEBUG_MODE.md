@@ -92,7 +92,7 @@ console.log(isDebug()); // true or false
 
 ## How It Works
 
-Debug mode is stored in `miniCycleData.settings.debugMode` (Schema 2.5).
+Debug mode is stored in `miniCycleData.settings.debugMode` (Schema 2.6).
 
 The debug filter is installed at the very start of boot in `orchestrator.js`, before any other modules load. This ensures all console output is filtered from the beginning.
 

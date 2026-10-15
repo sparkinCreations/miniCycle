@@ -279,7 +279,7 @@ function sanitizeLiteStorage(backupData) {
  */
 export function sanitizeImportedData(backupData) {
 
-    // Sanitize Schema 2.5 format
+    // Sanitize the state document
     if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
         try {
             const data = JSON.parse(backupData.miniCycleData);

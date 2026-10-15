@@ -267,7 +267,7 @@ orchestrator.js (sequence control + boot UI)
 Modules load across 8 phases: Core Utils → Theme/Visual → Task Management → Recurring → Cycle → UI Managers → Features → Testing. Each module can declare `requires`, `optionalDeps`, and `lazyRequires` to control wiring order.
 
 #### State Management
-Centralized `AppState.update(producer)` is the single mutation entry point for all state changes. Schema 2.5 organizes data into `cycles`, `appState`, `settings`, `userProgress`, and `achievements`. Saves are debounced at 600ms by default, with immediate save option for critical operations. A full undo/redo system captures snapshots with deduplication and signature tracking.
+Centralized `AppState.update(producer)` is the single mutation entry point for all state changes. Schema 2.6 organizes data into `routine`, `appState`, `settings`, `userProgress`, and `achievements`. Saves are debounced at 600ms by default, with immediate save option for critical operations. A full undo/redo system captures snapshots with deduplication and signature tracking.
 
 #### Label System
 Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. The vocabulary theme system layers theme-specific overrides on top of the 53-category default label set. Themes are resolved per-routine, so different routines can display entirely different vocabulary simultaneously.

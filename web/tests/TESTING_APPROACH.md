@@ -79,7 +79,7 @@ setModuleDependencies({
 | `set*Dependencies()` | Late dependency injection for each module |
 | `setupTestEnvironment()` | Creates complete mock environment |
 | `createProtectedTest()` | Test runner with localStorage backup/restore |
-| `createMockAppState()` | Schema 2.5 compliant AppState mock |
+| `createMockAppState()` | Schema 2.6 compliant AppState mock |
 
 ---
 

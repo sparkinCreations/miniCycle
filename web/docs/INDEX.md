@@ -167,7 +167,7 @@
 - Testing integration
 
 #### [DATA_SCHEMA_GUIDE.md](reference/DATA_SCHEMA_GUIDE.md)
-**What it is**: Complete Schema 2.5 structure
+**What it is**: Complete Schema 2.6 structure
 **Read if**: You're working with data persistence
 **Time**: 10 minutes
 
@@ -318,7 +318,7 @@
 
 **Topics:**
 - Complete data model specification
-- Schema version 2.5 structure
+- Schema version 2.6 structure
 - Cycles, tasks, recurring templates
 - Settings and metadata
 - Migration and backward compatibility

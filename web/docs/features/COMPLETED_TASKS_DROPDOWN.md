@@ -100,8 +100,8 @@ Task moved to #completedTaskList with fade animation
     completedTasksExpanded: boolean     // Dropdown expanded/collapsed
   },
   data: {
-    cycles: {
-      [cycleId]: {
+    routine: {
+      [routineId]: {
         tasks: [
           {
             id: "task-1",

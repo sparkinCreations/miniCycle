@@ -476,7 +476,7 @@ export class TaskCore {
     }
 
     /**
-     * Save task to Schema 2.5 format
+     * Save task into the state document
      * @param {string} activeCycle - Active cycle ID
      * @param {Cycle} currentCycle - Current cycle data
      * @returns {void}
@@ -650,7 +650,7 @@ function saveCurrentTaskOrder() {
 }
 
 /**
- * Save task to Schema 2.5 (wrapper function)
+ * Save task into the state document (wrapper function)
  * @param {string} cycleId - Cycle ID
  * @param {Cycle} cycleData - Cycle data
  * @returns {void}

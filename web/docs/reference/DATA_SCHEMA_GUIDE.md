@@ -8,19 +8,19 @@
 
 ## Table of Contents
 
-1. [Schema 2.5 Structure](#schema-25-structure-current)
+1. [Schema 2.6 Structure](#schema-26-structure-current)
 2. [How Data Flows](#how-data-flows)
 3. [Real Example: Adding a Task](#real-example-adding-a-task)
 
 ---
 
-## Schema 2.5 Structure (Current)
+## Schema 2.6 Structure (Current)
 
 > **Source of Truth**: `modules/core/types.js` contains the canonical JSDoc type definitions.
 
 ```typescript
 {
-    schemaVersion: "2.5",
+    schemaVersion: "2.6",
 
     metadata: {
         createdAt: 1696723400000,            // Unix timestamp
@@ -29,7 +29,7 @@
         migrationDate: "2025-10-07",         // Migration date (null when fresh)
         totalRoutinesCreated: 5,               // Total cycles ever created
         totalCyclesCompleted: 12,            // Total cycles ever completed
-        schemaVersion: "2.5"                 // Also stamped here, not just at the root
+        schemaVersion: "2.6"                 // Also stamped here, not just at the root
         // NOT here: `appVersion`, `migrationHistory` and `totalTasksCompleted`
         // were listed but nothing writes them. `totalTasksCompleted` is real and
         // lives on `userProgress`.
@@ -37,15 +37,14 @@
 
     data: {
         routine: {
-            // ⚠️ Cycles are keyed by TITLE, not by id — creation, rename,
-            // duplication, and import all write `routine[<generated id>]`; `title` is the name. Ids are
-            // therefore unique (getUniqueCycleName), and renaming rekeys the
-            // map entry. The `id` field is internal metadata and does NOT
-            // match the key (no code currently reads it).
-            "Morning Routine": {
-                id: "cycle-abc123",
-                name: "Morning Routine",
-                title: "Morning Routine",    // Legacy field
+            // Routines are keyed by a GENERATED id — creation, rename,
+            // duplication, and import all write `routine[<generated id>]`.
+            // `title` is the display name (there is no `name` field), so
+            // renaming never rekeys the map entry. The record's `id` repeats
+            // its key.
+            "routine-1789760998636-bqphapbbc": {
+                id: "routine-1789760998636-bqphapbbc",
+                title: "Morning Routine",    // Display name
                 cycleCount: 42,              // Times completed
                 autoReset: true,             // Auto-cycle mode
                 deleteCheckedTasks: false,
@@ -96,7 +95,7 @@
                     customize: true,
                     moveArrows: false,
                     threeDots: false,
-                    priority: 'high',
+                    highPriority: true,          // visibility of the priority button (a boolean, not a level)
                     rename: true,
                     delete: true,
                     recurring: false,
@@ -109,7 +108,6 @@
 
     appState: {
         activeRoutineId: "routine-1789760998636-bqphapbbc", // The active routine's generated id
-                                             // field — the name is a legacy artifact.
         overdueTaskStates: {}                // {[taskId]: boolean}
         // Mode is NOT stored here — derived from the cycle's autoReset/deleteCheckedTasks.
     },

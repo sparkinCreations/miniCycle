@@ -92,8 +92,8 @@ npm start
 // Open browser console at http://localhost:8080/miniCycle.html
 
 // Create 1000 tasks
-const data = { cycles: { 'test-cycle': {
-    name: 'Performance Test',
+const data = { routine: { 'routine-perf': {
+    title: 'Performance Test',
     tasks: Array.from({length: 1000}, (_, i) => ({
         id: `task-${i}`,
         text: `Task ${i}`,

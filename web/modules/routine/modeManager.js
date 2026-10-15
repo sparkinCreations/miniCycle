@@ -1325,7 +1325,7 @@ export class ModeManager {
         const safeAdd = this.deps.safeAddEventListener;
 
         deleteCheckedTasks._deleteCheckedTasksModeHandler = async (event) => {
-            // ✅ Schema 2.5 only
+            // ✅ Reads the state document only
 
             const state = self.deps.AppState?.get?.();
             if (!state) {

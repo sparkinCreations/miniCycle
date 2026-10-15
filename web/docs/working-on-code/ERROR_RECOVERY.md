@@ -78,7 +78,7 @@ original total can't be trusted from corrupted bytes. The corrupted original sta
 `miniCycleData_corrupted_<ts>`.
 
 > The plan's `extract-cycles` regex strategy was dropped: its partial output never survives the strict
-> Schema 2.5 re-validation, so it could never be adopted.
+> state-document re-validation (`validateStateStructure`), so it could never be adopted.
 
 ### Recovering a backup manually
 

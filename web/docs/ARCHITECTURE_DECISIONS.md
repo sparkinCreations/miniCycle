@@ -131,15 +131,17 @@ contributor docs make "always use `AppState.update()`" a top-tier rule.
 
 ---
 
-## ADR-004 — Client-side schema versioning and migration (name-key + stable `id`)
+## ADR-004 — Client-side schema versioning and migration (id-keyed routines since 2.6)
 
-**Status:** Accepted · **Date:** Schema 2.5 documented v2.263 (2026-06-28); migration system predates changelog
+**Status:** Accepted · **Date:** Schema 2.5 documented v2.263 (2026-06-28); Schema 2.6 shipped v2.588 (Sep 2026); migration system predates changelog
 
-**Decision.** Stamp every saved data blob with a `schemaVersion` (currently `"2.5"`).
-On startup, `migrationManager` reads the stamp and upgrades older data to the current
-shape, **backing up the old data before rewriting.** Cycles remain keyed by their
-**display name** (the historical primary key), while a stable `id` field
-(`cycle-...`) is carried alongside for forward use.
+**Decision.** Stamp every saved data blob with a `schemaVersion` (currently `"2.6"`).
+On startup, `AppState._migrateIfOlder` reads the stamp and upgrades older data to the
+current shape, **backing up the old data before rewriting.** Routines were keyed by
+their **display name** until Schema 2.6 (Sep 2026) rekeyed them by a generated id
+(`routine-...`) with `title` as the name, stored priority as a level and folded the
+clear-on-complete flags into one `autoClear` map; `routine/schemaMigration26.js`
+performs that rewrite once at boot.
 
 **Why.**
 - The app has **no server**, so users hold data in whatever shape was current when

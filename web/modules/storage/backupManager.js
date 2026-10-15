@@ -103,7 +103,7 @@ function buildPortableBackupPayload(backup) {
         miniCycleData: JSON.stringify(backup.data),
         backupMetadata: {
             createdAt: backup.timestamp,
-            version: backup.metadata?.version || backup.data.metadata?.version || '2.5',
+            version: backup.metadata?.version || backup.data.metadata?.version || APP_VERSION,
             schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || SCHEMA.CURRENT,
             includesLiteStorage: Boolean(backup.liteStorage),
             source: 'miniCycle BackupManager'

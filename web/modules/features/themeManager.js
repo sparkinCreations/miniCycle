@@ -464,7 +464,7 @@ export class ThemeManager {
             // Step 4: Update theme color after applying theme
             this.updateThemeColor();
 
-            // Step 5: Save to Schema 2.5 only (skip during initial load)
+            // Step 5: Save to state only (skip during initial load)
             if (shouldSave) {
                 this.saveThemeToStorage(themeName);
             }
@@ -1142,7 +1142,7 @@ export class ThemeManager {
     // ===== STORAGE FUNCTIONS =====
     
     /**
-     * Load Schema 2.5 data from localStorage
+     * Load the state document from localStorage
      */
     loadSchemaData() {
         try {
@@ -1343,7 +1343,7 @@ function setupThemesPanel() {
 
 /**
  * Setup themes panel with data
- * @param {object} schemaData - Schema 2.5 data
+ * @param {object} schemaData - The state document
  * @returns {void}
  */
 function setupThemesPanelWithData(schemaData) {

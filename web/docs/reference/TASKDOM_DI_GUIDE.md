@@ -191,7 +191,7 @@ import { TaskCore } from './taskCore.js';
 describe('TaskCore', () => {
     it('adds a task', async () => {
         const mockAppState = {
-            get: () => ({ data: { cycles: { main: { tasks: [] } } } }),
+            get: () => ({ data: { routine: { main: { tasks: [] } } } }),
             update: jest.fn(),
             isReady: () => true
         };

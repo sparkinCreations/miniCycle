@@ -323,7 +323,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
 // ============================================================================
 
 /**
- * Apply recurring settings to a task (Schema 2.5)
+ * Apply recurring settings to a task (Schema 2.6)
  * @param {string} taskId - The task ID
  * @param {Object} newSettings - New recurring settings to apply
  * @returns {Promise<void>}

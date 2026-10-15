@@ -10,7 +10,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS, APP_VERSION } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // The iOS / Android app runs in a WebView that does not handle downloads: an
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
@@ -534,7 +534,7 @@ export function neutralizeAppState() {
 // ============================================================================
 
 /**
- * Schema 2.5 JSON string for a backup, taken from live AppState.
+ * The state document as a JSON string for a backup, taken from live AppState.
  * Persistence can fail (quota) while memory is still current; the file must
  * still carry what the user sees, including when no previous stored document
  * exists. Do not read localStorage for this — a failed save leaves it stale.
@@ -584,7 +584,7 @@ function buildBackupFile(AppState, fileName, defaultName) {
         miniCycleData,
         backupMetadata: {
             createdAt: Date.now(),
-            version: _deps.AppMeta?.version || currentState?.metadata?.version || '2.5',
+            version: _deps.AppMeta?.version || currentState?.metadata?.version || APP_VERSION,
             schemaVersion: currentState?.metadata?.schemaVersion || SCHEMA.CURRENT,
             includesLiteStorage: Boolean(liteStorage),
             source: 'miniCycle App'
@@ -1060,7 +1060,7 @@ async function processRestoreData(fileContent) {
                 // Stop AppState from auto-saving
                 neutralizeAppState();
 
-                // Handle Schema 2.5 backup
+                // Handle a 2.5 or 2.6 backup (an older document is migrated at the next boot)
                 if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
 
                     // Structural validation (shared with the testing modal's IDB

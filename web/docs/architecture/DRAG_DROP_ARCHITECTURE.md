@@ -157,8 +157,8 @@ then `touchcancel` (taking over the touch). Without this flag, `touchcancel` wou
 ```javascript
 {
   data: {
-    cycles: {
-      [cycleId]: {
+    routine: {
+      [routineId]: {
         tasks: [...],  // Task order persisted here
       }
     }

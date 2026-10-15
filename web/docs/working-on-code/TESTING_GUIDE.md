@@ -288,9 +288,9 @@ test('global functions are exported', () => {
 ```javascript
 test('processes schema data correctly', () => {
     const mockData = {
-        metadata: { version: '2.5', lastModified: Date.now() },
+        metadata: { version: '2.6', lastModified: Date.now() },
         settings: { theme: 'default' },
-        cycles: {}
+        data: { routine: {} }
     };
 
     const result = MyModule.processData(mockData);
@@ -337,7 +337,7 @@ export function runOnboardingManagerTests(resultsDiv) {
     const mockAppState = {
         get: () => ({
             settings: { onboardingCompleted: false },
-            data: { cycles: {} }
+            data: { routine: {} }
         }),
         update: jest.fn()
     };

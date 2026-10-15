@@ -31,7 +31,7 @@
 | **Zero custom window.* globals** | 100% ✅ |
 | **Boot files split** | Dec 2025 |
 | **CSS modularized** | Jan 2026 |
-| **Schema Version** | 2.5 |
+| **Schema Version** | 2.6 |
 | **Test Pass Rate** | 100% ✅ |
 
 **Strict DI Complete:** All modules use dependency injection. No `|| window.*` fallbacks exist in the codebase. DI wiring happens in `modules/boot/featureBoot.js`, while `orchestrator.js` is a sequence control + boot UI + early coordination.
@@ -51,7 +51,7 @@ Frontend:
 
 Data:
 ├─ localStorage (primary storage)
-├─ JSON Schema 2.5
+├─ JSON Schema 2.6
 ├─ Export/Import (.mcyc format)
 └─ Automatic migration system
 
@@ -694,7 +694,7 @@ this.deps.AppState.update(state => {
 
 - **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Learn the 4 module patterns
 - **[AppInit System](APPINIT_SYSTEM.md)** - Understand 2-phase initialization
-- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - Explore Schema 2.5 structure
+- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - Explore Schema 2.6 structure
 - **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions and modules
 
 ---

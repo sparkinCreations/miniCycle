@@ -75,7 +75,7 @@ A manifest-based wiring layer — dependencies are declared in `moduleManifests.
 ### What miniCycle builds
 `AppState` in `modules/core/appState.js`:
 
-- Single centralized state object (Schema 2.5)
+- Single centralized state object (Schema 2.6)
 - `AppState.update(producer)` — mutates state via a producer function (like Immer)
 - `AppState.subscribe()` — reactive listeners notified on changes
 - 600ms debounced persistence to localStorage
@@ -93,7 +93,7 @@ dispatch({ type: 'ADD_TASK', payload: { cycleId, task: newTask } });
 
 // Zustand equivalent
 useStore.setState(state => ({
-    cycles: { ...state.cycles, [cycleId]: { ...cycle, tasks: [...tasks, newTask] } }
+    routine: { ...state.routine, [routineId]: { ...routine, tasks: [...tasks, newTask] } }
 }));
 ```
 

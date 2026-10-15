@@ -260,34 +260,35 @@ and delivers dependencies. `_deps` = "what was delivered to me."
 ## Part 7 — The shape of the data (the schema)
 
 "Schema" = the agreed-upon **shape** of your data. The whole app is one nested
-record (defined in `modules/routine/migrationManager.js`, schema version `"2.5"`):
+record (defined in `modules/routine/migrationManager.js`, schema version `"2.6"`):
 
 ```javascript
 {
-  schemaVersion: "2.5",     // the version stamp on the data's shape
+  schemaVersion: "2.6",     // the version stamp on the data's shape
   metadata:      { ... },   // facts about the file (created/modified dates, totals)
   settings:      { ... },   // preferences: theme, dark mode, accessibility, tour progress
-  data:          { cycles: { ... } },   // ← THE ACTUAL ROUTINES
-  appState:      { activeCycleId: ... },// which routine is currently open
+  data:          { routine: { ... } },  // ← THE ACTUAL ROUTINES
+  appState:      { activeRoutineId: ... }, // which routine is currently open
   userProgress:  { ... },   // cycles completed, reward milestones
   customReminders: { ... }  // global reminder config
 }
 ```
 
-**`data.routine`** holds your routines. Each cycle is keyed by its name and also
-carries a stable `id`:
+**`data.routine`** holds your routines. Each routine is keyed by a generated id;
+its display name is the `title` field:
 
 ```javascript
-cycles: {
-  "Morning Routine": {          // KEY = display name (historical primary key)
-    id: "cycle-abc123",         // stable unique ID (added later, alongside the name)
-    tasks: [ ... ],             // an ordered LIST of tasks
+routine: {
+  "routine-abc123": {         // KEY = the routine's generated id
+    id: "routine-abc123",      // the same id, repeated on the record
+    title: "Morning Routine",  // display name (there is no `name` field)
+    tasks: [ ... ],            // an ordered LIST of tasks
   }
 }
 ```
 
-*(This name-vs-ID duality is the reason some routine code has to "compensate for
-both" — the name is the historical key; the `id` is the newer stable identifier.)*
+*(Before Schema 2.6 (Sep 2026) routines were keyed by their name, which is why
+some older routine code still talks about "compensating for both" a name and an id.)*
 
 **A single task:**
 
@@ -296,7 +297,7 @@ both" — the name is the historical key; the `id` is the newer stable identifie
   id: "task-xyz",
   text: "Make coffee",
   completed: false,            // ← the checkbox
-  priority: 'high',    // custom priority color (null = theme default)
+  priority: 'high',            // a LEVEL: 'high' | 'medium' | 'low' | null (the colour is the theme's)
   dueDate: null,
   remindersEnabled: false,
   recurring: false,
@@ -315,8 +316,8 @@ So checking a task = navigating `data.routine[activeId].tasks`, finding the one 
 **`schemaVersion` is the quiet hero.** With no server, users hold data saved in
 older shapes. On startup, `migrationManager` reads the stamp and **upgrades old data
 to the current shape** (backing it up first). This is what lets the app *evolve* its
-data — e.g. introduce the stable `id` alongside the legacy name-key — without
-breaking existing users.
+data — e.g. rekey routines by a generated id and store priority as a level
+(Schema 2.6, Sep 2026) — without breaking existing users.
 
 **Routines can also leave the record** as `.mcyc` files (share, backup export, or
 download from the routine switcher). Since v2.343 all three paths use **one payload

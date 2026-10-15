@@ -17,7 +17,7 @@ miniCycle is a **routine manager**, not a todo app. Tasks are completed, reset, 
 - The `<head>` of `miniCycle.html` is an ordered gauntlet. Everything above the feature gate is ES5 only, because a script block is parsed in full before any of it runs. The gate runs last, alone in its own block, and sends old devices to the frozen `lite/` build.
 - One entrypoint, `miniCycle-main.js`, imports the orchestrator and nothing else.
 - All dependency wiring happens in Phase 2. Phases 1 and 3 never touch `moduleManifests.js`.
-- Persistence is one Schema 2.5 document. `AppState.get()` returns a live reference; `AppState.update()` is the only write path.
+- Persistence is one Schema 2.6 document. `AppState.get()` returns a live reference; `AppState.update()` is the only write path.
 
 **Read next:** [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) · [MODULE_SYSTEM_GUIDE.md](MODULE_SYSTEM_GUIDE.md) · [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md) · [LITE_VERSION.md](LITE_VERSION.md)
 

@@ -7,12 +7,11 @@
       "text": "🧘 Warm-up: 3 min march in place + arm circles",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -23,12 +22,11 @@
       "text": "🏃 30 sec high knees → 30 sec rest × 4",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -39,12 +37,11 @@
       "text": "🦵 Mountain Climbers – 3 rounds × 20 sec on / 20 sec rest",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -55,12 +52,11 @@
       "text": "🧍 Jump Squats (or Bodyweight Squats) – 3 sets × 12 reps",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -71,12 +67,11 @@
       "text": "💥 Sit-ups or Crunches – 3 sets × 15 reps",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -87,12 +82,11 @@
       "text": "🔥 Bicycle Kicks – 3 rounds × 30 sec",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -103,12 +97,11 @@
       "text": "⏱ 1‑min plank hold (modify as needed)",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -119,12 +112,11 @@
       "text": "🧘 Cooldown: gentle stretch, deep breathing (3–5 min)",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },

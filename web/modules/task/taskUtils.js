@@ -7,7 +7,7 @@
  * Features:
  * - Task context building from DOM elements
  * - DOM data extraction for persistence
- * - Schema 2.5 task data creation
+ * - Schema 2.6 task record creation
  * - Recurring task template management
  * - Scroll-to-task behavior
  * - Overdue styling management

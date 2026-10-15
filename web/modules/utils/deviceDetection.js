@@ -7,7 +7,7 @@
  * - User agent analysis
  * - Hardware capability detection
  * - Network connection assessment
- * - Schema 2.5 compatibility data storage
+ * - Compatibility data stored in the state document
  * - Automatic lite version routing
  *
  * Note: window.screen, window.location, navigator.* are browser APIs,

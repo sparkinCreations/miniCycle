@@ -1,5 +1,5 @@
 /**
- * miniCycle Routine Loader Module (Schema 2.5, DI-Pure)
+ * miniCycle Routine Loader Module (Schema 2.6, DI-Pure)
  * - Pure module with explicit dependency injection
  * - No window probing, no stubs, no retry loops
  * - No window.* fallbacks (DI-pure)

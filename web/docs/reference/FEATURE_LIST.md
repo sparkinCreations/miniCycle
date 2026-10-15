@@ -252,7 +252,7 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | LocalStorage Persistence | All data stored locally (no server) | `core/appState.js` |
-| Schema 2.5 Format | Structured data format with migrations | `core/dataAccess.js` |
+| Schema 2.6 Format | Structured data format with migrations | `core/dataAccess.js` |
 | Debounced Saves | 600ms debounce to prevent excessive writes | `core/appState.js` |
 | Quota Management | Monitors and warns when storage is low | `utils/storageUtils.js` |
 
@@ -274,7 +274,7 @@ Create tasks that automatically appear on a schedule.
 ### Data Migration
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Boot entry & fresh install | Runs initial setup; creates a new user's Schema 2.5 data | `routine/migrationManager.js` |
+| Boot entry & fresh install | Runs initial setup; creates a new user's Schema 2.6 data | `routine/migrationManager.js` |
 | Forward Compatibility | Data written by a newer build is never adopted or overwritten | `utils/schemaVersion.js` |
 
 ---

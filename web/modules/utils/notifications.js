@@ -1,5 +1,5 @@
 /**
- * MiniCycle Notifications Module (Schema 2.5)
+ * MiniCycle Notifications Module (Schema 2.6)
  *
  * Comprehensive notification system with toast messages,
  * educational tips, and modal dialogs.
@@ -10,7 +10,7 @@
  * - Educational tips with dismissal tracking
  * - Recurring task notifications
  * - Modal dialogs (confirmation & prompt)
- * - Schema 2.5 data integration
+ * - State document integration
  *
  * @module utils/notifications
  * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
@@ -565,7 +565,7 @@ export class MiniCycleNotifications {
         this.educationalTips.initTipListeners(notification);
       }
 
-      // Restore saved position from Schema 2.5
+      // Restore saved position from state
       this.restoreNotificationPosition(notificationContainer);
 
       // Auto-remove logic with hover pause
@@ -701,7 +701,7 @@ async setDefaultPosition(notificationContainer) {
     notificationContainer.style.left = `${defaultX}px`;
     notificationContainer.style.right = "auto";
 
-    // Save this default position to Schema 2.5 so it persists (asynchronous, non-blocking)
+    // Save this default position to state so it persists (asynchronous, non-blocking)
     try {
         // ✅ Only save if AppState is available (DI-pure)
         if (!this.deps.AppState || typeof this.deps.AppState.update !== 'function') {
@@ -870,7 +870,7 @@ async setDefaultPosition(notificationContainer) {
     let pendingSave = null;
     const THROTTLE_MS = 100;
 
-    // Save position to Schema 2.5 via AppState (DI-pure, throttled)
+    // Save position to state via AppState (DI-pure, throttled)
     const savePositionToState = async (x, y) => {
       const now = Date.now();
 

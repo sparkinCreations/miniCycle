@@ -191,7 +191,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
 - Centralized state with `AppState.get()` and `AppState.update()`
 - Subscriber system for reactive updates
 - 600ms debounced saves to localStorage
-- Schema 2.5 data format
+- Schema 2.6 data format
 - **Accessed via injected dependency, not window.AppState**
 
 ### Initialization (`modules/core/appInit.js`)
@@ -199,17 +199,17 @@ All notification messages, modal text, ARIA labels, and button text should use `
 - **Phase 2**: All modules initialized, app ready
 - Use `await appInit.waitForCore()` before accessing state
 
-### Data Schema (2.5)
+### Data Schema (2.6)
 ```javascript
 {
-  schemaVersion: "2.5",          // string (the per-task schemaVersion is the number 2)
+  schemaVersion: "2.6",          // string (the per-task schemaVersion is the number 2)
   metadata: { createdAt, lastModified, schemaVersion },
   settings: { theme, darkMode, onboardingCompleted },
   data: {
-    cycles: {
-      [cycleId]: {
-        name: string,
-        tasks: Task[],
+    routine: {
+      [routineId]: {            // keyed by a generated id
+        title: string,          // the display name (there is no `name`)
+        tasks: Task[],          // task.priority is a level; task.autoClear a per-mode map
         cycleCount: number,
         autoReset: boolean,
         deleteCheckedTasks: boolean,
@@ -220,7 +220,7 @@ All notification messages, modal text, ARIA labels, and button text should use `
       }
     }
   },
-  appState: { activeCycleId: string },
+  appState: { activeRoutineId: string },
   userProgress: { cyclesCompleted, totalTasksCompleted, rewardMilestones },
   achievements: { unlocked: [], seen: {} }  // OR-based achievements
 }

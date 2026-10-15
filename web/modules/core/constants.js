@@ -46,9 +46,9 @@ export const COLORS = Object.freeze({
 
 /**
  * Priority levels, highest first — this order IS the sort order.
- * Schema 2.5 still stores priority as `highPriority` + a `priorityColor` hex; the
- * helpers in utils/priorityLevel.js translate between the two until Schema 2.6
- * stores the level itself (docs/future-work/SCHEMA_2_6_PLAN.md).
+ * Schema 2.6 stores the level itself (`task.priority`); Schema 2.5 stored a
+ * `highPriority` flag + a `priorityColor` hex, and utils/priorityLevel.js still
+ * reads that pair for the boot migration and the .mcyc importer.
  * @constant {ReadonlyArray<'high'|'medium'|'low'>}
  */
 export const PRIORITY_LEVELS = Object.freeze(['high', 'medium', 'low']);

@@ -967,7 +967,7 @@ export async function loadAllModules(deps, coreResult) {
     // ✅ Validate cross-phase dependencies (warns about undeclared lazyRequires)
     validateCrossPhaseDeps();
 
-    // Ensure core systems (AppState, Schema 2.5 data) are ready before loading modules
+    // Ensure core systems (AppState, the state document) are ready before loading modules
     if (appInit && !appInit.isCoreReady()) {
         await appInit.waitForCore();
     }

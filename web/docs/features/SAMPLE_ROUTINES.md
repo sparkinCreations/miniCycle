@@ -82,7 +82,7 @@ User opens Create New dialog
 
 ## File Format Requirements
 
-Every sample `.mcyc` file must be a valid Schema 2.5 routine with **all fields present**. This ensures clean imports without repair warnings in the console.
+Every sample `.mcyc` file must be a valid Schema 2.6 routine (`schema/mcyc-2.6.schema.json`) with **all fields present**. This ensures clean imports without repair warnings in the console.
 
 ### Required root-level fields
 
@@ -161,7 +161,7 @@ Use `Descriptive_Name.mcyc` with underscores for spaces:
 
 **Step 1: Create the .mcyc file**
 
-Create a new file in `web/examples/sample-routines/`. Use the full Schema 2.5 format with all fields. Copy an existing sample as a template.
+Create a new file in `web/examples/sample-routines/`. Use the full Schema 2.6 format with all fields (`priority` as a level, `autoClear` as a per-mode map). Copy an existing sample as a template.
 
 Key decisions:
 - **`autoReset: true`** for routines people repeat (daily, weekly)

@@ -1,5 +1,5 @@
 /**
- * MiniCycle Educational Tips Module (Schema 2.5)
+ * MiniCycle Educational Tips Module (Schema 2.6)
  *
  * Teaching moments surfaced inside notifications: which tips a user has seen,
  * which they have dismissed, and the DOM for showing and hiding one.

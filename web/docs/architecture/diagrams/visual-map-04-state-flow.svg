@@ -80,11 +80,11 @@
   </g>
   <g data-box="1">
     <rect x="672.0" y="84" width="300" height="249.2" rx="10" fill="#f4f6fa" stroke="#d5dbe8" filter="url(#shadow)"/>
-    <text x="684.0" y="106.8" font-size="12" font-weight="700" fill="#1b2540">The Schema 2.5 document</text>
-    <text x="684.0" y="123.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.schemaVersion   &quot;2.5&quot;</text>
+    <text x="684.0" y="106.8" font-size="12" font-weight="700" fill="#1b2540">The Schema 2.6 document</text>
+    <text x="684.0" y="123.8" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.schemaVersion   &quot;2.6&quot;</text>
     <text x="684.0" y="138.5" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.metadata        { lastModified }</text>
-    <text x="684.0" y="153.2" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.appState.activeCycleId</text>
-    <text x="684.0" y="167.9" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.data.cycles[id]</text>
+    <text x="684.0" y="153.2" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.appState.activeRoutineId</text>
+    <text x="684.0" y="167.9" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">state.data.routine[id]</text>
     <text x="684.0" y="182.6" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.title              (no `name`)</text>
     <text x="684.0" y="197.3" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.tasks[]            Task objects</text>
     <text x="684.0" y="212.0" xml:space="preserve" font-size="10.5" font-family="Menlo, Consolas, 'Courier New', monospace" fill="#1b2540">.cycleCount         resets so far</text>

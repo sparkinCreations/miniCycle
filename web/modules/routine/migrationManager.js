@@ -74,11 +74,11 @@ function assertInjected(name, value) {
 }
 
 // ==========================================
-// 🆕 SCHEMA 2.5 INITIALIZATION
+// 🆕 FRESH-INSTALL DOCUMENT (SCHEMA.CURRENT)
 // ==========================================
 
 /**
- * Create initial Schema 2.5 data structure
+ * Create the initial state document for a fresh install (SCHEMA.CURRENT)
  * Used for first-time users or fresh start
  *
  * @public

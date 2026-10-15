@@ -61,7 +61,7 @@ const morningRoutine = {
 |-------------|--------|
 | Strict DI | 100% ✅ |
 | Zero window.* globals | 100% ✅ |
-| Schema Version | 2.5 |
+| Schema Version | 2.6 |
 | Test Pass Rate | 100% ✅ |
 | Browser Support | Modern + ES5 |
 
@@ -76,7 +76,7 @@ const morningRoutine = {
 
 ```
 Frontend: Pure Vanilla JS (ES6+), HTML5, CSS3
-Data: localStorage, JSON Schema 2.5, .mcyc export
+Data: localStorage, JSON Schema 2.6, .mcyc export
 PWA: Service Worker v109, Cache-first, Offline
 ```
 
@@ -259,11 +259,11 @@ function assertInjected(name, fn) {
 
 ---
 
-## 📊 Data Schema 2.5
+## 📊 Data Schema 2.6
 
 ```javascript
 {
-    schemaVersion: "2.5",
+    schemaVersion: "2.6",
 
     metadata: {
         lastModified: 1696723445123,
@@ -271,9 +271,9 @@ function assertInjected(name, fn) {
     },
 
     data: {
-        cycles: {
-            "cycle-abc123": {
-                name: "Morning Routine",
+        routine: {
+            "routine-abc123": {          // keyed by a generated id
+                title: "Morning Routine",    // display name (there is no `name`)
                 cycleCount: 42,
                 autoReset: true,
                 deleteCheckedTasks: false,
@@ -306,7 +306,7 @@ function assertInjected(name, fn) {
     },
 
     appState: {
-        activeCycleId: "cycle-abc123",
+        activeRoutineId: "routine-abc123",
         currentMode: "auto-cycle",  // or "manual-cycle", "todo-mode"
         ui: { moveArrowsVisible: true, activeTaskId: null }
     },
@@ -496,7 +496,7 @@ git push origin main
 const newTask = {
     // ... existing properties
     myCustomProperty: "custom value",
-    schemaVersion: 2.5
+    schemaVersion: 2       // per-task shape version is a NUMBER (the document's is the string "2.6")
 };
 
 // 2. Update addTask function
@@ -807,7 +807,7 @@ window.exportDebugData()                 // Debug package
 3. **Recurring Tasks** - Template-based, checked every 15s, ONE task per catch-up (cycle-based, not project-based)
 4. **Undo/Redo** - State snapshots with max 50 history
 5. **Modules** - 4 patterns: Static, Simple, Resilient, Strict Injection
-6. **Schema 2.5** - Current data format with auto-migration
+6. **Schema 2.6** - Current data format with auto-migration
 7. **PWA** - Service Worker v109, offline-first, cache strategy
 8. **No Build** - Pure vanilla JS, edit and refresh
 9. **33 Modules** - 74.8% reduction achieved! ✅ Modularization complete!

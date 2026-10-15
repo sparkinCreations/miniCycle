@@ -25,7 +25,7 @@ miniCycle is a **routine manager** that helps users build and maintain repeatabl
 ### Architecture
 - **[DEPENDENCY_MAP.md](architecture/DEPENDENCY_MAP.md)** - Actual module dependencies and global usage
 - **[APPINIT_EXPLAINED.md](architecture/APPINIT_EXPLAINED.md)** - 2-phase initialization system
-- **[DATA_SCHEMA_GUIDE.md](reference/DATA_SCHEMA_GUIDE.md)** - Schema 2.5 structure
+- **[DATA_SCHEMA_GUIDE.md](reference/DATA_SCHEMA_GUIDE.md)** - Schema 2.6 structure
 
 ### Development
 - **[DEVELOPMENT_WORKFLOW.md](working-on-code/DEVELOPMENT_WORKFLOW.md)** - Making changes, testing, deployment
@@ -130,17 +130,17 @@ await appInit.waitForCore();
 await appInit.waitForApp();
 ```
 
-### 3. Data Schema (2.5)
+### 3. Data Schema (2.6)
 
 ```javascript
 {
-  schemaVersion: "2.5",   // document version is a STRING (per-task version is the number 2)
+  schemaVersion: "2.6",   // document version is a STRING (per-task version is the number 2)
   metadata: { lastModified, ... },
   data: {
-    cycles: {
-      [cycleId]: {
-        name: string,
-        tasks: Task[],
+    routine: {
+      [routineId]: {            // keyed by a generated id
+        title: string,          // the display name (there is no `name`)
+        tasks: Task[],          // task.priority is a level; task.autoClear a per-mode map
         cycleCount: number,
         autoReset: boolean,
         deleteCheckedTasks: boolean,
@@ -149,7 +149,7 @@ await appInit.waitForApp();
       }
     }
   },
-  appState: { activeCycleId: string },
+  appState: { activeRoutineId: string },
   settings: { theme, darkMode, ... }
 }
 ```

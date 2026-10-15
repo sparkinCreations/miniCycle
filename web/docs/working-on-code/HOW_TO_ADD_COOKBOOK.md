@@ -515,7 +515,7 @@ taskList.addEventListener('click', (e) => {
 
 ### Step 1: Create the .mcyc file
 
-Add a new file to `examples/sample-routines/`. Use the full Schema 2.5 format with **all fields** -- copy an existing sample as a template.
+Add a new file to `examples/sample-routines/`. Use the full Schema 2.6 format with **all fields** (`priority` as a level, `autoClear` as a per-mode map) -- copy an existing sample as a template.
 
 **Title must include an emoji** (at the start or end):
 ```json

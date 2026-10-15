@@ -262,7 +262,7 @@ For a comprehensive understanding of miniCycle's folder structure, see **[FOLDER
 3. **Recurring Tasks** - Template-based, checked every 15s
 4. **Undo/Redo** - Per-cycle history with IndexedDB persistence
 5. **Modules** - 4 patterns: Static, Simple Instance, Resilient, Strict Injection
-6. **Schema 2.5** - Current data format with auto-migration
+6. **Schema 2.6** - Current data format with auto-migration
 7. **Domain Organization** - Code grouped by feature, not by technical layer
 
 ---

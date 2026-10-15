@@ -695,7 +695,7 @@ task().refresh?.();
 - Fallbacks at three levels (cycle → global → hardcoded)
 
 **Schema Version:**
-- Still 2.5 (additive change, not breaking)
+- No bump needed (additive change, shipped on 2.5 and carried into 2.6 unchanged)
 - No migration needed
 
 ### Upgrade Path

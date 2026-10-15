@@ -234,7 +234,7 @@ open http://localhost:8080/tests/module-test-suite.html
 
 ## 9. Versioning & Schema Migration
 
-- Schema version is tracked in AppState (currently 2.5)
+- Schema version is tracked in AppState (currently 2.6)
 - Always bump `schemaVersion` and include backward transformation logic
 - See [SCHEMA_2_6.md](../reference/SCHEMA_2_6.md) for the current data structure
 

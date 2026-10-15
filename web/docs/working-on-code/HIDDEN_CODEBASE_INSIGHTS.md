@@ -373,30 +373,30 @@ this.deps.updateSearchVisibility?.(tasksArray.length);
 ### 5.2 Schema Version is a String
 
 ```javascript
-schemaVersion: "2.5"
+schemaVersion: "2.6"
 ```
 
-String comparison works (`"2.5" === "2.5"`), but if you ever need version comparison:
+String comparison works (`"2.6" === "2.6"`), but if you ever need version comparison:
 
 ```javascript
-"2.5" > "2.10"  // true (wrong! "5" > "1" alphabetically)
+"2.6" > "2.10"  // true (wrong! "6" > "1" alphabetically)
 ```
 
 **Recommendation:** Use numeric comparison or semver library if needed.
 
 ---
 
-### 5.3 Cycle IDs Are Human-Readable Names
+### 5.3 Cycle IDs Are Human-Readable Names — ✅ resolved Sep 2026 (Schema 2.6)
+
+Until Schema 2.6 the routine map was keyed by the display name:
 
 ```javascript
-activeCycleId: "Morning Routine"  // The actual cycle name
+activeCycleId: "Morning Routine"  // was the actual cycle name
 ```
 
-Most apps use UUIDs. This works until someone:
-- Creates two cycles with the same name
-- Renames a cycle (breaks all references)
-
-You handle renames, but it's fragile.
+Two routines with the same name collided and a rename had to rekey every reference.
+Since 2.6 routines are keyed by a generated id (`activeRoutineId: "routine-…"`) and
+`title` holds the name; `routine/schemaMigration26.js` rekeys older documents once at boot.
 
 ---
 
@@ -590,10 +590,10 @@ Event handlers created inside a render function capture variables from the rende
 
 ```javascript
 // ❌ BROKEN — activeCycleId captured at render time
-const activeCycleId = state?.appState?.activeRoutineId;  // e.g. "Morning Routine"
+const activeCycleId = state?.appState?.activeRoutineId;  // e.g. "routine-1789760998636-bqphapbbc"
 
 radio.addEventListener('change', () => {
-    vtm.setRoutineTheme(activeCycleId, themeId);  // Still "Morning Routine" even after switching
+    vtm.setRoutineTheme(activeCycleId, themeId);  // still the OLD routine's id even after switching
 });
 ```
 

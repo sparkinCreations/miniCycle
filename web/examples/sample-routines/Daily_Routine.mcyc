@@ -7,12 +7,11 @@
       "text": "🛏️ Make the bed",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -23,12 +22,11 @@
       "text": "🪥 Brush teeth & wash face",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -39,12 +37,11 @@
       "text": "💧 Drink a glass of water",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -55,12 +52,11 @@
       "text": "🍳 Eat breakfast",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -71,12 +67,11 @@
       "text": "📝 Review today's tasks & priorities",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -87,12 +82,11 @@
       "text": "🏋️ Exercise or stretch (20+ min)",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -103,12 +97,11 @@
       "text": "🧹 Tidy up living space (10 min)",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -119,12 +112,11 @@
       "text": "📬 Check & respond to messages",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -135,12 +127,11 @@
       "text": "🍽️ Eat lunch",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -151,12 +142,11 @@
       "text": "🚶 Get outside — walk or fresh air break",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -167,12 +157,11 @@
       "text": "📖 Read or learn something new (15+ min)",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -183,12 +172,11 @@
       "text": "🍲 Prepare & eat dinner",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -199,12 +187,11 @@
       "text": "🧼 Clean up kitchen & dishes",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -215,12 +202,11 @@
       "text": "📵 Wind down — screens off 30 min before bed",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
