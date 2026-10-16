@@ -1,3 +1,7 @@
+## [2.618] - 2026-10-16
+- docs(legal): privacy policy 2.7 and terms name the device backup folder
+
+
 ## [2.617] - 2026-10-16
 - feat(focus-view): keyboard focus on the exit button arms the help-tip dwell too
 - feat(focus-view): Help window names the exit button when the pointer rests on it
