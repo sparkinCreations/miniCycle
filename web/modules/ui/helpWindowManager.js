@@ -75,6 +75,7 @@ export class HelpWindowManager {
         this.sideLayoutEnabled = false;
         this._pendingTimeouts = [];
         this._customizerTipShownOnHover = false;
+        this._focusExitTipShownOnHover = false;
 
         this.init();
     }
@@ -461,6 +462,39 @@ export class HelpWindowManager {
             this._customizerTipShownOnHover = true;
         }
 
+        this._showTransientTip('help.customizerTip');
+    }
+
+    /**
+     * Shows a tip naming what the Focus View exit button does. Fired by
+     * focusMode when the pointer rests on the button (UI_TIMEOUTS.HOVER_TIP_DWELL),
+     * once per page load — the glyph changed from × to inward brackets in
+     * Oct 2026 and the one-time "moved" notice does not re-fire for users who
+     * already saw it, so this is where they learn the new icon.
+     * @param {'hover'} trigger - Only 'hover' today; shown once per page reload
+     * @returns {void}
+     */
+    showFocusExitTip(trigger) {
+        if (!this.helpWindow) return;
+
+        if (trigger === 'hover') {
+            if (this._focusExitTipShownOnHover) return;
+            this._focusExitTipShownOnHover = true;
+        }
+
+        this._showTransientTip('help.focusExitTip');
+    }
+
+    /**
+     * Replace the status line with a one-line tip for 10 s, then restore it.
+     * Shared by showCustomizerTip() and showFocusExitTip(); never interrupts
+     * the cycle-complete message. Holds the isShowingModeDescription lock the
+     * same way showModeDescription() does (see clearTemporaryMessage()).
+     * @param {string} labelKey - getLabel() key of the tip text
+     * @returns {void}
+     * @private
+     */
+    _showTransientTip(labelKey) {
         // Don't interrupt cycle complete message
         if (this.isShowingCycleComplete) return;
 
@@ -473,7 +507,7 @@ export class HelpWindowManager {
         this.isShowingModeDescription = true;
         this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
 
-        const tipText = getLabel('help.customizerTip');
+        const tipText = getLabel(labelKey);
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
                 <p style="margin: 0; line-height: 1.4;">${tipText}</p>

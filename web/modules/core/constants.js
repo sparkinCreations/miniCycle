@@ -191,6 +191,7 @@ export const UI_TIMEOUTS = Object.freeze({
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
+    HOVER_TIP_DWELL: 600,          // 600ms - A pointer must rest on a control this long before the Help window shows its tip (focusMode exit button); a pass-through sweep never fires it
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
     TITLE_SCREEN_USECASE_HOLD: 2800,       // 2800ms - Welcome Screen use-case crossfade. Matches the first-run screen's inline rotator: it is the same line doing the same job, and the two screens are meant to feel identical.
     TIP_ARCHIVE_SLIDE_HOLD: 8000,          // 8000ms - How long one tip stays up in the tip archive before auto-advancing. Matches FIRST_RUN_WELCOME_SLIDE_HOLD: same job (read one short line, unhurried) so the two should not drift apart. Deliberately far slower than the 4s BOOT rotator, which the user is not expected to read completely.
