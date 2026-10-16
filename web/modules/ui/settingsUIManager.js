@@ -531,7 +531,11 @@ export function setupThreeDotsToggle() {
 
     const settings = currentSettings();
     if (!settings) {
-        console.error('State data required for three dots toggle');
+        // Expected on every first run, not a fault: state is not ready until the
+        // choice screen persists a routine. Stay unlatched and return quietly —
+        // openSettings() re-runs initAllToggles(), and the user cannot reach this
+        // toggle before state exists. Logging console.error here made every brand-
+        // new user's console show an error for a condition the retry handles.
         return;
     }
 
@@ -547,7 +551,7 @@ export function setupThreeDotsToggle() {
     //
     // Measured Oct 2026: the checkbox flipped to checked:true, showThreeDots
     // stayed false in storage, the body class never applied, zero three-dots
-    // buttons were built — with only the console.error above as a signal. It was
+    // buttons were built — with only a console.error (since removed) as a signal. It was
     // found by hand, not by a gate, because a flipped checkbox looks like success.
     //
     // A missing ELEMENT (above) is effectively permanent, so latching past it
