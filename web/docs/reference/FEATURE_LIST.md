@@ -268,7 +268,7 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Automatic Backups | IndexedDB snapshot on every app open and whenever the app is hidden (keeps last 5, skipped when unchanged), plus one daily copy (keeps last 10) | `storage/backupManager.js` |
-| Daily backup files (desktop, Android) | One backup file per day in Documents/miniCycle Backups (desktop) or Documents/miniCycle (Android), written on open and on hide, keeps 7, survives uninstall | `storage/backupFolder.js` |
+| Daily backup files (desktop, Android, iPhone) | One backup file per day in Documents/miniCycle Backups (desktop), Documents/miniCycle (Android) or Files → On My iPhone → miniCycle → Backups (iPhone), written on open and on hide, keeps 7; survives uninstall on desktop and Android | `storage/backupFolder.js` |
 | Automatic backups list | Settings → Data Management → Show automatic backups: newest snapshots and daily files, named as automatic, each restorable | `ui/backupRestoreManager.js` |
 | Manual Backups | Create backups on demand | `storage/backupManager.js` |
 | Backup Restore | Restore from any backup point | `ui/backupRestoreManager.js` |

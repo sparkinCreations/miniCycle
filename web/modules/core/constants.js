@@ -727,11 +727,15 @@ export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
  * (storage/backupFolder.js): desktop → Documents/<DESKTOP_DIR> through the
  * shell's IPC (the folder name is also spelled in desktop/src/backupFiles.js —
  * the shell is a separate package); Android → the public Documents/<ANDROID_DIR>
- * folder through the Filesystem plugin. One file per local day.
+ * folder through the Filesystem plugin; iPhone → <IOS_DIR> inside the app's own
+ * Documents folder, which the two Files keys in Info.plist make visible under
+ * On My iPhone → miniCycle (and which is deleted with the app). One file per
+ * local day.
  */
 export const BACKUP_FOLDER = Object.freeze({
     DESKTOP_DIR: 'miniCycle Backups',
     ANDROID_DIR: 'miniCycle',
+    IOS_DIR: 'Backups',
     FILE_PREFIX: 'miniCycle-auto-backup-',
     FILE_PATTERN: /^miniCycle-auto-backup-\d{4}-\d{2}-\d{2}\.json$/
 });

@@ -47,5 +47,12 @@
 	</array>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<!-- The app's Documents folder shows in the Files app (On My iPhone → miniCycle)
+	     so the daily backup files web/modules/storage/backupFolder.js writes there
+	     are visible, and files can be opened in place rather than copied. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<key>LSSupportsOpeningDocumentsInPlace</key>
+	<true/>
 </dict>
 </plist>

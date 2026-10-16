@@ -4,7 +4,7 @@
 
 **Effective Date:** October 2, 2025
 **Last Updated:** October 16, 2026
-**Version:** 2.7
+**Version:** 2.8
 **miniCycle Version:** 2.618
 
 > This file mirrors the published policy. The canonical text is `web/legal/privacy.html` (minicycle.app/legal/privacy); when the two differ, the HTML wins.
@@ -50,7 +50,7 @@ All data is stored **in your browser** using:
 
 ---
 
-On desktop and Android, miniCycle also writes one backup file per day to a folder you can see (Documents/miniCycle Backups on desktop, Documents/miniCycle on Android). These are plain files on your device: you can open, copy or delete them, and they remain if the app is removed. If your device backs up its Documents folder to a service you have set up, those files are included by your device, not by miniCycle; the app never sends them anywhere and cannot see where they go. On Android, other apps you have given file access can read that folder.
+On desktop, Android and iPhone, miniCycle also writes one backup file per day to a folder you can see (Documents/miniCycle Backups on desktop, Documents/miniCycle on Android, and the Files app under On My iPhone → miniCycle → Backups on iPhone). These are plain files on your device: you can open, copy or delete them. On desktop and Android they remain if the app is removed; on iPhone they are removed with the app. If your device backs up its Documents folder to a service you have set up, those files are included by your device, not by miniCycle; the app never sends them anywhere and cannot see where they go. On Android, other apps you have given file access can read that folder.
 
 ---
 

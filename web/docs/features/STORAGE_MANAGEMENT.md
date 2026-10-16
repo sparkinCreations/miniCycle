@@ -110,10 +110,12 @@ The quota gates below govern **user-initiated** growth. Several system writers s
 **Daily backup files on the device (desktop, Android).** `storage/backupFolder.js` writes one backup FILE per
 local day — the same JSON the Backup button writes — to a folder the user can see: `Documents/miniCycle Backups`
 on desktop (through the shell's IPC, `desktop/src/backupFiles.js`) and the public `Documents/miniCycle` folder on
-Android (Filesystem plugin). Written on app open and whenever the app is hidden, rewritten through the day only when
+Android (Filesystem plugin), and `Backups` inside the app's Documents folder on iPhone — shown in the Files app under
+On My iPhone → miniCycle thanks to `UIFileSharingEnabled` + `LSSupportsOpeningDocumentsInPlace` in Info.plist, and
+deleted with the app. Written on app open and whenever the app is hidden, rewritten through the day only when
 the state changed, newest `LIMITS.BACKUP_FOLDER_KEEP` (7) kept. Unlike the IndexedDB snapshots these survive an
-uninstall and a cleared storage, and nothing leaves the device. No adapter on the web or on iOS (the iOS folder would
-be invisible until the Files keys are in the plist), so there every call is a no-op.
+uninstall (desktop, Android) and a cleared storage, and nothing leaves the device. No adapter on the web, so there every
+call is a no-op.
 
 Since Oct 2026 the newest few IndexedDB snapshots (`LIMITS.AUTO_BACKUPS_SHOWN`) are listed under Settings →
 Data Management → **Show automatic backups**, every row named as an automatic backup rather than a file the user
