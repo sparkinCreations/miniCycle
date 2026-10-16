@@ -124,11 +124,7 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
  * touch the row only appears after a deliberate ⋮ tap or long-press, so a tap
  * landing near it is aimed at it.
  *
- * Known limit: the FIRST task's row sits 20px above that task, but
- * .task-list-container (overflow-y: auto) has only 10px of top padding, so the
- * top 6px of those buttons, and all of their upward hit box, is clipped by the
- * scroll container. Fixing it is a layout call (more list padding, or a lower
- * row for the first task), not a hit-box one.
+ * The FIRST task's row needs room above the list, see the next rule.
  */
 @media (pointer: coarse) {
     .task-options .task-btn {
@@ -146,6 +142,33 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
         left: calc(var(--space-1) / -2 - 1px);
         right: calc(var(--space-1) / -2 - 1px);
     }
+}
+
+/* FIRST TASK — make room for its options row only while that row is open.
+ *
+ * The row sits 20px above its task (.task-options top: -20px), but
+ * .task-list-container scrolls (overflow-y: auto) and has only 10px of top
+ * padding, so for the first task the top 6px of every button was clipped by
+ * the scroll container (measured Oct 2026). A z-index cannot fix that; content
+ * outside a scroll box is cut, not covered. Permanent extra padding would push
+ * every list down 10px for a row that is usually closed, so the padding grows
+ * only while the first task's row is open, and the list shifts 10px for that.
+ *
+ * "Open" deliberately excludes the HOVER path. In hover mode a plain
+ * mouseenter also adds .task-options-visible; padding that appeared on hover
+ * would slide the task out from under the cursor, the mouseleave would close
+ * the row, the padding would go, and the task would come back under the
+ * cursor: a flicker loop. So the padding follows only the deliberate opens:
+ *   - three-dots mode, where only the ⋮ tap can add .task-options-visible
+ *     (TaskOptionsVisibilityController.canHandle);
+ *   - a long-press, which marks the task itself .long-pressed.
+ * 20px shows the buttons whole. The extra 11px of touch hit box above them
+ * stays clipped on this one row; reaching it would mean a 21px shift.
+ * Browsers without :has() keep the old, clipped look; nothing breaks.
+ */
+body.show-three-dots-enabled .task-list-container:has(> #taskList > .task.is-first-task > .task-options.task-options-visible),
+.task-list-container:has(> #taskList > .task.is-first-task.long-pressed) {
+    padding-top: var(--space-5);
 }
 
 /* Button color variants */
