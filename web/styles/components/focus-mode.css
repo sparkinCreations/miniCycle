@@ -653,14 +653,22 @@ body.focus-mode #focus-mode-mode-item::after {
          + .input-bar-visible| .empty-state-hint-focus-visible
 
    `body.input-bar-visible` is maintained by modeManager's
-   _updateTaskInputVisibility(), the single choke point for that state. */
+   _updateTaskInputVisibility(), the single choke point for that state.
+
+   None of the four may show under body.all-tasks-complete. That class means the
+   routine HAS tasks and every one sits in the completed dropdown, so the empty
+   list gets "All tasks complete!" copy instead (task-list.css). Its hide rule
+   is only (0,2,1), and these show rules carry #empty-state, so they won: with
+   the input bar up (the default), "Type your first task in the bar above and
+   press Add" appeared under "All tasks complete!" at the end of every cycle
+   (measured Oct 2026). Each show rule therefore excludes the class itself. */
 
 /* --- Home view, input bar showing --- */
 body.input-bar-visible:not(.focus-mode) #empty-state .empty-state-hint {
     display: none;
 }
 
-body.input-bar-visible:not(.focus-mode) #empty-state .empty-state-hint-visible {
+body.input-bar-visible:not(.focus-mode):not(.all-tasks-complete) #empty-state .empty-state-hint-visible {
     display: block;
 }
 
@@ -670,11 +678,11 @@ body.focus-mode #empty-state .empty-state-hint-visible {
     display: none;
 }
 
-body.focus-mode:not(.input-bar-visible) #empty-state .empty-state-hint-focus {
+body.focus-mode:not(.input-bar-visible):not(.all-tasks-complete) #empty-state .empty-state-hint-focus {
     display: block;
 }
 
-body.focus-mode.input-bar-visible #empty-state .empty-state-hint-focus-visible {
+body.focus-mode.input-bar-visible:not(.all-tasks-complete) #empty-state .empty-state-hint-focus-visible {
     display: block;
 }
 
