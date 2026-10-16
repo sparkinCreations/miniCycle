@@ -214,7 +214,7 @@ export class ModeManager {
                 currentCycle, // ✅ Required for recurring button handler
                 activeCycle: activeCycleId, // ✅ Also include activeCycleId
                 recurring: task.classList.contains(DOM_CLASSES.RECURRING),
-                highPriority: task.classList.contains(DOM_CLASSES.HIGH_PRIORITY)
+                hasPriority: task.classList.contains(DOM_CLASSES.HIGH_PRIORITY)
             };
 
             // Create new button container
@@ -1325,7 +1325,7 @@ export class ModeManager {
         const safeAdd = this.deps.safeAddEventListener;
 
         deleteCheckedTasks._deleteCheckedTasksModeHandler = async (event) => {
-            // ✅ Schema 2.5 only
+            // ✅ Reads the state document only
 
             const state = self.deps.AppState?.get?.();
             if (!state) {

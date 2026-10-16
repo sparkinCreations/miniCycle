@@ -1,7 +1,7 @@
 /**
  * miniCycle State Management Module
  *
- * Central state manager for the application using Schema 2.5 format.
+ * Central state manager for the application using the Schema 2.6 document.
  * Handles loading, updating, and persisting state to localStorage with
  * debounced saves, subscriber notifications, and concurrent modification detection.
  *
@@ -76,7 +76,7 @@ export function setAppStateDependencies(dependencies) {
 /**
  * Central state manager for miniCycle application
  *
- * Manages Schema 2.5 state with:
+ * Manages the Schema 2.6 state document with:
  * - Debounced localStorage persistence
  * - Subscriber pattern for reactive updates
  * - Concurrent modification detection
@@ -104,7 +104,7 @@ class MiniCycleState {
             showNotification: mergedDeps.showNotification || (() => {}),
             storage: mergedDeps.storage || localStorage,
             loadInitialData: mergedDeps.loadInitialData || (() => null),
-            // Wired by coreBoot to migrationManager.createInitialSchema25Data, but
+            // Wired by coreBoot to migrationManager.createInitialSchemaData, but
             // nothing in this class ever calls it — and that function writes
             // miniCycleData to storage rather than returning it, so a caller would
             // get undefined anyway. Kept as a pass-through so the boot wiring stays
@@ -211,7 +211,7 @@ class MiniCycleState {
     }
 
     /**
-     * Reload data from localStorage (used after createInitialSchema25Data)
+     * Reload data from localStorage (used after createInitialSchemaData)
      * Unlike init(), this will reload even if already initialized
      * @returns {Schema25Data|null} The loaded data or null if not found/invalid
      */
@@ -225,7 +225,7 @@ class MiniCycleState {
                 } catch (parseError) {
                     console.warn('⚠️ Corrupted data in localStorage — attempting recovery', parseError);
                     const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
-                    if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                    if (recovery.recovered && this.validateStateStructure(recovery.data)) {
                         this.data = this._ensureMetadata(recovery.data);
                         this._persistRepairedData(this.data);
                         this.isInitialized = true;
@@ -251,7 +251,7 @@ class MiniCycleState {
                     return null;
                 }
                 parsed = this._migrateIfOlder(parsed, stored);
-                if (this.validateSchema25Structure(parsed)) {
+                if (this.validateStateStructure(parsed)) {
                     this.data = this._ensureMetadata(parsed);
                     this.isInitialized = true;
                     this._registerPersistenceListeners();
@@ -324,7 +324,7 @@ class MiniCycleState {
             // Note: Interrupted test recovery is handled by coreBoot.js BEFORE appState loads
             // This ensures localStorage already has the correct data when we read it here
 
-            // ✅ Check if Schema 2.5 data already exists
+            // ✅ Check if a stored document already exists
             let existingData = null;
             let stored = null;
             try {
@@ -341,7 +341,7 @@ class MiniCycleState {
             } catch (parseError) {
                 console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
                 const recovery = stored ? recoverCorruptedData(stored, { storage: this.deps.storage }) : { recovered: false };
-                if (recovery.recovered && this.validateSchema25Structure(recovery.data)) {
+                if (recovery.recovered && this.validateStateStructure(recovery.data)) {
                     existingData = recovery.data;
                     this._persistRepairedData(existingData);
                     this._notifyDataRepaired(recovery);
@@ -529,7 +529,7 @@ class MiniCycleState {
                 }
                 // Never adopt malformed external data — a corrupt write from
                 // another tab would otherwise replace valid in-memory state.
-                if (!this.validateSchema25Structure(externalData)) {
+                if (!this.validateStateStructure(externalData)) {
                     console.warn('⚠️ Multi-tab sync: External data failed schema validation — ignoring');
                     return;
                 }
@@ -578,7 +578,7 @@ class MiniCycleState {
 
     /**
      * Guarantee an adopted state object carries a metadata block. update()
-     * hard-dereferences data.metadata.lastModified, but validateSchema25Structure
+     * hard-dereferences data.metadata.lastModified, but validateStateStructure
      * doesn't require metadata — so restored/salvaged/external data without it
      * would make every subsequent update() throw (app becomes read-only).
      * @param {Schema25Data} data - State object being adopted
@@ -643,14 +643,14 @@ class MiniCycleState {
             return null;
         }
         // ✅ Validate the structure before using
-        if (this.validateSchema25Structure(parsed)) return parsed;
+        if (this.validateStateStructure(parsed)) return parsed;
 
         // Parsed fine but wrong shape — try to salvage before discarding.
         console.warn('⚠️ Existing data structure is invalid — attempting recovery');
         const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
         if (recovery.recovered) {
             recovery.data = this._migrateIfOlder(recovery.data, null);
-            if (this.validateSchema25Structure(recovery.data)) {
+            if (this.validateStateStructure(recovery.data)) {
                 this._persistRepairedData(recovery.data);
                 this._notifyDataRepaired(recovery);
                 return recovery.data;
@@ -756,14 +756,14 @@ class MiniCycleState {
     }
 
     /**
-     * Validate that data conforms to Schema 2.5 structure
+     * Validate that data conforms to the state document structure (Schema 2.6)
      * @param {Object} data - Data to validate
      * @returns {boolean} True for the CURRENT stored shape (SCHEMA.CURRENT, 2.6)
      * @private
      */
-    validateSchema25Structure(data) {
-        // Name kept from 2.5 for its call sites and tests; the shape it checks
-        // is the current one. An older document is migrated BEFORE it gets
+    validateStateStructure(data) {
+        // Renamed in Oct 2026 (the old name carried a 2.5 suffix): the shape it checks
+        // is the CURRENT one. An older document is migrated BEFORE it gets
         // here (_migrateIfOlder), so this is a strict "current shape" check.
         try {
             return data &&
@@ -780,7 +780,7 @@ class MiniCycleState {
     
     /**
      * Create minimal fallback state for recovery scenarios
-     * @returns {Schema25Data} Minimal valid Schema 2.5 state
+     * @returns {Schema25Data} Minimal valid state for SCHEMA.CURRENT
      * @private
      */
     createMinimalFallbackState() {
@@ -959,7 +959,7 @@ class MiniCycleState {
 
                         // Never adopt malformed stored data — overwriting it with our
                         // valid state is the correct outcome in that case.
-                        if (isForeignWrite && this.validateSchema25Structure(storedData)) {
+                        if (isForeignWrite && this.validateStateStructure(storedData)) {
                             console.warn('⚠️ Real concurrent modification detected!', {
                                 storedTimestamp,
                                 ourTimestamp,

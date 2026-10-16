@@ -385,9 +385,15 @@ export const DEFAULT_LABELS = deepFreeze({
         taskInputHiddenFocus:   'Task input hidden. Press the ⋯ menu above to show it again.',
         // Shown once when a first-run user lands in Focus View after choosing
         // "Create My First Routine" / "Load a Sample". Names the ⋯ menu on
-        // purpose — exiting is the excuse to make them discover the menu that
-        // holds every focus-mode action.
-        focusViewFirstRun:      'To keep things simple, we start you in Focus View. Press the ⋯ menu to exit.',
+        // purpose — it is the one place that holds every focus-mode action,
+        // including Exit Focus View. The last sentence teaches that toasts are
+        // draggable and the position persists, at the one moment the default
+        // spot sits over the task input. Device-variant: the touch gesture
+        // starts with a press-and-hold, the pointer gesture is a plain drag.
+        focusViewFirstRun:      {
+            touch:   'You\'re in Focus View. Everything else is in the ⋯ menu. Press and hold to drag this message anywhere, and the app will remember its location.',
+            pointer: 'You\'re in Focus View. Everything else is in the ⋯ menu. Drag this message anywhere and the app will remember its location.'
+        },
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
         featureUnavailable:     'Feature temporarily unavailable',
@@ -651,6 +657,10 @@ export const DEFAULT_LABELS = deepFreeze({
         preMigrationDeleted:     'The copy from before the update was deleted.',
         preMigrationDownloaded:  'Downloaded the copy from before the update.',
         preMigrationUnreadable:  'The saved copy could not be read.',
+        autoBackupUnreadable:    'That automatic backup could not be read. Nothing was changed.',
+        autoBackupsListFailed:   'The automatic backups could not be listed.',
+        autoBackupsUnavailable:  'Automatic backups are not available on this device.',
+        autoBackupFileUnreadable: 'That backup file could not be read. Nothing was changed.',
 
         // Import/export notifications
         fileTooLarge:            'File too large. Maximum size is 10MB.',
@@ -982,6 +992,10 @@ export const DEFAULT_LABELS = deepFreeze({
         preMigrationDeleteTitle:    'Delete the copy from before the update',
         preMigrationDeleteMessage:  'This removes the copy saved on {date}. You will not be able to go back to it.',
         preMigrationDeleteConfirm:  'Delete',
+        autoBackupRestoreTitle:     'Restore an automatic backup',
+        autoBackupRestoreMessage:   'Your current routines, settings and progress will be replaced by the automatic backup miniCycle saved on {date}. Anything changed since then will be lost. A safety copy is saved first.',
+        autoBackupFileRestoreTitle:   'Restore a backup file',
+        autoBackupFileRestoreMessage: 'Your current routines, settings and progress will be replaced by the backup file miniCycle saved on {date} in {folder}. Anything changed since then will be lost. A safety copy is saved first.',
         restoreNoSafetyBackupTitle:   'No Safety Backup',
         restoreNoSafetyBackupMessage: 'A safety backup of your current data could not be created. If you restore now, your current routines will be replaced with no way to get them back. Restore anyway?',
         restoreNoSafetyBackupConfirm: 'Restore Anyway',
@@ -1372,6 +1386,23 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreAll:           'Restore All Routines',
         // The copy AppState kept before a schema migration (Settings → Data Management)
         preMigrationCopyDesc: 'A copy of your data from before the update on {date} is kept on this device.',
+        // Automatic backups: the IndexedDB snapshots BackupManager keeps on this
+        // device. Every string says they are automatic, not files the user saved.
+        autoBackupsShow:        'Show automatic backups',
+        autoBackupsHide:        'Hide automatic backups',
+        autoBackupsNote:        'miniCycle saves a snapshot of your data on this device each time you open or leave the app, plus one copy a day, and keeps the newest few here. They are automatic backups, not files you saved, and they go with the app if its storage is cleared. Restoring one replaces your current data; a safety copy is saved first.',
+        autoBackupsEmpty:       'No automatic backups yet. One is saved the next time you open the app.',
+        autoBackupsListLabel:   'Automatic backups',
+        autoBackupKindSession:  'Automatic backup, saved when the app opened',
+        autoBackupKindSessionHide: 'Automatic backup, saved when you left the app',
+        autoBackupKindManual:   'Safety copy, saved before a restore or reset',
+        autoBackupKindAuto:     'Automatic backup, daily',
+        autoBackupKindFile:     'Backup file in {folder}',
+        autoBackupFileMeta:     '{date} · {size} KB',
+        autoBackupsFolderNote:  'A backup file is also written once a day to {folder} on this device. Those files stay even if the app is removed or its storage is cleared, and nothing leaves the device.',
+        autoBackupMeta:         '{date} · {count} {routines} · {size} KB',
+        autoBackupRestore:      'Restore',
+        autoBackupRestoreAria:  'Restore the automatic backup from {date}',
         preMigrationDownload: 'Download the copy',
         preMigrationRestore:  'Restore the copy',
         preMigrationDelete:   'Delete the copy',
@@ -1667,7 +1698,7 @@ export const DEFAULT_LABELS = deepFreeze({
         enterTitle:     'Hide distractions and focus on tasks',
         exit:           'Exit Focus View',
         exitTitle:      'Return to Home View',
-        exitMovedNotice: 'The × to leave Focus View has moved: it now sits at the bottom right, just under the routine list.',
+        exitMovedNotice: 'The button to leave Focus View has moved: it now sits at the bottom right, just under the routine list, and shows inward-pointing brackets.',
         enterAria:      'Enter Focus View — hides header, navigation, and other UI elements',
         exitAria:       'Exit Focus View — return to Home View',
         activated:      'Focus View activated',
@@ -2435,6 +2466,9 @@ export const DEFAULT_LABELS = deepFreeze({
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared',
         customizerTip:     'Press the +/- button to add or remove task option buttons',
+        // Help-window tip when the pointer rests on the Focus View exit button
+        // (inward brackets): names what the icon does, once per page load.
+        focusExitTip:      'This button leaves Focus View and returns to Home View.',
         recurringRemoved:  'Recurring tasks removed — they\'ll return on schedule'
     },
 

@@ -57,6 +57,26 @@ export function getDesktopPlatform() {
  * only for diagnostics, so a payload/shell mismatch can be named.
  * @returns {string|null}
  */
+/**
+ * The shell's backup-folder API (preload `backups`), as the adapter shape
+ * storage/backupFolder.js consumes, or null outside the desktop app / on a shell
+ * too old to have it. Files live in Documents/miniCycle Backups; the shell
+ * validates names and never leaves that folder (desktop/src/backupFiles.js).
+ * @returns {{describe: function(): Promise<string>, write: function(string, string): Promise<*>, list: function(): Promise<Array<{name: string, size: number, mtime: number}>>, read: function(string): Promise<string>, remove: function(string): Promise<*>}|null}
+ */
+export function getDesktopBackupFolder() {
+    if (!isDesktopApp()) return null;
+    const api = shell().backups;
+    if (!api || typeof api.write !== 'function' || typeof api.list !== 'function') return null;
+    return {
+        describe: () => api.folder(),
+        write: (name, text) => api.write(name, text),
+        list: () => api.list(),
+        read: (name) => api.read(name),
+        remove: (name) => api.remove(name)
+    };
+}
+
 export function getDesktopShellVersion() {
     if (!isDesktopApp()) return null;
     const v = shell().shellVersion;

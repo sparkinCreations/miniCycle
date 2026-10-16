@@ -124,7 +124,7 @@ export const MODULE_MANIFESTS = {
         path: '../utils/notifications.js',
         phase: PHASES.CORE_UTILS,
         requires: ['appInit', 'GlobalUtils'],
-        optionalDeps: ['applyRecurringToTaskSchema25', 'openRecurringSettingsPanelForTask', 'updateRecurringPanel', 'vocabThemeManager'],
+        optionalDeps: ['applyRecurringToTask', 'openRecurringSettingsPanelForTask', 'updateRecurringPanel', 'vocabThemeManager'],
         provides: ['showNotification', 'showConfirmationModal', 'showPromptModal'],
         api: 'utils'
     },
@@ -295,7 +295,7 @@ export const MODULE_MANIFESTS = {
         // guards them with `|| null` for exactly that reason — declaring them `requires`
         // would assert an availability that does not hold when the sub-modules are built.
         optionalDeps: [
-            'saveTaskToSchema25', 'showNotification', 'taskCore',
+            'saveRoutineToState', 'showNotification', 'taskCore',
             'DEFAULT_TASK_OPTION_BUTTONS', 'addTask', 'checkCompleteAllButton',
             'checkMiniCycle', 'checkOverdueTasks', 'createDueDateInput',
             'enableDragAndDropOnTask', 'enableUndoSystemOnFirstInteraction',
@@ -497,7 +497,7 @@ export const MODULE_MANIFESTS = {
         // entry because featureBoot assigns it directly
         // (`deps.utils.showChoiceModal = …`) during the early notifications init,
         // which is why the depMappings route resolves but nothing declares it.
-        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
+        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'BackupFolder', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'saveBackupFileAs', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -702,7 +702,7 @@ export const MODULE_MANIFESTS = {
             'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'updateUndoRedoButtons',
             'refreshUIFromState', 'helpWindowManager', 'recurringCore',
             'showConfirmationModal', 'showPromptModal'],
-        provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveTaskToSchema25', 'handleCompleteAllTasks'],
+        provides: ['addTask', 'editTask', 'deleteTask', 'toggleTaskPriority', 'handleTaskCompletionChange', 'resetTasks', 'saveRoutineToState', 'handleCompleteAllTasks'],
         provideInstance: 'taskCore',
         api: 'task',
         after: ['taskDOM', 'cycleCompletion', 'recurringIntegration']
@@ -712,7 +712,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/routineLoader.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState'],
-        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchema25Data', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
+        optionalDeps: ['helpWindowManager', 'refreshThemeLabels', 'syncModeFromToggles', 'updateRecurringInfoLink', 'addTask', 'catchUpMissedRecurringTasks', 'checkCompleteAllButton', 'completedTasksManager', 'createInitialSchemaData', 'startReminders', 'syncAllTasksWithMode', 'taskToAddTaskOptions', 'TaskRenderer', 'updateMainMenuHeader', 'updateProgressBar', 'updateSearchVisibility', 'updateStatsPanel', 'updateThemeColor'],
         provides: ['loadMiniCycle'],
         api: 'cycle',
         after: ['taskCore']
@@ -744,7 +744,7 @@ export const MODULE_MANIFESTS = {
     focusMode: {
         path: '../ui/focusMode.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle', 'ensureModuleLoaded', 'showTaskView'],
+        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle', 'ensureModuleLoaded', 'showTaskView', 'showFocusExitTip'],
         provides: ['activateFocusMode'],
         provideInstance: 'focusMode',
         api: 'ui',
@@ -844,6 +844,17 @@ export const MODULE_MANIFESTS = {
         api: 'storage',
         optional: true,
         singleton: true
+    },
+
+    backupFolder: {
+        path: '../storage/backupFolder.js',
+        phase: PHASES.TESTING,
+        requires: ['AppState'],
+        provides: ['backupFolder'],
+        api: 'storage',
+        optional: true,
+        singleton: true,
+        after: ['backupManager']
     },
 
     testingModal: {

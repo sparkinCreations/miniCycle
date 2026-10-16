@@ -481,7 +481,7 @@ body.focus-mode #focus-mode-menu-btn {
 
 body.focus-mode #focus-mode-menu-btn { right: 16px; }
 
-/* The × exit sits in the progress row's right slot — the same 36px circle,
+/* The exit button sits in the progress row's right slot — the same 36px circle,
    same place, as the eye button that opened Focus View from Home View (the
    eye button leaves this slot on activate; see .focus-mode-btn below). It
    was a fixed top-left 52×30 button until Oct 2026; moving it here takes a
@@ -500,7 +500,6 @@ body.focus-mode #focus-mode-exit-btn {
     border: 1px solid rgba(255, 255, 255, 0.25);
     background: rgba(255, 255, 255, 0.12);
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
-    font-size: 20px;
     line-height: 1;
     cursor: pointer;
     padding: 0;
@@ -508,6 +507,13 @@ body.focus-mode #focus-mode-exit-btn {
     backdrop-filter: blur(2px);
     transition: background var(--transition-fast) ease,
                 transform var(--transition-fast) ease;
+}
+
+/* Same 20px glyph box as .focus-mode-btn svg below: the compress brackets are
+   the mirror of the eye-in-brackets, so the pair must render at one size. */
+body.focus-mode #focus-mode-exit-btn svg {
+    width: 20px;
+    height: 20px;
 }
 
 /* While the first-run welcome banner is up, hide the exit button so the

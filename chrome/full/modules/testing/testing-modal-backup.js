@@ -19,7 +19,7 @@ import { DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS } from '../core/c
 import { getLabel } from '../labels/labelResolver.js';
 // Pure, DI-free — shared with the production file-restore path so the testing
 // modal's IDB restore applies the SAME structural validation before writing.
-import { validateSchema25PayloadString } from '../utils/dataRecovery.js';
+import { validateStatePayloadString } from '../utils/dataRecovery.js';
 
 const LITE_STORAGE_KEYS = Object.freeze([
     STORAGE_KEYS.LITE_DATA,
@@ -454,15 +454,15 @@ export async function restoreFromBackup() {
                             throw new Error('Failed to load backup from IndexedDB');
                         }
 
-                        const isPortableSchema25 = isSupportedStoredVersion(restoredData) &&
+                        const isPortableSchema = isSupportedStoredVersion(restoredData) &&
                             typeof restoredData.miniCycleData === 'string';
-                        const isSchema25 = isSupportedStoredVersion(restoredData);
+                        const isSupportedSchema = isSupportedStoredVersion(restoredData);
 
-                        if (isPortableSchema25) {
+                        if (isPortableSchema) {
                             // Same structural gate as the production file-restore
                             // path — a version-string match alone let ANY payload
                             // reach localStorage.
-                            if (!validateSchema25PayloadString(restoredData.miniCycleData)) {
+                            if (!validateStatePayloadString(restoredData.miniCycleData)) {
                                 throw new Error('Backup payload failed structural validation — not restored');
                             }
                             localStorage.setItem(STORAGE_KEYS.DATA, restoredData.miniCycleData);
@@ -471,7 +471,7 @@ export async function restoreFromBackup() {
                             if (liteKeysRestored > 0) {
                                 appendToTestResults(`Restored ${liteKeysRestored} lite storage key(s)\n`);
                             }
-                        } else if (isSchema25) {
+                        } else if (isSupportedSchema) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(restoredData));
                             appendToTestResults(`Restored data to localStorage\n`);
                         } else {
@@ -488,9 +488,9 @@ export async function restoreFromBackup() {
                             throw new Error('Failed to parse backup data');
                         }
 
-                        const isSchema25 = isSupportedStoredVersion(parsed);
+                        const isSupportedSchema = isSupportedStoredVersion(parsed);
 
-                        if (isSchema25) {
+                        if (isSupportedSchema) {
                             localStorage.setItem(STORAGE_KEYS.DATA, JSON.stringify(parsed));
                             appendToTestResults(`Restored data from localStorage backup\n`);
                         } else {

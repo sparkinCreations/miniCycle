@@ -46,7 +46,7 @@ import { getRoutine, getRoutines, getActiveRoutineId, setActiveRoutineId } from 
 
 const di = createDIModule('AppInit', {
 	// For initialSetup
-	createInitialSchema25Data: optional(null),
+	createInitialSchemaData: optional(null),
 	showCycleCreationModal: optional(null),
 	getOnboardingManager: optional(null),
 	getMiniCycleState: optional(null),
@@ -70,7 +70,7 @@ const di = createDIModule('AppInit', {
 const getDeps = () => di.resolve();
 
 // Legacy _deps reference for compatibility (uses getter for late binding)
-/** @type {{createInitialSchema25Data: Function|null, showCycleCreationModal: Function|null, getOnboardingManager: Function|null, getMiniCycleState: Function|null, showNotification: Function|null, loadMiniCycle: Function|null, updateReminderButtons: Function|null, updateDueDateVisibility: Function|null, checkOverdueTasks: Function|null, organizeCompletedTasks: Function|null, startReminders: Function|null, updateThemeColor: Function|null, getElementById: Function, addBodyClass: Function, removeBodyClass: Function}} */
+/** @type {{createInitialSchemaData: Function|null, showCycleCreationModal: Function|null, getOnboardingManager: Function|null, getMiniCycleState: Function|null, showNotification: Function|null, loadMiniCycle: Function|null, updateReminderButtons: Function|null, updateDueDateVisibility: Function|null, checkOverdueTasks: Function|null, organizeCompletedTasks: Function|null, startReminders: Function|null, updateThemeColor: Function|null, getElementById: Function, addBodyClass: Function, removeBodyClass: Function}} */
 const _deps = new Proxy({}, {
 	get(_, prop) {
 		return getDeps()[prop];
@@ -522,7 +522,7 @@ class AppInit {
 				return;
 			}
 
-			_deps.createInitialSchema25Data?.();
+			_deps.createInitialSchemaData?.();
 
 			// ✅ FIX: Reload AppState so it picks up the newly created data
 			// This ensures AppState.isReady() returns true for onboarding and subsequent code
@@ -962,7 +962,7 @@ class AppInit {
 			localStorage.removeItem(STORAGE_KEYS.DATA);
 			modal.remove();
 			// Create initial data then show cycle creation modal with sample option
-			_deps.createInitialSchema25Data?.();
+			_deps.createInitialSchemaData?.();
 			const miniCycleState = _deps.getMiniCycleState?.();
 			if (miniCycleState?.reload) {
 				miniCycleState.reload();

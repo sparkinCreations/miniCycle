@@ -176,7 +176,7 @@ export function backupCorruptedData(corruptedData, storage) {
 /**
  * Lightweight structural check for salvaged data — just enough to confirm it's
  * shaped like miniCycle data (a cycles map whose entries carry task arrays).
- * AppState applies the stricter Schema 2.5 validator before actually adopting it.
+ * AppState applies the stricter state-document validator before actually adopting it.
  * @param {Object} data
  * @returns {boolean}
  */
@@ -193,7 +193,7 @@ export function validateRecoveredData(data) {
 }
 
 /**
- * Structural validation for a Schema 2.5 payload STRING (the value stored at
+ * Structural validation for a state document payload STRING (the value stored at
  * STORAGE_KEYS.DATA / carried in backup files as `miniCycleData`). Shared by
  * the file-restore path (backupRestoreManager) and the testing modal's
  * IndexedDB restore so both reject malformed payloads BEFORE writing to
@@ -205,7 +205,7 @@ export function validateRecoveredData(data) {
  * @param {string} payloadString - Raw JSON string to validate
  * @returns {boolean}
  */
-export function validateSchema25PayloadString(payloadString) {
+export function validateStatePayloadString(payloadString) {
     if (typeof payloadString !== 'string') return false;
     try {
         const parsed = JSON.parse(payloadString);

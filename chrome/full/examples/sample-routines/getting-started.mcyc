@@ -7,12 +7,11 @@
       "text": "✅ Tap or click here to complete this task!",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -23,12 +22,11 @@
       "text": "➕ Press or click '...' menu button or plus button to show input bar to add tasks",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -39,12 +37,11 @@
       "text": "📊 Swipe left to explore stats and achievements",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -55,12 +52,11 @@
       "text": "📱 Long press or click and drag to rearrange tasks",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -71,12 +67,11 @@
       "text": "🔁 Watch tasks reset when all are completed",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },

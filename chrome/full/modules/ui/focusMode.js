@@ -37,6 +37,8 @@ const di = createDIModule('FocusMode', {
     // the Task panel is active (FOCUS_TASK_VIEW_PLAN D7)
     ensureModuleLoaded: optional(null),
     showTaskView: optional(null),
+    // Help window: one-line tip when the pointer rests on the exit button
+    showFocusExitTip: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     getBody: optional(() => document.body),
@@ -81,6 +83,11 @@ export class FocusMode {
         this._menuBtnHandler = null;
         this._exitBtn = null;
         this._exitBtnHandler = null;
+        this._exitHoverEnterHandler = null;
+        this._exitHoverLeaveHandler = null;
+        this._exitFocusHandler = null;
+        this._exitBlurHandler = null;
+        this._exitHoverTimer = null;
         this._panelChangeHandler = null;
         /** Focus View's fixed Complete Cycle / Clear button — its own element. */
         this._actionBtn = null;
@@ -286,7 +293,10 @@ export class FocusMode {
         this._exitBtn.className = DOM_CLASSES.FOCUS_MODE_EXIT_BTN;
         this._exitBtn.title = getLabel('focusMode.exitTitle');
         this._exitBtn.setAttribute('aria-label', getLabel('focusMode.exitAria'));
-        this._exitBtn.textContent = '×'; // multiplication sign — close affordance
+        // The inward-pointing brackets mirror the focusEye glyph that opened the
+        // view, so enter/exit read as one toggle. It was a bare × until Oct 2026,
+        // which read as "close" — the same glyph every toast uses to dismiss.
+        this._exitBtn.innerHTML = getIcon('compress');
         // Lives in the progress row's right-hand slot — the exact spot (and size)
         // the eye button occupies in Home View — so the control that opened
         // Focus View is where the control that closes it appears. The eye button
@@ -511,6 +521,38 @@ export class FocusMode {
                 this.deactivate();
             };
             this._exitBtn.addEventListener('click', this._exitBtnHandler);
+
+            // Resting on the exit button — pointer hover, or keyboard focus —
+            // asks the Help window to name what the icon does. Dwell-gated so
+            // a sweep across the row or a Tab passing through never fires it;
+            // the manager shows it once per page load.
+            const armTip = () => {
+                clearTimeout(this._exitHoverTimer);
+                this._exitHoverTimer = setTimeout(() => {
+                    this._exitHoverTimer = null;
+                    this.deps.showFocusExitTip?.('hover');
+                }, UI_TIMEOUTS.HOVER_TIP_DWELL);
+            };
+            const cancelTip = () => {
+                clearTimeout(this._exitHoverTimer);
+                this._exitHoverTimer = null;
+            };
+            this._exitHoverEnterHandler = armTip;
+            this._exitHoverLeaveHandler = cancelTip;
+            // Keyboard only: a focus that does not match :focus-visible came
+            // from a tap or click, which the pointer path already covers.
+            this._exitFocusHandler = () => {
+                try {
+                    if (this._exitBtn.matches(':focus-visible')) armTip();
+                } catch {
+                    // Browser without :focus-visible — the hover path still works
+                }
+            };
+            this._exitBlurHandler = cancelTip;
+            this._exitBtn.addEventListener('mouseenter', this._exitHoverEnterHandler);
+            this._exitBtn.addEventListener('mouseleave', this._exitHoverLeaveHandler);
+            this._exitBtn.addEventListener('focus', this._exitFocusHandler);
+            this._exitBtn.addEventListener('blur', this._exitBlurHandler);
         }
 
         // Click on a menu item dispatches the action
@@ -1122,7 +1164,7 @@ export class FocusMode {
      *        that quietly stops being true.
      */
     /**
-     * Tell a returning user, once, that the × to leave Focus View moved from
+     * Tell a returning user, once, that the button to leave Focus View moved from
      * the top-left corner to under the routine list (v2.594). Only users whose
      * data predates the move ever knew the old spot; everyone else, and anyone
      * who has seen this, gets the flag set silently so it never fires. A
@@ -1353,6 +1395,26 @@ export class FocusMode {
     /**
      * Clean up all event listeners.
      */
+    /**
+     * Drop the exit button's dwell listeners (hover and keyboard focus) and
+     * any armed timer.
+     * @private
+     */
+    _detachExitHover() {
+        if (this._exitBtn && this._exitHoverEnterHandler) {
+            this._exitBtn.removeEventListener('mouseenter', this._exitHoverEnterHandler);
+            this._exitBtn.removeEventListener('mouseleave', this._exitHoverLeaveHandler);
+            this._exitBtn.removeEventListener('focus', this._exitFocusHandler);
+            this._exitBtn.removeEventListener('blur', this._exitBlurHandler);
+        }
+        clearTimeout(this._exitHoverTimer);
+        this._exitHoverTimer = null;
+        this._exitHoverEnterHandler = null;
+        this._exitHoverLeaveHandler = null;
+        this._exitFocusHandler = null;
+        this._exitBlurHandler = null;
+    }
+
     destroy() {
         if (this._panelChangeHandler) {
             document.removeEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
@@ -1379,6 +1441,7 @@ export class FocusMode {
         if (this._exitBtn && this._exitBtnHandler) {
             this._exitBtn.removeEventListener('click', this._exitBtnHandler);
         }
+        this._detachExitHover();
         if (this._menu && this._menuClickHandler) {
             this._menu.removeEventListener('click', this._menuClickHandler);
         }

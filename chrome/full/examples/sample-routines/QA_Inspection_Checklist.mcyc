@@ -7,12 +7,11 @@
       "text": "🔧 Verify measuring instruments are calibrated (calipers, mics, gauges)",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -23,12 +22,11 @@
       "text": "📦 Inspect incoming material — verify certs, grade & dimensions",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -39,12 +37,11 @@
       "text": "⚙️ Confirm machine setup & alignment before first run",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -55,12 +52,11 @@
       "text": "📐 First article inspection — measure & compare to blueprint",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -71,12 +67,11 @@
       "text": "📏 Check critical dimensions & tolerances (GD&T per drawing)",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -87,12 +82,11 @@
       "text": "✋ Inspect surface finish — visual + profilometer if required",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -103,12 +97,11 @@
       "text": "🔩 Verify threads, holes & features with go/no-go gauges",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -119,12 +112,11 @@
       "text": "🪒 Check for burrs, sharp edges & cosmetic defects",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -135,12 +127,11 @@
       "text": "📊 In-process check — random sample from production run",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -151,12 +142,11 @@
       "text": "📝 Record all measurements on inspection report / traveler",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -167,12 +157,11 @@
       "text": "🏷️ Tag & label inspected parts — PASS / HOLD / REJECT",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -183,12 +172,11 @@
       "text": "🧹 Clean & return gauges and instruments to storage",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },

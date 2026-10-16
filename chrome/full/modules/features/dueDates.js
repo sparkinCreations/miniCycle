@@ -8,7 +8,7 @@
  * - Integration with auto-reset mode
  * - Due date reminder notifications
  * - Persistence across sessions
- * - Integration with Schema 2.5 data structure
+ * - Integration with the Schema 2.6 state document
  *
  * @module dueDates
  */
@@ -95,7 +95,7 @@ const di = createDIModule('DueDates', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, saveTaskToSchema25: Function|null, AppState: Object|null, AppMeta: Object|null}} */
+/** @type {{appInit: Object|null, showNotification: Function|null, updateStatsPanel: Function|null, updateProgressBar: Function|null, checkCompleteAllButton: Function|null, saveRoutineToState: Function|null, AppState: Object|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -522,7 +522,7 @@ export class MiniCycleDueDates {
 
         this.checkOverdueTasks(taskItem);
 
-        // ✅ Load Due Date Notification Setting from Schema 2.5
+        // ✅ Load Due Date Notification Setting from state
         const remindersSettings = reminders || {};
         const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
 

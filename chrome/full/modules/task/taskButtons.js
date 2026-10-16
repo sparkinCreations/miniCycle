@@ -87,7 +87,7 @@ export class TaskButtons {
         const {
             autoResetEnabled, deleteCheckedEnabled, settings,
             remindersEnabled, remindersEnabledGlobal, assignedTaskId,
-            currentCycle, recurring, highPriority
+            currentCycle, recurring, hasPriority
         } = taskContext;
 
         const buttonContainer = document.createElement("div");
@@ -189,7 +189,7 @@ export class TaskButtons {
      */
     createTaskButton(buttonConfig, taskContext, buttonContainer) {
         const { class: btnClass, icon, iconClass, toggle = false, show } = buttonConfig;
-        const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, highPriority, deleteWhenComplete } = taskContext;
+        const { assignedTaskId, currentCycle, settings, remindersEnabled, recurring, hasPriority, deleteWhenComplete } = taskContext;
 
         const button = document.createElement("button");
         button.classList.add(DOM_CLASSES.TASK_BTN, btnClass);
@@ -227,7 +227,7 @@ export class TaskButtons {
         }
 
         this.setupButtonAccessibility(button, btnClass, buttonContainer);
-        this.setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete);
+        this.setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, hasPriority, assignedTaskId, currentCycle, deleteWhenComplete);
         this.setupButtonEventHandlers(button, btnClass, taskContext);
 
         return button;
@@ -357,13 +357,13 @@ export class TaskButtons {
      * @param {string} btnClass - Button class name
      * @param {boolean} remindersEnabled - Whether reminders are enabled
      * @param {boolean} recurring - Whether task is recurring
-     * @param {boolean} highPriority - Whether task is high priority
+     * @param {boolean} hasPriority - Whether the task has a priority level set (any level)
      * @param {string} assignedTaskId - Task ID
      * @param {Object} currentCycle - Current cycle data
      * @param {boolean} deleteWhenComplete - Delete when complete state
      * @returns {void}
      */
-    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, highPriority, assignedTaskId, currentCycle, deleteWhenComplete) {
+    setupButtonAriaStates(button, btnClass, remindersEnabled, recurring, hasPriority, assignedTaskId, currentCycle, deleteWhenComplete) {
         if (btnClass === "enable-task-reminders") {
             const isActive = remindersEnabled === true;
             button.classList.toggle(DOM_CLASSES.REMINDER_ACTIVE, isActive);
@@ -386,7 +386,7 @@ export class TaskButtons {
                 // isActive.toString() produced the invalid aria-pressed="[object Object]".
                 isActive = !!hasRecurringTemplate || !!recurring;
             } else {
-                isActive = !!highPriority;
+                isActive = !!hasPriority;
             }
 
             button.classList.toggle(DOM_CLASSES.ACTIVE, isActive);

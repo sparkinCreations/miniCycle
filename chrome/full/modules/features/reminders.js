@@ -8,7 +8,7 @@
  * - Flexible scheduling (minutes/hours/days)
  * - Indefinite or limited repeat counts
  * - Persistence across sessions
- * - Integration with Schema 2.5 data structure
+ * - Integration with the Schema 2.6 state document
  *
  * Note: document.getElementById, document.querySelectorAll are browser APIs,
  * not dependencies - they cannot be injected (but can be overridden for testing).
@@ -370,7 +370,7 @@ export class MiniCycleReminders {
 
         const isEnabled = enableReminders.checked;
 
-        // Get previous state from Schema 2.5
+        // Get previous settings from state
         const state = this._state();
         if (!state) {
             console.error('❌ State data required for handleReminderToggle');
@@ -451,7 +451,7 @@ export class MiniCycleReminders {
 
         replaceStoredEventListener(enableReminders, "change", "__miniCycleRemindersToggleChangeHandler", () => this.handleReminderToggle());
 
-        // Load reminder settings from Schema 2.5
+        // Load reminder settings from state
         const state = this._state();
         if (!state) {
             console.warn('⚠️ No state data yet - reminder toggle will initialize after cycle creation');
@@ -759,7 +759,7 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        // Schema 2.5 only. Return, don't throw: this runs inside a timer
+        // State only. Return, don't throw: this runs inside a timer
         // callback, where a throw becomes an unhandled rejection — matching
         // how scheduleNextReminder already handles the same condition.
         const state = this._state();
@@ -874,7 +874,7 @@ export class MiniCycleReminders {
             this.state.reminderTimeoutId = null;
         }
 
-        // Schema 2.5 only
+        // State only
         const state = this._state();
         if (!state) {
             console.warn('⚠️ No state data yet - reminders will start after cycle creation');
@@ -1140,7 +1140,7 @@ export class MiniCycleReminders {
             await appInitModule.waitForCore();
         }
 
-        // Schema 2.5 only
+        // State only
         const state = this._state();
         if (!state) {
             console.error('❌ State data required for updateReminderButtons');
@@ -1161,7 +1161,7 @@ export class MiniCycleReminders {
             return;
           }
 
-          // Get task data from Schema 2.5
+          // Get task data from state
           const taskData = currentCycle?.tasks?.find(t => t.id === taskId);
           const isActive = taskData?.remindersEnabled === true;
 

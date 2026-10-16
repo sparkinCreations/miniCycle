@@ -7,13 +7,11 @@
       "text": "Intro: Safety check",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": "#28a745",
+      "priority": "low",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -24,13 +22,11 @@
       "text": "Pain: 0–10? Meds needed?",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": "#dc3545",
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -41,13 +37,11 @@
       "text": "Personal needs: Restroom?",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": null,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -58,13 +52,11 @@
       "text": "Position: Reposition/comfort",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": null,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -75,13 +67,11 @@
       "text": "Call light in reach",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": "#28a745",
+      "priority": "low",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -92,13 +82,11 @@
       "text": "Phone/water/glasses near",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": null,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -109,13 +97,11 @@
       "text": "Trash can nearby",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": "#28a745",
+      "priority": "low",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -126,13 +112,11 @@
       "text": "Closing: Anything else?",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
-      "priorityColor": "#facc15",
+      "priority": "medium",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },

@@ -48,6 +48,7 @@ const di = createDIModule('SettingsManager', {
     AppMeta: optional(null),
     safeAddEventListener: required(),
     BackupManager: optional(null),
+    BackupFolder: optional(null),
     enableDebug: optional(null),
     disableDebug: optional(null),
     isDebug: optional(null),
@@ -154,6 +155,7 @@ async function loadSubModules(version) {
         setupRestoreButton: backupRestoreModule.setupRestoreButton,
         setupFactoryResetButton: backupRestoreModule.setupFactoryResetButton,
         setupPreMigrationCopyControls: backupRestoreModule.setupPreMigrationCopyControls,
+        setupAutoBackupsControls: backupRestoreModule.setupAutoBackupsControls,
         neutralizeAppState: backupRestoreModule.neutralizeAppState,
         downloadBackupFile: backupRestoreModule.downloadBackupFile,
         saveBackupFileAs: backupRestoreModule.saveBackupFileAs,
@@ -239,6 +241,7 @@ function wireSubModuleDependencies(dependencies) {
         showConfirmationModal: dependencies.showConfirmationModal,
         safeAddEventListener: dependencies.safeAddEventListener,
         BackupManager: dependencies.BackupManager,
+        BackupFolder: dependencies.BackupFolder,
         AppMeta: dependencies.AppMeta,
         loadMiniCycle: dependencies.loadMiniCycle,
         showLoader: dependencies.showLoader,
@@ -319,6 +322,7 @@ export class SettingsManager {
             _subModules.setupRestoreButton?.();
             _subModules.setupFactoryResetButton?.();
             _subModules.setupPreMigrationCopyControls?.();
+            _subModules.setupAutoBackupsControls?.();
             _subModules.setupShareRoutineButton?.();
             _subModules.setupShareAppButton?.();
 
@@ -571,6 +575,7 @@ export function setupFactoryResetButton() { _subModules?.setupFactoryResetButton
  * @returns {void}
  */
 export function setupPreMigrationCopyControls() { _subModules?.setupPreMigrationCopyControls?.(); }
+export function setupAutoBackupsControls() { _subModules?.setupAutoBackupsControls?.(); }
 
 /**
  * Neutralize AppState to prevent saves during destructive operations.

@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS, BACKUP_TRIGGERS } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
@@ -1280,18 +1280,30 @@ export async function initUIBoot({ GlobalUtils, deps, appContextMod }) {
   // hardware back button. No-op on the web — self-gated by isNativeApp().
   initNativeShell();
 
-  // ========== SESSION BACKUP (non-blocking) ==========
-  // Create a session backup on every app open (keeps last 5)
-  // This runs after UI is fully loaded to avoid blocking boot
-  setTimeout(async () => {
+  // ========== AUTOMATIC SNAPSHOTS (non-blocking) ==========
+  // On every app open: a session snapshot (newest 5, skipped when nothing changed
+  // since the last one) and the daily copy (newest 10, at most one per 24h). Then
+  // again whenever the app is hidden — tab switched, window minimised, app
+  // backgrounded — so a session that stays open is not unprotected until the
+  // next open. Both run after the UI is up so they never block boot, and
+  // BackupManager folds the pagehide + visibilitychange pair into one write.
+  const takeSnapshots = async (reason) => {
     try {
-      if (deps.storage?.backupManager?.createSessionBackup) {
-        await deps.storage.backupManager.createSessionBackup();
-      }
+      const backupManager = deps.storage?.backupManager;
+      if (!backupManager?.createSessionBackup) return;
+      await backupManager.createSessionBackup({ reason });
+      await backupManager.createAutoBackup?.();
+      // Desktop / Android: the daily backup FILE in the device folder (no-op elsewhere).
+      await deps.storage?.backupFolder?.writeDailyBackupFile?.({ reason });
     } catch (error) {
-      console.warn('⚠️ Session backup failed (non-critical):', error);
+      console.warn('⚠️ Automatic snapshot failed (non-critical):', error);
     }
-  }, 1000); // Delay 1s to ensure AppState is fully ready
+  };
+  setTimeout(() => takeSnapshots(BACKUP_TRIGGERS.OPEN), UI_TIMEOUTS.SESSION_BACKUP_DELAY);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') takeSnapshots(BACKUP_TRIGGERS.HIDE);
+  });
+  window.addEventListener('pagehide', () => { takeSnapshots(BACKUP_TRIGGERS.HIDE); });
 
   // ========== BACKUP REMINDER CHECK (non-blocking) ==========
   // Check if user should be reminded to back up their routines (14-day interval)

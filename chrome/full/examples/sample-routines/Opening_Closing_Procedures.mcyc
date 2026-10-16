@@ -7,12 +7,11 @@
       "text": "🔓 Unlock facility & disarm alarm system",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -23,12 +22,11 @@
       "text": "💡 Turn on lights, HVAC & ventilation",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -39,12 +37,11 @@
       "text": "👀 Walk-through — check for leaks, damage or safety hazards",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -55,12 +52,11 @@
       "text": "🧯 Verify fire exits clear, first aid stocked, PPE available",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -71,12 +67,11 @@
       "text": "📋 Review today's schedule, work orders & priorities",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -87,12 +82,11 @@
       "text": "📦 Check inventory & restock supplies if needed",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -103,12 +97,11 @@
       "text": "💻 Power on registers, POS systems or workstations",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -119,12 +112,11 @@
       "text": "— — — CLOSING — — —",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -135,12 +127,11 @@
       "text": "🛑 Shut down all machines & equipment",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -151,12 +142,11 @@
       "text": "🧹 Clean & organize work areas and common spaces",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -167,12 +157,11 @@
       "text": "🔧 Return tools & materials to proper storage",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -183,12 +172,11 @@
       "text": "🗑️ Empty trash & recycling bins",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -199,12 +187,11 @@
       "text": "💻 Log off workstations & power down non-essential systems",
       "completed": false,
       "dueDate": null,
-      "highPriority": false,
+      "priority": null,
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -215,12 +202,11 @@
       "text": "🚪 Check all windows & doors are closed and secured",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },
@@ -231,12 +217,11 @@
       "text": "🔒 Set alarm system & lock up",
       "completed": false,
       "dueDate": null,
-      "highPriority": true,
+      "priority": "high",
       "remindersEnabled": false,
       "recurring": false,
       "recurringSettings": {},
-      "deleteWhenComplete": false,
-      "deleteWhenCompleteSettings": {
+      "autoClear": {
         "cycle": false,
         "todo": true
       },

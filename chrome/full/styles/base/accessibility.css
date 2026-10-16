@@ -53,7 +53,11 @@ body.high-contrast:not(.dark-mode) .task.completed {
 }
 
 /* Checkboxes */
-body.high-contrast:not(.dark-mode) .task input[type="checkbox"] {
+/* The selector carries the same three theme :not()s as task-list.css's
+   incomplete-checkbox rule, which otherwise outranked this one and kept the
+   faint 60% grey ring in High Contrast mode (measured 1.5:1, Oct 2026). */
+body.high-contrast:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"],
+body.high-contrast:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
     border: 2px solid #333333;
 }
 

@@ -700,7 +700,7 @@ export class MenuManager {
                 // ✅ Update through state system
                 AppState.update(state => {
 
-                    // ✅ Create new cycle with title as key for Schema 2.5
+                    // ✅ Create the copy as a new routine record (Schema 2.6: keyed by id, named by title)
                     const newCycleId = `copy_${Date.now()}`;
 
                     // ✅ Deep copy the current cycle with new title as storage key

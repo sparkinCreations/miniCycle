@@ -534,6 +534,46 @@ export async function saveFileToDocumentsNative({ data, fileName }) {
 }
 
 /**
+ * The Android backup folder — `Documents/<dirName>` through the Filesystem
+ * plugin — as the adapter shape storage/backupFolder.js consumes, or null off
+ * Android. Files the app created there are readable without a permission on
+ * Android 10+ and survive an uninstall. iOS is left out on purpose: the call
+ * would work, but the folder stays invisible until the Files keys are in the
+ * plist, so it would protect nothing the user can see.
+ * @param {string} dirName
+ * @returns {{describe: function(): Promise<string>, write: function(string, string): Promise<*>, list: function(): Promise<Array<{name: string, size: number, mtime: number}>>, read: function(string): Promise<string>, remove: function(string): Promise<*>}|null}
+ */
+export function getAndroidBackupFolder(dirName) {
+    if (getNativePlatform() !== 'android') return null;
+    const Filesystem = getPlugin('Filesystem');
+    if (!Filesystem || !dirName) return null;
+    const inDir = (name) => `${dirName}/${name}`;
+    return {
+        describe: async () => `Documents/${dirName}`,
+        write: async (name, text) => {
+            await Filesystem.writeFile({ path: inDir(name), data: text, directory: 'DOCUMENTS', encoding: 'utf8', recursive: true });
+        },
+        list: async () => {
+            try {
+                const result = await Filesystem.readdir({ path: dirName, directory: 'DOCUMENTS' });
+                return (result?.files || [])
+                    .filter((f) => f && f.type !== 'directory' && typeof f.name === 'string')
+                    .map((f) => ({ name: f.name, size: Number(f.size) || 0, mtime: Number(f.mtime) || 0 }));
+            } catch {
+                return [];   // the folder does not exist until the first write
+            }
+        },
+        read: async (name) => {
+            const result = await Filesystem.readFile({ path: inDir(name), directory: 'DOCUMENTS', encoding: 'utf8' });
+            return typeof result?.data === 'string' ? result.data : '';
+        },
+        remove: async (name) => {
+            await Filesystem.deleteFile({ path: inDir(name), directory: 'DOCUMENTS' });
+        }
+    };
+}
+
+/**
  * Share plain text / a URL natively (e.g. "share the app").
  * @returns {Promise<{handled: boolean, cancelled?: boolean}>} (see above)
  */

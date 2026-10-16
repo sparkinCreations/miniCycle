@@ -10,7 +10,8 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { isSupportedStoredVersion } from '../utils/schemaVersion.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, STORAGE_KEYS, SCHEMA, PRE_MIGRATION_BACKUP_PREFIX, EVENTS, APP_VERSION, LIMITS, BACKUP_TRIGGERS } from '../core/constants.js';
+import { getRoutines } from '../utils/cycleMode.js';
 import { getLabel } from '../labels/labelResolver.js';
 // The iOS / Android app runs in a WebView that does not handle downloads: an
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
@@ -21,7 +22,7 @@ import { isDesktopApp } from '../platform/desktopBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
 // testing modal's IndexedDB restore.
-import { validateSchema25PayloadString } from '../utils/dataRecovery.js';
+import { validateStatePayloadString } from '../utils/dataRecovery.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -33,6 +34,7 @@ const di = createDIModule('BackupRestoreManager', {
     showConfirmationModal: required(),
     safeAddEventListener: required(),
     BackupManager: optional(null),  // For safety backups before restore
+    BackupFolder: optional(null),   // Daily backup files in the device folder (desktop / Android)
     AppMeta: optional(null),  // For version info
     loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
     showLoader: optional(null),  // Loading overlay from uiBoot
@@ -74,7 +76,8 @@ const _initialized = {
     backupButton: false,
     restoreButton: false,
     resetButton: false,
-    preMigration: false
+    preMigration: false,
+    autoBackups: false
 };
 
 const LITE_STORAGE_KEYS = Object.freeze([
@@ -534,7 +537,7 @@ export function neutralizeAppState() {
 // ============================================================================
 
 /**
- * Schema 2.5 JSON string for a backup, taken from live AppState.
+ * The state document as a JSON string for a backup, taken from live AppState.
  * Persistence can fail (quota) while memory is still current; the file must
  * still carry what the user sees, including when no previous stored document
  * exists. Do not read localStorage for this — a failed save leaves it stale.
@@ -552,7 +555,7 @@ function serializeLiveMiniCycleData(AppState) {
         console.error('Could not serialize in-memory state for backup:', serializeError);
         return null;
     }
-    if (!validateSchema25PayloadString(payload)) {
+    if (!validateStatePayloadString(payload)) {
         console.error('In-memory state failed structure validation for backup');
         return null;
     }
@@ -584,7 +587,7 @@ function buildBackupFile(AppState, fileName, defaultName) {
         miniCycleData,
         backupMetadata: {
             createdAt: Date.now(),
-            version: _deps.AppMeta?.version || currentState?.metadata?.version || '2.5',
+            version: _deps.AppMeta?.version || currentState?.metadata?.version || APP_VERSION,
             schemaVersion: currentState?.metadata?.schemaVersion || SCHEMA.CURRENT,
             includesLiteStorage: Boolean(liteStorage),
             source: 'miniCycle App'
@@ -942,7 +945,7 @@ export function setupRestoreButton() {
  * @param {string} fileContent - Raw file content
  * @returns {Promise<void>}
  */
-async function processRestoreData(fileContent) {
+async function processRestoreData(fileContent, options = {}) {
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
@@ -995,8 +998,8 @@ async function processRestoreData(fileContent) {
 
     return new Promise((resolve) => {
         showConfirmationModal({
-            title: getLabel('modal.restoreBackupTitle'),
-            message: getLabel('modal.restoreBackupMessage'),
+            title: options.title || getLabel('modal.restoreBackupTitle'),
+            message: options.message || getLabel('modal.restoreBackupMessage'),
             confirmText: getLabel('modal.restoreBackupConfirm'),
             cancelText: getLabel('button.cancel'),
             destructive: true,
@@ -1060,7 +1063,7 @@ async function processRestoreData(fileContent) {
                 // Stop AppState from auto-saving
                 neutralizeAppState();
 
-                // Handle Schema 2.5 backup
+                // Handle a 2.5 or 2.6 backup (an older document is migrated at the next boot)
                 if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
 
                     // Structural validation (shared with the testing modal's IDB
@@ -1068,7 +1071,7 @@ async function processRestoreData(fileContent) {
                     // version cited as motivation but didn't actually test. Reject
                     // the file up front: "file rejected", not "restored, then
                     // recovery mode".
-                    if (!validateSchema25PayloadString(backupData.miniCycleData)) {
+                    if (!validateStatePayloadString(backupData.miniCycleData)) {
                         console.error('miniCycleData failed structural validation');
                         _deps.showNotification(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                         resolve();
@@ -1125,6 +1128,276 @@ async function processRestoreData(fileContent) {
 }
 
 // ============================================================================
+// AUTOMATIC BACKUPS (Settings → Data Management)
+// ============================================================================
+// BackupManager keeps a snapshot of the state document in IndexedDB on every
+// app open (the session store, newest five), plus the safety copies taken before
+// a restore or reset (the manual store) and the daily store. Until Oct 2026 the
+// only way to see or restore any of them was the Testing modal under Advanced.
+// This block lists the newest few under a disclosure button and restores one
+// through the same pipeline as Restore All Routines (processRestoreData), so
+// the confirmation, the safety copy and the in-place reload are identical. Every
+// string names them as the app's automatic backups, not files the user saved.
+
+const AUTO_BACKUP_KIND_LABELS = Object.freeze({
+    session: 'settings.autoBackupKindSession',
+    sessionHide: 'settings.autoBackupKindSessionHide',
+    manual:  'settings.autoBackupKindManual',
+    auto:    'settings.autoBackupKindAuto',
+    file:    'settings.autoBackupKindFile'
+});
+
+function autoBackupKindLabel(item) {
+    if (item.type === 'session' && item.trigger === BACKUP_TRIGGERS.HIDE) return AUTO_BACKUP_KIND_LABELS.sessionHide;
+    return AUTO_BACKUP_KIND_LABELS[item.type] || AUTO_BACKUP_KIND_LABELS.session;
+}
+
+function formatSnapshotDate(timestamp) {
+    try {
+        return new Date(timestamp).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    } catch {
+        return new Date(timestamp).toString();
+    }
+}
+
+/**
+ * The newest automatic backups across the session, manual and daily stores,
+ * newest first. The test store is left out: it holds pre-test-run copies.
+ * Records that hold the SAME document (the open snapshot and the daily copy
+ * taken a moment later carry one modified stamp) collapse into one row, the
+ * session entry preferred, so the list never shows one state twice.
+ * `key` is what the store is keyed by (the timestamp, or the id for manual
+ * backups), so it can be handed straight back to BackupManager.
+ * @param {number} [limit]
+ * Daily files from the device folder (desktop / Android) are listed too, as
+ * `type: 'file'` keyed by file name; they are a separate tier and never collapse
+ * into a snapshot row.
+ * @returns {Promise<Array<{type: string, key: (number|string), timestamp: number, trigger: (string|undefined), routines: (number|null), size: number}>>}
+ */
+export async function listRecentAutoBackups(limit = LIMITS.AUTO_BACKUPS_SHOWN) {
+    const files = await listBackupFolderItems();
+    const BackupManager = _deps.BackupManager?.();
+    if (!BackupManager?.listAllBackups) return files;
+    const { auto = [], manual = [], session = [] } = await BackupManager.listAllBackups();
+    const describe = (list, type) => list.map((b) => ({
+        type,
+        key: type === 'manual' ? b.id : b.timestamp,
+        timestamp: Number(b.timestamp),
+        trigger: b.metadata?.trigger,
+        stamp: b.data?.metadata?.lastModified,
+        routines: typeof b.metadata?.cycleCount === 'number'
+            ? b.metadata.cycleCount
+            : Object.keys((b.data && getRoutines(b.data)) || {}).length,
+        size: b.metadata?.size || 0
+    }));
+    const seenStamps = new Set();
+    return [...describe(session, 'session'), ...describe(manual, 'manual'), ...describe(auto, 'auto')]
+        .filter((b) => Number.isFinite(b.timestamp))
+        .filter((b) => {
+            if (!b.stamp) return true;
+            if (seenStamps.has(b.stamp)) return false;
+            seenStamps.add(b.stamp);
+            return true;
+        })
+        .sort((a, b) => b.timestamp - a.timestamp)
+        .slice(0, limit)
+        .concat(files)
+        .sort((a, b) => b.timestamp - a.timestamp);
+}
+
+async function listBackupFolderItems() {
+    const BackupFolder = _deps.BackupFolder?.();
+    if (!BackupFolder?.isAvailable?.() || !BackupFolder.listBackupFiles) return [];
+    try {
+        return (await BackupFolder.listBackupFiles()).map((f) => ({
+            type: 'file', key: f.name, timestamp: f.timestamp, trigger: undefined, stamp: undefined, routines: null, size: f.size
+        }));
+    } catch (e) {
+        console.warn('Could not list the backup folder:', e);
+        return [];
+    }
+}
+
+function renderAutoBackupsList(items, { folder = null } = {}) {
+    const list = document.getElementById(DOM_IDS.AUTO_BACKUPS_LIST);
+    const empty = document.getElementById(DOM_IDS.AUTO_BACKUPS_EMPTY);
+    if (!list) return;
+    list.textContent = '';
+    for (const item of items) {
+        const li = document.createElement('li');
+        li.className = DOM_CLASSES.AUTO_BACKUP_ITEM;
+
+        const meta = document.createElement('div');
+        meta.className = DOM_CLASSES.AUTO_BACKUP_META;
+        const kind = document.createElement('span');
+        kind.className = DOM_CLASSES.AUTO_BACKUP_KIND;
+        kind.textContent = getLabel(autoBackupKindLabel(item), { vars: { folder: folder || '' } });
+        const when = document.createElement('span');
+        when.className = DOM_CLASSES.AUTO_BACKUP_WHEN;
+        const date = formatSnapshotDate(item.timestamp);
+        const size = Math.max(1, Math.round(item.size / 1024));
+        when.textContent = item.type === 'file'
+            ? getLabel('settings.autoBackupFileMeta', { vars: { date, size } })
+            : getLabel('settings.autoBackupMeta', { vars: {
+                date,
+                count: item.routines,
+                routines: getLabel('noun.routine', { count: item.routines }),
+                size
+            } });
+        meta.append(kind, when);
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `${DOM_CLASSES.SETTINGS_BTN} ${DOM_CLASSES.SETTINGS_BTN_GHOST} ${DOM_CLASSES.AUTO_BACKUP_RESTORE}`;
+        btn.textContent = getLabel('settings.autoBackupRestore');
+        btn.setAttribute('aria-label', getLabel('settings.autoBackupRestoreAria', { vars: { date } }));
+        btn.dataset.type = item.type;
+        btn.dataset.key = String(item.key);
+
+        li.append(meta, btn);
+        list.appendChild(li);
+    }
+    if (empty) empty.hidden = items.length > 0;
+}
+
+/**
+ * Re-list the snapshots while the block is open. Safe to call at any time.
+ * @returns {Promise<Array>} the items rendered (empty while the block is hidden)
+ */
+export async function refreshAutoBackupsList() {
+    const block = document.getElementById(DOM_IDS.AUTO_BACKUPS);
+    if (!block || block.hidden) return [];
+    let items = [];
+    let folder = null;
+    try {
+        folder = await describeBackupFolder();
+        items = await listRecentAutoBackups();
+    } catch (e) {
+        console.warn('Could not list the automatic backups:', e);
+        _deps.showNotification(getLabel('notify.autoBackupsListFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+    }
+    const folderNote = document.getElementById(DOM_IDS.AUTO_BACKUPS_FOLDER_NOTE);
+    if (folderNote) {
+        folderNote.hidden = !folder;
+        if (folder) folderNote.textContent = getLabel('settings.autoBackupsFolderNote', { vars: { folder } });
+    }
+    renderAutoBackupsList(items, { folder });
+    return items;
+}
+
+/** The device folder's user-facing location, or null where there is none. */
+async function describeBackupFolder() {
+    const BackupFolder = _deps.BackupFolder?.();
+    if (!BackupFolder?.isAvailable?.()) return null;
+    return (await BackupFolder.describeFolder?.()) || null;
+}
+
+/**
+ * Wire the disclosure button and the list's Restore buttons. Idempotent.
+ * @returns {void}
+ */
+export function setupAutoBackupsControls() {
+    if (_initialized.autoBackups) return;
+    const toggle = document.getElementById(DOM_IDS.AUTO_BACKUPS_TOGGLE);
+    const block = document.getElementById(DOM_IDS.AUTO_BACKUPS);
+    const list = document.getElementById(DOM_IDS.AUTO_BACKUPS_LIST);
+    if (!toggle || !block || !list) return;
+
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('BackupRestoreManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.autoBackups = true;
+
+    const labelSpan = toggle.querySelector(`.${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}`);
+    safeAddEventListener(toggle, 'click', () => {
+        const open = block.hidden;
+        block.hidden = !open;
+        toggle.setAttribute('aria-expanded', String(open));
+        if (labelSpan) labelSpan.textContent = getLabel(open ? 'settings.autoBackupsHide' : 'settings.autoBackupsShow');
+        if (open) refreshAutoBackupsList();
+    });
+
+    safeAddEventListener(list, 'click', (e) => {
+        const btn = e.target.closest?.(`.${DOM_CLASSES.AUTO_BACKUP_RESTORE}`);
+        if (!btn || !list.contains(btn)) return;
+        restoreAutoBackup(btn.dataset.type, btn.dataset.key);
+    });
+}
+
+/**
+ * Hand one snapshot to the restore pipeline. The confirmation names the date
+ * the backup was taken; the pipeline then takes the safety copy, writes the
+ * document and re-renders in place, exactly as a restored file would.
+ * @param {string} type - 'session' | 'manual' | 'auto'
+ * @param {string|number} key - the store key from listRecentAutoBackups
+ * @returns {Promise<boolean>} false when the snapshot could not be loaded;
+ *   true once it was handed to the pipeline (the user may still decline there)
+ */
+export async function restoreAutoBackup(type, key) {
+    if (type === 'file') return restoreBackupFolderFile(key);
+    const BackupManager = _deps.BackupManager?.();
+    if (!BackupManager?.restoreBackup) {
+        _deps.showNotification(getLabel('notify.autoBackupsUnavailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        return false;
+    }
+    const identifier = type === 'manual' ? String(key) : Number(key);
+    let payload = null;
+    try {
+        payload = await BackupManager.restoreBackup(identifier, type, { format: 'portable' });
+    } catch (e) {
+        console.warn('The automatic backup could not be loaded:', e);
+    }
+    if (!payload || typeof payload.miniCycleData !== 'string') {
+        _deps.showNotification(getLabel('notify.autoBackupUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        refreshAutoBackupsList();
+        return false;
+    }
+    const date = formatSnapshotDate(payload.backupMetadata?.createdAt || identifier);
+    await processRestoreData(JSON.stringify(payload), {
+        title: getLabel('modal.autoBackupRestoreTitle'),
+        message: getLabel('modal.autoBackupRestoreMessage', { vars: { date } })
+    });
+    refreshAutoBackupsList();
+    return true;
+}
+
+/**
+ * Hand one daily file from the device folder to the restore pipeline.
+ * @param {string} name - the file name from listRecentAutoBackups
+ * @returns {Promise<boolean>} false when the file could not be read
+ */
+export async function restoreBackupFolderFile(name) {
+    const BackupFolder = _deps.BackupFolder?.();
+    if (!BackupFolder?.readBackupFile) {
+        _deps.showNotification(getLabel('notify.autoBackupsUnavailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        return false;
+    }
+    let text = null;
+    try {
+        text = await BackupFolder.readBackupFile(name);
+    } catch (e) {
+        console.warn('The backup file could not be read:', e);
+    }
+    if (typeof text !== 'string' || !text) {
+        _deps.showNotification(getLabel('notify.autoBackupFileUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        refreshAutoBackupsList();
+        return false;
+    }
+    let createdAt = 0;
+    try { createdAt = Number(JSON.parse(text)?.backupMetadata?.createdAt) || 0; } catch { /* the pipeline reports an unreadable file */ }
+    const date = formatSnapshotDate(createdAt || Date.now());
+    const folder = (await describeBackupFolder()) || '';
+    await processRestoreData(text, {
+        title: getLabel('modal.autoBackupFileRestoreTitle'),
+        message: getLabel('modal.autoBackupFileRestoreMessage', { vars: { date, folder } })
+    });
+    refreshAutoBackupsList();
+    return true;
+}
+
+// ============================================================================
 // PRE-MIGRATION COPY (Settings → Data Management)
 // ============================================================================
 // AppState keeps the raw stored document under `<DATA>_pre-migration_<ts>` before
@@ -1165,7 +1438,7 @@ export function findPreMigrationCopy() {
  * @returns {Object|null} null when the copy is not a readable document
  */
 export function buildPreMigrationBackupPayload(copy) {
-    if (!copy || !validateSchema25PayloadString(copy.raw)) return null;
+    if (!copy || !validateStatePayloadString(copy.raw)) return null;
     const parsed = JSON.parse(copy.raw);
     const schemaVersion = String(parsed.schemaVersion || parsed.metadata?.schemaVersion || SCHEMA.OLDEST_MIGRATABLE);
     return {
@@ -1269,7 +1542,7 @@ export function downloadPreMigrationCopy() {
  */
 export async function restorePreMigrationCopy() {
     const copy = findPreMigrationCopy();
-    if (!copy || !validateSchema25PayloadString(copy.raw)) {
+    if (!copy || !validateStatePayloadString(copy.raw)) {
         _deps.showNotification(getLabel('notify.preMigrationUnreadable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
         refreshPreMigrationCopyControls();
         return false;

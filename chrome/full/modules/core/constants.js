@@ -46,9 +46,9 @@ export const COLORS = Object.freeze({
 
 /**
  * Priority levels, highest first — this order IS the sort order.
- * Schema 2.5 still stores priority as `highPriority` + a `priorityColor` hex; the
- * helpers in utils/priorityLevel.js translate between the two until Schema 2.6
- * stores the level itself (docs/future-work/SCHEMA_2_6_PLAN.md).
+ * Schema 2.6 stores the level itself (`task.priority`); Schema 2.5 stored a
+ * `highPriority` flag + a `priorityColor` hex, and utils/priorityLevel.js still
+ * reads that pair for the boot migration and the .mcyc importer.
  * @constant {ReadonlyArray<'high'|'medium'|'low'>}
  */
 export const PRIORITY_LEVELS = Object.freeze(['high', 'medium', 'low']);
@@ -191,6 +191,7 @@ export const UI_TIMEOUTS = Object.freeze({
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
+    HOVER_TIP_DWELL: 600,          // 600ms - A pointer must rest on a control this long before the Help window shows its tip (focusMode exit button); a pass-through sweep never fires it
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
     TITLE_SCREEN_USECASE_HOLD: 2800,       // 2800ms - Welcome Screen use-case crossfade. Matches the first-run screen's inline rotator: it is the same line doing the same job, and the two screens are meant to feel identical.
     TIP_ARCHIVE_SLIDE_HOLD: 8000,          // 8000ms - How long one tip stays up in the tip archive before auto-advancing. Matches FIRST_RUN_WELCOME_SLIDE_HOLD: same job (read one short line, unhurried) so the two should not drift apart. Deliberately far slower than the 4s BOOT rotator, which the user is not expected to read completely.
@@ -411,6 +412,8 @@ export const LIMITS = Object.freeze({
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
+    AUTO_BACKUPS_SHOWN: 8,               // Newest IndexedDB snapshots listed under Settings → Data Management → automatic backups
+    BACKUP_FOLDER_KEEP: 7,               // Daily backup files kept in the device folder (storage/backupFolder.js) — one per day
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     // Max task names stored on ONE history event's completion breakdown (per
     // side). Names are user text, so this is a STORAGE cap, not a display one:
@@ -712,6 +715,27 @@ export const STORAGE_KEYS = Object.freeze({
  */
 export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`;
 
+/**
+ * Why a session snapshot was taken (stored on the record as metadata.trigger):
+ * on app open, or when the app was hidden (tab switched, window minimised, app
+ * backgrounded). backupManager writes it; Settings → automatic backups reads it.
+ */
+export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
+
+/**
+ * The daily backup FILE the native shells write to a folder on the device
+ * (storage/backupFolder.js): desktop → Documents/<DESKTOP_DIR> through the
+ * shell's IPC (the folder name is also spelled in desktop/src/backupFiles.js —
+ * the shell is a separate package); Android → the public Documents/<ANDROID_DIR>
+ * folder through the Filesystem plugin. One file per local day.
+ */
+export const BACKUP_FOLDER = Object.freeze({
+    DESKTOP_DIR: 'miniCycle Backups',
+    ANDROID_DIR: 'miniCycle',
+    FILE_PREFIX: 'miniCycle-auto-backup-',
+    FILE_PATTERN: /^miniCycle-auto-backup-\d{4}-\d{2}-\d{2}\.json$/
+});
+
 // ============================================================================
 // CUSTOM EVENT NAMES — Single source of truth for document.dispatchEvent
 // ============================================================================
@@ -925,6 +949,14 @@ export const DOM_CLASSES = Object.freeze({
     // House class for a modal's primary/close action: full-width, --color-primary.
     // Used by the reminders, settings and preferences modals.
     SETTINGS_BTN: 'settings-btn',
+    SETTINGS_BTN_GHOST: 'settings-btn-ghost',
+    AUTO_BACKUPS_TOGGLE_LABEL: 'auto-backups-toggle-label',
+    AUTO_BACKUPS_LIST: 'auto-backups-list',
+    AUTO_BACKUP_ITEM: 'auto-backup-item',
+    AUTO_BACKUP_META: 'auto-backup-meta',
+    AUTO_BACKUP_KIND: 'auto-backup-kind',
+    AUTO_BACKUP_WHEN: 'auto-backup-when',
+    AUTO_BACKUP_RESTORE: 'auto-backup-restore',
     // ---- Welcome Screen (modules/ui/titleScreen.js) ----
     // NOTE: deliberately NOT reusing .first-run-choice. critical.css hides it
     // with `html:not(.mc-first-run) .first-run-choice { display: none }`, and a
@@ -1234,6 +1266,13 @@ export const DOM_IDS = Object.freeze({
     PRE_MIGRATION_DOWNLOAD: 'pre-migration-download',
     PRE_MIGRATION_RESTORE: 'pre-migration-restore',
     PRE_MIGRATION_DELETE: 'pre-migration-delete',
+    // Automatic backups (Settings → Data Management): the disclosure button and
+    // the list of IndexedDB snapshots BackupManager keeps (backupRestoreManager).
+    AUTO_BACKUPS_TOGGLE: 'auto-backups-toggle',
+    AUTO_BACKUPS: 'auto-backups',
+    AUTO_BACKUPS_LIST: 'auto-backups-list',
+    AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
+    AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
     FACTORY_RESET: 'factory-reset',
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',

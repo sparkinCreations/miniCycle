@@ -14,7 +14,7 @@
  */
 
 import { createDIModule, required } from '../core/diBase.js';
-import { STORAGE_KEYS, INTERVALS, APP_VERSION, SCHEMA } from '../core/constants.js';
+import { STORAGE_KEYS, INTERVALS, APP_VERSION, SCHEMA, BACKUP_TRIGGERS } from '../core/constants.js';
 import { getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -51,7 +51,7 @@ const DB_NAME = 'miniCycle_backups';
 const DB_VERSION = 3; // Bumped for test_backups store
 const AUTO_BACKUP_STORE = 'auto_backups';
 const MANUAL_BACKUP_STORE = 'manual_backups';
-const SESSION_BACKUP_STORE = 'session_backups'; // Backups on every app open
+const SESSION_BACKUP_STORE = 'session_backups'; // Snapshots on every app open and whenever the app is hidden
 const TEST_BACKUP_STORE = 'test_backups'; // Backups before running tests
 const MAX_AUTO_BACKUPS = 10; // Keep last 10 auto-backups
 const MAX_SESSION_BACKUPS = 5; // Keep last 5 session backups
@@ -71,7 +71,7 @@ const LITE_STORAGE_KEYS = Object.freeze([
     STORAGE_KEYS.LITE_FOCUS_MODE
 ]);
 
-function collectLiteStorageSnapshot() {
+export function collectLiteStorageSnapshot() {
     const liteStorage = {};
     let hasLiteData = false;
 
@@ -103,7 +103,7 @@ function buildPortableBackupPayload(backup) {
         miniCycleData: JSON.stringify(backup.data),
         backupMetadata: {
             createdAt: backup.timestamp,
-            version: backup.metadata?.version || backup.data.metadata?.version || '2.5',
+            version: backup.metadata?.version || backup.data.metadata?.version || APP_VERSION,
             schemaVersion: backup.metadata?.schemaVersion || backup.data.metadata?.schemaVersion || SCHEMA.CURRENT,
             includesLiteStorage: Boolean(backup.liteStorage),
             source: 'miniCycle BackupManager'
@@ -124,7 +124,7 @@ class BackupManager {
         this.initPromise = null;
     }
 
-    _buildBackupRecord(currentState, type, { id, name, cycleCount, liteStorage = collectLiteStorageSnapshot(), timestamp = Date.now() } = {}) {
+    _buildBackupRecord(currentState, type, { id, name, cycleCount, trigger, liteStorage = collectLiteStorageSnapshot(), timestamp = Date.now() } = {}) {
         const backup = {
             timestamp,
             data: currentState,
@@ -148,6 +148,7 @@ class BackupManager {
         if (typeof cycleCount === 'number') {
             backup.metadata.cycleCount = cycleCount;
         }
+        if (trigger) backup.metadata.trigger = trigger;
         if (liteStorage) {
             backup.liteStorage = liteStorage;
         }
@@ -254,18 +255,29 @@ class BackupManager {
      * Create an automatic backup (non-blocking background operation)
      * @returns {Promise<boolean>}
      */
+    /**
+     * True when `currentState` is the same document the last snapshot in a store
+     * holds: the modified stamp AppState writes on every update() matches. A copy
+     * of an unchanged state would only push an older, DIFFERENT copy out of the
+     * store, so every writer skips it.
+     * @private
+     */
+    _unchangedSince(lastBackup, currentState) {
+        const last = lastBackup?.data?.metadata?.lastModified;
+        const now = currentState?.metadata?.lastModified;
+        return Boolean(last) && last === now;
+    }
+
+    /**
+     * Create the daily copy: at most one per 24h (INTERVALS.BACKUP_DAILY), skipped
+     * when nothing changed since the last one, newest MAX_AUTO_BACKUPS kept. Called
+     * from uiBoot on app open and whenever the app is hidden, so a session that
+     * stays open for days still gets its daily copy.
+     * @returns {Promise<boolean>}
+     */
     async createAutoBackup() {
         try {
             await this.init();
-
-            // Check if we need a backup (only once per day)
-            const lastBackup = await this.getLastAutoBackup();
-            if (lastBackup) {
-                const timeSinceLastBackup = Date.now() - lastBackup.timestamp;
-                if (timeSinceLastBackup < INTERVALS.BACKUP_DAILY) {
-                    return false;
-                }
-            }
 
             // Get current app state (DI-pure)
             const AppState = _deps.AppState;
@@ -273,11 +285,19 @@ class BackupManager {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping auto-backup');
                 return false;
             }
-
             const currentState = AppState.get();
             if (!currentState) {
                 console.warn('⚠️ BackupManager: No state data available for backup');
                 return false;
+            }
+
+            const lastBackup = await this.getLastAutoBackup();
+            if (lastBackup) {
+                if (this._unchangedSince(lastBackup, currentState)) return false;
+                const timeSinceLastBackup = Date.now() - lastBackup.timestamp;
+                if (timeSinceLastBackup < INTERVALS.BACKUP_DAILY) {
+                    return false;
+                }
             }
 
             const backup = this._buildBackupRecord(currentState, 'auto');
@@ -297,23 +317,27 @@ class BackupManager {
     }
 
     /**
-     * Create a session backup (runs on every app open)
-     * Skips if last session backup was less than 5 minutes ago.
-     * Keeps only the last 5 backups for quick recovery.
-     * @returns {Promise<boolean>}
+     * Take a session snapshot. `reason` is BACKUP_TRIGGERS.OPEN (app open: the
+     * 5-minute gap guards a burst of reopens) or BACKUP_TRIGGERS.HIDE (the app was
+     * hidden: no gap — the state changed during the session and that is the
+     * copy a long session needs). Either way nothing is written when the state
+     * is unchanged since the last snapshot, and concurrent calls (pagehide and
+     * visibilitychange fire together on close) share one write. Keeps the
+     * newest MAX_SESSION_BACKUPS.
+     * @param {{reason?: string}} [options]
+     * @returns {Promise<boolean>} true when a snapshot was written
      */
-    async createSessionBackup() {
+    async createSessionBackup({ reason = BACKUP_TRIGGERS.OPEN } = {}) {
+        if (this._sessionBackupInFlight) return this._sessionBackupInFlight;
+        this._sessionBackupInFlight = this._createSessionBackup(reason)
+            .finally(() => { this._sessionBackupInFlight = null; });
+        return this._sessionBackupInFlight;
+    }
+
+    /** @private */
+    async _createSessionBackup(reason) {
         try {
             await this.init();
-
-            // Skip if last session backup was recent (avoid duplicates on rapid app opens)
-            const lastSessionBackup = await this.getLastBackupFromStore(SESSION_BACKUP_STORE);
-            if (lastSessionBackup) {
-                const timeSinceLastBackup = Date.now() - lastSessionBackup.timestamp;
-                if (timeSinceLastBackup < INTERVALS.BACKUP_SESSION_MIN) {
-                    return false;
-                }
-            }
 
             // Get current app state (DI-pure)
             const AppState = _deps.AppState;
@@ -321,11 +345,21 @@ class BackupManager {
                 console.warn('⚠️ BackupManager: AppState not ready, skipping session backup');
                 return false;
             }
-
             const currentState = AppState.get();
             if (!currentState) {
                 console.warn('⚠️ BackupManager: No state data available for session backup');
                 return false;
+            }
+
+            const lastSessionBackup = await this.getLastBackupFromStore(SESSION_BACKUP_STORE);
+            if (lastSessionBackup) {
+                if (this._unchangedSince(lastSessionBackup, currentState)) return false;
+                if (reason === BACKUP_TRIGGERS.OPEN) {
+                    const timeSinceLastBackup = Date.now() - lastSessionBackup.timestamp;
+                    if (timeSinceLastBackup < INTERVALS.BACKUP_SESSION_MIN) {
+                        return false;
+                    }
+                }
             }
 
             // Check if data is meaningful (has at least one cycle)
@@ -335,7 +369,7 @@ class BackupManager {
                 return false;
             }
 
-            const backup = this._buildBackupRecord(currentState, 'session', { cycleCount, liteStorage });
+            const backup = this._buildBackupRecord(currentState, 'session', { cycleCount, liteStorage, trigger: reason });
 
             // Save to IndexedDB
             await this.saveBackup(SESSION_BACKUP_STORE, backup);

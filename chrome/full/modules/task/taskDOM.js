@@ -51,7 +51,7 @@ const di = createDIModule('TaskDOMManager', {
     escapeHtml: optional(null),
     generateId: optional(null),
     syncTaskDeleteWhenCompleteDOM: optional(null),
-    saveTaskToSchema25: optional(null),
+    saveRoutineToState: optional(null),
     AppMeta: optional(null),
     // Priority colour = the task's LEVEL under the active theme (utils/priorityLevel.js).
     // Also handed to TaskDOMPatch at construction (init) — keep the two in step.
@@ -59,7 +59,7 @@ const di = createDIModule('TaskDOMManager', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, taskCore: Object|null, autoSave: Function|null, showNotification: Function|null, sanitizeInput: Function|null, escapeHtml: Function|null, generateId: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, saveTaskToSchema25: Function|null, AppMeta: Object|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, taskCore: Object|null, autoSave: Function|null, showNotification: Function|null, sanitizeInput: Function|null, escapeHtml: Function|null, generateId: Function|null, syncTaskDeleteWhenCompleteDOM: Function|null, saveRoutineToState: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -77,7 +77,7 @@ export function setTaskDOMManagerDependencies(dependencies) {
 // ✅ Module classes will be loaded dynamically with versioning
 // ✅ Also stored globally to handle multiple module instances (see note above)
 let TaskValidator, TaskUtils, TaskRenderer, TaskEvents, TaskButtons, TaskDOMPatch;
-// ✅ Wrapper function from taskUtils.js (uses _deps for saveTaskToSchema25)
+// ✅ Wrapper function from taskUtils.js (uses _deps for saveRoutineToState)
 let _createOrUpdateTaskDataFn = null;
 // ✅ taskToAddTaskOptions from taskUtils.js - exported for other modules to use
 let _taskToAddTaskOptions = null;
@@ -131,7 +131,7 @@ export class TaskDOMManager {
             // IMPORTANT - warn if missing but don't fail
             // ============================================
             GlobalUtils: resolvedDeps.GlobalUtils || this._warnMissing('GlobalUtils'),
-            saveTaskToSchema25: resolvedDeps.saveTaskToSchema25 || this.fallbackSave,
+            saveRoutineToState: resolvedDeps.saveRoutineToState || this.fallbackSave,
             generateId: resolvedDeps.generateId || this._warnMissingWithFallback('generateId', this.fallbackGenerateId),
 
             // ============================================
@@ -297,7 +297,7 @@ export class TaskDOMManager {
                 TaskEvents = EventsClass;
                 TaskButtons = ButtonsClass;
                 TaskDOMPatch = PatchClass;
-                // Store wrapper function that uses _deps (for saveTaskToSchema25)
+                // Store wrapper function that uses _deps (for saveRoutineToState)
                 _createOrUpdateTaskDataFn = createOrUpdateTaskDataWrapper;
                 // Store taskToAddTaskOptions for export to other modules
                 _taskToAddTaskOptions = taskToAddTaskOptions;
@@ -310,7 +310,7 @@ export class TaskDOMManager {
                     get generateId() { return instanceDeps.generateId; },
                     get enableDragAndDropOnTask() { return instanceDeps.enableDragAndDropOnTask; },
                     get updateMoveArrowsVisibility() { return instanceDeps.updateMoveArrowsVisibility; },
-                    get saveTaskToSchema25() { return instanceDeps.saveTaskToSchema25; },
+                    get saveRoutineToState() { return instanceDeps.saveRoutineToState; },
                     get calculateNextOccurrence() { return instanceDeps.calculateNextOccurrence; }
                 });
 
@@ -502,7 +502,7 @@ export class TaskDOMManager {
     // ============================================
 
     fallbackSave() {
-        console.warn('⚠️ saveTaskToSchema25 not available - changes not saved');
+        console.warn('⚠️ saveRoutineToState not available - changes not saved');
     }
 
     fallbackNotification(message, type) {
@@ -551,7 +551,7 @@ export class TaskDOMManager {
      */
     createTaskDOMElements(taskContext, taskData) {
         const {
-            assignedTaskId, taskTextTrimmed, highPriority, priority, recurring,
+            assignedTaskId, taskTextTrimmed, hasPriority, priority, recurring,
             recurringSettings, settings, autoResetEnabled, currentCycle, autoClear
         } = taskContext;
 
@@ -566,7 +566,7 @@ export class TaskDOMManager {
         }
 
         // Create main task element
-        const taskItem = this.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, autoClear);
+        const taskItem = this.createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle, autoClear);
 
         // Apply per-task priority color via CSS custom property (more reliable than borderLeftColor
         // because it doesn't conflict with the border-left shorthand in the stylesheet).
@@ -617,13 +617,13 @@ export class TaskDOMManager {
     /**
      * Create main task element (li)
      */
-    createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle, deleteWhenCompleteSettings = null) {
+    createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle, autoClear = null) {
         const taskItem = document.createElement("li");
         taskItem.classList.add(DOM_CLASSES.TASK);
         taskItem.setAttribute("draggable", "true");
         taskItem.dataset.taskId = assignedTaskId;
 
-        if (highPriority) {
+        if (hasPriority) {
             taskItem.classList.add(DOM_CLASSES.HIGH_PRIORITY);
         }
 
@@ -652,11 +652,11 @@ export class TaskDOMManager {
         const currentMode = isToDoMode ? 'todo' : 'cycle';
 
         // Validate and initialize settings if missing
-        const validSettings = deleteWhenCompleteSettings &&
-            typeof deleteWhenCompleteSettings === 'object' &&
-            typeof deleteWhenCompleteSettings.cycle === 'boolean' &&
-            typeof deleteWhenCompleteSettings.todo === 'boolean'
-            ? deleteWhenCompleteSettings
+        const validSettings = autoClear &&
+            typeof autoClear === 'object' &&
+            typeof autoClear.cycle === 'boolean' &&
+            typeof autoClear.todo === 'boolean'
+            ? autoClear
             : { cycle: false, todo: true }; // Use defaults if invalid
 
         // ✅ Decide active deleteWhenComplete strictly from settings when possible
@@ -1459,7 +1459,7 @@ function setupFinalTaskInteractions(taskItem, isLoading) {
 }
 
 function createOrUpdateTaskData(taskContext) {
-    // Use the wrapper function from taskUtils.js that has _deps wired (includes saveTaskToSchema25)
+    // Use the wrapper function from taskUtils.js that has _deps wired (includes saveRoutineToState)
     if (!_createOrUpdateTaskDataFn) {
         console.warn('⚠️ createOrUpdateTaskData wrapper not initialized yet');
         return null;
@@ -1543,12 +1543,12 @@ function createTaskDOMElements(taskContext, taskData) {
     return taskDOMManager.createTaskDOMElements(taskContext, taskData);
 }
 
-function createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle) {
+function createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle) {
     if (!taskDOMManager) {
         console.warn('⚠️ TaskDOMManager not initialized');
         return document.createElement('li');
     }
-    return taskDOMManager.createMainTaskElement(assignedTaskId, highPriority, recurring, recurringSettings, currentCycle);
+    return taskDOMManager.createMainTaskElement(assignedTaskId, hasPriority, recurring, recurringSettings, currentCycle);
 }
 
 function createThreeDotsButton(taskItem, settings) {

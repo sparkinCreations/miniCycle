@@ -1,5 +1,5 @@
 /**
- * MiniCycle Notifications Module (Schema 2.5)
+ * MiniCycle Notifications Module (Schema 2.6)
  *
  * Comprehensive notification system with toast messages,
  * educational tips, and modal dialogs.
@@ -10,7 +10,7 @@
  * - Educational tips with dismissal tracking
  * - Recurring task notifications
  * - Modal dialogs (confirmation & prompt)
- * - Schema 2.5 data integration
+ * - State document integration
  *
  * @module utils/notifications
  * @see {@link file://docs/architecture/ARCHITECTURE_OVERVIEW.md} - Architecture
@@ -54,7 +54,7 @@ const di = createDIModule('Notifications', {
   generateHashId: optional(null),
   GlobalUtils: optional(null),
   escapeHtml: optional(null),
-  applyRecurringToTaskSchema25: optional(null),
+  applyRecurringToTask: optional(null),
   updateRecurringPanel: optional(null),
   openRecurringSettingsPanelForTask: optional(null),
   safeAddEventListener: optional(null),
@@ -62,7 +62,7 @@ const di = createDIModule('Notifications', {
 });
 
 // Late-binding deps via Proxy
-/** @type {{appInit: Object|null, AppState: Object|null, generateHashId: Function|null, GlobalUtils: Object|null, escapeHtml: Function|null, applyRecurringToTaskSchema25: Function|null, updateRecurringPanel: Function|null, openRecurringSettingsPanelForTask: Function|null, safeAddEventListener: Function|null}} */
+/** @type {{appInit: Object|null, AppState: Object|null, generateHashId: Function|null, GlobalUtils: Object|null, escapeHtml: Function|null, applyRecurringToTask: Function|null, updateRecurringPanel: Function|null, openRecurringSettingsPanelForTask: Function|null, safeAddEventListener: Function|null}} */
 const _deps = new Proxy({}, {
   get(_, prop) {
     return di.resolve()[prop];
@@ -565,7 +565,7 @@ export class MiniCycleNotifications {
         this.educationalTips.initTipListeners(notification);
       }
 
-      // Restore saved position from Schema 2.5
+      // Restore saved position from state
       this.restoreNotificationPosition(notificationContainer);
 
       // Auto-remove logic with hover pause
@@ -701,7 +701,7 @@ async setDefaultPosition(notificationContainer) {
     notificationContainer.style.left = `${defaultX}px`;
     notificationContainer.style.right = "auto";
 
-    // Save this default position to Schema 2.5 so it persists (asynchronous, non-blocking)
+    // Save this default position to state so it persists (asynchronous, non-blocking)
     try {
         // ✅ Only save if AppState is available (DI-pure)
         if (!this.deps.AppState || typeof this.deps.AppState.update !== 'function') {
@@ -870,15 +870,15 @@ async setDefaultPosition(notificationContainer) {
     let pendingSave = null;
     const THROTTLE_MS = 100;
 
-    // Save position to Schema 2.5 via AppState (DI-pure, throttled)
-    const savePositionToSchema25 = async (x, y) => {
+    // Save position to state via AppState (DI-pure, throttled)
+    const savePositionToState = async (x, y) => {
       const now = Date.now();
 
       // Throttle: skip if called too recently
       if (now - lastSaveTime < THROTTLE_MS) {
         // Schedule a final save for the last position
         if (pendingSave) clearTimeout(pendingSave);
-        pendingSave = setTimeout(() => savePositionToSchema25(x, y), THROTTLE_MS);
+        pendingSave = setTimeout(() => savePositionToState(x, y), THROTTLE_MS);
         return;
       }
 
@@ -1012,7 +1012,7 @@ async setDefaultPosition(notificationContainer) {
 
           // Save final position once on drag end (not during movement)
           const finalRect = notificationContainer.getBoundingClientRect();
-          savePositionToSchema25(finalRect.left, finalRect.top);
+          savePositionToState(finalRect.left, finalRect.top);
           if (Math.abs(ev.clientX - startX) + Math.abs(ev.clientY - startY) > dragThreshold) {
             ev.preventDefault();
             ev.stopPropagation();
@@ -1273,8 +1273,8 @@ async setDefaultPosition(notificationContainer) {
         const activeCycleId = getActiveRoutineId(state);
 
         // Apply recurring settings (DI-pure)
-        if (this.deps.applyRecurringToTaskSchema25) {
-          await this.deps.applyRecurringToTaskSchema25(taskId, { frequency: newFrequency });
+        if (this.deps.applyRecurringToTask) {
+          await this.deps.applyRecurringToTask(taskId, { frequency: newFrequency });
         }
 
         // Re-read fresh state after update (state var above is pre-update snapshot)

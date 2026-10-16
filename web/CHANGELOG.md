@@ -1,3 +1,10 @@
+## [2.617] - 2026-10-16
+- feat(focus-view): keyboard focus on the exit button arms the help-tip dwell too
+- feat(focus-view): Help window names the exit button when the pointer rests on it
+- feat(focus-view): exit button uses the compress glyph, pairing it with the eye
+- feat(onboarding): device-variant Focus View first-run toast with drag hint
+
+
 ## [2.616] - 2026-10-15
 - feat(backups): daily backup file in a device folder on desktop and Android
 - feat(backups): snapshot when the app is hidden, schedule the daily copy, skip unchanged state
