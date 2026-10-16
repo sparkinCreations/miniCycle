@@ -137,6 +137,7 @@
   * [CTA Click Tracking](deployment/CLICK_TRACKING.md)
 
 * **Future Work** _(active plans only)_
+  * [App Lock (Face ID / fingerprint, optional)](future-work/APP_LOCK_PLAN.md)
   * [AppState Merge States](future-work/APPSTATE_MERGE_STATES.md)
   * [Audit Residuals (Aug 2026)](future-work/AUDIT_RESIDUALS_2026_08.md)
   * [Auto-Generated depMappings](future-work/AUTO_GENERATED_DEPMAPPINGS_PLAN.md)
