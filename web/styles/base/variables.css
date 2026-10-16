@@ -145,18 +145,12 @@
      These are overridden by theme-manager.js when a theme is applied
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
-  /* Footer links: white text on a see-through navy glass strip (heavy blur).
-     A deeper tint at a lower alpha is the most transparent setting that
-     keeps the white text at 4.6:1 over the gradient's light end (WCAG 1.4.3
-     asks 4.5:1); the contrast runner gates it. A lighter tint would need
-     more opacity for the same number. */
+  /* Footer links: plain white over the page gradient, no strip, every width.
+     Below 4.5:1 at the gradient's light end on purpose (Oct 2026: the glass
+     strip and the near-black phone text that met WCAG 1.4.3 were traded away
+     for the look); the contrast runner reports the number but does not gate
+     it, and the accessibility statement lists it under Known Limitations. */
   --footer-text: #ffffff;
-  --footer-strip-bg: rgba(10, 25, 60, 0.43);
-  --footer-strip-border: rgba(255, 255, 255, 0.35);
-  /* Phones show only the copyright line and no strip: one short caption
-     reads quieter bare. Near-black carries the contrast there (4.9:1 at the
-     gradient's light end); the dark themes set a light colour. */
-  --footer-text-mobile: #111111;
   --theme-bg-solid: #4c79ff;
   --theme-bg-surface: rgba(255, 255, 255, 0.95);
   --theme-bg-surface-elevated: #ffffff;

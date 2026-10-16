@@ -14,7 +14,6 @@
 html.dark-mode,
 body.dark-mode {
     /* Phones show the copyright bare on the dark gradient: light text there. */
-    --footer-text-mobile: #ffffff;
     background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
     color: var(--theme-text-primary);
 

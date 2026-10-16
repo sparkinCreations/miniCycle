@@ -23,12 +23,11 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
-/* White links on a thin, see-through navy glass strip under a heavy blur,
-   so the page shows through like the panels' glass. Blur alone does not
-   change what is under the text, so the tint is what the contrast comes
-   from: a deep navy at 43% is the most transparent setting that keeps the
-   white text at 4.6:1 over the gradient's light end (see --footer-strip-bg),
-   gated by the contrast runner. No opacity dimming on the text. */
+/* Plain white links straight over the page gradient, no strip and no
+   dimming, at every width. This knowingly sits under 4.5:1 at the
+   gradient's light end (Oct 2026: the glass strip that met WCAG 1.4.3 was
+   traded away for the look). The contrast runner reports the number without
+   gating it; the accessibility statement lists it as a known limitation. */
 .footer-links {
     list-style: none;
     margin: 0 auto;
@@ -38,11 +37,6 @@
     align-items: center;
     width: fit-content;
     max-width: calc(100% - 2 * var(--space-4));
-    background: var(--footer-strip-bg, rgba(28, 56, 120, 0.55));
-    border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.28));
-    border-radius: var(--radius-full, 999px);
-    backdrop-filter: blur(14px) saturate(1.3);
-    -webkit-backdrop-filter: blur(14px) saturate(1.3);
 }
 #copyright {
     margin: 0;
@@ -138,20 +132,9 @@
         display: none;
     }
 
-    /* Phones: only the copyright line shows, so the glass strip would be a
-       pill around one short caption under the Undo button and the page dots.
-       Drop it; the text carries the contrast via --footer-text-mobile. */
+    /* Phones: only the copyright line shows; same white text as desktop. */
     #footer-container .footer-links {
-        background: none;
-        border: none;
-        backdrop-filter: none;
-        -webkit-backdrop-filter: none;
         padding: 0;
-    }
-
-    #footer-container #copyright,
-    #footer-container #copyright a {
-        color: var(--footer-text-mobile, #111111);
     }
 
     #footer-container #copyright {
