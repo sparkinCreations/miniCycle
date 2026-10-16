@@ -151,6 +151,13 @@
      for the look); the contrast runner reports the number but does not gate
      it, and the accessibility statement lists it under Known Limitations. */
   --footer-text: #ffffff;
+  /* Only when more contrast is asked for — the OS "Increase contrast" setting
+     (prefers-contrast) or the app's own High Contrast mode — the links get
+     the navy glass strip on desktop (white at 4.6:1 over the gradient's light
+     end) and near-black text on phones; the dark themes set a light colour. */
+  --footer-strip-bg: rgba(10, 25, 60, 0.43);
+  --footer-strip-border: rgba(255, 255, 255, 0.35);
+  --footer-text-contrast: #111111;
   --theme-bg-solid: #4c79ff;
   --theme-bg-surface: rgba(255, 255, 255, 0.95);
   --theme-bg-surface-elevated: #ffffff;

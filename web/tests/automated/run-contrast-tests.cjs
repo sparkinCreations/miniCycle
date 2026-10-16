@@ -67,7 +67,8 @@ async function boot(page, baseURL) {
 }
 
 // Runs in the page. Returns [{ name, ratio, min }] for the hand-measured pairs.
-function measureHandChecks() {
+function measureHandChecks(opts) {
+    opts = opts || {};
     const parse = (str) => {
         const m = String(str).match(/rgba?\(([^)]+)\)/);
         if (m) { const [r, g, b, a = 1] = m[1].split(',').map(Number); return { r, g, b, a: isNaN(a) ? 1 : a }; }
@@ -121,10 +122,14 @@ function measureHandChecks() {
         const bgs = stops.length ? stops : (solid ? [solid] : [WHITE]);
         let worst = Infinity;
         for (const bg of bgs) { const surface = over(band, over(bg, WHITE)); worst = Math.min(worst, ratio(over(text, surface), surface)); }
-        // Reported, not gated (Oct 2026): the footer links are plain white over
-        // the page gradient by choice, and sit under 4.5:1 at its light end. The
-        // accessibility statement lists it under Known Limitations.
-        out.push({ name: 'footer text over every gradient stop', ratio: worst, min: 4.5, reportOnly: 'design choice, see the accessibility statement' });
+        // By default reported, not gated (Oct 2026): the footer links are plain
+        // white over the page gradient by choice, and sit under 4.5:1 at its
+        // light end. GATED when more contrast is asked for — the app's High
+        // Contrast mode (body.high-contrast) or the OS setting the runner
+        // emulates with opts.moreContrast — because that is when the strip and
+        // the dark phone text come back and must deliver.
+        const gated = opts.moreContrast || document.body.classList.contains('high-contrast');
+        out.push({ name: 'footer text over every gradient stop', ratio: worst, min: 4.5, reportOnly: gated ? undefined : 'design choice by default, see the accessibility statement' });
     }
     return out;
 }
@@ -210,6 +215,27 @@ async function run() {
                 else { console.log(`   ${colors.red}❌ ${label} ${line}${colors.reset}`); serious.push(`${label}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
             }
         }
+        // More-contrast pass: the OS "Increase contrast" setting (prefers-contrast)
+        // brings the footer strip back on desktop and dark text on phones, and
+        // that mode is GATED at 4.5:1 on every theme at both widths.
+        await page.emulateMedia({ contrast: 'more' });
+        for (const width of [{ name: 'desktop', size: { width: 1280, height: 900 } }, { name: 'phone', size: { width: 390, height: 844 } }]) {
+            await page.setViewportSize(width.size);
+            for (const theme of THEMES) {
+                await page.evaluate(([themeOff, themeOn]) => {
+                    document.body.classList.remove(...themeOff);
+                    document.body.classList.add(...themeOn);
+                }, [allThemeClasses, theme.classes]);
+                await page.waitForTimeout(350);
+                const label = `${theme.name} / ${width.name} / prefers-contrast: more`;
+                for (const m of (await page.evaluate(measureHandChecks, { moreContrast: true })).filter(x => /footer/.test(x.name))) {
+                    const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
+                    if (m.ratio >= m.min) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
+                    else { console.log(`   ${colors.red}❌ ${label} ${line}${colors.reset}`); serious.push(`${label}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
+                }
+            }
+        }
+        await page.emulateMedia({ contrast: null });
     } catch (e) {
         console.error(`${colors.red}❌ contrast run errored: ${e.message}${colors.reset}`);
         serious.push(`harness error: ${e.message}`);
