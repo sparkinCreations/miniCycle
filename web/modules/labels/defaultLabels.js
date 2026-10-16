@@ -391,8 +391,9 @@ export const DEFAULT_LABELS = deepFreeze({
         // spot sits over the task input. Device-variant: the touch gesture
         // starts with a press-and-hold, the pointer gesture is a plain drag.
         focusViewFirstRun:      {
-            touch:   'You\'re in Focus View. Everything else is in the ⋯ menu. Press and hold to drag this message anywhere, and the app will remember its location.',
-            pointer: 'You\'re in Focus View. Everything else is in the ⋯ menu. Drag this message anywhere and the app will remember its location.'
+            // A blank line between the two tips (\n\n — the toast body renders white-space: pre-line) so they read as two thoughts, not one run-on.
+            touch:   'You\'re in Focus View. Everything else is in the ⋯ menu.\n\nPress and hold to drag this message anywhere, and the app will remember its location.',
+            pointer: 'You\'re in Focus View. Everything else is in the ⋯ menu.\n\nDrag this message anywhere and the app will remember its location.'
         },
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
