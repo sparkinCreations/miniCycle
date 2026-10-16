@@ -54,7 +54,10 @@
     }
 }
 
-body.high-contrast .footer-links {
+/* …and under a colour the user picked in Personalization (body.custom-app-bg,
+   set by preferencesManager): the strip makes any colour work. */
+body.high-contrast .footer-links,
+body.custom-app-bg .footer-links {
     background: var(--footer-strip-bg, rgba(10, 25, 60, 0.43));
     border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.35));
     border-radius: var(--radius-full, 999px);
@@ -176,14 +179,17 @@ body.high-contrast .footer-links {
         }
     }
 
-    body.high-contrast #footer-container .footer-links {
+    body.high-contrast #footer-container .footer-links,
+    body.custom-app-bg #footer-container .footer-links {
         background: none;
         border: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
     }
     body.high-contrast #footer-container #copyright,
-    body.high-contrast #footer-container #copyright a {
+    body.high-contrast #footer-container #copyright a,
+    body.custom-app-bg #footer-container #copyright,
+    body.custom-app-bg #footer-container #copyright a {
         color: var(--footer-text-contrast, #111111);
     }
 

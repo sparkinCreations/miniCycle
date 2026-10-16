@@ -1072,6 +1072,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Background / Pattern ----
     NO_BG_PATTERN: 'no-bg-pattern',
     CUSTOM_PATTERN: 'custom-pattern',
+    CUSTOM_APP_BG: 'custom-app-bg',       // body: the app background is a colour the user picked (not a preset) — the footer links get their backing strip
     HAS_BG_IMAGE: 'has-bg-image',
     BG_MODE_COVER: 'bg-mode-cover',
     BG_MODE_CENTER: 'bg-mode-center',

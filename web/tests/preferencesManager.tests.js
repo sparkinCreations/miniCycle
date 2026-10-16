@@ -276,6 +276,44 @@ export async function runPreferencesManagerTests(resultsDiv) {
         }
     });
 
+    await test('a colour the user picked gets the footer strip class; a quick preset does not; reset clears it', () => {
+        const body = document.body;
+        const root = document.documentElement;
+        const hadDark = body.classList.contains('dark-mode');
+        const prevVocab = root.dataset.vocabTheme;
+        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow', 'custom-app-bg');
+        delete root.dataset.vocabTheme;
+        const withColors = (customColors) => {
+            mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: { customColors } }), update: () => {} } });
+            new mod.PreferencesManager().applyCustomColors();
+            return body.classList.contains('custom-app-bg');
+        };
+        try {
+            if (withColors({ appBg: '#d4a017', preset: 'goldenGlow' })) throw new Error('a quick preset got the strip class');
+            if (!withColors({ appBg: '#6b7280', preset: null })) throw new Error('a user-picked colour did not get the strip class');
+            if (withColors({ appBg: '#6b7280' })) throw new Error('an older save with no preset record got the strip class');
+            withColors({ appBg: '#6b7280', preset: null });
+            new mod.PreferencesManager().removeCustomColors();
+            if (body.classList.contains('custom-app-bg')) throw new Error('removeCustomColors left the strip class');
+        } finally {
+            body.classList.remove('custom-app-bg');
+            ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-app-bg'].forEach(v => root.style.removeProperty(v));
+            if (hadDark) body.classList.add('dark-mode');
+            if (prevVocab !== undefined) root.dataset.vocabTheme = prevVocab;
+        }
+    });
+
+    await test('readableText: white where it clears 4.5:1, near-black otherwise, cleared on null', async () => {
+        const rt = await import(`../modules/utils/readableText.js?v=${cacheBuster}`);
+        const el = document.createElement('div');
+        if (Math.abs(rt.contrastRatio('#ffffff', '#000000') - 21) > 0.01) throw new Error('white/black should be 21:1');
+        if (rt.contrastRatio('nope', '#000000') !== null) throw new Error('an unreadable colour should give null');
+        if (rt.applyReadableTextColors(el, '#0a2540') !== true || el.style.getPropertyValue('--footer-text') !== '#ffffff' || el.style.getPropertyValue('--pref-subtitle-opacity') !== '1') throw new Error('dark background should pick white: ' + el.style.cssText);
+        if (rt.applyReadableTextColors(el, '#8a8a8a') !== false || el.style.getPropertyValue('--footer-text') !== '#111111' || el.style.getPropertyValue('--pref-subtitle-color') !== '') throw new Error('mid grey (white 3.5:1) should pick near-black: ' + el.style.cssText);
+        rt.applyReadableTextColors(el, null);
+        if (el.style.cssText !== '') throw new Error('null should clear every var, left: ' + el.style.cssText);
+    });
+
     await test('isDefaultTheme returns true on a clean body and false under a theme class', () => {
         const body = document.body;
         const hadDark = body.classList.contains('dark-mode');

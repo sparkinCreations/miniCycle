@@ -47,6 +47,9 @@ const THEMES = [
     { name: 'Ocean preset', classes: [], preset: 'darkOcean' },
     { name: 'Berry preset', classes: [], preset: 'berry' },
     { name: 'Forest preset', classes: [], preset: 'forest' },
+    // A colour the user typed into the app-background picker (the hard, mid-tone
+    // case): the footer gets its strip and the derived text, and is GATED.
+    { name: 'user colour #8a8a8a', classes: [], preset: 'default', custom: '#8a8a8a' },
     { name: 'high contrast', classes: ['high-contrast'], preset: 'default' },
     { name: 'high contrast + dark', classes: ['high-contrast', 'dark-mode'], preset: 'default' }
 ];
@@ -70,6 +73,16 @@ async function applyThemeState(page, theme) {
     await page.waitForFunction(() => document.querySelectorAll('.quick-preset-btn').length > 0, null, { timeout: 10000 });
     await page.evaluate((key) => document.querySelector(`.quick-preset-btn[data-preset="${key}"]`)?.click(), theme.preset);
     await page.waitForTimeout(400);
+    if (theme.custom) {
+        await page.evaluate((hex) => {
+            const input = document.getElementById('pref-app-bg');
+            if (!input) return;
+            input.value = hex;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+        }, theme.custom);
+        await page.waitForTimeout(400);
+    }
     await page.evaluate(() => {
         document.getElementById('close-preferences-btn')?.click();
         document.getElementById('close-main-menu')?.click();
@@ -171,7 +184,7 @@ function measureHandChecks(opts) {
         // Contrast mode (body.high-contrast) or the OS setting the runner
         // emulates with opts.moreContrast — because that is when the strip and
         // the dark phone text come back and must deliver.
-        const gated = opts.moreContrast || document.body.classList.contains('high-contrast');
+        const gated = opts.moreContrast || document.body.classList.contains('high-contrast') || document.body.classList.contains('custom-app-bg');
         out.push({ name: 'footer text over every gradient stop', ratio: worst, min: 4.5, reportOnly: gated ? undefined : 'design choice by default, see the accessibility statement' });
     }
     return out;

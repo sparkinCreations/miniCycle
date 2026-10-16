@@ -167,6 +167,7 @@ var BOOT_CRITICAL = [
   './modules/utils/longPressHint.js',
   './modules/utils/collapsibleSections.js',
   './modules/utils/styleValidators.js',
+  './modules/utils/readableText.js',
   './modules/utils/cycleMode.js',
   './modules/utils/priorityLevel.js',
   './modules/utils/schemaVersion.js',

@@ -35,6 +35,7 @@ import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { applyReadableTextColors } from '../utils/readableText.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -189,6 +190,9 @@ function _refreshLiveLensLabels() {
         if (activeTheme.colorPreset.appBg) {
             body.style.setProperty('background', activeTheme.colorPreset.appBg);
         }
+        // Footer and subtitle colours that read on this preset's background —
+        // on body so they win over Personalization's root-level ones.
+        applyReadableTextColors(body, activeTheme.colorPreset.appBg || null);
         root.dataset.vocabTheme = themeId;
         root.dataset.vocabThemeName = activeTheme.name;
     } else {
@@ -200,6 +204,7 @@ function _refreshLiveLensLabels() {
         }
         // Remove the direct background override so Classic CSS / user colors take over.
         body.style.removeProperty('background');
+        applyReadableTextColors(body, null);
         delete root.dataset.vocabTheme;
         delete root.dataset.vocabThemeName;
         _deps.applyCustomColors?.();

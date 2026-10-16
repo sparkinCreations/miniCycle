@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyReadableTextColors } from '../utils/readableText.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -88,63 +89,11 @@ const TRANSLUCENT_BG_ALPHA = {
  * @param {number} alpha - Alpha value (0–1)
  * @returns {string} rgba string
  */
-// Text that must read on whatever the preset painted. The default blue
-// gradient keeps its fixed colours (footer.css, header.css); a preset is ONE
-// solid colour, so the choice is computable: white where white clears WCAG's
-// 4.5:1 against it, a near-black otherwise — the footer links (and their
-// phone contrast-mode text and desktop strip), and the header subtitle, which
-// turns white at full opacity on a dark preset (black at 0.8 measured 1.3:1 on
-// the Ocean preset, Oct 2026). Set beside the --pref-* vars, cleared with them.
-const READABLE_TEXT_VARS = Object.freeze([
-    '--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border',
-    '--pref-subtitle-color', '--pref-subtitle-opacity'
-]);
-const READABLE_DARK_TEXT = '#111111';
-const READABLE_LIGHT_TEXT = '#ffffff';
-
-function relativeLuminance(hex) {
-    const h = String(hex).replace('#', '');
-    if (!/^[0-9a-f]{6}$/i.test(h)) return null;
-    const channel = (i) => {
-        const c = parseInt(h.slice(i, i + 2), 16) / 255;
-        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
-    };
-    return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
-}
-
-function contrastRatio(hexA, hexB) {
-    const a = relativeLuminance(hexA); const b = relativeLuminance(hexB);
-    if (a === null || b === null) return null;
-    const [hi, lo] = a > b ? [a, b] : [b, a];
-    return (hi + 0.05) / (lo + 0.05);
-}
-
-/**
- * Pick the footer and subtitle colours for a preset's app background, or clear
- * them (no preset / unreadable value) so the stylesheets' defaults return.
- * @param {HTMLElement} root
- * @param {string|null} appBgHex
- */
-function applyReadableTextColors(root, appBgHex) {
-    const ratio = appBgHex ? contrastRatio(READABLE_LIGHT_TEXT, appBgHex) : null;
-    if (ratio === null) {
-        READABLE_TEXT_VARS.forEach((v) => root.style.removeProperty(v));
-        return;
-    }
-    const whiteReads = ratio >= 4.5;
-    root.style.setProperty('--footer-text', whiteReads ? READABLE_LIGHT_TEXT : READABLE_DARK_TEXT);
-    root.style.setProperty('--footer-text-contrast', whiteReads ? READABLE_LIGHT_TEXT : READABLE_DARK_TEXT);
-    // The on-request strip (prefers-contrast / High Contrast): navy glass under
-    // white text, a light glass under dark text.
-    root.style.setProperty('--footer-strip-bg', whiteReads ? 'rgba(10, 25, 60, 0.43)' : 'rgba(255, 255, 255, 0.72)');
-    root.style.setProperty('--footer-strip-border', whiteReads ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.3)');
-    if (whiteReads) {
-        root.style.setProperty('--pref-subtitle-color', READABLE_LIGHT_TEXT);
-        root.style.setProperty('--pref-subtitle-opacity', '1');
-    } else {
-        root.style.removeProperty('--pref-subtitle-color');
-        root.style.removeProperty('--pref-subtitle-opacity');
-    }
+/** Add or remove a body class only when that changes something (see applyCustomColors). */
+function setBodyClass(className, wanted) {
+    const body = _deps.getBody?.();
+    if (!body || body.classList.contains(className) === wanted) return;
+    body.classList.toggle(className, wanted);
 }
 
 function hexToRgba(hex, alpha) {
@@ -854,6 +803,7 @@ export class PreferencesManager {
             if (presetKey) {
                 btn._clickHandler = () => _presetsModule.applyQuickPreset(presetKey, {
                     saveColor: (key, color) => this.saveColor(key, color),
+                    markPreset: (key) => this.saveColor('preset', key),
                     resetAllColors: () => this.resetAllColors(),
                     loadSavedColors: () => this.loadSavedColors(),
                     updatePreview: () => this.updatePreview(),
@@ -1195,8 +1145,10 @@ export class PreferencesManager {
         // Save current state for undo before changing
         this.pushToUndoStack();
 
-        // Save to appState
+        // Save to appState — and record that this is the user's own pick, not a
+        // quick preset (applyCustomColors adds the footer strip for those).
         this.saveColor(config.key, color);
+        this.saveColor('preset', null);
 
         // Update preview immediately
         this.updatePreview();
@@ -1741,7 +1693,18 @@ export class PreferencesManager {
         });
 
         // Handle checkbox fill visibility
-        applyReadableTextColors(root, normalizeHex(customColors.appBg) || null);
+        const appBg = normalizeHex(customColors.appBg) || null;
+        applyReadableTextColors(root, appBg);
+        // A colour the user picked themselves (not a quick preset: handleColorChange
+        // clears `preset`) gets the backing strip under the footer links, so any
+        // colour works without the user having to think about it. A preset relies
+        // on the derived text colour alone. Older saves carry no `preset` key at
+        // all and are left as they were (no strip) until a colour is touched.
+        // Written only when it CHANGES: setupThemeObserver re-runs this method on
+        // every body class mutation, and classList.remove rewrites the attribute
+        // even for an absent class — an unconditional write here looped the page
+        // (Oct 2026, dark mode).
+        setBodyClass(DOM_CLASSES.CUSTOM_APP_BG, Boolean(appBg) && customColors.preset === null);
 
         const showCheckboxFill = customColors.showCheckboxFill !== false;
         if (!showCheckboxFill) {
@@ -1835,6 +1798,7 @@ export class PreferencesManager {
             root.style.removeProperty(config.cssVar);
         });
         applyReadableTextColors(root, null);
+        setBodyClass(DOM_CLASSES.CUSTOM_APP_BG, false);
 
         // Update status bar color back to default
         updateThemeColor();
