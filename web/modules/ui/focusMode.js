@@ -85,6 +85,8 @@ export class FocusMode {
         this._exitBtnHandler = null;
         this._exitHoverEnterHandler = null;
         this._exitHoverLeaveHandler = null;
+        this._exitFocusHandler = null;
+        this._exitBlurHandler = null;
         this._exitHoverTimer = null;
         this._panelChangeHandler = null;
         /** Focus View's fixed Complete Cycle / Clear button — its own element. */
@@ -520,22 +522,37 @@ export class FocusMode {
             };
             this._exitBtn.addEventListener('click', this._exitBtnHandler);
 
-            // Resting the pointer on the exit button asks the Help window to
-            // name what the icon does. Dwell-gated so a sweep across the row
-            // never fires it; the manager shows it once per page load.
-            this._exitHoverEnterHandler = () => {
+            // Resting on the exit button — pointer hover, or keyboard focus —
+            // asks the Help window to name what the icon does. Dwell-gated so
+            // a sweep across the row or a Tab passing through never fires it;
+            // the manager shows it once per page load.
+            const armTip = () => {
                 clearTimeout(this._exitHoverTimer);
                 this._exitHoverTimer = setTimeout(() => {
                     this._exitHoverTimer = null;
                     this.deps.showFocusExitTip?.('hover');
                 }, UI_TIMEOUTS.HOVER_TIP_DWELL);
             };
-            this._exitHoverLeaveHandler = () => {
+            const cancelTip = () => {
                 clearTimeout(this._exitHoverTimer);
                 this._exitHoverTimer = null;
             };
+            this._exitHoverEnterHandler = armTip;
+            this._exitHoverLeaveHandler = cancelTip;
+            // Keyboard only: a focus that does not match :focus-visible came
+            // from a tap or click, which the pointer path already covers.
+            this._exitFocusHandler = () => {
+                try {
+                    if (this._exitBtn.matches(':focus-visible')) armTip();
+                } catch {
+                    // Browser without :focus-visible — the hover path still works
+                }
+            };
+            this._exitBlurHandler = cancelTip;
             this._exitBtn.addEventListener('mouseenter', this._exitHoverEnterHandler);
             this._exitBtn.addEventListener('mouseleave', this._exitHoverLeaveHandler);
+            this._exitBtn.addEventListener('focus', this._exitFocusHandler);
+            this._exitBtn.addEventListener('blur', this._exitBlurHandler);
         }
 
         // Click on a menu item dispatches the action
@@ -1379,18 +1396,23 @@ export class FocusMode {
      * Clean up all event listeners.
      */
     /**
-     * Drop the exit button's dwell-hover listeners and any armed timer.
+     * Drop the exit button's dwell listeners (hover and keyboard focus) and
+     * any armed timer.
      * @private
      */
     _detachExitHover() {
         if (this._exitBtn && this._exitHoverEnterHandler) {
             this._exitBtn.removeEventListener('mouseenter', this._exitHoverEnterHandler);
             this._exitBtn.removeEventListener('mouseleave', this._exitHoverLeaveHandler);
+            this._exitBtn.removeEventListener('focus', this._exitFocusHandler);
+            this._exitBtn.removeEventListener('blur', this._exitBlurHandler);
         }
         clearTimeout(this._exitHoverTimer);
         this._exitHoverTimer = null;
         this._exitHoverEnterHandler = null;
         this._exitHoverLeaveHandler = null;
+        this._exitFocusHandler = null;
+        this._exitBlurHandler = null;
     }
 
     destroy() {
