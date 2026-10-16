@@ -718,6 +718,63 @@ export async function runFocusModeTests(resultsDiv) {
         }
     });
 
+    // Keyboard focus rides the same dwell: a focus that matches :focus-visible
+    // arms it, blur cancels it, and a pointer-originated focus (no match) is
+    // left to the hover path. matches() is stubbed because programmatic
+    // focus() does not reliably count as focus-visible in a test page.
+    await test('exit button keyboard focus arms the help-tip dwell; pointer focus and blur do not', () => {
+        setupDOMScaffold();
+        const tipCalls = [];
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showFocusExitTip: (trigger) => { tipCalls.push(trigger); }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        const exit = document.getElementById('focus-mode-exit-btn');
+        if (!exit) throw new Error('exit button was not created on init');
+
+        const realSetTimeout = window.setTimeout;
+        const realClearTimeout = window.clearTimeout;
+        const scheduled = [];
+        const cleared = [];
+        let nextId = 500;
+        window.setTimeout = (cb, delay) => { const id = nextId++; scheduled.push({ id, cb, delay }); return id; };
+        window.clearTimeout = (id) => { cleared.push(id); };
+        let keyboard = false;
+        const realMatches = exit.matches.bind(exit);
+        exit.matches = (sel) => sel === ':focus-visible' ? keyboard : realMatches(sel);
+        try {
+            // Pointer-originated focus: nothing armed.
+            keyboard = false;
+            exit.dispatchEvent(new Event('focus'));
+            if (scheduled.length !== 0) throw new Error('a non-keyboard focus armed the dwell');
+
+            // Keyboard focus then blur before the dwell: armed, then cancelled.
+            keyboard = true;
+            exit.dispatchEvent(new Event('focus'));
+            const armed = scheduled[scheduled.length - 1];
+            if (!armed || armed.delay !== UI_TIMEOUTS.HOVER_TIP_DWELL) throw new Error('keyboard focus did not arm the dwell timer');
+            exit.dispatchEvent(new Event('blur'));
+            if (!cleared.includes(armed.id)) throw new Error('blur did not cancel the dwell timer');
+            if (tipCalls.length !== 0) throw new Error('a Tab passing through asked for the tip');
+
+            // Keyboard focus that rests: fires once.
+            exit.dispatchEvent(new Event('focus'));
+            scheduled[scheduled.length - 1].cb();
+            if (tipCalls.length !== 1 || tipCalls[0] !== 'hover') throw new Error(`expected one tip request, got ${JSON.stringify(tipCalls)}`);
+        } finally {
+            window.setTimeout = realSetTimeout;
+            window.clearTimeout = realClearTimeout;
+            instance.destroy();
+            teardownDOMScaffold();
+        }
+    });
+
     // The × to leave Focus View moved from the top-left corner to under the
     // routine list in v2.594 (2026-10-10). A user whose data predates that knew
     // the old spot and is told once; new data never is; and once told, never again.
