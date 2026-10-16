@@ -744,7 +744,7 @@ export const MODULE_MANIFESTS = {
     focusMode: {
         path: '../ui/focusMode.js',
         phase: PHASES.UI_MANAGERS,
-        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle', 'ensureModuleLoaded', 'showTaskView'],
+        optionalDeps: ['showNotification', 'safeAddEventListener', 'AppState', 'clearAllTasks', 'deleteAllTasks', 'switchMiniCycle', 'createNewMiniCycle', 'ensureModuleLoaded', 'showTaskView', 'showFocusExitTip'],
         provides: ['activateFocusMode'],
         provideInstance: 'focusMode',
         api: 'ui',

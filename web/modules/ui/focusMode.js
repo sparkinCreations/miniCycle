@@ -37,6 +37,8 @@ const di = createDIModule('FocusMode', {
     // the Task panel is active (FOCUS_TASK_VIEW_PLAN D7)
     ensureModuleLoaded: optional(null),
     showTaskView: optional(null),
+    // Help window: one-line tip when the pointer rests on the exit button
+    showFocusExitTip: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
     querySelector: optional((sel) => document.querySelector(sel)),
     getBody: optional(() => document.body),
@@ -81,6 +83,9 @@ export class FocusMode {
         this._menuBtnHandler = null;
         this._exitBtn = null;
         this._exitBtnHandler = null;
+        this._exitHoverEnterHandler = null;
+        this._exitHoverLeaveHandler = null;
+        this._exitHoverTimer = null;
         this._panelChangeHandler = null;
         /** Focus View's fixed Complete Cycle / Clear button — its own element. */
         this._actionBtn = null;
@@ -514,6 +519,23 @@ export class FocusMode {
                 this.deactivate();
             };
             this._exitBtn.addEventListener('click', this._exitBtnHandler);
+
+            // Resting the pointer on the exit button asks the Help window to
+            // name what the icon does. Dwell-gated so a sweep across the row
+            // never fires it; the manager shows it once per page load.
+            this._exitHoverEnterHandler = () => {
+                clearTimeout(this._exitHoverTimer);
+                this._exitHoverTimer = setTimeout(() => {
+                    this._exitHoverTimer = null;
+                    this.deps.showFocusExitTip?.('hover');
+                }, UI_TIMEOUTS.HOVER_TIP_DWELL);
+            };
+            this._exitHoverLeaveHandler = () => {
+                clearTimeout(this._exitHoverTimer);
+                this._exitHoverTimer = null;
+            };
+            this._exitBtn.addEventListener('mouseenter', this._exitHoverEnterHandler);
+            this._exitBtn.addEventListener('mouseleave', this._exitHoverLeaveHandler);
         }
 
         // Click on a menu item dispatches the action
@@ -1356,6 +1378,21 @@ export class FocusMode {
     /**
      * Clean up all event listeners.
      */
+    /**
+     * Drop the exit button's dwell-hover listeners and any armed timer.
+     * @private
+     */
+    _detachExitHover() {
+        if (this._exitBtn && this._exitHoverEnterHandler) {
+            this._exitBtn.removeEventListener('mouseenter', this._exitHoverEnterHandler);
+            this._exitBtn.removeEventListener('mouseleave', this._exitHoverLeaveHandler);
+        }
+        clearTimeout(this._exitHoverTimer);
+        this._exitHoverTimer = null;
+        this._exitHoverEnterHandler = null;
+        this._exitHoverLeaveHandler = null;
+    }
+
     destroy() {
         if (this._panelChangeHandler) {
             document.removeEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
@@ -1382,6 +1419,7 @@ export class FocusMode {
         if (this._exitBtn && this._exitBtnHandler) {
             this._exitBtn.removeEventListener('click', this._exitBtnHandler);
         }
+        this._detachExitHover();
         if (this._menu && this._menuClickHandler) {
             this._menu.removeEventListener('click', this._menuClickHandler);
         }

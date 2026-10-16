@@ -879,6 +879,36 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
+    // The Focus View exit tip rides the same transient-tip path: it replaces
+    // the status line, auto-hides back to it, and the 'hover' trigger fires
+    // once per page load (focusMode asks on every dwell; the manager gates).
+    await test('focus exit tip shows once per page load on hover and auto-hides', () => {
+        const manager = new HelpWindowManager();
+        manager.isVisible = true;
+        manager.updateConstantMessage();
+        const statusHTML = helpWindowEl.innerHTML;
+        const tipText = 'leaves Focus View'; // substring of help.focusExitTip
+
+        runAutoHide(manager, () => {
+            manager.showFocusExitTip('hover');
+            if (!helpWindowEl.innerHTML.includes(tipText)) {
+                throw new Error('the focus exit tip did not replace the status line');
+            }
+        });
+        if (helpWindowEl.innerHTML !== statusHTML) {
+            throw new Error('auto-hide did not restore the original status message');
+        }
+
+        // Second hover in the same page load: a no-op, nothing scheduled.
+        const realSetTimeout = window.setTimeout;
+        let scheduled = 0;
+        window.setTimeout = () => { scheduled++; return 0; };
+        try { manager.showFocusExitTip('hover'); } finally { window.setTimeout = realSetTimeout; }
+        if (scheduled !== 0 || helpWindowEl.innerHTML !== statusHTML) {
+            throw new Error('a second hover re-showed the focus exit tip');
+        }
+    });
+
     await test('mode description clears itself when the status line has not changed', () => {
         const manager = new HelpWindowManager();
         manager.isVisible = true;

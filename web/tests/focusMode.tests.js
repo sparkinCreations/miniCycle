@@ -8,6 +8,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runFocusModeTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/ui/focusMode.js?v=${cacheBuster}`);
+    const { UI_TIMEOUTS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
 
     // These label assertions must name the KEY, never the default vocabulary's
     // English word. focusMode.{cycle,clear}ActionLabel are vocab-themable, and
@@ -666,6 +667,56 @@ export async function runFocusModeTests(resultsDiv) {
 
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">📍 "The × moved" one-time notice</h4>';
+
+    // Resting the pointer on the exit button asks the Help window for its tip
+    // after a dwell; a sweep that leaves before the dwell asks for nothing.
+    // Timers are captured rather than waited out (same trick as the help
+    // window tests' runAutoHide).
+    await test('exit button hover asks for the help tip after the dwell, not on a pass-through', () => {
+        setupDOMScaffold();
+        const tipCalls = [];
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn),
+            showFocusExitTip: (trigger) => { tipCalls.push(trigger); }
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        const exit = document.getElementById('focus-mode-exit-btn');
+        if (!exit) throw new Error('exit button was not created on init');
+
+        const realSetTimeout = window.setTimeout;
+        const realClearTimeout = window.clearTimeout;
+        const scheduled = [];
+        const cleared = [];
+        let nextId = 100;
+        window.setTimeout = (cb, delay) => { const id = nextId++; scheduled.push({ id, cb, delay }); return id; };
+        window.clearTimeout = (id) => { cleared.push(id); };
+        try {
+            // Pass-through: enter then leave before the dwell elapses.
+            exit.dispatchEvent(new Event('mouseenter'));
+            const sweep = scheduled[scheduled.length - 1];
+            if (!sweep || sweep.delay !== UI_TIMEOUTS.HOVER_TIP_DWELL) throw new Error(`hover did not arm a ${UI_TIMEOUTS.HOVER_TIP_DWELL}ms dwell timer`);
+            exit.dispatchEvent(new Event('mouseleave'));
+            if (!cleared.includes(sweep.id)) throw new Error('leaving before the dwell did not cancel the timer');
+            if (tipCalls.length !== 0) throw new Error('a pass-through asked for the tip');
+
+            // Dwell: enter and let the timer fire.
+            exit.dispatchEvent(new Event('mouseenter'));
+            const dwell = scheduled[scheduled.length - 1];
+            if (dwell === sweep) throw new Error('re-entering did not arm a fresh timer');
+            dwell.cb();
+            if (tipCalls.length !== 1 || tipCalls[0] !== 'hover') throw new Error(`expected one 'hover' tip request, got ${JSON.stringify(tipCalls)}`);
+        } finally {
+            window.setTimeout = realSetTimeout;
+            window.clearTimeout = realClearTimeout;
+            instance.destroy();
+            teardownDOMScaffold();
+        }
+    });
 
     // The × to leave Focus View moved from the top-left corner to under the
     // routine list in v2.594 (2026-10-10). A user whose data predates that knew

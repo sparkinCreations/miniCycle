@@ -1762,6 +1762,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         helpWindowManager: () => deps.ui?.helpWindowManager,
         updateHelpWindow: (...args) => deps.ui?.helpWindowManager?.refreshLabels?.(...args),
         showCustomizerTip: (...args) => deps.ui?.helpWindowManager?.showCustomizerTip?.(...args),
+        showFocusExitTip: (...args) => deps.ui?.helpWindowManager?.showFocusExitTip?.(...args),
 
         // Focus-mode action button refresh — called by themeManager when
         // vocab theme changes so the button's data-label / aria pick up

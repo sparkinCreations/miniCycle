@@ -2466,6 +2466,9 @@ export const DEFAULT_LABELS = deepFreeze({
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared',
         customizerTip:     'Press the +/- button to add or remove task option buttons',
+        // Help-window tip when the pointer rests on the Focus View exit button
+        // (inward brackets): names what the icon does, once per page load.
+        focusExitTip:      'This button leaves Focus View and returns to Home View.',
         recurringRemoved:  'Recurring tasks removed — they\'ll return on schedule'
     },
 
