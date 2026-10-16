@@ -9,7 +9,14 @@
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── Gradient background on body ── */
-body {
+/* `html body`, not `body`: critical.css paints the default gradient on
+   `html, body` before main.css arrives (no flash of white), and it sits AFTER
+   main.css in document order, so at equal specificity it kept winning and the
+   colour themes' gradient never reached the page (Dark Ocean and Golden Glow
+   painted the default blue until Oct 2026; the contrast runner measured every
+   theme over it). One extra type selector outranks it; dark mode's
+   `body.dark-mode` rule still outranks this. */
+html body {
     background: var(--theme-bg-gradient);
     position: relative;
     z-index: 0; /* Creates stacking context so ::before renders above gradient */

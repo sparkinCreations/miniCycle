@@ -88,6 +88,65 @@ const TRANSLUCENT_BG_ALPHA = {
  * @param {number} alpha - Alpha value (0–1)
  * @returns {string} rgba string
  */
+// Text that must read on whatever the preset painted. The default blue
+// gradient keeps its fixed colours (footer.css, header.css); a preset is ONE
+// solid colour, so the choice is computable: white where white clears WCAG's
+// 4.5:1 against it, a near-black otherwise — the footer links (and their
+// phone contrast-mode text and desktop strip), and the header subtitle, which
+// turns white at full opacity on a dark preset (black at 0.8 measured 1.3:1 on
+// the Ocean preset, Oct 2026). Set beside the --pref-* vars, cleared with them.
+const READABLE_TEXT_VARS = Object.freeze([
+    '--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border',
+    '--pref-subtitle-color', '--pref-subtitle-opacity'
+]);
+const READABLE_DARK_TEXT = '#111111';
+const READABLE_LIGHT_TEXT = '#ffffff';
+
+function relativeLuminance(hex) {
+    const h = String(hex).replace('#', '');
+    if (!/^[0-9a-f]{6}$/i.test(h)) return null;
+    const channel = (i) => {
+        const c = parseInt(h.slice(i, i + 2), 16) / 255;
+        return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    };
+    return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
+}
+
+function contrastRatio(hexA, hexB) {
+    const a = relativeLuminance(hexA); const b = relativeLuminance(hexB);
+    if (a === null || b === null) return null;
+    const [hi, lo] = a > b ? [a, b] : [b, a];
+    return (hi + 0.05) / (lo + 0.05);
+}
+
+/**
+ * Pick the footer and subtitle colours for a preset's app background, or clear
+ * them (no preset / unreadable value) so the stylesheets' defaults return.
+ * @param {HTMLElement} root
+ * @param {string|null} appBgHex
+ */
+function applyReadableTextColors(root, appBgHex) {
+    const ratio = appBgHex ? contrastRatio(READABLE_LIGHT_TEXT, appBgHex) : null;
+    if (ratio === null) {
+        READABLE_TEXT_VARS.forEach((v) => root.style.removeProperty(v));
+        return;
+    }
+    const whiteReads = ratio >= 4.5;
+    root.style.setProperty('--footer-text', whiteReads ? READABLE_LIGHT_TEXT : READABLE_DARK_TEXT);
+    root.style.setProperty('--footer-text-contrast', whiteReads ? READABLE_LIGHT_TEXT : READABLE_DARK_TEXT);
+    // The on-request strip (prefers-contrast / High Contrast): navy glass under
+    // white text, a light glass under dark text.
+    root.style.setProperty('--footer-strip-bg', whiteReads ? 'rgba(10, 25, 60, 0.43)' : 'rgba(255, 255, 255, 0.72)');
+    root.style.setProperty('--footer-strip-border', whiteReads ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.3)');
+    if (whiteReads) {
+        root.style.setProperty('--pref-subtitle-color', READABLE_LIGHT_TEXT);
+        root.style.setProperty('--pref-subtitle-opacity', '1');
+    } else {
+        root.style.removeProperty('--pref-subtitle-color');
+        root.style.removeProperty('--pref-subtitle-opacity');
+    }
+}
+
 function hexToRgba(hex, alpha) {
     // Normalize FIRST: the fixed slice offsets below assume 6 digits, so a
     // shorthand like '#f00' read `''` for blue and produced
@@ -1682,6 +1741,8 @@ export class PreferencesManager {
         });
 
         // Handle checkbox fill visibility
+        applyReadableTextColors(root, normalizeHex(customColors.appBg) || null);
+
         const showCheckboxFill = customColors.showCheckboxFill !== false;
         if (!showCheckboxFill) {
             root.style.setProperty('--pref-checkbox-bg', 'transparent');
@@ -1773,6 +1834,7 @@ export class PreferencesManager {
         Object.values(COLOR_MAP).forEach(config => {
             root.style.removeProperty(config.cssVar);
         });
+        applyReadableTextColors(root, null);
 
         // Update status bar color back to default
         updateThemeColor();

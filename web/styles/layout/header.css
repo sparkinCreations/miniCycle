@@ -252,16 +252,28 @@
     font-weight: 600;
     font-size: 0.75rem;
     letter-spacing: 0.25em;
-    color: var(--color-black);
+    /* A Personalization preset sets --pref-subtitle-color / -opacity when its
+       background is dark enough that black would vanish (preferencesManager,
+       applyReadableTextColors); otherwise the defaults below. */
+    color: var(--pref-subtitle-color, var(--color-black));
     margin-top: var(--space-px);
     /* 0.8, not 0.7: this is 12px/600 text (not WCAG "large"), so it needs
        4.5:1. Composited over the #4c79ff header, 0.7 gave 3.93:1 and 0.8
        gives 4.57:1. Keeps the softened look while clearing AA. */
-    opacity: 0.8;
+    opacity: var(--pref-subtitle-opacity, 0.8);
 }
 
 body.dark-mode .app-subtitle {
     color: var(--color-gray-300);
+}
+
+/* The dark colour themes: black at 0.8 vanishes on their navy headers
+   (Dark Ocean measured 1.65:1 once the themes actually painted, Oct 2026 —
+   see background.css). Keyed by the root attribute the theme tokens use, so
+   this outranks critical.css's plain .app-subtitle too. */
+:root[data-theme="dark-ocean"] .app-subtitle,
+:root[data-theme="dark"] .app-subtitle {
+    color: var(--theme-header-text, var(--color-gray-300));
 }
 
 /* =============================================================================

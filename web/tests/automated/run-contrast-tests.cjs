@@ -31,14 +31,53 @@ const GATE = process.env.CONTRAST_GATE === '1';
 const colors = { reset: '\x1b[0m', red: '\x1b[31m', green: '\x1b[32m', yellow: '\x1b[33m', cyan: '\x1b[36m', gray: '\x1b[90m', blue: '\x1b[34m' };
 
 // Body classes the theme manager applies — the same ones the stylesheets key on.
+// What a user can actually pick (Oct 2026): the Personalization quick presets
+// (Golden, Ocean, Berry, …) — applied here by CLICKING the real preset button in
+// Preferences, so the page is painted exactly as the app paints it (the
+// --pref-* variables on <html>) — plus dark mode and High Contrast, which are
+// body classes. The old `data-theme` colour themes (Dark Ocean, Golden Glow) no
+// longer have a picker; until Oct 2026 this runner applied them by body class,
+// which never reached their tokens, so every "theme" measured the default
+// gradient and reported one number. Presets only apply in the default (light)
+// state — preferencesManager.applyCustomColors is a no-op in dark mode.
 const THEMES = [
-    { name: 'default', classes: [] },
-    { name: 'dark mode', classes: ['dark-mode'] },
-    { name: 'Dark Ocean', classes: ['theme-dark-ocean'] },
-    { name: 'Golden Glow', classes: ['theme-golden-glow'] },
-    { name: 'high contrast', classes: ['high-contrast'] },
-    { name: 'high contrast + dark', classes: ['high-contrast', 'dark-mode'] }
+    { name: 'default', classes: [], preset: 'default' },
+    { name: 'dark mode', classes: ['dark-mode'], preset: 'default' },
+    { name: 'Golden preset', classes: [], preset: 'goldenGlow' },
+    { name: 'Ocean preset', classes: [], preset: 'darkOcean' },
+    { name: 'Berry preset', classes: [], preset: 'berry' },
+    { name: 'Forest preset', classes: [], preset: 'forest' },
+    { name: 'high contrast', classes: ['high-contrast'], preset: 'default' },
+    { name: 'high contrast + dark', classes: ['high-contrast', 'dark-mode'], preset: 'default' }
 ];
+const MODE_CLASSES = ['dark-mode', 'high-contrast', 'theme-dark-ocean', 'theme-golden-glow'];
+
+// Put the page in one THEMES state the way a user would: clear every mode
+// class and the legacy data-theme attribute, pick the preset through the real
+// Preferences UI (the 'default' preset is the app's own Reset All), close the
+// dialog and the menu, then add the mode classes.
+async function applyThemeState(page, theme) {
+    await page.evaluate((modes) => {
+        document.body.classList.remove(...modes);
+        delete document.documentElement.dataset.theme;
+    }, MODE_CLASSES);
+    await page.evaluate(() => document.querySelector('.menu-button')?.click());
+    await page.waitForTimeout(300);
+    await page.evaluate(() => {
+        document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed'));
+        document.getElementById('open-preferences')?.click();
+    });
+    await page.waitForFunction(() => document.querySelectorAll('.quick-preset-btn').length > 0, null, { timeout: 10000 });
+    await page.evaluate((key) => document.querySelector(`.quick-preset-btn[data-preset="${key}"]`)?.click(), theme.preset);
+    await page.waitForTimeout(400);
+    await page.evaluate(() => {
+        document.getElementById('close-preferences-btn')?.click();
+        document.getElementById('close-main-menu')?.click();
+    });
+    await page.waitForTimeout(300);
+    await page.evaluate((classes) => document.body.classList.add(...classes), theme.classes);
+    await page.waitForTimeout(350);
+}
 // `activate` runs in the page after the classes are applied, for views that
 // need a click to come on screen (axe skips what is not rendered on screen —
 // the Focus View Task panel lives on the carousel's first tab and its
@@ -115,9 +154,13 @@ function measureHandChecks(opts) {
         // What is painted behind the footer is the body's computed background;
         // the --theme-bg-gradient token is only a fallback (dark mode paints its
         // own gradient and leaves the token at the light value).
-        const painted = getComputedStyle(document.body).backgroundImage;
+        const bodyStyle = getComputedStyle(document.body);
+        const painted = bodyStyle.backgroundImage;
+        // A preset paints one solid colour (--pref-app-bg) and no gradient: measure
+        // that colour. Otherwise every stop of the painted gradient.
+        const paintedSolid = /gradient/.test(painted) ? null : parse(bodyStyle.backgroundColor);
         const gradient = /gradient/.test(painted) ? painted : getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-gradient');
-        const stops = [...gradient.matchAll(/#[0-9a-f]{6}|rgba?\([^)]+\)/gi)].map(m => parse(m[0])).filter(Boolean);
+        const stops = paintedSolid && paintedSolid.a > 0 ? [paintedSolid] : [...gradient.matchAll(/#[0-9a-f]{6}|rgba?\([^)]+\)/gi)].map(m => parse(m[0])).filter(Boolean);
         const solid = parse(getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-solid'));
         const bgs = stops.length ? stops : (solid ? [solid] : [WHITE]);
         let worst = Infinity;
@@ -153,15 +196,13 @@ async function run() {
     let needsReview = 0;
     try {
         await boot(page, srv.url);
-        const allThemeClasses = [...new Set(THEMES.flatMap(t => t.classes))];
         const allViewClasses = [...new Set(VIEWS.flatMap(v => v.classes))];
         for (const theme of THEMES) {
             const handReported = new Set();
             for (const view of VIEWS) {
-                await page.evaluate(([themeOff, themeOn, viewOff, viewOn]) => {
-                    document.body.classList.remove(...themeOff, ...viewOff);
-                    document.body.classList.add(...themeOn, ...viewOn);
-                }, [allThemeClasses, theme.classes, allViewClasses, view.classes]);
+                await page.evaluate((viewOff) => document.body.classList.remove(...viewOff), allViewClasses);
+                await applyThemeState(page, theme);
+                await page.evaluate((viewOn) => document.body.classList.add(...viewOn), view.classes);
                 if (view.activate) { await page.evaluate(view.activate); await page.waitForTimeout(600); }
                 await page.waitForTimeout(350);   // theme transitions settle
                 const label = `${theme.name} / ${view.name}`.padEnd(32);
@@ -202,11 +243,7 @@ async function run() {
         await page.setViewportSize({ width: 390, height: 844 });
         await page.evaluate((viewOff) => document.body.classList.remove(...viewOff), allViewClasses);
         for (const theme of THEMES) {
-            await page.evaluate(([themeOff, themeOn]) => {
-                document.body.classList.remove(...themeOff);
-                document.body.classList.add(...themeOn);
-            }, [allThemeClasses, theme.classes]);
-            await page.waitForTimeout(350);
+            await applyThemeState(page, theme);
             const label = `${theme.name} / phone`;
             for (const m of (await page.evaluate(measureHandChecks)).filter(x => /footer/.test(x.name))) {
                 const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
@@ -222,11 +259,7 @@ async function run() {
         for (const width of [{ name: 'desktop', size: { width: 1280, height: 900 } }, { name: 'phone', size: { width: 390, height: 844 } }]) {
             await page.setViewportSize(width.size);
             for (const theme of THEMES) {
-                await page.evaluate(([themeOff, themeOn]) => {
-                    document.body.classList.remove(...themeOff);
-                    document.body.classList.add(...themeOn);
-                }, [allThemeClasses, theme.classes]);
-                await page.waitForTimeout(350);
+                await applyThemeState(page, theme);
                 const label = `${theme.name} / ${width.name} / prefers-contrast: more`;
                 for (const m of (await page.evaluate(measureHandChecks, { moreContrast: true })).filter(x => /footer/.test(x.name))) {
                     const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;

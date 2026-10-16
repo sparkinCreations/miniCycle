@@ -239,6 +239,43 @@ export async function runPreferencesManagerTests(resultsDiv) {
         }
     });
 
+    await test('applyCustomColors picks footer and subtitle colours that read on the preset background', () => {
+        const body = document.body;
+        const root = document.documentElement;
+        const hadDark = body.classList.contains('dark-mode');
+        const prevVocab = root.dataset.vocabTheme;
+        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow');
+        delete root.dataset.vocabTheme;
+        const vars = ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-app-bg'];
+        const read = () => Object.fromEntries(vars.map(v => [v, root.style.getPropertyValue(v)]));
+        const withBg = (appBg) => {
+            mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: { customColors: { appBg } } }), update: () => {} } });
+            new mod.PreferencesManager().applyCustomColors();
+            return read();
+        };
+        try {
+            // Golden preset: white would be 2.4:1 on #d4a017 → dark links, light strip, subtitle left black.
+            const gold = withBg('#d4a017');
+            if (gold['--footer-text'] !== '#111111' || gold['--footer-text-contrast'] !== '#111111') throw new Error('Golden: footer text should be near-black, got ' + JSON.stringify(gold));
+            if (!/255, 255, 255/.test(gold['--footer-strip-bg'])) throw new Error('Golden: the on-request strip should be light, got ' + gold['--footer-strip-bg']);
+            if (gold['--pref-subtitle-color'] !== '' || gold['--pref-subtitle-opacity'] !== '') throw new Error('Golden: the subtitle should keep its black default, got ' + JSON.stringify(gold));
+            // Ocean preset: white is 15:1 on #0a2540 → white links, navy strip, white subtitle at full opacity.
+            const ocean = withBg('#0a2540');
+            if (ocean['--footer-text'] !== '#ffffff' || ocean['--footer-text-contrast'] !== '#ffffff') throw new Error('Ocean: footer text should be white, got ' + JSON.stringify(ocean));
+            if (!/10, 25, 60/.test(ocean['--footer-strip-bg'])) throw new Error('Ocean: the on-request strip should be navy, got ' + ocean['--footer-strip-bg']);
+            if (ocean['--pref-subtitle-color'] !== '#ffffff' || ocean['--pref-subtitle-opacity'] !== '1') throw new Error('Ocean: the subtitle should be white at full opacity, got ' + JSON.stringify(ocean));
+            // Reset clears every one of them with the --pref-* vars.
+            new mod.PreferencesManager().removeCustomColors();
+            const cleared = read();
+            const left = Object.entries(cleared).filter(([, v]) => v !== '');
+            if (left.length) throw new Error('removeCustomColors left vars behind: ' + JSON.stringify(left));
+        } finally {
+            vars.forEach(v => root.style.removeProperty(v));
+            if (hadDark) body.classList.add('dark-mode');
+            if (prevVocab !== undefined) root.dataset.vocabTheme = prevVocab;
+        }
+    });
+
     await test('isDefaultTheme returns true on a clean body and false under a theme class', () => {
         const body = document.body;
         const hadDark = body.classList.contains('dark-mode');

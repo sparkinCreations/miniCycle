@@ -201,9 +201,13 @@
     /* Backgrounds */
     --theme-bg-gradient:            linear-gradient(135deg, #fff9e0, #ffe066);
     /* A light background: white links would vanish, so this theme's footer
-       text is dark by default, not only when more contrast is asked for. */
+       text is dark by default, not only when more contrast is asked for —
+       and the on-request strip is a light glass, not the navy one, so the
+       dark text keeps its ratio on it. */
     --footer-text:                  #4a3d00;
     --footer-text-contrast:         #4a3d00;
+    --footer-strip-bg:              rgba(255, 252, 235, 0.72);
+    --footer-strip-border:          rgba(74, 61, 0, 0.35);
     --theme-bg-solid:               #ffd700;
     --theme-bg-surface:             rgba(255, 251, 230, 0.95);
     --theme-bg-surface-elevated:    #fffbe6;
