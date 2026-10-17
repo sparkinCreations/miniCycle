@@ -42,6 +42,7 @@ import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import { prefersReducedMotion } from './motionPreference.js';
+import { getIcon } from './icons.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -306,12 +307,27 @@ export class MiniCycleNotifications {
           + escapedMessage.slice(titleBreak + 2)
         : escapedMessage;
 
+      // Optional secondary line under a divider: { message, icon }. For a
+      // message carrying two separate ideas (the first-run Focus View tip:
+      // where you are, then that toasts can be dragged), so the second reads as
+      // an optional extra instead of the end of one long sentence. The text is
+      // escaped like the message; the icon is looked up by NAME in ICONS
+      // (getIcon), so only the trusted SVG set can ever reach innerHTML.
+      const hintText = typeof options?.hint?.message === 'string' ? options.hint.message.trim() : '';
+      const hintIcon = typeof options?.hint?.icon === 'string' ? getIcon(options.hint.icon) : '';
+      const hintMarkup = hintText
+        ? `<div class="notification-hint">${hintIcon ? `<span class="notification-hint-icon">${hintIcon}</span>` : ''}<span class="notification-hint-text">${getEscapeHtml(this.deps)(hintText)}</span></div>`
+        : '';
+
       // Always escape user content, regardless of structure
-      // When an action button is present, wrap message in a span so both sit in a flex-column
+      // When an action button or a hint is present, wrap message in a span so
+      // they stack in a flex-column under it
       const hasAction = !!(options?.actionButton);
-      notification.innerHTML = hasAction
-        ? `<div class="notification-content notification-has-action">
-             <span class="notification-message">${bodyMarkup}</span>
+      const contentClass = ['notification-content', hasAction && 'notification-has-action', hintMarkup && 'notification-has-hint']
+        .filter(Boolean).join(' ');
+      notification.innerHTML = (hasAction || hintMarkup)
+        ? `<div class="${contentClass}">
+             <span class="notification-message">${bodyMarkup}</span>${hintMarkup}
            </div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`
         : `<div class="notification-content">${bodyMarkup}</div>
