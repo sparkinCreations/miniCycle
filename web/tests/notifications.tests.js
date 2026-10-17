@@ -1144,6 +1144,50 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // === HINT LINE (show(..., { hint: { message, icon } })) ===
+    // A second idea under a divider. The hint text is escaped like the message;
+    // the icon is looked up by name in ICONS, so only trusted SVG reaches the DOM.
+    function showAndGrab(n, message, options) {
+        n.show(message, 'info', 5000, options);
+        const all = document.querySelectorAll('#notification-container .notification');
+        return all[all.length - 1];
+    }
+
+    await test('show() renders a hint under the message with its icon', () => {
+        const n = new window.MiniCycleNotifications();
+        const el = showAndGrab(n, 'Hint test one', { hint: { message: 'Drag me', icon: 'drag-handle' } });
+        if (!el) throw new Error('notification not rendered');
+        const hint = el.querySelector('.notification-hint');
+        if (!hint) throw new Error('hint line missing');
+        if (hint.querySelector('.notification-hint-text')?.textContent !== 'Drag me') throw new Error('hint text wrong');
+        if (!hint.querySelector('.notification-hint-icon svg')) throw new Error('drag-handle icon missing');
+        if (!el.querySelector('.notification-content.notification-has-hint')) throw new Error('content should stack as a column');
+        if (el.querySelector('.notification-message')?.textContent.trim() !== 'Hint test one') throw new Error('message text wrong');
+        if (!el.querySelector('.close-btn')) throw new Error('close button missing');
+    });
+
+    await test('show() escapes the hint text', () => {
+        const n = new window.MiniCycleNotifications();
+        const el = showAndGrab(n, 'Hint test two', { hint: { message: '<img src=x onerror="window.__hintXss=1">' } });
+        if (el.querySelector('.notification-hint img')) throw new Error('hint markup was not escaped');
+        if (!el.querySelector('.notification-hint-text').textContent.includes('<img')) throw new Error('escaped text should show literally');
+    });
+
+    await test('show() drops an unknown hint icon but keeps the text', () => {
+        const n = new window.MiniCycleNotifications();
+        const el = showAndGrab(n, 'Hint test three', { hint: { message: 'Still here', icon: 'no-such-icon' } });
+        if (el.querySelector('.notification-hint-icon')) throw new Error('unknown icon should render nothing');
+        if (el.querySelector('.notification-hint-text')?.textContent !== 'Still here') throw new Error('hint text missing');
+    });
+
+    await test('show() without a hint keeps the plain markup', () => {
+        const n = new window.MiniCycleNotifications();
+        const el = showAndGrab(n, 'Hint test four', {});
+        if (el.querySelector('.notification-hint, .notification-has-hint, .notification-message')) {
+            throw new Error('no hint should mean the original single-block markup');
+        }
+    });
+
     // === DEFAULT POSITION CLEARS THE TASK INPUT BAR ===
     // The first-run Focus View tip used to sit on the task input for ~8s, so a
     // tap on the input hit the tip. A DEFAULT-positioned panel that would overlap

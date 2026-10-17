@@ -306,7 +306,9 @@ export class OnboardingManager {
         this.deps.showNotification?.(
             getLabel('notify.focusViewFirstRun'),
             'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            // Same grip the Task View Layout drag handles use, so it reads as "drag".
+            { hint: { message: getLabel('notify.focusViewDragHint'), icon: 'drag-handle' } }
         );
 
         // EVERY first-run choice gets the Home View welcome on first Focus View
