@@ -1,6 +1,6 @@
 # Completed Tasks Dropdown Feature
 
-> **Version:** 1.516 (December 20, 2025)
+> **Version:** 1.516 (December 20, 2025) · move animations added October 2026
 > **Status:** ✅ Production Ready
 > **Test Coverage:** 100% (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts)
 
@@ -16,7 +16,7 @@ The **Completed Tasks Dropdown** is an optional UI feature that separates comple
 - ✅ **Recurring Task Integration:** Recurring system respects completed tasks in dropdown
 - ✅ **Settings Toggle:** Enable/disable via Settings → "Show Completed Tasks in Dropdown"
 - ✅ **Badge Counter:** Shows number of completed tasks in dropdown header
-- ✅ **Smooth Animations:** Tasks smoothly transition between active and completed lists
+- ✅ **Move Animations:** A checked task holds its tick, folds out of the list and unfolds in the dropdown; an unchecked one folds back to its original spot. The count pops when a task lands in a collapsed dropdown. Instant under reduced motion (OS or the app's setting).
 
 ## User Experience
 
@@ -29,8 +29,9 @@ The **Completed Tasks Dropdown** is an optional UI feature that separates comple
 ### Using the Feature
 
 **When enabled:**
-- Checking a task ✅ moves it to the completed dropdown
-- Unchecking a task ⬜ moves it back to the active list
+- Checking a task ✅ moves it to the completed dropdown (after a short hold, so the tick is seen)
+- Unchecking a task ⬜ moves it back to the active list, at the position it left
+- Tapping it again before it has gone cancels the move
 - Click dropdown header to expand/collapse completed section
 - Badge shows count (e.g., "✓ Completed (3)")
 
@@ -77,17 +78,18 @@ The **Completed Tasks Dropdown** is an optional UI feature that separates comple
 ```
 User checks task
     ↓
-handleTaskCompletionChange(checkbox)  [taskCore.js:487]
+handleTaskCompletionChangeImpl(checkbox)  [modules/task/taskCompletion.js]
     ↓
-1. Update task.completed = true in AppState
+1. AppState.update → task.completed = true (debounced save)
     ↓
-2. autoSave(null, true) → persist to localStorage
+2. handleTaskListMovement(taskEl, true, { animate: true })
+       → completedTasksManager.handleMovement  [wired in modules/boot/moduleLoader.js]
     ↓
-3. handleTaskListMovement(taskEl, true)  [modules/boot/orchestrator.js:3166]
+3. Row gets .task-completing: holds, then folds (styles/base/animations.css)
     ↓
-4. moveTaskToCompleted(taskEl)  [modules/boot/orchestrator.js:3098]
+4. When the fold ends: re-check the row against AppState, then moveToCompleted()
     ↓
-Task moved to #completedTaskList with fade animation
+5. Row gets .task-arriving and unfolds in #completedTaskList
 ```
 
 ### State Management
@@ -119,7 +121,7 @@ Task moved to #completedTaskList with fade animation
 **Key Functions:**
 - `isCompletedDropdownEnabled()` - Check if feature is enabled
 - `organizeCompletedTasks()` - Initialize dropdown on cycle load
-- `handleTaskListMovement(taskEl, isCompleted)` - Move task between lists
+- `handleTaskListMovement(taskEl, isCompleted, { animate })` - Move task between lists; only the checkbox path passes `animate: true`
 - `moveTaskToCompleted(taskEl)` - Append task to completed list
 - `moveTaskToActive(taskEl)` - Append task to active list
 - `updateCompletedTasksCount()` - Update badge counter
@@ -134,12 +136,12 @@ Task moved to #completedTaskList with fade animation
   - `resetTasks()` (lines 659-830)
 
 **UI Coordination:**
-- `modules/boot/orchestrator.js` - DOM manipulation and UI updates
-  - `initCompletedTasksSection()` (lines 3041-3062)
-  - `organizeCompletedTasks()` (lines 3202-3226)
-  - `handleTaskListMovement()` (lines 3166-3180)
-  - `moveTaskToCompleted()` (lines 3098-3124)
-  - `moveTaskToActive()` (lines 3130-3155)
+- `modules/ui/completedTasksManager.js` - the dropdown: `init()`, `toggle()`, `organize()`,
+  `handleMovement()`, `moveToCompleted()`, `moveToActive()`, `updateCount()`, `destroy()`
+- `styles/base/animations.css` - "COMPLETED DROPDOWN MOVES" keyframes and classes
+
+> The orchestrator line references this doc used to carry predate the module split;
+> the functions above are where the behaviour lives now.
 
 **Settings UI:**
 - `modules/ui/settingsManager.js` - Settings toggle and state management
@@ -207,6 +209,19 @@ if (completedTaskList && taskList) {
     window.updateCompletedTasksCount();
 }
 ```
+
+#### 4. Animated Moves Must Re-check Before Moving
+
+**Problem:** The DOM move now waits for the fold to finish (about 600ms), and the row can
+change under it: a second tap, an undo, the cycle reset, or a full re-render.
+
+**Solution:** `completedTasksManager` tracks each row's pending move and, when the fold ends,
+moves the row only if it is still attached, still in the list it started in, and AppState
+still agrees with the direction. A second `handleMovement()` cancels the first, and so does
+any direct `moveToCompleted()`/`moveToActive()` (which is what `organize()` calls). Timing is
+read from the row's computed `animation-duration`, never from `animationend`, which does not
+fire while the Routine panel is hidden behind the Task card. The auto-reset fires 1s after
+the last tick, after the fold and landing (about 900ms) have finished.
 
 ## Recurring Tasks Integration
 

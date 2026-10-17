@@ -910,6 +910,209 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
         if (!stillSet) throw new Error('should not clear the flag while state is unknown');
     });
 
+    // === ANIMATED MOVE TESTS ===
+    // The checkbox path asks handleMovement() for { animate: true }: the row folds
+    // out, moves when the fold ends, then unfolds in the other list. The suite page
+    // loads no app CSS, so this injects fixed durations; the manager reads them back
+    // through getComputedStyle, exactly as it reads the real tokens in the app.
+    resultsDiv.innerHTML += '<h4 class="test-section">🎞️ Animated Move Tests</h4>';
+
+    const FOLD_MS = 120;
+    const ARRIVE_MS = 60;
+    const animStyle = document.createElement('style');
+    animStyle.id = 'ctm-anim-test-style';
+    animStyle.textContent = `
+        @keyframes ctmTestFold { from { opacity: 1; } to { opacity: 0.5; } }
+        .task-completing, .task-uncompleting { animation: ctmTestFold ${FOLD_MS}ms forwards; }
+        .task-arriving, .count-bump { animation: ctmTestFold ${ARRIVE_MS}ms; }
+    `;
+    document.head.appendChild(animStyle);
+    const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+    // State the manager re-checks when a fold ends. `done` maps task id -> completed.
+    function animDeps(done) {
+        return createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => ({
+                    settings: { showCompletedDropdown: true, completedTasksExpanded: false },
+                    appState: { activeRoutineId: 'r1' },
+                    data: { routine: { r1: { tasks: Object.keys(done).map(id => ({ id, completed: done[id] })) } } }
+                }),
+                update: () => {}
+            }
+        });
+    }
+    function animTask(id, completed) {
+        const task = createMockTask(id, completed);
+        task.dataset.taskId = id;
+        return task;
+    }
+    const moveClasses = (el) => ['task-completing', 'task-uncompleting', 'task-arriving'].filter(c => el.classList.contains(c));
+
+    await test('animated complete: row folds in place, then moves and unfolds in the dropdown', async () => {
+        createTestDOM();
+        const done = { a: true };
+        setCompletedTasksManagerDependencies(animDeps(done));
+        const manager = new CompletedTasksManager();
+        const taskList = document.getElementById('taskList');
+        const completedList = document.getElementById('completedTaskList');
+        const task = animTask('a', true);
+        taskList.appendChild(task);
+
+        manager.handleMovement(task, true, { animate: true });
+        if (!taskList.contains(task)) throw new Error('row must stay in #taskList while it folds');
+        if (!task.classList.contains('task-completing')) throw new Error('fold class not applied');
+
+        await wait(FOLD_MS + 40);
+        if (!completedList.contains(task)) throw new Error('row should be in the dropdown once the fold ends');
+        if (!task.classList.contains('task-arriving')) throw new Error('arrival class not applied after the move');
+
+        await wait(ARRIVE_MS + 40);
+        if (moveClasses(task).length) throw new Error(`classes left behind: ${moveClasses(task)}`);
+        if (task.style.getPropertyValue('--task-move-height')) throw new Error('measured height left inline');
+    });
+
+    await test('animated complete: a second tap mid-fold leaves the row where it was', async () => {
+        createTestDOM();
+        const done = { a: false, b: true, c: false };
+        setCompletedTasksManagerDependencies(animDeps(done));
+        const manager = new CompletedTasksManager();
+        const taskList = document.getElementById('taskList');
+        const [a, b, c] = ['a', 'b', 'c'].map(id => animTask(id, id === 'b'));
+        taskList.append(a, b, c);
+
+        manager.handleMovement(b, true, { animate: true });
+        await wait(FOLD_MS / 3);
+        done.b = false; b.querySelector('input').checked = false;
+        manager.handleMovement(b, false, { animate: true });
+
+        await wait(FOLD_MS + ARRIVE_MS + 60);
+        const order = Array.from(taskList.children).map(el => el.dataset.taskId).join('');
+        if (order !== 'abc') throw new Error(`row should stay second, got order "${order}" (moveToActive would append it)`);
+        if (moveClasses(b).length) throw new Error(`classes left behind: ${moveClasses(b)}`);
+    });
+
+    await test('animated complete: skips the move when state no longer says completed', async () => {
+        createTestDOM();
+        const done = { a: true };
+        setCompletedTasksManagerDependencies(animDeps(done));
+        const manager = new CompletedTasksManager();
+        const taskList = document.getElementById('taskList');
+        const task = animTask('a', true);
+        taskList.appendChild(task);
+
+        manager.handleMovement(task, true, { animate: true });
+        done.a = false; // e.g. undo, or the cycle reset, landed during the fold
+        await wait(FOLD_MS + 40);
+        if (!taskList.contains(task)) throw new Error('row moved although state says it is not completed');
+        if (moveClasses(task).length) throw new Error(`classes left behind: ${moveClasses(task)}`);
+    });
+
+    await test('animated uncomplete: row returns to its original position after the fold', async () => {
+        createTestDOM();
+        const done = { a: false, b: true, c: false };
+        setCompletedTasksManagerDependencies(animDeps(done));
+        const manager = new CompletedTasksManager();
+        const taskList = document.getElementById('taskList');
+        const completedList = document.getElementById('completedTaskList');
+        const [a, b, c] = ['a', 'b', 'c'].map(id => animTask(id, id === 'b'));
+        taskList.append(a, b, c);
+        manager.moveToCompleted(b); // records originalIndex 1
+
+        done.b = false; b.querySelector('input').checked = false;
+        manager.handleMovement(b, false, { animate: true });
+        if (!completedList.contains(b)) throw new Error('row must stay in the dropdown while it folds');
+        if (!b.classList.contains('task-uncompleting')) throw new Error('fold class not applied');
+
+        await wait(FOLD_MS + 40);
+        const order = Array.from(taskList.children).map(el => el.dataset.taskId).join('');
+        if (order !== 'abc') throw new Error(`expected order "abc", got "${order}"`);
+    });
+
+    await test('animated complete: pops the count when the dropdown is collapsed', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(animDeps({ a: true }));
+        const manager = new CompletedTasksManager();
+        const task = animTask('a', true);
+        document.getElementById('taskList').appendChild(task);
+
+        manager.handleMovement(task, true, { animate: true });
+        await wait(FOLD_MS + 20);
+        const count = document.getElementById('completed-count');
+        if (!count.classList.contains('count-bump')) throw new Error('count should pop when a task lands out of sight');
+        await wait(ARRIVE_MS + 40);
+        if (count.classList.contains('count-bump')) throw new Error('count-bump should be removed when its animation ends');
+    });
+
+    await test('animated move: reduced motion moves instantly', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(animDeps({ a: true }));
+        const manager = new CompletedTasksManager();
+        const task = animTask('a', true);
+        document.getElementById('taskList').appendChild(task);
+
+        document.documentElement.classList.add('reduced-motion');
+        try {
+            manager.handleMovement(task, true, { animate: true });
+        } finally {
+            document.documentElement.classList.remove('reduced-motion');
+        }
+        if (!document.getElementById('completedTaskList').contains(task)) throw new Error('reduced motion should move at once');
+        if (moveClasses(task).length) throw new Error(`no animation classes expected, got ${moveClasses(task)}`);
+    });
+
+    await test('animated move: a direct move (organize) mid-fold supersedes it', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(animDeps({ a: true }));
+        const manager = new CompletedTasksManager();
+        const task = animTask('a', true);
+        document.getElementById('taskList').appendChild(task);
+
+        manager.handleMovement(task, true, { animate: true });
+        manager.organize();
+        if (!document.getElementById('completedTaskList').contains(task)) throw new Error('organize should move it at once');
+        if (moveClasses(task).length) throw new Error(`fold should be cancelled, got ${moveClasses(task)}`);
+        await wait(FOLD_MS + 40);
+        if (moveClasses(task).length) throw new Error(`a cancelled fold must not come back, got ${moveClasses(task)}`);
+    });
+
+    await test('animated move: a row removed mid-fold is skipped without error', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(animDeps({ a: true }));
+        const manager = new CompletedTasksManager();
+        const task = animTask('a', true);
+        document.getElementById('taskList').appendChild(task);
+
+        manager.handleMovement(task, true, { animate: true });
+        task.remove(); // a full re-render replaced it
+        await wait(FOLD_MS + 40);
+        if (document.getElementById('completedTaskList').contains(task)) throw new Error('a detached row must not be re-inserted');
+    });
+
+    await test('destroy cancels pending moves and removes the header listener', async () => {
+        createTestDOM();
+        setCompletedTasksManagerDependencies(animDeps({ a: true }));
+        const manager = new CompletedTasksManager();
+        manager.init();
+        const task = animTask('a', true);
+        const taskList = document.getElementById('taskList');
+        taskList.appendChild(task);
+
+        manager.handleMovement(task, true, { animate: true });
+        manager.destroy();
+        await wait(FOLD_MS + 40);
+        if (!taskList.contains(task)) throw new Error('a destroyed manager must not finish the move');
+        if (moveClasses(task).length) throw new Error(`classes left behind: ${moveClasses(task)}`);
+        if (manager._initialized) throw new Error('destroy should reset the init latch');
+
+        const list = document.getElementById('completedTaskList');
+        document.getElementById('completed-tasks-header').click();
+        if (list.classList.contains('visible')) throw new Error('header click still toggles after destroy');
+    });
+
+    animStyle.remove();
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
