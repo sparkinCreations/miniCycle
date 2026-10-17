@@ -32,6 +32,21 @@
 > the order of steps *is* the routine — so do this when task numbering is wanted, after
 > `STATE_TRUTH_MIGRATION.md` P1 (it writes to the same paths P1 stabilises).
 
+> **Oct 2026 — problem 1 is fixed without this plan too.** `dataset.originalIndex` did not
+> "work" across a reload: it lives on the DOM node, so a task rendered straight into the
+> dropdown never had one and was appended to the END when unchecked, while the saved order
+> kept its slot (measured: screen `DEABC`, saved `DECAB`, row jumped on the next reload).
+> `completedTasksManager.moveToActive()` now inserts by the SAVED order instead (before the
+> first active row that follows the task in `routine.tasks`), with the DOM index kept only as
+> a not-ready fallback. That leaves this plan's one remaining motivation: numbering.
+>
+> **Behaviour this plan would change.** Today a dropdown task keeps its *slot*:
+> `mergeVisibleOrder` (drag-drop) permutes only the visible rows, so if A B C D E has C in the
+> dropdown and E is dragged to the top, C returns third (`E A C B D`), not beside its old
+> neighbours. With fractional `order`, the dragged row gets a new value and C keeps one
+> between B and D, so it would return beside them (`E A B C D`). Decide which is wanted
+> before starting; it is a product choice, not a bug either way.
+
 ---
 
 ## Overview
@@ -183,8 +198,8 @@ function calculateInsertOrder(prevOrder, nextOrder) {
 ### Phase 3: Feature Integration
 
 1. **Completed Task Dropdown** (`completedTasksManager.js`)
-   - Remove `dataset.originalIndex` approach
-   - Use `task.order` for position restoration
+   - Already restores from saved state (Oct 2026, `_savedOrderAnchor`); switch its lookup
+     from array position to `task.order`
    ```javascript
    moveToActive(taskElement) {
      const taskOrder = getTaskOrder(taskElement.dataset.taskId);

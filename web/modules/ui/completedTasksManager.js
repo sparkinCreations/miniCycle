@@ -239,11 +239,25 @@ export class CompletedTasksManager {
         // Save current focus state — restore after DOM move
         const hadFocus = taskElement.contains(this.deps.getActiveElement());
 
-        // Try to restore to original position (saved when task was completed)
-        const originalIndex = parseInt(taskElement.dataset.originalIndex, 10);
+        // Position comes from the SAVED order, so the screen always matches what
+        // the next reload will render. The DOM index captured at completion
+        // (dataset.originalIndex) is only a fallback for when state is not ready:
+        // it lives on the node, so a task rendered straight into the dropdown
+        // after a reload never had one and used to be appended to the END, while
+        // the saved order still had it in its slot (measured Oct 2026: screen
+        // "DEABC", saved "DECAB", and the row jumped on the next reload).
         const currentTaskEls = Array.from(taskList.querySelectorAll(DOM_SELECTORS.TASK));
+        const anchor = this._savedOrderAnchor(taskElement, currentTaskEls);
+        const originalIndex = parseInt(taskElement.dataset.originalIndex, 10);
 
-        if (!isNaN(originalIndex) && originalIndex >= 0) {
+        if (anchor !== undefined) {
+            if (anchor) {
+                taskList.insertBefore(taskElement, anchor);
+            } else {
+                taskList.appendChild(taskElement);
+            }
+            delete taskElement.dataset.originalIndex;
+        } else if (!isNaN(originalIndex) && originalIndex >= 0) {
             // Clamp to valid range (list may have fewer tasks now)
             const insertIndex = Math.min(originalIndex, currentTaskEls.length);
 
@@ -273,6 +287,36 @@ export class CompletedTasksManager {
         // Update count and boundary markers
         this.updateCount();
         this._updateBoundaryMarkers();
+    }
+
+    /**
+     * Where a returning task belongs in the active list, per the saved order:
+     * before the first active row that comes after it in the routine's tasks.
+     *
+     * The active list is always the saved order with the dropdown rows taken
+     * out (drag saves through mergeVisibleOrder, which keeps hidden rows in
+     * their slots), so inserting there reproduces the saved order exactly.
+     *
+     * @param {HTMLElement} taskElement - The task coming back from the dropdown
+     * @param {HTMLElement[]} activeEls - Rows currently in #taskList, in order
+     * @returns {HTMLElement|null|undefined} the row to insert before; null to
+     *   append; undefined when state cannot answer (not ready, or the task is
+     *   unknown to it), so the caller falls back to the captured DOM index
+     * @private
+     */
+    _savedOrderAnchor(taskElement, activeEls) {
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.()) return undefined;
+
+        const state = AppState.get();
+        const tasks = getRoutine(state, getActiveRoutineId(state))?.tasks;
+        if (!Array.isArray(tasks)) return undefined;
+
+        const position = new Map(tasks.map((t, i) => [t.id, i]));
+        const own = position.get(taskElement.dataset.taskId);
+        if (own === undefined) return undefined;
+
+        return activeEls.find(el => el !== taskElement && (position.get(el.dataset.taskId) ?? -1) > own) ?? null;
     }
 
     /**

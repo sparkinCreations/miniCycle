@@ -1113,6 +1113,79 @@ export async function runCompletedTasksManagerTests(resultsDiv, isPartOfSuite = 
 
     animStyle.remove();
 
+    // === SAVED-ORDER RESTORE TESTS ===
+    // moveToActive() places a returning task by the routine's saved task order,
+    // not by a DOM index stored on the node. That index does not survive a
+    // reload, which sent the task to the end while the saved order kept its slot.
+    resultsDiv.innerHTML += '<h4 class="test-section">↩️ Saved-Order Restore Tests</h4>';
+
+    // Builds the lists from a saved order; `done` ids start in the dropdown.
+    function orderFixture(savedOrder, done) {
+        createTestDOM();
+        const completed = Object.fromEntries(savedOrder.map(id => [id, done.includes(id)]));
+        setCompletedTasksManagerDependencies(createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => ({
+                    settings: { showCompletedDropdown: true },
+                    appState: { activeRoutineId: 'r1' },
+                    data: { routine: { r1: { tasks: savedOrder.map(id => ({ id, completed: completed[id] })) } } }
+                }),
+                update: () => {}
+            }
+        }));
+        const taskList = document.getElementById('taskList');
+        const completedList = document.getElementById('completedTaskList');
+        const els = {};
+        savedOrder.forEach(id => {
+            const el = createMockTask(id, done.includes(id));
+            el.dataset.taskId = id;
+            els[id] = el;
+            (done.includes(id) ? completedList : taskList).appendChild(el);
+        });
+        const order = () => Array.from(taskList.children).map(el => el.dataset.taskId).join('');
+        return { manager: new CompletedTasksManager(), els, order };
+    }
+
+    await test('moveToActive uses the saved slot for a task rendered into the dropdown (reload)', async () => {
+        // After a reload the node never carried an originalIndex.
+        const { manager, els, order } = orderFixture(['D', 'E', 'C', 'A', 'B'], ['C']);
+        manager.moveToActive(els.C);
+        if (order() !== 'DECAB') throw new Error(`expected saved order "DECAB", got "${order()}"`);
+    });
+
+    await test('moveToActive prefers the saved order over a stale originalIndex', async () => {
+        // C was 3rd (index 2) when completed; a drag since then moved B ahead of A.
+        const { manager, els, order } = orderFixture(['B', 'A', 'C', 'D'], ['C']);
+        els.C.dataset.originalIndex = '0';
+        manager.moveToActive(els.C);
+        if (order() !== 'BACD') throw new Error(`expected "BACD", got "${order()}"`);
+        if (els.C.dataset.originalIndex !== undefined) throw new Error('stale originalIndex should be cleared');
+    });
+
+    await test('moveToActive appends a task that is last in the saved order', async () => {
+        const { manager, els, order } = orderFixture(['A', 'B', 'C'], ['C']);
+        manager.moveToActive(els.C);
+        if (order() !== 'ABC') throw new Error(`expected "ABC", got "${order()}"`);
+    });
+
+    await test('moveToActive skips other dropdown tasks when finding its place', async () => {
+        // B and D are both in the dropdown; bringing D back must land before E.
+        const { manager, els, order } = orderFixture(['A', 'B', 'C', 'D', 'E'], ['B', 'D']);
+        manager.moveToActive(els.D);
+        if (order() !== 'ACDE') throw new Error(`expected "ACDE", got "${order()}"`);
+    });
+
+    await test('moveToActive falls back to originalIndex when state does not know the task', async () => {
+        const { manager, order } = orderFixture(['A', 'B', 'C'], []);
+        const stranger = createMockTask('X', false);
+        stranger.dataset.taskId = 'X';
+        stranger.dataset.originalIndex = '1';
+        document.getElementById('completedTaskList').appendChild(stranger);
+        manager.moveToActive(stranger);
+        if (order() !== 'AXBC') throw new Error(`expected "AXBC", got "${order()}"`);
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

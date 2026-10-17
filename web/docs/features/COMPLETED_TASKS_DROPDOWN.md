@@ -30,7 +30,8 @@ The **Completed Tasks Dropdown** is an optional UI feature that separates comple
 
 **When enabled:**
 - Checking a task ✅ moves it to the completed dropdown (after a short hold, so the tick is seen)
-- Unchecking a task ⬜ moves it back to the active list, at the position it left
+- Unchecking a task ⬜ moves it back to the active list, at its slot in the saved order (so it
+  lands where a reload would put it, even if it went into the dropdown before a reload)
 - Tapping it again before it has gone cancels the move
 - Click dropdown header to expand/collapse completed section
 - Badge shows count (e.g., "✓ Completed (3)")
