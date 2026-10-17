@@ -172,9 +172,13 @@ export async function handleTaskCompletionChangeImpl(checkbox, deps = {}) {
                 }
             }
 
-            // Move task between active and completed lists
+            // Move task between active and completed lists. Animated here — this
+            // is the user's own tap — and nowhere else (adding a completed task,
+            // switching the dropdown off). The move itself waits for the fold to
+            // finish; nothing below reads the row's list, and every count reads
+            // AppState, which was updated above.
             if (typeof handleTaskListMovement === 'function') {
-                handleTaskListMovement(taskItem, isCompleted);
+                handleTaskListMovement(taskItem, isCompleted, { animate: true });
             }
 
             const taskText = taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '';

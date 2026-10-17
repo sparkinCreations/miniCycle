@@ -26,3 +26,31 @@ export function prefersReducedMotion() {
         return false;
     }
 }
+
+/**
+ * How long the CSS animation currently applied to an element runs, in ms,
+ * including its delay. Reads the COMPUTED value, so it is 0 whenever the motion
+ * tokens are zeroed (OS preference or the app's Reduced Motion setting) and it
+ * never drifts from the stylesheet the way a hand-copied JS constant does.
+ *
+ * Timing a class off this instead of `animationend` is deliberate: that event
+ * never fires for an element that is display:none (the Routine panel while the
+ * Task card is showing), or whose animation is replaced mid-flight, so a move
+ * hung on it can strand a row half-faded.
+ *
+ * @param {Element|null} el
+ * @returns {number} the longest `delay + duration` across its animations; 0 if none
+ */
+export function getAnimationDurationMs(el) {
+    if (!el || typeof getComputedStyle !== 'function') return 0;
+    const style = getComputedStyle(el);
+    if (!style.animationName || style.animationName === 'none') return 0;
+    const toMs = (part) => {
+        const v = parseFloat(part);
+        if (!Number.isFinite(v)) return 0;
+        return part.trim().endsWith('ms') ? v : v * 1000;
+    };
+    const durations = style.animationDuration.split(',').map(toMs);
+    const delays = style.animationDelay.split(',').map(toMs);
+    return durations.reduce((max, d, i) => Math.max(max, d + (delays[i] || 0)), 0);
+}

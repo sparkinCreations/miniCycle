@@ -404,6 +404,119 @@
 
 
 /* =============================================================================
+   COMPLETED DROPDOWN MOVES
+   With "Show Completed in Dropdown" on, a checked task leaves #taskList for the
+   completed list. It used to vanish the instant it was tapped (gone within
+   60ms, before the checkmark had painted), which read as "deleted", not "done".
+   completedTasksManager now folds the row out, moves it when the fold ends, and
+   unfolds it in the other list. It times each step from the COMPUTED duration
+   (motionPreference.getAnimationDurationMs), so these tokens are the only place
+   the timing lives, and zeroing them for reduced motion zeroes the moves too.
+
+   --task-move-height is the row's measured height, set inline by the manager:
+   max-height cannot animate from `auto`, and a fixed cap (taskClearOut's 100px)
+   would spend most of a short row's fold collapsing empty space.
+   ============================================================================= */
+
+/* Checked: fold down and away. The hold before it, long enough to see the
+   tick pop, is the animation DELAY on .task-completing, not a flat stretch of
+   keyframes: properties named only in the last frame (padding, margin) would
+   start shrinking at 0% and eat the hold. During a delay the row simply keeps
+   its own styles. */
+@keyframes taskCompleteOut {
+    from {
+        max-height: var(--task-move-height);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(var(--space-2)) scale(0.97);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
+/* Unchecked in the dropdown: no hold, fold up toward the active list. */
+@keyframes taskUncompleteOut {
+    from {
+        max-height: var(--task-move-height);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(calc(var(--space-2) * -1)) scale(0.97);
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+}
+
+/* Landing: unfold from the side it came from. Only the opening frame sets
+   opacity, so the row settles on its own resting value (0.75 in the dropdown)
+   instead of jumping to it when the animation ends. */
+@keyframes taskMoveIn {
+    from {
+        opacity: 0;
+        transform: translateY(var(--task-move-from-y, 0));
+        max-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        margin-top: 0;
+        margin-bottom: 0;
+    }
+    to {
+        max-height: var(--task-move-height);
+    }
+}
+
+/* The tick, and the dropdown's count when a task lands out of sight. */
+@keyframes taskCheckPop {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.25); }
+    100% { transform: scale(1); }
+}
+
+.task-completing,
+.task-uncompleting,
+.task-arriving {
+    overflow: hidden;
+}
+
+.task-completing {
+    animation: taskCompleteOut var(--transition-normal) var(--ease-smooth) var(--transition-normal) forwards;
+}
+
+.task-completing input[type="checkbox"] {
+    animation: taskCheckPop var(--transition-normal) var(--ease-bounce);
+}
+
+.task-uncompleting {
+    animation: taskUncompleteOut var(--transition-normal) var(--ease-smooth) forwards;
+}
+
+.task-arriving {
+    animation: taskMoveIn var(--transition-normal) var(--ease-smooth);
+}
+
+/* Into the dropdown it drops from above; back into the list it rises from below. */
+.completed-task-list .task-arriving {
+    --task-move-from-y: calc(var(--space-2) * -1);
+}
+
+.task-list .task-arriving {
+    --task-move-from-y: var(--space-2);
+}
+
+.count-bump {
+    display: inline-block;
+    animation: taskCheckPop var(--transition-normal) var(--ease-bounce);
+}
+
+
+/* =============================================================================
    REDUCED MOTION
    Note: variables.css already sets --transition-* and --animation-* to 0ms,
    which handles most cases. This block catches animation shorthand classes
@@ -421,7 +534,12 @@
     .animate-bounce,
     .animate-shake,
     .task-resetting,
-    .task-clearing {
+    .task-clearing,
+    .task-completing,
+    .task-completing input[type="checkbox"],
+    .task-uncompleting,
+    .task-arriving,
+    .count-bump {
         animation: none;
     }
 

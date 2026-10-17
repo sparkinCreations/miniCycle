@@ -1115,6 +1115,12 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Task Cycle Reset ----
     TASK_RESETTING: 'task-resetting',
     TASK_CLEARING: 'task-clearing',
+
+    // ---- Completed dropdown moves (completedTasksManager; keyframes in animations.css) ----
+    TASK_COMPLETING: 'task-completing',      /* checked row: holds its checkmark, then folds out of #taskList */
+    TASK_UNCOMPLETING: 'task-uncompleting',  /* unchecked row: folds out of the completed list */
+    TASK_ARRIVING: 'task-arriving',          /* row unfolds into whichever list it just landed in */
+    COUNT_BUMP: 'count-bump',                /* #completed-count pops when a task lands in the collapsed dropdown */
     COMPLETED: 'completed',
     PROGRESS_COMPLETE: 'complete',   /* .progress-bar at 100%: the sheen plays once (progress-bar.css) */
 
