@@ -106,44 +106,6 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     transform: scale(1.05);
 }
 
-/* TOUCH HIT AREA — bigger tap target, same drawing.
- *
- * The buttons are drawn 32x24, well under the 44x44 touch minimum (Apple HIG;
- * Material asks 48x48). Measured Oct 2026 on a 390px phone. They cannot simply
- * be drawn bigger or spaced wider: a row can hold up to ten of them (+/-, move
- * arrows, and every optional button turned on), and at today's 32px + gap that
- * already fills a phone-width task. So the drawing stays, and an invisible
- * ::before extends each button's hit box instead:
- *   - vertically to 44px (10px above and below the 24px button);
- *   - horizontally into HALF the flex gap on each side, so neighbouring hit
- *     boxes meet at the gap's midline and never overlap (an overlap would hand
- *     the shared strip to whichever sibling paints later).
- * That makes 36x44: the width is capped by the gap, not by choice.
- * Coarse pointers only. On a mouse, the row shows on plain hover, and a hit box
- * reaching 14px into the task row would swallow clicks meant for the task. On
- * touch the row only appears after a deliberate ⋮ tap or long-press, so a tap
- * landing near it is aimed at it.
- *
- * The FIRST task's row needs room above the list, see the next rule.
- */
-@media (pointer: coarse) {
-    .task-options .task-btn {
-        position: relative;
-    }
-
-    /* Each offset carries an extra -1px: an absolute box is placed from the
-       PADDING edge, inside the button's 1px border, so without it the hit box
-       measured 34x42 instead of 36x44. */
-    .task-options .task-btn::before {
-        content: "";
-        position: absolute;
-        top: -11px;
-        bottom: -11px;
-        left: calc(var(--space-1) / -2 - 1px);
-        right: calc(var(--space-1) / -2 - 1px);
-    }
-}
-
 /* FIRST TASK — make room for its options row only while that row is open.
  *
  * The row sits 20px above its task (.task-options top: -20px), but
@@ -1239,5 +1201,48 @@ body.dark-mode .task-option-item[data-option-key="threeDots"] .option-icon {
 
     .preview-review-body {
         max-height: 45vh;
+    }
+}
+
+/* =============================================================================
+   TOUCH ADJUSTMENTS
+   ============================================================================= */
+
+/* TOUCH HIT AREA — bigger tap target, same drawing.
+ *
+ * The buttons are drawn 32x24, well under the 44x44 touch minimum (Apple HIG;
+ * Material asks 48x48). Measured Oct 2026 on a 390px phone. They cannot simply
+ * be drawn bigger or spaced wider: a row can hold up to ten of them (+/-, move
+ * arrows, and every optional button turned on), and at today's 32px + gap that
+ * already fills a phone-width task. So the drawing stays, and an invisible
+ * ::before extends each button's hit box instead:
+ *   - vertically to 44px (10px above and below the 24px button);
+ *   - horizontally into HALF the flex gap on each side, so neighbouring hit
+ *     boxes meet at the gap's midline and never overlap (an overlap would hand
+ *     the shared strip to whichever sibling paints later).
+ * That makes 36x44: the width is capped by the gap, not by choice.
+ * Coarse pointers only. On a mouse, the row shows on plain hover, and a hit box
+ * reaching 14px into the task row would swallow clicks meant for the task. On
+ * touch the row only appears after a deliberate ⋮ tap or long-press, so a tap
+ * landing near it is aimed at it.
+ *
+ * The FIRST task's row needs room above the list: see FIRST TASK, above.
+ */
+@media (pointer: coarse) {
+    .task-options .task-btn {
+        position: relative;
+    }
+
+    /* --space-2-5 (10px) above and below takes the 24px button to 44px. Each
+       offset carries an extra -1px: an absolute box is placed from the PADDING
+       edge, inside the button's 1px border, so without it the hit box measured
+       34x42 instead of 36x44. */
+    .task-options .task-btn::before {
+        content: "";
+        position: absolute;
+        top: calc(var(--space-2-5) * -1 - 1px);
+        bottom: calc(var(--space-2-5) * -1 - 1px);
+        left: calc(var(--space-1) / -2 - 1px);
+        right: calc(var(--space-1) / -2 - 1px);
     }
 }
