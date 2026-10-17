@@ -387,8 +387,10 @@ export const DEFAULT_LABELS = deepFreeze({
         // "Create My First Routine" / "Load a Sample". Names the ⋯ menu on
         // purpose — it is the one place that holds every focus-mode action,
         // including Exit Focus View. The last sentence teaches that toasts are
-        // draggable and the position persists, at the one moment the default
-        // spot sits over the task input. Device-variant: the touch gesture
+        // draggable and the position persists. (It was written for a default
+        // spot that sat over the task input; notifications.clearOfTaskInput now
+        // drops the panel below the bar instead, so the input is never blocked
+        // and the sentence is general advice.) Device-variant: the touch gesture
         // starts with a press-and-hold, the pointer gesture is a plain drag.
         focusViewFirstRun:      {
             touch:   'You\'re in Focus View. Everything else is in the ⋯ menu. Press and hold to drag this message anywhere, and the app will remember its location.',

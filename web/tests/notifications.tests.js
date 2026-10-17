@@ -1144,6 +1144,74 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // === DEFAULT POSITION CLEARS THE TASK INPUT BAR ===
+    // The first-run Focus View tip used to sit on the task input for ~8s, so a
+    // tap on the input hit the tip. A DEFAULT-positioned panel that would overlap
+    // the visible bar now drops just below it; one that would not stays put.
+    function withInputBar(rect, fn) {
+        const bar = document.createElement('div');
+        bar.id = 'task-input-row';
+        Object.assign(bar.style, { position: 'fixed', left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+        const panel = document.createElement('div');
+        Object.assign(panel.style, { position: 'fixed', width: '300px', height: '160px' });
+        document.body.append(bar, panel);
+        try { return fn(bar, panel); } finally { bar.remove(); panel.remove(); }
+    }
+
+    await test('clearOfTaskInput drops an overlapping panel below the bar', () => {
+        const n = new window.MiniCycleNotifications();
+        withInputBar({ left: 40, top: 150, width: 310, height: 48 }, (bar, panel) => {
+            const y = n.clearOfTaskInput(50, 70, panel);
+            const expected = 198 + 8; // bar bottom + NOTIFICATION_INPUT_GAP
+            if (y !== expected) throw new Error(`expected y=${expected}, got ${y}`);
+        });
+    });
+
+    await test('clearOfTaskInput leaves a panel alone when it does not reach the bar', () => {
+        const n = new window.MiniCycleNotifications();
+        withInputBar({ left: 40, top: 300, width: 310, height: 48 }, (bar, panel) => {
+            const y = n.clearOfTaskInput(50, 70, panel);
+            if (y !== 70) throw new Error(`expected y=70, got ${y}`);
+        });
+    });
+
+    await test('clearOfTaskInput ignores a hidden bar', () => {
+        const n = new window.MiniCycleNotifications();
+        withInputBar({ left: 40, top: 150, width: 310, height: 48 }, (bar, panel) => {
+            bar.style.display = 'none';
+            const y = n.clearOfTaskInput(50, 70, panel);
+            if (y !== 70) throw new Error(`expected y=70 with the bar hidden, got ${y}`);
+        });
+    });
+
+    await test('clearOfTaskInput measures where a sliding bar will rest', async () => {
+        const n = new window.MiniCycleNotifications();
+        // Fixed wrapper, bar placed inside it: a transformed ancestor becomes the
+        // containing block for fixed children, so the bar itself is absolute.
+        const wrap = document.createElement('div');
+        Object.assign(wrap.style, { position: 'fixed', left: '0px', top: '0px', width: '0px', height: '0px' });
+        const bar = document.createElement('div');
+        bar.id = 'task-input-row';
+        Object.assign(bar.style, { position: 'absolute', left: '40px', top: '150px', width: '310px', height: '48px' });
+        const panel = document.createElement('div');
+        Object.assign(panel.style, { position: 'fixed', width: '300px', height: '160px' });
+        wrap.appendChild(bar);
+        document.body.append(wrap, panel);
+        // The bar slides in from 400px above its resting place (Focus View's entrance).
+        const anim = wrap.animate([{ transform: 'translateY(-400px)' }, { transform: 'none' }], { duration: 2000 });
+        try {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+            const top = bar.getBoundingClientRect().top;
+            if (top > 0) throw new Error(`setup: bar should be offscreen mid-slide, top=${top}`);
+            const y = n.clearOfTaskInput(50, 70, panel);
+            if (Math.round(y) !== 206) throw new Error(`expected the resting spot (206), got ${y}`);
+        } finally {
+            anim.cancel();
+            wrap.remove();
+            panel.remove();
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
