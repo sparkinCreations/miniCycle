@@ -85,6 +85,14 @@ async function reloadAndBoot(page, timeoutMs) {
 }
 
 async function run() {
+    // Watchdog: a navigation that hangs (the 2.621 offline-reopen bug) left later
+    // calls without their own timeout waiting forever, so the suite never
+    // reported. Fail loudly instead.
+    const watchdog = setTimeout(() => {
+        console.error(`${colors.red}❌ service-worker suite exceeded 6 minutes — a page is stuck (a hung navigation?)${colors.reset}`);
+        process.exit(1);
+    }, 6 * 60 * 1000);
+    watchdog.unref();
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
     console.log(`${colors.blue}🛰  miniCycle Service-Worker Offline-Boot Tests${colors.reset}`);
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
@@ -241,8 +249,57 @@ async function run() {
         failures.push(`run error: ${e.message}`);
     } finally {
         await context.close();
-        await browser.close();
         if (!serverKilled && srv) await srv.close();
+    }
+
+    // ── Test 4: a version that took over MID-SESSION still serves a reopen
+    //    with the network gone ─────────────────────────────────────────────
+    // Its own server (another port = another origin = a fresh registration) and
+    // context, so the state above cannot leak in. A new worker installs and takes
+    // control while the app is open, then the server dies before the next open.
+    // 2.621 stopped reloading on that controllerchange ("update ready" instead),
+    // which left the new worker's FIRST navigation to happen offline — and that
+    // reopen hung: >25s, never loaded (2.620: 1.9s). Measured Oct 2026; this is
+    // the iPhone-reopened-offline case after a release landed in the background.
+    console.log(`\n${colors.cyan}▸ new version took over mid-session, then reopened with the network gone${colors.reset}`);
+    let srv2;
+    const ctx2 = await browser.newContext();
+    try {
+        srv2 = await startStaticServer(WEB_ROOT, PORT + 1);
+        const p2 = await ctx2.newPage();
+        await p2.goto(`${srv2.url}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await p2.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 30000 });
+        await p2.evaluate(() => navigator.serviceWorker.ready);
+        await p2.waitForFunction(async () => { for (const n of await caches.keys()) { const c = await caches.open(n); if (await c.match('/modules/core/constants.js') || await c.match('./modules/core/constants.js')) return true; } return false; }, null, { timeout: 30000 });
+        await p2.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+        await p2.waitForFunction(() => navigator.serviceWorker.controller !== null && document.documentElement.dataset.appLoaded === 'true', null, { timeout: 30000 });
+        // a new worker arrives and takes over while the app is in use
+        srv2.overrides['/service-worker.js'] = (buf) => buf.toString() + `\n// release ${Date.now()}\n`;
+        const before = await p2.evaluate(() => navigator.serviceWorker.controller && navigator.serviceWorker.controller.scriptURL);
+        await p2.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); await r.update().catch(() => {}); });
+        // wait until the new worker controls a page in this context (the same
+        // page, or the one it reloaded into)
+        let tookOver = false;
+        for (let i = 0; i < 100 && !tookOver; i++) {
+            try {
+                tookOver = await p2.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active && !r.installing && !r.waiting && navigator.serviceWorker.controller && navigator.serviceWorker.controller === r.active); })
+                    && (await p2.evaluate(() => document.documentElement.dataset.appLoaded === 'true'));
+            } catch (_) { /* a reload onto the new version was in flight */ }
+            if (!tookOver) await p2.waitForTimeout(200);
+        }
+        record('fixture: the new version took over while the app was open', tookOver, `controller before: ${before}`);
+        await srv2.close();
+        srv2 = null;
+        await new Promise(r => setTimeout(r, 600));
+        const reopen = await reloadAndBoot(p2, 25000);
+        record('…and the reopen with the network gone still boots', reopen.ok, reopen.ok ? `(${reopen.ms}ms)` : reopen.err);
+    } catch (e) {
+        console.error(`\n${colors.red}❌ Test 4 errored: ${e.message}${colors.reset}`);
+        failures.push(`mid-session takeover run error: ${e.message}`);
+    } finally {
+        await ctx2.close();
+        await browser.close();
+        if (srv2) await srv2.close();
     }
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);

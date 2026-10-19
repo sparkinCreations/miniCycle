@@ -256,7 +256,7 @@ if ('serviceWorker' in navigator) {
             // was never true. Data is safe across the reload via AppState's
             // flush trio; only uncommitted input in an open field is lost.
             console.log('🆕 New app version installed — activating');
-            showNotification('🆕 A new version is ready — it applies the next time you open miniCycle, or refresh now.', 'info', 6000);
+            showNotification('🆕 Updating miniCycle — the app will refresh in a moment…', 'info', 4000);
           } else {
             console.log('📱 App cached for offline use');
             showAppCachedNotification();
@@ -289,16 +289,14 @@ if ('serviceWorker' in navigator) {
           sessionStorage.setItem('__miniCycle_justCleared', pendingServerVersion);
         }
       } catch { /* storage unavailable */ }
-      // In use already (the splash is gone)? Don't yank the app out from under
-      // the user: the old build keeps running safely under the new worker (it
-      // keeps the previous cache as a fallback), and the update applies on the
-      // next open or a refresh. A reload is automatic only while the splash is
-      // still up, where it is invisible. (Oct 2026 — before, every release
-      // reloaded mid-session or, via the heals, cold.)
-      if (document.documentElement.dataset.appLoaded === 'true') {
-        showNotification('🆕 Update ready — it applies the next time you open miniCycle, or refresh now.', 'info', 8000);
-        return;
-      }
+      // Reload onto the new worker NOW, even mid-session. Its first navigation
+      // must happen while the network is up: 2.621 skipped this reload when the
+      // app was in use ("update ready" instead), so that first navigation came
+      // at the next open — and when that open was offline (an iPhone reopened
+      // without signal after a release landed in the background) it hung,
+      // >25s, never loaded (2.620: 1.9s). test:sw pins it (honest-offline and
+      // mid-session-takeover reopens). Data is safe across the reload via
+      // AppState's flush trio.
       // ✅ Check cooldown to prevent perpetual reload loops
       if (!canReloadSafely()) {
         console.log('⏳ Skipping reload due to cooldown');

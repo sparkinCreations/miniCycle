@@ -415,14 +415,17 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('createSessionBackup: concurrent calls (pagehide + visibilitychange) share one write', async () => {
         const { mock } = touchedState();
         setBackupManagerDependencies({ AppState: mock });
-        const t0 = Date.now();
+        // Count the records the PAIR added, by key, not by `timestamp >= start`:
+        // the previous test's write can land in the same millisecond as the start
+        // and was counted as a second record (CI, v2.619 and v2.620).
+        const keysBefore = new Set((await backupManager.listAllBackups()).session.map(s => s.timestamp));
         const [a, b] = await Promise.all([
             backupManager.createSessionBackup({ reason: 'hide' }),
             backupManager.createSessionBackup({ reason: 'hide' })
         ]);
         if (!a || !b) throw new Error('both callers should resolve with the shared result, got ' + a + '/' + b);
         const { session } = await backupManager.listAllBackups();
-        const written = session.filter(s => s.timestamp >= t0).length;
+        const written = session.filter(s => !keysBefore.has(s.timestamp)).length;
         if (written !== 1) throw new Error('expected exactly one record from the pair, got ' + written);
     });
 

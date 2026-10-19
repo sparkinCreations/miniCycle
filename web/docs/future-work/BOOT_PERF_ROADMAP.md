@@ -262,8 +262,9 @@ boot itself was 0.16s; a first visit became usable at 5–11s, of which the boot
   the worker and hard-reloaded on a version mismatch — the next open was a cold first
   visit. With 48 releases in 30 days that was most days. Both now ask the worker for
   the release first and keep the full heal as the second attempt per session (see
-  `docs/deployment/PWA_OFFLINE_ARCHITECTURE.md`); the controllerchange reload happens
-  only while the splash is up, otherwise "update ready" + next open. `test:sw` pins it:
+  `docs/deployment/PWA_OFFLINE_ARCHITECTURE.md`); the controllerchange reload onto the new
+  worker stays (2.621 dropped it mid-session and the next open hung when it was offline —
+  restored in 2.622, see that doc). `test:sw` pins it:
   after a simulated release the app boots at once from the old cache, the caches are
   never emptied, no cache-busting navigation happens, and the next open runs the new
   version. The inline early check in `miniCycle.html` (minicycle.app only) is left as
