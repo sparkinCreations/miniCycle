@@ -124,6 +124,24 @@ async function run() {
     };
 
     try {
+        // ── Test 0: a FIRST VISIT boots before the worker finishes precaching ─
+        // The precache's requests are `cache: 'reload'` (they carry
+        // Cache-Control: no-cache); boot's own fetches are not. Delaying only those
+        // leaves boot untouched while the precache takes several seconds, so a boot
+        // that waited for the install would show up here as a controlled page.
+        // (Until Oct 2026 boot awaited serviceWorker.ready — i.e. the whole
+        // precache — before its first import; measured 4–9s on the live site.)
+        console.log(`\n${colors.cyan}▸ first visit (no worker yet)${colors.reset}`);
+        srv.delayMs = (p, req) => (/no-cache/.test(req.headers['cache-control'] || '') && !/version\.js$/.test(p)) ? 150 : 0;
+        const firstStart = Date.now();
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', { timeout: 30000 });
+        const firstMs = Date.now() - firstStart;
+        const controlledAtLoad = await page.evaluate(() => navigator.serviceWorker.controller !== null);
+        record('first visit boots before the worker finishes precaching', !controlledAtLoad,
+            controlledAtLoad ? `the worker already controlled the page at appLoaded (${firstMs}ms): boot waited for the precache` : `appLoaded at ${firstMs}ms, no controller yet`);
+        srv.delayMs = null;
+
         // ── Phase 0: prime the SW + precache ────────────────────────────────
         console.log(`\n${colors.cyan}▸ priming service worker + cache${colors.reset}`);
         await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -147,6 +165,50 @@ async function run() {
         console.log(`\n${colors.cyan}▸ online (SW-controlled)${colors.reset}`);
         const online = await reloadAndBoot(page, 20000);
         record('online boot works', online.ok, online.ok ? `(${online.ms}ms)` : online.err);
+
+        // ── Test 1b: a RELEASE is applied without wiping the cache ──────────
+        // Bump what the server hands out (version.js, the HTML's version stamps,
+        // the worker's bytes) the way a deploy does, then open the app: it must
+        // boot at once from the old cache, never empty the caches or take the
+        // cache-busting heal, and the release must arrive through the worker —
+        // as an update-ready notice, or a reload if it landed during the splash.
+        console.log(`\n${colors.cyan}▸ release while cached (non-destructive update)${colors.reset}`);
+        const cur = await page.evaluate(() => String(globalThis.APP_VERSION));
+        const next = `${cur}-next`;
+        const bump = (buf) => buf.toString().split(cur).join(next);
+        srv.overrides['/version.js'] = bump;
+        srv.overrides['/miniCycle.html'] = bump;
+        srv.overrides['/service-worker.js'] = (buf) => bump(buf) + `\n// release ${next}\n`;
+        const relStart = Date.now();
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', { timeout: 30000 });
+        const relMs = Date.now() - relStart;
+        record('the open after a release boots at once from the old cache', relMs < 8000, `${relMs}ms`);
+        let wiped = false, cbNav = false, outcome = null;
+        for (let i = 0; i < 100 && !outcome; i++) {
+            let st;
+            try {
+                st = await page.evaluate(async () => ({
+                keys: (await caches.keys()).length,
+                cb: location.search.indexOf('_cb=') !== -1,
+                version: String(globalThis.APP_VERSION),
+                notice: [...document.querySelectorAll('.notification')].some(n => /update ready|new version is ready/i.test(n.textContent))
+                }));
+            } catch (_) {
+                await page.waitForTimeout(300);   // a navigation (the splash-time reload) was in flight
+                continue;
+            }
+            if (st.keys === 0) wiped = true;
+            if (st.cb) cbNav = true;
+            if (st.version === next) outcome = 'reloaded onto the new version during the splash';
+            else if (st.notice) outcome = 'update-ready notice shown, old build kept running';
+            await page.waitForTimeout(200);
+        }
+        record('no cache wipe and no cache-busting heal during the update', !wiped && !cbNav, `wiped=${wiped} cacheBustNavigation=${cbNav}`);
+        record('the release arrived through the worker', !!outcome, outcome || 'neither a notice nor a reload within 20s');
+        const nextOpen = await reloadAndBoot(page, 20000);
+        const after = await page.evaluate(async () => ({ version: String(globalThis.APP_VERSION), caches: (await caches.keys()).length, cb: location.search.indexOf('_cb=') !== -1 }));
+        record('the next open runs the new version, caches intact', nextOpen.ok && after.version === next && after.caches > 0 && !after.cb, JSON.stringify({ ...after, ms: nextOpen.ms }));
 
         // ── Test 2: honest offline (navigator.onLine === false) ─────────────
         console.log(`\n${colors.cyan}▸ honest offline (navigator.onLine = false)${colors.reset}`);

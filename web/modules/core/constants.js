@@ -110,6 +110,7 @@ export const BOOT_TIMEOUTS = Object.freeze({
     SW_READY_WAIT: 8000,   // Cap on waiting for navigator.serviceWorker.ready at boot — always the long value because navigator.onLine lies on iOS (was a dead 3s parameter floored to 8s)
     IDB_OPERATION: 3000,   // 3s timeout for IndexedDB ops during boot recovery; raised from
                            // 1s — old/slow devices were timing out test-mode/backup checks
+    LOADER_FADE: 300,      // The boot splash's fade-out before it is removed and appLoaded flips — the same 300ms as --transition-normal, which paints the fade; it was a flat 500ms, 200ms of which was dead time on every open (Oct 2026)
     VERSION_GATE: 1500     // 1.5s cap on the pre-boot server-version check (orchestrator
                            // gateOnServerVersion). Kicked off early so it overlaps Phase 1
                            // (≈free on a healthy network); fails open on timeout/offline so a

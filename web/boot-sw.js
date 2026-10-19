@@ -80,6 +80,10 @@ if ('serviceWorker' in navigator) {
   // This fetches version.js fresh and compares against what's currently loaded.
   // ═══════════════════════════════════════════════════════════════════════════
   let versionCheckInProgress = false;
+  // The server version a non-destructive heal handed to the worker; the
+  // controllerchange handler records it as seen so the next load's early check
+  // does not wipe the freshly built cache.
+  let pendingServerVersion = null;
   // eslint-disable-next-line sonarjs/cognitive-complexity -- deliberate: the build/version/cache checks and their loop guards are one atomic recovery sequence (splitting them risks re-breaking the v2.316-class boot heals); complexity was identical when this lived inline, just unlinted
   async function verifyVersionFresh() {
     if (versionCheckInProgress) return;
@@ -118,25 +122,60 @@ if ('serviceWorker' in navigator) {
               : `CACHE_VERSION: loaded=${CACHE_VERSION}, server=${serverCacheVersion}`);
         console.warn(`🔄 VERSION MISMATCH: ${reason}`);
 
-        // Loop guard: if we already healed for this server version THIS session
-        // and a mismatch STILL persists, stop reloading (the cache can't refresh
-        // right now — e.g. flaky network, or a CDN edge serving inconsistent
-        // version.js). Covers BOTH mismatch kinds: gating on buildStale alone
-        // let a versionJsStale-only mismatch re-heal (full cache delete + SW
-        // unregister) on every check. sessionStorage clears on a full app
-        // close, so a fresh launch retries. Keyed on server version so a newer
-        // deploy still triggers a heal.
+        // Two attempts per server version per session, then stop (the cache
+        // cannot refresh right now — flaky network, CDN edge serving mixed
+        // version.js). sessionStorage clears on a full app close, so a fresh
+        // launch retries. Keyed on server version so a newer deploy still heals.
+        let attempts = 0;
         try {
-          if (sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion) {
-            console.warn('⚠️ Version still mismatched after a heal attempt this session — not reloading again');
+          attempts = sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion
+            ? parseInt(sessionStorage.getItem('__miniCycle_buildHealAttempts') || '0', 10) : 0;
+          if (attempts >= 2) {
+            console.warn('⚠️ Version still mismatched after healing twice this session — not reloading again');
             return;
           }
           sessionStorage.setItem('__miniCycle_buildHeal', serverVersion);
-          // Sync localStorage so the early boot check on the reloaded page
-          // sees a matching version and doesn't trigger a second reload.
+          sessionStorage.setItem('__miniCycle_buildHealAttempts', String(attempts + 1));
+          // Sync so the early boot check on the next page sees a matching version
+          // and does not wipe again (the inline check in miniCycle.html).
           localStorage.setItem('__miniCycle_lastVersion', serverVersion);
           sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
         } catch { /* storage unavailable */ }
+
+        // FIRST ATTEMPT IS NON-DESTRUCTIVE (Oct 2026). Wiping every cache and
+        // unregistering the worker turned the next open into a cold first visit
+        // (5–11s behind the splash), and with releases most days that was the
+        // "slow when online" users felt. The worker versions its caches, keeps
+        // the previous one as a fallback and claims on activate, so: ask it for
+        // the release; if a new worker starts installing, the controllerchange
+        // handler applies it (reload while the splash is up, "update ready" +
+        // next open otherwise). If the worker already HAS this version, this
+        // page is stale from a memory cache (the Safari case this heal was
+        // written for): navigate past the memory cache with the caches intact.
+        // The second attempt is the full heal below.
+        if (attempts === 0 && 'serviceWorker' in navigator) {
+          try {
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+              const controllerBefore = navigator.serviceWorker.controller;
+              await Promise.race([reg.update(), new Promise(r => setTimeout(r, 2500))]);
+              // Installing, waiting — or already activated during the check (the
+              // orchestrator's gate runs the same update() in parallel; on a fast
+              // network the new worker can claim before this resolves).
+              const controllerNow = navigator.serviceWorker.controller;
+              const arriving = reg.installing || reg.waiting || controllerNow !== controllerBefore
+                || (reg.active && controllerNow && reg.active !== controllerNow);
+              if (arriving) {
+                pendingServerVersion = serverVersion;
+                console.log(`🆕 Worker fetching v${serverVersion} — this build keeps running meanwhile`);
+                return;
+              }
+              console.warn('🔄 Worker is current; re-navigating past the memory cache (caches kept)');
+              window.location.href = window.location.pathname + '?_cb=' + Date.now();
+              return;
+            }
+          } catch { /* fall through to the full heal */ }
+        }
 
         // Clear caches AND unregister the SW so the reload fetches HTML straight
         // from the network — a cache-first navigation handler could otherwise
@@ -217,7 +256,7 @@ if ('serviceWorker' in navigator) {
             // was never true. Data is safe across the reload via AppState's
             // flush trio; only uncommitted input in an open field is lost.
             console.log('🆕 New app version installed — activating');
-            showNotification('🆕 Updating miniCycle — the app will refresh in a moment…', 'info', 4000);
+            showNotification('🆕 A new version is ready — it applies the next time you open miniCycle, or refresh now.', 'info', 6000);
           } else {
             console.log('📱 App cached for offline use');
             showAppCachedNotification();
@@ -240,6 +279,24 @@ if ('serviceWorker' in navigator) {
       if (refreshing) return;
       if (!hadControllerAtLoad) {
         console.log('📱 First service worker install — no reload needed');
+        return;
+      }
+      // The new worker now controls the page: the NEXT load is the new build.
+      // Record that so the early version check does not wipe its cache.
+      try {
+        if (pendingServerVersion) {
+          localStorage.setItem('__miniCycle_lastVersion', pendingServerVersion);
+          sessionStorage.setItem('__miniCycle_justCleared', pendingServerVersion);
+        }
+      } catch { /* storage unavailable */ }
+      // In use already (the splash is gone)? Don't yank the app out from under
+      // the user: the old build keeps running safely under the new worker (it
+      // keeps the previous cache as a fallback), and the update applies on the
+      // next open or a refresh. A reload is automatic only while the splash is
+      // still up, where it is invisible. (Oct 2026 — before, every release
+      // reloaded mid-session or, via the heals, cold.)
+      if (document.documentElement.dataset.appLoaded === 'true') {
+        showNotification('🆕 Update ready — it applies the next time you open miniCycle, or refresh now.', 'info', 8000);
         return;
       }
       // ✅ Check cooldown to prevent perpetual reload loops

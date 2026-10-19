@@ -24,11 +24,16 @@ const MIME = {
 };
 
 // Start a static server rooted at `root`, listening on 127.0.0.1:port.
-// Resolves to { url, close } where close() also destroys live sockets so the
-// SW test's "dead server" simulation produces real connection failures.
+// Resolves to { url, close, overrides, delayMs } where close() also destroys
+// live sockets so the SW test's "dead server" simulation produces real
+// connection failures. `overrides` (pathname → string, or (original Buffer) →
+// string) and `delayMs` ((pathname, req) → ms) are LIVE: a test mutates them
+// between page loads to simulate a release (bumped version.js / HTML / worker)
+// or a slow precache.
 function startStaticServer(root, port) {
     const rootResolved = path.resolve(root);
     const sockets = new Set();
+    const live = { overrides: {}, delayMs: null };
 
     const server = http.createServer((req, res) => {
         let pathname;
@@ -45,8 +50,14 @@ function startStaticServer(root, port) {
         }
         fs.readFile(filePath, (err, data) => {
             if (err) { res.writeHead(404); return res.end('not found'); }
-            res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
-            res.end(data);
+            const override = live.overrides[pathname];
+            const body = override === undefined ? data : Buffer.from(typeof override === 'function' ? override(data) : String(override));
+            const send = () => {
+                res.writeHead(200, { 'Content-Type': MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream' });
+                res.end(body);
+            };
+            const wait = typeof live.delayMs === 'function' ? (live.delayMs(pathname, req) || 0) : 0;
+            if (wait > 0) setTimeout(send, wait); else send();
         });
     });
 
@@ -60,6 +71,9 @@ function startStaticServer(root, port) {
         server.listen(port, '127.0.0.1', () => {
             resolve({
                 url: `http://127.0.0.1:${port}`,
+                overrides: live.overrides,
+                set delayMs(fn) { live.delayMs = fn; },
+                get delayMs() { return live.delayMs; },
                 close: () => new Promise((r) => {
                     for (const s of sockets) s.destroy();
                     server.close(() => r());

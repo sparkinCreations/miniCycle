@@ -243,3 +243,31 @@ frontier is **module init work** (the init-split/deferral tiers above, settingsM
 first at ~140-250ms) — optional; users behind the choice screen can't feel it.
 Also shipped en route: first-install controllerchange no longer reloads (v2.308) —
 new visitors boot ONCE (the old double-boot is gone from every first-visit trace).
+
+## Oct 2026 — the network waits, not the boot, were the slowness online
+
+Measured on the live site (Oct 2026): a returning visit booted in 0.75s, of which the
+boot itself was 0.16s; a first visit became usable at 5–11s, of which the boot was
+1.25s. Three waits, none of them rendering or architecture, all fixed in v2.621:
+
+- **First visit waited for the whole precache.** `waitForServiceWorker` awaited
+  `navigator.serviceWorker.ready`, which resolves only after the worker has INSTALLED
+  (the full precache, ~170 files) and activated. The wait exists for the offline
+  relaunch; online with no worker in control and none active there is nothing to wait
+  for, so boot now proceeds from the network and the worker installs behind it (its
+  first-install claim does not reload). `test:sw` pins it: a first visit reaches
+  appLoaded with no controller while the precache is deliberately slowed.
+- **A release was applied by wiping every cache.** The pre-boot version gate
+  (`gateOnServerVersion`) and `verifyVersionFresh` both cleared all caches, unregistered
+  the worker and hard-reloaded on a version mismatch — the next open was a cold first
+  visit. With 48 releases in 30 days that was most days. Both now ask the worker for
+  the release first and keep the full heal as the second attempt per session (see
+  `docs/deployment/PWA_OFFLINE_ARCHITECTURE.md`); the controllerchange reload happens
+  only while the splash is up, otherwise "update ready" + next open. `test:sw` pins it:
+  after a simulated release the app boots at once from the old cache, the caches are
+  never emptied, no cache-busting navigation happens, and the next open runs the new
+  version. The inline early check in `miniCycle.html` (minicycle.app only) is left as
+  is; the heals pre-set `__miniCycle_lastVersion` so it does not fire after an update.
+- **The splash held 500ms after boot** before `appLoaded` flipped, while its CSS fade
+  is 300ms: `BOOT_TIMEOUTS.LOADER_FADE` now matches the fade.
+
