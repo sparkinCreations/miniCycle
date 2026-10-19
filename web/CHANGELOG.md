@@ -1,3 +1,15 @@
+## [2.620] - 2026-10-19
+- fix(ui): the first task's option-row room works on a fresh load
+- feat(ui): split the first-run Focus View tip into a message and a drag hint
+- fix(ui): keep default-positioned notifications off the task input bar
+- fix(ui): unchecked dropdown tasks return to their saved slot after a reload
+- feat(ui): animate tasks moving into and out of the completed dropdown
+- style(ui): bring the option-button touch rules in line with CSS standards
+- fix(ui): stop onboarding hints leaking under "All tasks complete!"
+- fix(ui): give the first task's option row room only while it is open
+- fix(ui): larger touch hit area for task option buttons; quiet first-run three-dots bail
+
+
 ## [2.619] - 2026-10-18
 - style(onboarding): a blank line between the two tips in the Focus View first-run toast
 - feat(personalization): readable footer and subtitle on vocab-theme presets; a colour you picked yourself gets the footer strip

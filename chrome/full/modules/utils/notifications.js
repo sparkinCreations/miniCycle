@@ -41,6 +41,8 @@ import { getLevelForColor } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { prefersReducedMotion } from './motionPreference.js';
+import { getIcon } from './icons.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -305,12 +307,27 @@ export class MiniCycleNotifications {
           + escapedMessage.slice(titleBreak + 2)
         : escapedMessage;
 
+      // Optional secondary line under a divider: { message, icon }. For a
+      // message carrying two separate ideas (the first-run Focus View tip:
+      // where you are, then that toasts can be dragged), so the second reads as
+      // an optional extra instead of the end of one long sentence. The text is
+      // escaped like the message; the icon is looked up by NAME in ICONS
+      // (getIcon), so only the trusted SVG set can ever reach innerHTML.
+      const hintText = typeof options?.hint?.message === 'string' ? options.hint.message.trim() : '';
+      const hintIcon = typeof options?.hint?.icon === 'string' ? getIcon(options.hint.icon) : '';
+      const hintMarkup = hintText
+        ? `<div class="notification-hint">${hintIcon ? `<span class="notification-hint-icon">${hintIcon}</span>` : ''}<span class="notification-hint-text">${getEscapeHtml(this.deps)(hintText)}</span></div>`
+        : '';
+
       // Always escape user content, regardless of structure
-      // When an action button is present, wrap message in a span so both sit in a flex-column
+      // When an action button or a hint is present, wrap message in a span so
+      // they stack in a flex-column under it
       const hasAction = !!(options?.actionButton);
-      notification.innerHTML = hasAction
-        ? `<div class="notification-content notification-has-action">
-             <span class="notification-message">${bodyMarkup}</span>
+      const contentClass = ['notification-content', hasAction && 'notification-has-action', hintMarkup && 'notification-has-hint']
+        .filter(Boolean).join(' ');
+      notification.innerHTML = (hasAction || hintMarkup)
+        ? `<div class="${contentClass}">
+             <span class="notification-message">${bodyMarkup}</span>${hintMarkup}
            </div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`
         : `<div class="notification-content">${bodyMarkup}</div>
@@ -675,6 +692,87 @@ clampNotificationPosition(x, y, container) {
 }
 
 /**
+ * The y to show the panel at so it does not cover the task input bar.
+ *
+ * The default spot (below the logo) lands on the input bar in Focus View on a
+ * phone, and the first notification a new user sees is shown right then: the
+ * "You're in Focus View" tip, while the empty state tells them to type in that
+ * bar. A tap on the input hit the tip instead, for the ~8s it stayed up
+ * (measured Oct 2026). So when the panel at `y` would overlap the visible bar,
+ * it drops NOTIFICATION_INPUT_GAP below it; otherwise `y` is returned as is.
+ * Measured at show time, with the panel's real size, so it only moves when it
+ * would actually block, at any width or layout.
+ *
+ * The bar is measured where it will REST, not where it is: on that first-run
+ * show, Focus View's entrance is still sliding #task-view in with a transform
+ * transition, and the bar sits ~330px above its final spot (measured), so a
+ * plain getBoundingClientRect() saw no overlap. See taskInputRestingRect().
+ *
+ * @param {number} x - Left edge the panel will use
+ * @param {number} y - Top edge it would use by default
+ * @param {HTMLElement} container - The notification panel (already filled)
+ * @returns {number}
+ */
+clearOfTaskInput(x, y, container) {
+    const r = this.taskInputRestingRect();
+    if (!r || !container) return y;
+
+    const width = container.offsetWidth;
+    const height = container.offsetHeight;
+    const overlaps = x < r.right && x + width > r.left && y < r.bottom && y + height > r.top;
+    if (!overlaps) return y;
+
+    return this.clampNotificationPosition(x, r.bottom + UI_TIMEOUTS.NOTIFICATION_INPUT_GAP, container).y;
+}
+
+/**
+ * The task input bar's rectangle once running transitions/animations on it or
+ * its ancestors have finished, or null when the bar is not shown.
+ *
+ * Undoes the translation of every element in the chain that has a RUNNING
+ * animation, on the assumption those animations end at no transform — true of
+ * the entrance slides this guards against (they animate FROM an offset TO the
+ * element's own place). setDefaultPosition re-checks once they finish anyway,
+ * so a wrong guess costs one correction, not a blocked bar.
+ * @returns {{left:number, right:number, top:number, bottom:number}|null}
+ */
+taskInputRestingRect() {
+    const bar = document.getElementById(DOM_IDS.TASK_INPUT_ROW);
+    if (!bar) return null;
+    const r = bar.getBoundingClientRect();
+    if (!r.width || !r.height || getComputedStyle(bar).visibility === 'hidden') return null;
+
+    let dx = 0, dy = 0;
+    for (let el = bar; el && el !== document.documentElement; el = el.parentElement) {
+        if (!el.getAnimations?.().some(a => a.playState === 'running')) continue;
+        // Computed transforms serialise as matrix(a,b,c,d,tx,ty) or a 16-value
+        // matrix3d(...) whose translation is values 13 and 14.
+        const inner = /\(([^)]*)\)/.exec(getComputedStyle(el).transform);
+        const values = inner ? inner[1].split(',').map(Number) : [];
+        if (values.length === 6) {
+            dx += values[4];
+            dy += values[5];
+        } else if (values.length === 16) {
+            dx += values[12];
+            dy += values[13];
+        }
+    }
+    return { left: r.left - dx, right: r.right - dx, top: r.top - dy, bottom: r.bottom - dy };
+}
+
+/**
+ * Animations currently moving the task input bar (on it or any ancestor).
+ * @returns {Animation[]}
+ */
+taskInputRunningAnimations() {
+    const running = [];
+    for (let el = document.getElementById(DOM_IDS.TASK_INPUT_ROW); el && el !== document.documentElement; el = el.parentElement) {
+        (el.getAnimations?.() || []).forEach(a => { if (a.playState === 'running') running.push(a); });
+    }
+    return running;
+}
+
+/**
  * 📍 Set smart default notification position
  */
 async setDefaultPosition(notificationContainer) {
@@ -696,10 +794,32 @@ async setDefaultPosition(notificationContainer) {
         defaultY = 70; // Below logo
     }
 
-    // Apply the position immediately (synchronous)
-    notificationContainer.style.top = `${defaultY}px`;
+    // Apply the position immediately (synchronous). The default spot must not
+    // sit on the task input bar; a position the user dragged to never reaches
+    // this function, so their choice is left alone.
+    notificationContainer.style.top = `${this.clearOfTaskInput(defaultX, defaultY, notificationContainer)}px`;
     notificationContainer.style.left = `${defaultX}px`;
     notificationContainer.style.right = "auto";
+
+    // If the bar is still sliding in, check again where it actually lands. Skipped
+    // when the user has since dragged the panel (that position is theirs).
+    const moving = this.taskInputRunningAnimations();
+    if (moving.length) {
+        Promise.all(moving.map(a => a.finished.catch(() => null))).then(() => {
+            if (this.isDraggingNotification || !notificationContainer.isConnected) return;
+            if (this.deps.AppState?.get?.()?.settings?.notificationPositionModified === true) return;
+            if (notificationContainer.style.left !== `${defaultX}px`) return; // repositioned since
+            const from = notificationContainer.style.top;
+            const to = `${this.clearOfTaskInput(defaultX, defaultY, notificationContainer)}px`;
+            if (from === to) return;
+            notificationContainer.style.top = to;
+            // Focus View's band is measured a frame after the tip is placed, which
+            // can shift the bar ~14px (measured): glide the correction, don't jump.
+            if (!prefersReducedMotion()) {
+                notificationContainer.animate?.([{ top: from }, { top: to }], { duration: UI_TIMEOUTS.ANIMATION_SHORT, easing: 'ease-out' });
+            }
+        });
+    }
 
     // Save this default position to state so it persists (asynchronous, non-blocking)
     try {

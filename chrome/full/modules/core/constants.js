@@ -167,6 +167,7 @@ export const UI_TIMEOUTS = Object.freeze({
     LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
     LAYOUT_HANDLE_LEAVE_GRACE: 250, // 250ms - Task View Layout: how long a draggable stays "hovered" after the cursor leaves it, so a handle floating outside its edge can be reached across the gap (a hidden handle is not hit-testable, so without this the cursor could never arrive on it)
     NOTIFICATION_MIN_VISIBLE: 40,  // px - the strip of the notification panel that must stay inside the viewport when it is dragged or restored, so it can always be grabbed again
+    NOTIFICATION_INPUT_GAP: 8,     // px - when a notification at its DEFAULT spot would cover the task input bar, it drops this far below the bar instead (notifications.setDefaultPosition)
     SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
     LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
     ANIMATION_SHORT: 200,          // 200ms - Short animation / transition delay
@@ -1115,6 +1116,12 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Task Cycle Reset ----
     TASK_RESETTING: 'task-resetting',
     TASK_CLEARING: 'task-clearing',
+
+    // ---- Completed dropdown moves (completedTasksManager; keyframes in animations.css) ----
+    TASK_COMPLETING: 'task-completing',      /* checked row: holds its checkmark, then folds out of #taskList */
+    TASK_UNCOMPLETING: 'task-uncompleting',  /* unchecked row: folds out of the completed list */
+    TASK_ARRIVING: 'task-arriving',          /* row unfolds into whichever list it just landed in */
+    COUNT_BUMP: 'count-bump',                /* #completed-count pops when a task lands in the collapsed dropdown */
     COMPLETED: 'completed',
     PROGRESS_COMPLETE: 'complete',   /* .progress-bar at 100%: the sheen plays once (progress-bar.css) */
 

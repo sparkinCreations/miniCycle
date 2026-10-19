@@ -386,14 +386,17 @@ export const DEFAULT_LABELS = deepFreeze({
         // Shown once when a first-run user lands in Focus View after choosing
         // "Create My First Routine" / "Load a Sample". Names the ⋯ menu on
         // purpose — it is the one place that holds every focus-mode action,
-        // including Exit Focus View. The last sentence teaches that toasts are
-        // draggable and the position persists, at the one moment the default
-        // spot sits over the task input. Device-variant: the touch gesture
-        // starts with a press-and-hold, the pointer gesture is a plain drag.
-        focusViewFirstRun:      {
-            // A blank line between the two tips (\n\n — the toast body renders white-space: pre-line) so they read as two thoughts, not one run-on.
-            touch:   'You\'re in Focus View. Everything else is in the ⋯ menu.\n\nPress and hold to drag this message anywhere, and the app will remember its location.',
-            pointer: 'You\'re in Focus View. Everything else is in the ⋯ menu.\n\nDrag this message anywhere and the app will remember its location.'
+        // including Exit Focus View.
+        focusViewFirstRun:      'You\'re in Focus View. Everything else is in the ⋯ menu.',
+        // The second half of that tip, shown under a divider with the drag-handle
+        // icon (onboardingManager passes it as the notification's `hint`): toasts
+        // are draggable and the position persists. It was one sentence of the
+        // label above; splitting it lets the orientation read at a glance and
+        // the drag tip read as an optional extra. Device-variant: the touch
+        // gesture starts with a press-and-hold, the pointer gesture is a drag.
+        focusViewDragHint:      {
+            touch:   'Press and hold to drag this message anywhere, and the app will remember its location.',
+            pointer: 'Drag this message anywhere and the app will remember its location.'
         },
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',

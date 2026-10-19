@@ -174,9 +174,12 @@ export class TaskRenderer {
      *  - Move-arrow boundary markers (IS_FIRST_TASK / IS_LAST_TASK) are computed
      *    from the ACTIVE list's child order (_updateBoundaryMarkers). Building
      *    completed tasks out of that list must leave the remaining order intact.
-     *  - Un-complete restoration uses `dataset.originalIndex` captured at
-     *    completion time (moveToActive). A task rendered straight into the
-     *    dropdown never had one, so it falls back to "append to end".
+     *  - Un-complete restoration (moveToActive) inserts the row before the
+     *    first active row that follows it in the SAVED order, so it relies on
+     *    the active list being that order with the dropdown rows removed.
+     *    (It used `dataset.originalIndex`, which a task rendered straight into
+     *    the dropdown never had, so after a reload it went to the end; that
+     *    index is now only the fallback for when state is not ready.)
      *
      * This is precisely why a pure-CSS approach was rejected: grouping completed
      * tasks to the bottom of a single list with flexbox `order` would decouple
