@@ -127,10 +127,29 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
  * 20px shows the buttons whole. The extra 11px of touch hit box above them
  * stays clipped on this one row; reaching it would mean a 21px shift.
  * Browsers without :has() keep the old, clipped look; nothing breaks.
+ *
+ * `:first-child`, not the .is-first-task marker: the marker is written by the
+ * dropdown moves, drag-drop and the cycle reset, NOT by the first render, so on
+ * a fresh load (measured Oct 2026: a sample just imported) the first task had
+ * no marker and this rule never matched until a reload. The first child of
+ * #taskList is the first row by definition.
+ *
+ * On a coarse pointer the open row counts WITHOUT the body class: there is no
+ * hover path on touch, so no flicker loop, and body.show-three-dots-enabled is
+ * written by the settings toggle's init, which on a fresh first load has not
+ * run when the ⋮ is first tapped (measured Oct 2026: row open, class absent,
+ * padding still 10px). The body-class selector stays for three-dots mode on a
+ * mouse.
  */
-body.show-three-dots-enabled .task-list-container:has(> #taskList > .task.is-first-task > .task-options.task-options-visible),
-.task-list-container:has(> #taskList > .task.is-first-task.long-pressed) {
+body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-child > .task-options.task-options-visible),
+.task-list-container:has(> #taskList > .task:first-child.long-pressed) {
     padding-top: var(--space-5);
+}
+
+@media (pointer: coarse) {
+    .task-list-container:has(> #taskList > .task:first-child > .task-options.task-options-visible) {
+        padding-top: var(--space-5);
+    }
 }
 
 /* Button color variants */

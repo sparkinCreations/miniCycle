@@ -4778,6 +4778,65 @@ async function journeyFirstRunSettingToggle(browser, baseURL) {
     return { name: 'a settings toggle works on the session that created the data', failures };
 }
 
+// ── Journey: the first task's option row gets room on a fresh load ───────────
+// The options row sits above its task and the list container clips it; the
+// container grows its top padding while the FIRST task's row is open. That rule
+// used to key on the .is-first-task marker, which the first render never writes
+// (only moves, drags and resets do), so it silently failed in a user's first
+// session. It keys on :first-child now; this pins it on a just-imported sample.
+async function journeyFirstTaskOptionRoom(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    // A phone: the app turns three-dots mode on for touch, and the padding rule
+    // is about the touch hit area anyway.
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 });
+        await page.waitForFunction(() => { const b = document.querySelector('.first-run-btn[data-choice="sample"]'); return b && !b.disabled; }, null, { timeout: 20000 });
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="sample"]').click());
+        await page.waitForFunction(() => document.querySelectorAll('.sample-item').length > 0, null, { timeout: 15000 });
+        await page.evaluate(() => document.querySelector('.sample-item').click());
+        await page.waitForFunction(() => document.querySelectorAll('#taskList .task').length > 1, null, { timeout: 20000 });
+        await page.waitForTimeout(1500);
+        await page.evaluate(() => {
+            document.querySelectorAll('.notification').forEach(n => n.remove());
+            document.getElementById('first-run-welcome')?.remove();
+            document.body.classList.remove('first-run-welcome-active');
+            document.getElementById('focus-mode-exit-btn')?.click();
+        });
+        await page.waitForTimeout(800);
+        // On a fresh first load body.show-three-dots-enabled is NOT yet set (the
+        // settings toggle writes it); the ⋮ buttons are rendered regardless, so
+        // the padding rule must not wait for the class on touch.
+        const bodyClass = await page.evaluate(() => document.body.classList.contains('show-three-dots-enabled'));
+        record('fixture: a fresh load (three-dots body class not yet applied)', bodyClass === false, 'the class was already there, so this run does not exercise the fresh-load case');
+        const before = await page.evaluate(() => getComputedStyle(document.querySelector('.task-list-container')).paddingTop);
+        const dots = page.locator('#taskList .task').first().locator('.three-dots-btn, [class*="three-dots"]').first();
+        const opened = { ok: (await dots.count()) > 0, marker: await page.evaluate(() => document.querySelector('#taskList .task')?.classList.contains('is-first-task')) };
+        if (opened.ok) await dots.tap();   // a finger, not a synthetic click: the row opens on the touch path
+        await page.waitForTimeout(400);
+        const after = await page.evaluate(() => ({
+            padding: getComputedStyle(document.querySelector('.task-list-container')).paddingTop,
+            rowOpen: !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible')
+        }));
+        record('the first task\'s row opened', opened.ok && after.rowOpen, JSON.stringify({ opened, after }));
+        record('on a fresh load the first task carries no marker (the rule must not depend on it)', opened.ok && opened.marker === false, `marker=${opened.marker}`);
+        record('the list container made room (10px → 20px) while the row is open', before === '10px' && after.padding === '20px', `before=${before} after=${after.padding}`);
+        // Close it the way a user does: a tap elsewhere (a second ⋮ tap does not toggle).
+        await page.touchscreen.tap(195, 120);
+        await page.waitForTimeout(500);
+        const closed = await page.evaluate(() => ({
+            padding: getComputedStyle(document.querySelector('.task-list-container')).paddingTop,
+            rowOpen: !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible')
+        }));
+        record('closing the row gives the room back', closed.rowOpen === false && closed.padding === '10px', JSON.stringify(closed));
+    } finally {
+        await context.close();
+    }
+    return { name: 'the first task\'s option row gets room on a fresh load', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -4825,6 +4884,7 @@ const JOURNEYS = [
     { name: "the + button's first-time shimmer", fn: journeyPlusButtonShimmer },
     { name: 'the re-audit dialogs name themselves, keep Tab, and hand focus back', fn: journeyReauditDialogs },
     { name: 'the one-time "the × moved" notice in Focus View', fn: journeyFocusExitMovedNotice },
+    { name: 'the first task\'s option row gets room on a fresh load', fn: journeyFirstTaskOptionRoom },
 ];
 
 async function run() {
