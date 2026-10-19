@@ -257,18 +257,19 @@ boot itself was 0.16s; a first visit became usable at 5–11s, of which the boot
   for, so boot now proceeds from the network and the worker installs behind it (its
   first-install claim does not reload). `test:sw` pins it: a first visit reaches
   appLoaded with no controller while the precache is deliberately slowed.
-- **A release was applied by wiping every cache.** The pre-boot version gate
-  (`gateOnServerVersion`) and `verifyVersionFresh` both cleared all caches, unregistered
-  the worker and hard-reloaded on a version mismatch — the next open was a cold first
-  visit. With 48 releases in 30 days that was most days. Both now ask the worker for
-  the release first and keep the full heal as the second attempt per session (see
-  `docs/deployment/PWA_OFFLINE_ARCHITECTURE.md`); the controllerchange reload onto the new
-  worker stays (2.621 dropped it mid-session and the next open hung when it was offline —
-  restored in 2.622, see that doc). `test:sw` pins it:
-  after a simulated release the app boots at once from the old cache, the caches are
-  never emptied, no cache-busting navigation happens, and the next open runs the new
-  version. The inline early check in `miniCycle.html` (minicycle.app only) is left as
-  is; the heals pre-set `__miniCycle_lastVersion` so it does not fire after an update.
+- **A release was applied by wiping every cache — still is (attempt reverted).** The pre-boot
+  version gate and `verifyVersionFresh` clear all caches, unregister the worker and hard-reload
+  on a version mismatch, so the next open is a cold first visit — most days at the current
+  release cadence. v2.621 replaced that with a non-destructive first tier (ask the worker for
+  the release, keep the caches, apply on controllerchange). **Reverted in v2.623**: with the
+  updated worker in control, an offline reopen hung intermittently (>20s, never loaded) —
+  every CI run, about 1 local run in 4 (`test:sw`, honest-offline step; the diagnostics show
+  worker `service-worker.js?v=<new>` active and controlling, and the page emits nothing).
+  v2.621 also dropped the controllerchange reload mid-session, which made the same hang
+  reachable directly (fixed in v2.622; `test:sw` Test 4 pins it). **A retry needs** the
+  browser-level cause first — whether the hang follows the script-URL change (`?v=<new>`
+  registers a new script URL on every release) or the update path itself — and 20+ green
+  `test:sw` iterations on CI before it ships.
 - **The splash held 500ms after boot** before `appLoaded` flipped, while its CSS fade
   is 300ms: `BOOT_TIMEOUTS.LOADER_FADE` now matches the fade.
 
