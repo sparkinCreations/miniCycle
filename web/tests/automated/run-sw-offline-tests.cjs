@@ -70,7 +70,33 @@ function assertPrecacheCoversCss() {
 }
 
 // Reload and wait for the app to report booted; returns { ok, ms }.
+// The page's recent console lines, for the diagnostics a failure prints.
+const consoleTail = new WeakMap();
+function watchConsole(page) {
+    if (consoleTail.has(page)) return;
+    const lines = [];
+    consoleTail.set(page, lines);
+    const push = (l) => { lines.push(`${new Date().toISOString().slice(17, 23)} ${l}`); if (lines.length > 60) lines.shift(); };
+    page.on('console', (m) => push(`${m.type()}: ${m.text().slice(0, 200)}`));
+    page.on('pageerror', (e) => push(`pageerror: ${e.message.slice(0, 200)}`));
+    page.on('framenavigated', (f) => { if (f === page.mainFrame()) push(`navigated: ${f.url()}`); });
+}
+
+// When a boot or an update check times out, say what the page and its workers
+// were doing: the URL, every service worker in the context, and the page's last
+// console lines. CI is where these show up and it cannot be stepped through.
+function dumpDiagnostics(page) {
+    try {
+        console.log(`${colors.gray}      ↳ url: ${page.url()}${colors.reset}`);
+        for (const w of page.context().serviceWorkers()) console.log(`${colors.gray}      ↳ worker: ${w.url()}${colors.reset}`);
+        for (const l of (consoleTail.get(page) || []).slice(-30)) console.log(`${colors.gray}      ↳ ${l}${colors.reset}`);
+    } catch (e) {
+        console.log(`${colors.gray}      ↳ (diagnostics unavailable: ${e.message})${colors.reset}`);
+    }
+}
+
 async function reloadAndBoot(page, timeoutMs) {
+    watchConsole(page);
     const start = Date.now();
     try {
         await page.reload({ waitUntil: 'domcontentloaded', timeout: timeoutMs });
@@ -80,6 +106,7 @@ async function reloadAndBoot(page, timeoutMs) {
         );
         return { ok: true, ms: Date.now() - start };
     } catch (e) {
+        dumpDiagnostics(page);
         return { ok: false, ms: Date.now() - start, err: e.message };
     }
 }
@@ -125,6 +152,7 @@ async function run() {
     const browser = await chromium.launch({ headless: true });
     const context = await browser.newContext();
     const page = await context.newPage();
+    watchConsole(page);
 
     const record = (name, ok, detail) => {
         if (ok) console.log(`   ${colors.green}✅${colors.reset} ${name} ${colors.gray}${detail || ''}${colors.reset}`);
@@ -214,6 +242,7 @@ async function run() {
         }
         record('no cache wipe and no cache-busting heal during the update', !wiped && !cbNav, `wiped=${wiped} cacheBustNavigation=${cbNav}`);
         record('the release arrived through the worker', !!outcome, outcome || 'neither a notice nor a reload within 20s');
+        if (!outcome) dumpDiagnostics(page);
         const nextOpen = await reloadAndBoot(page, 20000);
         const after = await page.evaluate(async () => ({ version: String(globalThis.APP_VERSION), caches: (await caches.keys()).length, cb: location.search.indexOf('_cb=') !== -1 }));
         record('the next open runs the new version, caches intact', nextOpen.ok && after.version === next && after.caches > 0 && !after.cb, JSON.stringify({ ...after, ms: nextOpen.ms }));
