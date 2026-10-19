@@ -221,7 +221,10 @@ async function run() {
         const relMs = Date.now() - relStart;
         record('the open after a release boots at once from the old cache', relMs < 8000, `${relMs}ms`);
         let wiped = false, cbNav = false, outcome = null;
-        for (let i = 0; i < 100 && !outcome; i++) {
+        // 60s, not 20: the new worker precaches ~220 files before it can take
+        // over, and on a CI runner that took longer than 20s (diagnosed Oct 2026:
+        // still "installing" at 20s, then fine). Locally it is ~1s.
+        for (let i = 0; i < 300 && !outcome; i++) {
             let st;
             try {
                 st = await page.evaluate(async () => ({
@@ -241,11 +244,25 @@ async function run() {
             await page.waitForTimeout(200);
         }
         record('no cache wipe and no cache-busting heal during the update', !wiped && !cbNav, `wiped=${wiped} cacheBustNavigation=${cbNav}`);
-        record('the release arrived through the worker', !!outcome, outcome || 'neither a notice nor a reload within 20s');
+        record('the release arrived through the worker', !!outcome, outcome || 'neither a notice nor a reload within 60s');
         if (!outcome) dumpDiagnostics(page);
         const nextOpen = await reloadAndBoot(page, 20000);
         const after = await page.evaluate(async () => ({ version: String(globalThis.APP_VERSION), caches: (await caches.keys()).length, cb: location.search.indexOf('_cb=') !== -1 }));
         record('the next open runs the new version, caches intact', nextOpen.ok && after.version === next && after.caches > 0 && !after.cb, JSON.stringify({ ...after, ms: nextOpen.ms }));
+
+        // Let the worker registration SETTLE before going offline: the next open
+        // above registers the new version's worker URL, which installs again, and
+        // on a slow runner it was still mid-update when Test 2 cut the network —
+        // so Test 2 measured a half-finished update instead of an offline boot
+        // (CI, Oct 2026). Test 4 covers a takeover followed by an offline reopen
+        // on purpose; here the question is the plain offline boot.
+        let settled = false;
+        for (let i = 0; i < 300 && !settled; i++) {
+            settled = await page.evaluate(async () => { const r = await navigator.serviceWorker.getRegistration(); return !!(r && r.active && !r.installing && !r.waiting && navigator.serviceWorker.controller === r.active); }).catch(() => false);
+            if (!settled) await page.waitForTimeout(200);
+        }
+        if (!settled) { console.log(`${colors.gray}   (worker still updating after 60s — diagnostics follow)${colors.reset}`); dumpDiagnostics(page); }
+        else { await reloadAndBoot(page, 20000); }   // boot once under the settled worker, online
 
         // ── Test 2: honest offline (navigator.onLine === false) ─────────────
         console.log(`\n${colors.cyan}▸ honest offline (navigator.onLine = false)${colors.reset}`);
