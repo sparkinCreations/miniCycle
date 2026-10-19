@@ -1,3 +1,11 @@
+## [2.623] - 2026-10-19
+- docs(boot): record the reverted non-destructive update, its evidence, and what a retry needs
+- revert(boot): back to the 2.620 version heal — offline reopens under an updated worker hung
+- test(sw): give the release a CI-sized window and let the worker settle before the offline boots
+- test(backup): assert on written content and write count, not millisecond timestamp keys
+- test(sw): print the page's console tail, navigations and service workers when a boot or update check times out
+
+
 ## [2.622] - 2026-10-19
 - fix(boot): reload onto a new worker even mid-session — an offline reopen after a release hung
 
