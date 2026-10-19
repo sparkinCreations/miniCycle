@@ -1,3 +1,7 @@
+## [2.621] - 2026-10-19
+- perf(boot): first visits boot before the precache; a release no longer wipes the cache; splash fade matches its CSS
+
+
 ## [2.620] - 2026-10-19
 - fix(ui): the first task's option-row room works on a fresh load
 - feat(ui): split the first-run Focus View tip into a message and a drag hint

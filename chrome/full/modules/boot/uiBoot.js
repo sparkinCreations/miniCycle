@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS, BACKUP_TRIGGERS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
@@ -795,7 +795,7 @@ function dismissAppLoader(appLoader) {
       // Update iOS status bar color now that loading is complete
       // (starts black during load, switches to theme color after)
       _appContextMod?.getUiApi?.()?.updateThemeColor?.();
-    }, 500);
+    }, BOOT_TIMEOUTS.LOADER_FADE);   // the CSS fade's own length; 500 left 200ms of dead time
   }
 }
 
