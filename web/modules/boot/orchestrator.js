@@ -756,32 +756,6 @@ function downloadDataBackup() {
  * @param {number} timeoutMs - Max wait for the version fetch before failing open.
  * @returns {Promise<void>} Resolves when boot may proceed; never resolves if it reloads.
  */
-/**
- * Ask the registered worker to check for the release the server just reported.
- * @param {string} serverVersion
- * @returns {Promise<boolean>} true when a NEW worker is now installing/waiting
- *   (the update will arrive through it), false when the gate must heal itself
- */
-async function updateWorkerInstead(serverVersion) {
-  if (!('serviceWorker' in navigator) || !navigator.onLine) return false;
-  try {
-    const reg = await navigator.serviceWorker.getRegistration();
-    if (!reg) return false;
-    const controllerBefore = navigator.serviceWorker.controller;
-    await Promise.race([reg.update(), new Promise((r) => setTimeout(r, 2500))]);
-    // A new worker is installing or waiting — or, on a fast network, it has
-    // already activated during the check (boot-sw.js runs its own check in
-    // parallel): the controller changed, or the active worker is newer than the
-    // one controlling this page. All of those mean the release is arriving.
-    const controllerNow = navigator.serviceWorker.controller;
-    if (reg.installing || reg.waiting || controllerNow !== controllerBefore || (reg.active && controllerNow && reg.active !== controllerNow)) {
-      console.log(`🆕 Version gate: worker fetching v${serverVersion} — booting the current build meanwhile`);
-      return true;
-    }
-  } catch (_) { /* update check failed — heal */ }
-  return false;
-}
-
 async function gateOnServerVersion(timeoutMs) {
   try {
     const timeout = new Promise((resolve) => setTimeout(() => resolve(null), timeoutMs));
@@ -809,17 +783,6 @@ async function gateOnServerVersion(timeoutMs) {
       sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
     } catch (_) { /* storage unavailable — still attempt the reload */ }
 
-    // NON-DESTRUCTIVE FIRST (Oct 2026): a release used to be applied by wiping
-    // every cache and reloading — which turned the next open into a cold first
-    // visit (5–11s behind the splash), on most days given the release cadence.
-    // The worker already versions its caches, keeps the previous one as a
-    // fallback and claims on activate, so ask it to fetch the release instead:
-    // this open boots the current build at once, and boot-sw.js's
-    // controllerchange handler applies the new one (a reload only while the
-    // splash is still up, otherwise "update ready" + next open). The wipe below
-    // stays for when no worker can do that job (none registered, or it already
-    // has this version — then THIS page is stale from a memory cache).
-    if (await updateWorkerInstead(serverVersion)) return;
 
     console.warn(`🔄 Pre-boot version gate: loaded=${APP_VERSION}, server=${serverVersion} — clearing caches and reloading to the fresh build`);
     // Swap the boot splash for the friendly "Updating to latest version…" overlay so

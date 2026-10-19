@@ -202,13 +202,16 @@ async function run() {
         const online = await reloadAndBoot(page, 20000);
         record('online boot works', online.ok, online.ok ? `(${online.ms}ms)` : online.err);
 
-        // ── Test 1b: a RELEASE is applied without wiping the cache ──────────
+        // ── Test 1b: a RELEASE reaches the app ──────────────────────────────
         // Bump what the server hands out (version.js, the HTML's version stamps,
         // the worker's bytes) the way a deploy does, then open the app: it must
-        // boot at once from the old cache, never empty the caches or take the
-        // cache-busting heal, and the release must arrive through the worker —
-        // as an update-ready notice, or a reload if it landed during the splash.
-        console.log(`\n${colors.cyan}▸ release while cached (non-destructive update)${colors.reset}`);
+        // boot at once from the old cache, the new version must be running
+        // within the window, and the next open must run it too. HOW it arrives
+        // is the version heal's business (clear caches + reload, as in 2.620;
+        // v2.621's non-destructive path was reverted in 2.623 after offline
+        // reopens under the updated worker hung intermittently — see
+        // docs/deployment/PWA_OFFLINE_ARCHITECTURE.md).
+        console.log(`\n${colors.cyan}▸ release while cached${colors.reset}`);
         const cur = await page.evaluate(() => String(globalThis.APP_VERSION));
         const next = `${cur}-next`;
         const bump = (buf) => buf.toString().split(cur).join(next);
@@ -220,35 +223,19 @@ async function run() {
         await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', { timeout: 30000 });
         const relMs = Date.now() - relStart;
         record('the open after a release boots at once from the old cache', relMs < 8000, `${relMs}ms`);
-        let wiped = false, cbNav = false, outcome = null;
-        // 60s, not 20: the new worker precaches ~220 files before it can take
-        // over, and on a CI runner that took longer than 20s (diagnosed Oct 2026:
-        // still "installing" at 20s, then fine). Locally it is ~1s.
-        for (let i = 0; i < 300 && !outcome; i++) {
-            let st;
+        let arrived = false;
+        // 60s: on a CI runner the new worker's precache took over 20s (Oct 2026).
+        for (let i = 0; i < 300 && !arrived; i++) {
             try {
-                st = await page.evaluate(async () => ({
-                keys: (await caches.keys()).length,
-                cb: location.search.indexOf('_cb=') !== -1,
-                version: String(globalThis.APP_VERSION),
-                notice: [...document.querySelectorAll('.notification')].some(n => /update ready|new version is ready/i.test(n.textContent))
-                }));
-            } catch (_) {
-                await page.waitForTimeout(300);   // a navigation (the splash-time reload) was in flight
-                continue;
-            }
-            if (st.keys === 0) wiped = true;
-            if (st.cb) cbNav = true;
-            if (st.version === next) outcome = 'reloaded onto the new version during the splash';
-            else if (st.notice) outcome = 'update-ready notice shown, old build kept running';
-            await page.waitForTimeout(200);
+                arrived = await page.evaluate((v) => String(globalThis.APP_VERSION) === v && document.documentElement.dataset.appLoaded === 'true', next);
+            } catch (_) { /* a navigation (the heal's reload) was in flight */ }
+            if (!arrived) await page.waitForTimeout(200);
         }
-        record('no cache wipe and no cache-busting heal during the update', !wiped && !cbNav, `wiped=${wiped} cacheBustNavigation=${cbNav}`);
-        record('the release arrived through the worker', !!outcome, outcome || 'neither a notice nor a reload within 60s');
-        if (!outcome) dumpDiagnostics(page);
+        record('the release is running within 60s', arrived, arrived ? '' : 'still on the old version after 60s');
+        if (!arrived) dumpDiagnostics(page);
         const nextOpen = await reloadAndBoot(page, 20000);
-        const after = await page.evaluate(async () => ({ version: String(globalThis.APP_VERSION), caches: (await caches.keys()).length, cb: location.search.indexOf('_cb=') !== -1 }));
-        record('the next open runs the new version, caches intact', nextOpen.ok && after.version === next && after.caches > 0 && !after.cb, JSON.stringify({ ...after, ms: nextOpen.ms }));
+        const after = await page.evaluate(() => ({ version: String(globalThis.APP_VERSION) }));
+        record('the next open runs the new version', nextOpen.ok && after.version === next, JSON.stringify({ ...after, ms: nextOpen.ms }));
 
         // Let the worker registration SETTLE before going offline: the next open
         // above registers the new version's worker URL, which installs again, and
