@@ -1,3 +1,13 @@
+## [2.619] - 2026-10-18
+- style(onboarding): a blank line between the two tips in the Focus View first-run toast
+- feat(personalization): readable footer and subtitle on vocab-theme presets; a colour you picked yourself gets the footer strip
+- fix(contrast): the runner measures the real Personalization presets; preset text colours now read on their backgrounds
+- style(footer): more contrast on request — OS setting or High Contrast mode; Golden Glow dark by default
+- style(footer): plain white links over the gradient, no strip, every width
+- docs(future-work): app lock plan — optional Face ID / Touch ID / fingerprint lock, all native apps
+- feat(ios): daily backup files on iPhone, visible in the Files app
+
+
 ## [2.618] - 2026-10-16
 - docs(legal): privacy policy 2.7 and terms name the device backup folder
 

@@ -339,6 +339,9 @@ export function applyQuickPreset(presetKey, callbacks) {
     Object.entries(preset.colors).forEach(([key, color]) => {
         callbacks.saveColor(key, color);
     });
+    // Remember it is a preset: a colour the user picks by hand clears this, and
+    // only a hand-picked colour gets the footer strip (preferencesManager).
+    callbacks.markPreset?.(presetKey);
 
     // Update inputs
     callbacks.loadSavedColors();

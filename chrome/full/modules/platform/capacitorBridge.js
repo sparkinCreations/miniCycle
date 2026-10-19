@@ -534,22 +534,24 @@ export async function saveFileToDocumentsNative({ data, fileName }) {
 }
 
 /**
- * The Android backup folder — `Documents/<dirName>` through the Filesystem
- * plugin — as the adapter shape storage/backupFolder.js consumes, or null off
- * Android. Files the app created there are readable without a permission on
- * Android 10+ and survive an uninstall. iOS is left out on purpose: the call
- * would work, but the folder stays invisible until the Files keys are in the
- * plist, so it would protect nothing the user can see.
- * @param {string} dirName
+ * The phone's backup folder through the Filesystem plugin, as the adapter shape
+ * storage/backupFolder.js consumes, or null off the native apps. Android: the
+ * public `Documents/<dirs.android>` folder — files the app created there are
+ * readable without a permission on Android 10+ and survive an uninstall. iOS:
+ * `<dirs.ios>` inside the app's own Documents folder, which the two Files keys
+ * in Info.plist show under On My iPhone → miniCycle; it is deleted with the app.
+ * @param {{android?: string, ios?: string}} dirs - folder name per platform
  * @returns {{describe: function(): Promise<string>, write: function(string, string): Promise<*>, list: function(): Promise<Array<{name: string, size: number, mtime: number}>>, read: function(string): Promise<string>, remove: function(string): Promise<*>}|null}
  */
-export function getAndroidBackupFolder(dirName) {
-    if (getNativePlatform() !== 'android') return null;
+export function getNativeBackupFolder(dirs) {
+    const platform = getNativePlatform();
+    if (!platform) return null;
     const Filesystem = getPlugin('Filesystem');
+    const dirName = dirs && dirs[platform];
     if (!Filesystem || !dirName) return null;
     const inDir = (name) => `${dirName}/${name}`;
     return {
-        describe: async () => `Documents/${dirName}`,
+        describe: async () => (platform === 'ios' ? `On My iPhone/miniCycle/${dirName}` : `Documents/${dirName}`),
         write: async (name, text) => {
             await Filesystem.writeFile({ path: inDir(name), data: text, directory: 'DOCUMENTS', encoding: 'utf8', recursive: true });
         },

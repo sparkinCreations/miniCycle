@@ -23,6 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { applyReadableTextColors } from '../utils/readableText.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -88,6 +89,13 @@ const TRANSLUCENT_BG_ALPHA = {
  * @param {number} alpha - Alpha value (0–1)
  * @returns {string} rgba string
  */
+/** Add or remove a body class only when that changes something (see applyCustomColors). */
+function setBodyClass(className, wanted) {
+    const body = _deps.getBody?.();
+    if (!body || body.classList.contains(className) === wanted) return;
+    body.classList.toggle(className, wanted);
+}
+
 function hexToRgba(hex, alpha) {
     // Normalize FIRST: the fixed slice offsets below assume 6 digits, so a
     // shorthand like '#f00' read `''` for blue and produced
@@ -795,6 +803,7 @@ export class PreferencesManager {
             if (presetKey) {
                 btn._clickHandler = () => _presetsModule.applyQuickPreset(presetKey, {
                     saveColor: (key, color) => this.saveColor(key, color),
+                    markPreset: (key) => this.saveColor('preset', key),
                     resetAllColors: () => this.resetAllColors(),
                     loadSavedColors: () => this.loadSavedColors(),
                     updatePreview: () => this.updatePreview(),
@@ -1136,8 +1145,10 @@ export class PreferencesManager {
         // Save current state for undo before changing
         this.pushToUndoStack();
 
-        // Save to appState
+        // Save to appState — and record that this is the user's own pick, not a
+        // quick preset (applyCustomColors adds the footer strip for those).
         this.saveColor(config.key, color);
+        this.saveColor('preset', null);
 
         // Update preview immediately
         this.updatePreview();
@@ -1682,6 +1693,19 @@ export class PreferencesManager {
         });
 
         // Handle checkbox fill visibility
+        const appBg = normalizeHex(customColors.appBg) || null;
+        applyReadableTextColors(root, appBg);
+        // A colour the user picked themselves (not a quick preset: handleColorChange
+        // clears `preset`) gets the backing strip under the footer links, so any
+        // colour works without the user having to think about it. A preset relies
+        // on the derived text colour alone. Older saves carry no `preset` key at
+        // all and are left as they were (no strip) until a colour is touched.
+        // Written only when it CHANGES: setupThemeObserver re-runs this method on
+        // every body class mutation, and classList.remove rewrites the attribute
+        // even for an absent class — an unconditional write here looped the page
+        // (Oct 2026, dark mode).
+        setBodyClass(DOM_CLASSES.CUSTOM_APP_BG, Boolean(appBg) && customColors.preset === null);
+
         const showCheckboxFill = customColors.showCheckboxFill !== false;
         if (!showCheckboxFill) {
             root.style.setProperty('--pref-checkbox-bg', 'transparent');
@@ -1773,6 +1797,8 @@ export class PreferencesManager {
         Object.values(COLOR_MAP).forEach(config => {
             root.style.removeProperty(config.cssVar);
         });
+        applyReadableTextColors(root, null);
+        setBodyClass(DOM_CLASSES.CUSTOM_APP_BG, false);
 
         // Update status bar color back to default
         updateThemeColor();

@@ -23,12 +23,11 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
-/* White links on a thin, see-through navy glass strip under a heavy blur,
-   so the page shows through like the panels' glass. Blur alone does not
-   change what is under the text, so the tint is what the contrast comes
-   from: a deep navy at 43% is the most transparent setting that keeps the
-   white text at 4.6:1 over the gradient's light end (see --footer-strip-bg),
-   gated by the contrast runner. No opacity dimming on the text. */
+/* Plain white links straight over the page gradient, no strip and no
+   dimming, at every width. This knowingly sits under 4.5:1 at the
+   gradient's light end (Oct 2026: the glass strip that met WCAG 1.4.3 was
+   traded away for the look). The contrast runner reports the number without
+   gating it; the accessibility statement lists it as a known limitation. */
 .footer-links {
     list-style: none;
     margin: 0 auto;
@@ -38,8 +37,29 @@
     align-items: center;
     width: fit-content;
     max-width: calc(100% - 2 * var(--space-4));
-    background: var(--footer-strip-bg, rgba(28, 56, 120, 0.55));
-    border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.28));
+}
+
+/* More contrast on request, not by default. The OS "Increase contrast"
+   setting (prefers-contrast) and the app's own High Contrast mode bring back
+   the navy glass strip that puts the white links at 4.6:1 over the gradient's
+   light end; everyone else keeps the plain white above. The contrast runner
+   gates this mode. Phones swap the strip for dark text (see the mobile block). */
+@media (prefers-contrast: more), (prefers-contrast: high) {
+    .footer-links {
+        background: var(--footer-strip-bg, rgba(10, 25, 60, 0.43));
+        border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.35));
+        border-radius: var(--radius-full, 999px);
+        backdrop-filter: blur(14px) saturate(1.3);
+        -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    }
+}
+
+/* …and under a colour the user picked in Personalization (body.custom-app-bg,
+   set by preferencesManager): the strip makes any colour work. */
+body.high-contrast .footer-links,
+body.custom-app-bg .footer-links {
+    background: var(--footer-strip-bg, rgba(10, 25, 60, 0.43));
+    border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.35));
     border-radius: var(--radius-full, 999px);
     backdrop-filter: blur(14px) saturate(1.3);
     -webkit-backdrop-filter: blur(14px) saturate(1.3);
@@ -138,20 +158,39 @@
         display: none;
     }
 
-    /* Phones: only the copyright line shows, so the glass strip would be a
-       pill around one short caption under the Undo button and the page dots.
-       Drop it; the text carries the contrast via --footer-text-mobile. */
+    /* Phones: only the copyright line shows; same white text as desktop. */
     #footer-container .footer-links {
+        padding: 0;
+    }
+
+    /* When more contrast is asked for, a strip around one short caption would
+       be a pill under the Undo button and the page dots; dark text does the
+       same job on its own (the dark themes keep light text). */
+    @media (prefers-contrast: more), (prefers-contrast: high) {
+        #footer-container .footer-links {
+            background: none;
+            border: none;
+            backdrop-filter: none;
+            -webkit-backdrop-filter: none;
+        }
+        #footer-container #copyright,
+        #footer-container #copyright a {
+            color: var(--footer-text-contrast, #111111);
+        }
+    }
+
+    body.high-contrast #footer-container .footer-links,
+    body.custom-app-bg #footer-container .footer-links {
         background: none;
         border: none;
         backdrop-filter: none;
         -webkit-backdrop-filter: none;
-        padding: 0;
     }
-
-    #footer-container #copyright,
-    #footer-container #copyright a {
-        color: var(--footer-text-mobile, #111111);
+    body.high-contrast #footer-container #copyright,
+    body.high-contrast #footer-container #copyright a,
+    body.custom-app-bg #footer-container #copyright,
+    body.custom-app-bg #footer-container #copyright a {
+        color: var(--footer-text-contrast, #111111);
     }
 
     #footer-container #copyright {

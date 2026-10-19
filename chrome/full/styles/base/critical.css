@@ -672,12 +672,14 @@ html.mc-first-run #app-loader .first-run-status {
   font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.25em;
-  color: #000;
+  /* The --pref-* fallbacks let a Personalization preset turn the subtitle
+     white on a dark background (see layout/header.css). */
+  color: var(--pref-subtitle-color, #000);
   /* 0.8, not 0.7: 12px/600 is not WCAG "large" text, so it needs 4.5:1.
      Composited over the #4c79ff header, 0.7 gave 3.93:1 and 0.8 gives 4.57:1.
      This sheet loads after main.css, so it wins over layout/header.css —
      keep the two in sync. */
-  opacity: 0.8;
+  opacity: var(--pref-subtitle-opacity, 0.8);
 }
 .mode-selector-wrapper {
   display: flex;

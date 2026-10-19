@@ -3,10 +3,11 @@
  *
  * A daily backup FILE written silently to a folder on the device: desktop →
  * Documents/miniCycle Backups through the shell's IPC (desktopBridge), Android →
- * the public Documents/miniCycle folder through the Filesystem plugin
- * (capacitorBridge). Unlike the IndexedDB snapshots BackupManager keeps, these
- * files outlive the app's own storage and an uninstall, and the user can see
- * them. Nothing here touches the network.
+ * the public Documents/miniCycle folder, iPhone → Backups inside the app's
+ * Documents folder shown in the Files app (both through the Filesystem plugin,
+ * capacitorBridge). Unlike the IndexedDB snapshots BackupManager keeps, these
+ * files outlive the app's own storage, and the user can see them; on desktop
+ * and Android they also outlive an uninstall. Nothing here touches the network.
  *
  * The file is the same JSON the Backup button writes, so Restore All Routines
  * reads it. One file per local day (BACKUP_FOLDER.FILE_PREFIX + YYYY-MM-DD),
@@ -14,8 +15,8 @@
  * LIMITS.BACKUP_FOLDER_KEEP kept. uiBoot calls writeDailyBackupFile on app open
  * and whenever the app is hidden, beside the snapshots.
  *
- * On the web and on iOS there is no adapter and every call is a no-op; the
- * Settings panel shows the folder note only when isAvailable() is true.
+ * On the web there is no adapter and every call is a no-op; the Settings panel
+ * shows the folder note only when isAvailable() is true.
  *
  * Pattern: Simple Instance ✨ — required deps via diBase.js.
  *
@@ -26,7 +27,7 @@ import { createDIModule, required } from '../core/diBase.js';
 import { LIMITS, SCHEMA, APP_VERSION, BACKUP_FOLDER, BACKUP_TRIGGERS } from '../core/constants.js';
 import { getRoutines } from '../utils/cycleMode.js';
 import { isDesktopApp, getDesktopBackupFolder } from '../platform/desktopBridge.js';
-import { getAndroidBackupFolder } from './../platform/capacitorBridge.js';
+import { getNativeBackupFolder } from '../platform/capacitorBridge.js';
 import { collectLiteStorageSnapshot } from './backupManager.js';
 
 // ============================================================================
@@ -93,7 +94,9 @@ export class BackupFolder {
     /** @returns {BackupFolderAdapter|null} @private */
     _resolveAdapter() {
         if (this._adapter !== undefined) return this._adapter;
-        this._adapter = (isDesktopApp() ? getDesktopBackupFolder() : getAndroidBackupFolder(BACKUP_FOLDER.ANDROID_DIR)) || null;
+        this._adapter = (isDesktopApp()
+            ? getDesktopBackupFolder()
+            : getNativeBackupFolder({ android: BACKUP_FOLDER.ANDROID_DIR, ios: BACKUP_FOLDER.IOS_DIR })) || null;
         return this._adapter;
     }
 
