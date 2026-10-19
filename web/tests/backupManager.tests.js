@@ -387,8 +387,12 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
         st.metadata.lastModified += 1;
         const second = await backupManager.createSessionBackup({ reason: 'hide' });
         if (!second) throw new Error('a changed state inside the gap was not snapshotted on hide');
+        // Assert on CONTENT, not on a new timestamp key: the store is keyed by the
+        // millisecond, so two snapshots in the same ms share a key and the second
+        // replaces the first (CI, Oct 2026). The newest record must hold the
+        // changed state.
         const b = await newestSession();
-        if (!b || b.timestamp === a.timestamp) throw new Error('no new record after the second hide');
+        if (!b || b.data?.metadata?.lastModified !== st.metadata.lastModified) throw new Error('the newest record does not hold the changed state: ' + JSON.stringify(b && b.data && b.data.metadata));
     });
 
     await test('createSessionBackup: nothing changed since the last snapshot → skipped, on open and on hide', async () => {
@@ -415,18 +419,23 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
     await test('createSessionBackup: concurrent calls (pagehide + visibilitychange) share one write', async () => {
         const { mock } = touchedState();
         setBackupManagerDependencies({ AppState: mock });
-        // Count the records the PAIR added, by key, not by `timestamp >= start`:
-        // the previous test's write can land in the same millisecond as the start
-        // and was counted as a second record (CI, v2.619 and v2.620).
-        const keysBefore = new Set((await backupManager.listAllBackups()).session.map(s => s.timestamp));
-        const [a, b] = await Promise.all([
+        // Count the WRITES, not records by timestamp: the store is keyed by the
+        // millisecond, so neighbouring tests' records can share a key with this
+        // one (CI, v2.619/v2.620: "got 2"; v2.622: a same-ms overwrite).
+        const realSave = backupManager.saveBackup;
+        let saves = 0;
+        backupManager.saveBackup = function (...args) { saves++; return realSave.apply(this, args); };
+        let a, b;
+        try {
+            [a, b] = await Promise.all([
             backupManager.createSessionBackup({ reason: 'hide' }),
             backupManager.createSessionBackup({ reason: 'hide' })
-        ]);
+            ]);
+        } finally {
+            backupManager.saveBackup = realSave;
+        }
         if (!a || !b) throw new Error('both callers should resolve with the shared result, got ' + a + '/' + b);
-        const { session } = await backupManager.listAllBackups();
-        const written = session.filter(s => !keysBefore.has(s.timestamp)).length;
-        if (written !== 1) throw new Error('expected exactly one record from the pair, got ' + written);
+        if (saves !== 1) throw new Error('expected exactly one write from the pair, got ' + saves);
     });
 
     await test('createAutoBackup: an unchanged state since the last daily copy is skipped', async () => {
