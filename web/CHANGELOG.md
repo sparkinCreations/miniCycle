@@ -1,3 +1,7 @@
+## [2.622] - 2026-10-19
+- fix(boot): reload onto a new worker even mid-session — an offline reopen after a release hung
+
+
 ## [2.621] - 2026-10-19
 - perf(boot): first visits boot before the precache; a release no longer wipes the cache; splash fade matches its CSS
 
