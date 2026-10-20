@@ -48,6 +48,70 @@ function showConfirmationModal(options) {
 // ✅ Enhanced Service Worker Registration with Update Management
 if ('serviceWorker' in navigator) {
   let refreshing;
+  // The registration, once register() has resolved (null if it failed) — the
+  // version heal below waits on it so its update check never races the
+  // registration's own update job (two jobs = two workers, one left waiting).
+  let resolveRegistration = () => {};
+  const registrationReady = new Promise((r) => { resolveRegistration = r; });
+
+  // Chrome intermittently leaves a freshly installed worker in `waiting` even
+  // though it called skipWaiting() during install (observed in ~40% of
+  // simulated releases, Oct 2026: new worker `installed`, old one still
+  // controlling, no pending events). A SKIP_WAITING message from the page
+  // activates it at once, so nudge — now and on a short retry schedule.
+  function nudgeWaitingWorker(registration) {
+    if (!registration || !navigator.serviceWorker.controller) return;
+    const nudge = () => {
+      if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+    };
+    nudge();
+    for (const ms of [1000, 3000, 8000]) setTimeout(nudge, ms);
+  }
+
+  // When the nudges do not take either, Chrome leaves the installed worker in
+  // `waiting` until every client is gone — a user who never closes the tab
+  // stays on the old build. A plain reload DOES activate it (measured 2/2,
+  // Oct 2026) and keeps every cache, so once the worker has been waiting for
+  // a few seconds, reload once per session. Polls for up to 90s so a slow
+  // precache (20s+ on CI runners) still gets its turn; a worker that is still
+  // installing is left alone.
+  const WAITING_WATCHDOG_INTERVAL_MS = 1000;
+  const WAITING_WATCHDOG_GRACE_MS = 3000;
+  const WAITING_WATCHDOG_DEADLINE_MS = 90000;
+  function armWaitingWatchdog(registration, serverVersion) {
+    if (!registration || !navigator.serviceWorker.controller) return;
+    const started = Date.now();
+    let waitingSince = 0;
+    const timer = setInterval(() => {
+      if (refreshing || Date.now() - started > WAITING_WATCHDOG_DEADLINE_MS) return clearInterval(timer);
+      if (!registration.waiting) { waitingSince = 0; return; }
+      if (!waitingSince) { waitingSince = Date.now(); return; }
+      if (Date.now() - waitingSince < WAITING_WATCHDOG_GRACE_MS) return;
+      clearInterval(timer);
+      try {
+        if (sessionStorage.getItem('__miniCycle_waitingReload') === serverVersion) return;
+        sessionStorage.setItem('__miniCycle_waitingReload', serverVersion);
+        localStorage.setItem('__miniCycle_lastVersion', serverVersion);
+        sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
+      } catch { /* storage unavailable */ }
+      refreshing = true;
+      console.warn('🔄 Update installed but not activating — reloading so it takes over (caches kept)');
+      window.location.reload();
+    }, WAITING_WATCHDOG_INTERVAL_MS);
+  }
+
+  // Ask the controlling worker for its app version. true/false, or null when
+  // it cannot answer in time.
+  function controllerMatchesPage() {
+    return new Promise((resolve) => {
+      const controller = navigator.serviceWorker.controller;
+      if (!controller) return resolve(null);
+      const ch = new MessageChannel();
+      ch.port1.onmessage = (e) => resolve(!!(e.data && e.data.appVersion) && e.data.appVersion === APP_VERSION);
+      try { controller.postMessage({ type: 'GET_VERSION' }, [ch.port2]); } catch { resolve(null); }
+      setTimeout(() => resolve(null), 1500);
+    });
+  }
 
   // ✅ RELOAD COOLDOWN: prevent rapid reload loops WITHIN A TAB. sessionStorage
   // is per-tab, so this does NOT coordinate across tabs (each tab has its own
@@ -80,6 +144,7 @@ if ('serviceWorker' in navigator) {
   // This fetches version.js fresh and compares against what's currently loaded.
   // ═══════════════════════════════════════════════════════════════════════════
   let versionCheckInProgress = false;
+  let pendingServerVersion = null;
   // eslint-disable-next-line sonarjs/cognitive-complexity -- deliberate: the build/version/cache checks and their loop guards are one atomic recovery sequence (splitting them risks re-breaking the v2.316-class boot heals); complexity was identical when this lived inline, just unlinted
   async function verifyVersionFresh() {
     if (versionCheckInProgress) return;
@@ -118,25 +183,59 @@ if ('serviceWorker' in navigator) {
               : `CACHE_VERSION: loaded=${CACHE_VERSION}, server=${serverCacheVersion}`);
         console.warn(`🔄 VERSION MISMATCH: ${reason}`);
 
-        // Loop guard: if we already healed for this server version THIS session
-        // and a mismatch STILL persists, stop reloading (the cache can't refresh
-        // right now — e.g. flaky network, or a CDN edge serving inconsistent
-        // version.js). Covers BOTH mismatch kinds: gating on buildStale alone
-        // let a versionJsStale-only mismatch re-heal (full cache delete + SW
-        // unregister) on every check. sessionStorage clears on a full app
-        // close, so a fresh launch retries. Keyed on server version so a newer
-        // deploy still triggers a heal.
+        // Loop guard, keyed on the server version: at most two heal attempts
+        // per session (one through the worker, one full wipe) so a cache that
+        // cannot refresh right now (flaky network, inconsistent CDN edge) does
+        // not spin reloads. sessionStorage clears on a full app close, so a
+        // fresh launch retries; a newer deploy still triggers a heal.
+        let attempts = 0;
         try {
-          if (sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion) {
-            console.warn('⚠️ Version still mismatched after a heal attempt this session — not reloading again');
+          attempts = sessionStorage.getItem('__miniCycle_buildHeal') === serverVersion
+            ? parseInt(sessionStorage.getItem('__miniCycle_buildHealAttempts') || '0', 10) : 0;
+          if (attempts >= 2) {
+            console.warn('⚠️ Version still mismatched after healing twice this session — not reloading again');
             return;
           }
           sessionStorage.setItem('__miniCycle_buildHeal', serverVersion);
-          // Sync localStorage so the early boot check on the reloaded page
-          // sees a matching version and doesn't trigger a second reload.
+          sessionStorage.setItem('__miniCycle_buildHealAttempts', String(attempts + 1));
+          // Sync the other guards so the gate on the reloaded page sees a
+          // matching version and doesn't trigger a second heal.
           localStorage.setItem('__miniCycle_lastVersion', serverVersion);
           sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
         } catch { /* storage unavailable */ }
+
+        // Tier 1 — non-destructive: let the registered worker fetch the release
+        // and take over (controllerchange below reloads onto it). Caches stay,
+        // so the update is one background install instead of a cold first
+        // visit. Waits for register() so this never races its update job.
+        if (attempts === 0 && 'serviceWorker' in navigator) {
+          try {
+            const reg = await Promise.race([registrationReady, new Promise(r => setTimeout(() => r(null), 5000))]);
+            if (reg) {
+              const controllerBefore = navigator.serviceWorker.controller;
+              if (!reg.installing && !reg.waiting) {
+                await Promise.race([reg.update(), new Promise(r => setTimeout(r, 2500))]);
+              }
+              const controllerNow = navigator.serviceWorker.controller;
+              const arriving = reg.installing || reg.waiting || controllerNow !== controllerBefore
+                || (reg.active && controllerNow && reg.active !== controllerNow);
+              if (arriving) {
+                pendingServerVersion = serverVersion;
+                nudgeWaitingWorker(reg);
+                armWaitingWatchdog(reg, serverVersion);
+                console.log(`🆕 Worker fetching v${serverVersion} — this build keeps running meanwhile`);
+                return;
+              }
+              // The worker already has the release but this page came from the
+              // memory cache: a plain re-navigation is enough (caches kept).
+              console.warn('🔄 Worker is current; re-navigating past the memory cache (caches kept)');
+              window.location.href = window.location.pathname + '?_cb=' + Date.now();
+              return;
+            }
+          } catch { /* fall through to the full heal */ }
+        }
+
+        // Tier 2 — full heal: wipe caches, drop the worker, hard-reload.
 
         // Clear caches AND unregister the SW so the reload fetches HTML straight
         // from the network — a cache-first navigation handler could otherwise
@@ -194,14 +293,21 @@ if ('serviceWorker' in navigator) {
 
   // ✅ Function to register service worker with all event listeners
   async function registerServiceWorker() {
-    const registration = await navigator.serviceWorker.register(`./service-worker.js?v=${APP_VERSION}`, {
+    // No ?v= on the script URL: the worker is served no-store and registered
+    // with updateViaCache 'none', so releases arrive by byte comparison on
+    // update(). A versioned URL made every open after an update re-register
+    // and re-precache the identical worker under the new URL.
+    const registration = await navigator.serviceWorker.register('./service-worker.js', {
       updateViaCache: 'none'
     });
     console.log('✅ Service Worker registered successfully:', registration.scope);
+    resolveRegistration(registration);
 
     // Handle service worker updates
     registration.addEventListener('updatefound', () => {
-      const newWorker = registration.installing;
+      // installing may already be null if install finished before this task ran
+      const newWorker = registration.installing || registration.waiting;
+      if (!newWorker) return;
       console.log('🔄 New service worker installing...');
 
       newWorker.addEventListener('statechange', () => {
@@ -217,6 +323,8 @@ if ('serviceWorker' in navigator) {
             // was never true. Data is safe across the reload via AppState's
             // flush trio; only uncommitted input in an open field is lost.
             console.log('🆕 New app version installed — activating');
+            nudgeWaitingWorker(registration);
+            armWaitingWatchdog(registration, pendingServerVersion || 'update');
             showNotification('🆕 Updating miniCycle — the app will refresh in a moment…', 'info', 4000);
           } else {
             console.log('📱 App cached for offline use');
@@ -236,12 +344,19 @@ if ('serviceWorker' in navigator) {
     // reloaded document briefly painted at an un-emulated viewport width —
     // CLS 0.787 artifact; real-browser CLS is 0).
     const hadControllerAtLoad = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
+    navigator.serviceWorker.addEventListener('controllerchange', async () => {
       if (refreshing) return;
       if (!hadControllerAtLoad) {
         console.log('📱 First service worker install — no reload needed');
         return;
       }
+      // A worker with this page's own version taking over (a duplicate install
+      // from a second update job) needs no reload — and no "refresh" nudge.
+      if (await controllerMatchesPage() === true) {
+        console.log('✅ New controller matches this build — no reload needed');
+        return;
+      }
+      if (refreshing) return;
       // ✅ Check cooldown to prevent perpetual reload loops
       if (!canReloadSafely()) {
         console.log('⏳ Skipping reload due to cooldown');
@@ -252,6 +367,12 @@ if ('serviceWorker' in navigator) {
         showNotification('🆕 Update ready — refresh to finish applying it.', 'info', 8000);
         return;
       }
+      try {
+        if (pendingServerVersion) {
+          localStorage.setItem('__miniCycle_lastVersion', pendingServerVersion);
+          sessionStorage.setItem('__miniCycle_justCleared', pendingServerVersion);
+        }
+      } catch { /* storage unavailable */ }
       refreshing = true;
       console.log('🔄 New service worker is now controlling the page - reloading...');
       window.location.reload();
@@ -297,7 +418,7 @@ if ('serviceWorker' in navigator) {
     // Force check right after registration to catch updates on app launch
     // ═══════════════════════════════════════════════════════════════════════════
     console.log('🚀 Immediate SW update check on registration...');
-    registration.update().catch(err => {
+    registration.update().then(() => nudgeWaitingWorker(registration)).catch(err => {
       console.warn('Immediate update check failed:', err);
     });
 
@@ -320,6 +441,7 @@ if ('serviceWorker' in navigator) {
 
       await registerServiceWorker();
     } catch (error) {
+      resolveRegistration(null);
       console.error('❌ Service Worker registration failed:', error);
     }
   });

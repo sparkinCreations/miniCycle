@@ -257,19 +257,29 @@ boot itself was 0.16s; a first visit became usable at 5–11s, of which the boot
   for, so boot now proceeds from the network and the worker installs behind it (its
   first-install claim does not reload). `test:sw` pins it: a first visit reaches
   appLoaded with no controller while the precache is deliberately slowed.
-- **A release was applied by wiping every cache — still is (attempt reverted).** The pre-boot
-  version gate and `verifyVersionFresh` clear all caches, unregister the worker and hard-reload
-  on a version mismatch, so the next open is a cold first visit — most days at the current
-  release cadence. v2.621 replaced that with a non-destructive first tier (ask the worker for
-  the release, keep the caches, apply on controllerchange). **Reverted in v2.623**: with the
-  updated worker in control, an offline reopen hung intermittently (>20s, never loaded) —
-  every CI run, about 1 local run in 4 (`test:sw`, honest-offline step; the diagnostics show
-  worker `service-worker.js?v=<new>` active and controlling, and the page emits nothing).
-  v2.621 also dropped the controllerchange reload mid-session, which made the same hang
-  reachable directly (fixed in v2.622; `test:sw` Test 4 pins it). **A retry needs** the
-  browser-level cause first — whether the hang follows the script-URL change (`?v=<new>`
-  registers a new script URL on every release) or the update path itself — and 20+ green
-  `test:sw` iterations on CI before it ships.
+- **A release no longer wipes the caches (v2.624; first tried in v2.621, reverted in
+  v2.623).** On a version mismatch `verifyVersionFresh` now asks the registered worker for
+  the release and lets it take over on controllerchange, caches kept, so the open after a
+  deploy is a warm visit plus one background install instead of a cold first visit. The
+  browser-level cause of the v2.623 hang was found with a worker-instrumented repro:
+  **Chrome leaves the freshly installed worker in `waiting`** in roughly 1 release in 5
+  (5 of 10 under Playwright, 1 of 3 clean runs in Chrome 155 with no automation) even
+  though it called `skipWaiting()` during install — the old worker has no pending events
+  and further SKIP_WAITING messages change nothing. v2.621 had no answer to that state,
+  so the page sat on the old build; its tests then wedged on a probe issued mid-reload.
+  What ships now (`boot-sw.js`): the heal waits for `register()` before calling
+  `update()` and skips it when a worker is already arriving (two update jobs made two
+  workers, one left waiting); an installed worker gets SKIP_WAITING nudges; a worker still
+  waiting after 3s gets **one plain reload per session, which activates it** (measured
+  2/2 under Playwright, 1/1 in Chrome) with every cache intact; a second mismatch in the
+  session falls back to the full wipe; the controllerchange reload is skipped when the new
+  controller already matches the page (duplicate install); and the worker is registered
+  without `?v=`, so the open after an update no longer re-registers and re-precaches an
+  identical worker under a new URL (users holding the old `?v=` URL migrate on their next
+  update; measured 4/4). Evidence, Oct 20 2026: `test:sw` 12/12 locally with the probe
+  bounded (10/12 before, both failures the suite's own probe hanging mid-reload, not the
+  app), a passive Playwright release repro 12/12, Chrome 155 without automation 10/10 (one
+  of them through the waiting-worker reload).
 - **The splash held 500ms after boot** before `appLoaded` flipped, while its CSS fade
   is 300ms: `BOOT_TIMEOUTS.LOADER_FADE` now matches the fade.
 

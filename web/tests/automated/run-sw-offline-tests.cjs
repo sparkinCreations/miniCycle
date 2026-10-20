@@ -207,10 +207,10 @@ async function run() {
         // the worker's bytes) the way a deploy does, then open the app: it must
         // boot at once from the old cache, the new version must be running
         // within the window, and the next open must run it too. HOW it arrives
-        // is the version heal's business (clear caches + reload, as in 2.620;
-        // v2.621's non-destructive path was reverted in 2.623 after offline
-        // reopens under the updated worker hung intermittently — see
-        // docs/deployment/PWA_OFFLINE_ARCHITECTURE.md).
+        // is the version heal's business: since v2.624 the registered worker
+        // fetches the release and takes over with the caches kept (a plain
+        // reload when Chrome leaves it in `waiting`, a full wipe only as the
+        // last tier) — see docs/deployment/PWA_OFFLINE_ARCHITECTURE.md.
         console.log(`\n${colors.cyan}▸ release while cached${colors.reset}`);
         const cur = await page.evaluate(() => String(globalThis.APP_VERSION));
         const next = `${cur}-next`;
@@ -225,10 +225,18 @@ async function run() {
         record('the open after a release boots at once from the old cache', relMs < 8000, `${relMs}ms`);
         let arrived = false;
         // 60s: on a CI runner the new worker's precache took over 20s (Oct 2026).
+        // Each probe is bounded: an evaluate issued while the page reloads itself
+        // (the update's controllerchange / waiting-worker reload) can hang in
+        // Playwright instead of rejecting — measured Oct 2026, it wedged this
+        // loop until the 6-minute suite watchdog fired, 2 runs in 12 — so a
+        // probe that does not answer in 3s is treated like a navigation in flight.
         for (let i = 0; i < 300 && !arrived; i++) {
             try {
-                arrived = await page.evaluate((v) => String(globalThis.APP_VERSION) === v && document.documentElement.dataset.appLoaded === 'true', next);
-            } catch (_) { /* a navigation (the heal's reload) was in flight */ }
+                arrived = await Promise.race([
+                    page.evaluate((v) => String(globalThis.APP_VERSION) === v && document.documentElement.dataset.appLoaded === 'true', next),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('probe timed out')), 3000)),
+                ]);
+            } catch (_) { /* a navigation (the update's reload) was in flight */ }
             if (!arrived) await page.waitForTimeout(200);
         }
         record('the release is running within 60s', arrived, arrived ? '' : 'still on the old version after 60s');
