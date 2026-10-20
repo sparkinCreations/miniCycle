@@ -70,11 +70,15 @@ if ('serviceWorker' in navigator) {
 
   // When the nudges do not take either, Chrome leaves the installed worker in
   // `waiting` until every client is gone — a user who never closes the tab
-  // stays on the old build. A plain reload DOES activate it (measured 2/2,
-  // Oct 2026) and keeps every cache, so once the worker has been waiting for
-  // a few seconds, reload once per session. Polls for up to 90s so a slow
-  // precache (20s+ on CI runners) still gets its turn; a worker that is still
-  // installing is left alone.
+  // stays on the old build. A plain reload activates it on a fast machine
+  // (measured 2/2 locally, 1/1 in Chrome 155), but on a slow one the
+  // navigation races the old worker's teardown and HANGS (CI, Oct 2026: the
+  // reload navigated and never loaded; the open after it was fine) — the
+  // v2.623 hang family. So once the worker has been waiting for a few
+  // seconds, take the full heal instead (unregister first, so no worker
+  // handles the navigation): one cold open, never a hung one. Polls for up to
+  // 90s so a slow precache (20s+ on CI runners) still gets its turn; a worker
+  // that is still installing is left alone.
   const WAITING_WATCHDOG_INTERVAL_MS = 1000;
   const WAITING_WATCHDOG_GRACE_MS = 3000;
   const WAITING_WATCHDOG_DEADLINE_MS = 90000;
@@ -91,13 +95,38 @@ if ('serviceWorker' in navigator) {
       try {
         if (sessionStorage.getItem('__miniCycle_waitingReload') === serverVersion) return;
         sessionStorage.setItem('__miniCycle_waitingReload', serverVersion);
-        localStorage.setItem('__miniCycle_lastVersion', serverVersion);
-        sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
+        // Count as the session's second heal so a mismatch after it stops.
+        sessionStorage.setItem('__miniCycle_buildHeal', serverVersion);
+        sessionStorage.setItem('__miniCycle_buildHealAttempts', '2');
       } catch { /* storage unavailable */ }
       refreshing = true;
-      console.warn('🔄 Update installed but not activating — reloading so it takes over (caches kept)');
-      window.location.reload();
+      console.warn('🔄 Update installed but not activating — healing (caches cleared, worker dropped, reload)');
+      fullHeal(serverVersion);
     }, WAITING_WATCHDOG_INTERVAL_MS);
+  }
+
+  // The destructive heal (the 2.620 path): clear caches AND unregister the
+  // worker so the navigation fetches HTML straight from the network — a
+  // cache-first navigation handler could otherwise re-serve the same stale
+  // HTML, and no worker is left to race the navigation.
+  async function fullHeal(serverVersion) {
+    try {
+      localStorage.setItem('__miniCycle_lastVersion', serverVersion);
+      sessionStorage.setItem('__miniCycle_justCleared', serverVersion);
+    } catch { /* storage unavailable */ }
+    if ('caches' in window) {
+      try {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      } catch { /* ignore */ }
+    }
+    if ('serviceWorker' in navigator) {
+      try {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      } catch { /* ignore */ }
+    }
+    window.location.href = window.location.pathname + '?_cb=' + Date.now();
   }
 
   // Ask the controlling worker for its app version. true/false, or null when
@@ -236,23 +265,7 @@ if ('serviceWorker' in navigator) {
         }
 
         // Tier 2 — full heal: wipe caches, drop the worker, hard-reload.
-
-        // Clear caches AND unregister the SW so the reload fetches HTML straight
-        // from the network — a cache-first navigation handler could otherwise
-        // re-serve the same stale HTML even after the caches are cleared.
-        if ('caches' in window) {
-          try {
-            const keys = await caches.keys();
-            await Promise.all(keys.map(k => caches.delete(k)));
-          } catch { /* ignore */ }
-        }
-        if ('serviceWorker' in navigator) {
-          try {
-            const regs = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(regs.map(r => r.unregister()));
-          } catch { /* ignore */ }
-        }
-        window.location.href = window.location.pathname + '?_cb=' + Date.now();
+        await fullHeal(serverVersion);
         return;
       }
       if (!serverVersion) {

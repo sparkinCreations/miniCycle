@@ -208,9 +208,10 @@ async function run() {
         // boot at once from the old cache, the new version must be running
         // within the window, and the next open must run it too. HOW it arrives
         // is the version heal's business: since v2.624 the registered worker
-        // fetches the release and takes over with the caches kept (a plain
-        // reload when Chrome leaves it in `waiting`, a full wipe only as the
-        // last tier) — see docs/deployment/PWA_OFFLINE_ARCHITECTURE.md.
+        // fetches the release and takes over with the caches kept; when Chrome
+        // leaves it in `waiting` the page falls back to the full heal (a plain
+        // reload there hangs on slow machines — measured on CI) — see
+        // docs/deployment/PWA_OFFLINE_ARCHITECTURE.md.
         console.log(`\n${colors.cyan}▸ release while cached${colors.reset}`);
         const cur = await page.evaluate(() => String(globalThis.APP_VERSION));
         const next = `${cur}-next`;

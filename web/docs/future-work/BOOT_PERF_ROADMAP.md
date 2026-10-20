@@ -270,9 +270,11 @@ boot itself was 0.16s; a first visit became usable at 5–11s, of which the boot
   What ships now (`boot-sw.js`): the heal waits for `register()` before calling
   `update()` and skips it when a worker is already arriving (two update jobs made two
   workers, one left waiting); an installed worker gets SKIP_WAITING nudges; a worker still
-  waiting after 3s gets **one plain reload per session, which activates it** (measured
-  2/2 under Playwright, 1/1 in Chrome) with every cache intact; a second mismatch in the
-  session falls back to the full wipe; the controllerchange reload is skipped when the new
+  waiting after 3s **falls back to the full heal** (unregister, wipe, hard-reload) — a
+  plain reload activates it on a fast machine (2/2 under Playwright, 1/1 in Chrome 155) but
+  on CI the reload navigated and never loaded, the v2.623 hang family, so the stuck ~20%
+  of releases stay a cold open rather than risk a hung one; a second mismatch in the
+  session takes the same path; the controllerchange reload is skipped when the new
   controller already matches the page (duplicate install); and the worker is registered
   without `?v=`, so the open after an update no longer re-registers and re-precaches an
   identical worker under a new URL (users holding the old `?v=` URL migrate on their next
