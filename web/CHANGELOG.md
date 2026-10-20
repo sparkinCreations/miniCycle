@@ -1,3 +1,9 @@
+## [2.624] - 2026-10-20
+- fix(boot): stuck-worker fallback heals instead of reloading — the reload hangs on slow machines
+- docs(boot): record the measured rejection of build-generated startup modulepreload hints
+- fix(boot): apply releases without wiping the caches — tiered heal with a waiting-worker reload
+
+
 ## [2.623] - 2026-10-19
 - docs(boot): record the reverted non-destructive update, its evidence, and what a retry needs
 - revert(boot): back to the 2.620 version heal — offline reopens under an updated worker hung
