@@ -280,6 +280,15 @@ boot itself was 0.16s; a first visit became usable at 5–11s, of which the boot
   bounded (10/12 before, both failures the suite's own probe hanging mid-reload, not the
   app), a passive Playwright release repro 12/12, Chrome 155 without automation 10/10 (one
   of them through the waiting-worker reload).
+- **Build-generated `modulepreload` hints for the whole startup closure — measured, rejected
+  (Oct 20 2026).** A build step emitted static hints for the boot chain plus every
+  non-deferred manifest module and their chunks (128 hints) on top of the inline script's 15.
+  Against `dist/` on a static server, median of 5: fast network cold 806ms vs 825ms without,
+  warm (worker-served) 682ms vs 683ms — no gain; **throttled (1.5Mbps/100ms) cold 12.9s vs
+  8.1s without — slower.** The hints compete with the critical path and the worker's own
+  precache for a slow link, and the worker-served path is already flat. Not shipped; the
+  inline 15-module list stays. (A smaller list for phases 1–3 was not measured: the warm path
+  shows nothing to recover.)
 - **The splash held 500ms after boot** before `appLoaded` flipped, while its CSS fade
   is 300ms: `BOOT_TIMEOUTS.LOADER_FADE` now matches the fade.
 
