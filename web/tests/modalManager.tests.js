@@ -235,6 +235,36 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
+    await test('REGRESSION: closeAllModals leaves a panel inside a dialog visible for the next open', async () => {
+        // #recurring-panel is a <div> inside the overlay <dialog>, and both are
+        // registered. The legacy non-dialog fallback set display:none on the div,
+        // which nothing cleared: after an in-place factory reset or restore the
+        // overlay opened as a blurred backdrop with no panel (Oct 2026).
+        const overlay = document.createElement('dialog');
+        overlay.id = 'rp-overlay-under-test';
+        const panel = document.createElement('div');
+        panel.id = 'rp-panel-under-test';
+        panel.innerHTML = '<button>inside</button>';
+        overlay.appendChild(panel);
+        document.body.appendChild(overlay);
+        setModalManagerDependencies({
+            getModal: (name) => name === 'recurringOverlay' ? overlay : name === 'recurringPanel' ? panel : null
+        });
+        try {
+            overlay.showModal();
+            new ModalManager().closeAllModals();
+            await new Promise(resolve => setTimeout(resolve, 350));
+            if (overlay.open) throw new Error('the overlay dialog should be closed');
+            if (panel.style.display === 'none') throw new Error('the panel inside the dialog was hidden with display:none — the next open shows an empty backdrop');
+            overlay.showModal();
+            if (getComputedStyle(panel).display === 'none') throw new Error('the panel is invisible on the next open');
+            overlay.close();
+        } finally {
+            setModalManagerDependencies({ getModal: mockGetModal });
+            overlay.remove();
+        }
+    });
+
     await test('closeAllModals returns focus to the opener and clears _previousFocus', async () => {
         const mm = new ModalManager();
 

@@ -4901,6 +4901,50 @@ async function journeyModeSwitchThenAdd(browser, baseURL) {
     return { name: 'a task added right after a mode switch stays on screen', failures };
 }
 
+// ── The recurring panel still opens after an in-place factory reset ─────────
+// #recurring-panel is a <div> inside its overlay <dialog>, and both are in the
+// modal registry. closeAllModals() — which the in-place reset and restore run
+// through reloadWithLoader() — set display:none on the div, and nothing cleared
+// it: the next open showed the dialog's blurred backdrop with no panel until
+// the app was relaunched (reported Oct 2026, after a reset without a reload and
+// a restore).
+async function journeyRecurringPanelAfterInPlaceReset(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { saveDialog: 'save' });
+    const panelState = () => page.evaluate(() => {
+        const overlay = document.getElementById('recurring-panel-overlay');
+        const panel = document.getElementById('recurring-panel');
+        return {
+            overlayOpen: !!overlay?.open,
+            display: panel ? getComputedStyle(panel).display : 'missing',
+            height: panel ? panel.getBoundingClientRect().height : 0
+        };
+    });
+    const openAndRead = async () => {
+        await page.evaluate(() => document.getElementById('open-recurring-panel')?.click());
+        await page.waitForTimeout(900);
+        const s = await panelState();
+        await page.evaluate(() => document.getElementById('close-recurring-panel')?.click());
+        await page.waitForTimeout(700);
+        return s;
+    };
+    try {
+        let s = await openAndRead();
+        record('the panel opens before the reset', s.overlayOpen && s.display !== 'none' && s.height > 0, JSON.stringify(s));
+
+        await runFactoryResetUI(page);
+        await page.waitForTimeout(5500);
+        await seedViaLearnOn(page);
+
+        s = await openAndRead();
+        record('after an in-place reset the panel opens with content, not an empty backdrop',
+            s.overlayOpen && s.display !== 'none' && s.height > 0, JSON.stringify(s));
+    } finally {
+        await context.close();
+    }
+    return { name: 'the recurring panel still opens after an in-place factory reset', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -4950,6 +4994,7 @@ const JOURNEYS = [
     { name: 'the one-time "the × moved" notice in Focus View', fn: journeyFocusExitMovedNotice },
     { name: 'the first task\'s option row gets room on a fresh load', fn: journeyFirstTaskOptionRoom },
     { name: 'a task added right after a mode switch stays on screen', fn: journeyModeSwitchThenAdd },
+    { name: 'the recurring panel still opens after an in-place factory reset', fn: journeyRecurringPanelAfterInPlaceReset },
 ];
 
 async function run() {
