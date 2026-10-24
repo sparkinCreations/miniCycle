@@ -138,6 +138,17 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(cyc.recurringTemplates.t1.nextScheduledOccurrence, NOW + 60000, 'next occurrence advanced');
     });
 
+    await test('a recreated instance clears in EVERY mode, whatever the template map says', async () => {
+        // A recurring pin is one choice for all modes, so a single false key
+        // would spawn the task already pinned — and paused (Oct 2026).
+        const as = cycleState({ t1: dueTemplate('t1', { autoClear: { cycle: false, todo: false } }) }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+        await mod.catchUpMissedRecurringTasks();
+        const ac = as.get().data.routine.c1.tasks[0].autoClear;
+        eq(ac.cycle, true, 'clears in the cycle modes');
+        eq(ac.todo, true, 'clears in To-Do');
+    });
+
     await test('catchUp recreates a task at its template position, not at the bottom', async () => {
         // The reported bug: recurring tasks always came back last. A template that
         // remembers its position gets its instance spliced back there.

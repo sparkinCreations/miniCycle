@@ -411,7 +411,7 @@ export const DEFAULT_LABELS = deepFreeze({
         deletionCancelled:      'Deletion cancelled.',
         saveCancelled:          'Save cancelled.',
         noRoutineToSave:        'No routine found to save.',
-        recurringKeptOnReset:   'This recurring task will be kept on reset instead of respawning.',
+        recurringKeptOnReset:   'This recurring task is pinned to your list in every mode, and paused until you unpin it.',
         taskRemovedOnReset:     'Task will be removed on reset',
         taskKeptOnComplete:     'Task will be kept on complete (pinned)',
         taskRemainOnReset:      'Task will remain in list on reset',

@@ -484,6 +484,15 @@ schedule. The panel shows it: `getRecurringPauseState(routine, template)` in `re
 returns `'manual'` (the user's `paused` flag — always wins), `'pinned'` (`isRecurringPinned`), or
 `null`. Nothing is stored for the pin, so unpinning ends it on its own.
 
+**A recurring pin holds in every mode.** A normal task keeps a separate Clear on Reset (cycle modes)
+and Marked for Clearing (To-Do) choice; a recurring task does not, because a pause must not switch
+off when the routine changes mode. `setAutoClear` writes every key of a recurring task's map;
+`getAutoClear` reads a recurring map that is `false` in any mode as pinned in all of them; and
+`syncTaskAutoClear` (load, mode switch) repairs a map that disagrees — from before this rule — to
+pinned everywhere, the direction that never clears a task the user chose to keep. The watcher builds
+a recreated instance clearing in every mode, so a stale `false` on the template cannot spawn it
+already pinned.
+
 | Sequence | Panel shows | After unpinning |
 |---|---|---|
 | Pin (not paused) | "Paused · pinned", resume control faded | Active |

@@ -67,6 +67,12 @@ export function getAutoClearMode(cycle) {
  * adds survives a round trip through this one (SCHEMA_2_6_PLAN.md, "Built to
  * adapt"). Non-boolean junk under an unknown key is dropped.
  *
+ * The one wholesale repair is a RECURRING task's map that disagrees between
+ * modes: it becomes pinned (false) in every mode. A recurring task's pin is one
+ * choice for all modes, because pinned means paused and a pause must not come
+ * and go with a mode switch (see isRecurringPinnedAnyMode). Pinned is the
+ * direction that never clears a task the user chose to keep.
+ *
  * @param {Object} task - Task draft to mutate
  * @param {'todo'|'cycle'} mode - Active mode (see getAutoClearMode); kept in the
  *   signature so callers that track the mode need not change, unused here
@@ -102,8 +108,29 @@ export function syncTaskAutoClear(task, mode, defaults) {
         }
     }
 
+    if (task.recurring === true) {
+        const values = Object.values(next);
+        if (values.includes(false) && values.includes(true)) {
+            for (const key of Object.keys(next)) next[key] = false;
+            repaired = true;
+        }
+    }
+
     if (repaired) task.autoClear = next;
     return { repaired, changed: repaired };
+}
+
+/**
+ * Is this per-mode map pinned (false) in ANY mode? For a recurring task that is
+ * the answer for EVERY mode (Oct 2026): a normal task keeps a separate choice
+ * per mode, but a recurring task pinned to the list is paused, and a pause must
+ * not switch off because the routine changed mode. syncTaskAutoClear repairs a
+ * disagreeing map to match; this lets readers agree before that repair runs.
+ * @param {Object|null|undefined} settings - task.autoClear
+ * @returns {boolean}
+ */
+function isRecurringPinnedAnyMode(settings) {
+    return !!settings && typeof settings === 'object' && Object.values(settings).includes(false);
 }
 
 /**
@@ -294,6 +321,7 @@ export function getAutoClear(task, routine, defaults) {
  * @returns {boolean}
  */
 export function getAutoClearForMode(task, mode, defaults) {
+    if (task?.recurring === true && isRecurringPinnedAnyMode(task.autoClear)) return false;
     return resolveAutoClear({ settings: task?.autoClear, mode, defaults });
 }
 
@@ -365,8 +393,9 @@ export function autoClearFields({ settings, defaults, mode, value } = {}) {
 /**
  * Turn Clear on Reset / Marked for Clearing on or off for the routine's current
  * mode — the same write the task's toggle button makes (taskButtons.js). The
- * other mode's setting is kept. Mutates `task` — call it inside an
- * AppState.update() producer.
+ * other mode's setting is kept — except on a RECURRING task, whose pin is one
+ * choice for every mode (see syncTaskAutoClear), so every mode is written.
+ * Mutates `task` — call it inside an AppState.update() producer.
  *
  * The map is repaired per key first (syncTaskAutoClear), then replaced with a
  * fresh object rather than edited in place, so a task that holds the frozen
@@ -384,6 +413,8 @@ export function setAutoClear(task, routine, value, defaults) {
     const next = value === true;
 
     syncTaskAutoClear(task, mode, defaults);
-    task.autoClear = { ...task.autoClear, [mode]: next };
+    task.autoClear = task.recurring === true
+        ? Object.fromEntries(Object.keys(task.autoClear).map(key => [key, next]))
+        : { ...task.autoClear, [mode]: next };
     return mode;
 }

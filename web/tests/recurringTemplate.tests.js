@@ -119,9 +119,10 @@ export async function runRecurringTemplateTests(resultsDiv) {
         assertEq(isRecurringPinned(pinRoutine({ keep: { cycle: true, todo: true } }), 'r'), false, 'Clear on Reset on');
     });
 
-    await test('pinned follows the mode: the To-Do key decides in To-Do mode', () => {
-        assertEq(isRecurringPinned(pinRoutine({ todoMode: true }), 'r'), false, 'cycle off but To-Do on is not pinned in To-Do');
+    await test('a recurring pin holds in every mode, even on a map from before that rule', () => {
+        assertEq(isRecurringPinned(pinRoutine({ todoMode: true }), 'r'), true, 'pinned in the cycle modes is pinned in To-Do');
         assertEq(isRecurringPinned(pinRoutine({ todoMode: true, keep: { cycle: true, todo: false } }), 'r'), true, 'Marked for Clearing off');
+        assertEq(isRecurringPinned(pinRoutine({ keep: { cycle: true, todo: false } }), 'r'), true, 'pinned in To-Do is pinned in the cycle modes');
     });
 
     await test('no instance in the list, or no routine, is never pinned', () => {

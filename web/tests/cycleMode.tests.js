@@ -368,6 +368,37 @@ export async function runCycleModeTests(resultsDiv) {
         if (getAutoClear(task, cycleRoutine, DEFAULTS) !== true) throw new Error('round trip in Cycle mode');
     });
 
+    // ── A recurring task's pin is one choice for every mode (Oct 2026) ──────
+    await test('pinning a recurring task pins it in every mode; unpinning clears every mode', () => {
+        const task = { recurring: true, autoClear: { cycle: true, todo: true } };
+        setAutoClear(task, cycleRoutine, false, DEFAULTS);
+        if (task.autoClear.cycle !== false || task.autoClear.todo !== false) throw new Error(`pin did not reach every mode: ${JSON.stringify(task.autoClear)}`);
+        if (getAutoClear(task, todoRoutine, DEFAULTS) !== false) throw new Error('pinned in Cycle should read pinned in To-Do');
+        setAutoClear(task, todoRoutine, true, DEFAULTS);
+        if (task.autoClear.cycle !== true || task.autoClear.todo !== true) throw new Error(`unpin did not reach every mode: ${JSON.stringify(task.autoClear)}`);
+    });
+
+    await test('a normal task still keeps a separate choice per mode', () => {
+        const task = { recurring: false, autoClear: { cycle: true, todo: true } };
+        setAutoClear(task, cycleRoutine, false, DEFAULTS);
+        if (task.autoClear.todo !== true) throw new Error('a normal task\'s To-Do setting must not follow the Cycle one');
+    });
+
+    await test('a recurring map pinned in one mode only reads, and repairs to, pinned everywhere', () => {
+        for (const map of [{ cycle: false, todo: true }, { cycle: true, todo: false }]) {
+            const task = { recurring: true, autoClear: { ...map } };
+            if (getAutoClear(task, cycleRoutine, DEFAULTS) !== false) throw new Error(`${JSON.stringify(map)} should read pinned in Cycle`);
+            if (getAutoClear(task, todoRoutine, DEFAULTS) !== false) throw new Error(`${JSON.stringify(map)} should read pinned in To-Do`);
+            const r = syncTaskAutoClear(task, 'cycle', DEFAULTS);
+            if (!r.changed) throw new Error('a disagreeing recurring map should report a repair');
+            if (task.autoClear.cycle !== false || task.autoClear.todo !== false) throw new Error(`repaired to ${JSON.stringify(task.autoClear)}`);
+        }
+        const normal = { autoClear: { cycle: false, todo: true } };
+        if (syncTaskAutoClear(normal, 'cycle', DEFAULTS).changed) throw new Error('a normal task\'s differing modes are not a fault');
+        const agreeing = { recurring: true, autoClear: { cycle: true, todo: true } };
+        if (syncTaskAutoClear(agreeing, 'cycle', DEFAULTS).changed) throw new Error('an agreeing recurring map needs no repair');
+    });
+
     await test('setAutoClear repairs a missing or invalid map before writing', () => {
         const task = { autoClear: 'garbage' };
         setAutoClear(task, cycleRoutine, true, DEFAULTS);

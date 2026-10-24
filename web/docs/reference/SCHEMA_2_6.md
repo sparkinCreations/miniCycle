@@ -394,7 +394,7 @@ Each task object in the `tasks` array:
 | `schemaVersion` | number | Per-task shape version. Currently the number `2`. This is a *separate* counter from the document's `schemaVersion` (`"2.6"`) — see "Two Version Stamps" below. |
 | `createdAt` | string | ISO timestamp of creation |
 | `completedAt` | string\|null | ISO timestamp of completion |
-| `autoClear` | object | 🧹 Clear on Reset (cycle) / Marked for Clearing (to-do), per mode: `{ cycle: boolean, todo: boolean }`. An OPEN map — a boolean under any other key is kept. Read with `getAutoClear(task, routine, defaults)`; there is no derived mirror |
+| `autoClear` | object | 🧹 Clear on Reset (cycle) / Marked for Clearing (to-do), per mode: `{ cycle: boolean, todo: boolean }`. An OPEN map — a boolean under any other key is kept. Read with `getAutoClear(task, routine, defaults)`; there is no derived mirror. A **recurring** task's pin is one choice for every mode (Oct 2026): `setAutoClear` writes every key, a map pinned in any mode reads pinned in all, and `syncTaskAutoClear` repairs a disagreeing one to all-`false` |
 
 #### Recurring Settings Structure
 
