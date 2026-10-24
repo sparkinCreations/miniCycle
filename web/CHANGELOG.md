@@ -1,3 +1,7 @@
+## [2.627] - 2026-10-24
+- fix(modals): the recurring panel no longer opens empty after an in-place reset or restore
+
+
 ## [2.626] - 2026-10-24
 - fix(mode): a task added right after a mode switch no longer vanishes
 - fix(achievements): Auto/Manual Cycle clears no longer count toward cleared-task badges
