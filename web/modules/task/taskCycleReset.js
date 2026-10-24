@@ -379,22 +379,19 @@ function resetTasksData(context, deps) {
         return { aborted: true };
     }
 
-    // Capture recurring task names before removal for history logging
-    const recurringRemovedNames = [];
-    taskElements.forEach(taskEl => {
-        if (taskEl.classList.contains(DOM_CLASSES.RECURRING)) {
-            const taskId = taskEl.dataset.taskId;
-            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
-            if (task?.text) recurringRemovedNames.push(task.text);
-        }
-    });
-
     // Plan the recurring-task removal: DOM effects happen now, state changes
     // are returned as a plan and applied inside the producer below (one-door
     // migration v2.361 — previously this mutated live state directly).
     const recurringPlan = (typeof removeRecurringTasksFromCycle === 'function')
         ? (removeRecurringTasksFromCycle(taskElements, freshCycleData) || { removedIds: [], keptIds: [], templateUpdates: {} })
         : { removedIds: [], keptIds: [], templateUpdates: {} };
+
+    // History names come from what the plan actually REMOVED. They used to be
+    // gathered from every recurring task before the plan ran, so a recurring
+    // task pinned to the list (kept, only unchecked) was logged as removed too.
+    const recurringRemovedNames = recurringPlan.removedIds
+        .map(id => freshCycleData?.tasks?.find(t => t.id === id)?.text)
+        .filter(Boolean);
 
     // Process non-recurring tasks
     const tasksToDelete = [];

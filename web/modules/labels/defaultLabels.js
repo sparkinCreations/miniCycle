@@ -442,6 +442,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTurnedOff:     'Recurring turned off for this task.',
         recurringPaused:        'Recurring paused for this task.',
         recurringResumed:       'Recurring resumed — the next occurrence is scheduled from now.',
+        recurringUnpinToResume: 'Pinned to your list, so it will not recur. Unpin it to resume.',
         recurringRemoveFailed:  'Failed to remove task',
         recurringNoTasksSelected: 'No tasks selected',
         recurringNoActiveCycle: 'No active routine',
@@ -1129,6 +1130,12 @@ export const DEFAULT_LABELS = deepFreeze({
         resumeRecurring:      'Resume recurring',
         pausedBadge:          'Paused',
         pausedSummary:        'Paused — will not recur until resumed',
+        // Pinned to the list (Clear on Reset / Marked for Clearing switched off)
+        // without a pause of the user's own: the pin holds it, so the panel says
+        // so and the resume control is inactive (getRecurringPauseState).
+        pausedPinnedBadge:    'Paused · pinned',
+        pausedPinnedSummary:  'Paused while pinned to your list — unpin it to resume',
+        unpinToResume:        'Pinned to your list — unpin it to resume',
         selectTask:           'Select {name} to make recurring',
         markTaskTemporarily:  'Mark this task temporarily',
         firstSpecificDate:    'First specific date',

@@ -474,7 +474,26 @@ Recurring Tasks
 schedule and occurrence count, but `recurringWatcher` skips it (`template.paused === true`). Resuming
 recomputes `nextScheduledOccurrence` from the moment of resume — there is no catch-up for occurrences
 missed while paused, so a task paused for a month does not come back as a backlog. Re-applying
-settings (`recurringSettingsApplicator`) preserves the flag.
+settings (`recurringSettingsApplicator`) preserves the flag. The selected task's summary shows
+"Paused — will not recur until resumed" in place of "Appears in…"; the schedule line stays.
+
+**Pinned = paused, derived (Oct 2026).** A recurring task whose instance is in the list and set NOT
+to clear in the current mode (Clear on Reset / Marked for Clearing off — 📌) never leaves the list,
+and the watcher never spawns a template whose instance is present, so the pin already holds the
+schedule. The panel shows it: `getRecurringPauseState(routine, template)` in `recurringTemplate.js`
+returns `'manual'` (the user's `paused` flag — always wins), `'pinned'` (`isRecurringPinned`), or
+`null`. Nothing is stored for the pin, so unpinning ends it on its own.
+
+| Sequence | Panel shows | After unpinning |
+|---|---|---|
+| Pin (not paused) | "Paused · pinned", resume control faded | Active |
+| Pause, then pin | "Paused" (normal) | Still paused — resuming is deliberate |
+| Pause, pin, then resume | Pause cleared → "Paused · pinned" | Active |
+
+The faded control is `aria-disabled="true"`, not `disabled`: it stays focusable, and a tap shows
+"Unpin it to resume" and changes nothing (`handleTogglePause`) — pausing on top would turn the pin's
+hold into a manual one that outlives the pin. A reset's `recurring_tasks_removed` history event names
+only the plan's `removedIds`, so a pinned recurring task is no longer logged as removed.
 
 **Remove, with the task put back (Oct 2026).** If the task's instance is not in the list when you
 remove its recurrence (its last occurrence was cleared), the confirmation offers "Put the task back in

@@ -436,6 +436,62 @@ export async function runRecurringPanelTests(resultsDiv) {
         if (live.querySelector('.recurring-pause-btn')?.getAttribute('aria-pressed') !== 'false') throw new Error('live control should read not pressed');
     });
 
+    // ── Pinned to the list: paused by the pin, not by the user ──────────────
+    const pinnedRig = ({ paused }) => {
+        const rig = pauseRig({ paused });
+        rig.state.data.routine.c1.tasks = [{ id: 'r', text: 'Rent', recurring: true, autoClear: { cycle: false, todo: true } }];
+        return rig;
+    };
+
+    await test('a pinned template renders paused with a faded, still-focusable resume control', () => {
+        const { state } = pinnedRig({ paused: false });
+        const routine = state.data.routine.c1;
+        const panel = new RecurringPanelManager();
+        const row = panel.createRecurringTaskItem(routine.recurringTemplates.r, routine);
+        if (!row.classList.contains('recurring-paused')) throw new Error('row not marked paused');
+        const btn = row.querySelector('.recurring-pause-btn');
+        if (btn.getAttribute('aria-disabled') !== 'true') throw new Error('pinned control should be aria-disabled');
+        if (btn.disabled) throw new Error('must not use the disabled attribute — a tap has to explain how to resume');
+        if (btn.getAttribute('aria-pressed') !== 'true') throw new Error('pinned control should read pressed (paused)');
+        if (!/unpin/i.test(btn.getAttribute('aria-label') || '')) throw new Error(`label should say to unpin, got "${btn.getAttribute('aria-label')}"`);
+        const badge = row.querySelector('.recurring-paused-badge');
+        if (!badge || !/pinned/i.test(badge.textContent)) throw new Error('badge should say it is pinned');
+    });
+
+    await test('a pause of the user\'s own on a pinned task renders as a normal pause', () => {
+        const { state } = pinnedRig({ paused: true });
+        const routine = state.data.routine.c1;
+        const panel = new RecurringPanelManager();
+        const row = panel.createRecurringTaskItem(routine.recurringTemplates.r, routine);
+        const btn = row.querySelector('.recurring-pause-btn');
+        if (btn.hasAttribute('aria-disabled')) throw new Error('a manual pause keeps a live resume control');
+        if (/pinned/i.test(row.querySelector('.recurring-paused-badge')?.textContent || '')) throw new Error('a manual pause should not say pinned');
+    });
+
+    await test('tapping the faded control explains how to resume and changes nothing', async () => {
+        const { state, seen } = pinnedRig({ paused: false });
+        const panel = new RecurringPanelManager();
+        let rerendered = false;
+        panel.updateRecurringPanel = async () => { rerendered = true; };
+        await panel.handleTogglePause(state.data.routine.c1.recurringTemplates.r, document.createElement('li'));
+        const tpl = state.data.routine.c1.recurringTemplates.r;
+        if (tpl.paused !== false) throw new Error('a pin must not become a pause of the user\'s own');
+        if (tpl.nextScheduledOccurrence !== 5) throw new Error('the schedule must not move');
+        if (!seen.notices.some(n => /unpin/i.test(n))) throw new Error(`no unpin hint, saw ${JSON.stringify(seen.notices)}`);
+        if (rerendered) throw new Error('nothing changed, so nothing to re-render');
+    });
+
+    await test('resuming a manual pause while pinned clears the pause; the pin still holds it', async () => {
+        const { state } = pinnedRig({ paused: true });
+        const panel = new RecurringPanelManager();
+        panel.updateRecurringPanel = async () => {};
+        await panel.handleTogglePause(state.data.routine.c1.recurringTemplates.r, document.createElement('li'));
+        const routine = state.data.routine.c1;
+        if (routine.recurringTemplates.r.paused !== false) throw new Error('the user\'s pause should be cleared');
+        const row = panel.createRecurringTaskItem(routine.recurringTemplates.r, routine);
+        if (row.querySelector('.recurring-pause-btn').getAttribute('aria-disabled') !== 'true') throw new Error('the row should now read as held by the pin');
+    });
+
     // ── Removing a recurring task whose instance is not in the list ─────────
     const removeRig = ({ taskInList, checked }) => {
         const state = {

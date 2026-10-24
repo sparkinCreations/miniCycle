@@ -41,6 +41,7 @@ import {
 import { animateDialogClose } from '../utils/dialogClose.js';
 import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 import { autoClearFields, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { getRecurringPauseState } from './recurringTemplate.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
 import {
@@ -779,12 +780,21 @@ export class RecurringPanelManager {
         removeBtn.innerHTML = `<span class="icon recurring-trash-icon" aria-hidden="true">${ICONS['trash']}</span>`;
         // Pause / resume. A paused template keeps its settings and schedule but
         // the watcher does not spawn from it; resuming reschedules from now.
-        const paused = task.paused === true;
+        // A task pinned to the list (and not paused by the user) is held too,
+        // by the pin: the button shows as resume but INACTIVE, because there is
+        // no pause to undo. aria-disabled, not `disabled`: it stays focusable
+        // and clickable so a tap can say how to resume (handleTogglePause), and
+        // screen readers announce it as unavailable.
+        const pauseState = getRecurringPauseState(cycleData, task);
+        const paused = pauseState !== null;
+        const heldByPin = pauseState === 'pinned';
         const pauseBtn = document.createElement("button");
-        const pauseLabel = getLabel(paused ? 'recurring.resumeRecurring' : 'recurring.pauseRecurring');
+        const pauseLabel = getLabel(heldByPin ? 'recurring.unpinToResume'
+            : (paused ? 'recurring.resumeRecurring' : 'recurring.pauseRecurring'));
         pauseBtn.title = pauseLabel;
         pauseBtn.setAttribute("aria-label", pauseLabel);
         pauseBtn.setAttribute("aria-pressed", paused ? "true" : "false");
+        if (heldByPin) pauseBtn.setAttribute("aria-disabled", "true");
         pauseBtn.className = "recurring-pause-btn";
         pauseBtn.innerHTML = `<span class="icon" aria-hidden="true">${ICONS[paused ? 'play' : 'pause']}</span>`;
         item.classList.toggle(DOM_CLASSES.RECURRING_PAUSED, paused);
@@ -794,7 +804,7 @@ export class RecurringPanelManager {
         if (paused) {
             const badge = document.createElement("span");
             badge.className = "recurring-paused-badge";
-            badge.textContent = getLabel('recurring.pausedBadge');
+            badge.textContent = getLabel(heldByPin ? 'recurring.pausedPinnedBadge' : 'recurring.pausedBadge');
             item.appendChild(badge);
         }
         item.appendChild(pauseBtn);
@@ -831,6 +841,13 @@ export class RecurringPanelManager {
             const activeCycleId = getActiveRoutineId(state);
             if (!activeCycleId) return;
             const pausing = template.paused !== true;
+            // Held by a pin, not by the user: there is no pause to undo, and
+            // pausing it on top would turn an automatic hold into a manual one
+            // that outlives the pin. Say how to resume instead.
+            if (pausing && getRecurringPauseState(getRoutine(state, activeCycleId), template) === 'pinned') {
+                this.deps.showNotification(`📌 ${getLabel('notify.recurringUnpinToResume')}`, 'info', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                return;
+            }
             await this.deps.updateAppState(draft => {
                 const tpl = getRoutine(draft, activeCycleId)?.recurringTemplates?.[template.id];
                 if (!tpl) return;
@@ -1204,10 +1221,17 @@ export class RecurringPanelManager {
             summarySpan.textContent = summaryText;
             previewText.appendChild(summarySpan);
 
-            // ✅ Get next occurrence text
-            const nextOccurrenceText = template?.nextScheduledOccurrence
-                ? this.deps.formatNextOccurrence(template.nextScheduledOccurrence)
-                : null;
+            // ✅ Get next occurrence text. Paused (by the user or by a pin):
+            // the schedule above still shows, but "Appears in…" would be wrong.
+            // Nothing spawns while paused, and resuming reschedules from now.
+            const pauseState = getRecurringPauseState(currentCycle, template);
+            const nextOccurrenceText = pauseState === 'manual'
+                ? getLabel('recurring.pausedSummary')
+                : pauseState === 'pinned'
+                    ? getLabel('recurring.pausedPinnedSummary')
+                    : (template?.nextScheduledOccurrence
+                        ? this.deps.formatNextOccurrence(template.nextScheduledOccurrence)
+                        : null);
 
             if (nextOccurrenceText) {
                 previewText.appendChild(document.createElement('br'));

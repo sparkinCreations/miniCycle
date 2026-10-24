@@ -11,7 +11,7 @@ import { createProtectedTest } from './testHelpers.js';
 
 export async function runRecurringTemplateTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
-    const { buildRecurringTemplate, RECURRING_TEMPLATE_SCHEMA_VERSION } =
+    const { buildRecurringTemplate, RECURRING_TEMPLATE_SCHEMA_VERSION, isRecurringPinned, getRecurringPauseState } =
         await import(`../modules/recurring/recurringTemplate.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>🔁 recurringTemplate Tests</h2><h3>Running tests...</h3>';
@@ -105,6 +105,38 @@ export async function runRecurringTemplateTests(resultsDiv) {
             'each template must own its settings object');
         a.autoClear.cycle = 'mutated';
         assert(b.autoClear.cycle !== 'mutated', 'mutation leaked between templates');
+    });
+
+    // ── Pinned = paused, derived ───────────────────────────────────────────
+    const pinRoutine = ({ todoMode = false, instance = true, keep = { cycle: false, todo: true } } = {}) => ({
+        deleteCheckedTasks: todoMode,
+        tasks: instance ? [{ id: 'r', text: 'Rent', recurring: true, autoClear: keep }] : [],
+        recurringTemplates: { r: { id: 'r', paused: false } }
+    });
+
+    await test('a recurring task set not to clear in the current mode is pinned', () => {
+        assertEq(isRecurringPinned(pinRoutine(), 'r'), true, 'Clear on Reset off in a cycle mode');
+        assertEq(isRecurringPinned(pinRoutine({ keep: { cycle: true, todo: true } }), 'r'), false, 'Clear on Reset on');
+    });
+
+    await test('pinned follows the mode: the To-Do key decides in To-Do mode', () => {
+        assertEq(isRecurringPinned(pinRoutine({ todoMode: true }), 'r'), false, 'cycle off but To-Do on is not pinned in To-Do');
+        assertEq(isRecurringPinned(pinRoutine({ todoMode: true, keep: { cycle: true, todo: false } }), 'r'), true, 'Marked for Clearing off');
+    });
+
+    await test('no instance in the list, or no routine, is never pinned', () => {
+        assertEq(isRecurringPinned(pinRoutine({ instance: false }), 'r'), false, 'absent instance');
+        assertEq(isRecurringPinned(null, 'r'), false, 'no routine');
+        assertEq(isRecurringPinned({}, 'r'), false, 'routine without tasks');
+    });
+
+    await test('a pause of the user\'s own wins over the pin', () => {
+        const routine = pinRoutine();
+        assertEq(getRecurringPauseState(routine, { id: 'r', paused: true }), 'manual', 'paused then pinned reads as a normal pause');
+        assertEq(getRecurringPauseState(routine, { id: 'r', paused: false }), 'pinned', 'pinned without a pause');
+        assertEq(getRecurringPauseState(pinRoutine({ keep: { cycle: true, todo: true } }), { id: 'r', paused: true }), 'manual', 'unpinned keeps the user\'s pause');
+        assertEq(getRecurringPauseState(pinRoutine({ keep: { cycle: true, todo: true } }), { id: 'r', paused: false }), null, 'neither');
+        assertEq(getRecurringPauseState(routine, null), null, 'no template');
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

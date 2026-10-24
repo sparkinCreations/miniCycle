@@ -678,6 +678,70 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
+    await test('history names only the recurring tasks a reset removed, never one pinned to the list', async () => {
+        // The names used to be gathered from every recurring row before the plan
+        // ran, so a recurring task pinned to the list (Clear on Reset off — kept,
+        // only unchecked) was logged as removed too (Oct 2026).
+        const h = splitRig([
+            { id: 'r', text: 'Removed recurring', completed: true, recurring: true, autoClear: { cycle: true, todo: true } },
+            { id: 'k', text: 'Pinned recurring', completed: true, recurring: true, autoClear: { cycle: false, todo: true } }
+        ]);
+        h.cycleData.recurringTemplates = {
+            r: { id: 'r', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1 },
+            k: { id: 'k', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1 }
+        };
+        for (const t of h.cycleData.tasks) {
+            const li = document.createElement('li');
+            li.className = 'task recurring';
+            li.dataset.taskId = t.id;
+            h.taskList.appendChild(li);
+        }
+        h.deps.querySelectorAll = () => Array.from(h.taskList.children);
+        h.deps.removeRecurringTasksFromCycle = () => ({
+            removedIds: ['r'], keptIds: ['k'],
+            templateUpdates: { r: { nextScheduledOccurrence: 2, lastTriggeredTimestamp: null, position: 0 } }
+        });
+        const logged = [];
+        // resetTasksImpl reads the logger from the module's own deps.
+        mod.setTaskCycleResetDependencies({ logHistoryEvent: (type, detail) => logged.push({ type, detail }) });
+        try {
+            await mod.resetTasksImpl(h.deps);
+            const removed = logged.filter(e => e.type === 'recurring_tasks_removed');
+            if (removed.length !== 1) throw new Error(`expected one recurring_tasks_removed event, got ${removed.length}`);
+            const names = removed[0].detail.taskNames;
+            if (names.length !== 1 || names[0] !== 'Removed recurring') throw new Error(`only the removed task should be named, got ${JSON.stringify(names)}`);
+            if (removed[0].detail.count !== 1) throw new Error(`count should be 1, got ${removed[0].detail.count}`);
+        } finally {
+            mod.setTaskCycleResetDependencies({ logHistoryEvent: null });
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
+    await test('no recurring-removed history at all when every recurring task is pinned', async () => {
+        const h = splitRig([
+            { id: 'k', text: 'Pinned recurring', completed: true, recurring: true, autoClear: { cycle: false, todo: true } }
+        ]);
+        h.cycleData.recurringTemplates = { k: { id: 'k', recurringSettings: { frequency: 'daily' }, nextScheduledOccurrence: 1 } };
+        const li = document.createElement('li');
+        li.className = 'task recurring';
+        li.dataset.taskId = 'k';
+        h.taskList.appendChild(li);
+        h.deps.querySelectorAll = () => Array.from(h.taskList.children);
+        h.deps.removeRecurringTasksFromCycle = () => ({ removedIds: [], keptIds: ['k'], templateUpdates: {} });
+        const logged = [];
+        // resetTasksImpl reads the logger from the module's own deps.
+        mod.setTaskCycleResetDependencies({ logHistoryEvent: (type, detail) => logged.push({ type, detail }) });
+        try {
+            await mod.resetTasksImpl(h.deps);
+            if (logged.some(e => e.type === 'recurring_tasks_removed')) throw new Error('a pinned recurring task was logged as removed');
+        } finally {
+            mod.setTaskCycleResetDependencies({ logHistoryEvent: null });
+            mod.clearAllTimeouts();
+            h.taskList.remove();
+        }
+    });
+
     await test('a To-Do clear records where a cleared recurring instance sat', async () => {
         const container = document.createElement('div');
         const taskList = document.createElement('ul');
