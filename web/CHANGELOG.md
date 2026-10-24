@@ -1,3 +1,8 @@
+## [2.626] - 2026-10-24
+- fix(mode): a task added right after a mode switch no longer vanishes
+- fix(achievements): Auto/Manual Cycle clears no longer count toward cleared-task badges
+
+
 ## [2.625] - 2026-10-24
 - Recurring: a pin holds in every mode, not just the one it was set in
 - Recurring: pinned tasks read as paused; pause summary; honest reset history
