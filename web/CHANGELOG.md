@@ -1,3 +1,8 @@
+## [2.625] - 2026-10-24
+- Recurring: a pin holds in every mode, not just the one it was set in
+- Recurring: pinned tasks read as paused; pause summary; honest reset history
+
+
 ## [2.624] - 2026-10-20
 - fix(boot): stuck-worker fallback heals instead of reloading — the reload hangs on slow machines
 - docs(boot): record the measured rejection of build-generated startup modulepreload hints
