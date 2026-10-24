@@ -53,7 +53,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { autoClearFields, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { autoClearFields, clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
@@ -465,6 +465,11 @@ function resetTasksData(context, deps) {
         }
     }
 
+    // Only To-Do mode's clears count toward achievements (see
+    // clearsCountTowardAchievements). Read from the routine as it was when the
+    // cycle completed, before this reset changes anything.
+    const countClears = tasksToDelete.length > 0 && clearsCountTowardAchievements(freshCycleData);
+
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState.isReady()) {
         AppState.update(state => {
@@ -503,21 +508,26 @@ function resetTasksData(context, deps) {
                 });
             }
 
-            // Count the deleteWhenComplete tasks this reset just removed.
+            // Count the deleteWhenComplete tasks this reset just removed — in
+            // To-Do mode only.
             //
             // This path and deleteCompletedTasksImpl both clear tasks and both
             // archive them, but only that one was advancing the counter — so in
             // To-Do mode, where finishing the last task completes the CYCLE and
             // lands here instead, totalTasksCompleted never moved and no
-            // task-count achievement could ever unlock. The archive filled up
-            // while the number behind it stayed at zero.
+            // task-count achievement could ever unlock (fixed v2.439).
+            //
+            // That fix counted in EVERY mode, because every mode's reset runs
+            // here. Auto and Manual Cycle "Clear on Reset" tasks were never meant
+            // to count (Oct 2026); they still go to the Cleared Tasks archive,
+            // and the cycle itself still counts. countClears applies the rule.
             //
             // tasksToDelete is already non-recurring: the collection loop above
             // returns early on DOM_CLASSES.RECURRING. That matches the rule the
             // sibling path documents — a recurring occurrence is scheduled to
             // return, so it must not inflate this total, and it still reaches
             // achievements through the cycle-completion path.
-            if (tasksToDelete.length > 0) {
+            if (countClears) {
                 if (!state.userProgress) state.userProgress = {};
                 state.userProgress.totalTasksCompleted =
                     (state.userProgress.totalTasksCompleted || 0) + tasksToDelete.length;
@@ -527,7 +537,7 @@ function resetTasksData(context, deps) {
         // Re-check achievements against the new total, mirroring the sibling
         // path. Without this the unlock waits for some later event to happen to
         // call it, which for a To-Do user may be never.
-        if (tasksToDelete.length > 0 && typeof _deps.checkAchievements === 'function') {
+        if (countClears && typeof _deps.checkAchievements === 'function') {
             const updatedState = AppState.get();
             _deps.checkAchievements(
                 updatedState.userProgress?.cyclesCompleted || 0,

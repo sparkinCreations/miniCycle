@@ -12,7 +12,7 @@ export async function runCycleModeTests(resultsDiv) {
             routineHasTasks, areAllTasksComplete,
             getAutoClearMode, syncTaskAutoClear, resolveAutoClear, getAutoClear, setAutoClear,
             getAutoClearForMode, getAutoClearSettings, isAutoClearSettings, setAutoClearSettings,
-            autoClearFields } = mod;
+            autoClearFields, clearsCountTowardAchievements } = mod;
     const { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: DEFAULTS } =
         await import(`../modules/core/constants.js?v=${cacheBuster}`);
     const { DEFAULT_LABELS } = await import(`../modules/labels/defaultLabels.js?v=${cacheBuster}`);
@@ -498,6 +498,16 @@ export async function runCycleModeTests(resultsDiv) {
         const noMap = autoClearFields({ settings: null, mode: 'todo', defaults: DEFAULTS });
         if (noMap.autoClear === DEFAULTS) throw new Error('defaults must be copied');
         if (JSON.stringify(noMap.autoClear) !== JSON.stringify(DEFAULTS)) throw new Error('defaults not used');
+    });
+
+    await test('clearsCountTowardAchievements: only To-Do clears count', () => {
+        // Product rule (Oct 2026): Auto and Manual Cycle "Clear on Reset" removals
+        // never count toward the cleared-task achievements; only To-Do's do.
+        if (clearsCountTowardAchievements({ deleteCheckedTasks: true }) !== true) throw new Error('To-Do should count');
+        if (clearsCountTowardAchievements({ deleteCheckedTasks: true, autoReset: true }) !== true) throw new Error('To-Do wins over autoReset');
+        if (clearsCountTowardAchievements({ autoReset: true }) !== false) throw new Error('Auto Cycle must not count');
+        if (clearsCountTowardAchievements({ autoReset: false }) !== false) throw new Error('Manual Cycle must not count');
+        if (clearsCountTowardAchievements(null) !== false) throw new Error('no routine must not count');
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
