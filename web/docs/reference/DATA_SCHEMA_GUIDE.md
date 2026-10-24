@@ -158,7 +158,7 @@
 
     userProgress: {
         cyclesCompleted: 42,                 // Global cycles completed
-        totalTasksCompleted: 156,            // Lifetime tasks cleared
+        totalTasksCompleted: 156,            // Lifetime To-Do clears (Auto/Manual Cycle clears don't count)
         rewardMilestones: []                 // LIVE, not a placeholder — gamesManager
                                              // pushes "task-order-game-100", the
                                              // migration seeds "dark-ocean-5", and

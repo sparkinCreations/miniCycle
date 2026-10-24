@@ -194,7 +194,7 @@ same function on a clone of the live state and reports what it would do.
   userProgress: {
     cyclesCompleted: 42,                   // Total cycles completed (global)
     rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
-    totalTasksCompleted: 156,              // Lifetime tasks cleared — LIVES HERE, not on metadata
+    totalTasksCompleted: 156,              // Lifetime To-Do clears (Auto/Manual Cycle clears don't count) — LIVES HERE, not on metadata
                                            // (read by achievementsManager, backupReminder, undo)
     // createInitialSchemaData() seeds only `cyclesCompleted` and
     // `rewardMilestones`; `totalTasksCompleted` is written later, on first clear.

@@ -40,6 +40,29 @@ export function getCycleMode(cycle) {
 }
 
 /**
+ * Whether tasks cleared from this routine count toward the cleared-task total
+ * that achievements read (`userProgress.totalTasksCompleted`).
+ *
+ * Only To-Do mode's clears count. In Auto and Manual Cycle a "Clear on Reset"
+ * task is part of how the routine is set up to run, and progress there is
+ * measured in cycles, which still count. Product decision (Oct 2026): letting
+ * cycle-mode clears count was never intended. It arrived in v2.439 as a side
+ * effect of the fix that made To-Do mode's cycle completion count its clears,
+ * because the reset path it patched is shared by every mode.
+ *
+ * Every write to that counter goes through this rule: the cycle reset
+ * (taskCycleReset) and undo/redo's delta adjustment (undoRedoManager). The
+ * Clear Completed path is only reachable in To-Do mode. Works on a routine or
+ * on an undo snapshot, which carries the same mode fields.
+ *
+ * @param {Object|null|undefined} routine
+ * @returns {boolean}
+ */
+export function clearsCountTowardAchievements(routine) {
+    return getCycleMode(routine) === 'todo';
+}
+
+/**
  * The `deleteWhenCompleteSettings` key for a cycle.
  *
  * That map is keyed by TWO modes, not the three above: auto and manual routines

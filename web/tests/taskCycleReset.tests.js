@@ -494,7 +494,10 @@ export async function runTaskCycleResetTests(resultsDiv) {
     // completes the CYCLE and lands here, so the counter never moved and no
     // task-count achievement could unlock — the archive filled while the number
     // behind it stayed at zero.
-    function makeResetHarness(tasks) {
+    //
+    // Counting is To-Do only (Oct 2026): Auto/Manual Cycle "Clear on Reset"
+    // removals must not move the counter. `mode` sets the routine's mode flags.
+    function makeResetHarness(tasks, mode = 'todo') {
         const taskList = document.createElement('ul');
         taskList.id = 'taskList';
         tasks.forEach(t => {
@@ -511,7 +514,10 @@ export async function runTaskCycleResetTests(resultsDiv) {
         const stateObj = {
             appState: { activeRoutineId: 'c1' },
             settings: { disableCompletionAnimation: true },
-            data: { routine: { c1: { tasks: tasks.map(t => ({ ...t, completed: true })), cycleCount: 0 } } },
+            data: { routine: { c1: {
+                tasks: tasks.map(t => ({ ...t, completed: true })), cycleCount: 0,
+                deleteCheckedTasks: mode === 'todo', autoReset: mode === 'auto'
+            } } },
             userProgress: {}
         };
         const AppState = {
@@ -519,14 +525,20 @@ export async function runTaskCycleResetTests(resultsDiv) {
             get: () => stateObj,
             update: async (producer) => { await producer(stateObj); return stateObj; }
         };
-        return { taskList, stateObj, deps: { AppState, querySelector: (sel) => sel === '#taskList' ? taskList : null } };
+        const achievementChecks = [];
+        return { taskList, stateObj, achievementChecks, deps: {
+            AppState,
+            querySelector: (sel) => sel === '#taskList' ? taskList : null,
+            checkAchievements: (...args) => achievementChecks.push(args)
+        } };
     }
 
-    await test('reset advances totalTasksCompleted by the tasks it deleted', async () => {
+    await test('To-Do reset advances totalTasksCompleted by the tasks it deleted', async () => {
+        // To-Do mode reads each task's `todo` key: A and B are marked, C is not.
         const h = makeResetHarness([
-            { id: 'A', text: 'A', autoClear: { cycle: true, todo: true } },
-            { id: 'B', text: 'B', autoClear: { cycle: true, todo: true } },
-            { id: 'C', text: 'C', autoClear: { cycle: false, todo: true } }
+            { id: 'A', text: 'A', autoClear: { cycle: false, todo: true } },
+            { id: 'B', text: 'B', autoClear: { cycle: false, todo: true } },
+            { id: 'C', text: 'C', autoClear: { cycle: true, todo: false } }
         ]);
         try {
             await mod.resetTasksImpl(h.deps);
@@ -541,7 +553,7 @@ export async function runTaskCycleResetTests(resultsDiv) {
         }
     });
 
-    await test('reset does not count recurring occurrences toward the total', async () => {
+    await test('To-Do reset does not count recurring occurrences toward the total', async () => {
         // A recurring occurrence is scheduled to return, so counting it would
         // inflate the cleared-task milestones — the same rule the Clear
         // Completed path documents. It still reaches achievements via cycles.
@@ -561,6 +573,28 @@ export async function runTaskCycleResetTests(resultsDiv) {
             h.taskList.remove();
         }
     });
+
+    for (const mode of ['auto', 'manual']) {
+        await test(`${mode === 'auto' ? 'Auto' : 'Manual'} Cycle reset does not count its Clear on Reset tasks`, async () => {
+            const h = makeResetHarness([
+                { id: 'A', text: 'A', autoClear: { cycle: true, todo: true } },
+                { id: 'B', text: 'B', autoClear: { cycle: true, todo: true } },
+                { id: 'C', text: 'C', autoClear: { cycle: false, todo: true } }
+            ], mode);
+            try {
+                await mod.resetTasksImpl(h.deps);
+                await new Promise(r => setTimeout(r, 150));
+                const tasksLeft = h.stateObj.data.routine.c1.tasks.map(t => t.id).join('');
+                if (tasksLeft !== 'C') throw new Error(`setup: Clear on Reset tasks should still be removed, left "${tasksLeft}"`);
+                const got = h.stateObj.userProgress.totalTasksCompleted || 0;
+                if (got !== 0) throw new Error(`cycle-mode clears must not count; counter=${got}`);
+                if (h.achievementChecks.length) throw new Error('no cleared-task achievement check expected in a cycle mode');
+            } finally {
+                mod.clearAllTimeouts();
+                h.taskList.remove();
+            }
+        });
+    }
 
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">📝 Manual vs button completion breakdown</h4>';

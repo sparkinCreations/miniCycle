@@ -35,7 +35,7 @@ import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../
 // Aug 2026. `describeChange` is re-exported from there for tests only; the
 // parent calls `computeTransactionDiff`, which is the entry point.
 import { computeTransactionDiff } from './undoTransactionDiff.js';
-import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { clearsCountTowardAchievements, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // Re-exported because it was part of this module's public surface before the
 // split and the test suite imports it from here. Not a `provides` name.
@@ -959,8 +959,13 @@ export async function performStateBasedUndo() {
         state.userProgress.cyclesCompleted = Math.max(0,
           (state.userProgress.cyclesCompleted || 0) + cycleDelta);
       }
+      // The archive (clearedTasks) records clears in every mode, but only To-Do
+      // clears were added to the achievement counter, so only those come off it.
+      // The step being undone ran in the mode of the state it produced:
+      // currentSnapshot. Without this, undoing a Cycle-mode reset would subtract
+      // tasks that were never counted.
       const clearedDelta = (snap.clearedTasks?.totalCleared || 0) - (currentSnapshot.clearedTasks?.totalCleared || 0);
-      if (clearedDelta !== 0 && state.userProgress) {
+      if (clearedDelta !== 0 && state.userProgress && clearsCountTowardAchievements(currentSnapshot)) {
         state.userProgress.totalTasksCompleted = Math.max(0,
           (state.userProgress.totalTasksCompleted || 0) + clearedDelta);
       }
@@ -1159,8 +1164,10 @@ export async function performStateBasedRedo() {
         state.userProgress.cyclesCompleted = Math.max(0,
           (state.userProgress.cyclesCompleted || 0) + cycleDelta);
       }
+      // Same rule as undo: only To-Do clears are on the counter. The step being
+      // redone ran in the mode of the state it produces: snap.
       const clearedDelta = (snap.clearedTasks?.totalCleared || 0) - (currentSnapshot.clearedTasks?.totalCleared || 0);
-      if (clearedDelta !== 0 && state.userProgress) {
+      if (clearedDelta !== 0 && state.userProgress && clearsCountTowardAchievements(snap)) {
         state.userProgress.totalTasksCompleted = Math.max(0,
           (state.userProgress.totalTasksCompleted || 0) + clearedDelta);
       }
