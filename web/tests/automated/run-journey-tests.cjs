@@ -4837,6 +4837,70 @@ async function journeyFirstTaskOptionRoom(browser, baseURL) {
     return { name: 'the first task\'s option row gets room on a fresh load', failures };
 }
 
+// ── Journey: a task added right after a mode switch stays on screen ─────────
+// After a mode switch modeManager syncs every task row with the new mode, once
+// at once and again 100ms later, and syncAllTasksWithMode REMOVES any row it
+// cannot find in the task map it is handed (an "orphan"). Both passes reused a
+// map built at the switch, so a task added inside that window (switch modes,
+// type, press Enter) lost its row: saved, counted by the stats, invisible until
+// a reload, and in Auto mode its hidden unchecked copy blocked the cycle
+// (reported Oct 2026; 6 of 12 runs failed here before the fix). Each pass now
+// reads the tasks fresh. Every mode is a target, from a different mode.
+async function journeyModeSwitchThenAdd(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const orphanWarnings = [];
+    page.on('console', m => { if (/orphaned task element/.test(m.text())) orphanWarnings.push(m.text()); });
+    try {
+        const cases = [['todo', 'auto-cycle'], ['auto', 'manual-cycle'], ['manual', 'todo-mode']];
+        for (const [from, to] of cases) {
+            await page.evaluate((from) => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = d.data.routine[d.appState.activeRoutineId];
+                c.tasks = ['A', 'B', 'C', 'D'].map(t => ({
+                    id: 'ms' + t, text: t, completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false,
+                    recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2
+                }));
+                c.recurringTemplates = {};
+                c.autoReset = from === 'auto';
+                c.deleteCheckedTasks = from === 'todo';
+                d.settings = d.settings || {};
+                d.settings.showCompletedDropdown = false;
+                localStorage.setItem('miniCycleData', JSON.stringify(d));
+            }, from);
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            await bootApp(page);
+            await page.waitForTimeout(800);
+            // Switch through the selector's own change handler, then add at once
+            // with Enter, inside the 100ms second-pass window.
+            await page.evaluate((to) => {
+                const sel = document.getElementById('mode-selector');
+                sel.value = to;
+                sel.dispatchEvent(new Event('change', { bubbles: true }));
+            }, to);
+            await page.locator('#taskInput').fill(`Added after ${to}`);
+            await page.locator('#taskInput').press('Enter');
+            await page.waitForTimeout(1500);
+            const r = await page.evaluate(() => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = d.data.routine[d.appState.activeRoutineId];
+                return {
+                    saved: c.tasks.map(t => t.text),
+                    shown: [...document.querySelectorAll('#taskList .task-text, #completedTaskList .task-text')].map(e => e.textContent)
+                };
+            });
+            const added = `Added after ${to}`;
+            record(`${from} → ${to}: the task saved`, r.saved.includes(added), JSON.stringify(r.saved));
+            record(`${from} → ${to}: the task is on screen`, r.shown.includes(added) && r.shown.length === r.saved.length,
+                `saved ${r.saved.length}, shown ${r.shown.length}: ${JSON.stringify(r.shown)}`);
+        }
+        record('no task row was removed as an orphan', orphanWarnings.length === 0, orphanWarnings.join(' | '));
+    } finally {
+        await context.close();
+    }
+    return { name: 'a task added right after a mode switch stays on screen', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -4885,6 +4949,7 @@ const JOURNEYS = [
     { name: 'the re-audit dialogs name themselves, keep Tab, and hand focus back', fn: journeyReauditDialogs },
     { name: 'the one-time "the × moved" notice in Focus View', fn: journeyFocusExitMovedNotice },
     { name: 'the first task\'s option row gets room on a fresh load', fn: journeyFirstTaskOptionRoom },
+    { name: 'a task added right after a mode switch stays on screen', fn: journeyModeSwitchThenAdd },
 ];
 
 async function run() {
