@@ -2404,7 +2404,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         deleteCheckedTasks, tasks
     });
 
-    await test('mode switch is described as "Mode changed", not the per-task control', () => {
+    await test('mode switch is described by the mode it switched to, not the per-task control', () => {
         // Both halves of a mode switch land in ONE snapshot pair: the routine flag
         // AND every task's derived value. Only the flag is a control the user touched.
         const settings = { cycle: false, todo: true };
@@ -2412,7 +2412,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const to   = snapOf(true,  [{ id: 't1', text: 'a', autoClear: { ...settings } }]);
 
         const desc = computeTransactionDiff(from, to).description;
-        if (!/Mode changed/.test(desc)) {
+        if (!/Switched to .*To-Do/.test(desc)) {
             throw new Error(`expected the mode change to be named, got "${desc}"`);
         }
         // Assert on the COMPOUND marker, not on the leaked string. When two changes
@@ -2431,9 +2431,40 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const to   = snapOf(false, [{ id: 't1', text: 'a', autoClear: { cycle: true,  todo: true } }]);
 
         const desc = computeTransactionDiff(from, to).description;
-        if (!/[Rr]emove when complete/.test(desc)) {
+        if (!/Clear on Reset turned on/.test(desc)) {
             throw new Error(`a real toggle must still be named, got "${desc}"`);
         }
+        // Direction follows the step: the reverse pair turns it off.
+        const back = computeTransactionDiff(to, from).description;
+        if (!/Clear on Reset turned off/.test(back)) throw new Error(`reverse toggle should read "turned off", got "${back}"`);
+        // In To-Do mode the same control is called by its To-Do name.
+        const todoFrom = snapOf(true, [{ id: 't1', text: 'a', autoClear: { cycle: false, todo: false } }]);
+        const todoTo   = snapOf(true, [{ id: 't1', text: 'a', autoClear: { cycle: false, todo: true } }]);
+        const todoDesc = computeTransactionDiff(todoFrom, todoTo).description;
+        if (!/Marked for Clearing turned on/.test(todoDesc)) throw new Error(`To-Do toggle should use its To-Do name, got "${todoDesc}"`);
+    });
+
+    await test('a completed cycle reads as ONE step, not its consequences', () => {
+        // Completing a cycle unchecks every task and may clear some; the old text
+        // listed them: "Cycle count changed + 1 change" (Oct 2026 audit).
+        const from = { ...snapOf(false, [{ id: 't1', text: 'a', completed: true }, { id: 't2', text: 'b', completed: true }]), cycleCount: 2, clearedTasks: { totalCleared: 0 } };
+        const to   = { ...snapOf(false, [{ id: 't1', text: 'a', completed: false }]), cycleCount: 3, clearedTasks: { totalCleared: 1 } };
+        const desc = computeTransactionDiff(from, to).description;
+        if (desc !== 'Cycle completed') throw new Error(`expected "Cycle completed", got "${desc}"`);
+    });
+
+    await test('tasks that went to the cleared archive read as cleared, not deleted', () => {
+        const from = { ...snapOf(true, [{ id: 't1', text: 'a', completed: true }, { id: 't2', text: 'b', completed: true }, { id: 't3', text: 'c' }]), clearedTasks: { totalCleared: 4 } };
+        const to   = { ...snapOf(true, [{ id: 't3', text: 'c' }]), clearedTasks: { totalCleared: 6 } };
+        const desc = computeTransactionDiff(from, to).description;
+        if (!/2 tasks cleared/.test(desc) || /deleted|\+/.test(desc)) throw new Error(`expected "2 tasks cleared" alone, got "${desc}"`);
+    });
+
+    await test('a task-view layout drag is named, not the bare generic', () => {
+        const from = { ...snapOf(false, [{ id: 't1', text: 'a' }]), taskViewLayout: { positions: {} } };
+        const to   = { ...snapOf(false, [{ id: 't1', text: 'a' }]), taskViewLayout: { positions: { t1: { x: 10, y: 20 } } } };
+        const desc = computeTransactionDiff(from, to).description;
+        if (desc !== 'Layout changed') throw new Error(`expected "Layout changed", got "${desc}"`);
     });
 
     // === WRAPPER SYSTEM-OPTION (review F-005) ===

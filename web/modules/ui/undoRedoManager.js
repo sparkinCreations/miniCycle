@@ -1011,9 +1011,8 @@ export async function performStateBasedUndo() {
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack);
-      const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
-                        stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
-                        getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
+      const stepsText = stepsLeft === 0 ? getLabel('notify.undoStepsNone') :
+                        getLabel('notify.undoStepsLeft', { vars: { count: stepsLeft } });
       _deps.showNotification('↩️ ' + getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
@@ -1213,9 +1212,8 @@ export async function performStateBasedRedo() {
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack);
-      const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
-                        stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
-                        getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
+      const stepsText = stepsLeft === 0 ? getLabel('notify.redoStepsNone') :
+                        getLabel('notify.redoStepsLeft', { vars: { count: stepsLeft } });
       _deps.showNotification('↪️ ' + getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
