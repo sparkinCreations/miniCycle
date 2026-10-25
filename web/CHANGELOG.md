@@ -1,3 +1,7 @@
+## [2.630] - 2026-10-25
+- fix(touch): ⋮ reopens a task row after a tap elsewhere closed it (iOS)
+
+
 ## [2.629] - 2026-10-25
 - fix(reset): show the settle pause as a notification, not the loader
 - fix: renaming the routine can be undone; factory reset settles 3s before it says it is done
