@@ -32,9 +32,25 @@
     background: var(--theme-header-bg, var(--header-bg, transparent));
     border: none;
     border-radius: 0;
-    backdrop-filter: blur(5px);
     height: auto;
     min-height: 45px;
+    /* The frost lives on ::before (below), so this row only isolates it. */
+    isolation: isolate;
+}
+
+/* Frost BEHIND the row's content, not on the row. With backdrop-filter on the
+   row itself, WebKit (the iOS app) composites the logo, wordmark and ☰ button
+   into the blurred layer and they rendered soft (Oct 2026). A layer of its own
+   at z-index -1 blurs the same backdrop and leaves the content crisp. */
+.mini-cycle-header-row::before,
+.mode-selector-wrapper::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    -webkit-backdrop-filter: blur(5px);
+    backdrop-filter: blur(5px);
+    pointer-events: none;
 }
 
 /* =============================================================================
@@ -178,8 +194,8 @@
     padding: var(--space-0-75) 0;
     background: transparent;
     border-bottom: none;
-    backdrop-filter: blur(5px);
     min-height: 31px;
+    isolation: isolate; /* frost on ::before — see .mini-cycle-header-row::before */
     overflow: visible; /* Allow quick-actions menu to overflow */
 }
 

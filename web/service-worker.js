@@ -103,6 +103,12 @@ var CORE = [
   './assets/images/pattern.svg',
   './assets/images/logo/minicycle_logo_icon.png',
   './assets/images/logo/logo.png',
+  // Header marks at display size (srcset in miniCycle.html): the 512px originals
+  // shrunk ~20x came out soft on iOS. 2x/3x are what phones request.
+  './assets/images/logo/logo-2x.png',
+  './assets/images/logo/logo-3x.png',
+  './assets/images/logo/App_Name_miniCycle-2x.png',
+  './assets/images/logo/App_Name_miniCycle-3x.png',
   './assets/images/logo/pwa-icons/icon-192.png',   // favicon + apple-touch-icon (blue square)
   // Loading tips (shown during boot splash)
   './modules/labels/loading-tips.json',
