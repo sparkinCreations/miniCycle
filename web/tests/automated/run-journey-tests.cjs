@@ -3924,8 +3924,36 @@ async function journeyUndoBottom(browser, baseURL) {
         await bootApp(page);
         await page.waitForTimeout(800);
 
+        const diagConsole = [];
+        page.on('console', m => { if (m.type() === 'error' || m.type() === 'warning') diagConsole.push(`${m.type()}: ${m.text().slice(0, 200)}`); });
         await addTask(page, 'UB A');
-        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 2, null, { timeout: 10000 });
+        try {
+            await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 2, null, { timeout: 10000 });
+        } catch (e) {
+            const dump = await page.evaluate(() => {
+                const btn = document.getElementById('addTaskBtn');
+                const r = btn?.getBoundingClientRect();
+                const atBtn = r ? document.elementFromPoint(r.x + r.width / 2, r.y + r.height / 2) : null;
+                let stored = null;
+                try { const d = JSON.parse(localStorage.getItem('miniCycleData')); stored = d.data.routine[d.appState.activeRoutineId].tasks.map(t => t.text); } catch (err) { stored = String(err); }
+                return {
+                    liCount: document.querySelectorAll('#taskList li').length,
+                    liTexts: [...document.querySelectorAll('#taskList li .task-text')].map(x => x.textContent),
+                    stored,
+                    inputValue: document.getElementById('taskInput')?.value,
+                    btnRect: r && { x: r.x, y: r.y, w: r.width, h: r.height },
+                    elementAtBtn: atBtn ? `${atBtn.tagName}#${atBtn.id}.${atBtn.className}` : null,
+                    bodyClass: document.body.className,
+                    dataset: { ...document.documentElement.dataset },
+                    notifications: [...document.querySelectorAll('.notification')].map(n => n.textContent.trim().slice(0, 100)),
+                    swController: !!navigator.serviceWorker?.controller,
+                    navType: performance.getEntriesByType('navigation')[0]?.type
+                };
+            });
+            console.log('   DIAG undo-bottom first add did not land: ' + JSON.stringify(dump));
+            console.log('   DIAG console: ' + JSON.stringify(diagConsole.slice(-15)));
+            throw e;
+        }
         await page.waitForTimeout(400);
         await addTask(page, 'UB B');
         await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 3, null, { timeout: 10000 });
@@ -4824,8 +4852,21 @@ async function journeyFirstTaskOptionRoom(browser, baseURL) {
         record('on a fresh load the first task carries no marker (the rule must not depend on it)', opened.ok && opened.marker === false, `marker=${opened.marker}`);
         record('the list container made room (10px → 20px) while the row is open', before === '10px' && after.padding === '20px', `before=${before} after=${after.padding}`);
         // Close it the way a user does: a tap elsewhere (a second ⋮ tap does not toggle).
+        const diagBefore = await page.evaluate(() => {
+            window.__diagEvents = [];
+            ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click'].forEach(type =>
+                document.addEventListener(type, (e) => window.__diagEvents.push(`${type}@${e.target?.tagName}#${e.target?.id}.${String(e.target?.className).slice(0, 40)}`), true));
+            const el = document.elementFromPoint(195, 120);
+            const cs = el ? getComputedStyle(el) : null;
+            return { at: el ? `${el.tagName}#${el.id}.${String(el.className).slice(0, 60)}` : null, cursor: cs?.cursor, ua: navigator.userAgent, maxTouch: navigator.maxTouchPoints };
+        });
         await page.touchscreen.tap(195, 120);
         await page.waitForTimeout(500);
+        const diagAfter = await page.evaluate(() => window.__diagEvents);
+        console.log('   DIAG option-row tap target: ' + JSON.stringify(diagBefore));
+        console.log('   DIAG option-row events: ' + JSON.stringify(diagAfter));
+        // Second probe: same tap on an element the app treats as background, with cursor:pointer (iOS click heuristic).
+        
         const closed = await page.evaluate(() => ({
             padding: getComputedStyle(document.querySelector('.task-list-container')).paddingTop,
             rowOpen: !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible')
