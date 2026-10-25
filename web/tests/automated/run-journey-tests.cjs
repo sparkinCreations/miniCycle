@@ -4836,9 +4836,26 @@ async function journeyFirstTaskOptionRoom(browser, baseURL) {
         // pointer and touch events (measured Oct 2026 in the WebKit journey job) —
         // so a click-only light dismiss left the row open on iPhone. Replay exactly
         // that here so Chromium catches it too: reopen, then a touch tap with no click.
+        await page.evaluate(() => {
+            window.__diagEv = [];
+            const t0 = performance.now();
+            ['touchstart', 'touchend', 'pointerdown', 'pointerup', 'mousedown', 'mouseup', 'click'].forEach(type =>
+                document.addEventListener(type, (e) => window.__diagEv.push(`${Math.round(performance.now() - t0)}ms ${type}@${e.target?.tagName}.${String(e.target?.className).slice(0, 30)}`), true));
+            const opts = document.querySelector('#taskList .task:first-child .task-options');
+            new MutationObserver(() => window.__diagEv.push(`${Math.round(performance.now() - t0)}ms class=${opts.className}`)).observe(opts, { attributes: true, attributeFilter: ['class'] });
+        });
         if (opened.ok) await dots.tap();
         await page.waitForTimeout(400);
         const reopened = await page.evaluate(() => !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible'));
+        console.log('   DIAG reopen (500ms after close) reopened=' + reopened + ' events: ' + JSON.stringify(await page.evaluate(() => window.__diagEv)));
+        if (!reopened) {
+            await page.waitForTimeout(1500);
+            await page.evaluate(() => { window.__diagEv = []; });
+            await dots.tap();
+            await page.waitForTimeout(400);
+            const late = await page.evaluate(() => !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible'));
+            console.log('   DIAG reopen (after +1.5s) reopened=' + late + ' events: ' + JSON.stringify(await page.evaluate(() => window.__diagEv)));
+        }
         await page.evaluate(() => {
             const target = document.elementFromPoint(195, 120) || document.body;
             const init = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: 195, clientY: 120 };
