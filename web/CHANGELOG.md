@@ -1,3 +1,9 @@
+## [2.628] - 2026-10-25
+- fix(touch): tapping the background closes an open task row on iOS WebKit
+- fix(undo): every undo/redo message names the step in the app's own words
+- fix: undo names the step it undid; rename box survives background refresh; backup-gate messages say what to do
+
+
 ## [2.627] - 2026-10-24
 - fix(modals): the recurring panel no longer opens empty after an in-place reset or restore
 
