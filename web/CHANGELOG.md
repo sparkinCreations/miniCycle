@@ -1,3 +1,7 @@
+## [2.633] - 2026-10-25
+- fix(modals): Task Options and Recurring stay on screen and clear of the notch on phones
+
+
 ## [2.632] - 2026-10-25
 - fix(switcher): theme picker no longer collapses the routine list on phones; card clears the notch
 - fix(header): logo, wordmark and ☰ stay crisp under the frosted header on iOS
