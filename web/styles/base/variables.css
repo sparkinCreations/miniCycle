@@ -559,6 +559,11 @@
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
 
+  /* Smallest height the routine switcher's routine panel may shrink to: its
+     38px title bar plus about one and a half 62px routine rows, so the list
+     still reads as scrollable. Below it the switcher card scrolls instead. */
+  --switch-body-min-height: 134px;
+
   /* Task card vertical budget — space reserved above & below the scrollable task list.
      Components: header + mode selector + progress bar + help window + nav dots + margins.
      Increase to shrink the task card; decrease to give it more room. */

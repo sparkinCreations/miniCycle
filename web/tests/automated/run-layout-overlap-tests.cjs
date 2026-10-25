@@ -776,11 +776,15 @@ async function run() {
             // last child — below the fold with no visible affordance to scroll to
             // it. Measured at 1280x600: its bottom sat at 677px in a 600px viewport.
             //
-            // The contract now is: the shell is capped and clips, and ONLY the list
-            // and preview scroll. Assert all three parts, because fixing one without
-            // the others silently reintroduces the bug — capping the shell without
-            // `min-height: 0` on the flexible row leaves it overflowing anyway
+            // The contract now is: the shell is capped, the list and preview are the
+            // scrollers and shrink first, and the shell scrolls only as a last
+            // resort — once the routine panel is at its floor — with Close sticky
+            // to its bottom edge. Assert every part, because fixing one without the
+            // others silently reintroduces the bug — capping the shell without an
+            // explicit min-height on the flexible row leaves it overflowing anyway
             // (a flex item's default min-height is `auto`, which refuses to shrink).
+            // The floor (Oct 2026) replaced `min-height: 0`, which let the list be
+            // squeezed to a 13px sliver; see the theme-picker check below.
             {
                 const sw = await page.evaluate(() => {
                     const d = document.getElementById('routine-switcher-modal');
@@ -788,9 +792,10 @@ async function run() {
                     const wasOpen = d.open;
                     if (!wasOpen) d.showModal();
                     const content = d.querySelector('.mini-cycle-switch-modal-content');
+                    const body = d.querySelector('.routine-switcher-body');
                     const list = document.getElementById('miniCycleList');
                     const close = document.getElementById('miniCycleSwitchClose');
-                    if (!content || !list || !close) { if (!wasOpen) d.close(); return { missing: true }; }
+                    if (!content || !body || !list || !close) { if (!wasOpen) d.close(); return { missing: true }; }
 
                     // Overfill the list so the scroll region is genuinely overflowing;
                     // an empty picker fits anywhere and would pass vacuously.
@@ -803,6 +808,8 @@ async function run() {
                     const out = {
                         missing: false,
                         shellScrolls: content.scrollHeight > content.clientHeight + 1,
+                        bodyH: Math.round(body.getBoundingClientRect().height),
+                        bodyFloor: Math.round(parseFloat(getComputedStyle(body).minHeight) || 0),
                         listScrolls: list.scrollHeight > list.clientHeight + 1,
                         closeTop: Math.round(br.top),
                         closeBottom: Math.round(br.bottom),
@@ -819,9 +826,10 @@ async function run() {
                         sw.closeTop >= 0 && sw.closeBottom <= sw.vh + TOL,
                         `Close spans ${sw.closeTop}-${sw.closeBottom}px in a ${sw.vh}px viewport`);
 
-                    record(vp, 'routine switcher: the dialog itself does not scroll',
-                        !sw.shellScrolls,
-                        'the shell is the scroller again — Close is the last child, so it goes below the fold');
+                    record(vp, 'routine switcher: the dialog scrolls only once the list is at its floor',
+                        !sw.shellScrolls || sw.bodyH <= sw.bodyFloor + TOL,
+                        `the shell scrolls while the routine panel is ${sw.bodyH}px, above its `
+                        + `${sw.bodyFloor}px floor — something other than the list refuses to shrink`);
 
                     record(vp, 'routine switcher: the routine list is the scroller',
                         sw.listScrolls,
@@ -846,6 +854,116 @@ async function run() {
                         `Close bottom ${sw.closeBottom}px vs shell bottom ${sw.shellBottom}px — `
                         + `${sw.shellBottom - sw.closeBottom}px of card showing below the button `
                         + '(negative = the button overhangs and is clipped away)');
+                }
+            }
+
+            // --- Routine switcher: a selected routine with the theme picker open ----
+            // The check above runs with nothing selected, when the action row and
+            // the picker are both hidden — the state where everything fits. Select a
+            // routine on a phone and open 🎨, and the routine panel was the only box
+            // allowed to shrink: the list went to a 13px sliver and the action row was
+            // drawn over it, which read as the theme button floating on its own layer.
+            // At 375px 🎨 also wrapped onto a line of its own (Oct 2026). Build that
+            // state in the DOM and assert the stack holds.
+            {
+                const sw = await page.evaluate(() => {
+                    const d = document.getElementById('routine-switcher-modal');
+                    if (!d) return { missing: true };
+                    const content = d.querySelector('.mini-cycle-switch-modal-content');
+                    const body = d.querySelector('.routine-switcher-body');
+                    const list = document.getElementById('miniCycleList');
+                    const row = document.getElementById('switch-items-row');
+                    const themeBtn = document.getElementById('switch-theme');
+                    const picker = document.getElementById('theme-picker-row');
+                    const preview = document.getElementById('switch-preview-window');
+                    const close = document.getElementById('miniCycleSwitchClose');
+                    if (!content || !body || !list || !row || !themeBtn || !picker || !preview || !close) {
+                        return { missing: true };
+                    }
+                    const wasOpen = d.open;
+                    if (!wasOpen) d.showModal();
+                    const saved = {
+                        list: list.innerHTML, rowDisplay: row.style.display,
+                        btnDisplay: themeBtn.style.display, expanded: themeBtn.getAttribute('aria-expanded'),
+                        picker: picker.innerHTML, preview: preview.innerHTML
+                    };
+
+                    list.innerHTML = Array.from({ length: 6 }, (_, i) =>
+                        `<div class="mini-cycle-switch-item" role="option">Routine ${i + 1}</div>`).join('');
+                    row.style.display = 'flex';
+                    themeBtn.style.display = '';
+                    themeBtn.setAttribute('aria-expanded', 'true');
+                    preview.innerHTML = Array.from({ length: 6 }, (_, i) =>
+                        `<div class="preview-task">Task ${i + 1}</div>`).join('');
+                    picker.innerHTML = '<p class="theme-picker-title">Themes</p><div class="theme-picker-chips">'
+                        + Array.from({ length: 5 }, (_, i) =>
+                            `<button class="theme-chip" role="radio"><span class="theme-chip-name">Theme ${i + 1}</span></button>`).join('')
+                        + '</div>';
+                    picker.classList.remove('hidden');
+
+                    const R = el => el.getBoundingClientRect();
+                    const btnTops = [...row.querySelectorAll('.switch-buttons')]
+                        .filter(b => b.getClientRects().length)
+                        .map(b => R(b).top)
+                        .sort((a, b) => a - b);
+                    // A new line starts more than half a button below the last one;
+                    // the expanded 🎨 sits a pixel off its neighbours and is not a wrap.
+                    const btnH = btnTops.length ? R(row.querySelector('.switch-buttons')).height : 0;
+                    const btnLines = btnTops.filter((t, i) => i === 0 || t - btnTops[i - 1] > btnH / 2).length;
+                    const out = {
+                        missing: false,
+                        listH: Math.round(R(list).height),
+                        bodyBottom: Math.round(R(body).bottom),
+                        rowTop: Math.round(R(row).top),
+                        rowBottom: Math.round(R(row).bottom),
+                        pickerTop: Math.round(R(picker).top),
+                        previewShown: preview.getClientRects().length > 0,
+                        btnLines,
+                        closeTop: Math.round(R(close).top),
+                        closeBottom: Math.round(R(close).bottom),
+                        shellBottom: Math.round(R(content).bottom),
+                        vh: window.innerHeight
+                    };
+
+                    list.innerHTML = saved.list;
+                    row.style.display = saved.rowDisplay;
+                    themeBtn.style.display = saved.btnDisplay;
+                    themeBtn.setAttribute('aria-expanded', saved.expanded);
+                    picker.innerHTML = saved.picker;
+                    picker.classList.add('hidden');
+                    preview.innerHTML = saved.preview;
+                    if (!wasOpen) d.close();
+                    return out;
+                });
+
+                if (!sw.missing) {
+                    record(vp, 'routine switcher + theme picker: the routine list keeps a usable height',
+                        sw.listH >= 48,
+                        `list is ${sw.listH}px tall — squeezed to a sliver by the rows below it`);
+
+                    record(vp, 'routine switcher + theme picker: the action row starts below the routine panel',
+                        sw.rowTop >= sw.bodyBottom - TOL,
+                        `action row top ${sw.rowTop}px vs routine panel bottom ${sw.bodyBottom}px — drawn over the list`);
+
+                    record(vp, 'routine switcher + theme picker: the picker starts below the action row',
+                        sw.pickerTop >= sw.rowBottom - TOL,
+                        `picker top ${sw.pickerTop}px vs action row bottom ${sw.rowBottom}px`);
+
+                    record(vp, 'routine switcher + theme picker: Close is on screen and flush with the shell',
+                        sw.closeTop >= 0 && sw.closeBottom <= sw.vh + TOL
+                            && Math.abs(sw.shellBottom - sw.closeBottom) <= TOL,
+                        `Close spans ${sw.closeTop}-${sw.closeBottom}px (shell bottom ${sw.shellBottom}px) `
+                        + `in a ${sw.vh}px viewport`);
+
+                    if (vp.width < 768) {
+                        record(vp, 'routine switcher + theme picker: the picker takes the preview\'s place on a phone',
+                            !sw.previewShown,
+                            'the inline preview is still shown with the picker open — both do not fit on a phone');
+
+                        record(vp, 'routine switcher: the action buttons share one line on a phone',
+                            sw.btnLines === 1,
+                            `the icon buttons wrapped onto ${sw.btnLines} lines`);
+                    }
                 }
             }
         }

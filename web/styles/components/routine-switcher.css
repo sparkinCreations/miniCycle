@@ -69,6 +69,11 @@
     align-items: center;
     overflow: hidden;
     overscroll-behavior: none;
+    /* The app runs edge-to-edge (viewport-fit=cover), so without this the
+       centred card's top and bottom sat under the iPhone status bar and home
+       indicator (Oct 2026). The content's max-height subtracts the same insets. */
+    box-sizing: border-box;
+    padding: var(--safe-area-top) 0 var(--safe-area-bottom);
 }
 
 .mini-cycle-switch-modal.active,
@@ -117,14 +122,18 @@ dialog.mini-cycle-switch-modal::backdrop {
        feature gate still admits. An unsupported max-height is DROPPED, not
        ignored gracefully — the modal would then have no height cap at all and
        overflow worse than before the fix. */
-    max-height: calc(100vh - var(--space-4));
-    max-height: calc(100dvh - var(--space-4));
-    /* Was `overflow-y: auto`, which made the ENTIRE dialog the scroller — so the
-       Close button, being the last child, scrolled off the bottom of the screen
-       (measured: at 1280x600 its bottom sat at 677px in a 600px viewport).
-       Only the list and preview scroll now. */
-    overflow: hidden;
-    overflow-x: hidden;          /* content should fit width; never show a horizontal bar */
+    max-height: calc(100vh - var(--space-4) - var(--safe-area-top) - var(--safe-area-bottom));
+    max-height: calc(100dvh - var(--space-4) - var(--safe-area-top) - var(--safe-area-bottom));
+    /* The list and preview are the scrollers: they shrink first. The shell
+       scrolls only as a LAST resort, when even the list at its floor (see
+       .routine-switcher-body) leaves too little room — a phone with a routine
+       selected and 🎨 open, or a landscape phone (Oct 2026: with plain `hidden`
+       here that state pushed Close off the screen). It used to be the scroller
+       outright, which let Close, the last child, scroll out of reach (measured
+       at 1280x600: bottom at 677px); Close is now sticky to the bottom edge, so
+       it never does. */
+    overflow-y: auto;
+    overflow-x: hidden;          /* content should fit width; never show a horizontal bar. Also clips Close's -25px margins into a full-bleed footer */
     overscroll-behavior: contain;
     /* Dual-strategy scrollbar styling:
        - scrollbar-width: thin → Firefox + Chrome 121+ + Safari 18.2+ (newer browsers)
@@ -529,6 +538,22 @@ input.routine-search-input:focus {
         border-top: none;
     }
 
+    /* The rows outside the scrolling list keep their own height: they are
+       buttons and chips, and a shrunk row paints over its neighbours. */
+    .switch-items-row,
+    .theme-picker-row {
+        flex-shrink: 0;
+    }
+
+    /* While the theme picker is open, it takes the preview's place. Both did
+       not fit on a phone, and it is the preview that can wait: it comes back
+       the moment the picker closes. */
+    .switch-theme[aria-expanded="true"] ~ .switch-preview-window,
+    .switch-theme[aria-expanded="true"] ~ .switch-preview-date,
+    .switch-theme[aria-expanded="true"] ~ .switch-preview-hint {
+        display: none;
+    }
+
     /* Tighter routine actions spacing */
     .switch-items-row {
         gap: var(--space-0-75) var(--space-1);
@@ -733,6 +758,10 @@ input.routine-search-input:focus {
     margin: var(--space-2-5) -25px 0;
     width: calc(100% + 50px);
     flex-shrink: 0;
+    /* Pinned to the shell's bottom edge for the rare case the shell scrolls. */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     cursor: pointer;
     transition: background var(--transition-fast) ease;
     display: block;
@@ -956,14 +985,17 @@ input.routine-search-input:focus {
    ============================================================================= */
 
 /* The one flexible row: absorbs whatever height the fixed rows leave over.
-   min-height: 0 is the load-bearing part — a flex item's default min-height is
-   `auto`, which refuses to shrink below its content, so without it the modal
-   still overflows no matter what max-height the shell carries. */
+   An explicit min-height is the load-bearing part — a flex item's default
+   min-height is `auto`, which refuses to shrink below its content (the full
+   240px list), so the modal overflowed no matter what max-height the shell
+   carried. It was `0`, which let this row be the only thing that gave up height:
+   with a routine selected and 🎨 open the list went to a 13px sliver and the
+   action row was drawn over it (Oct 2026). Below the floor the shell scrolls. */
 .routine-switcher-body {
     display: flex;
     flex-direction: column;
     flex: 1 1 auto;
-    min-height: 0;
+    min-height: var(--switch-body-min-height);
 }
 
 .routine-switcher-left {
@@ -1174,6 +1206,17 @@ input.routine-search-input:focus {
     .mini-cycle-switch-modal-content {
         min-width: 280px;
         max-width: 95%;
+    }
+
+    /* The five icon buttons share the row instead of wrapping: at 375px their
+       56px minimum came to 296px in a 295px row and 🎨 dropped onto a line of
+       its own. They still never grow past 56px, so a wider phone looks as it
+       did. (The earlier mobile block's min-width: auto never applied — the base
+       .switch-buttons rule sits later in the file.) */
+    .switch-buttons {
+        flex: 1 1 0;
+        min-width: 0;
+        max-width: 56px;
     }
 }
 
