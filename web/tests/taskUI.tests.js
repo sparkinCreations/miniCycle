@@ -178,6 +178,15 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    await test('canHandle always allows the ⋮ button, even before the three-dots body class is applied', async () => {
+        // A fresh first load renders ⋮ buttons before the body class is set; the
+        // tap was refused there and only focusin opened the row (iOS: once).
+        document.body.classList.remove('show-three-dots-enabled');
+        if (!TaskOptionsVisibilityController.canHandle('three-dots-button')) {
+            throw new Error('a ⋮ tap must be allowed without the body class');
+        }
+    });
+
     await test('canHandle allows three-dots-button in three-dots mode', async () => {
         document.body.classList.add('show-three-dots-enabled');
         if (!TaskOptionsVisibilityController.canHandle('three-dots-button')) {

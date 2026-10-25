@@ -4849,6 +4849,17 @@ async function journeyFirstTaskOptionRoom(browser, baseURL) {
         const tapClosed = await page.evaluate(() => !document.querySelector('#taskList .task:first-child .task-options.task-options-visible'));
         record('a touch tap that sends no click (iOS WebKit) still closes the row', reopened && tapClosed,
             JSON.stringify({ reopened, closedAfterTap: tapClosed }));
+
+        // …and ⋮ must reopen it. The click-less tap above moves no focus, exactly as
+        // on iOS, so focus is still on the ⋮ button: the tap must open the row by
+        // itself, not through a focusin (measured Oct 2026 in the WebKit journey
+        // job: the click arrived and nothing changed, because a fresh load has no
+        // three-dots body class and the controller refused the ⋮ caller).
+        const focusKept = await page.evaluate(() => document.activeElement?.classList.contains('three-dots-btn'));
+        if (opened.ok) await dots.tap();
+        await page.waitForTimeout(400);
+        const reopenedAgain = await page.evaluate(() => !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible'));
+        record('⋮ reopens the row after a tap elsewhere closed it', reopenedAgain, JSON.stringify({ reopenedAgain, focusStillOnDots: focusKept }));
     } finally {
         await context.close();
     }
