@@ -508,6 +508,7 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
     VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
+    TAP_SLOP: 10,                  // px, per axis - How far a touch may travel between pointerdown and pointerup and still be a TAP. Further is a scroll or a drag. Used where a tap must be recognised without a click (WebKit sends none for a tap on non-interactive background)
     TASK_HOLD_SLOP: 15,            // px, per axis - How far a finger may drift during the TASK_DRAG_LONG_PRESS hold before it is read as a scroll and the hold is cancelled. Wider than the platforms' 8-10px on purpose: a thumb trembles while it waits, and a real scroll clears 15px long before the hold is up
     WHEEL_SCROLL_MIN: 10,          // Minimum wheel scroll to trigger action
     AXIS_DOMINANCE_RATIO: 1.5      // A swipe must exceed the OTHER axis by this factor to count — without it, a thumb arcing during a scroll reads as a sideways swipe

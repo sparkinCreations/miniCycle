@@ -4831,6 +4831,24 @@ async function journeyFirstTaskOptionRoom(browser, baseURL) {
             rowOpen: !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible')
         }));
         record('closing the row gives the room back', closed.rowOpen === false && closed.padding === '10px', JSON.stringify(closed));
+
+        // iOS WebKit sends NO click for a tap on non-interactive background — only
+        // pointer and touch events (measured Oct 2026 in the WebKit journey job) —
+        // so a click-only light dismiss left the row open on iPhone. Replay exactly
+        // that here so Chromium catches it too: reopen, then a touch tap with no click.
+        if (opened.ok) await dots.tap();
+        await page.waitForTimeout(400);
+        const reopened = await page.evaluate(() => !!document.querySelector('#taskList .task:first-child .task-options.task-options-visible'));
+        await page.evaluate(() => {
+            const target = document.elementFromPoint(195, 120) || document.body;
+            const init = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: 195, clientY: 120 };
+            target.dispatchEvent(new PointerEvent('pointerdown', init));
+            target.dispatchEvent(new PointerEvent('pointerup', init));
+        });
+        await page.waitForTimeout(300);
+        const tapClosed = await page.evaluate(() => !document.querySelector('#taskList .task:first-child .task-options.task-options-visible'));
+        record('a touch tap that sends no click (iOS WebKit) still closes the row', reopened && tapClosed,
+            JSON.stringify({ reopened, closedAfterTap: tapClosed }));
     } finally {
         await context.close();
     }
