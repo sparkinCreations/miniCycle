@@ -653,6 +653,41 @@ body.focus-mode #stats-panel {
     color: var(--theme-stats-text, #595959);
 }
 
+/* ⓘ after the All Routines line: toggles what counts toward badges. */
+.stats-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin-left: var(--space-1);
+    padding: var(--space-1);
+    border: none;
+    background: none;
+    color: inherit;
+    opacity: 0.75;
+    cursor: pointer;
+}
+
+.stats-info-btn .icon {
+    display: inline-flex;
+    width: 1em;
+    height: 1em;
+}
+
+.stats-info-btn:hover,
+.stats-info-btn[aria-expanded="true"] {
+    opacity: 1;
+}
+
+.stats-info-note {
+    margin: 0 auto var(--space-2) auto;
+    max-width: 32em;
+    text-align: center;
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+    color: var(--theme-stats-text, #595959);
+}
+
 /* =============================================================================
    ACHIEVEMENT BADGES BUTTON
    ============================================================================= */

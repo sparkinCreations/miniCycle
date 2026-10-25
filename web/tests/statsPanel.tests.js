@@ -309,6 +309,49 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
+    await test('the All Routines cleared figure says it counts toward badges', async () => {
+        // It is the badge counter (To-Do clears since v2.626); each routine's own
+        // "Cleared tasks" counts every mode. "Cleared tasks" here read as the same
+        // number and looked contradictory (Oct 2026).
+        const mock = statsMockAppState([{ id: 't1', text: 'a', completed: false }]);
+        const base = mock.get();
+        base.userProgress = { cyclesCompleted: 3, totalTasksCompleted: 12 };
+        mock.get = () => base;
+        setStatsPanelDependencies({ AppState: mock });
+        try {
+            const statsPanel = new StatsPanelManager();
+            await statsPanel.updateStatsPanel();
+            const text = document.getElementById('mini-cycle-count').textContent;
+            if (!/12 cleared toward badges/.test(text)) throw new Error(`expected "12 cleared toward badges", got "${text}"`);
+        } finally {
+            setStatsPanelDependencies({ AppState: null });
+        }
+    });
+
+    await test('the ⓘ after All Routines toggles its note and reports expanded', async () => {
+        const panel = document.getElementById('stats-panel');
+        const line = document.createElement('p');
+        line.id = 'all-routines-count';
+        panel.appendChild(line);
+        // Wired as the app wires it: the panel attaches listeners through the injected helper.
+        setStatsPanelDependencies({ safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn) });
+        const statsPanel = new StatsPanelManager();
+        statsPanel.injectFeatureButtons();
+        const btn = document.getElementById('all-routines-info-btn');
+        const note = document.getElementById('all-routines-info');
+        if (!btn || !note) throw new Error('the info button and its note should be built');
+        if (!note.hidden || btn.getAttribute('aria-expanded') !== 'false') throw new Error('the note starts closed');
+        if (!/To-Do/.test(note.textContent)) throw new Error(`the note should explain the To-Do rule, got "${note.textContent}"`);
+        btn.click();
+        if (note.hidden || btn.getAttribute('aria-expanded') !== 'true') throw new Error('a click should open the note');
+        btn.click();
+        if (!note.hidden || btn.getAttribute('aria-expanded') !== 'false') throw new Error('a second click should close it');
+        statsPanel.injectFeatureButtons();
+        if (document.querySelectorAll('#all-routines-info-btn').length !== 1) throw new Error('building twice must not duplicate the button');
+        statsPanel.destroy();
+        setStatsPanelDependencies({ safeAddEventListener: null });
+    });
+
     await test('handles zero tasks gracefully (real 0% branch)', async () => {
         setStatsPanelDependencies({ AppState: statsMockAppState([]) });
         try {

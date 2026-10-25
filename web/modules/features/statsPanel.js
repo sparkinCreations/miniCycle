@@ -28,6 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { ICONS } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine, getActiveRoutine } from '../utils/cycleMode.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
@@ -341,6 +342,35 @@ export class StatsPanelManager {
             this.elements.achievementCountBadge = achievementBadgesBtn.querySelector(`#${DOM_IDS.ACHIEVEMENT_COUNT_BADGE}`);
         }
 
+        // === "WHAT COUNTS TOWARD BADGES" (ⓘ after the All Routines line) ===
+        // A real button, not a `title`: touch has no hover, so a tap toggles the
+        // note under the line (aria-expanded), and the title still serves hover.
+        const allRoutinesLine = statsPanel.querySelector(`#${DOM_IDS.ALL_ROUTINES_COUNT}`);
+        if (allRoutinesLine && !statsPanel.querySelector(`#${DOM_IDS.ALL_ROUTINES_INFO_BTN}`)) {
+            const infoLabel = getLabel('stats.allRoutinesInfoAria');
+            const infoBtn = document.createElement('button');
+            infoBtn.type = 'button';
+            infoBtn.id = DOM_IDS.ALL_ROUTINES_INFO_BTN;
+            infoBtn.className = DOM_CLASSES.STATS_INFO_BTN;
+            infoBtn.setAttribute('aria-label', infoLabel);
+            infoBtn.title = infoLabel;
+            infoBtn.setAttribute('aria-expanded', 'false');
+            infoBtn.setAttribute('aria-controls', DOM_IDS.ALL_ROUTINES_INFO);
+            // eslint-disable-next-line no-restricted-syntax -- static ICONS SVG only, no user text
+            infoBtn.innerHTML = `<span class="icon" aria-hidden="true">${ICONS['info-circle']}</span>`;
+            allRoutinesLine.appendChild(infoBtn);
+
+            const infoNote = document.createElement('p');
+            infoNote.id = DOM_IDS.ALL_ROUTINES_INFO;
+            infoNote.className = DOM_CLASSES.STATS_INFO_NOTE;
+            infoNote.hidden = true;
+            infoNote.textContent = getLabel('stats.allRoutinesInfo');
+            allRoutinesLine.insertAdjacentElement('afterend', infoNote);
+
+            this.elements.allRoutinesInfoBtn = infoBtn;
+            this.elements.allRoutinesInfo = infoNote;
+        }
+
         // Setup click handlers
         this.setupFeatureButtonHandlers();
 
@@ -367,6 +397,18 @@ export class StatsPanelManager {
 
         if (this.elements.achievementBadgesBtn && safeAdd) {
             safeAdd(this.elements.achievementBadgesBtn, 'click', this._achievementsClickHandler);
+        }
+
+        // stopPropagation: the stats panel's own tap/swipe handling must not see it.
+        this._allRoutinesInfoClickHandler = (e) => {
+            e.stopPropagation();
+            const note = this.elements.allRoutinesInfo;
+            if (!note) return;
+            note.hidden = !note.hidden;
+            this.elements.allRoutinesInfoBtn.setAttribute('aria-expanded', String(!note.hidden));
+        };
+        if (this.elements.allRoutinesInfoBtn && safeAdd) {
+            safeAdd(this.elements.allRoutinesInfoBtn, 'click', this._allRoutinesInfoClickHandler);
         }
     }
 
@@ -820,9 +862,8 @@ export class StatsPanelManager {
         if (this.elements.miniCycleCount) {
             const cycleText = getLabel('noun.cycle', { count: globalCyclesCompleted });
             if (globalTasksCleared > 0) {
-                const clearedText = 'Cleared ' + getLabel('noun.task', { count: globalTasksCleared });
                 this.elements.miniCycleCount.textContent =
-                    getLabel('stats.globalDisplay', { vars: { cycles: globalCyclesCompleted, cycleText, cleared: globalTasksCleared, clearedText } });
+                    getLabel('stats.globalDisplay', { vars: { cycles: globalCyclesCompleted, cycleText, cleared: globalTasksCleared } });
             } else {
                 this.elements.miniCycleCount.textContent = `${globalCyclesCompleted} ${cycleText}`;
             }
@@ -1187,6 +1228,10 @@ export class StatsPanelManager {
         if (this._achievementsClickHandler && this.elements.achievementBadgesBtn) {
             this.elements.achievementBadgesBtn.removeEventListener('click', this._achievementsClickHandler);
             this._achievementsClickHandler = null;
+        }
+        if (this._allRoutinesInfoClickHandler && this.elements.allRoutinesInfoBtn) {
+            this.elements.allRoutinesInfoBtn.removeEventListener('click', this._allRoutinesInfoClickHandler);
+            this._allRoutinesInfoClickHandler = null;
         }
 
         // Remove setupUIEvents listeners

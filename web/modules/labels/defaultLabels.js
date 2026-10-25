@@ -319,7 +319,13 @@ export const DEFAULT_LABELS = deepFreeze({
         progressToNext:     'Progress to next badge',
         progressCleared:    '{current} of {next} cleared {taskWord} to next badge',
         progressCycles:     '{current} of {next} {cycleWord} to next badge',
-        globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
+        // The cleared figure is the BADGE counter (userProgress.totalTasksCompleted),
+        // not every clear: since v2.626 only To-Do clears add to it, while each
+        // routine's own "Cleared tasks" line counts clears in every mode. Saying so
+        // here is what keeps the two numbers from looking contradictory.
+        globalDisplay:      '{cycles} {cycleText} / {cleared} cleared toward badges',
+        allRoutinesInfoAria: 'What counts toward badges',
+        allRoutinesInfo:    'Badges count completed cycles in every routine, plus tasks cleared in To-Do mode. Each routine\'s own cleared count also includes tasks cleared in Auto and Manual Cycle mode, which do not count toward badges.',
         progressCircleAria: 'Current {cycleWord} {taskWord} completion',
         allBadgesUnlocked:  'All badges unlocked!',
         clearedToMilestone: 'Next badge: {remaining} more cleared {taskWord}',
@@ -2710,6 +2716,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'stats.progressCleared',
     'stats.progressCycles',
     'stats.globalDisplay',
+    'stats.allRoutinesInfo',
     'stats.progressCircleAria',
 
     // Notifications

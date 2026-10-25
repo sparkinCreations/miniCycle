@@ -1117,6 +1117,8 @@ export const DOM_CLASSES = Object.freeze({
     GOLDEN_THEME: 'golden-theme',
     GAME_UNLOCKED: 'game-unlocked',
     HAS_CONTENT: 'has-content',
+    STATS_INFO_BTN: 'stats-info-btn',     // small ⓘ toggle in the stats panel
+    STATS_INFO_NOTE: 'stats-info-note',   // the explanation it shows
 
     // ---- Task Cycle Reset ----
     TASK_RESETTING: 'task-resetting',
@@ -1446,6 +1448,9 @@ export const DOM_IDS = Object.freeze({
     COMPLETED_TASKS: 'completed-tasks',
     COMPLETION_RATE: 'completion-rate',
     MINI_CYCLE_COUNT: 'mini-cycle-count',
+    ALL_ROUTINES_COUNT: 'all-routines-count',
+    ALL_ROUTINES_INFO_BTN: 'all-routines-info-btn',   // ⓘ after the All Routines line (statsPanel)
+    ALL_ROUTINES_INFO: 'all-routines-info',           // the note it toggles: what counts toward badges
     PER_CYCLE_COUNT: 'per-cycle-count',
     MILESTONE_PROGRESS_TEXT: 'milestone-progress-text',
     STATS_PROGRESS_BAR: 'stats-progress-bar',
