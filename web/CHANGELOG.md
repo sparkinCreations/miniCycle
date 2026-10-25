@@ -1,3 +1,8 @@
+## [2.631] - 2026-10-25
+- feat(stats): the All Routines cleared figure says it counts toward badges, with an ⓘ note explaining the difference
+- fix(wording): clearing-option labels are true in both states; Clear Completed says when tasks are pinned
+
+
 ## [2.630] - 2026-10-25
 - fix(touch): ⋮ reopens a task row after a tap elsewhere closed it (iOS)
 
