@@ -1830,7 +1830,8 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (all.length !== 3) throw new Error(`stacks must be preserved, got ${all.length} snapshots`);
         for (const snap of all) {
             if (snap.activeCycleId !== 'New Name') throw new Error(`snapshot activeCycleId not relabeled: ${snap.activeCycleId}`);
-            if (snap.title !== 'New Name') throw new Error(`snapshot title not relabeled: ${snap.title}`);
+            // The recorded title is kept — overwriting it made the rename impossible to undo.
+            if (snap.title !== 'Old Name') throw new Error(`snapshot title must be kept, got ${snap.title}`);
             if ('_sig' in snap) throw new Error('stale cached _sig must be stripped by relabel');
         }
         // The relabeled snapshots must pass the strict validation that was
@@ -2093,7 +2094,7 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    await test('renameUndoStackInIndexedDB relabels activeCycleId and title', async () => {
+    await test('renameUndoStackInIndexedDB relabels activeCycleId and keeps the recorded title', async () => {
         // A verbatim copy here is the silent-wipe bug: validateSnapshot compares
         // activeCycleId strictly and rejects the whole migrated history.
         const snap = renamedNew.undoStack[0];
@@ -2101,8 +2102,9 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         if (snap.activeCycleId !== NEW_ID) {
             throw new Error(`activeCycleId still ${snap.activeCycleId}, expected ${NEW_ID}`);
         }
-        if (snap.title !== NEW_ID) {
-            throw new Error(`title still ${snap.title}, expected ${NEW_ID}`);
+        // The recorded title stays: overwriting it made the rename impossible to undo.
+        if (snap.title !== OLD_ID) {
+            throw new Error(`title should stay ${OLD_ID}, got ${snap.title}`);
         }
     });
 
@@ -2554,8 +2556,10 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         const g = mockDeps.AppGlobalState;
         if (g.activeCycleIdForUndo !== 'Renamed Cycle') throw new Error(`tracking id should follow the rename, got "${g.activeCycleIdForUndo}"`);
         if (g.activeUndoStack.length === 0) throw new Error('undo history was wiped by the rename');
-        const stale = g.activeUndoStack.find(s => s.activeCycleId !== 'Renamed Cycle' || s.title !== 'Renamed Cycle');
+        const stale = g.activeUndoStack.find(s => s.activeCycleId !== 'Renamed Cycle');
         if (stale) throw new Error(`a snapshot still carries the old key: ${JSON.stringify({ id: stale.activeCycleId, title: stale.title })}`);
+        // The pre-rename title is kept on the snapshots — it is what Undo puts back.
+        if (!g.activeUndoStack.some(s => s.title === 'Test Cycle')) throw new Error('the pre-rename title was overwritten, so the rename cannot be undone');
         if (g.activeUndoStack.some(s => s._sig === 'stale')) throw new Error('relabel must drop the cached pre-rename signature');
     });
 

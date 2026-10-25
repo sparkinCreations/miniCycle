@@ -4963,6 +4963,44 @@ async function journeyRecurringPanelAfterInPlaceReset(browser, baseURL) {
     return { name: 'the recurring panel still opens after an in-place factory reset', failures };
 }
 
+// ── Renaming the routine can be undone ──────────────────────────────────────
+// A rename re-keys the routine and relabels the undo stacks to the new key. The
+// relabel also overwrote every snapshot's TITLE with the new name, so the
+// snapshot taken just before the rename matched the current state, Undo skipped
+// it, and pressing Undo after a rename undid the step BEFORE it instead
+// (Oct 2026 audit). Undo must put the old name back — in state and on the
+// heading — and Redo must bring the new one back.
+async function journeyRoutineRenameUndo(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const read = () => page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData'));
+        return { title: d.data.routine[d.appState.activeRoutineId]?.title, heading: document.getElementById('mini-cycle-title').textContent.trim() };
+    });
+    try {
+        const before = await read();
+        await page.locator('#mini-cycle-title').click();
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a');
+        await page.keyboard.type('Journey Renamed');
+        await page.evaluate(() => document.getElementById('mini-cycle-title').blur());
+        await page.waitForTimeout(1000);
+        const renamed = await read();
+        record('fixture: the routine was renamed', renamed.title === 'Journey Renamed', JSON.stringify(renamed));
+        await clickEl(page, '#undo-btn');
+        await page.waitForTimeout(900);
+        const undone = await read();
+        record('Undo puts the old name back, in state and on the heading',
+            undone.title === before.title && undone.heading === before.title, JSON.stringify({ before, undone }));
+        await clickEl(page, '#redo-btn');
+        await page.waitForTimeout(900);
+        const redone = await read();
+        record('Redo brings the new name back', redone.title === 'Journey Renamed' && redone.heading === 'Journey Renamed', JSON.stringify(redone));
+    } finally {
+        await context.close();
+    }
+    return { name: 'renaming the routine can be undone', failures };
+}
+
 const JOURNEYS = [
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
@@ -5013,6 +5051,7 @@ const JOURNEYS = [
     { name: 'the first task\'s option row gets room on a fresh load', fn: journeyFirstTaskOptionRoom },
     { name: 'a task added right after a mode switch stays on screen', fn: journeyModeSwitchThenAdd },
     { name: 'the recurring panel still opens after an in-place factory reset', fn: journeyRecurringPanelAfterInPlaceReset },
+    { name: 'renaming the routine can be undone', fn: journeyRoutineRenameUndo },
 ];
 
 async function run() {

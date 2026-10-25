@@ -35,7 +35,7 @@ import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../
 // Aug 2026. The parent calls `computeTransactionDiff`, which is the entry point;
 // undo also calls `describeChange` directly, to name the step it takes back.
 import { computeTransactionDiff, describeChange } from './undoTransactionDiff.js';
-import { clearsCountTowardAchievements, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // Re-exported because it was part of this module's public surface before the
 // split and the test suite imports it from here. Not a `provides` name.
@@ -203,18 +203,24 @@ function loadFromUndoCache(expectedCycleId) {
 
 
 /**
- * Relabel snapshots for a renamed cycle. Snapshots embed the cycle identity
- * twice — activeCycleId (the cycles-map key) and title (equal to the key in
- * this app) — so a rename must rewrite BOTH in every snapshot of both stacks,
- * or validateSnapshot discards the history and Undo restores the old title.
+ * Relabel snapshots for a renamed routine: move them to the new routines-map
+ * key (activeCycleId), or validateSnapshot discards the history.
+ *
+ * The TITLE each snapshot recorded is kept. Overwriting it with the new name
+ * (as this did until Oct 2026) erased the rename from history: the snapshot
+ * taken just before it then matched the current state, Undo skipped it, and a
+ * rename could never be undone — Undo silently undid the step before it. Undo
+ * now puts the old name back on the routine under its new key; a key that
+ * differs from the title is already normal (routines migrated to 2.6 carry
+ * generated ids).
  * @param {Array} snapshots - Snapshots to relabel
- * @param {string} newCycleId - The new cycle id (= new title)
+ * @param {string} newCycleId - The routine's new key
  * @returns {Array} New array with relabeled snapshot copies
  */
 function relabelSnapshotsForCycle(snapshots, newCycleId) {
   return (snapshots || []).map(snap => {
     if (!snap || typeof snap !== 'object') return snap;
-    const relabeled = { ...snap, activeCycleId: newCycleId, title: newCycleId };
+    const relabeled = { ...snap, activeCycleId: newCycleId };
     // The cached signature embeds the OLD id/title (c/ti fields), so carrying
     // it forward makes the first post-rename capture mismatch the stack top by
     // construction and push a duplicate. Both consumers (capture dedup,
@@ -816,6 +822,17 @@ function handleUndoRedoUIUpdate(diff, newState) {
   // Refresh history modal if cleared tasks changed
   if (diff.clearedTasksChanged) {
     _deps.refreshHistoryIfOpen?.();
+  }
+
+  // The routine title heading is not part of any render above. Without this an
+  // undone rename put the old name back in state while the heading kept the new
+  // one (Oct 2026). Not while the user is editing the heading itself.
+  if (diff.cycleChanged) {
+    const titleEl = _deps.getElementById?.(DOM_IDS.MINI_CYCLE_TITLE);
+    const title = getActiveRoutine(newState)?.title;
+    if (titleEl && title && document.activeElement !== titleEl && titleEl.textContent !== title) {
+      titleEl.textContent = title;
+    }
   }
 }
 

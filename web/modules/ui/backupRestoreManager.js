@@ -1890,6 +1890,15 @@ export function setupFactoryResetButton() {
             console.warn('Could not reopen undo IndexedDB:', e);
         }
 
+        // Let the wipe settle before saying it is done. A reload in the first
+        // moments after "Reset Complete" was reported to bring the old routines
+        // back (Oct 2026, not reproduced in Chromium), so the success message,
+        // the re-init and the page reload all wait UI_TIMEOUTS.FACTORY_RESET_SETTLE.
+        // The loader covers the pause so the app does not look frozen.
+        _deps.showLoader?.(getLabel('notify.factoryResetFinishing'));
+        await new Promise(resolve => setTimeout(resolve, UI_TIMEOUTS.FACTORY_RESET_SETTLE));
+        _deps.hideLoader?.();
+
         // Say what actually happened. Every cleanup step above only warns on
         // failure, so the success notification was unconditional — it fired even
         // when a database was still sitting there.
