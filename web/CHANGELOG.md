@@ -1,3 +1,8 @@
+## [2.632] - 2026-10-25
+- fix(switcher): theme picker no longer collapses the routine list on phones; card clears the notch
+- fix(header): logo, wordmark and ☰ stay crisp under the frosted header on iOS
+
+
 ## [2.631] - 2026-10-25
 - feat(stats): the All Routines cleared figure says it counts toward badges, with an ⓘ note explaining the difference
 - fix(wording): clearing-option labels are true in both states; Clear Completed says when tasks are pinned
