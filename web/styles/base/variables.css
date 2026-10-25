@@ -559,6 +559,14 @@
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
 
+  /* Height a modal card must leave free: a small gap plus the status bar and
+     home indicator (the app runs edge-to-edge, viewport-fit=cover). Use it as
+     `max-height: calc(100vh - var(--modal-viewport-inset))` followed by the same
+     line in dvh. Keep the vh/dvh unit OUT of this token: Safari < 15.4 drops a
+     dvh declaration at parse time and keeps the vh line, but a dvh hidden in a
+     var() is only found at computed time, voiding the whole max-height. */
+  --modal-viewport-inset: calc(var(--space-4) + var(--safe-area-top) + var(--safe-area-bottom));
+
   /* Smallest height the routine switcher's routine panel may shrink to: its
      38px title bar plus about one and a half 62px routine rows, so the list
      still reads as scrollable. Below it the switcher card scrolls instead. */

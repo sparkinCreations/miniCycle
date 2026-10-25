@@ -1663,6 +1663,92 @@ async function run() {
                         }
                     }
                 }
+
+                // ── Task Options and Recurring: on screen, clear of the notch ──
+                // Both are opened through their real menu entries, which need the
+                // routine this tour created. The insets are forced to iPhone values:
+                // Chromium reports env(safe-area-inset-*) as 0, which would let a
+                // card under the status bar pass. Measured Oct 2026 before the fix:
+                // Task Options had no height cap (at 375x667 it ran from -8px to
+                // 675px, Close cut off), and the recurring panel's Close was its last
+                // scrolled child — out of view once the settings form opened — with
+                // a hidden live region stretching the panel's scroll past it.
+                const INSET_TOP = 47, INSET_BOTTOM = 34;
+                await tp.evaluate(([t, b]) => {
+                    const s = document.createElement('style');
+                    s.id = 'layout-test-insets';
+                    s.textContent = `:root{--safe-area-top:${t}px!important;--safe-area-bottom:${b}px!important}`;
+                    document.head.appendChild(s);
+                }, [INSET_TOP, INSET_BOTTOM]);
+                for (const vp of VIEWPORTS) {
+                    await tp.setViewportSize({ width: vp.width, height: vp.height });
+                    await tp.evaluate(() => document.body.classList.remove('focus-mode'));
+                    await tp.waitForTimeout(400);
+                    console.log(`\n${colors.cyan}▸ ${vp.name} ${vp.width}x${vp.height} (Task Options + Recurring, iPhone insets)${colors.reset}`);
+
+                    await tp.evaluate(() => document.getElementById('menu-task-options').click());
+                    await tp.waitForSelector('#task-options-customizer-modal[open]', { timeout: 10000 });
+                    await tp.waitForTimeout(500); // open animation
+                    const to = await tp.evaluate(() => {
+                        const card = document.querySelector('#task-options-customizer-modal .task-options-modal');
+                        const close = card.querySelector('.close-button-fullwidth');
+                        const c = card.getBoundingClientRect(), b = close.getBoundingClientRect();
+                        return { top: Math.round(c.top), bottom: Math.round(c.bottom), closeTop: Math.round(b.top), closeBottom: Math.round(b.bottom), vh: innerHeight };
+                    });
+                    record(vp, 'Task Options: the card stays clear of the status bar and home indicator',
+                        to.top >= INSET_TOP - TOL && to.bottom <= to.vh - INSET_BOTTOM + TOL,
+                        `card spans ${to.top}-${to.bottom}px; the insets leave ${INSET_TOP}-${to.vh - INSET_BOTTOM}px`);
+                    // 2px: the card's 1px border sits below the full-bleed button.
+                    record(vp, 'Task Options: Close is on screen and flush with the card bottom',
+                        to.closeTop >= 0 && to.closeBottom <= to.vh + TOL && Math.abs(to.bottom - to.closeBottom) <= 2,
+                        `Close spans ${to.closeTop}-${to.closeBottom}px, card bottom ${to.bottom}px, viewport ${to.vh}px`);
+                    await tp.evaluate(() => document.querySelector('#task-options-customizer-modal .close-button-fullwidth').click());
+                    await tp.waitForFunction(() => !document.querySelector('#task-options-customizer-modal[open]'), null, { timeout: 10000 });
+
+                    await tp.evaluate(() => document.getElementById('open-recurring-panel').click());
+                    await tp.waitForSelector('#recurring-panel-overlay[open]', { timeout: 10000 });
+                    await tp.waitForTimeout(500);
+                    const rp = await tp.evaluate(() => {
+                        const panel = document.getElementById('recurring-panel');
+                        const list = document.getElementById('recurring-task-list');
+                        const settings = document.getElementById('recurring-settings-panel');
+                        const close = document.getElementById('close-recurring-panel');
+                        // Overfill: a long list AND the settings form, the state that
+                        // makes the panel itself scroll.
+                        const saved = { list: list.innerHTML, settingsHidden: settings.classList.contains('hidden') };
+                        list.innerHTML = Array.from({ length: 20 }, (_, i) =>
+                            `<li class="recurring-task-item"><span class="recurring-task-text">Recurring ${i + 1}</span></li>`).join('');
+                        settings.classList.remove('hidden');
+                        const read = () => {
+                            const p = panel.getBoundingClientRect(), b = close.getBoundingClientRect();
+                            return { top: Math.round(p.top), bottom: Math.round(p.bottom), closeTop: Math.round(b.top), closeBottom: Math.round(b.bottom) };
+                        };
+                        panel.scrollTop = 0;
+                        const atTop = read();
+                        panel.scrollTop = panel.scrollHeight;
+                        const atEnd = read();
+                        const scrolls = panel.scrollHeight > panel.clientHeight + 1;
+                        panel.scrollTop = 0;
+                        list.innerHTML = saved.list;
+                        if (saved.settingsHidden) settings.classList.add('hidden');
+                        return { atTop, atEnd, scrolls, vh: innerHeight };
+                    });
+                    record(vp, 'Recurring: the panel stays clear of the status bar and home indicator',
+                        rp.atTop.top >= INSET_TOP - TOL && rp.atTop.bottom <= rp.vh - INSET_BOTTOM + TOL,
+                        `panel spans ${rp.atTop.top}-${rp.atTop.bottom}px; the insets leave ${INSET_TOP}-${rp.vh - INSET_BOTTOM}px`);
+                    record(vp, 'Recurring: Close is on screen and flush with the panel bottom before scrolling',
+                        rp.atTop.closeTop >= 0 && rp.atTop.closeBottom <= rp.vh + TOL
+                            && Math.abs(rp.atTop.bottom - rp.atTop.closeBottom) <= 2,
+                        `Close spans ${rp.atTop.closeTop}-${rp.atTop.closeBottom}px, panel bottom ${rp.atTop.bottom}px `
+                        + `(scrolls: ${rp.scrolls}) — Close is scrolled out of view`);
+                    record(vp, 'Recurring: scrolled to the end, there is no blank card past Close',
+                        Math.abs(rp.atEnd.bottom - rp.atEnd.closeBottom) <= 2,
+                        `scrolled to the end, Close ends at ${rp.atEnd.closeBottom}px but the panel at ${rp.atEnd.bottom}px — `
+                        + 'something outside the list scroller is stretching the panel');
+                    await tp.evaluate(() => document.getElementById('close-recurring-panel').click());
+                    await tp.waitForFunction(() => !document.querySelector('#recurring-panel-overlay[open]'), null, { timeout: 10000 });
+                }
+                await tp.evaluate(() => document.getElementById('layout-test-insets')?.remove());
             } finally {
                 await tourContext.close();
             }

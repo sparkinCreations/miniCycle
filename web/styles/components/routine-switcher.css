@@ -122,8 +122,8 @@ dialog.mini-cycle-switch-modal::backdrop {
        feature gate still admits. An unsupported max-height is DROPPED, not
        ignored gracefully — the modal would then have no height cap at all and
        overflow worse than before the fix. */
-    max-height: calc(100vh - var(--space-4) - var(--safe-area-top) - var(--safe-area-bottom));
-    max-height: calc(100dvh - var(--space-4) - var(--safe-area-top) - var(--safe-area-bottom));
+    max-height: calc(100vh - var(--modal-viewport-inset));
+    max-height: calc(100dvh - var(--modal-viewport-inset));
     /* The list and preview are the scrollers: they shrink first. The shell
        scrolls only as a LAST resort, when even the list at its floor (see
        .routine-switcher-body) leaves too little room — a phone with a routine
