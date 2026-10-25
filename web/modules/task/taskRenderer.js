@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
@@ -336,6 +336,22 @@ export class TaskRenderer {
      * @returns {Promise<void>}
      */
     async refreshUIFromState(providedState = null) {
+        // An inline task edit is open. Re-rendering replaces its row, the input
+        // blurs, and blur SAVES: the half-typed name was committed and the box
+        // closed under the user's fingers (Oct 2026 — the recurring watcher's
+        // refresh did it mid-typing). Hold the refresh until the edit ends; it
+        // runs then from fresh state, so nothing it would have shown is lost.
+        if (document.querySelector(DOM_SELECTORS.TASK_EDIT_INPUT)) {
+            if (!this._refreshHeldForEdit) {
+                this._refreshHeldForEdit = true;
+                document.addEventListener(EVENTS.TASK_INLINE_EDIT_ENDED, () => {
+                    this._refreshHeldForEdit = false;
+                    this.refreshUIFromState();
+                }, { once: true });
+            }
+            return;
+        }
+
         const state =
             providedState ||
             (this.deps.AppState.isReady() ? this.deps.AppState.get() : null);

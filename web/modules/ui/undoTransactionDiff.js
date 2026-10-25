@@ -8,8 +8,8 @@
  * PATTERN 2 — pure utility extraction. No DI container, no module-level mutable
  * state, no listeners, and no globals: this pair reads `localStorage`, `document`
  * and `window` exactly zero times. `computeTransactionDiff` is the entry point;
- * `describeChange` is its helper and is exported only so it can be tested
- * directly.
+ * `describeChange` is its helper, exported for undo (which names the step it
+ * takes back, the reverse of the diff's direction) and for tests.
  *
  * ONE HONEST CAVEAT about "pure": every user-facing string comes from
  * `getLabel()`, which is vocabulary-theme sensitive. Same input gives the same

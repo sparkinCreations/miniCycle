@@ -828,6 +828,37 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('undo names the step it takes back, redo the step it repeats', async () => {
+        // An undone delete used to say "Undone: Task added" — the undo's own
+        // effect, read off a diff that runs current → restored (Oct 2026).
+        // Wording is matched loosely: labels are vocabulary-theme sensitive.
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.isInitializing = false;
+        const seen = [];
+        mockDeps.showNotification = (message) => seen.push(String(message));
+        setUndoRedoManagerDependencies(mockDeps);
+
+        await captureStateSnapshot(mockDeps.AppState.get());
+        await new Promise(resolve => setTimeout(resolve, 350));
+        await mockDeps.AppState.update(state => {
+            state.data.routine['Test Cycle'].tasks.pop();
+        });
+        await captureStateSnapshot(mockDeps.AppState.get());
+
+        await performStateBasedUndo();
+        const undoMsg = seen.join(' | ');
+        if (!/deleted/i.test(undoMsg) || /added/i.test(undoMsg)) {
+            throw new Error(`undoing a delete should name the delete, got ${JSON.stringify(seen)}`);
+        }
+
+        seen.length = 0;
+        await performStateBasedRedo();
+        const redoMsg = seen.join(' | ');
+        if (!/deleted/i.test(redoMsg) || /added/i.test(redoMsg)) {
+            throw new Error(`redoing a delete should name the delete, got ${JSON.stringify(seen)}`);
+        }
+    });
+
     await test('performStateBasedRedo moves snapshot to undoStack', async () => {
         const mockDeps = createMockDependencies();
         mockDeps.AppGlobalState.isInitializing = false;

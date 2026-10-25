@@ -772,7 +772,8 @@ export const EVENTS = Object.freeze({
         it — the order the user performed them. */
     UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending',
     FIRST_RUN_REARM: 'firstrun:rearm',          // backupRestoreManager after an IN-PLACE factory reset: the choice screen is back, the origin is empty again (inline rotators and the + shimmer re-arm on it)
-    ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered' // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
+    ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered', // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
+    TASK_INLINE_EDIT_ENDED: 'task:inlineEditEnded' // taskCRUD when an inline task edit closes (saved, unchanged or cancelled): TaskRenderer runs the refresh it held back while the edit was open
 });
 
 // ============================================================================

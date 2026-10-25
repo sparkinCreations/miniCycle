@@ -32,9 +32,9 @@ import { getLabel } from '../labels/labelResolver.js';
 import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 
 // Change description for undo/redo notifications (Pattern 2, pure). Split out
-// Aug 2026. `describeChange` is re-exported from there for tests only; the
-// parent calls `computeTransactionDiff`, which is the entry point.
-import { computeTransactionDiff } from './undoTransactionDiff.js';
+// Aug 2026. The parent calls `computeTransactionDiff`, which is the entry point;
+// undo also calls `describeChange` directly, to name the step it takes back.
+import { computeTransactionDiff, describeChange } from './undoTransactionDiff.js';
 import { clearsCountTowardAchievements, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // Re-exported because it was part of this module's public surface before the
@@ -929,6 +929,11 @@ export async function performStateBasedUndo() {
     // Compute transaction diff BEFORE applying state change
     const transactionDiff = computeTransactionDiff(currentSnapshot, snap);
     transactionDiff.kind = 'undo';
+    // Name the step being UNDONE. The diff runs current → restored, which is what
+    // the UI must apply, and read that way an undone delete said "Undone: Task
+    // added" (Oct 2026) — the undo's own effect. The step itself ran restored →
+    // current. Redo needs no flip: its diff already runs in the step's direction.
+    transactionDiff.description = describeChange(snap, currentSnapshot);
 
     // Use non-immediate save for better UI latency (persistence via debounce)
     // NOTE: Undo NEVER switches cycles - each routine has isolated undo history

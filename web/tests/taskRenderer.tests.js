@@ -13,7 +13,7 @@ import {
     setupTestEnvironment
 } from './testHelpers.js';
 
-import { DOM_CLASSES } from '../modules/core/constants.js';
+import { DOM_CLASSES, EVENTS } from '../modules/core/constants.js';
 
 // ============================================
 // 🧪 MOCK DEPENDENCIES FOR TASKRENDERER
@@ -235,6 +235,35 @@ export async function runTaskRendererTests(resultsDiv) {
         }));
         await renderer.refreshUIFromState();
         if (!appStateCalled) throw new Error('Should call AppState.get() when ready');
+    });
+
+    await test('REGRESSION: refreshUIFromState waits while an inline task edit is open, then runs once', async () => {
+        // A background refresh (the recurring watcher) re-rendered the list
+        // mid-typing: the edit input blurred, blur saved the half-typed name, and
+        // the box closed (Oct 2026). It must hold until the edit ends.
+        let reads = 0;
+        const renderer = new TaskRenderer(createMockDependencies({
+            AppState: {
+                isReady: () => true,
+                get: () => ({ data: { routine: { 'cycle-1': { tasks: [] } } }, appState: { activeRoutineId: 'cycle-1' }, ui: {} })
+            },
+            getElementById: () => document.createElement('ul')
+        }));
+        renderer.renderTasks = async () => { reads++; };
+        const input = document.createElement('input');
+        input.className = 'task-edit-input';
+        document.body.appendChild(input);
+        try {
+            await renderer.refreshUIFromState();
+            await renderer.refreshUIFromState();
+            if (reads !== 0) throw new Error(`rendered ${reads} time(s) while the edit was open`);
+            input.remove();
+            document.dispatchEvent(new CustomEvent(EVENTS.TASK_INLINE_EDIT_ENDED));
+            await new Promise(resolve => setTimeout(resolve, 0));
+            if (reads !== 1) throw new Error(`the held refresh should run exactly once after the edit ends, ran ${reads}`);
+        } finally {
+            input.remove();
+        }
     });
 
     await test('refreshTaskListUI delegates to refreshUIFromState', async () => {

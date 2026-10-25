@@ -654,8 +654,10 @@ export const DEFAULT_LABELS = deepFreeze({
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
-        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
-        factoryResetBackupCancelled: 'Backup not saved, so nothing was deleted.',
+        // Both name the way forward: try again, or tick the confirmation's
+        // "Skip the backup" (modal.factoryResetSkipBackup) — Oct 2026 review.
+        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed and try again, or tick "Skip the backup" when you confirm.',
+        factoryResetBackupCancelled: 'The save window was closed before the backup was saved, so nothing was deleted. Try again and save the file, or tick "Skip the backup" when you confirm.',
         restoreCancelled:        'Restore cancelled.',
         preMigrationRestored:    'Restored the copy from before the update.',
         preMigrationRestoreFailed: 'The copy could not be written back. Nothing was changed.',
