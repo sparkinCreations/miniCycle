@@ -96,6 +96,32 @@ export async function runTaskCycleResetTests(resultsDiv) {
     //   A: completed in STATE, checkbox UNCHECKED   → must be DELETED
     //   B: NOT completed in STATE, checkbox CHECKED → must be KEPT
     // (Both carry autoClear.todo=true.) Reading the checkbox would invert the outcome.
+    await test('Clear Completed with only pinned completed tasks says they are pinned, not that none are completed', async () => {
+        // A To-Do task with Marked for Clearing off (📌) stays on Clear Completed —
+        // correctly — but the message said "No completed tasks" (Oct 2026).
+        const taskList = document.createElement('ul');
+        const li = document.createElement('li');
+        li.className = 'task';
+        li.dataset.taskId = 'P';
+        taskList.appendChild(li);
+        document.body.appendChild(taskList);
+        const routine = { deleteCheckedTasks: true, tasks: [{ id: 'P', text: 'Pinned', completed: true, autoClear: { cycle: false, todo: false } }] };
+        const seen = [];
+        mod.setTaskCycleResetDependencies({ showNotification: (msg) => seen.push(String(msg)) });
+        try {
+            const r = await mod.deleteCompletedTasksImpl('c1', routine, taskList, { AppState: { isReady: () => true, get: () => ({}), update: async () => {} } });
+            if (!r?.aborted) throw new Error('nothing should have been cleared');
+            if (!seen.some(m => /pinned/i.test(m))) throw new Error(`expected the pinned explanation, got ${JSON.stringify(seen)}`);
+            seen.length = 0;
+            routine.tasks[0].completed = false;
+            await mod.deleteCompletedTasksImpl('c1', routine, taskList, { AppState: { isReady: () => true, get: () => ({}), update: async () => {} } });
+            if (!seen.some(m => /No completed tasks to clear/i.test(m))) throw new Error(`with nothing completed, expected the plain message, got ${JSON.stringify(seen)}`);
+        } finally {
+            mod.setTaskCycleResetDependencies({ showNotification: null });
+            taskList.remove();
+        }
+    });
+
     await test('deleteCompletedTasksImpl reads completion from state, not the DOM checkbox (§1.1)', async () => {
         const container = document.createElement('div');
         container.id = 'test-clear-completed-state';

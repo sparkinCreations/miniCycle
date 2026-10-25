@@ -141,8 +141,11 @@ export const DEFAULT_LABELS = deepFreeze({
         priority:         'Toggle task priority',
         edit:             'Rename task',
         delete:           'Delete task',
-        clearOnReset:     'Clear on Reset (removes task when cycle resets)',
-        markedForClearing: 'Marked for Clearing (removes task when cleared)',
+        // A toggle: the name stays put and aria-pressed carries on/off, so the text
+        // must be true in BOTH states. "(removes task when cleared)" read as a fact
+        // while the option was off and the task pinned (Oct 2026).
+        clearOnReset:     'Clear on Reset (when on, the task is removed when the cycle resets)',
+        markedForClearing: 'Marked for Clearing (when on, the task is removed when completed tasks are cleared)',
         showOptions:      'Show task options',
         customize:        'Add or remove task buttons',
         customizeAria:    'Add or remove which task option buttons are visible'
@@ -368,7 +371,10 @@ export const DEFAULT_LABELS = deepFreeze({
         taskPriorityFailed:     'Could not toggle priority',
         taskResetFailed:        'Could not reset tasks',
         completeAllFailed:      'Could not complete all tasks',
-        noCompletedToDelete:    'No completed tasks to delete.',
+        noCompletedToDelete:    'No completed tasks to clear.',
+        // Clear Completed found completed tasks, but every one is pinned (Marked
+        // for Clearing off) — "no completed tasks" was untrue there.
+        completedTasksPinned:   'The completed tasks are pinned to your list, so nothing was cleared. Turn on Marked for Clearing on a task to clear it.',
         taskLimitReached:       'Cannot add task - limit of {limit} tasks reached.\nComplete or delete tasks to add more.',
         priorityEnabled:        'Priority enabled.',
         priorityRemoved:        'Priority removed.',
@@ -2718,6 +2724,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.taskResetFailed',
     'notify.completeAllFailed',
     'notify.noCompletedToDelete',
+    'notify.completedTasksPinned',
     'notify.taskSystemLimited',
     'notify.taskDisplayLimited',
     'notify.featureUnavailable',

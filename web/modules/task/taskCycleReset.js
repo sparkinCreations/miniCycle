@@ -843,7 +843,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     completedTaskElements.forEach(processTaskElement);
 
     if (tasksToDelete.length === 0) {
-        _deps.showNotification?.(getLabel('notify.noCompletedToDelete'), "default", UI_TIMEOUTS.NOTIFICATION_LONG);
+        // Completed tasks that are all pinned are not "no completed tasks": say
+        // why nothing was cleared and how to clear one.
+        const anyCompleted = (cycleData.tasks || []).some(t => t?.completed === true);
+        _deps.showNotification?.(getLabel(anyCompleted ? 'notify.completedTasksPinned' : 'notify.noCompletedToDelete'), "default", UI_TIMEOUTS.NOTIFICATION_LONG);
         return { aborted: true, reason: 'no_tasks' };
     }
 
