@@ -1,3 +1,8 @@
+## [2.629] - 2026-10-25
+- fix(reset): show the settle pause as a notification, not the loader
+- fix: renaming the routine can be undone; factory reset settles 3s before it says it is done
+
+
 ## [2.628] - 2026-10-25
 - fix(touch): tapping the background closes an open task row on iOS WebKit
 - fix(undo): every undo/redo message names the step in the app's own words
