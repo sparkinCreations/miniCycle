@@ -155,6 +155,15 @@ export class MiniCycleDueDates {
 
             this.setupDueDateSystem();
             this._subscribeDueDateNotifications();
+            // Arm the plan from state NOW. The subscription only re-plans after
+            // a write, and the afterApp hook below is no guarantee for a boot
+            // that writes nothing: runHooks never replays for a hook added after
+            // afterApp has run, and the hook bails while no task row is in the
+            // DOM yet. Either race left a quiet boot with no 9:00 timer at all
+            // until the user changed something (Oct 2026, WebKit CI: nothing
+            // posted at 9:00 or an hour later). Idempotent, and a no-op until
+            // state is ready.
+            this.syncDueDateNotifications();
 
             // ✅ Add hook to check overdue tasks after app is fully ready
             _deps.appInit?.addHook?.('afterApp', async () => {
