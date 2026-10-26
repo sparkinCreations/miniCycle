@@ -337,10 +337,9 @@ export class TaskDOMPatch {
         taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove(DOM_CLASSES.IS_FIRST_TASK);
         taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove(DOM_CLASSES.IS_LAST_TASK);
 
-        // Find first/last INCOMPLETE tasks (skip completed — their arrows are hidden)
-        const tasks = Array.from(taskList.children).filter(el =>
-            el.classList.contains(DOM_CLASSES.TASK) && !el.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)
-        );
+        // Every row in #taskList counts, checked or not: a checked row is only
+        // here when the completed dropdown is off, and then it keeps its arrows.
+        const tasks = Array.from(taskList.children).filter(el => el.classList.contains(DOM_CLASSES.TASK));
 
         const firstTask = tasks[0] || null;
         const lastTask = tasks.length > 1 ? tasks[tasks.length - 1] : null;

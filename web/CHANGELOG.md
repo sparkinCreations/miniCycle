@@ -1,3 +1,10 @@
+## [2.635] - 2026-10-26
+- fix(tasks): a checked task keeps its move arrows unless it is parked in the completed dropdown
+- test(webkit): journeys run locally only; four timing checks wait on their condition
+- chore(chrome): rebuild the Chrome extension payload at 2.634
+- chore(platforms): sync iOS, Android and desktop stamps to 2.634 (builds 54 / 62 / 2.634.0)
+
+
 ## [2.634] - 2026-10-26
 - fix(reminders): arm reminders from state at boot; one catch-up, not three
 

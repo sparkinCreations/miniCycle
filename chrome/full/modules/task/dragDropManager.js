@@ -737,8 +737,10 @@ export class DragDropManager {
                 return;
             }
 
-            // Prevent arrow reordering on completed tasks
-            if (taskItem.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)) return;
+            // No arrow reordering for a row parked in the completed dropdown: its
+            // on-screen order is display-only. A checked row still in #taskList
+            // (dropdown off) keeps its slot and may be moved like any other.
+            if (taskItem.closest('#' + DOM_IDS.COMPLETED_TASK_LIST)) return;
 
             // Resolve the NEIGHBOUR from the DOM, then reorder state by ID.
             //
@@ -1105,10 +1107,9 @@ export class DragDropManager {
         taskList.querySelector(DOM_SELECTORS.IS_FIRST_TASK)?.classList.remove(DOM_CLASSES.IS_FIRST_TASK);
         taskList.querySelector(DOM_SELECTORS.IS_LAST_TASK)?.classList.remove(DOM_CLASSES.IS_LAST_TASK);
 
-        // Find first/last INCOMPLETE tasks (skip completed — their arrows are hidden)
-        const tasks = Array.from(taskList.children).filter(el =>
-            el.classList.contains(DOM_CLASSES.TASK) && !el.querySelector(DOM_SELECTORS.TASK_INPUT_CHECKED)
-        );
+        // Every row in #taskList counts, checked or not: a checked row is only
+        // here when the completed dropdown is off, and then it keeps its arrows.
+        const tasks = Array.from(taskList.children).filter(el => el.classList.contains(DOM_CLASSES.TASK));
 
         const firstTask = tasks[0] || null;
         const lastTask = tasks.length > 1 ? tasks[tasks.length - 1] : null;
