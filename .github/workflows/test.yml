@@ -2,7 +2,7 @@ name: Automated Tests
 
 on:
   push:
-    branches: [ main, develop, claude/bold-hypatia-kjgcg3 ] # TEMP: WebKit flake validation — revert before merge
+    branches: [ main, develop ]
   pull_request:
     branches: [ main, develop ]
   workflow_dispatch: # Allows manual triggering from GitHub UI
@@ -229,10 +229,6 @@ jobs:
   test-webkit:
     runs-on: ubuntu-latest
     continue-on-error: true
-    strategy: # TEMP: three independent WebKit runs per push — revert before merge
-      fail-fast: false
-      matrix:
-        attempt: [1, 2, 3]
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
