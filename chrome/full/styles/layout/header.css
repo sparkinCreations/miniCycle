@@ -367,12 +367,18 @@ body.dark-mode .app-subtitle {
 }
 
 .ios-pwa .mini-cycle-header-row {
-    /* Push content below Dynamic Island with padding (blur still extends to top) */
-    padding-top: 59px;
+    /* Same clearance as the native app: the real inset (59pt on Dynamic Island
+       phones, 47pt on notch phones) plus the mobile content padding. A flat
+       59px (Oct 2026 and earlier) put the logo and ☰ at the status bar's very
+       edge, inside the feather of iOS 26's status-bar glass, so they rendered
+       soft in the home-screen web app while the Capacitor app — which uses the
+       env() rules above — kept them clear. max() keeps the old fallback for a
+       web app that reports a zero inset. Keep in sync with base/critical.css. */
+    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 14px);
     padding-bottom: var(--space-6);
 }
 
 .ios-pwa .header-branding {
-    /* Adjust logo/app name position to account for safe area padding */
-    top: calc(50% + 27px);
+    /* Centre within the area below the status bar, like the env() rule above. */
+    top: calc(50% + max(env(safe-area-inset-top, 0px), 47px) / 2);
 }

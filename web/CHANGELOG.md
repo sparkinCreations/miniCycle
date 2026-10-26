@@ -1,3 +1,7 @@
+## [2.639] - 2026-10-26
+- fix(header): iOS home-screen web app clears the status bar like the native app
+
+
 ## [2.638] - 2026-10-26
 - fix(focus): no header frost in Focus View — Safari's home-screen web view blurred the logo and ⋯ into it
 - fix(ios): adopt the UIScene lifecycle — the iOS 27.1 SDK trapped at launch
