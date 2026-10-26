@@ -370,10 +370,21 @@ export async function runBackupManagerTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML += '<h4 class="test-section">🕘 Session snapshots: open vs hide, unchanged-state skip</h4>';
 
     const newestSession = async () => (await backupManager.listAllBackups()).session[0] || null;
+    // Each fixture's lastModified must differ from every record already in the
+    // store: the session/auto paths skip silently (return false) when the newest
+    // record has the same value. Date.now() + random(0..999) could land on the
+    // value a neighbouring test had just written (its st + 1, ms earlier), and
+    // then a test that expects a write got false/false (WebKit CI, Oct 2026:
+    // "concurrent calls ... share one write"). Strictly increasing, spaced
+    // wider than the tests' own `+= 1` bumps, and based on this run's clock so
+    // records left by an earlier run cannot match either.
+    const touchBase = Date.now() * 1000;
+    let touchSeq = 0;
     const touchedState = () => {
         const mock = createMockAppStateWithData();
         const st = mock.get();
-        st.metadata = { ...(st.metadata || {}), lastModified: Date.now() + Math.floor(Math.random() * 1000) };
+        touchSeq += 1;
+        st.metadata = { ...(st.metadata || {}), lastModified: touchBase + touchSeq * 10 };
         return { mock, st };
     };
 
