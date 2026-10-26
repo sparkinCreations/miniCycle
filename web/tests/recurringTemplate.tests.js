@@ -11,7 +11,7 @@ import { createProtectedTest } from './testHelpers.js';
 
 export async function runRecurringTemplateTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
-    const { buildRecurringTemplate, RECURRING_TEMPLATE_SCHEMA_VERSION, isRecurringPinned, getRecurringPauseState } =
+    const { buildRecurringTemplate, RECURRING_TEMPLATE_SCHEMA_VERSION, isRecurringPinned, getRecurringPauseState, syncTemplateFromTask, healTemplatesFromTasks } =
         await import(`../modules/recurring/recurringTemplate.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>🔁 recurringTemplate Tests</h2><h3>Running tests...</h3>';
@@ -24,6 +24,60 @@ export async function runRecurringTemplateTests(resultsDiv) {
         id: 't-1', text: 'water the plants',
         recurringSettings: { frequency: 'daily', indefinitely: true },
         nextScheduledOccurrence: 1786000000000
+    });
+
+    // ── syncTemplateFromTask / healTemplatesFromTasks ─────────────────────
+    // The watcher recreates a task from its template, so an edit on the live task
+    // must reach the template or it holds only until the next occurrence. Until
+    // Oct 2026 a renamed recurring task came back under its old name.
+    const routineWith = (taskOverrides = {}, templateOverrides = {}) => ({
+        tasks: [{ id: 't-1', text: 'water the plants', dueDate: null, priority: null, remindersEnabled: false, recurring: true, ...taskOverrides }],
+        recurringTemplates: { 't-1': buildRecurringTemplate({ ...base(), ...templateOverrides }) }
+    });
+
+    await test('syncTemplateFromTask: a rename reaches the template', () => {
+        const r = routineWith();
+        const changed = syncTemplateFromTask(r, 't-1', { text: 'water the garden' });
+        assertEq(changed, true, 'reports the change');
+        assertEq(r.recurringTemplates['t-1'].text, 'water the garden', 'template text follows the task');
+    });
+
+    await test('syncTemplateFromTask: the reminder flag, due date and priority follow too', () => {
+        const r = routineWith();
+        syncTemplateFromTask(r, 't-1', { remindersEnabled: true, dueDate: '2026-11-01', priority: 'high' });
+        const t = r.recurringTemplates['t-1'];
+        assertEq(t.remindersEnabled, true, 'remindersEnabled');
+        assertEq(t.dueDate, '2026-11-01', 'dueDate');
+        assertEq(t.priority, 'high', 'priority');
+        syncTemplateFromTask(r, 't-1', { dueDate: '', priority: 'nonsense' });
+        assertEq(t.dueDate, null, 'an empty due date stores null');
+        assertEq(t.priority, null, 'an invalid level stores null');
+    });
+
+    await test('syncTemplateFromTask: no template, or nothing different, is a no-op that says so', () => {
+        const r = routineWith();
+        assertEq(syncTemplateFromTask(r, 'nope', { text: 'x' }), false, 'unknown task');
+        assertEq(syncTemplateFromTask(r, 't-1', { text: 'water the plants' }), false, 'same text');
+        assertEq(syncTemplateFromTask(r, 't-1', { text: '   ' }), false, 'blank text never blanks the template');
+        assertEq(r.recurringTemplates['t-1'].text, 'water the plants', 'template untouched');
+    });
+
+    await test('healTemplatesFromTasks: repairs drifted templates, counts them, dryRun only counts', () => {
+        const r = routineWith({ text: 'renamed long ago', remindersEnabled: true });
+        r.tasks.push({ id: 't-2', text: 'no template here', recurring: false });
+        assertEq(healTemplatesFromTasks(r, { dryRun: true }), 1, 'dry run counts the drifted template');
+        assertEq(r.recurringTemplates['t-1'].text, 'water the plants', 'dry run writes nothing');
+        assertEq(healTemplatesFromTasks(r), 1, 'repairs one');
+        assertEq(r.recurringTemplates['t-1'].text, 'renamed long ago', 'text repaired');
+        assertEq(r.recurringTemplates['t-1'].remindersEnabled, true, 'reminder flag repaired');
+        assertEq(healTemplatesFromTasks(r), 0, 'second pass finds nothing');
+    });
+
+    await test('healTemplatesFromTasks: a template whose task is gone is left alone', () => {
+        const r = routineWith();
+        r.tasks = [];   // cleared, waiting for its next occurrence
+        assertEq(healTemplatesFromTasks(r), 0, 'nothing to compare against');
+        assertEq(r.recurringTemplates['t-1'].text, 'water the plants', 'template kept');
     });
 
     await test('produces the full field set every writer needs', () => {

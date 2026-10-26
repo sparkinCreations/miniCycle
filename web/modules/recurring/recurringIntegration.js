@@ -15,6 +15,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 
 import { APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { healTemplatesFromTasks } from './recurringTemplate.js';
 // Lightweight boot-time recurring UI (no heavy panel) — see RECURRING_PANEL_DEFERRAL_PLAN.md
 import {
     updateRecurringButtonVisibility,
@@ -83,6 +84,23 @@ export async function initRecurringModules(options = {}) {
         // guard explicitly so a missing AppState still fails clearly at init (not later on open).
         if (!deps.AppState) {
             throw new Error('Recurring init: AppState is required (missing required deps)');
+        }
+
+        // One-time repair of templates that drifted from their live task: text and
+        // the reminder flag were never synced on edit until Oct 2026, so a renamed
+        // recurring task came back under its old name. Read first, write only when
+        // something differs — a clean state costs no save and no re-render.
+        try {
+            const routines = Object.values(deps.AppState.get?.()?.data?.routine || {});
+            const drifted = routines.reduce((n, r) => n + healTemplatesFromTasks(r, { dryRun: true }), 0);
+            if (drifted > 0) {
+                await deps.AppState.update(draft => {
+                    for (const r of Object.values(draft.data?.routine || {})) healTemplatesFromTasks(r);
+                }, false);
+                console.log(`🔁 Recurring: ${drifted} template(s) re-synced from their live task`);
+            }
+        } catch (healError) {
+            console.warn('⚠️ Recurring template re-sync skipped:', healError);
         }
 
         // ============================================

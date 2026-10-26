@@ -93,6 +93,50 @@ export async function runTaskCRUDTests(resultsDiv) {
         }
     });
 
+    await test('renaming a recurring task renames its template too (the next occurrence keeps the new name)', async () => {
+        // Until Oct 2026 both rename paths wrote only cycle.tasks; the watcher
+        // rebuilt the next occurrence from recurringTemplates[id].text, so the
+        // old name came back after every reset.
+        const { editTaskImpl } = mod;
+        const state = createMockState();
+        const routine = state.data.routine['cycle-1'];
+        routine.tasks[0].recurring = true;
+        routine.recurringTemplates = { 'task-1': { id: 'task-1', text: 'Existing', recurring: true, recurringSettings: { frequency: 'daily' } } };
+
+        const taskItem = document.createElement('div');
+        taskItem.className = 'task';
+        taskItem.dataset.taskId = 'task-1';
+        const label = document.createElement('span');
+        label.className = 'task-text';
+        label.textContent = 'Existing';
+        taskItem.appendChild(label);
+        document.body.appendChild(taskItem);
+
+        const deps = {
+            AppState: createMockAppState(state),
+            sanitizeInput: (t, maxLength = LIMITS.TASK_CHARACTER_INPUT) => t.trim().substring(0, maxLength),
+            showNotification: () => {},
+            isTouchDevice: () => true,
+            getBody: () => document.body
+        };
+        setTaskCRUDDependencies(deps);
+        try {
+            await editTaskImpl(taskItem, deps);
+            const dialog = document.querySelector('.miniCycle-prompt-dialog');
+            if (!dialog) throw new Error('edit modal should open on a touch device');
+            dialog.querySelector('.miniCycle-prompt-input').value = 'Renamed';
+            dialog.querySelector('.miniCycle-btn-confirm').click();
+            await new Promise(r => setTimeout(r, 50));
+            if (routine.tasks[0].text !== 'Renamed') throw new Error(`task text: ${routine.tasks[0].text}`);
+            if (routine.recurringTemplates['task-1'].text !== 'Renamed') {
+                throw new Error(`template still says "${routine.recurringTemplates['task-1'].text}" — the next occurrence would come back under the old name`);
+            }
+        } finally {
+            document.querySelector('.miniCycle-prompt-dialog')?.remove();
+            taskItem.remove();
+        }
+    });
+
     await test('REGRESSION: edit modal flags empty text for AT and warns when a long edit is truncated', async () => {
         // Mobile edit modal (isTouchDevice → true). Two gaps, both twins of the
         // routine-creation dialog's: empty text got only a red border (no

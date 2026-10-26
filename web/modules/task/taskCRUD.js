@@ -46,6 +46,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getAutoClear, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 import { hasPriority, isPriorityLevel } from '../utils/priorityLevel.js';
+import { syncTemplateFromTask } from '../recurring/recurringTemplate.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -531,6 +532,9 @@ export async function editTaskImpl(taskItem, deps = {}) {
                     const cycle = getRoutine(state, cid);
                     const t = cycle?.tasks?.find(t => t.id === taskId);
                     if (t) t.text = newText;
+                    // A recurring task's next occurrence is built from its template:
+                    // without this the rename held only until the next occurrence.
+                    syncTemplateFromTask(cycle, taskId, { text: newText });
                 }, true);
             } else {
                 console.warn('⚠️ AppState not ready for task edit - state may be lost');
@@ -666,6 +670,7 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
                 const cycle = getRoutine(state, cid);
                 const t = cycle?.tasks?.find(t => t.id === taskId);
                 if (t) t.text = newText;
+                syncTemplateFromTask(cycle, taskId, { text: newText });   // see the inline-edit path
             }, true);
         }
 
