@@ -5167,7 +5167,61 @@ async function journeyRoutineRenameUndo(browser, baseURL) {
     return { name: 'renaming the routine can be undone', failures };
 }
 
+async function journeyFocusTabFollowsSort(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = d.data.routine[d.appState.activeRoutineId];
+            c.tasks = ['Zebra', 'Apple', 'Mango'].map((text, i) => ({
+                id: 'fs' + i, text, completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false,
+                recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2
+            }));
+            c.recurringTemplates = {};
+            c.autoReset = false;
+            c.deleteCheckedTasks = false;
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(600);
+
+        const focusText = () => page.evaluate(() => document.getElementById('focus-task-text')?.textContent?.trim() || '');
+        const sortTo = async (sort) => {
+            await page.evaluate((sort) => {
+                const chip = document.querySelector(`.sort-chip[data-sort="${sort}"]`);
+                if (!chip || chip.offsetParent === null) document.getElementById('task-search-toggle')?.click();
+                document.querySelector(`.sort-chip[data-sort="${sort}"]`)?.click();
+            }, sort);
+            await page.waitForTimeout(600);
+        };
+        const toTab = async (panelId) => {
+            await clickEl(page, `#nav-dots .dot[aria-controls="${panelId}"]`);
+            await page.waitForTimeout(700);
+        };
+
+        await sortTo('az');
+        const listFirst = await page.evaluate(() => document.querySelector('#taskList .task .task-text')?.textContent || '');
+        record('fixture: the Routine list is sorted A–Z', listFirst === 'Apple' && await page.evaluate(() => document.body.dataset.taskSort === 'az'),
+            `first row "${listFirst}" — the sort chip did not apply, so the assertions below prove nothing`);
+        await toTab('focus-task-panel');
+        record('the Task tab browses the same order: Apple first', (await focusText()).includes('Apple'), `focus card shows "${await focusText()}"`);
+
+        await toTab('task-view');
+        await sortTo('default');
+        await toTab('focus-task-panel');
+        record('back on Default the Task tab is in routine order: Zebra first', (await focusText()).includes('Zebra'), `focus card shows "${await focusText()}"`);
+    } catch (e) {
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'the Task tab browses the order the sort chip chose', failures };
+}
+
 const JOURNEYS = [
+    { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },

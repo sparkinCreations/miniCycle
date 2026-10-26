@@ -135,7 +135,7 @@ export async function runTaskSearchTests(resultsDiv) {
             </ul>`;
         document.body.appendChild(root);
         mod.setTaskSearchDependencies({
-            AppState: stateWith([{ id: 'a' }, { id: 'b' }, { id: 'c' }]),
+            AppState: stateWith([{ id: 'a', text: 'zebra' }, { id: 'b', text: 'apple' }, { id: 'c', text: 'mango' }]),
             vocabThemeManager: themes,
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (s) => document.querySelectorAll(s),
@@ -148,6 +148,26 @@ export async function runTaskSearchTests(resultsDiv) {
             cleanup: () => root.remove()
         };
     }
+
+    // ── utils/taskSort.js: the comparator the chips and the Focus view share ──
+    await test('taskSort: A–Z ignores leading emoji and case, ties keep routine order', async () => {
+        const { sortTasksBySort, compareTasksBySort } = await import(`../modules/utils/taskSort.js?v=${cacheBuster}`);
+        const tasks = [{ id: 'z', text: '🦓 Zebra' }, { id: 'b', text: 'banana' }, { id: 'a', text: '🍎 Apple' }, { id: 'b2', text: 'Banana' }];
+        const order = sortTasksBySort(tasks, 'az').map(t => t.id).join(',');
+        if (order !== 'a,b,b2,z') throw new Error(`az order: ${order}`);
+        if (compareTasksBySort('default', tasks[0], tasks[1]) !== 0) throw new Error('default must not reorder');
+        if (sortTasksBySort(tasks, 'default').map(t => t.id).join(',') !== 'z,b,a,b2') throw new Error('default keeps routine order');
+    });
+
+    await test('taskSort: due date puts undated last; priority puts high first, none last', async () => {
+        const { sortTasksBySort } = await import(`../modules/utils/taskSort.js?v=${cacheBuster}`);
+        const dated = [{ id: 'n', text: 'n', dueDate: null }, { id: 'late', text: 'l', dueDate: '2026-12-01' }, { id: 'soon', text: 's', dueDate: '2026-11-01' }];
+        const d = sortTasksBySort(dated, 'due-date').map(t => t.id).join(',');
+        if (d !== 'soon,late,n') throw new Error(`due-date order: ${d}`);
+        const prio = [{ id: 'none', text: 'x', priority: null }, { id: 'low', text: 'x', priority: 'low' }, { id: 'high', text: 'x', priority: 'high' }, { id: 'med', text: 'x', priority: 'medium' }];
+        const p = sortTasksBySort(prio, 'priority').map(t => t.id).join(',');
+        if (p !== 'high,med,low,none') throw new Error(`priority order: ${p}`);
+    });
 
     await test('reapplyActiveFilter is exported as a function', () => {
         if (typeof mod.reapplyActiveFilter !== 'function') throw new Error('Missing export');
@@ -210,7 +230,7 @@ export async function runTaskSearchTests(resultsDiv) {
             </ul>`;
         document.body.appendChild(root);
         mod.setTaskSearchDependencies({
-            AppState: stateWith([{ id: 'a' }, { id: 'b' }, { id: 'c' }]),
+            AppState: stateWith([{ id: 'a', text: 'zebra' }, { id: 'b', text: 'apple' }, { id: 'c', text: 'mango' }]),
             vocabThemeManager: themes,
             getElementById: (id) => document.getElementById(id),
             querySelectorAll: (sel) => document.querySelectorAll(sel),

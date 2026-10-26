@@ -117,6 +117,26 @@ export async function runFocusTaskPanelTests(resultsDiv) {
         } finally { host.remove(); }
     });
 
+    await test('browses the task-search sort order and re-renders when the chip changes', async () => {
+        // taskSearch publishes the chip on body.dataset.taskSort and announces
+        // changes; the Task tab must browse that order (Oct 2026: it browsed
+        // routine order whatever the chip said).
+        const host = buildPanelFixture();
+        try {
+            document.body.dataset.taskSort = 'az';
+            const { panel } = await makeManager(makeState([T('z', false, { text: 'Zebra' }), T('a', false, { text: 'Apple' })]));
+            const text = () => host.querySelector('#focus-task-text').textContent.trim();
+            if (!text().includes('Apple')) throw new Error(`A–Z should show Apple first, got "${text()}"`);
+            document.body.dataset.taskSort = 'default';
+            document.body.dispatchEvent(new CustomEvent('app:taskSortChanged', { bubbles: true }));
+            if (!text().includes('Zebra')) throw new Error(`Default should show Zebra first, got "${text()}"`);
+            panel.destroy();
+        } finally {
+            delete document.body.dataset.taskSort;
+            host.remove();
+        }
+    });
+
     await test('shows the first incomplete task with position indicator', async () => {
         const host = buildPanelFixture();
         try {

@@ -176,6 +176,7 @@ var BOOT_CRITICAL = [
   './modules/utils/readableText.js',
   './modules/utils/cycleMode.js',
   './modules/utils/priorityLevel.js',
+  './modules/utils/taskSort.js',
   './modules/utils/schemaVersion.js',
   './modules/routine/schemaMigration26.js',
   // Task modules - ALL task functionality
