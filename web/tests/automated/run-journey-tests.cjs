@@ -303,6 +303,24 @@ async function addTask(page, text) {
     await page.click('#addTaskBtn');
 }
 
+// Reload into a seeded `miniCycleData`. Writing the seed into localStorage from
+// the live page and then reloading races the app: a save it still has pending
+// (the first-run choice's, right after openFresh) flushes on pagehide, OVER the
+// seed, and the reload boots whatever the app last held. Measured on WebKit CI,
+// Oct 2026: after such a reload the list AND storage held the sample routine,
+// not the seed. So the seed is written by an init script in the NEW document —
+// after the old page's last save, before any app code reads storage. One-shot
+// per call (the token), so later reloads boot what the app saved.
+async function reloadWithSeed(page, doc) {
+    const token = `seed-${Date.now()}-${Math.random()}`;
+    await page.addInitScript(([doc, token]) => {
+        if (sessionStorage.getItem('__journeySeed') === token) return;
+        sessionStorage.setItem('__journeySeed', token);
+        localStorage.setItem('miniCycleData', doc);
+    }, [doc, token]);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+}
+
 // Fire a click straight at the element's own handler. The header/menu chrome can
 // sit under #app-container in the band-centred layout, so Playwright's hit-test
 // reports the click as "intercepted" even though it works for a real user. A DOM
@@ -3957,9 +3975,8 @@ async function journeyUndoBottom(browser, baseURL) {
                 autoClear: { cycle: false, todo: true }, schemaVersion: 2 }];
             c.recurringTemplates = {};
             c.autoReset = false; c.deleteCheckedTasks = false;
-            localStorage.setItem('miniCycleData', JSON.stringify(d));
-        });
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            return JSON.stringify(d);
+        }).then(doc => reloadWithSeed(page, doc));
         await bootApp(page);
         await page.waitForTimeout(800);
         // Wait for a row count and say which step stalled, with what the list and
@@ -3977,10 +3994,9 @@ async function journeyUndoBottom(browser, baseURL) {
                 throw new Error(`${step}: expected ${n} rows within 10s — ${JSON.stringify(seen)}`);
             }
         };
-        // The seeded row first. This is the run's FIRST journey, so WebKit boots
-        // cold here, and an add made before the boot render had put the seed on
-        // screen never reached 2 rows (Oct 2026, CI: a bare 10s timeout 18s into
-        // the run). If it stalls again, the error now says at which step.
+        // The seeded row first: an add made before the boot render settled, or
+        // onto a reload that lost its seed (see reloadWithSeed), surfaced only as
+        // a bare 10s timeout (WebKit CI, Oct 2026). Now each stall names its step.
         await waitRows(1, 'boot render of the seeded task');
 
         await addTask(page, 'UB A');
@@ -4042,17 +4058,17 @@ async function journeyFirstGestureUndo(browser, baseURL) {
             c.autoReset = false;            // manual cycle: Complete Cycle is how it completes
             c.deleteCheckedTasks = false;
             c.cycleCount = 0;
-            localStorage.setItem('miniCycleData', JSON.stringify(d));
-        });
-        // Reload: undo's "initializing" flag starts over, so the next gesture is the first.
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            return JSON.stringify(d);
+        }).then(doc => reloadWithSeed(page, doc));
+        // Reloaded: undo's "initializing" flag starts over, so the next gesture is the first.
         await bootApp(page);
         await page.waitForTimeout(800);
-        // appLoaded is not "rendered", and the 800ms above is a guess at the gap.
-        // On WebKit CI (Oct 2026) Enter on Complete Cycle completed nothing
-        // ("cycleCount=0") in a case that took 15s instead of the usual 6 — a
-        // slow boot whose button was not up yet. Wait for what the gesture needs,
-        // and the focus fixture below says so if it still is not.
+        // appLoaded is not "rendered", and the 800ms above is a guess at the gap:
+        // wait for what the gesture needs. When the seed was lost on the reload
+        // (see reloadWithSeed) the sample routine booted instead — auto-cycle, so
+        // Complete Cycle is display:none and Enter completed nothing (WebKit CI,
+        // Oct 2026: "cycleCount=0"; the focus fixture below then read
+        // "focus is on BODY; #completeAll display=none").
         await page.waitForFunction(() => {
             const btn = document.getElementById('completeAll');
             return document.querySelectorAll('#taskList li').length === 3
