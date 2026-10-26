@@ -363,19 +363,22 @@ body.dark-mode .app-subtitle {
        edge, inside the feather of iOS 26's status-bar glass, so they rendered
        soft in the home-screen web app while the Capacitor app — which uses the
        env() rules above — kept them clear. max() keeps the old fallback for a
-       web app that reports a zero inset. +44px rather than the native +14px:
+       web app that reports a zero inset. +34px rather than the native +14px:
        iOS 26's status-bar glass reaches ~35pt below the bar, fading as it goes
        (measured on an iPhone screenshot of v2.640: the top of the logo and of
-       ☰ were blurred, the wordmark below them was not). +14px (v2.639) and
-       +24px (v2.640) both left the logo inside it. The native app has no such
-       glass. Keep in sync with base/critical.css. */
-    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 44px);
+       ☰ were blurred, the wordmark below them was not). The native app has no
+       such glass, and iOS gives a web app no setting for its height. +24px
+       (v2.640) left the logo inside it; +44px (v2.641) cleared it but sat the
+       header visibly low. +34px is the chosen middle: the logo's top edge sits
+       at the glass's faint tail. A solid status bar would remove the glass,
+       but it would cut a custom background photo off with a flat strip.
+       Keep in sync with base/critical.css. */
+    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 34px);
     padding-bottom: var(--space-6);
 }
 
 .ios-pwa .header-branding {
-    /* Centre within the area below the status-bar glass (the inset plus 24px).
-       Centred below the inset alone, the logo moved only half as far as the
-       padding above, and stayed in the glass. */
-    top: calc(50% + (max(env(safe-area-inset-top, 0px), 47px) + 24px) / 2);
+    /* Centre below the inset plus 12px. Centred below the inset alone, the
+       logo moves only half as far as the padding above grows. */
+    top: calc(50% + (max(env(safe-area-inset-top, 0px), 47px) + 12px) / 2);
 }
