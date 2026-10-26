@@ -30,7 +30,7 @@
  */
 
 import { DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
-import { isPriorityLevel } from '../utils/priorityLevel.js';
+import { isPriorityLevel, getPriorityLevel } from '../utils/priorityLevel.js';
 import { autoClearFields, getAutoClear } from '../utils/cycleMode.js';
 
 /** Schema stamp for template records. Bump only alongside a migration. */
@@ -149,4 +149,63 @@ export function buildRecurringTemplate({
         position: Number.isInteger(position) && position >= 0 ? position : null,
         schemaVersion: RECURRING_TEMPLATE_SCHEMA_VERSION
     };
+}
+
+/**
+ * Mirror edits on the live task onto its recurring template.
+ *
+ * The template is what the watcher recreates the task from, so any field it
+ * carries that the user can edit on the task must follow the edit — otherwise
+ * the change holds only until the next occurrence, which comes back with the
+ * template's old value. Priority (Mar 2026) and due date (Oct 2026) got their
+ * own ad-hoc syncs; text and the reminder flag never had one (a renamed
+ * recurring task came back under its old name). This is the one place.
+ *
+ * Pure: mutates the draft routine inside an AppState.update producer.
+ * @param {Object|null|undefined} routine - draft routine
+ * @param {string} taskId
+ * @param {{text?: string, dueDate?: string|null, priority?: string|null, remindersEnabled?: boolean}} fields
+ * @param {{dryRun?: boolean}} [options] - dryRun only reports whether anything differs
+ * @returns {boolean} true when a template exists and at least one field differed
+ */
+export function syncTemplateFromTask(routine, taskId, fields, { dryRun = false } = {}) {
+    const template = routine?.recurringTemplates?.[taskId];
+    if (!template || !fields) return false;
+    let changed = false;
+    const put = (key, value) => {
+        if (template[key] === value) return;
+        if (!dryRun) template[key] = value;
+        changed = true;
+    };
+    if (typeof fields.text === 'string' && fields.text.trim()) put('text', fields.text);
+    if ('dueDate' in fields) put('dueDate', fields.dueDate || null);
+    if ('priority' in fields) put('priority', isPriorityLevel(fields.priority) ? fields.priority : null);
+    if ('remindersEnabled' in fields) put('remindersEnabled', fields.remindersEnabled === true);
+    return changed;
+}
+
+/**
+ * Repair every template in a routine from its live task (text, due date,
+ * priority, reminder flag). Covers edits made before the syncs existed. The
+ * live task is the user-visible truth; a template whose task is gone (cleared,
+ * awaiting its next occurrence) is left alone.
+ * @param {Object|null|undefined} routine
+ * @param {{dryRun?: boolean}} [options]
+ * @returns {number} templates that differed (and were repaired unless dryRun)
+ */
+export function healTemplatesFromTasks(routine, { dryRun = false } = {}) {
+    const templates = routine?.recurringTemplates;
+    if (!templates || !Array.isArray(routine.tasks)) return 0;
+    let healed = 0;
+    for (const task of routine.tasks) {
+        if (!task || !templates[task.id]) continue;
+        const differed = syncTemplateFromTask(routine, task.id, {
+            text: task.text,
+            dueDate: task.dueDate,
+            priority: getPriorityLevel(task),
+            remindersEnabled: task.remindersEnabled === true
+        }, { dryRun });
+        if (differed) healed++;
+    }
+    return healed;
 }

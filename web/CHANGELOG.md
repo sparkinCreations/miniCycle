@@ -1,3 +1,7 @@
+## [2.636] - 2026-10-26
+- fix(recurring): renaming a recurring task renames its template; reminder flag follows too; drifted templates heal at boot
+
+
 ## [2.635] - 2026-10-26
 - fix(tasks): a checked task keeps its move arrows unless it is parked in the completed dropdown
 - test(webkit): journeys run locally only; four timing checks wait on their condition

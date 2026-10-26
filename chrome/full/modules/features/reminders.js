@@ -22,6 +22,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { syncTemplateFromTask } from '../recurring/recurringTemplate.js';
 import {
     isNativeApp,
     requestNotificationPermission,
@@ -741,8 +742,12 @@ export class MiniCycleReminders {
         // the live task first, then assign the whole routine back over itself.
         const AppStateTask = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
         await AppStateTask.update(draft => {
-            const task = getRoutine(draft, activeCycle)?.tasks?.find(t => t.id === taskId);
+            const routine = getRoutine(draft, activeCycle);
+            const task = routine?.tasks?.find(t => t.id === taskId);
             if (task) task.remindersEnabled = isEnabled;
+            // The next occurrence of a recurring task takes this flag from its
+            // template; without the sync the toggle held only until then.
+            syncTemplateFromTask(routine, taskId, { remindersEnabled: isEnabled });
         }, true); // immediate save for task changes
 
     }
