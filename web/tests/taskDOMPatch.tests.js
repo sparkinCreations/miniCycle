@@ -460,19 +460,23 @@ export async function runTaskDOMPatchTests(resultsDiv) {
         } finally { unmount(list); }
     });
 
-    await test('completed tasks are skipped when choosing boundaries', () => {
+    await test('a checked row still in the list counts for boundaries (it keeps its arrows)', () => {
         const list = mountList('a', 'b', 'c');
         try {
-            // mark 'a' completed via checked checkbox (selector: .task input:checked)
+            // 'a' is checked but still in #taskList — the completed-dropdown-off case.
+            // Until Oct 2026 it was skipped (and its arrows hidden); its slot still
+            // matters, so it is the first row and 'b' is not.
             list.querySelector('.task[data-task-id="a"] input').checked = true;
             const p = make();
             p.syncBoundaryMarkers();
-            // first incomplete is 'b', last is 'c'
-            if (!list.querySelector('.task[data-task-id="b"]').classList.contains('is-first-task')) {
-                throw new Error('b should be first incomplete');
+            if (!list.querySelector('.task[data-task-id="a"]').classList.contains('is-first-task')) {
+                throw new Error('checked row a should still be first');
             }
-            if (list.querySelector('.task[data-task-id="a"]').classList.contains('is-first-task')) {
-                throw new Error('completed task a should not be first');
+            if (list.querySelector('.task[data-task-id="b"]').classList.contains('is-first-task')) {
+                throw new Error('b must not be first while a is above it');
+            }
+            if (!list.querySelector('.task[data-task-id="c"]').classList.contains('is-last-task')) {
+                throw new Error('c should be last');
             }
         } finally { unmount(list); }
     });

@@ -1031,9 +1031,13 @@ body.tasks-sorted #taskList .move-down {
     cursor: not-allowed;
 }
 
-/* Hide move arrows on completed tasks (order is irrelevant for completed tasks) */
-#taskList .task:has(input[type="checkbox"]:checked) .move-up,
-#taskList .task:has(input[type="checkbox"]:checked) .move-down,
+/* Hide move arrows on rows parked in the completed dropdown: their on-screen
+   order is display-only (a row goes back to its stored slot when unchecked), so
+   an arrow there would reorder state with nothing visible moving. A CHECKED row
+   that is still in #taskList (dropdown off) keeps its arrows — it holds its slot
+   and comes back unchecked in that slot at the next cycle, so its order still
+   matters, and the arrows are the keyboard/accessibility way to move it. (Until
+   Oct 2026 every checked row lost its arrows, dropdown or not.) */
 #completedTaskList .task .move-up,
 #completedTaskList .task .move-down {
     display: none;

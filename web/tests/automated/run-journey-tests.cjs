@@ -2652,6 +2652,36 @@ async function journeyArrowReorderMovesTheRightTask(browser, baseURL) {
             return true;
         }, { text, dir });
 
+        // ---- Trigger 0: dropdown OFF — a checked row keeps its slot AND its arrows
+        // (until Oct 2026 every checked row lost its arrows, dropdown or not; the
+        // arrows are the keyboard way to move a task, and a checked row's order
+        // still matters — it comes back unchecked in that slot next cycle).
+        await seed(['A', 'B', 'C', 'D'], { dropdown: false });
+        await page.evaluate(() => {
+            const row = [...document.querySelectorAll('#taskList .task')]
+                .find(r => r.querySelector('.task-text')?.textContent === 'A');
+            const cb = row?.querySelector('input[type="checkbox"]');
+            if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.waitForTimeout(1200);
+        const dom0 = await domOrder();
+        record('dropdown off: checking A leaves it in the active list', dom0[0] === 'A' && dom0.length === 4,
+            `#taskList shows ${JSON.stringify(dom0)}`);
+        const arrows0 = await page.evaluate(() => {
+            const row = [...document.querySelectorAll('#taskList .task')]
+                .find(r => r.querySelector('.task-text')?.textContent === 'A');
+            const btn = row?.querySelector('[class*="move-down"]');
+            return btn ? getComputedStyle(btn).display : 'missing';
+        });
+        record('dropdown off: the checked row still shows its move arrows', arrows0 !== 'none' && arrows0 !== 'missing',
+            `A's move-down is ${arrows0}`);
+        const pressed0 = await pressArrow('A', 'down');
+        await page.waitForTimeout(1500);
+        const after0 = await stored();
+        record('dropdown off: the arrow moves the checked row like any other',
+            pressed0 && JSON.stringify(after0) === '["B","A","C","D"]',
+            `expected ["B","A","C","D"], got ${JSON.stringify(after0)}`);
+
         // ---- Trigger 1: completed row removed from #taskList ------------------
         await seed(['A', 'B', 'C', 'D'], { dropdown: true });
         record('four tasks seeded in order', JSON.stringify(await stored()) === '["A","B","C","D"]',
