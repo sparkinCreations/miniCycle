@@ -180,30 +180,29 @@ export class MiniCycleReminders {
             this.setupModalCloseListeners();
             this.wireOpenRemindersModalListener();
 
-            // ✅ Add hook to update reminder buttons after app is fully ready (DI-pure)
+            // Arm reminders from STATE now, independent of the DOM. The afterApp
+            // hook below is no guarantee on its own: runHooks never replays for a
+            // hook added after afterApp has run (this one is added after
+            // waitForCore, which a slow engine — WebKit / the iOS WKWebView — can
+            // resolve that late), and it used to bail while no task row was
+            // rendered yet, which is exactly what afterApp saw on a measured
+            // Chromium boot (Oct 2026). Either race left a user with reminders
+            // on and no timer until something else started one — the same bug
+            // dueDates.js had with its 9:00 notification. startReminders() is
+            // state-derived, serialised and idempotent, and a no-op until state
+            // is ready (first run) or while reminders are off.
+            this.startReminders().catch(error => console.warn('⚠️ Could not start reminders at boot:', error));
+
+            // After each app (re)init — an in-place restore or import can bring
+            // new reminder settings — re-arm from state, and refresh the 🔔
+            // buttons. The button refresh is DOM work, so only it waits on rows.
             if (appInitModule?.addHook) {
                 appInitModule.addHook('afterApp', async () => {
+                    await this.startReminders();
 
-                // Check if tasks exist in DOM before proceeding
-                const tasks = this.deps.querySelectorAll(DOM_SELECTORS.TASK);
-                if (tasks.length === 0) {
-                    return;
-                }
-
-                // Load settings to check if reminders are enabled
-                const state = this._state();
-                if (state) {
-                    const reminderSettings = state.customReminders || {};
-
-                    // Update reminder buttons now that tasks are rendered
-                    await this.updateReminderButtons();
-
-                    // Start reminders if they were enabled
-                    if (reminderSettings.enabled) {
-                        await this.startReminders();
+                    if (this._state() && this.deps.querySelectorAll(DOM_SELECTORS.TASK).length > 0) {
+                        await this.updateReminderButtons();
                     }
-                }
-
                 });
             }
 
@@ -475,8 +474,8 @@ export class MiniCycleReminders {
             frequencySection.classList.toggle(DOM_CLASSES.HIDDEN, !reminderSettings.enabled);
         }
 
-        // ✅ NOTE: updateReminderButtons() and startReminders() are now called via afterApp hook
-        // This ensures tasks are rendered before we try to update their reminder buttons
+        // NOTE: startReminders() runs from init() (state-derived); updateReminderButtons()
+        // runs from the afterApp hook, once task rows are rendered.
     }
 
     /**
@@ -858,9 +857,30 @@ export class MiniCycleReminders {
     }
 
     /**
-     * Start the reminder system
+     * Start the reminder system.
+     *
+     * Calls are serialised. One boot starts reminders from several places (init,
+     * the afterApp hook, appInit's settings load, the routine loader), and
+     * overlapping runs each saw the same overdue nextReminderTime and each
+     * posted the catch-up: three notifications for one overdue reminder,
+     * measured Oct 2026. Queued, a later run reads the time the earlier one
+     * just wrote and only re-arms.
+     * @returns {Promise<void>}
      */
-    async startReminders() {
+    startReminders() {
+        // Idle: start now, same timing as an unserialised call. Busy: queue.
+        const run = this._startRemindersRunning
+            ? this._startRemindersRunning.then(() => this._startRemindersNow())
+            : this._startRemindersNow();
+        const settled = run.catch(() => {}).then(() => {
+            if (this._startRemindersRunning === settled) this._startRemindersRunning = null;
+        });
+        this._startRemindersRunning = settled;
+        return run;
+    }
+
+    /** One run of startReminders(); call through startReminders(), never directly. */
+    async _startRemindersNow() {
 
         // Wait for core systems (DI-pure)
         const appInitModule = this.deps.appInit;
