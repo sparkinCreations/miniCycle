@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "miniCycle: Routine Checklist Manager",
-  "version": "2.640",
-  "version_name": "Chrome Edition v2.640",
+  "version": "2.641",
+  "version_name": "Chrome Edition v2.641",
   "description": "Reusable checklists for routines that repeat. Build it once — it resets every time you finish. Private, offline, no account.",
   "author": "sparkinCreations",
   "homepage_url": "https://minicycleapp.com",

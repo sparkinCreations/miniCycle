@@ -1,3 +1,7 @@
+## [2.641] - 2026-10-26
+- fix(header): iOS web app header clears the status-bar glass — logo and ☰ were still soft at +24px
+
+
 ## [2.640] - 2026-10-26
 - style(header): drop the frosted header band everywhere; iOS web app gets 10px more clearance
 
