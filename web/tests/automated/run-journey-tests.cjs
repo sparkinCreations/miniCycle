@@ -3249,6 +3249,111 @@ async function journeyDueDateSystemNotification(browser, baseURL) {
     return { name: 'due-day system notification', failures };
 }
 
+// ── Journey: a returning user's reminders fire without being touched ─────────
+//
+// Reminders used to be started ONLY from reminders.js's afterApp hook, and that
+// hook bailed while no task row was rendered and never ran at all when it was
+// registered after afterApp had already fired (runHooks does not replay — the
+// slow-engine case). Either way a user with reminders on opened the app and got
+// nothing until they changed a setting. init() now arms them from state. This
+// boots a returning user with reminders on and a reminder due in two minutes,
+// touches nothing, and pushes the fake clock past it; then reloads with the
+// reminder already overdue and asserts exactly ONE catch-up (init and the hook
+// both start reminders on one boot — startReminders serialises them).
+async function journeyRemindersFireAtBoot(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+    try {
+        await context.addInitScript(() => {
+            window.__sysNotes = [];
+            // Same stubs as the due-day journey: headless Chromium reports
+            // "denied" even after grantPermissions, and the service worker's
+            // showNotification is the sink observed.
+            if (typeof Notification !== 'undefined') {
+                Object.defineProperty(Notification, 'permission', { get: () => 'granted', configurable: true });
+            }
+            if (typeof ServiceWorkerRegistration !== 'undefined') {
+                ServiceWorkerRegistration.prototype.showNotification = async function (title, options) {
+                    window.__sysNotes.push({ title, body: options && options.body, tag: options && options.tag });
+                };
+            }
+        });
+        const start = new Date(); start.setHours(10, 0, 0, 0);
+        await page.clock.install({ time: start });
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 }).catch(() => {});
+        await page.evaluate(() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); if (b && !b.disabled) b.click(); });
+        await page.waitForFunction(() => { try { const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); const c = p && p.data && p.data.routine; return c && Object.keys(c).length > 0; } catch { return false; } }, null, { timeout: 20000 });
+        // Reminders on (every 5 minutes, system channel too), next one due in
+        // two minutes, and the first task carries the 🔔.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            p.customReminders = {
+                ...(p.customReminders || {}),
+                enabled: true, indefinite: true, dueDatesReminders: false, browserNotifications: true,
+                repeatCount: 0, frequencyValue: 5, frequencyUnit: 'minutes',
+                timesReminded: 0, reminderStartTime: Date.now(), nextReminderTime: Date.now() + 2 * 60000
+            };
+            const r = p.data.routine[p.appState.activeRoutineId];
+            r.tasks.forEach(t => { t.remindersEnabled = false; t.completed = false; });
+            r.tasks[0].remindersEnabled = true;
+            r.tasks[0].text = 'Water the plants';
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+
+        const inApp = () => page.evaluate(() => Array.from(document.querySelectorAll('.notification-content'))
+            .map(n => n.textContent).filter(t => /You have tasks to complete/.test(t)));
+        const stored = () => page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).customReminders);
+
+        const before = await page.evaluate(() => ({ perm: Notification.permission, notes: window.__sysNotes.length }));
+        record('fixture: notification permission is granted', before.perm === 'granted', `fixture: ${JSON.stringify(before)}`);
+        record('nothing fires before the reminder is due', before.notes === 0 && (await inApp()).length === 0,
+            `${before.notes} system notification(s) posted early`);
+
+        await page.clock.fastForward(3 * 60 * 1000); // past the 2-minute mark, short of the next 5
+        await page.waitForTimeout(500);
+        const after = await page.evaluate(() => window.__sysNotes);
+        const shown = await inApp();
+        record('the due reminder fires with no interaction: one system notification', after.length === 1,
+            `posted: ${JSON.stringify(after)} — nothing armed the reminder timer at boot`);
+        record('…tagged as a reminder and naming the task',
+            !!after[0] && after[0].tag === 'minicycle-reminder' && /Water the plants/.test(after[0].body || ''),
+            `posted: ${JSON.stringify(after[0])}`);
+        record('…and the in-app reminder lists the task', shown.length === 1 && /Water the plants/.test(shown[0]),
+            `in-app: ${JSON.stringify(shown)}`);
+        const s1 = await stored();
+        record('the fire is recorded: timesReminded 1, next reminder in the future',
+            s1 && s1.timesReminded === 1 && s1.nextReminderTime > (await page.evaluate(() => Date.now())),
+            `stored: ${JSON.stringify(s1)}`);
+
+        // Overdue at boot → exactly one catch-up.
+        await page.evaluate(() => {
+            const p = JSON.parse(localStorage.getItem('miniCycleData'));
+            p.customReminders.nextReminderTime = Date.now() - 60000;
+            localStorage.setItem('miniCycleData', JSON.stringify(p));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 25000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+        const catchUp = await page.evaluate(() => window.__sysNotes);
+        record('an overdue reminder catches up once at boot, not once per starter',
+            catchUp.length === 1, `posted at boot: ${JSON.stringify(catchUp)}`);
+        const s2 = await stored();
+        record('…and counts once', s2 && s2.timesReminded === 2, `stored: ${JSON.stringify(s2)}`);
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'reminders fire at boot', failures };
+}
+
 // ── Journey: a restored backup with hostile cleared-task ids renders inertly ──
 //
 // The injection fix has two layers: the sanitizer bounds imported cleared-task
@@ -5054,6 +5159,7 @@ const JOURNEYS = [
     { name: "a new routine's empty-state hint matches the bar on screen", fn: journeyNewRoutineHintMatchesBar },
     { name: 'the help window wraps inside its column', fn: journeyHelpWindowWraps },
     { name: 'a due-day system notification fires at 9:00', fn: journeyDueDateSystemNotification },
+    { name: "a returning user's reminders fire without being touched", fn: journeyRemindersFireAtBoot },
     { name: 'a restored backup with hostile cleared-task ids renders inertly', fn: journeyRestoredHostileClearedIdsRenderInertly },
     { name: 'keyboard focus survives every dialog and layer', fn: journeyKeyboardFocusSurvivesDialogs },
     { name: "the + button's first-time shimmer", fn: journeyPlusButtonShimmer },
