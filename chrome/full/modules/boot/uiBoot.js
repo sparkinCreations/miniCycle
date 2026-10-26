@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
@@ -200,6 +200,28 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     'click',
     '__miniCycleUiBootTaskButtonsClickHandler',
     handleGlobalClickForTaskButtons
+  );
+
+  // ========== Touch tap: Hide Task Buttons (WebKit) ==========
+  // iOS WebKit sends NO click for a tap on non-interactive background (measured
+  // Oct 2026 in the WebKit journey job: pointerdown, touchstart, pointerup,
+  // touchend — and nothing else), so the click above never fired there and an
+  // open option row could not be dismissed by tapping elsewhere. A touch that
+  // ends where it began is that tap. Running the dismiss twice where a click
+  // DOES follow (Chromium) is harmless: it only removes classes.
+  replaceStoredEventListener(
+    document,
+    'pointerdown',
+    '__miniCycleUiBootTapStartHandler',
+    handleTouchTapStart,
+    { passive: true }
+  );
+  replaceStoredEventListener(
+    document,
+    'pointerup',
+    '__miniCycleUiBootTapEndHandler',
+    handleTouchTapEnd,
+    { passive: true }
   );
 
   // ========== Escape: drop every transient UI state ==========
@@ -462,6 +484,27 @@ function handleGlobalClickForTaskButtons(event) {
   if (isIgnored) return;
 
   clearTransientTaskState();
+}
+
+// Where the current touch began, or null (not a touch, or already handled).
+let _touchTapStart = null;
+
+function handleTouchTapStart(event) {
+  _touchTapStart = event.pointerType === 'touch' ? { x: event.clientX, y: event.clientY } : null;
+}
+
+/**
+ * A touch that ends within GESTURE.TAP_SLOP of where it began is a tap: run the
+ * same light dismiss the click does. See the registration for why a click
+ * alone is not enough on WebKit.
+ */
+function handleTouchTapEnd(event) {
+  const start = _touchTapStart;
+  _touchTapStart = null;
+  if (event.pointerType !== 'touch' || !start) return;
+  if (Math.abs(event.clientX - start.x) > GESTURE.TAP_SLOP ||
+      Math.abs(event.clientY - start.y) > GESTURE.TAP_SLOP) return;
+  handleGlobalClickForTaskButtons(event);
 }
 
 /**

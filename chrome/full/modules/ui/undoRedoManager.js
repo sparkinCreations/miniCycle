@@ -32,10 +32,10 @@ import { getLabel } from '../labels/labelResolver.js';
 import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 
 // Change description for undo/redo notifications (Pattern 2, pure). Split out
-// Aug 2026. `describeChange` is re-exported from there for tests only; the
-// parent calls `computeTransactionDiff`, which is the entry point.
-import { computeTransactionDiff } from './undoTransactionDiff.js';
-import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+// Aug 2026. The parent calls `computeTransactionDiff`, which is the entry point;
+// undo also calls `describeChange` directly, to name the step it takes back.
+import { computeTransactionDiff, describeChange } from './undoTransactionDiff.js';
+import { clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // Re-exported because it was part of this module's public surface before the
 // split and the test suite imports it from here. Not a `provides` name.
@@ -203,18 +203,24 @@ function loadFromUndoCache(expectedCycleId) {
 
 
 /**
- * Relabel snapshots for a renamed cycle. Snapshots embed the cycle identity
- * twice — activeCycleId (the cycles-map key) and title (equal to the key in
- * this app) — so a rename must rewrite BOTH in every snapshot of both stacks,
- * or validateSnapshot discards the history and Undo restores the old title.
+ * Relabel snapshots for a renamed routine: move them to the new routines-map
+ * key (activeCycleId), or validateSnapshot discards the history.
+ *
+ * The TITLE each snapshot recorded is kept. Overwriting it with the new name
+ * (as this did until Oct 2026) erased the rename from history: the snapshot
+ * taken just before it then matched the current state, Undo skipped it, and a
+ * rename could never be undone — Undo silently undid the step before it. Undo
+ * now puts the old name back on the routine under its new key; a key that
+ * differs from the title is already normal (routines migrated to 2.6 carry
+ * generated ids).
  * @param {Array} snapshots - Snapshots to relabel
- * @param {string} newCycleId - The new cycle id (= new title)
+ * @param {string} newCycleId - The routine's new key
  * @returns {Array} New array with relabeled snapshot copies
  */
 function relabelSnapshotsForCycle(snapshots, newCycleId) {
   return (snapshots || []).map(snap => {
     if (!snap || typeof snap !== 'object') return snap;
-    const relabeled = { ...snap, activeCycleId: newCycleId, title: newCycleId };
+    const relabeled = { ...snap, activeCycleId: newCycleId };
     // The cached signature embeds the OLD id/title (c/ti fields), so carrying
     // it forward makes the first post-rename capture mismatch the stack top by
     // construction and push a duplicate. Both consumers (capture dedup,
@@ -817,6 +823,17 @@ function handleUndoRedoUIUpdate(diff, newState) {
   if (diff.clearedTasksChanged) {
     _deps.refreshHistoryIfOpen?.();
   }
+
+  // The routine title heading is not part of any render above. Without this an
+  // undone rename put the old name back in state while the heading kept the new
+  // one (Oct 2026). Not while the user is editing the heading itself.
+  if (diff.cycleChanged) {
+    const titleEl = _deps.getElementById?.(DOM_IDS.MINI_CYCLE_TITLE);
+    const title = getActiveRoutine(newState)?.title;
+    if (titleEl && title && document.activeElement !== titleEl && titleEl.textContent !== title) {
+      titleEl.textContent = title;
+    }
+  }
 }
 
 /**
@@ -929,6 +946,11 @@ export async function performStateBasedUndo() {
     // Compute transaction diff BEFORE applying state change
     const transactionDiff = computeTransactionDiff(currentSnapshot, snap);
     transactionDiff.kind = 'undo';
+    // Name the step being UNDONE. The diff runs current → restored, which is what
+    // the UI must apply, and read that way an undone delete said "Undone: Task
+    // added" (Oct 2026) — the undo's own effect. The step itself ran restored →
+    // current. Redo needs no flip: its diff already runs in the step's direction.
+    transactionDiff.description = describeChange(snap, currentSnapshot);
 
     // Use non-immediate save for better UI latency (persistence via debounce)
     // NOTE: Undo NEVER switches cycles - each routine has isolated undo history
@@ -959,8 +981,13 @@ export async function performStateBasedUndo() {
         state.userProgress.cyclesCompleted = Math.max(0,
           (state.userProgress.cyclesCompleted || 0) + cycleDelta);
       }
+      // The archive (clearedTasks) records clears in every mode, but only To-Do
+      // clears were added to the achievement counter, so only those come off it.
+      // The step being undone ran in the mode of the state it produced:
+      // currentSnapshot. Without this, undoing a Cycle-mode reset would subtract
+      // tasks that were never counted.
       const clearedDelta = (snap.clearedTasks?.totalCleared || 0) - (currentSnapshot.clearedTasks?.totalCleared || 0);
-      if (clearedDelta !== 0 && state.userProgress) {
+      if (clearedDelta !== 0 && state.userProgress && clearsCountTowardAchievements(currentSnapshot)) {
         state.userProgress.totalTasksCompleted = Math.max(0,
           (state.userProgress.totalTasksCompleted || 0) + clearedDelta);
       }
@@ -1001,9 +1028,8 @@ export async function performStateBasedUndo() {
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack);
-      const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
-                        stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
-                        getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
+      const stepsText = stepsLeft === 0 ? getLabel('notify.undoStepsNone') :
+                        getLabel('notify.undoStepsLeft', { vars: { count: stepsLeft } });
       _deps.showNotification('↩️ ' + getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
@@ -1159,8 +1185,10 @@ export async function performStateBasedRedo() {
         state.userProgress.cyclesCompleted = Math.max(0,
           (state.userProgress.cyclesCompleted || 0) + cycleDelta);
       }
+      // Same rule as undo: only To-Do clears are on the counter. The step being
+      // redone ran in the mode of the state it produces: snap.
       const clearedDelta = (snap.clearedTasks?.totalCleared || 0) - (currentSnapshot.clearedTasks?.totalCleared || 0);
-      if (clearedDelta !== 0 && state.userProgress) {
+      if (clearedDelta !== 0 && state.userProgress && clearsCountTowardAchievements(snap)) {
         state.userProgress.totalTasksCompleted = Math.max(0,
           (state.userProgress.totalTasksCompleted || 0) + clearedDelta);
       }
@@ -1201,9 +1229,8 @@ export async function performStateBasedRedo() {
     if (_deps.showNotification) {
       const changeDesc = transactionDiff.description;
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack);
-      const stepsText = stepsLeft === 0 ? getLabel('notify.stepsLeftNone') :
-                        stepsLeft === 1 ? getLabel('notify.stepsLeftOne') :
-                        getLabel('notify.stepsLeftMany', { vars: { count: stepsLeft } });
+      const stepsText = stepsLeft === 0 ? getLabel('notify.redoStepsNone') :
+                        getLabel('notify.redoStepsLeft', { vars: { count: stepsLeft } });
       _deps.showNotification('↪️ ' + getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 

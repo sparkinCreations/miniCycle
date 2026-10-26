@@ -276,11 +276,34 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
    TASK OPTIONS MODAL
    ============================================================================= */
 
+/* The <dialog> is centred by the UA; pad it by the safe areas so the card is
+   centred in the part of the screen the status bar and home indicator leave. */
+#task-options-customizer-modal {
+    box-sizing: border-box;
+    padding: var(--safe-area-top) 0 var(--safe-area-bottom);
+}
+
+/* Header and footer stay put, the body scrolls. It had no height cap at all, so
+   on a 667px phone the card was taller than the screen: its top ran off the top
+   and Close was cut off at the bottom (Oct 2026). */
 .modal-content.task-options-modal {
     max-width: 620px;
     width: 90vw;
     border-radius: var(--radius-lg);
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - var(--modal-viewport-inset));
+    max-height: calc(100dvh - var(--modal-viewport-inset));
+    /* Close is a full-bleed footer, flush with the card's bottom edge. The
+       footer used to reach it with a -20px margin, which matched only the
+       desktop padding: on a phone (~16px) the card clipped 4px off Close. */
+    padding-bottom: 0;
+}
+
+.task-options-modal .modal-header,
+.task-options-modal .modal-footer {
+    flex-shrink: 0;
 }
 
 .task-options-modal .modal-header {
@@ -313,6 +336,10 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
 .task-options-modal .modal-body {
     background: transparent;
     padding: var(--space-3-75);
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 /* =============================================================================
@@ -854,7 +881,7 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
     flex-direction: column;
     gap: var(--space-2-5);
     padding: var(--space-3) 0 0 0;
-    margin: 0 -20px -20px -20px;
+    margin: 0 -20px; /* sides bleed full-width (clipped by the card); bottom is flush — see .task-options-modal */
     background: transparent;
 }
 

@@ -167,6 +167,8 @@ export const UI_TIMEOUTS = Object.freeze({
     HINT_DISMISS_ARM: 100,         // 100ms - Delay before a shown long-press hint starts listening for the touch that dismisses it, so the press that raised it cannot also close it
     LAYOUT_CLICK_SWALLOW: 50,      // 50ms - Task View Layout: window in which the synthesized click after a drag is swallowed
     LAYOUT_HANDLE_LEAVE_GRACE: 250, // 250ms - Task View Layout: how long a draggable stays "hovered" after the cursor leaves it, so a handle floating outside its edge can be reached across the gap (a hidden handle is not hit-testable, so without this the cursor could never arrive on it)
+    MODE_SYNC_SECOND_PASS: 100,    // 100ms - after a mode switch, modeManager re-syncs task rows once more to catch rows rendered late
+    FACTORY_RESET_SETTLE: 3000,    // 3s - factory reset: pause between the wipe and "Reset Complete" / the re-init and reload. A reload in the first moments after a reset was reported to bring the old routines back (Oct 2026; not reproduced in Chromium, suspected storage write-back timing elsewhere), so the reset only says it is done once the storage has had time to settle
     NOTIFICATION_MIN_VISIBLE: 40,  // px - the strip of the notification panel that must stay inside the viewport when it is dragged or restored, so it can always be grabbed again
     NOTIFICATION_INPUT_GAP: 8,     // px - when a notification at its DEFAULT spot would cover the task input bar, it drops this far below the bar instead (notifications.setDefaultPosition)
     SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
@@ -507,6 +509,7 @@ export const GESTURE = Object.freeze({
     MOUSE_DRAG_START: 20,          // Minimum distance to start mouse drag
     TOUCH_SWIPE: 50,               // Minimum distance for touch swipe
     VERTICAL_SWIPE: 60,            // Minimum vertical distance for the focus task panel's swipe-to-skip (higher than TOUCH_SWIPE to avoid scroll-intent misfires)
+    TAP_SLOP: 10,                  // px, per axis - How far a touch may travel between pointerdown and pointerup and still be a TAP. Further is a scroll or a drag. Used where a tap must be recognised without a click (WebKit sends none for a tap on non-interactive background)
     TASK_HOLD_SLOP: 15,            // px, per axis - How far a finger may drift during the TASK_DRAG_LONG_PRESS hold before it is read as a scroll and the hold is cancelled. Wider than the platforms' 8-10px on purpose: a thumb trembles while it waits, and a real scroll clears 15px long before the hold is up
     WHEEL_SCROLL_MIN: 10,          // Minimum wheel scroll to trigger action
     AXIS_DOMINANCE_RATIO: 1.5      // A swipe must exceed the OTHER axis by this factor to count — without it, a thumb arcing during a scroll reads as a sideways swipe
@@ -771,7 +774,8 @@ export const EVENTS = Object.freeze({
         it — the order the user performed them. */
     UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending',
     FIRST_RUN_REARM: 'firstrun:rearm',          // backupRestoreManager after an IN-PLACE factory reset: the choice screen is back, the origin is empty again (inline rotators and the + shimmer re-arm on it)
-    ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered' // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
+    ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered', // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
+    TASK_INLINE_EDIT_ENDED: 'task:inlineEditEnded' // taskCRUD when an inline task edit closes (saved, unchanged or cancelled): TaskRenderer runs the refresh it held back while the edit was open
 });
 
 // ============================================================================
@@ -1113,6 +1117,8 @@ export const DOM_CLASSES = Object.freeze({
     GOLDEN_THEME: 'golden-theme',
     GAME_UNLOCKED: 'game-unlocked',
     HAS_CONTENT: 'has-content',
+    STATS_INFO_BTN: 'stats-info-btn',     // small ⓘ toggle in the stats panel
+    STATS_INFO_NOTE: 'stats-info-note',   // the explanation it shows
 
     // ---- Task Cycle Reset ----
     TASK_RESETTING: 'task-resetting',
@@ -1442,6 +1448,9 @@ export const DOM_IDS = Object.freeze({
     COMPLETED_TASKS: 'completed-tasks',
     COMPLETION_RATE: 'completion-rate',
     MINI_CYCLE_COUNT: 'mini-cycle-count',
+    ALL_ROUTINES_COUNT: 'all-routines-count',
+    ALL_ROUTINES_INFO_BTN: 'all-routines-info-btn',   // ⓘ after the All Routines line (statsPanel)
+    ALL_ROUTINES_INFO: 'all-routines-info',           // the note it toggles: what counts toward badges
     PER_CYCLE_COUNT: 'per-cycle-count',
     MILESTONE_PROGRESS_TEXT: 'milestone-progress-text',
     STATS_PROGRESS_BAR: 'stats-progress-bar',

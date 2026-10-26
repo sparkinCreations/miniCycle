@@ -114,6 +114,18 @@
     color: var(--color-primary, var(--color-black));
 }
 
+/* Held by a pin, not by the user (getRecurringPauseState 'pinned'): faded to
+   show it cannot be resumed from here. Still focusable and tappable — a tap
+   explains that unpinning resumes it — so this is aria-disabled, not disabled. */
+.recurring-task-item .recurring-pause-btn[aria-disabled="true"] {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.recurring-task-item .recurring-pause-btn[aria-disabled="true"]:hover {
+    color: var(--color-black);
+}
+
 .recurring-task-item.recurring-paused .recurring-task-text {
     opacity: 0.6;
 }
@@ -324,6 +336,12 @@
 .recurring-scroll-area {
     max-height: 200px;
     overflow-y: auto;
+    /* Contains #recurring-search-status (visually-hidden = position: absolute).
+       Unpositioned, this box was not that element's containing block: it sat at
+       the bottom of the list's UNCLIPPED height, outside this scroller's clip,
+       and stretched the panel's own scroll by that much — 188px of blank card
+       past Close at 320px with 12 recurring tasks, growing with every task. */
+    position: relative;
     padding-right: var(--space-1);
     margin-top: var(--space-2-5);
     /* space-6 (was 2-5): enough for the next card to peek — the scrollability
@@ -358,6 +376,12 @@
 
 /* Close button — matches #close-main-menu style */
 .close-recurring-panel {
+    /* Sticky to the panel's bottom edge: the panel scrolls (a selected task's
+       summary, then the settings form), and as its last child Close used to
+       scroll out of view with Apply and Cancel (Oct 2026). */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
     background: var(--menu-close-bg, var(--color-steel-blue));
     color: var(--menu-close-text, var(--color-white));
     font-size: var(--font-size-lg);
@@ -365,7 +389,11 @@
     padding: var(--space-3-5);
     border: none;
     border-radius: 0 0 var(--radius-15) var(--radius-15);
-    margin: var(--space-2-5) -25px -20px;
+    /* Bottom 0, not -20px: the panel's bottom padding is gone (see
+       #recurring-panel below), and a sticky element cannot hang past the edge
+       it sticks to. The -25px sides still bleed it full-width; the panel's
+       overflow-x clips the excess. */
+    margin: var(--space-2-5) -25px 0;
     width: calc(100% + 50px);
     cursor: pointer;
     transition: background var(--transition-fast) ease;
@@ -1204,6 +1232,34 @@ dialog.reminders-modal[open] {
     border-left: 3px solid var(--pref-modal-accent, var(--accent-color, #007bff));
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
     background: var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.06)));
+}
+
+/* =============================================================================
+   PANEL FRAME — clear of the status bar and home indicator
+   ============================================================================= */
+
+#recurring-panel {
+    /* Centre in the area the safe-area insets leave, not the whole screen:
+       with viewport-fit=cover a centred card sits closer to the status bar
+       than the home indicator, and a tall one went under it. */
+    top: calc(50% + (var(--safe-area-top) - var(--safe-area-bottom)) / 2);
+    padding-bottom: 0;   /* Close is the full-bleed footer; see .close-recurring-panel */
+    overflow-x: hidden;
+}
+
+@media (max-width: 767px) {
+    /* The shared .modal-panel cap of 75vh left a quarter of a phone screen
+       unused while the settings form scrolled inside the rest. */
+    #recurring-panel {
+        max-height: calc(100vh - var(--modal-viewport-inset));
+        max-height: calc(100dvh - var(--modal-viewport-inset));
+    }
+
+    /* A flat 200px held the hint, the search box AND the list, which left room
+       for under two tasks. Grow with the screen; never below the old height. */
+    .recurring-scroll-area {
+        max-height: max(200px, 35vh);
+    }
 }
 
 /* =============================================================================

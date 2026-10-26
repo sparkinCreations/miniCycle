@@ -167,6 +167,15 @@ export class ModalManager {
             const modal = _deps.getModal(name);
             if (!modal) continue;
 
+            // A registered element nested INSIDE a <dialog> closes with that
+            // dialog, which is registered too. The recurring panel is such an
+            // element: a <div> in its overlay dialog. The legacy fallback below
+            // set display:none on it, and nothing ever cleared that, so the next
+            // open showed the dialog's blurred backdrop with no panel — after an
+            // in-place factory reset or restore (reloadWithLoader), or ESC while
+            // the help window was showing (Oct 2026).
+            if (typeof modal.showModal !== 'function' && modal.parentElement?.closest('dialog')) continue;
+
             // Native <dialog> elements use animated close (focus restore is the browser's)
             if (typeof modal.showModal === 'function') {
                 if (modal.open) {

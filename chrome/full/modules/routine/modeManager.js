@@ -147,6 +147,29 @@ export class ModeManager {
      * Updates button visibility based on current mode settings
      * Debounced to prevent performance issues during rapid mode changes
      */
+    /**
+     * The ACTIVE routine's tasks keyed by id, read from AppState now.
+     *
+     * syncAllTasksWithMode treats any task row it cannot find in the map it is
+     * given as an orphan and removes it from the DOM. Every caller here used to
+     * build that map once and reuse it, including the delayed second pass 100ms
+     * after a mode switch, so a task added inside that window (switch modes,
+     * type, press Enter) was missing from the map and its row was deleted. The
+     * task stayed saved, reappeared on reload, and in Auto mode its unchecked
+     * hidden copy kept the cycle from completing (reported and measured Oct
+     * 2026: 4 of 4 runs). Building the map at the moment of each sync means it
+     * always describes the rows actually on screen.
+     *
+     * @returns {Object<string, Object>|null} null when there is no active routine
+     */
+    _currentTasksDataMap() {
+        const routine = getActiveRoutine(this.deps.AppState?.get?.());
+        if (!Array.isArray(routine?.tasks)) return null;
+        const map = {};
+        routine.tasks.forEach(task => { map[task.id] = task; });
+        return map;
+    }
+
     async refreshTaskButtonsForModeChange() {
         // Clear any pending refresh
         if (this.refreshDebounceTimer) {
@@ -260,11 +283,11 @@ export class ModeManager {
             if (successCount > 0) {
 
                 // ✅ Sync delete-when-complete button visual states after buttons are recreated
-                if (this.deps.syncAllTasksWithMode && currentCycle?.tasks) {
+                // Map read fresh, not from currentCycle captured above: see _currentTasksDataMap.
+                const tasksData = this._currentTasksDataMap();
+                if (this.deps.syncAllTasksWithMode && tasksData) {
                     // Determine current mode from toggle states (already captured above)
                     const currentMode = deleteCheckedEnabled ? 'todo' : 'cycle';
-                    const tasksData = {};
-                    currentCycle.tasks.forEach(t => { tasksData[t.id] = t; });
                     const constants = {
                         DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS: this.deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
                     };
@@ -1378,26 +1401,24 @@ export class ModeManager {
                     }, true); // Immediate save
                 }
 
-                // ✅ Update UI using centralized DOM sync with captured state
+                // ✅ Update UI using centralized DOM sync. Each pass reads the
+                // tasks fresh (see _currentTasksDataMap): the delayed pass used to
+                // reuse a map built here and deleted rows added in between.
                 const syncAllTasksWithMode = self.deps.syncAllTasksWithMode;
                 if (updatedCycle?.tasks && typeof syncAllTasksWithMode === 'function') {
-                    // Create task data map for batch sync
-                    const tasksDataMap = {};
-                    updatedCycle.tasks.forEach(task => {
-                        tasksDataMap[task.id] = task;
-                    });
-
-                    // Sync immediately AND after a small delay to catch any late DOM updates
-                    syncAllTasksWithMode(currentMode, tasksDataMap, {
-                        DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
-                    });
-
-                    // Second sync after delay to catch any stragglers
-                    setTimeout(() => {
+                    const syncNow = () => {
+                        const tasksDataMap = self._currentTasksDataMap();
+                        if (!tasksDataMap) return;
                         syncAllTasksWithMode(currentMode, tasksDataMap, {
                             DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
                         });
-                    }, 100);
+                    };
+
+                    // Sync immediately AND after a small delay to catch any late DOM updates
+                    syncNow();
+
+                    // Second sync after delay to catch any stragglers
+                    setTimeout(syncNow, UI_TIMEOUTS.MODE_SYNC_SECOND_PASS);
                 } else if (typeof syncAllTasksWithMode !== 'function') {
                     console.error('❌ syncAllTasksWithMode not available - GlobalUtils may not be loaded');
                 } else if (!updatedCycle?.tasks) {

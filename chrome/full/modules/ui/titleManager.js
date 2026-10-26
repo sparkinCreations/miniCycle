@@ -155,7 +155,12 @@ async function handleMiniCycleTitleBlur() {
 
     // ✅ Get unique name (auto-increment if duplicate)
     const currentState = AppState.get();
-    const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, getRoutines(currentState) || {});
+    // The routine's OWN key is no collision. After an undone rename the routine
+    // keeps its new key under its old title, and renaming it back to that key
+    // came out as "Name (2)".
+    const otherRoutines = { ...(getRoutines(currentState) || {}) };
+    delete otherRoutines[activeCycle];
+    const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, otherRoutines);
 
     if (wasModified) {
         showNotification?.(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);

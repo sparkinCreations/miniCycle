@@ -40,6 +40,29 @@ export function getCycleMode(cycle) {
 }
 
 /**
+ * Whether tasks cleared from this routine count toward the cleared-task total
+ * that achievements read (`userProgress.totalTasksCompleted`).
+ *
+ * Only To-Do mode's clears count. In Auto and Manual Cycle a "Clear on Reset"
+ * task is part of how the routine is set up to run, and progress there is
+ * measured in cycles, which still count. Product decision (Oct 2026): letting
+ * cycle-mode clears count was never intended. It arrived in v2.439 as a side
+ * effect of the fix that made To-Do mode's cycle completion count its clears,
+ * because the reset path it patched is shared by every mode.
+ *
+ * Every write to that counter goes through this rule: the cycle reset
+ * (taskCycleReset) and undo/redo's delta adjustment (undoRedoManager). The
+ * Clear Completed path is only reachable in To-Do mode. Works on a routine or
+ * on an undo snapshot, which carries the same mode fields.
+ *
+ * @param {Object|null|undefined} routine
+ * @returns {boolean}
+ */
+export function clearsCountTowardAchievements(routine) {
+    return getCycleMode(routine) === 'todo';
+}
+
+/**
  * The `deleteWhenCompleteSettings` key for a cycle.
  *
  * That map is keyed by TWO modes, not the three above: auto and manual routines
@@ -66,6 +89,12 @@ export function getAutoClearMode(cycle) {
  * boolean under any OTHER key is kept — the map is open, so a mode a newer build
  * adds survives a round trip through this one (SCHEMA_2_6_PLAN.md, "Built to
  * adapt"). Non-boolean junk under an unknown key is dropped.
+ *
+ * The one wholesale repair is a RECURRING task's map that disagrees between
+ * modes: it becomes pinned (false) in every mode. A recurring task's pin is one
+ * choice for all modes, because pinned means paused and a pause must not come
+ * and go with a mode switch (see isRecurringPinnedAnyMode). Pinned is the
+ * direction that never clears a task the user chose to keep.
  *
  * @param {Object} task - Task draft to mutate
  * @param {'todo'|'cycle'} mode - Active mode (see getAutoClearMode); kept in the
@@ -102,8 +131,29 @@ export function syncTaskAutoClear(task, mode, defaults) {
         }
     }
 
+    if (task.recurring === true) {
+        const values = Object.values(next);
+        if (values.includes(false) && values.includes(true)) {
+            for (const key of Object.keys(next)) next[key] = false;
+            repaired = true;
+        }
+    }
+
     if (repaired) task.autoClear = next;
     return { repaired, changed: repaired };
+}
+
+/**
+ * Is this per-mode map pinned (false) in ANY mode? For a recurring task that is
+ * the answer for EVERY mode (Oct 2026): a normal task keeps a separate choice
+ * per mode, but a recurring task pinned to the list is paused, and a pause must
+ * not switch off because the routine changed mode. syncTaskAutoClear repairs a
+ * disagreeing map to match; this lets readers agree before that repair runs.
+ * @param {Object|null|undefined} settings - task.autoClear
+ * @returns {boolean}
+ */
+function isRecurringPinnedAnyMode(settings) {
+    return !!settings && typeof settings === 'object' && Object.values(settings).includes(false);
 }
 
 /**
@@ -294,6 +344,7 @@ export function getAutoClear(task, routine, defaults) {
  * @returns {boolean}
  */
 export function getAutoClearForMode(task, mode, defaults) {
+    if (task?.recurring === true && isRecurringPinnedAnyMode(task.autoClear)) return false;
     return resolveAutoClear({ settings: task?.autoClear, mode, defaults });
 }
 
@@ -365,8 +416,9 @@ export function autoClearFields({ settings, defaults, mode, value } = {}) {
 /**
  * Turn Clear on Reset / Marked for Clearing on or off for the routine's current
  * mode — the same write the task's toggle button makes (taskButtons.js). The
- * other mode's setting is kept. Mutates `task` — call it inside an
- * AppState.update() producer.
+ * other mode's setting is kept — except on a RECURRING task, whose pin is one
+ * choice for every mode (see syncTaskAutoClear), so every mode is written.
+ * Mutates `task` — call it inside an AppState.update() producer.
  *
  * The map is repaired per key first (syncTaskAutoClear), then replaced with a
  * fresh object rather than edited in place, so a task that holds the frozen
@@ -384,6 +436,8 @@ export function setAutoClear(task, routine, value, defaults) {
     const next = value === true;
 
     syncTaskAutoClear(task, mode, defaults);
-    task.autoClear = { ...task.autoClear, [mode]: next };
+    task.autoClear = task.recurring === true
+        ? Object.fromEntries(Object.keys(task.autoClear).map(key => [key, next]))
+        : { ...task.autoClear, [mode]: next };
     return mode;
 }

@@ -41,7 +41,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { LIMITS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getAutoClear, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
@@ -469,9 +469,19 @@ export async function editTaskImpl(taskItem, deps = {}) {
 
         let finished = false;
 
+        // A refresh held back while this edit was open (TaskRenderer) runs on
+        // this event — so it fires on EVERY way out: saved, unchanged, cancelled.
         const finishEdit = async (cancelled) => {
             if (finished) return;
             finished = true;
+            try {
+                await commitEdit(cancelled);
+            } finally {
+                document.dispatchEvent(new CustomEvent(EVENTS.TASK_INLINE_EDIT_ENDED));
+            }
+        };
+
+        const commitEdit = async (cancelled) => {
 
             // sanitizeInput clamps to the task limit; measure the RAW length
             // first or the cut is silent (the add path's validator had the

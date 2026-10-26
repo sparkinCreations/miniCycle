@@ -96,7 +96,15 @@ export class TaskOptionsVisibilityController {
         // Always allow long-press, regardless of mode
         // This guarantees mobile long-press can reveal options
         // whether three-dots is enabled or not.
-        if (caller === 'long-press') {
+        //
+        // Always allow the ⋮ button too. It is only rendered when three-dots is on
+        // (settings.showThreeDots), so a tap on it IS three-dots mode — even on a
+        // fresh first load, before the body class getMode() reads is applied. There
+        // the ⋮ tap was refused and the row opened only incidentally, through the
+        // button taking focus (focusin). iOS keeps focus on the button after a tap
+        // elsewhere, so once the row was closed, ⋮ could not reopen it (measured
+        // in the WebKit journey job, Oct 2026: the click arrived, nothing changed).
+        if (caller === 'long-press' || caller === 'three-dots-button') {
             return true;
         }
 

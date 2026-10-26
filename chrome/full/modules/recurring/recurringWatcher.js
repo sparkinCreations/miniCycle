@@ -282,8 +282,16 @@ function buildRecurringInstance(template) {
         recurring: true,
         id: template.id,
         recurringSettings: template.recurringSettings,
-        // Always clears, whatever the template's map says (safety override)
-        ...autoClearFields({ settings: templateSettings, value: true, defaults: DEFAULT_RECURRING_DELETE_SETTINGS })
+        // Always clears, in EVERY mode, whatever the template's map says (safety
+        // override). Every mode, not just the current one: a recurring task's
+        // pin is one choice for all modes, so a single false key would arrive
+        // pinned — and paused — the moment it spawned.
+        ...autoClearFields({
+            settings: Object.fromEntries(
+                Object.keys({ ...DEFAULT_RECURRING_DELETE_SETTINGS, ...templateSettings }).map(key => [key, true])
+            ),
+            defaults: DEFAULT_RECURRING_DELETE_SETTINGS
+        })
     };
 }
 

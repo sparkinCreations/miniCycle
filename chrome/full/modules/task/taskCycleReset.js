@@ -53,7 +53,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { autoClearFields, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { autoClearFields, clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
 
 // ============================================================================
@@ -379,22 +379,19 @@ function resetTasksData(context, deps) {
         return { aborted: true };
     }
 
-    // Capture recurring task names before removal for history logging
-    const recurringRemovedNames = [];
-    taskElements.forEach(taskEl => {
-        if (taskEl.classList.contains(DOM_CLASSES.RECURRING)) {
-            const taskId = taskEl.dataset.taskId;
-            const task = freshCycleData?.tasks?.find(t => t.id === taskId);
-            if (task?.text) recurringRemovedNames.push(task.text);
-        }
-    });
-
     // Plan the recurring-task removal: DOM effects happen now, state changes
     // are returned as a plan and applied inside the producer below (one-door
     // migration v2.361 — previously this mutated live state directly).
     const recurringPlan = (typeof removeRecurringTasksFromCycle === 'function')
         ? (removeRecurringTasksFromCycle(taskElements, freshCycleData) || { removedIds: [], keptIds: [], templateUpdates: {} })
         : { removedIds: [], keptIds: [], templateUpdates: {} };
+
+    // History names come from what the plan actually REMOVED. They used to be
+    // gathered from every recurring task before the plan ran, so a recurring
+    // task pinned to the list (kept, only unchecked) was logged as removed too.
+    const recurringRemovedNames = recurringPlan.removedIds
+        .map(id => freshCycleData?.tasks?.find(t => t.id === id)?.text)
+        .filter(Boolean);
 
     // Process non-recurring tasks
     const tasksToDelete = [];
@@ -468,6 +465,11 @@ function resetTasksData(context, deps) {
         }
     }
 
+    // Only To-Do mode's clears count toward achievements (see
+    // clearsCountTowardAchievements). Read from the routine as it was when the
+    // cycle completed, before this reset changes anything.
+    const countClears = tasksToDelete.length > 0 && clearsCountTowardAchievements(freshCycleData);
+
     // ✅ Use AppState only (no localStorage fallback) - DI-pure
     if (AppState.isReady()) {
         AppState.update(state => {
@@ -506,21 +508,26 @@ function resetTasksData(context, deps) {
                 });
             }
 
-            // Count the deleteWhenComplete tasks this reset just removed.
+            // Count the deleteWhenComplete tasks this reset just removed — in
+            // To-Do mode only.
             //
             // This path and deleteCompletedTasksImpl both clear tasks and both
             // archive them, but only that one was advancing the counter — so in
             // To-Do mode, where finishing the last task completes the CYCLE and
             // lands here instead, totalTasksCompleted never moved and no
-            // task-count achievement could ever unlock. The archive filled up
-            // while the number behind it stayed at zero.
+            // task-count achievement could ever unlock (fixed v2.439).
+            //
+            // That fix counted in EVERY mode, because every mode's reset runs
+            // here. Auto and Manual Cycle "Clear on Reset" tasks were never meant
+            // to count (Oct 2026); they still go to the Cleared Tasks archive,
+            // and the cycle itself still counts. countClears applies the rule.
             //
             // tasksToDelete is already non-recurring: the collection loop above
             // returns early on DOM_CLASSES.RECURRING. That matches the rule the
             // sibling path documents — a recurring occurrence is scheduled to
             // return, so it must not inflate this total, and it still reaches
             // achievements through the cycle-completion path.
-            if (tasksToDelete.length > 0) {
+            if (countClears) {
                 if (!state.userProgress) state.userProgress = {};
                 state.userProgress.totalTasksCompleted =
                     (state.userProgress.totalTasksCompleted || 0) + tasksToDelete.length;
@@ -530,7 +537,7 @@ function resetTasksData(context, deps) {
         // Re-check achievements against the new total, mirroring the sibling
         // path. Without this the unlock waits for some later event to happen to
         // call it, which for a To-Do user may be never.
-        if (tasksToDelete.length > 0 && typeof _deps.checkAchievements === 'function') {
+        if (countClears && typeof _deps.checkAchievements === 'function') {
             const updatedState = AppState.get();
             _deps.checkAchievements(
                 updatedState.userProgress?.cyclesCompleted || 0,
@@ -836,7 +843,10 @@ export async function deleteCompletedTasksImpl(activeCycleId, cycleData, taskLis
     completedTaskElements.forEach(processTaskElement);
 
     if (tasksToDelete.length === 0) {
-        _deps.showNotification?.(getLabel('notify.noCompletedToDelete'), "default", UI_TIMEOUTS.NOTIFICATION_LONG);
+        // Completed tasks that are all pinned are not "no completed tasks": say
+        // why nothing was cleared and how to clear one.
+        const anyCompleted = (cycleData.tasks || []).some(t => t?.completed === true);
+        _deps.showNotification?.(getLabel(anyCompleted ? 'notify.completedTasksPinned' : 'notify.noCompletedToDelete'), "default", UI_TIMEOUTS.NOTIFICATION_LONG);
         return { aborted: true, reason: 'no_tasks' };
     }
 

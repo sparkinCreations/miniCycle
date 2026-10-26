@@ -8,8 +8,8 @@
  * PATTERN 2 — pure utility extraction. No DI container, no module-level mutable
  * state, no listeners, and no globals: this pair reads `localStorage`, `document`
  * and `window` exactly zero times. `computeTransactionDiff` is the entry point;
- * `describeChange` is its helper and is exported only so it can be tested
- * directly.
+ * `describeChange` is its helper, exported for undo (which names the step it
+ * takes back, the reverse of the diff's direction) and for tests.
  *
  * ONE HONEST CAVEAT about "pure": every user-facing string comes from
  * `getLabel()`, which is vocabulary-theme sensitive. Same input gives the same
@@ -31,6 +31,10 @@
 
 import { getLabel } from '../labels/labelResolver.js';
 import { getPriorityLevel } from '../utils/priorityLevel.js';
+import { getAutoClearForMode, getAutoClearMode, getCycleMode } from '../utils/cycleMode.js';
+import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+
+const MODE_LABEL_KEYS = Object.freeze({ auto: 'mode.auto', manual: 'mode.manual', todo: 'mode.todo' });
 
 /**
  * Analyze what changed between two snapshots
@@ -43,31 +47,45 @@ export function describeChange(fromSnapshot, toSnapshot) {
   const fromTasks = fromSnapshot.tasks || [];
   const toTasks = toSnapshot.tasks || [];
 
+  // A completed cycle is ONE step to the user. Its consequences — every task
+  // unchecked, Clear on Reset tasks cleared — are not steps of their own, and
+  // listing them read "Cycle count changed + 1 change" (Oct 2026 audit).
+  const cycleDelta = (toSnapshot.cycleCount || 0) - (fromSnapshot.cycleCount || 0);
+  if (cycleDelta > 0) return getLabel('notify.changeCycleCompleted');
+
   // Cycle-level changes
   if (fromSnapshot.title !== toSnapshot.title) {
     changes.push(getLabel('notify.changeCycleRenamed'));
   }
   if (fromSnapshot.autoReset !== toSnapshot.autoReset ||
       fromSnapshot.deleteCheckedTasks !== toSnapshot.deleteCheckedTasks) {
-    changes.push(getLabel('notify.changeModeChanged'));
+    changes.push(getLabel('notify.changeModeSwitched', { vars: { mode: getLabel(MODE_LABEL_KEYS[getCycleMode(toSnapshot)]) } }));
   }
   if ((fromSnapshot.theme || 'classic') !== (toSnapshot.theme || 'classic')) {
     changes.push(getLabel('notify.changeThemeChanged'));
   }
-  if ((fromSnapshot.cycleCount || 0) !== (toSnapshot.cycleCount || 0)) {
+  if (cycleDelta < 0) {
     changes.push(getLabel('notify.changeCycleCount'));
   }
-  if ((fromSnapshot.clearedTasks?.totalCleared || 0) !== (toSnapshot.clearedTasks?.totalCleared || 0)) {
+
+  // Tasks that left the list into the cleared archive were CLEARED, not deleted
+  // — "Clear Completed" read "Cleared tasks changed + 1 change". Only what the
+  // archive does not account for counts as deleted.
+  const clearedDelta = (toSnapshot.clearedTasks?.totalCleared || 0) - (fromSnapshot.clearedTasks?.totalCleared || 0);
+  const countDiff = toTasks.length - fromTasks.length;
+  let removed = countDiff < 0 ? -countDiff : 0;
+  if (clearedDelta > 0) {
+    changes.push(clearedDelta === 1 ? getLabel('notify.changeTaskCleared') : getLabel('notify.changeTasksCleared', { vars: { count: clearedDelta } }));
+    removed = Math.max(0, removed - clearedDelta);
+  } else if (clearedDelta < 0) {
     changes.push(getLabel('notify.changeClearedTasks'));
   }
 
   // Task count changes
-  const countDiff = toTasks.length - fromTasks.length;
   if (countDiff > 0) {
     changes.push(countDiff === 1 ? getLabel('notify.changeTaskAdded') : getLabel('notify.changeTasksAdded', { vars: { count: countDiff } }));
-  } else if (countDiff < 0) {
-    const deleted = Math.abs(countDiff);
-    changes.push(deleted === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: deleted } }));
+  } else if (removed > 0) {
+    changes.push(removed === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: removed } }));
   }
 
   // Per-task modifications
@@ -81,8 +99,10 @@ export function describeChange(fromSnapshot, toSnapshot) {
     recurringOn: 0, recurringOff: 0,
     remindersOn: 0, remindersOff: 0,
     dueDateSet: 0, dueDateRemoved: 0, dueDateChanged: 0,
-    clearToggled: 0
+    clearOn: 0, clearOff: 0, clearToggled: 0
   };
+  // The clearing option is named the way the routine's mode shows it.
+  const clearMode = getAutoClearMode(toSnapshot);
 
   for (const [id, toTask] of toTaskMap) {
     const fromTask = fromTaskMap.get(id);
@@ -114,7 +134,11 @@ export function describeChange(fromSnapshot, toSnapshot) {
     // The autoClear map is the only stored value (Schema 2.6): a mode switch no
     // longer touches the task, so any change here IS a per-task control.
     if (JSON.stringify(fromTask.autoClear || null) !== JSON.stringify(toTask.autoClear || null)) {
-      fieldCounts.clearToggled++;
+      const wasOn = getAutoClearForMode(fromTask, clearMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+      const isOn = getAutoClearForMode(toTask, clearMode, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS);
+      if (!wasOn && isOn) fieldCounts.clearOn++;
+      else if (wasOn && !isOn) fieldCounts.clearOff++;
+      else fieldCounts.clearToggled++;
     }
   }
 
@@ -136,6 +160,11 @@ export function describeChange(fromSnapshot, toSnapshot) {
   if (fieldCounts.dueDateSet > 0) changes.push(getLabel('notify.changeDueDateSet'));
   if (fieldCounts.dueDateRemoved > 0) changes.push(getLabel('notify.changeDueDateRemoved'));
   if (fieldCounts.dueDateChanged > 0) changes.push(getLabel('notify.changeDueDateChanged'));
+  if (fieldCounts.clearOn > 0 || fieldCounts.clearOff > 0) {
+    const option = getLabel(clearMode === 'todo' ? 'taskOptions.markedForClearing' : 'taskOptions.clearOnReset');
+    if (fieldCounts.clearOn > 0) changes.push(getLabel('notify.changeOptionOn', { vars: { option } }));
+    if (fieldCounts.clearOff > 0) changes.push(getLabel('notify.changeOptionOff', { vars: { option } }));
+  }
   if (fieldCounts.clearToggled > 0) changes.push(getLabel('notify.changeClearToggled'));
 
   // Check for reordering (only if no other task-level changes found)
@@ -145,6 +174,12 @@ export function describeChange(fromSnapshot, toSnapshot) {
     if (fromOrder !== toOrder) {
       changes.push(getLabel('notify.changeTasksReordered'));
     }
+  }
+
+  // Task-view layout (dragged positions) is restored by undo too; without this
+  // a drag undid as the bare generic "Change".
+  if (JSON.stringify(fromSnapshot.taskViewLayout || null) !== JSON.stringify(toSnapshot.taskViewLayout || null)) {
+    changes.push(getLabel('notify.changeLayout'));
   }
 
   // Return result

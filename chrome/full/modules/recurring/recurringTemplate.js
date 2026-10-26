@@ -31,10 +31,55 @@
 
 import { DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { isPriorityLevel } from '../utils/priorityLevel.js';
-import { autoClearFields } from '../utils/cycleMode.js';
+import { autoClearFields, getAutoClear } from '../utils/cycleMode.js';
 
 /** Schema stamp for template records. Bump only alongside a migration. */
 export const RECURRING_TEMPLATE_SCHEMA_VERSION = 2;
+
+/**
+ * Whether a recurring task is PINNED to the routine list right now: its
+ * instance is in the list and set NOT to clear in the current mode (the 📌
+ * state you get by switching off "Clear on Reset" / "Marked for Clearing").
+ *
+ * A pinned instance never leaves the list, and the watcher never spawns a
+ * template whose instance is already there, so pinning already stops the
+ * schedule. This makes that visible. It is DERIVED, never stored: unpinning
+ * ends it with nothing to clear, and it follows the per-mode autoClear key, so
+ * a task pinned in a cycle mode is not pinned in To-Do unless set there too.
+ *
+ * @param {Object|null|undefined} routine
+ * @param {string} templateId - the template's id, which its instance shares
+ * @returns {boolean}
+ */
+export function isRecurringPinned(routine, templateId) {
+    const instance = Array.isArray(routine?.tasks) ? routine.tasks.find(t => t.id === templateId) : null;
+    if (!instance) return false;
+    return !getAutoClear(instance, routine, DEFAULT_RECURRING_DELETE_SETTINGS);
+}
+
+/**
+ * Why a recurring template is not spawning, as the panel shows it.
+ *
+ *   'manual' — the user paused it. Always wins: pause first, then pin, and it
+ *              reads as a normal pause; unpin, and it stays paused until the
+ *              user resumes it.
+ *   'pinned' — not paused by the user, but pinned to the list (see
+ *              isRecurringPinned). Unpinning ends it on its own; the resume
+ *              control is shown inactive, because there is no pause to undo.
+ *   null     — neither.
+ *
+ * Resuming a 'manual' pause while pinned clears the user's pause; the panel
+ * then reads 'pinned', and unpinning makes the task active.
+ *
+ * @param {Object|null|undefined} routine
+ * @param {Object|null|undefined} template
+ * @returns {'manual'|'pinned'|null}
+ */
+export function getRecurringPauseState(routine, template) {
+    if (!template) return null;
+    if (template.paused === true) return 'manual';
+    return isRecurringPinned(routine, template.id) ? 'pinned' : null;
+}
 
 /**
  * Build a recurring template record.

@@ -141,8 +141,11 @@ export const DEFAULT_LABELS = deepFreeze({
         priority:         'Toggle task priority',
         edit:             'Rename task',
         delete:           'Delete task',
-        clearOnReset:     'Clear on Reset (removes task when cycle resets)',
-        markedForClearing: 'Marked for Clearing (removes task when cleared)',
+        // A toggle: the name stays put and aria-pressed carries on/off, so the text
+        // must be true in BOTH states. "(removes task when cleared)" read as a fact
+        // while the option was off and the task pinned (Oct 2026).
+        clearOnReset:     'Clear on Reset (when on, the task is removed when the cycle resets)',
+        markedForClearing: 'Marked for Clearing (when on, the task is removed when completed tasks are cleared)',
         showOptions:      'Show task options',
         customize:        'Add or remove task buttons',
         customizeAria:    'Add or remove which task option buttons are visible'
@@ -316,7 +319,13 @@ export const DEFAULT_LABELS = deepFreeze({
         progressToNext:     'Progress to next badge',
         progressCleared:    '{current} of {next} cleared {taskWord} to next badge',
         progressCycles:     '{current} of {next} {cycleWord} to next badge',
-        globalDisplay:      '{cycles} {cycleText} / {cleared} {clearedText}',
+        // The cleared figure is the BADGE counter (userProgress.totalTasksCompleted),
+        // not every clear: since v2.626 only To-Do clears add to it, while each
+        // routine's own "Cleared tasks" line counts clears in every mode. Saying so
+        // here is what keeps the two numbers from looking contradictory.
+        globalDisplay:      '{cycles} {cycleText} / {cleared} cleared toward badges',
+        allRoutinesInfoAria: 'What counts toward badges',
+        allRoutinesInfo:    'Badges count completed cycles in every routine, plus tasks cleared in To-Do mode. Each routine\'s own cleared count also includes tasks cleared in Auto and Manual Cycle mode, which do not count toward badges.',
         progressCircleAria: 'Current {cycleWord} {taskWord} completion',
         allBadgesUnlocked:  'All badges unlocked!',
         clearedToMilestone: 'Next badge: {remaining} more cleared {taskWord}',
@@ -368,7 +377,10 @@ export const DEFAULT_LABELS = deepFreeze({
         taskPriorityFailed:     'Could not toggle priority',
         taskResetFailed:        'Could not reset tasks',
         completeAllFailed:      'Could not complete all tasks',
-        noCompletedToDelete:    'No completed tasks to delete.',
+        noCompletedToDelete:    'No completed tasks to clear.',
+        // Clear Completed found completed tasks, but every one is pinned (Marked
+        // for Clearing off) — "no completed tasks" was untrue there.
+        completedTasksPinned:   'The completed tasks are pinned to your list, so nothing was cleared. Turn on Marked for Clearing on a task to clear it.',
         taskLimitReached:       'Cannot add task - limit of {limit} tasks reached.\nComplete or delete tasks to add more.',
         priorityEnabled:        'Priority enabled.',
         priorityRemoved:        'Priority removed.',
@@ -411,7 +423,7 @@ export const DEFAULT_LABELS = deepFreeze({
         deletionCancelled:      'Deletion cancelled.',
         saveCancelled:          'Save cancelled.',
         noRoutineToSave:        'No routine found to save.',
-        recurringKeptOnReset:   'This recurring task will be kept on reset instead of respawning.',
+        recurringKeptOnReset:   'This recurring task is pinned to your list in every mode, and paused until you unpin it.',
         taskRemovedOnReset:     'Task will be removed on reset',
         taskKeptOnComplete:     'Task will be kept on complete (pinned)',
         taskRemainOnReset:      'Task will remain in list on reset',
@@ -442,6 +454,7 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringTurnedOff:     'Recurring turned off for this task.',
         recurringPaused:        'Recurring paused for this task.',
         recurringResumed:       'Recurring resumed — the next occurrence is scheduled from now.',
+        recurringUnpinToResume: 'Pinned to your list, so it will not recur. Unpin it to resume.',
         recurringRemoveFailed:  'Failed to remove task',
         recurringNoTasksSelected: 'No tasks selected',
         recurringNoActiveCycle: 'No active routine',
@@ -550,18 +563,23 @@ export const DEFAULT_LABELS = deepFreeze({
         undoHistoryCleared:      'Undo history cleared.',
         undoAction:              'Undone: {description} ({steps})',
         redoAction:              'Redone: {description} ({steps})',
-        stepsLeftNone:           'no steps left',
-        stepsLeftOne:            '1 step left',
-        stepsLeftMany:           '{count} steps left',
+        // Undo counts what is left to UNDO, redo what is left to REDO. One shared
+        // "no steps left" after a redo read as "nothing can be undone" (Oct 2026).
+        undoStepsNone:           'nothing left to undo',
+        undoStepsLeft:           '{count} more to undo',
+        redoStepsNone:           'nothing left to redo',
+        redoStepsLeft:           '{count} more to redo',
 
-        // Undo/redo change descriptions
+        // Undo/redo change descriptions. Each names the STEP the user took (undo
+        // describes it restored → current, redo current → next), in the app's own
+        // words: an option by its name, a mode by its name, a cycle as completed.
         changeCycleRenamed:      'Routine renamed',
-        changeModeChanged:       'Mode changed',
+        changeModeSwitched:      'Switched to {mode}',
         changeTaskAdded:         'Task added',
         changeTasksAdded:        '{count} tasks added',
         changeTaskDeleted:       'Task deleted',
         changeTasksDeleted:      '{count} tasks deleted',
-        changeTaskEdited:        'Task edited',
+        changeTaskEdited:        'Task renamed',
         changeTaskCompleted:     'Task completed',
         changeTasksCompleted:    '{count} tasks completed',
         changeTaskUncompleted:   'Task uncompleted',
@@ -569,7 +587,7 @@ export const DEFAULT_LABELS = deepFreeze({
         changeTasksReordered:    'Tasks reordered',
         changePrioritySet:       'Priority set',
         changePriorityRemoved:   'Priority removed',
-        changePriorityColor:     'Priority color changed',
+        changePriorityColor:     'Priority changed',
         changeRecurringEnabled:  'Recurring enabled',
         changeRecurringDisabled: 'Recurring disabled',
         changeRemindersEnabled:  'Reminders enabled',
@@ -577,12 +595,20 @@ export const DEFAULT_LABELS = deepFreeze({
         changeDueDateSet:        'Due date set',
         changeDueDateRemoved:    'Due date removed',
         changeDueDateChanged:    'Due date changed',
-        changeClearToggled:      'Remove when complete changed',
+        // {option} is taskOptions.clearOnReset or taskOptions.markedForClearing,
+        // whichever the routine's mode shows.
+        changeOptionOn:          '{option} turned on',
+        changeOptionOff:         '{option} turned off',
+        changeClearToggled:      'Clearing option changed',
         changeThemeChanged:      'Theme changed',
+        changeCycleCompleted:    'Cycle completed',
         changeCycleCount:        'Cycle count changed',
+        changeTaskCleared:       'Task cleared',
+        changeTasksCleared:      '{count} tasks cleared',
         changeClearedTasks:      'Cleared tasks changed',
+        changeLayout:            'Layout changed',
         changeMultiple:          { one: '{count} change', other: '{count} changes' },
-        changeGeneric:           'Change',
+        changeGeneric:           'Last change',
         undoStorageFull:         'Storage full - undo history not saved. Consider exporting your data.',
         taskOptionsUpdated:      'Task options updated',
         taskOptionEnabled:       '{option} enabled',
@@ -651,10 +677,13 @@ export const DEFAULT_LABELS = deepFreeze({
         restoreStorageFailed:    'The restore could not be saved — storage is full. Nothing was changed. Export a backup, free some space, then try again.',
         restorePartialSettings:  'Your routines were restored, but some display settings could not be saved — storage is nearly full. Free some space and restore the file again to bring them back.',
         factoryResetComplete:    'Factory Reset Complete. Reloading...',
+        factoryResetFinishing:   'Finishing the reset...',
         factoryResetCancelled:   'Factory reset cancelled.',
         factoryResetPartial:     'Factory reset finished, but some stored data could not be removed. Close other miniCycle tabs and try again.',
-        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed, then try again.',
-        factoryResetBackupCancelled: 'Backup not saved, so nothing was deleted.',
+        // Both name the way forward: try again, or tick the confirmation's
+        // "Skip the backup" (modal.factoryResetSkipBackup) — Oct 2026 review.
+        factoryResetBackupFailed: 'Could not save a backup, so nothing was deleted. Check that downloads are allowed and try again, or tick "Skip the backup" when you confirm.',
+        factoryResetBackupCancelled: 'The save window was closed before the backup was saved, so nothing was deleted. Try again and save the file, or tick "Skip the backup" when you confirm.',
         restoreCancelled:        'Restore cancelled.',
         preMigrationRestored:    'Restored the copy from before the update.',
         preMigrationRestoreFailed: 'The copy could not be written back. Nothing was changed.',
@@ -1129,6 +1158,12 @@ export const DEFAULT_LABELS = deepFreeze({
         resumeRecurring:      'Resume recurring',
         pausedBadge:          'Paused',
         pausedSummary:        'Paused — will not recur until resumed',
+        // Pinned to the list (Clear on Reset / Marked for Clearing switched off)
+        // without a pause of the user's own: the pin holds it, so the panel says
+        // so and the resume control is inactive (getRecurringPauseState).
+        pausedPinnedBadge:    'Paused · pinned',
+        pausedPinnedSummary:  'Paused while pinned to your list — unpin it to resume',
+        unpinToResume:        'Pinned to your list — unpin it to resume',
         selectTask:           'Select {name} to make recurring',
         markTaskTemporarily:  'Mark this task temporarily',
         firstSpecificDate:    'First specific date',
@@ -2681,6 +2716,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'stats.progressCleared',
     'stats.progressCycles',
     'stats.globalDisplay',
+    'stats.allRoutinesInfo',
     'stats.progressCircleAria',
 
     // Notifications
@@ -2695,6 +2731,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'notify.taskResetFailed',
     'notify.completeAllFailed',
     'notify.noCompletedToDelete',
+    'notify.completedTasksPinned',
     'notify.taskSystemLimited',
     'notify.taskDisplayLimited',
     'notify.featureUnavailable',

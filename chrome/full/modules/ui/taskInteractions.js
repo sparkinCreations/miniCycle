@@ -68,6 +68,11 @@ export function attachKeyboardTaskOptionToggle(taskItem) {
     safeAddEventListener(taskItem, "focusin", (e) => {
         const target = e.target;
 
+        // The ⋮ button is an explicit toggle: its click opens and closes the row.
+        // Revealing on its focus as well opened the row on the tap's focus and
+        // shut it again on the same tap's click (Oct 2026).
+        if (target.closest?.(DOM_SELECTORS.THREE_DOTS_BTN)) return;
+
         // Keyboard focus on any task element should reveal options (a11y parity with hover)
         const isKeyboardFocus = target.matches?.(':focus-visible');
 

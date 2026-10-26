@@ -349,12 +349,10 @@ export async function renameUndoStackInIndexedDB(oldCycleId, newCycleId) {
     const objectStore = transaction.objectStore("undoStacks");
 
     // Relabel every snapshot, not just the storage key — snapshots embed
-    // activeCycleId and title (key=title in this app). A verbatim copy left
-    // each one carrying the OLD id, so validateSnapshot's strict-equality
-    // check rejected the entire migrated history on the next filtered load
-    // (silent total wipe), and any snapshot that DID survive an unfiltered
-    // path would restore the old title into the renamed cycle on Undo,
-    // breaking the key=title invariant.
+    // activeCycleId. A verbatim copy left each one carrying the OLD id, so
+    // validateSnapshot's strict-equality check rejected the entire migrated
+    // history on the next filtered load (silent total wipe). Titles are kept:
+    // they are what lets the rename itself be undone (relabelSnapshotsForCycle).
     const newData = {
       cycleId: newCycleId,
       undoStack: _deps.relabelSnapshotsForCycle(oldData.undoStack, newCycleId),
