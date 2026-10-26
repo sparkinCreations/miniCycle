@@ -755,6 +755,10 @@ export const BACKUP_FOLDER = Object.freeze({
  * @constant {Object}
  */
 export const EVENTS = Object.freeze({
+    /** Dispatched on body (bubbles) by taskSearch whenever the sort chip
+     *  changes, including reset. body.dataset.taskSort carries the new value;
+     *  focusTaskPanel re-renders so the Task tab browses the same order. */
+    TASK_SORT_CHANGED: 'app:taskSortChanged',
     FOCUS_MODE_ACTIVATED: 'focusMode:activated',
     FOCUS_MODE_DEACTIVATED: 'focusMode:deactivated',
     /** Dispatched on document by panelCarousel after a panel becomes active:

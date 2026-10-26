@@ -1,3 +1,7 @@
+## [2.637] - 2026-10-26
+- fix(focus): the Task tab browses the order the sort chip chose
+
+
 ## [2.636] - 2026-10-26
 - fix(recurring): renaming a recurring task renames its template; reminder flag follows too; drifted templates heal at boot
 

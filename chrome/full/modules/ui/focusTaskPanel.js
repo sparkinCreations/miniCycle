@@ -24,10 +24,11 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE,
+import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTURE, EVENTS,
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getTaskText } from '../task/taskUtils.js';
+import { sortTasksBySort, TASK_SORT_DATASET_KEY } from '../utils/taskSort.js';
 import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getAutoClearMode, getRoutine, getTaskResetIndicator, getAutoClearForMode } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -44,7 +45,8 @@ const di = createDIModule('FocusTaskPanel', {
     enableUndoSystemOnFirstInteraction: optional(null),
     safeAddEventListener: optional(null),
     getElementById: optional((id) => document.getElementById(id)),
-    querySelector: optional((sel) => document.querySelector(sel))
+    querySelector: optional((sel) => document.querySelector(sel)),
+    getBody: optional(() => document.body)
 });
 
 export const setFocusTaskPanelDependencies = di.setDependencies;
@@ -93,6 +95,10 @@ export class FocusTaskPanel {
         this._applyStaticLabels();
         this._attachListeners();
         this._subscribe();
+        // Re-render when the sort chip changes so the Task tab is already in
+        // the new order when the user swipes to it.
+        this._boundSortChanged = () => this.render();
+        this.deps.getBody?.()?.addEventListener(EVENTS.TASK_SORT_CHANGED, this._boundSortChanged);
         this.render();
         this.initialized = true;
     }
@@ -106,6 +112,10 @@ export class FocusTaskPanel {
         if (this._subscribed) {
             this.deps.AppState.unsubscribe?.(SUBSCRIBER_KEY, this._onStateChange);
             this._subscribed = false;
+        }
+        if (this._boundSortChanged) {
+            this.deps.getBody?.()?.removeEventListener(EVENTS.TASK_SORT_CHANGED, this._boundSortChanged);
+            this._boundSortChanged = null;
         }
         const { completeBtn, prevBtn, nextBtn, panel } = this.elements;
         completeBtn?.removeEventListener('click', this._boundComplete);
@@ -136,9 +146,20 @@ export class FocusTaskPanel {
         return { cycleId: cycleId ?? null, cycle: cycle ?? null };
     }
 
+    /**
+     * The routine's tasks in the order the user is looking at: the task-search
+     * sort chip (A–Z / Priority / Due Date) published by taskSearch on
+     * body.dataset.taskSort, through the same comparator the Routine list uses.
+     * Without this the Task tab browsed routine order whatever the chip said.
+     */
     _getTasks(state = null) {
         const { cycle } = this._getActiveCycle(state);
-        return Array.isArray(cycle?.tasks) ? cycle.tasks : [];
+        const tasks = Array.isArray(cycle?.tasks) ? cycle.tasks : [];
+        return sortTasksBySort(tasks, this._activeSort());
+    }
+
+    _activeSort() {
+        return this.deps.getBody?.()?.dataset?.[TASK_SORT_DATASET_KEY] || 'default';
     }
 
     /** The task the card shows: override if valid, else first incomplete. */

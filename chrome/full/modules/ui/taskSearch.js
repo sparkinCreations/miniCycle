@@ -12,7 +12,8 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, EVENTS } from '../core/constants.js';
+import { compareTasksBySort, TASK_SORT_DATASET_KEY } from '../utils/taskSort.js';
 import { getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -392,6 +393,20 @@ function matchesFilter(task, taskData, themes) {
  * @param {(el: HTMLElement) => Object|undefined} dataFor - The element's state record
  * @param {Object} themes - vocabThemeManager
  */
+/**
+ * Publish the active sort for other views: body.dataset.taskSort carries the
+ * value and EVENTS.TASK_SORT_CHANGED (bubbling from body) says it changed.
+ * The Focus view re-renders on it so the Task tab browses the same order.
+ */
+function publishSort() {
+    const deps = di.resolve();
+    const body = deps.getBody?.();
+    if (!body) return;
+    if (body.dataset[TASK_SORT_DATASET_KEY] === currentSort) return;
+    body.dataset[TASK_SORT_DATASET_KEY] = currentSort;
+    body.dispatchEvent(new CustomEvent(EVENTS.TASK_SORT_CHANGED, { bubbles: true, detail: { sort: currentSort } }));
+}
+
 function applySortToDOM(tasks, taskList, dataFor, themes) {
     if (currentSort === 'default') {
         // Restore original DOM order if we have a saved order, THEN drop it so
@@ -412,25 +427,13 @@ function applySortToDOM(tasks, taskList, dataFor, themes) {
         originalTaskOrder = tasks.map(t => t.dataset.taskId).filter(Boolean);
     }
 
-    // Strip leading emojis (including ZWJ sequences) so A-Z sorts by the text, not the emoji code point
-    const stripLeadingEmoji = (text) => text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
-
+    // One comparator shared with the Focus view (utils/taskSort.js), on STATE
+    // records: the Task tab must browse exactly this order. Rows without a
+    // state record (none expected) keep their place.
     const sorted = [...tasks].sort((a, b) => {
-        if (currentSort === 'az') {
-            const ta = stripLeadingEmoji(a.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '');
-            const tb = stripLeadingEmoji(b.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent?.toLowerCase() || '');
-            return ta.localeCompare(tb);
-        }
-        if (currentSort === 'priority') {
-            // High, then Medium, then Low, then none — from state, by level
-            return themes.compareTaskPriority(dataFor(a), dataFor(b));
-        }
-        if (currentSort === 'due-date') {
-            const da = a.querySelector(DOM_SELECTORS.DUE_DATE)?.value || '9999-12-31';
-            const db = b.querySelector(DOM_SELECTORS.DUE_DATE)?.value || '9999-12-31';
-            return da.localeCompare(db);
-        }
-        return 0;
+        const ta = dataFor(a), tb = dataFor(b);
+        if (!ta || !tb) return 0;
+        return compareTasksBySort(currentSort, ta, tb);
     });
 
     sorted.forEach(el => taskList.appendChild(el));
@@ -460,6 +463,7 @@ function applyFiltersAndSort(query) {
     // Flag the sorted view so reordering (drag + move arrows) pauses — see
     // DOM_CLASSES.TASKS_SORTED. Cleared again by Default / resetSearch().
     deps.getBody?.()?.classList.toggle(DOM_CLASSES.TASKS_SORTED, currentSort !== 'default');
+    publishSort();
 
     // 2. Apply text + category filter (show/hide each task) to BOTH the active list
     //    AND the completed-tasks dropdown. When that feature is enabled, completed
@@ -569,6 +573,7 @@ export function resetSearch() {
     currentFilter = 'all';
     currentSort = 'default';
     deps.getBody?.()?.classList.remove(DOM_CLASSES.TASKS_SORTED);
+    publishSort();
     filterGroupCollapsed = true;
 
     // Reset chip visual state to defaults
