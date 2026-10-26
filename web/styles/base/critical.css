@@ -645,19 +645,19 @@ html.mc-first-run #app-loader .first-run-status {
 }
 
 /* iOS PWA standalone mode - blur extends to top, content pushed with padding */
-/* Requires .ios-pwa class added by JavaScript detection. Same numbers as the
-   native app's env() rules plus 10px (real inset + 24px; 47px floor for a web
-   app that reports a zero inset): iOS 26's status-bar glass feathers ~10pt
-   below the bar, and a flat 59px had the logo and ☰ inside it. Mirrors
-   layout/header.css; keep the two in sync. */
+/* Requires .ios-pwa class added by JavaScript detection. Real inset + 44px
+   (47px floor for a web app that reports a zero inset), and the branding
+   centred below inset + 24px: iOS 26's status-bar glass reaches ~35pt below
+   the bar in the home-screen web app, and +24px still left the logo in it.
+   Mirrors layout/header.css (the reasoning is there); keep the two in sync. */
 .ios-pwa .fixed-header-container {
   top: 0;
 }
 .ios-pwa .mini-cycle-header-row {
-  padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 24px);
+  padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 44px);
 }
 .ios-pwa .header-branding {
-  top: calc(50% + max(env(safe-area-inset-top, 0px), 47px) / 2);
+  top: calc(50% + (max(env(safe-area-inset-top, 0px), 47px) + 24px) / 2);
 }
 .header-logo {
   height: 25px;

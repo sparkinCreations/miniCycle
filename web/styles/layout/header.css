@@ -363,14 +363,19 @@ body.dark-mode .app-subtitle {
        edge, inside the feather of iOS 26's status-bar glass, so they rendered
        soft in the home-screen web app while the Capacitor app — which uses the
        env() rules above — kept them clear. max() keeps the old fallback for a
-       web app that reports a zero inset. +24px rather than the native +14px:
-       iOS 26's status-bar glass feathers ~10pt below the bar and still grazed
-       the logo at +14px (v2.639). Keep in sync with base/critical.css. */
-    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 24px);
+       web app that reports a zero inset. +44px rather than the native +14px:
+       iOS 26's status-bar glass reaches ~35pt below the bar, fading as it goes
+       (measured on an iPhone screenshot of v2.640: the top of the logo and of
+       ☰ were blurred, the wordmark below them was not). +14px (v2.639) and
+       +24px (v2.640) both left the logo inside it. The native app has no such
+       glass. Keep in sync with base/critical.css. */
+    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 44px);
     padding-bottom: var(--space-6);
 }
 
 .ios-pwa .header-branding {
-    /* Centre within the area below the status bar, like the env() rule above. */
-    top: calc(50% + max(env(safe-area-inset-top, 0px), 47px) / 2);
+    /* Centre within the area below the status-bar glass (the inset plus 24px).
+       Centred below the inset alone, the logo moved only half as far as the
+       padding above, and stayed in the glass. */
+    top: calc(50% + (max(env(safe-area-inset-top, 0px), 47px) + 24px) / 2);
 }
