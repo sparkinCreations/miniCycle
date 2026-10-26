@@ -241,14 +241,22 @@ export class DragDropManager {
             }
 
             // Setup dragover handler
+            //
+            // Synchronous on purpose. handleRearrange only records the move and
+            // (re)arms its debounce timer; the DOM work happens later in
+            // _applyPendingRearrange. This used to hop through a
+            // requestAnimationFrame first, which made a dragover a move that was
+            // pending in TWO places — and the drop flush can only see
+            // _pendingRearrange. A drop inside that frame found nothing to flush
+            // and the row stayed put (Oct 2026, WebKit CI: drop 20ms after the
+            // dragover, "moved at 0, target at 3"; Chromium usually ran the frame
+            // first). WKWebView's frame cadence is the iOS app's, not a test's.
             this._dragoverHandler = (event) => {
                 event.preventDefault();
-                requestAnimationFrame(() => {
-                    const movingTask = event.target.closest(DOM_SELECTORS.TASK);
-                    if (movingTask) {
-                        this.handleRearrange(movingTask, event);
-                    }
-                });
+                const movingTask = event.target.closest(DOM_SELECTORS.TASK);
+                if (movingTask) {
+                    this.handleRearrange(movingTask, event);
+                }
             };
             safeAdd(document, "dragover", this._dragoverHandler);
 
