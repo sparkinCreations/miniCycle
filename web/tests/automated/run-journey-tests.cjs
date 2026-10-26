@@ -1121,8 +1121,15 @@ async function journeyDragReorder(browser, baseURL) {
             const moved = rows()[from], target = rows()[to];
             const dt = new DataTransfer();
             const at = (el, f) => { const r = el.getBoundingClientRect(); return r.top + r.height * f; };
+            const frame = () => new Promise(r => requestAnimationFrame(() => setTimeout(r, 0)));
             moved.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(moved, 0.5) }));
+            await frame();
             target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(target, frac) }));
+            // The app handles dragover on the next animation frame; `gap` is measured
+            // from when that frame has run, not from the dispatch — on a slow runner the
+            // frame itself could take longer than a 20ms gap, and the "quick release"
+            // then dropped before any move was pending.
+            await frame();
             await new Promise(r => setTimeout(r, gap));
             const movedBeforeEnd = rows().indexOf(moved);
             if (end === 'drop') {
@@ -1287,14 +1294,22 @@ async function journeyCustomizerClearsMenuBackdrop(browser, baseURL) {
             await page.evaluate(() => document.body.classList.contains('main-menu-open')),
             'fixture: the menu never opened');
         await page.evaluate(() => document.getElementById('menu-task-options')?.click());
-        await page.waitForTimeout(900);
+        await page.waitForFunction(() => !!document.querySelector('dialog[open]#task-options-customizer-modal'), null, { timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(300);
         record('the customizer opened', await page.evaluate(() => !!document.querySelector('dialog[open]#task-options-customizer-modal')),
             'no customizer dialog is open');
         record('…and the menu backdrop class is already gone',
             await page.evaluate(() => !document.body.classList.contains('main-menu-open')),
             'body.main-menu-open survived the customizer opening');
         await page.evaluate(() => document.getElementById('close-task-options-btn')?.click() || document.querySelector('dialog[open] .close-button-fullwidth')?.click());
-        await page.waitForTimeout(800);
+        // The backdrop fades out over a 0.25s visibility transition; wait for the
+        // closed state itself rather than a fixed delay a slow runner can miss.
+        await page.waitForFunction(() => {
+            const b = document.querySelector('.main-menu-backdrop');
+            return document.querySelectorAll('dialog[open]').length === 0
+                && !document.body.classList.contains('main-menu-open')
+                && (!b || getComputedStyle(b).visibility !== 'visible');
+        }, null, { timeout: 5000 }).catch(() => {});
         const after = await page.evaluate(() => ({
             open: document.querySelectorAll('dialog[open]').length,
             menuOpen: document.body.classList.contains('main-menu-open'),
@@ -3226,7 +3241,8 @@ async function journeyDueDateSystemNotification(browser, baseURL) {
         record('nothing is posted before 9:00', before.notes === 0, `${before.notes} notification(s) posted early`);
 
         await page.clock.fastForward(3 * 60 * 1000); // 08:58 → 09:01
-        await page.waitForTimeout(500);
+        await page.waitForFunction(() => window.__sysNotes.length >= 1, null, { timeout: 5000 }).catch(() => {});
+        await page.waitForTimeout(300);   // a second post, if the code ever double-fired, gets its chance to show
         const after = await page.evaluate(() => window.__sysNotes);
         record('at 9:00 one system notification is posted', after.length === 1, `posted: ${JSON.stringify(after)}`);
         record('…titled from the label and naming the due task',
@@ -4111,9 +4127,13 @@ async function journeyFirstGestureUndo(browser, baseURL) {
     let opened = await openColdRoutine();
     try {
         const { page } = opened;
+        // Wait for the button to be on screen and for focus to actually land before
+        // Enter: on a slow runner (CI WebKit) the keypress used to fire before either.
+        await page.waitForFunction(() => { const b = document.getElementById('completeAll'); return !!b && b.offsetParent !== null && !b.disabled; }, null, { timeout: 10000 }).catch(() => {});
         await page.focus('#completeAll');
+        await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'completeAll', null, { timeout: 3000 }).catch(() => {});
         await page.keyboard.press('Enter');
-        const completed = await waitField(page, 'cycleCount', 1);
+        const completed = await waitField(page, 'cycleCount', 1, 15000);
         record('Complete Cycle (first action) completed the cycle', completed, `cycleCount=${await field(page, 'cycleCount')}`);
         await page.waitForTimeout(3500);   // let the reset animation and its saves finish
         await page.keyboard.press('Control+z');

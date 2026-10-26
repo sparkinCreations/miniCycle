@@ -48,7 +48,8 @@ npm run test:journey  # end-to-end user journeys on the real app
 JOURNEY_FILTER="factory reset" npm run test:journey  # only the journeys whose name contains the text
 npm run test:a11y     # custom controls must be keyboard-operable and named — the class no label gate can see
 npm run test:contrast # axe color-contrast on the real app, per theme and view (gated at zero serious violations; text over image backgrounds is reported, not judged)
-npm run test:webkit   # the browser suite on WebKit (the iOS app is a WKWebView) — CI runs it non-blocking; test:journey:webkit likewise
+npm run test:webkit   # the browser suite on WebKit (the iOS app is a WKWebView) — CI runs it non-blocking
+npm run test:journey:webkit  # the journeys on WebKit — LOCAL ONLY, run before an iOS release (dropped from CI Oct 2026: the Ubuntu WebKit port failed a different timing check most runs while macOS WebKit passed them all)
 ```
 
 **Adding a new module file? Run `test:sw`.** Its precache drift guard fails when a module

@@ -258,6 +258,9 @@ jobs:
       working-directory: ./web
       run: npm run test:webkit
 
-    - name: Journeys on WebKit
-      working-directory: ./web
-      run: npm run test:journey:webkit
+    # The WebKit JOURNEYS run locally only (`npm run test:journey:webkit`, before an
+    # iOS release). On these Ubuntu runners the Linux WebKit port is slow enough that a
+    # different handful of timing-sensitive checks failed on most runs from Oct 12 to
+    # Oct 26 2026 (about 6 green in 30) while every one of them passed on macOS WebKit —
+    # the port the iPhone app actually runs on. A red that never means anything is
+    # worse than no signal.
