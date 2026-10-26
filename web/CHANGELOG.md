@@ -1,3 +1,8 @@
+## [2.638] - 2026-10-26
+- fix(focus): no header frost in Focus View — Safari's home-screen web view blurred the logo and ⋯ into it
+- fix(ios): adopt the UIScene lifecycle — the iOS 27.1 SDK trapped at launch
+
+
 ## [2.637] - 2026-10-26
 - fix(focus): the Task tab browses the order the sort chip chose
 
