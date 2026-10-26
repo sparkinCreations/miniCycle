@@ -34,24 +34,15 @@
     border-radius: 0;
     height: auto;
     min-height: 45px;
-    /* The frost lives on ::before (below), so this row only isolates it. */
-    isolation: isolate;
 }
 
-/* Frost BEHIND the row's content, not on the row. With backdrop-filter on the
-   row itself, WebKit (the iOS app) composites the logo, wordmark and ☰ button
-   into the blurred layer and they rendered soft (Oct 2026). A layer of its own
-   at z-index -1 blurs the same backdrop and leaves the content crisp. */
-.mini-cycle-header-row::before,
-.mode-selector-wrapper::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    -webkit-backdrop-filter: blur(5px);
-    backdrop-filter: blur(5px);
-    pointer-events: none;
-}
+/* No frost on the header any more (Oct 2026). The row used to carry a 5px
+   backdrop blur — first on the row (which softened the logo, wordmark and ☰
+   in the iOS app), then on a ::before layer behind them (v2.632). In the iOS
+   home-screen web app the band still read as a smeared strip against iOS 26's
+   own status-bar glass, so the frost is gone everywhere: the header is part of
+   the gradient, and the only blur left at the top is the system's, over empty
+   gradient where nothing sits (.ios-pwa clearance below). */
 
 /* =============================================================================
    HEADER VARIABLES
@@ -195,7 +186,6 @@
     background: transparent;
     border-bottom: none;
     min-height: 31px;
-    isolation: isolate; /* frost on ::before — see .mini-cycle-header-row::before */
     overflow: visible; /* Allow quick-actions menu to overflow */
 }
 
@@ -373,8 +363,10 @@ body.dark-mode .app-subtitle {
        edge, inside the feather of iOS 26's status-bar glass, so they rendered
        soft in the home-screen web app while the Capacitor app — which uses the
        env() rules above — kept them clear. max() keeps the old fallback for a
-       web app that reports a zero inset. Keep in sync with base/critical.css. */
-    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 14px);
+       web app that reports a zero inset. +24px rather than the native +14px:
+       iOS 26's status-bar glass feathers ~10pt below the bar and still grazed
+       the logo at +14px (v2.639). Keep in sync with base/critical.css. */
+    padding-top: calc(max(env(safe-area-inset-top, 0px), 47px) + 24px);
     padding-bottom: var(--space-6);
 }
 

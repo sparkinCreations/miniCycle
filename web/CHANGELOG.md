@@ -1,3 +1,7 @@
+## [2.640] - 2026-10-26
+- style(header): drop the frosted header band everywhere; iOS web app gets 10px more clearance
+
+
 ## [2.639] - 2026-10-26
 - fix(header): iOS home-screen web app clears the status bar like the native app
 
