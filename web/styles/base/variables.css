@@ -678,7 +678,7 @@
      arithmetic answers exist and each is wrong somewhere:
 
        - the buttons' own band, env + 12 + 38, bounds only the buttons. The
-         band that PAINTS is .mini-cycle-header-row (backdrop-filter: blur(5px))
+         band that PAINTS is .mini-cycle-header-row (its background; the frost was removed Oct 2026)
          and it extends below them — at inset 0 it runs to y=82 while the
          buttons end at 50, and the routine title was landing inside it, washed
          out. That is the v2.472 report.
