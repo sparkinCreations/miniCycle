@@ -1,3 +1,7 @@
+## [2.634] - 2026-10-26
+- fix(reminders): arm reminders from state at boot; one catch-up, not three
+
+
 ## [2.633] - 2026-10-25
 - fix(modals): Task Options and Recurring stay on screen and clear of the notch on phones
 
