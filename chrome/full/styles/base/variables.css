@@ -670,6 +670,12 @@
   --focus-btn-top: 12px;
   --focus-btn-height: 38px;
   --focus-btn-gap: 14px;
+  /* Extra drop for ⋯ in the iOS home-screen web app only (.ios-pwa). That
+     header sits lower to stay out of iOS 26's status-bar glass (layout/
+     header.css), which moves the Focus View logo down with it; this keeps ⋯
+     out of the glass too, with its centre ~6px above the logo's as in the
+     native app. Measured at 402x874, 59pt inset: logo centre 111, ⋯ 104. */
+  --focus-btn-pwa-drop: 14px;
 
   /* Bottom edge of the chrome the focus card must clear.
 

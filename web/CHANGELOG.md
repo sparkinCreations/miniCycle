@@ -1,3 +1,8 @@
+## [2.642] - 2026-10-26
+- fix(focus): Focus View ⋯ clears the iOS web app's status-bar glass too
+- style(header): iOS web app header sits halfway between v2.640 and v2.641
+
+
 ## [2.641] - 2026-10-26
 - fix(header): iOS web app header clears the status-bar glass — logo and ☰ were still soft at +24px
 

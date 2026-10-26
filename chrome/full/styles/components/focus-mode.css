@@ -803,6 +803,13 @@ body.focus-mode .focus-mode-mode-modal {
     }
     body.focus-mode #focus-mode-menu-btn { right: 12px; }
 
+    /* iOS home-screen web app: clear the status-bar glass like the header
+       does (same 47px floor for a zero inset). The chrome measure counts this
+       button, so the card and the Focus menu below follow it. */
+    .ios-pwa body.focus-mode #focus-mode-menu-btn {
+        top: calc(max(env(safe-area-inset-top, 0px), 47px) + var(--focus-btn-top) + var(--focus-btn-pwa-drop));
+    }
+
     /* Top-clearance comes from #task-view's max-height (see rule above),
        which is what positions the centred wrapper. Zero the normal-mode
        margins on #task-input-row and .task-card so they don't push the card
