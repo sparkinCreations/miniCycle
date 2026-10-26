@@ -89,6 +89,20 @@ body.focus-mode.focus-mode-menu-open #focus-mode-menu {
     z-index: var(--z-notification-btn);
 }
 
+/* No header frost in Focus View. The body::after overlay already dims and
+   blurs the whole page, so the header row's own frost (header.css,
+   .mini-cycle-header-row::before) only re-blurs that overlay into a darker
+   band across the status bar — and in Safari's standalone (home-screen PWA)
+   web view it also composites the logo and the ⋯ button into the blurred
+   layer, so they rendered soft (Oct 2026, v2.637; the Capacitor web view was
+   fine). With no backdrop-filter in the header subtree there is no layer to
+   be captured into: band gone, logo and button crisp, on both web views. */
+body.focus-mode .mini-cycle-header-row::before,
+body.focus-mode .mode-selector-wrapper::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
 /* =============================================================================
    FOCUS MODE LAYOUT — Expand task list into freed vertical space
    ============================================================================= */
