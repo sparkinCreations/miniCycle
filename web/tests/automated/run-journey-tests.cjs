@@ -5379,7 +5379,78 @@ async function journeyRecreateLandsInList(browser, baseURL) {
     return { name: 'recreating a cleared task lands in the routine list', failures };
 }
 
+async function journeyQuickActionPickerKeepsMenuOpen(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    // A phone: the quick-actions row lives inside the ☰ menu there.
+    const context = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
+    const page = await context.newPage();
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 });
+        await page.waitForFunction(() => { const b = document.querySelector('.first-run-btn[data-choice="learn"]'); return b && !b.disabled; }, null, { timeout: 20000 }).catch(() => {});
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]')?.click());
+        await page.waitForTimeout(1200);
+        // The row opens on its Recent view; the "+" slots live on the Pinned view.
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            d.settings = d.settings || {};
+            d.settings.quickActions = { pinned: ['stats', null, null, null, null], counts: {}, recent: [], activeView: 'pinned' };
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        await page.evaluate(() => { document.querySelectorAll('.notification').forEach(n => n.remove()); document.getElementById('first-run-welcome-dismiss')?.click(); });
+
+        await openMenu(page);
+        const menuOpen = () => page.evaluate(() => document.body.classList.contains('main-menu-open') && document.getElementById('main-menu')?.classList.contains('visible'));
+        record('fixture: the ☰ menu is open on a phone', await menuOpen(), 'the menu never opened');
+
+        // Tap the first empty "+" slot in the menu's quick-actions row.
+        const slotFound = await page.evaluate(() => { const s = document.querySelector('#quick-actions-menu-slots .quick-actions-slot.empty'); if (!s) return false; s.click(); return true; });
+        record('fixture: an empty quick-action slot was tapped', slotFound, 'no empty slot in the menu row — the picker cannot be exercised');
+        const pickerOpen = await page.waitForFunction(() => !!document.querySelector('dialog[open]#quick-actions-picker-overlay'), null, { timeout: 5000 }).then(() => true).catch(() => false);
+        record('the action picker opened', pickerOpen, 'no open picker dialog');
+        record('…and opening it did not close the menu', await menuOpen(), 'the menu closed when the picker opened');
+
+        // Pick an action: this tap lands in the top-layer dialog, outside the menu's box.
+        // Pick an action that is not already pinned (Stats is pinned by default,
+        // and the picker ignores a tap on an already-pinned action).
+        const picked = await page.evaluate(() => {
+            const items = [...document.querySelectorAll('dialog[open] .quick-actions-picker-item')];
+            const it = items.find(i => !/^Stats$/i.test(i.textContent.trim())) || null;
+            if (!it) return null; const name = it.textContent.trim(); it.click(); return name;
+        });
+        await page.waitForTimeout(500);
+        const after = await page.evaluate(() => ({
+            pickerOpen: !!document.querySelector('dialog[open]#quick-actions-picker-overlay'),
+            menuOpen: document.body.classList.contains('main-menu-open') && document.getElementById('main-menu')?.classList.contains('visible'),
+            emptySlots: document.querySelectorAll('#quick-actions-menu-slots .quick-actions-slot.empty').length,
+            filledSlots: document.querySelectorAll('#quick-actions-menu-slots .quick-actions-slot:not(.empty)').length
+        }));
+        record('picking an action pins it and closes the picker', !!picked && !after.pickerOpen && after.filledSlots >= 1,
+            `picked "${picked}", picker open ${after.pickerOpen}, filled slots ${after.filledSlots}`);
+        record('…and the menu is still open to add another (Oct 2026: it used to close)', after.menuOpen,
+            'the tap inside the picker dialog counted as "outside the menu" and closed it');
+
+        // Escape inside the picker closes the picker only.
+        await page.evaluate(() => document.querySelector('#quick-actions-menu-slots .quick-actions-slot.empty')?.click());
+        await page.waitForFunction(() => !!document.querySelector('dialog[open]#quick-actions-picker-overlay'), null, { timeout: 5000 }).catch(() => {});
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        const esc = await page.evaluate(() => ({ pickerOpen: !!document.querySelector('dialog[open]#quick-actions-picker-overlay'), menuOpen: document.body.classList.contains('main-menu-open') }));
+        record('Escape in the picker closes the picker and leaves the menu open', !esc.pickerOpen && esc.menuOpen,
+            `picker open ${esc.pickerOpen}, menu open ${esc.menuOpen}`);
+    } catch (e) {
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'adding a quick action from the menu keeps the menu open', failures };
+}
+
 const JOURNEYS = [
+    { name: 'adding a quick action from the menu keeps the menu open', fn: journeyQuickActionPickerKeepsMenuOpen },
     { name: 'recreating a cleared task lands in the routine list', fn: journeyRecreateLandsInList },
     { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },

@@ -725,6 +725,9 @@ function closeMainMenu(menu, menuButton, { restoreFocus = false } = {}) {
  */
 function menuEscHandler(event) {
   if (event.key !== 'Escape') return;
+  // Escape with a dialog open (the quick-actions picker, a confirmation)
+  // belongs to that dialog — the browser closes it; the menu stays.
+  if (document.querySelector('dialog[open]')) return;
   const menu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER);
   if (!menu) return;
   const menuButton = document.querySelector(DOM_SELECTORS.MENU_BUTTON);
@@ -747,6 +750,13 @@ function closeMenuOnClickOutside(event) {
   // menu-item click via hideMainMenu, leaving this handler attached. Detach
   // without touching focus instead of yanking it back mid-interaction.
   if (!menu.classList.contains(DOM_CLASSES.VISIBLE)) { teardownMenuListeners(menu); return; }
+  // A click inside a <dialog> is not "outside the menu": the quick-actions
+  // picker (the + slot) lives in the top layer, attached to <body>, so picking
+  // an action used to close the menu underneath it mid-add (Oct 2026). Any
+  // dialog, not just an open one: the item's own handler closes the picker
+  // before this document listener runs, so `dialog[open]` would already miss.
+  // Anything opened from the menu that wants the menu closed closes it itself.
+  if (event.target?.closest?.('dialog')) return;
   if (!menu.contains(event.target) && !menuButton?.contains(event.target)) {
     closeMainMenu(menu, menuButton, { restoreFocus: true });
   }
