@@ -169,6 +169,19 @@ export async function runTaskSearchTests(resultsDiv) {
         if (p !== 'high,med,low,none') throw new Error(`priority order: ${p}`);
     });
 
+    await test('taskSort: desc reverses the values but keeps the empties last', async () => {
+        const { sortTasksBySort } = await import(`../modules/utils/taskSort.js?v=${cacheBuster}`);
+        const tasks = [{ id: 'z', text: 'Zebra' }, { id: 'b', text: 'banana' }, { id: 'a', text: 'Apple' }];
+        const az = sortTasksBySort(tasks, 'az', 'desc').map(t => t.id).join(',');
+        if (az !== 'z,b,a') throw new Error(`az desc: ${az}`);
+        const dated = [{ id: 'n', text: 'n', dueDate: null }, { id: 'late', text: 'l', dueDate: '2026-12-01' }, { id: 'soon', text: 's', dueDate: '2026-11-01' }];
+        const d = sortTasksBySort(dated, 'due-date', 'desc').map(t => t.id).join(',');
+        if (d !== 'late,soon,n') throw new Error(`due-date desc should keep undated last: ${d}`);
+        const prio = [{ id: 'none', text: 'x', priority: null }, { id: 'low', text: 'x', priority: 'low' }, { id: 'high', text: 'x', priority: 'high' }];
+        const p = sortTasksBySort(prio, 'priority', 'desc').map(t => t.id).join(',');
+        if (p !== 'low,high,none') throw new Error(`priority desc should keep no-priority last: ${p}`);
+    });
+
     await test('reapplyActiveFilter is exported as a function', () => {
         if (typeof mod.reapplyActiveFilter !== 'function') throw new Error('Missing export');
     });
@@ -267,6 +280,21 @@ export async function runTaskSearchTests(resultsDiv) {
                 throw new Error(`Default must restore ${before}, got ${list.order()} — ` +
                     'the captured order was cleared before the restore could use it');
             }
+
+            // --- tapping the active chip again reverses it; Default is the way back ---
+            list.click('az');
+            list.click('az');
+            if (list.order() !== 'a,c,b') {
+                throw new Error(`a second tap on A-Z should reverse to zebra,mango,apple (a,c,b), got ${list.order()}`);
+            }
+            if (document.body.dataset.taskSortDirection !== 'desc') throw new Error('body.dataset.taskSortDirection should be desc');
+            const azChip = document.querySelector('.sort-chip[data-sort="az"]');
+            if (azChip.dataset.direction !== 'desc' || !/Z to A/.test(azChip.title)) {
+                throw new Error(`the reversed chip should carry data-direction=desc and a Z-to-A tooltip; got ${azChip.dataset.direction} / "${azChip.title}"`);
+            }
+            list.click('default');
+            if (list.order() !== before) throw new Error(`Default must restore ${before} after a reversed sort, got ${list.order()}`);
+            if (document.body.dataset.taskSortDirection !== 'asc') throw new Error('Default resets the direction to asc');
 
             // --- the sorted view is flagged on <body> for the reorder guard ---
             list.click('az');

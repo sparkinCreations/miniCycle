@@ -5302,6 +5302,15 @@ async function journeyFocusTabFollowsSort(browser, baseURL) {
         await toTab('focus-task-panel');
         record('the Task tab browses the same order: Apple first', (await focusText()).includes('Apple'), `focus card shows "${await focusText()}"`);
 
+        // Tapping the active chip again reverses it (Oct 2026).
+        await toTab('task-view');
+        await sortTo('az');
+        const listFirstRev = await page.evaluate(() => document.querySelector('#taskList .task .task-text')?.textContent || '');
+        record('tapping A–Z again reverses the Routine list: Zebra first', listFirstRev === 'Zebra' && await page.evaluate(() => document.body.dataset.taskSortDirection === 'desc'),
+            `first row "${listFirstRev}", direction ${await page.evaluate(() => document.body.dataset.taskSortDirection)}`);
+        await toTab('focus-task-panel');
+        record('…and the Task tab follows the reversed order: Zebra first', (await focusText()).includes('Zebra'), `focus card shows "${await focusText()}"`);
+
         await toTab('task-view');
         await sortTo('default');
         await toTab('focus-task-panel');

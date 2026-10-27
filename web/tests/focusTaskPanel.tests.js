@@ -127,12 +127,17 @@ export async function runFocusTaskPanelTests(resultsDiv) {
             const { panel } = await makeManager(makeState([T('z', false, { text: 'Zebra' }), T('a', false, { text: 'Apple' })]));
             const text = () => host.querySelector('#focus-task-text').textContent.trim();
             if (!text().includes('Apple')) throw new Error(`A–Z should show Apple first, got "${text()}"`);
+            document.body.dataset.taskSortDirection = 'desc';
+            document.body.dispatchEvent(new CustomEvent('app:taskSortChanged', { bubbles: true }));
+            if (!text().includes('Zebra')) throw new Error(`A–Z reversed should show Zebra first, got "${text()}"`);
             document.body.dataset.taskSort = 'default';
+            document.body.dataset.taskSortDirection = 'asc';
             document.body.dispatchEvent(new CustomEvent('app:taskSortChanged', { bubbles: true }));
             if (!text().includes('Zebra')) throw new Error(`Default should show Zebra first, got "${text()}"`);
             panel.destroy();
         } finally {
             delete document.body.dataset.taskSort;
+            delete document.body.dataset.taskSortDirection;
             host.remove();
         }
     });

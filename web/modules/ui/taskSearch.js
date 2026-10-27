@@ -13,7 +13,8 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, EVENTS } from '../core/constants.js';
-import { compareTasksBySort, TASK_SORT_DATASET_KEY } from '../utils/taskSort.js';
+import { compareTasksBySort, SORT_DIRECTION, TASK_SORT_DATASET_KEY, TASK_SORT_DIRECTION_DATASET_KEY } from '../utils/taskSort.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -58,6 +59,7 @@ let isSearchExpanded = false;
 let isInitialized = false;
 let currentFilter = 'all';        // persists across open/close
 let currentSort = 'default';      // persists across open/close
+let currentSortDirection = SORT_DIRECTION.ASC;   // tapping the active chip again flips it
 let originalTaskOrder = null;     // array of task IDs captured before first non-default sort
 let filterGroupCollapsed = true;  // filter chips show only active chip when true
 let _pageOverlay = null;          // mobile-only: full-page edit-focus overlay
@@ -171,14 +173,21 @@ export function initTaskSearch() {
             });
         });
 
-        // Sort chip click handlers — clicking an active non-default chip toggles back to Default
-        const defaultSortChip = filterRow.querySelector(`${DOM_SELECTORS.SORT_CHIP}[data-sort="default"]`);
+        // Sort chip click handlers — tapping the active chip again reverses its direction
+        syncSortChipUi(filterRow);
         filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(btn => {
             safeAdd(btn, 'click', () => {
                 const isAlreadyActive = btn.classList.contains(DOM_CLASSES.ACTIVE);
-                const targetChip = (isAlreadyActive && btn.dataset.sort !== 'default') ? defaultSortChip : btn;
-
-                currentSort = targetChip.dataset.sort;
+                if (isAlreadyActive && btn.dataset.sort !== 'default') {
+                    // Tapping the active chip again reverses it (A–Z ↔ Z–A,
+                    // soonest ↔ latest, high ↔ low). Until Oct 2026 this went
+                    // back to Default; Default is its own chip for that.
+                    currentSortDirection = currentSortDirection === SORT_DIRECTION.DESC
+                        ? SORT_DIRECTION.ASC : SORT_DIRECTION.DESC;
+                } else {
+                    currentSort = btn.dataset.sort;
+                    currentSortDirection = SORT_DIRECTION.ASC;
+                }
                 // Do NOT clear originalTaskOrder here. This used to null it
                 // before applyFiltersAndSort ran, and applySortToDOM's restore
                 // is guarded by `if (originalTaskOrder)` — so pressing Default
@@ -186,11 +195,7 @@ export function initTaskSearch() {
                 // the last sort's DOM order in place. applySortToDOM clears it
                 // itself, AFTER restoring (resetSearch() has always done it in
                 // that order).
-                filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(b => {
-                    const selected = b === targetChip;
-                    b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
-                    b.setAttribute('aria-pressed', String(selected));
-                });
+                syncSortChipUi(filterRow);
                 applyFiltersAndSort(searchInput.value || '');
             });
         });
@@ -402,9 +407,41 @@ function publishSort() {
     const deps = di.resolve();
     const body = deps.getBody?.();
     if (!body) return;
-    if (body.dataset[TASK_SORT_DATASET_KEY] === currentSort) return;
+    if (body.dataset[TASK_SORT_DATASET_KEY] === currentSort
+        && body.dataset[TASK_SORT_DIRECTION_DATASET_KEY] === currentSortDirection) return;
     body.dataset[TASK_SORT_DATASET_KEY] = currentSort;
-    body.dispatchEvent(new CustomEvent(EVENTS.TASK_SORT_CHANGED, { bubbles: true, detail: { sort: currentSort } }));
+    body.dataset[TASK_SORT_DIRECTION_DATASET_KEY] = currentSortDirection;
+    body.dispatchEvent(new CustomEvent(EVENTS.TASK_SORT_CHANGED, {
+        bubbles: true, detail: { sort: currentSort, direction: currentSortDirection }
+    }));
+}
+
+/** The tooltip for a sort chip in a direction — says what it does and that another tap reverses it. */
+function sortChipTip(sort, direction) {
+    const desc = direction === SORT_DIRECTION.DESC;
+    switch (sort) {
+        case 'az':       return getLabel(desc ? 'action.sortTipZA' : 'action.sortTipAZ');
+        case 'priority': return getLabel(desc ? 'action.sortTipPriorityLow' : 'action.sortTipPriorityHigh');
+        case 'due-date': return getLabel(desc ? 'action.sortTipDueLatest' : 'action.sortTipDueSoonest');
+        default:         return getLabel('action.sortTipDefault');
+    }
+}
+
+/**
+ * Chip state → DOM: active class, aria-pressed, the direction arrow
+ * (data-direction, drawn by CSS) and the tooltip.
+ */
+function syncSortChipUi(filterRow) {
+    if (!filterRow) return;
+    filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(b => {
+        const sort = b.dataset.sort;
+        const selected = sort === currentSort;
+        b.classList.toggle(DOM_CLASSES.ACTIVE, selected);
+        b.setAttribute('aria-pressed', String(selected));
+        if (selected && sort !== 'default') b.dataset.direction = currentSortDirection;
+        else delete b.dataset.direction;
+        b.title = sortChipTip(sort, selected ? currentSortDirection : SORT_DIRECTION.ASC);
+    });
 }
 
 function applySortToDOM(tasks, taskList, dataFor, themes) {
@@ -433,7 +470,7 @@ function applySortToDOM(tasks, taskList, dataFor, themes) {
     const sorted = [...tasks].sort((a, b) => {
         const ta = dataFor(a), tb = dataFor(b);
         if (!ta || !tb) return 0;
-        return compareTasksBySort(currentSort, ta, tb);
+        return compareTasksBySort(currentSort, ta, tb, currentSortDirection);
     });
 
     sorted.forEach(el => taskList.appendChild(el));
@@ -572,6 +609,7 @@ export function resetSearch() {
     // Reset filter/sort state
     currentFilter = 'all';
     currentSort = 'default';
+    currentSortDirection = SORT_DIRECTION.ASC;
     deps.getBody?.()?.classList.remove(DOM_CLASSES.TASKS_SORTED);
     publishSort();
     filterGroupCollapsed = true;
@@ -584,11 +622,7 @@ export function resetSearch() {
             b.classList.toggle(DOM_CLASSES.ACTIVE, isAll);
             b.setAttribute('aria-pressed', String(isAll));
         });
-        filterRow.querySelectorAll(DOM_SELECTORS.SORT_CHIP).forEach(b => {
-            const isDef = b.dataset.sort === 'default';
-            b.classList.toggle(DOM_CLASSES.ACTIVE, isDef);
-            b.setAttribute('aria-pressed', String(isDef));
-        });
+        syncSortChipUi(filterRow);
         // Re-collapse the filter chip group
         const filterChipGroup = filterRow.querySelector(DOM_SELECTORS.FILTER_CHIP_GROUP);
         if (filterChipGroup) {

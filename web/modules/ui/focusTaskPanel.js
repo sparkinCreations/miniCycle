@@ -28,7 +28,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTU
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getTaskText } from '../task/taskUtils.js';
-import { sortTasksBySort, TASK_SORT_DATASET_KEY } from '../utils/taskSort.js';
+import { sortTasksBySort, TASK_SORT_DATASET_KEY, TASK_SORT_DIRECTION_DATASET_KEY } from '../utils/taskSort.js';
 import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getAutoClearMode, getRoutine, getTaskResetIndicator, getAutoClearForMode } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -155,11 +155,9 @@ export class FocusTaskPanel {
     _getTasks(state = null) {
         const { cycle } = this._getActiveCycle(state);
         const tasks = Array.isArray(cycle?.tasks) ? cycle.tasks : [];
-        return sortTasksBySort(tasks, this._activeSort());
-    }
-
-    _activeSort() {
-        return this.deps.getBody?.()?.dataset?.[TASK_SORT_DATASET_KEY] || 'default';
+        const body = this.deps.getBody?.();
+        return sortTasksBySort(tasks, body?.dataset?.[TASK_SORT_DATASET_KEY] || 'default',
+            body?.dataset?.[TASK_SORT_DIRECTION_DATASET_KEY] || 'asc');
     }
 
     /** The task the card shows: override if valid, else first incomplete. */
