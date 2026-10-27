@@ -688,6 +688,23 @@ body > .edit-focus-overlay.search-page-overlay.active {
     opacity: 0.6;
 }
 
+/* A row just recreated from History / Cleared Tasks: the user is brought to
+   the Routine tab and this says which row it was (utils/landOnTasks.js). */
+@keyframes task-recreated-flash {
+    0%   { box-shadow: 0 0 0 3px var(--theme-accent, var(--color-primary)); }
+    70%  { box-shadow: 0 0 0 3px var(--theme-accent, var(--color-primary)); }
+    100% { box-shadow: 0 0 0 0 transparent; }
+}
+.task.task-recreated {
+    animation: task-recreated-flash 2s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+    .task.task-recreated {
+        animation: none;
+        box-shadow: 0 0 0 3px var(--theme-accent, var(--color-primary));
+    }
+}
+
 /* Direction arrow on the active sort chip — tapping it again reverses the sort. */
 .sort-chip.active[data-direction="asc"]::after,
 .sort-chip.active[data-direction="desc"]::after {

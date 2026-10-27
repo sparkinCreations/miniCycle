@@ -1,3 +1,10 @@
+## [2.644] - 2026-10-27
+- fix(menu): adding a quick action from the ☰ menu no longer closes the menu
+- feat(history): Recreate closes History, lands on the Routine tab and highlights the new rows
+- fix(personalization): uploading a background image switches Show Image on
+- style(header): restore the frosted band behind the header and mode rows
+
+
 ## [2.643] - 2026-10-27
 - docs(audit): record the three remaining decisions (gate the numbers, flat archive, incidents stay live)
 - docs(audit): archive the private developer profile; add the quality-claims check; record decisions
