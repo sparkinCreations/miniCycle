@@ -88,6 +88,49 @@ export async function runHistoryManagerTests(resultsDiv) {
         if (host.querySelectorAll('.cleared-entry').length !== 1) throw new Error('exactly one entry expected');
     });
 
+    await test('a successful Recreate closes History, goes to the Routine tab and flashes the new row', async () => {
+        // Until Oct 2026 the modal stayed open over a list the user could not see.
+        const calls = { showTaskView: 0, notify: [] };
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(), appInit: createMockAppInit(),
+            showNotification: (m, t) => calls.notify.push(t),
+            addTask: async (text) => ({ id: 'recreated-1', text }),
+            showTaskView: () => { calls.showTaskView++; }
+        });
+        const mgr = new HistoryManager();
+        mgr._getClearedTasks = () => ({ entries: [{ id: 'ce1', taskText: 'Bring me back', clearedAt: Date.now() }] });
+        mgr.selectedTasks = new Set(['ce1']);
+        mgr.isRecreateMode = true;
+        const row = document.createElement('div');
+        row.className = 'task'; row.dataset.taskId = 'recreated-1';
+        document.body.appendChild(row);
+        try {
+            await mgr._recreateSelectedTasks();
+            if (calls.showTaskView !== 1) throw new Error(`showTaskView called ${calls.showTaskView} times, expected 1`);
+            if (calls.notify[0] !== 'success') throw new Error(`expected a success toast first, got ${calls.notify.join(',')}`);
+            if (mgr.isRecreateMode) throw new Error('recreate mode should be off');
+            await new Promise(r => setTimeout(r, 500));
+            if (!row.classList.contains('task-recreated')) throw new Error('the recreated row should carry the flash class');
+        } finally { row.remove(); }
+    });
+
+    await test('a failed Recreate (addTask returns nothing) stays put and warns', async () => {
+        const calls = { showTaskView: 0, notify: [] };
+        setHistoryManagerDependencies({
+            AppState: createMockAppState(), appInit: createMockAppInit(),
+            showNotification: (m, t) => calls.notify.push(t),
+            addTask: async () => null,
+            showTaskView: () => { calls.showTaskView++; }
+        });
+        const mgr = new HistoryManager();
+        mgr._getClearedTasks = () => ({ entries: [{ id: 'ce1', taskText: 'x', clearedAt: Date.now() }] });
+        mgr.selectedTasks = new Set(['ce1']);
+        mgr.isRecreateMode = true;
+        await mgr._recreateSelectedTasks();
+        if (calls.showTaskView !== 0) throw new Error('must not navigate when nothing was recreated');
+        if (calls.notify[0] !== 'warning') throw new Error(`expected a warning, got ${calls.notify.join(',')}`);
+    });
+
     await test('creates instance', () => {
         setHistoryManagerDependencies({
             AppState: createMockAppState(),

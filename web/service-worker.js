@@ -154,6 +154,7 @@ var BOOT_CRITICAL = [
   './modules/utils/globalUtils.js',
   './modules/utils/motionPreference.js',
   './modules/utils/announce.js',
+  './modules/utils/landOnTasks.js',
   './modules/utils/mcycPayload.js',
   './modules/utils/featureAvailability.js',
   './modules/utils/dataRecovery.js',

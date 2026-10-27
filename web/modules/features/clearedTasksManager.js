@@ -17,6 +17,7 @@ import { isClickOnNotification } from '../ui/modalUtils.js';
 // them as UTC midnight, showing the previous day in negative UTC offsets.
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { landOnTasks } from '../utils/landOnTasks.js';
 import { hasPriority, priorityFields, getPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
 
 // ============================================================================
@@ -35,7 +36,9 @@ const di = createDIModule('ClearedTasksManager', {
     appInit: required(),
     showNotification: required(),
     showConfirmationModal: optional(null),
-    addTask: optional(null)
+    addTask: optional(null),
+    // Carousel → Routine tab, so a recreated task lands in view (landOnTasks).
+    showTaskView: optional(null)
 });
 
 export const setClearedTasksManagerDependencies = di.setDependencies;
@@ -284,6 +287,7 @@ export class ClearedTasksManager {
         const toRecreate = entries.filter(e => this.selectedTasks.has(e.id));
 
         let created = 0;
+        const createdIds = [];
         for (const entry of toRecreate) {
             try {
                 const recreateOptions = {
@@ -302,6 +306,10 @@ export class ClearedTasksManager {
                 const result = await addTask(entry.taskText, recreateOptions);
                 if (result) {
                     created++;
+                    // addTask resolves with the rendered row (taskCRUD.addTaskImpl); older
+                    // callers may get the task record — take the id either way.
+                    const newId = result?.dataset?.taskId ?? result?.id;
+                    if (newId) createdIds.push(newId);
                 } else {
                     console.warn('⚠️ ClearedTasksManager: addTask returned falsy value:', result);
                 }
@@ -320,6 +328,8 @@ export class ClearedTasksManager {
         this.isRecreateMode = false;
         this.selectedTasks.clear();
         this.closeModal();
+        // Bring the user to what was just created (Routine tab, scroll, flash).
+        if (created > 0) landOnTasks(createdIds, { showTaskView: this.deps.showTaskView });
     }
 
     // ========================================================================

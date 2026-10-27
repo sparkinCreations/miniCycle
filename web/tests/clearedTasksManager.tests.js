@@ -56,6 +56,29 @@ export async function runClearedTasksManagerTests(resultsDiv) {
         if (typeof ClearedTasksManager !== 'function') throw new Error('Not a class');
     });
 
+    await test('a successful Recreate goes to the Routine tab and flashes the new row', async () => {
+        const calls = { showTaskView: 0 };
+        setClearedTasksManagerDependencies({
+            AppState: createMockAppState(), appInit: createMockAppInit(),
+            showNotification: () => {},
+            addTask: async (text) => ({ id: 'recreated-2', text }),
+            showTaskView: () => { calls.showTaskView++; }
+        });
+        const mgr = new ClearedTasksManager();
+        mgr.getClearedTasks = () => ({ entries: [{ id: 'ce2', taskText: 'Back again', clearedAt: Date.now() }] });
+        mgr.selectedTasks = new Set(['ce2']);
+        mgr.isRecreateMode = true;
+        const row = document.createElement('div');
+        row.className = 'task'; row.dataset.taskId = 'recreated-2';
+        document.body.appendChild(row);
+        try {
+            await mgr.recreateSelectedTasks();
+            if (calls.showTaskView !== 1) throw new Error(`showTaskView called ${calls.showTaskView} times, expected 1`);
+            await new Promise(r => setTimeout(r, 500));
+            if (!row.classList.contains('task-recreated')) throw new Error('the recreated row should carry the flash class');
+        } finally { row.remove(); }
+    });
+
     await test('setClearedTasksManagerDependencies is exported', () => {
         if (typeof setClearedTasksManagerDependencies !== 'function') throw new Error('DI setter missing');
     });

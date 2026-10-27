@@ -146,6 +146,8 @@ export const TASK_TIMEOUTS = Object.freeze({
  * @constant {Object}
  */
 export const UI_TIMEOUTS = Object.freeze({
+    RECREATE_LANDING_DELAY: 350,   // modal close animation + panel switch before scrolling to a recreated task
+    RECREATE_FLASH: 2000,          // how long a recreated row keeps its highlight
     CYCLE_SWITCH_TRANSITION: 300,  // 300ms - Delay during cycle switch
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 200,        // 200ms - horizontal wheel/trackpad accumulation resets after this much silence. Was 15ms, SHORTER than a 60Hz trackpad's ~16.7ms event gap, so each event accumulated alone and flicks rarely reached the threshold
@@ -1060,6 +1062,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Task Boundary Markers ----
     IS_FIRST_TASK: 'is-first-task',
     IS_LAST_TASK: 'is-last-task',
+    TASK_RECREATED: 'task-recreated',   // flash on a row just recreated from History / Cleared Tasks
 
     // ---- Task Options Visibility ----
     TASK_OPTIONS_FORCE_HIDDEN: 'task-options-force-hidden',

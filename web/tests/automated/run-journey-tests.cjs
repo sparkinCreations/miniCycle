@@ -5323,7 +5323,64 @@ async function journeyFocusTabFollowsSort(browser, baseURL) {
     return { name: 'the Task tab browses the order the sort chip chose', failures };
 }
 
+async function journeyRecreateLandsInList(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const c = d.data.routine[d.appState.activeRoutineId];
+            c.tasks = [{ id: 'keep1', text: 'Still here', completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false, recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2 }];
+            c.recurringTemplates = {};
+            c.autoReset = false;
+            c.deleteCheckedTasks = false;
+            c.clearedTasks = { entries: [{ id: 'ce-journey', taskText: 'Bring me back', clearedAt: Date.now() }], totalCleared: 1, autoPruneEnabled: true };
+            localStorage.setItem('miniCycleData', JSON.stringify(d));
+        });
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(600);
+
+        await page.evaluate(() => document.getElementById('history-btn')?.click());
+        await page.waitForFunction(() => !!document.querySelector('dialog[open]#history-modal-dialog'), null, { timeout: 5000 }).catch(() => {});
+        await page.evaluate(() => document.querySelector('.history-tab[data-tab="cleared"]')?.click());
+        await page.waitForTimeout(700);
+        await page.evaluate(() => document.querySelector('.history-action-btn')?.click());   // enter recreate mode
+        await page.waitForTimeout(500);
+        const selected = await page.evaluate(() => { const e = document.querySelector('.cleared-entry'); if (!e) return false; e.click(); return e.getAttribute('aria-checked') === 'true'; });
+        record('fixture: the cleared entry is selected for recreation', selected, 'no .cleared-entry could be selected — the assertions below prove nothing');
+        await page.evaluate(() => document.querySelector('.history-confirm-btn')?.click());
+
+        const landed = await page.waitForFunction(() => {
+            const modalGone = !document.querySelector('dialog[open]#history-modal-dialog');
+            const onRoutine = document.getElementById('task-view')?.classList.contains('show');
+            const row = [...document.querySelectorAll('#taskList .task')].find(r => r.querySelector('.task-text')?.textContent === 'Bring me back');
+            return modalGone && onRoutine && !!row;
+        }, null, { timeout: 6000 }).then(() => true).catch(() => false);
+        // The flash lands RECREATE_LANDING_DELAY after the panel switch — wait for it.
+        const flashed = await page.waitForFunction(() =>
+            [...document.querySelectorAll('#taskList .task.task-recreated .task-text')].some(e => e.textContent === 'Bring me back'),
+            null, { timeout: 4000 }).then(() => true).catch(() => false);
+        const state = await page.evaluate(() => ({
+            modalOpen: !!document.querySelector('dialog[open]#history-modal-dialog'),
+            routineShown: document.getElementById('task-view')?.classList.contains('show'),
+            rows: [...document.querySelectorAll('#taskList .task .task-text')].map(e => e.textContent),
+            flashed: [...document.querySelectorAll('#taskList .task.task-recreated .task-text')].map(e => e.textContent)
+        }));
+        record('Recreate closes History and lands on the Routine tab with the task in the list', landed,
+            `modal open ${state.modalOpen}, routine shown ${state.routineShown}, rows ${JSON.stringify(state.rows)}`);
+        record('…and the recreated row is highlighted', flashed,
+            `no .task-recreated row named "Bring me back" within 4s; flashed rows now: ${JSON.stringify(state.flashed)}`);
+    } catch (e) {
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'recreating a cleared task lands in the routine list', failures };
+}
+
 const JOURNEYS = [
+    { name: 'recreating a cleared task lands in the routine list', fn: journeyRecreateLandsInList },
     { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },

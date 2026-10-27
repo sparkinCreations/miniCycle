@@ -18,6 +18,7 @@ import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } f
 import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
 import {  } from '../utils/styleValidators.js';
 import { getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
+import { landOnTasks } from '../utils/landOnTasks.js';
 
 // ============================================================================
 // CONSTANTS
@@ -39,6 +40,8 @@ const di = createDIModule('HistoryManager', {
     updateStatsPanel: optional(null),
     updateHelpWindow: optional(null),
     addTask: optional(null),
+    // Carousel → Routine tab, so a recreated task lands in view (landOnTasks).
+    showTaskView: optional(null),
     showHistoryTourNotification: optional(null),
     showClearedTasksTourNotification: optional(null)
 });
@@ -1147,6 +1150,7 @@ export class HistoryManager {
         const toRecreate = entries.filter(e => this.selectedTasks.has(e.id));
 
         let created = 0;
+        const createdIds = [];
         for (const entry of toRecreate) {
             try {
                 const recreateOptions = {
@@ -1166,6 +1170,10 @@ export class HistoryManager {
 
                 if (result) {
                     created++;
+                    // addTask resolves with the rendered row (taskCRUD.addTaskImpl); older
+                    // callers may get the task record — take the id either way.
+                    const newId = result?.dataset?.taskId ?? result?.id;
+                    if (newId) createdIds.push(newId);
                     // Note: Entry stays in cleared list as historical record
                     // Recreate ≠ Restore - we're creating a new task, not undoing the clear
                 } else {
@@ -1181,9 +1189,15 @@ export class HistoryManager {
                 getLabel('notify.tasksRecreated', { vars: { count: created } }),
                 'success'
             );
-        } else {
-            this.deps.showNotification(getLabel('notify.clearedRecreateFailed'), 'warning');
+            // The tasks went into a list the user cannot see from here: close
+            // History, go to the Routine tab, scroll to and flash the new rows.
+            this.isRecreateMode = false;
+            this.selectedTasks.clear();
+            this.closeModal();
+            landOnTasks(createdIds, { showTaskView: this.deps.showTaskView });
+            return;
         }
+        this.deps.showNotification(getLabel('notify.clearedRecreateFailed'), 'warning');
 
         // Reset state and refresh
         this.isRecreateMode = false;
