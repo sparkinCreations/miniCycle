@@ -225,7 +225,6 @@ const DOCS_EXCLUDE_DIRS = new Set([
   'incidents',    // internal postmortems
 ]);
 const DOCS_EXCLUDE_FILES = new Set([
-  'DEVELOPER_PROFILE.md',  // personal
   '.DS_Store',
 ]);
 

@@ -173,7 +173,6 @@ product domain:
 | `archive/` | historical snapshots — large, deliberately stale |
 | `future-work/` | unshipped plans |
 | `incidents/` | internal postmortems |
-| `DEVELOPER_PROFILE.md` | personal |
 
 Two things make a *partial* publish safe, and both are load-bearing:
 

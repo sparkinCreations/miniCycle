@@ -707,7 +707,7 @@ Two guards worth knowing, both from real breakage:
   `docs.minicycle.app`; a stale figure beats a wrong one.
 
 **`docFiles` uses `git ls-files`, deliberately.** `find` ignores `.gitignore`, so a
-release cut on a machine holding untracked docs (`DEVELOPER_PROFILE.md`, iCloud
+release cut on a machine holding untracked docs (a private gitignored note, iCloud
 `<name> 2.md` duplicates) published a different count than one cut from a clean clone.
 Same commit, different public number depending on who ran it. Don't "simplify" it back.
 

@@ -76,7 +76,7 @@ def tracked_paths():
 
     WHY THIS MATTERS: this script validates the WORKING TREE, but CI validates a
     fresh checkout — which contains tracked files only. A link to a gitignored
-    file (e.g. the private docs/DEVELOPER_PROFILE.md) therefore passes locally
+    file (e.g. the private, gitignored docs/archive/DEVELOPER_PROFILE.md) therefore passes locally
     and fails in CI. That exact mismatch shipped once and turned a contributor's
     PR red. Treating untracked files as absent makes local match CI.
     """

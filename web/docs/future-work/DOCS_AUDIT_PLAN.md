@@ -46,6 +46,17 @@ Every doc in a round gets the same five checks, in this order:
 5. **Freshness header.** A `**Last Updated**` line (88 docs have one today)
    set to the round's date, and a `> **Status**` line where the doc's
    nature calls for one (plans, audits, references with a version).
+6. **Quality claims.** An absolute claim — "100%", "fully tested", "WCAG AA",
+   "zero globals", "production-ready", "no known bugs", "complete coverage" —
+   stays only if a gate or test enforces it **today** and the doc names it
+   (`validate:di` gated at 0, the contrast suite, `test:a11y`). Otherwise it
+   is reworded to the measured, dated fact ("4,289 tests passed on Oct 26
+   2026" belongs in `PROJECT_STATS.md`, not here) or archived with its doc.
+   A claim that was true once and is not enforced is the most misleading
+   kind of stale, so this check is not optional. Sizing (Oct 27 2026): the
+   phrase grep matches 101 live docs, heaviest `performance/PERFORMANCE_SUMMARY.md`
+   (17) and `project-info/ACCESSIBILITY.md` (13); like the numbers, it is a
+   read, not a regex — "100%" is also a CSS width.
 
 The round is done when `npm run validate:docs` is green, the round's commit
 is in (`docs(audit): round N — <folders>`), and MJ has a short report: what
@@ -71,7 +82,7 @@ to be archived, and by then the rest of the docs say what actually shipped.
 | Round | Docs | Scope | Status |
 |---|---|---|---|
 | 1 | 14 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md` | pending |
-| 2 | 13 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DEVELOPER_PROFILE.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST` | pending |
+| 2 | 12 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST` | pending |
 | 3 | 14 | **Reference** rest (6): `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`; **Testing** (4); **Performance** (4) | pending |
 | 4 | 13 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
 | 5 | 13 | **Working on Code** rest (5): `MAKING_CODE_CHANGES`, `MESSAGING_SURFACES`, `SECURITY_GUIDE`, `TESTING_GUIDE`, `VALIDATION_GATES`; **Security** (6 incl. `audits/`); **Deployment**: `BUILD_PROCESS`, `DEPLOYMENT` | pending |
@@ -109,27 +120,40 @@ stay coherent, and the table is updated as rounds close.
 - **Least recently touched** (likely stale or archive candidates):
   `security/audits/AUDIT_SUMMARY.md` (Dec 2025), `BROWSER_COMPATIBILITY.md`
   (Jan 2026), `COPYRIGHT_AUTHORSHIP_STATEMENT.md`, `CLICK_TRACKING.md`,
-  `DEVELOPER_PROFILE.md`, the three `performance/` guides and
-  `TESTING_ARCHITECTURE.md` (Jun 2026).
+  the three `performance/` guides and `TESTING_ARCHITECTURE.md` (Jun 2026).
 - `PWA_OFFLINE_ARCHITECTURE.md` and `BOOT_PERF_ROADMAP.md` were rewritten
   piecemeal through Oct 2026 (update path, heal tiers) and need a
   coherence pass, not just a number pass.
 
-## Decisions for MJ before round 1
+## Decisions
+
+Taken (Oct 27 2026):
+
+- **Quality claims get the sixth check** (above): archive or reword every
+  outstanding one. — MJ.
+- **`DEVELOPER_PROFILE.md` archived.** It was a private, gitignored note that
+  was never committed or published; it now lives at
+  `archive/DEVELOPER_PROFILE.md`, still ignored, with a banner, and the
+  by-name carve-outs in the build script, the validator and two deployment
+  docs are gone. Not in the sidebar: the validator treats untracked files as
+  absent, so a link to it would fail in CI. — MJ.
+- **`COPYRIGHT_AUTHORSHIP_STATEMENT.md` stays in Project Info**, next to
+  `PRIVACY.md` and `CONTRIBUTING.md`, which is where the other legal-facing
+  pages already sit; it gets the normal round-2 checks. — recommended,
+  MJ undecided; say so if you want it elsewhere.
+
+Still open for MJ before round 1:
 
 1. **Gate it?** Extend `validate:docs` with a check that forbids the volatile
    count patterns outside `PROJECT_STATS.md`, so the numbers cannot drift
    back. Cheap, but it needs an allow-list for the legitimate literals.
    Recommended: yes, added in round 1 as a warning, promoted to a gate in
    round 10.
-2. **Archive structure.** `archive/` is flat (121 files). Leave flat, or
+2. **Archive structure.** `archive/` is flat (122 files now). Leave flat, or
    add year folders as docs are moved in? Recommended: leave flat; the
    banner line carries the date.
 3. **Old incidents.** Keep all five live under Incidents (recommended), or
    archive those older than a year?
-4. **`DEVELOPER_PROFILE.md`** and **`COPYRIGHT_AUTHORSHIP_STATEMENT.md`** are
-   personal/legal rather than technical. Keep where they are, or move to
-   Project Info?
 
 ---
 
