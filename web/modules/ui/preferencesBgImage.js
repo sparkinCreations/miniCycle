@@ -403,6 +403,18 @@ export async function handleBgImageUpload(event, deps) {
         // Save to IndexedDB
         await saveBgImage(dataUrl, mode);
 
+        // Choosing a picture means "show it": switch Show Image back on. The
+        // flag defaults to on, so this only matters for someone who turned it
+        // off earlier — who would otherwise upload a picture and see nothing
+        // change (Oct 2026).
+        deps.AppState?.update?.(state => {
+            if (!state.settings) state.settings = {};
+            if (!state.settings.customColors) state.settings.customColors = {};
+            state.settings.customColors.showBgImage = true;
+        });
+        const visibleToggle = getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
+        if (visibleToggle) visibleToggle.checked = true;
+
         // Apply to body
         applyBgImage(dataUrl, mode, deps.AppState);
 

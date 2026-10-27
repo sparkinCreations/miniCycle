@@ -240,6 +240,30 @@ export async function runPreferencesBgImageTests(resultsDiv) {
         if (notify.calls.length !== 1 || notify.calls[0][1] !== 'error') throw new Error('expected one error notification');
     });
 
+    await test('a successful upload switches Show Image back on (state, body class, toggle)', async () => {
+        // The flag defaults to on; someone who turned it off and then picks a
+        // picture used to see nothing change (Oct 2026).
+        const png = Uint8Array.from(atob('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='), c => c.charCodeAt(0));
+        const file = new File([png], 'tiny.png', { type: 'image/png' });
+        const AppState = makeAppState({ settings: { customColors: { showBgImage: false } } });
+        const toggle = document.createElement('input');
+        toggle.type = 'checkbox'; toggle.id = 'toggle-bg-image-visible'; toggle.checked = false;
+        document.body.appendChild(toggle);
+        document.body.classList.remove('has-bg-image');
+        try {
+            const event = { target: { files: [file], value: '' } };
+            const result = await handleBgImageUpload(event, { showNotification: makeNotifier(), AppState });
+            if (!result || !result.dataUrl) throw new Error('upload should succeed for a tiny PNG');
+            if (AppState.get().settings.customColors.showBgImage !== true) throw new Error('showBgImage should be switched on by the upload');
+            if (!document.body.classList.contains('has-bg-image')) throw new Error('the image should be visible right after the upload');
+            if (!toggle.checked) throw new Error('the Show Image toggle should read on');
+        } finally {
+            toggle.remove();
+            document.body.classList.remove('has-bg-image');
+            document.documentElement.style.removeProperty('--custom-bg-image');
+        }
+    });
+
     // ── readFileAsDataURL ───────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📄 readFileAsDataURL</h4>';
 
