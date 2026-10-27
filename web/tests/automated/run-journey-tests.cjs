@@ -303,6 +303,24 @@ async function addTask(page, text) {
     await page.click('#addTaskBtn');
 }
 
+// Reload into a seeded `miniCycleData`. Writing the seed into localStorage from
+// the live page and then reloading races the app: a save it still has pending
+// (the first-run choice's, right after openFresh) flushes on pagehide, OVER the
+// seed, and the reload boots whatever the app last held. Measured on WebKit CI,
+// Oct 2026: after such a reload the list AND storage held the sample routine,
+// not the seed. So the seed is written by an init script in the NEW document —
+// after the old page's last save, before any app code reads storage. One-shot
+// per call (the token), so later reloads boot what the app saved.
+async function reloadWithSeed(page, doc) {
+    const token = `seed-${Date.now()}-${Math.random()}`;
+    await page.addInitScript(([doc, token]) => {
+        if (sessionStorage.getItem('__journeySeed') === token) return;
+        sessionStorage.setItem('__journeySeed', token);
+        localStorage.setItem('miniCycleData', doc);
+    }, [doc, token]);
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+}
+
 // Fire a click straight at the element's own handler. The header/menu chrome can
 // sit under #app-container in the band-centred layout, so Playwright's hit-test
 // reports the click as "intercepted" even though it works for a real user. A DOM
@@ -530,12 +548,21 @@ async function journeyRoutineSwitch(browser, baseURL) {
             `count=${await taskCount(page)}, expected ${origTaskCount}`);
         record('title restored to original', (await titleText(page)) === origTitle, `title="${await titleText(page)}"`);
 
-        // The announcement must survive bootApp()'s re-render above, so read it last.
-        const switchAnn = await page.evaluate(() => (window.__ann || []).slice());
+        // announce() writes the region in a LATER animation frame (an empty ->
+        // text transition), after the title it follows. The title being restored
+        // therefore does not mean the text has landed: reading it at once raced
+        // that frame and lost on WebKit CI (Oct 2026, "said NOTHING" with the
+        // title already restored). Wait for the text itself. `__ann` is
+        // undefined, not empty, if the page reloaded and took the observer with it.
+        await page.waitForFunction(() => (window.__ann || []).some(t => t.toLowerCase().includes('switched to routine')),
+            null, { timeout: 5000 }).catch(() => {});
+        const switchAnn = await page.evaluate(() => window.__ann ? window.__ann.slice() : null);
         record('the switch is announced to screen readers',
-            switchAnn.some(t => t.toLowerCase().includes('switched to routine')),
-            `#live-region said ${switchAnn.length ? JSON.stringify(switchAnn) : 'NOTHING'} — ` +
-            'the title and the whole task list changed with no announcement');
+            !!switchAnn && switchAnn.some(t => t.toLowerCase().includes('switched to routine')),
+            switchAnn === null
+                ? 'the page reloaded during the switch, so the live-region observer is gone — nothing can be concluded about the announcement'
+                : `#live-region said ${switchAnn.length ? JSON.stringify(switchAnn) : 'NOTHING'} within 5s — ` +
+                  'the title and the whole task list changed with no announcement');
     } catch (e) {
         failures.push(`run error: ${e.message}`);
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
@@ -1125,12 +1152,9 @@ async function journeyDragReorder(browser, baseURL) {
             moved.dispatchEvent(new DragEvent('dragstart', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(moved, 0.5) }));
             await frame();
             target.dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(target, frac) }));
-            // The app handles dragover on the next animation frame; `gap` is measured
-            // from when that frame has run, not from the dispatch — on a slow runner the
-            // frame itself could take longer than a 20ms gap, and the "quick release"
-            // then dropped before any move was pending.
-            await frame();
-            await new Promise(r => setTimeout(r, gap));
+            // gap 0 = the drop arrives in the same task as the dragover, with no
+            // frame or timer able to run between them.
+            if (gap > 0) await new Promise(r => setTimeout(r, gap));
             const movedBeforeEnd = rows().indexOf(moved);
             if (end === 'drop') {
                 target.dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt, clientX: 100, clientY: at(target, frac) }));
@@ -1157,6 +1181,19 @@ async function journeyDragReorder(browser, baseURL) {
             `state ${o.state.join(',')} vs DOM ${o.dom.join(',')}`);
         record('quick release: no drag classes left behind', r.dragging === 0 && r.dropTarget === 0,
             `.dragging ${r.dragging}, .drop-target ${r.dropTarget}`);
+
+        // 1a. Release in the SAME task as the dragover: nothing — no frame, no
+        //     timer — can run in between, so this pins on every engine what the
+        //     20ms case above only caught where frames are slow. The dragover
+        //     used to defer its move to a requestAnimationFrame the drop flush
+        //     could not see (WebKit CI, Oct 2026: "moved at 0, target at 3").
+        r = await drag(0, 3, 0.8, 0, 'drop');
+        o = await names();
+        record('same-task release: the row lands after the row it was released over',
+            o.dom.indexOf(r.movedId) === o.dom.indexOf(r.targetId) + 1,
+            `moved at ${o.dom.indexOf(r.movedId)}, target at ${o.dom.indexOf(r.targetId)} — the dragover's move was not yet visible to the drop flush`);
+        record('same-task release: state holds the same order', o.state.join() === o.dom.join(),
+            `state ${o.state.join(',')} vs DOM ${o.dom.join(',')}`);
 
         // 1b. The end rows obey the pointer like every other row: the top of the
         //     last row means "above it", the bottom of the first row "below it".
@@ -3269,12 +3306,26 @@ async function journeyDueDateSystemNotification(browser, baseURL) {
             before.perm === 'granted' && before.hour === 8 && before.minute >= 58,
             `fixture: ${JSON.stringify(before)}`);
         record('nothing is posted before 9:00', before.notes === 0, `${before.notes} notification(s) posted early`);
+        // The post goes through the service worker's registration, the path the
+        // stub above records; without one the app falls back to new Notification(),
+        // which nothing here sees. Pin the precondition so a miss names itself.
+        const registered = await page.waitForFunction(async () => !!(await navigator.serviceWorker.getRegistration()),
+            null, { timeout: 10000 }).then(() => true).catch(() => false);
+        record('fixture: a service-worker registration exists to post through', registered,
+            'no registration — the notification would take the new Notification() fallback the stub cannot see');
 
+        // A marker the init script does not set: gone afterwards means the page
+        // navigated, and the recorder (re-created empty) lost the post with it.
+        await page.evaluate(() => { window.__beforeNine = true; });
         await page.clock.fastForward(3 * 60 * 1000); // 08:58 → 09:01
-        await page.waitForFunction(() => window.__sysNotes.length >= 1, null, { timeout: 5000 }).catch(() => {});
-        await page.waitForTimeout(300);   // a second post, if the code ever double-fired, gets its chance to show
+        // The timer's callback awaits getRegistration() before it posts: wait for
+        // the post, not a fixed beat.
+        await page.waitForFunction(() => window.__sysNotes.length > 0, null, { timeout: 5000 }).catch(() => {});
         const after = await page.evaluate(() => window.__sysNotes);
-        record('at 9:00 one system notification is posted', after.length === 1, `posted: ${JSON.stringify(after)}`);
+        const samePage = await page.evaluate(() => window.__beforeNine === true);
+        record('at 9:00 one system notification is posted', after.length === 1,
+            `posted: ${JSON.stringify(after)}` + (samePage ? ' — the page stayed put, so the 9:00 timer was never armed or never posted'
+                : ' — the page navigated during the fast-forward, so the recorder was reset'));
         record('…titled from the label and naming the due task',
             !!after[0] && /1 task due today/.test(after[0].title) && /Submit the report/.test(after[0].body || ''),
             `posted: ${JSON.stringify(after[0])}`);
@@ -4069,17 +4120,35 @@ async function journeyUndoBottom(browser, baseURL) {
                 autoClear: { cycle: false, todo: true }, schemaVersion: 2 }];
             c.recurringTemplates = {};
             c.autoReset = false; c.deleteCheckedTasks = false;
-            localStorage.setItem('miniCycleData', JSON.stringify(d));
-        });
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            return JSON.stringify(d);
+        }).then(doc => reloadWithSeed(page, doc));
         await bootApp(page);
         await page.waitForTimeout(800);
+        // Wait for a row count and say which step stalled, with what the list and
+        // the saved routine held — a bare waitForFunction timeout names neither.
+        const waitRows = async (n, step) => {
+            const ok = await page.waitForFunction((n) => document.querySelectorAll('#taskList li').length === n,
+                n, { timeout: 10000 }).then(() => true).catch(() => false);
+            if (!ok) {
+                const seen = await page.evaluate(() => {
+                    const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+                    const r = p && p.data.routine[p.appState.activeRoutineId];
+                    return { dom: [...document.querySelectorAll('#taskList li .task-text')].map(el => el.textContent.trim()),
+                        saved: r ? r.tasks.map(t => t.text) : null, input: document.getElementById('taskInput')?.value };
+                });
+                throw new Error(`${step}: expected ${n} rows within 10s — ${JSON.stringify(seen)}`);
+            }
+        };
+        // The seeded row first: an add made before the boot render settled, or
+        // onto a reload that lost its seed (see reloadWithSeed), surfaced only as
+        // a bare 10s timeout (WebKit CI, Oct 2026). Now each stall names its step.
+        await waitRows(1, 'boot render of the seeded task');
 
         await addTask(page, 'UB A');
-        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 2, null, { timeout: 10000 });
+        await waitRows(2, 'add "UB A"');
         await page.waitForTimeout(400);
         await addTask(page, 'UB B');
-        await page.waitForFunction(() => document.querySelectorAll('#taskList li').length === 3, null, { timeout: 10000 });
+        await waitRows(3, 'add "UB B"');
         await page.waitForTimeout(400);
         await page.evaluate(() => document.activeElement && document.activeElement.blur());
 
@@ -4134,13 +4203,40 @@ async function journeyFirstGestureUndo(browser, baseURL) {
             c.autoReset = false;            // manual cycle: Complete Cycle is how it completes
             c.deleteCheckedTasks = false;
             c.cycleCount = 0;
-            localStorage.setItem('miniCycleData', JSON.stringify(d));
-        });
-        // Reload: undo's "initializing" flag starts over, so the next gesture is the first.
-        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            return JSON.stringify(d);
+        }).then(doc => reloadWithSeed(page, doc));
+        // Reloaded: undo's "initializing" flag starts over, so the next gesture is the first.
         await bootApp(page);
         await page.waitForTimeout(800);
+        // appLoaded is not "rendered", and the 800ms above is a guess at the gap:
+        // wait for what the gesture needs. When the seed was lost on the reload
+        // (see reloadWithSeed) the sample routine booted instead — auto-cycle, so
+        // Complete Cycle is display:none and Enter completed nothing (WebKit CI,
+        // Oct 2026: "cycleCount=0"; the focus fixture below then read
+        // "focus is on BODY; #completeAll display=none").
+        await page.waitForFunction(() => {
+            const btn = document.getElementById('completeAll');
+            return document.querySelectorAll('#taskList li').length === 3
+                && !!btn && getComputedStyle(btn).display !== 'none' && btn.getClientRects().length > 0;
+        }, null, { timeout: 15000 }).catch(() => {});
         return opened;
+    };
+    // Focus a control for a keyboard gesture and confirm it took: page.focus()
+    // on an element that cannot take focus yet leaves focus where it was and
+    // does not throw, so the key press lands on <body> and the case "fails" for
+    // a reason it does not name.
+    const focusFor = async (page, selector) => {
+        await page.focus(selector);
+        return page.evaluate((sel) => {
+            const el = document.querySelector(sel);
+            const a = document.activeElement;
+            return {
+                focused: !!el && a === el,
+                active: a ? (a.id || a.tagName) : null,
+                display: el ? getComputedStyle(el).display : 'missing',
+                rows: document.querySelectorAll('#taskList li').length
+            };
+        }, selector);
     };
     const field = (page, name) => page.evaluate((name) => {
         const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
@@ -4157,11 +4253,9 @@ async function journeyFirstGestureUndo(browser, baseURL) {
     let opened = await openColdRoutine();
     try {
         const { page } = opened;
-        // Wait for the button to be on screen and for focus to actually land before
-        // Enter: on a slow runner (CI WebKit) the keypress used to fire before either.
-        await page.waitForFunction(() => { const b = document.getElementById('completeAll'); return !!b && b.offsetParent !== null && !b.disabled; }, null, { timeout: 10000 }).catch(() => {});
-        await page.focus('#completeAll');
-        await page.waitForFunction(() => document.activeElement && document.activeElement.id === 'completeAll', null, { timeout: 3000 }).catch(() => {});
+        const focus = await focusFor(page, '#completeAll');
+        record('fixture: Complete Cycle is on screen and holds focus before the key press', focus.focused,
+            `focus is on ${focus.active}; #completeAll display=${focus.display}, ${focus.rows} rows rendered`);
         await page.keyboard.press('Enter');
         const completed = await waitField(page, 'cycleCount', 1, 15000);
         record('Complete Cycle (first action) completed the cycle', completed, `cycleCount=${await field(page, 'cycleCount')}`);
