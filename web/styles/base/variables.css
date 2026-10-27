@@ -522,6 +522,11 @@
   --text-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.15);
   --text-shadow-md: 0 1px 2px rgba(0, 0, 0, 0.3);
   --text-shadow-lg: 0 1px 4px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 0, 0, 0.25);
+  /* A dark ring tight around each letter, for white text over a custom photo
+     background (background.css). A photo can be light, dark or both under one
+     word, so no text colour works on its own; white with this ring reads on
+     all three, the way the wordmark's outlined letters do. */
+  --text-shadow-photo: 0 0 1px rgba(0, 0, 0, 0.95), 0 0 3px rgba(0, 0, 0, 0.8), 0 0 8px rgba(0, 0, 0, 0.45);
 
   /* ═══════════════════════════════════════════════════════════════════════════
      Z-INDEX LAYERS — Single source of truth for stacking order

@@ -118,6 +118,41 @@ async function boot(page, baseURL) {
     }
 }
 
+// Runs in the page. Puts a photo background on the way preferencesBgImage does
+// (--custom-bg-image on <html>, has-bg-image + bg-mode-cover on <body>), reads the
+// text that sits straight on it, then takes the photo off again. axe cannot
+// judge text over an image, and a photo can be dark and light under one word,
+// so the contract is the treatment, not a ratio: white letters with the dark
+// --text-shadow-photo ring. Measured Oct 2026 without it: "ROUTINE MANAGER"
+// 1.10:1 on a dark photo, the footer and help line 1.14:1 on a light one.
+function measurePhotoText() {
+    const c = document.createElement('canvas'); c.width = 40; c.height = 80;
+    const g = c.getContext('2d'); g.fillStyle = '#1a1412'; g.fillRect(0, 0, 20, 80); g.fillStyle = '#ece8e0'; g.fillRect(20, 0, 20, 80);
+    const root = document.documentElement, body = document.body;
+    const hadPhoto = body.classList.contains('has-bg-image');
+    root.style.setProperty('--custom-bg-image', `url("${c.toDataURL()}")`);
+    body.classList.add('has-bg-image', 'bg-mode-cover');
+    const ring = getComputedStyle(root).getPropertyValue('--text-shadow-photo').trim();
+    const targets = [
+        ['"ROUTINE MANAGER"', '#app-subtitle'],
+        ['footer copyright', '#copyright'],
+        ['footer copyright link', '#copyright a'],
+        ['help-window line', '#help-window .help-window-body']
+    ];
+    const out = [];
+    for (const [name, sel] of targets) {
+        const el = document.querySelector(sel);
+        if (!el || !el.getClientRects().length) continue;
+        const cs = getComputedStyle(el);
+        out.push({ name, color: cs.color, opacity: cs.opacity, shadow: cs.textShadow, ring: ring.length > 0 });
+    }
+    if (!hadPhoto) {
+        body.classList.remove('has-bg-image', 'bg-mode-cover');
+        root.style.removeProperty('--custom-bg-image');
+    }
+    return out;
+}
+
 // Runs in the page. Returns [{ name, ratio, min }] for the hand-measured pairs.
 function measureHandChecks(opts) {
     opts = opts || {};
@@ -265,6 +300,36 @@ async function run() {
                 else { console.log(`   ${colors.red}❌ ${label} ${line}${colors.reset}`); serious.push(`${label}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
             }
         }
+        // Photo-background pass: every theme state, at phone and desktop width,
+        // and on phones with Increase Contrast too — that mode switches the
+        // copyright to the dark --footer-text-contrast, which inside a dark ring
+        // would be mud on a dark photo.
+        const photoPasses = [
+            { name: 'phone', size: { width: 390, height: 844 }, contrast: null },
+            { name: 'desktop', size: { width: 1280, height: 900 }, contrast: null },
+            { name: 'phone / prefers-contrast: more', size: { width: 390, height: 844 }, contrast: 'more' }
+        ];
+        for (const pass of photoPasses) {
+            await page.setViewportSize(pass.size);
+            await page.emulateMedia({ contrast: pass.contrast });
+            for (const theme of THEMES) {
+                await applyThemeState(page, theme);
+                const label = `${theme.name} / ${pass.name} / photo background`;
+                for (const m of await page.evaluate(measurePhotoText)) {
+                    const white = m.color === 'rgb(255, 255, 255)';
+                    const ringed = m.ring && m.shadow !== 'none' && m.shadow.includes('rgba(0, 0, 0');
+                    const solid = m.opacity === '1';
+                    const line = `${m.name}: colour ${m.color}, opacity ${m.opacity}, text-shadow ${m.shadow === 'none' ? 'none' : 'set'}`;
+                    if (white && ringed && solid) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
+                    else {
+                        console.log(`   ${colors.red}❌ ${label} ${line} — text on a photo must be white with the --text-shadow-photo ring${colors.reset}`);
+                        serious.push(`${label}: ${m.name} lost the photo treatment (${line})`);
+                    }
+                }
+            }
+        }
+        await page.emulateMedia({ contrast: null });
+
         // More-contrast pass: the OS "Increase contrast" setting (prefers-contrast)
         // brings the footer strip back on desktop and dark text on phones, and
         // that mode is GATED at 4.5:1 on every theme at both widths.
