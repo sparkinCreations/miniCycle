@@ -688,6 +688,15 @@ body > .edit-focus-overlay.search-page-overlay.active {
     opacity: 0.6;
 }
 
+/* Direction arrow on the active sort chip — tapping it again reverses the sort. */
+.sort-chip.active[data-direction="asc"]::after,
+.sort-chip.active[data-direction="desc"]::after {
+    font-size: 9px;
+    opacity: 0.85;
+}
+.sort-chip.active[data-direction="asc"]::after { content: ' \2191'; }
+.sort-chip.active[data-direction="desc"]::after { content: ' \2193'; }
+
 /* Icon before each chip group */
 .chip-group-icon {
     display: flex;

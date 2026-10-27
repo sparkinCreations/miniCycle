@@ -20,8 +20,11 @@ export const TASK_SORT = Object.freeze({
 
 /** `body.dataset` key taskSearch publishes the active sort under (data-task-sort). */
 export const TASK_SORT_DATASET_KEY = 'taskSort';
+/** `body.dataset` key for its direction (data-task-sort-direction). */
+export const TASK_SORT_DIRECTION_DATASET_KEY = 'taskSortDirection';
 
-const UNDATED = '9999-12-31';   // undated tasks sort after every real date
+/** Tapping the active chip again reverses it. */
+export const SORT_DIRECTION = Object.freeze({ ASC: 'asc', DESC: 'desc' });
 
 /** Strip leading emojis (incl. ZWJ sequences) so A–Z sorts by the words, not the emoji code point. */
 export function stripLeadingEmoji(text) {
@@ -34,36 +37,50 @@ function sortableText(task) {
 
 /**
  * Compare two STATE task records under a sort chip.
+ *
+ * Direction reverses the ORDER of the values, never where the empties go: a
+ * task with no due date, or no priority, sorts after every task that has one
+ * in both directions. "Latest due date first" should not open with the
+ * undated tasks.
  * @param {string} sort - one of TASK_SORT
  * @param {Object} a
  * @param {Object} b
+ * @param {string} [direction] - one of SORT_DIRECTION (default asc)
  * @returns {number}
  */
-export function compareTasksBySort(sort, a, b) {
+export function compareTasksBySort(sort, a, b, direction = SORT_DIRECTION.ASC) {
+    const flip = direction === SORT_DIRECTION.DESC ? -1 : 1;
     switch (sort) {
         case TASK_SORT.AZ:
-            return sortableText(a).localeCompare(sortableText(b));
-        case TASK_SORT.PRIORITY:
-            return comparePriority(a, b);
-        case TASK_SORT.DUE_DATE:
-            return String(a?.dueDate || UNDATED).localeCompare(String(b?.dueDate || UNDATED));
+            return flip * sortableText(a).localeCompare(sortableText(b));
+        case TASK_SORT.PRIORITY: {
+            const emptyA = !a?.priority, emptyB = !b?.priority;
+            if (emptyA !== emptyB) return emptyA ? 1 : -1;
+            return flip * comparePriority(a, b);
+        }
+        case TASK_SORT.DUE_DATE: {
+            const emptyA = !a?.dueDate, emptyB = !b?.dueDate;
+            if (emptyA !== emptyB) return emptyA ? 1 : -1;
+            return flip * String(a.dueDate).localeCompare(String(b.dueDate));
+        }
         default:
             return 0;
     }
 }
 
 /**
- * A new array of the tasks in sort order (stable: ties keep routine order).
- * The default sort returns a copy in routine order.
+ * A new array of the tasks in sort order (stable: ties keep routine order in
+ * both directions). The default sort returns a copy in routine order.
  * @param {Object[]} tasks
  * @param {string} sort
+ * @param {string} [direction] - one of SORT_DIRECTION (default asc)
  * @returns {Object[]}
  */
-export function sortTasksBySort(tasks, sort) {
+export function sortTasksBySort(tasks, sort, direction = SORT_DIRECTION.ASC) {
     const list = Array.isArray(tasks) ? tasks : [];
     if (!sort || sort === TASK_SORT.DEFAULT) return list.slice();
     return list
         .map((task, index) => ({ task, index }))
-        .sort((x, y) => compareTasksBySort(sort, x.task, y.task) || x.index - y.index)
+        .sort((x, y) => compareTasksBySort(sort, x.task, y.task, direction) || x.index - y.index)
         .map(({ task }) => task);
 }

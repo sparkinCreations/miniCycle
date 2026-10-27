@@ -1,3 +1,16 @@
+## [2.643] - 2026-10-27
+- docs(audit): record the three remaining decisions (gate the numbers, flat archive, incidents stay live)
+- docs(audit): archive the private developer profile; add the quality-claims check; record decisions
+- docs(audit): plan for the 10-round docs audit (accuracy, numbers → PROJECT_STATS, archive, sidebar)
+- feat(search): sort chips reverse on a second tap; every filter and sort chip has a tooltip
+- chore(platforms): sync iOS, Android and desktop stamps to 2.642 (builds 61 / 69 / 2.642.0)
+- Revert "ci(temp): run the workflow on this branch, WebKit job x3 — revert before merge"
+- test(backupManager): give each session-backup fixture a unique lastModified
+- test(journey): seed through an init script so a pending save cannot clobber it
+- ci(temp): run the workflow on this branch, WebKit job x3 — revert before merge
+- fix(webkit): make the five flaky WebKit journeys deterministic; two were app bugs
+
+
 ## [2.642] - 2026-10-26
 - fix(focus): Focus View ⋯ clears the iOS web app's status-bar glass too
 - style(header): iOS web app header sits halfway between v2.640 and v2.641

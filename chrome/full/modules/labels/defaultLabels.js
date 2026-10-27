@@ -124,6 +124,14 @@ export const DEFAULT_LABELS = deepFreeze({
         sortAZ:               'A\u2013Z',
         sortPriority:         'Priority',
         sortDueDate:          'Due Date',
+        // Sort chip tooltips; the active chip's tip names the direction another tap gives.
+        sortTipDefault:       'Routine order, as you arranged it',
+        sortTipAZ:            'A to Z by task name \u2014 tap again for Z to A',
+        sortTipZA:            'Z to A by task name \u2014 tap again for A to Z',
+        sortTipPriorityHigh:  'High priority first \u2014 tap again for low first',
+        sortTipPriorityLow:   'Low priority first \u2014 tap again for high first',
+        sortTipDueSoonest:    'Soonest due date first \u2014 tap again for latest first',
+        sortTipDueLatest:     'Latest due date first \u2014 tap again for soonest first',
         openThemesModal:      'Open Themes',
         openGamesModal:       'Open Games'
     },
