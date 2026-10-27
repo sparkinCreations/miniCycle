@@ -142,6 +142,7 @@
   * [Audit Residuals (Aug 2026)](future-work/AUDIT_RESIDUALS_2026_08.md)
   * [Auto-Generated depMappings](future-work/AUTO_GENERATED_DEPMAPPINGS_PLAN.md)
   * [Boot Performance Roadmap](future-work/BOOT_PERF_ROADMAP.md)
+  * [Docs Audit Plan (10 rounds)](future-work/DOCS_AUDIT_PLAN.md)
   * [Error Handling — Phases 3–5](future-work/ERROR_HANDLING_PHASES_3_5.md)
   * [Feedback TODO (Jul 2026)](future-work/FEEDBACK_TODO_2026_07.md)
   * [HTML Bootstrap Responsibility Reduction](future-work/HTML_BOOTSTRAP_RESPONSIBILITY_REDUCTION_PLAN.md)
