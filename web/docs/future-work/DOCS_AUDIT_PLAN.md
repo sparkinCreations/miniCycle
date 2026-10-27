@@ -142,18 +142,13 @@ Taken (Oct 27 2026):
   pages already sit; it gets the normal round-2 checks. — recommended,
   MJ undecided; say so if you want it elsewhere.
 
-Still open for MJ before round 1:
+Taken (Oct 27 2026, "go with the recommendations" — MJ):
 
-1. **Gate it?** Extend `validate:docs` with a check that forbids the volatile
-   count patterns outside `PROJECT_STATS.md`, so the numbers cannot drift
-   back. Cheap, but it needs an allow-list for the legitimate literals.
-   Recommended: yes, added in round 1 as a warning, promoted to a gate in
-   round 10.
-2. **Archive structure.** `archive/` is flat (122 files now). Leave flat, or
-   add year folders as docs are moved in? Recommended: leave flat; the
-   banner line carries the date.
-3. **Old incidents.** Keep all five live under Incidents (recommended), or
-   archive those older than a year?
+- **Gate the numbers.** `validate:docs` gains a check for volatile count
+  patterns outside `PROJECT_STATS.md`: a warning from round 1, a gate in
+  round 10, with an allow-list for legitimate literals.
+- **`archive/` stays flat.** The banner line carries the date.
+- **All five incidents stay live** under Incidents.
 
 ---
 
