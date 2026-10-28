@@ -74,8 +74,8 @@ Privacy focused so your information remains under your control.
 
 WHAT'S NEW (October 2026)
 
-• Automatic daily backups — a backup file is kept on your device, and each one is listed under Data Management, ready to restore.
-  (NEXT UPLOAD: reword — automatic backups date to 1.66x and the Chrome build keeps no backup file; the new part is the Data Management list, each restorable.)
+• Your automatic backups are now listed under Data Management, each one ready to restore.
+  (NEXT UPLOAD: this replaces the bullet submitted with 2.647, which presented automatic daily backups as new (they date to 1.66x) and said a backup file is kept on your device, which only the iPhone, Android and desktop builds do.)
 • Recurring tasks can be paused and resumed, and removing one offers to put it back.
 • Due dates can send a system notification on the due day, and Reminders now says when the next one fires and which tasks it covers.
 • Open Routine: sort and filter chips have tooltips, a second tap reverses the sort, searching stays applied when you change the filter or sort, and renaming is easier to read.
