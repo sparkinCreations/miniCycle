@@ -362,6 +362,64 @@ export async function runTestingModalTests(resultsDiv, isPartOfSuite = false) {
         if (!/Estimated Limit: [\d.]+ MB/.test(text)) throw new Error('expected an estimated limit line');
     });
 
+    // One storage meter. The same data used to read 37 KB in the switcher's bar,
+    // 36.6 KB here, 22 KB in the debug report and 18.2 KB summed in the storage
+    // viewer (Oct 2026): every report now reads storageUtils.
+    const storageUtils = await import('../modules/utils/storageUtils.js');
+    const meter = () => storageUtils.formatBytes(storageUtils.getLocalStorageUsedBytes());
+
+    await test('showStorageInfo reports the same storage figure as the switcher bar', () => {
+        showStorageInfo();
+        const text = outputText();
+        if (!text.includes(`Storage Used: ${meter()}`)) throw new Error(`expected "Storage Used: ${meter()}", got: "${text}"`);
+    });
+
+    // =====================================================
+    // Debug: generateDebugReport (real, sync)
+    // =====================================================
+    resultsDiv.innerHTML += '<h4>🐞 generateDebugReport</h4>';
+
+    const readReport = () => {
+        const text = outputText();
+        const start = text.indexOf('=== DEBUG REPORT ===');
+        const end = text.indexOf('====================', start + 20);
+        if (start < 0 || end < 0) return null;
+        return JSON.parse(text.slice(start + '=== DEBUG REPORT ==='.length, end));
+    };
+
+    await test('generateDebugReport is written at once (no 2-second wait)', () => {
+        clearTestResults();
+        debug.generateDebugReport();
+        if (!readReport()) throw new Error(`no report in the output right after the call: "${outputText().slice(0, 200)}"`);
+    });
+
+    await test('generateDebugReport names the real app version, not "unknown"', () => {
+        // It read metadata.version, a field the app never writes (the same bug
+        // showAppInfo had, fixed above, in a copy that was missed).
+        clearTestResults();
+        debug.generateDebugReport();
+        const report = readReport();
+        const appVersion = globalThis.APP_VERSION;
+        if (!appVersion) throw new Error('precondition: APP_VERSION not loaded in this environment');
+        if (report.appInfo.version !== appVersion) throw new Error(`version ${JSON.stringify(report.appInfo.version)}, expected ${appVersion}`);
+    });
+
+    await test('generateDebugReport names the active routine', () => {
+        // It read data.activeCycle, a 2.5 field; JSON.stringify dropped the undefined key.
+        clearTestResults();
+        debug.generateDebugReport();
+        const { dataInfo } = readReport();
+        if (dataInfo.activeRoutineId !== 'test-cycle') throw new Error(`activeRoutineId ${JSON.stringify(dataInfo.activeRoutineId)}`);
+        if (dataInfo.activeRoutine !== 'Test Routine') throw new Error(`activeRoutine ${JSON.stringify(dataInfo.activeRoutine)}`);
+    });
+
+    await test('generateDebugReport reports the same storage figure as the switcher bar', () => {
+        clearTestResults();
+        debug.generateDebugReport();
+        const { dataInfo } = readReport();
+        if (dataInfo.storageUsed !== meter()) throw new Error(`storageUsed ${dataInfo.storageUsed}, switcher bar meter ${meter()}`);
+    });
+
     // =====================================================
     // Debug: getServiceWorkerInfo (real, async — returns a promise)
     // =====================================================
