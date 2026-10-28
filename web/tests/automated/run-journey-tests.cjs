@@ -5931,7 +5931,173 @@ async function journeyIntroDoneAndFocusNotice(browser, baseURL) {
     return { name: 'the intro reads Done once it is finished; skipping it explains Focus View', failures };
 }
 
+// ── Keyboard reordering: Alt+ArrowUp / Alt+ArrowDown ───────────────────────
+// The ▲▼ buttons are off by default, so a keyboard user had no way to reorder.
+// Alt+arrow on a task's checkbox or name moves it one place through the SAME
+// path as the buttons (undo, sort refusal, dropdown refusal), keeps focus on the
+// moved task, and says where it went. A row in the completed dropdown is
+// refused, like every other reorder. And the search filter's hidden rows are
+// not neighbours: stepping past one moved the task in state while nothing on
+// screen changed — for the buttons too, which share the path (Oct 2026).
+async function journeyKeyboardReorder(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const seed = async (texts, opts = {}) => {
+            const doc = await page.evaluate(({ texts, opts }) => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const c = d.data.routine[d.appState.activeRoutineId];
+                c.tasks = texts.map((t, i) => ({
+                    id: 'k' + i, text: t, completed: false, dueDate: null, priority: null, remindersEnabled: false,
+                    recurring: false, recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2
+                }));
+                c.recurringTemplates = {};
+                c.autoReset = false;
+                c.deleteCheckedTasks = false;
+                d.settings = d.settings || {};
+                d.settings.showCompletedDropdown = !!opts.dropdown;
+                d.settings.focusModeActive = false;
+                d.ui = d.ui || {};
+                d.ui.moveArrowsVisible = !!opts.arrows;
+                return JSON.stringify(d);
+            }, { texts, opts });
+            await reloadWithSeed(page, doc);
+            await bootApp(page);
+            await page.evaluate(() => document.body.classList.contains('focus-mode')
+                && document.getElementById('focus-mode-exit-btn')?.click());
+            await page.waitForTimeout(800);
+        };
+        const stored = () => page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            return d.data.routine[d.appState.activeRoutineId].tasks.map(t => t.text).join('');
+        });
+        const focusOn = (text, what) => page.evaluate(({ text, what }) => {
+            const row = [...document.querySelectorAll('#taskList .task, #completedTaskList .task')]
+                .find(r => r.querySelector('.task-text')?.textContent === text);
+            const el = row?.querySelector(what === 'name' ? '.task-text' : 'input[type="checkbox"]');
+            el?.focus();
+            return !!el && document.activeElement === el;
+        }, { text, what });
+        const focused = () => page.evaluate(() => {
+            const a = document.activeElement;
+            const row = a?.closest?.('.task');
+            return row ? `${row.querySelector('.task-text')?.textContent}:${a.matches('input[type="checkbox"]') ? 'checkbox' : (a.classList.contains('task-text') ? 'name' : a.tagName)}` : 'none';
+        });
+        // The live region is cleared, then written a frame later (announce.js).
+        const spoken = (re) => page.waitForFunction((src) => new RegExp(src).test(document.getElementById('live-region')?.textContent || ''),
+            re.source, { timeout: 3000 }).then(() => true, () => false);
+
+        await seed(['A', 'B', 'C', 'D']);
+        record('the move arrows are off (the default)', await page.evaluate(() =>
+            ![...document.querySelectorAll('#taskList .move-up')].some(b => b.offsetParent && getComputedStyle(b).visibility !== 'hidden')),
+            'arrows visible — this would not test the keyboard-only path');
+
+        await focusOn('B', 'checkbox');
+        await page.keyboard.press('Alt+ArrowDown');
+        await page.waitForTimeout(700);
+        record('Alt+ArrowDown on a checkbox moves the task down one place', (await stored()) === 'ACBD', `stored ${await stored()}`);
+        record('focus stays on the moved task\'s checkbox', (await focused()) === 'B:checkbox', `focus on ${await focused()}`);
+        record('the move is spoken with the name and new position', await spoken(/Moved B to position 3 of 4/),
+            `live region: "${await page.evaluate(() => document.getElementById('live-region')?.textContent)}"`);
+        record('a keyboard move does not open the task\'s options', await page.evaluate(() =>
+            !document.querySelector('#taskList .task-options.visible')), 'an options row opened');
+
+        await page.waitForTimeout(300);
+        await focusOn('B', 'name');
+        await page.keyboard.press('Alt+ArrowUp');
+        await page.waitForTimeout(700);
+        record('Alt+ArrowUp on a task name moves it back up', (await stored()) === 'ABCD', `stored ${await stored()}`);
+        record('focus stays on the moved task\'s name', (await focused()) === 'B:name', `focus on ${await focused()}`);
+
+        await page.waitForTimeout(300);
+        await focusOn('A', 'checkbox');
+        await page.keyboard.press('Alt+ArrowUp');
+        await page.waitForTimeout(600);
+        record('Alt+ArrowUp on the first task changes nothing', (await stored()) === 'ABCD', `stored ${await stored()}`);
+        record('…and says it is already at the top', await spoken(/A is already at the top/), 'not spoken');
+
+        await page.keyboard.press('ArrowDown');
+        await page.waitForTimeout(300);
+        record('plain ArrowDown still moves focus without reordering',
+            (await stored()) === 'ABCD' && (await focused()) === 'B:checkbox', `stored ${await stored()}, focus ${await focused()}`);
+
+        await page.waitForTimeout(300);
+        await focusOn('A', 'checkbox');
+        await page.keyboard.press('Alt+ArrowDown');
+        await page.waitForTimeout(800);
+        const moved = await stored();
+        await page.keyboard.press('Control+z');
+        await page.waitForTimeout(1000);
+        record('a keyboard move can be undone', moved === 'BACD' && (await stored()) === 'ABCD',
+            `after move ${moved}, after undo ${await stored()}`);
+
+        // Search filter: hidden rows are not neighbours — for the keyboard and the
+        // buttons. "a" matches every name but Kiwi, which sits between Apple and
+        // Avocado; the next VISIBLE row below Apple is Avocado.
+        const names = () => page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            return d.data.routine[d.appState.activeRoutineId].tasks.map(t => t.text).join(',');
+        });
+        const filterBy = async (q) => {
+            await clickEl(page, '#task-search-btn');
+            await page.waitForSelector('#task-search-input', { state: 'visible', timeout: 5000 });
+            await page.fill('#task-search-input', q);
+            await page.waitForTimeout(700);
+            return page.evaluate(() => [...document.querySelectorAll('#taskList .task')]
+                .filter(r => r.style.display === 'none').map(r => r.querySelector('.task-text').textContent).join(','));
+        };
+        for (const door of ['keyboard', 'button']) {
+            await seed(['Apple', 'Kiwi', 'Avocado', 'Apricot'], { arrows: true });
+            const hidden = await filterBy('a');
+            record(`${door}: the search filter hides Kiwi`, hidden === 'Kiwi', `hidden: ${hidden || 'none'}`);
+            if (door === 'keyboard') {
+                await focusOn('Apple', 'checkbox');
+                await page.keyboard.press('Alt+ArrowDown');
+            } else {
+                await page.evaluate(() => {
+                    const row = [...document.querySelectorAll('#taskList .task')]
+                        .find(r => r.querySelector('.task-text')?.textContent === 'Apple');
+                    row?.querySelector('.move-down')?.click();
+                });
+            }
+            await page.waitForTimeout(900);
+            record(`${door}: under a filter, moving Apple down steps past the hidden row to Avocado`,
+                (await names()) === 'Kiwi,Avocado,Apple,Apricot', `stored ${await names()}`);
+        }
+
+        // Completed dropdown: a parked row is refused, with a spoken reason.
+        await seed(['A', 'B', 'C'], { dropdown: true });
+        await page.evaluate(() => {
+            const row = [...document.querySelectorAll('#taskList .task')]
+                .find(r => r.querySelector('.task-text')?.textContent === 'C');
+            const cb = row?.querySelector('input[type="checkbox"]');
+            if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.waitForTimeout(1500);
+        const inDropdown = await page.evaluate(() => [...document.querySelectorAll('#completedTaskList .task-text')].map(e => e.textContent).join(''));
+        record('with the dropdown on, the checked task moves into it', inDropdown === 'C', `dropdown holds "${inDropdown}"`);
+        await page.evaluate(() => {
+            const list = document.getElementById('completedTaskList');
+            if (list && !list.classList.contains('visible')) document.getElementById('completed-tasks-header')?.click();
+        });
+        await page.waitForTimeout(500);
+        const couldFocus = await focusOn('C', 'checkbox');
+        await page.keyboard.press('Alt+ArrowUp');
+        await page.waitForTimeout(700);
+        record('Alt+ArrowUp on a task in the completed dropdown does not move it',
+            couldFocus && (await stored()) === 'ABC', `focused ${couldFocus}, stored ${await stored()}`);
+        record('…and the reason is spoken', await spoken(/cannot be moved/), 'not spoken');
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'Alt+arrow reorders a task from the keyboard', failures };
+}
+
 const JOURNEYS = [
+    { name: 'Alt+arrow reorders a task from the keyboard', fn: journeyKeyboardReorder },
     { name: 'keyboard focus stays on the welcome choice screen', fn: journeyChoiceScreenKeepsFocus },
     { name: 'the intro reads Done once it is finished; skipping it explains Focus View', fn: journeyIntroDoneAndFocusNotice },
     { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },

@@ -175,6 +175,11 @@ export class TaskEvents {
         return (event) => {
             const target = event.target;
 
+            // Modified arrows are not navigation: Alt+ArrowUp/Down reorders the
+            // task (dragDropManager.handleReorderKeydown, on the same list), and
+            // moving focus as well would leave it on the wrong row.
+            if (event.altKey || event.ctrlKey || event.metaKey) return;
+
             // Navigate between task checkboxes with ArrowUp/Down
             if (target.type === 'checkbox' && target.closest(DOM_SELECTORS.TASK_CONTENT)) {
                 const taskList = target.closest('ul');

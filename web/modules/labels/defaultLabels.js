@@ -1933,10 +1933,10 @@ export const DEFAULT_LABELS = deepFreeze({
         titleCelebration:    'First Cycle Complete!',
         // To-Do mode never counts a cycle; its first success is a clear.
         titleCelebrationTodo: 'First Clear Complete!',
-        // The pointer variant is what keyboard users see too, so it names a way
-        // in for them: the move arrows (off by default) and Shift+→, which
-        // gesturePanelManager already maps to the next panel (review, Oct 2026).
-        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange, or turn on Show Move Arrows in Settings.|Drag left or press Shift+→ for stats and achievements 📊' },
+        // The pointer variant is what keyboard users see too, so it names their
+        // way in: Alt+arrow reordering (dragDropManager.handleReorderKeydown) and
+        // Shift+→, which gesturePanelManager maps to the next panel (review, Oct 2026).
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange, or press Alt+↑ / Alt+↓ on a task.|Drag left or press Shift+→ for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
@@ -2518,8 +2518,12 @@ export const DEFAULT_LABELS = deepFreeze({
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
         tasksCleared: 'Tasks cleared',
-        taskMovedUp: 'Task moved up',
-        taskMovedDown: 'Task moved down',
+        // Spoken after a ▲▼ or Alt+arrow move: the name and the new place among
+        // the rows on screen ("moved up" alone left the user to guess where).
+        taskMovedTo: 'Moved {name} to position {position} of {total}',
+        taskMoveAtTop: '{name} is already at the top',
+        taskMoveAtBottom: '{name} is already at the bottom',
+        taskMoveCompletedLocked: 'Completed tasks in the dropdown keep their order and cannot be moved',
         editRoutineName: 'Edit routine name',
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
@@ -3030,8 +3034,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'accessibility.taskUncompleted',
     'accessibility.cycleCompleted',
     'accessibility.tasksCleared',
-    'accessibility.taskMovedUp',
-    'accessibility.taskMovedDown',
+    'accessibility.taskMovedTo',
+    'accessibility.taskMoveAtTop',
+    'accessibility.taskMoveAtBottom',
+    'accessibility.taskMoveCompletedLocked',
     'accessibility.editRoutineName',
     'accessibility.editPresetName',
     'accessibility.taskAdded',

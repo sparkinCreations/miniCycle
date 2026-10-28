@@ -240,6 +240,14 @@ export class DragDropManager {
                 safeAdd(taskList, "click", taskList._arrowClickHandler);
             }
 
+            // Alt+ArrowUp / Alt+ArrowDown reordering. On both lists, so a row in
+            // the completed dropdown gets its spoken refusal (handleReorderKeydown).
+            this._reorderKeydownHandler = (event) => this.handleReorderKeydown(event);
+            [DOM_IDS.TASK_LIST, DOM_IDS.COMPLETED_TASK_LIST].forEach((id) => {
+                const list = document.getElementById(id);
+                if (list) safeAdd(list, "keydown", this._reorderKeydownHandler);
+            });
+
             // Setup dragover handler
             //
             // Synchronous on purpose. handleRearrange only records the move and
@@ -731,24 +739,72 @@ export class DragDropManager {
      * @param {HTMLElement} button - The arrow button that was clicked
      */
     async handleArrowClick(button) {
+        const taskItem = button.closest(DOM_SELECTORS.TASK);
+        if (!taskItem) return;
+        const movingUp = button.classList.contains(DOM_CLASSES.MOVE_UP);
+        await this._moveTaskOneStep(taskItem, movingUp, { via: 'arrow' });
+    }
+
+    /**
+     * Keyboard reordering: Alt+ArrowUp / Alt+ArrowDown (Option on a Mac) on a
+     * focused task's checkbox or name moves that task one place, the same move
+     * the ▲▼ buttons make. The buttons are off by default, so without this a
+     * keyboard user had no way to reorder at all (review, Oct 2026).
+     *
+     * Delegated on both lists. A row in the completed dropdown is refused with
+     * a spoken reason instead of silence — a sighted user sees why nothing
+     * moved, a screen-reader user would not.
+     * @param {KeyboardEvent} event
+     * @returns {boolean} true when the key was a reorder key and was handled
+     */
+    handleReorderKeydown(event) {
+        if (!event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return false;
+        if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return false;
+        const target = event.target;
+        // Only from the task's own focus stops — never out of a text field
+        // (Option+arrow moves the caret by paragraph there) or a task button.
+        const fromTask = target?.matches?.('input[type="checkbox"]') || target?.classList?.contains(DOM_CLASSES.TASK_TEXT);
+        if (!fromTask || target.isContentEditable) return false;
+        const taskItem = target.closest(DOM_SELECTORS.TASK);
+        if (!taskItem) return false;
+
+        event.preventDefault();
+        event.stopPropagation();
+        const focusSelector = target.classList.contains(DOM_CLASSES.TASK_TEXT)
+            ? DOM_SELECTORS.TASK_TEXT
+            : 'input[type="checkbox"]';
+        this._moveTaskOneStep(taskItem, event.key === 'ArrowUp', { via: 'keyboard', focusSelector });
+        return true;
+    }
+
+    /**
+     * One move, two doors (the ▲▼ buttons and Alt+arrow). Everything that
+     * decides whether a move is allowed and where it lands lives here, so the
+     * two cannot drift apart.
+     * @param {HTMLElement} taskItem - the row being moved
+     * @param {boolean} movingUp
+     * @param {{via: 'arrow'|'keyboard', focusSelector?: string}} options
+     * @private
+     */
+    async _moveTaskOneStep(taskItem, movingUp, { via, focusSelector } = {}) {
         // Guard against double execution (Enter key can fire both synthetic and native click in some browsers)
         if (this._arrowMoveInProgress) return;
         this._arrowMoveInProgress = true;
 
         try {
-            const taskItem = button.closest(DOM_SELECTORS.TASK);
-            if (!taskItem) return;
-
             // Sorted view: refuse rather than reorder a list the user cannot see move.
             if (this._isSortActive()) {
                 this._notifyReorderPaused();
                 return;
             }
 
-            // No arrow reordering for a row parked in the completed dropdown: its
+            // No reordering for a row parked in the completed dropdown: its
             // on-screen order is display-only. A checked row still in #taskList
             // (dropdown off) keeps its slot and may be moved like any other.
-            if (taskItem.closest('#' + DOM_IDS.COMPLETED_TASK_LIST)) return;
+            if (taskItem.closest('#' + DOM_IDS.COMPLETED_TASK_LIST)) {
+                if (via === 'keyboard') announce(getLabel('accessibility.taskMoveCompletedLocked'));
+                return;
+            }
 
             // Resolve the NEIGHBOUR from the DOM, then reorder state by ID.
             //
@@ -774,19 +830,29 @@ export class DragDropManager {
             // one that was never hardened.
             //
             // The DOM still decides WHICH neighbour (it is what the user is looking
-            // at and pointing the arrow at); state decides where that lands.
+            // at and pointing the arrow at); state decides where that lands. Only
+            // rows the user can SEE count: the search filter hides rows with
+            // display:none, and stepping past one of those moved the task in
+            // state while nothing on screen changed (Oct 2026).
             const taskList = document.getElementById(DOM_IDS.TASK_LIST);
-            const rows = Array.from(taskList.children);
+            const rows = Array.from(taskList.children).filter(row => row.style.display !== 'none');
             const domIndex = rows.indexOf(taskItem);
-            const movingUp = button.classList.contains(DOM_CLASSES.MOVE_UP);
             const targetRow = movingUp ? rows[domIndex - 1] : rows[domIndex + 1];
 
             // Already at the end of the list the user can see.
-            if (domIndex === -1 || !targetRow) return;
+            if (domIndex === -1 || !targetRow) {
+                if (via === 'keyboard' && domIndex !== -1) {
+                    announce(getLabel(movingUp ? 'accessibility.taskMoveAtTop' : 'accessibility.taskMoveAtBottom', {
+                        vars: { name: this._taskName(taskItem) }
+                    }));
+                }
+                return;
+            }
 
             const taskId = taskItem.dataset.taskId;
             const targetTaskId = targetRow.dataset.taskId;
             if (!taskId || !targetTaskId) return;
+            const name = this._taskName(taskItem);
 
             // Reorder via state system (state-first pattern)
             const AppState = this._getAppState();
@@ -809,15 +875,18 @@ export class DragDropManager {
                             tasks.splice(movingUp ? targetIndex : targetIndex + 1, 0, movedTask);
                         }
                     }
-                    // Set activeTaskId so rendering restores task options (state-driven UI)
-                    if (!state.ui) state.ui = {};
-                    state.ui.activeTaskId = taskId || null;
-                    // Signal that this render should restore options (explicit user action)
-                    state.ui.shouldRestoreActiveTaskOptions = true;
+                    // The arrows live in the task's options row, so after an arrow
+                    // move the render reopens it (state-driven UI). A keyboard move
+                    // started on the checkbox or name and must not pop it open.
+                    if (via === 'arrow') {
+                        if (!state.ui) state.ui = {};
+                        state.ui.activeTaskId = taskId || null;
+                        state.ui.shouldRestoreActiveTaskOptions = true;
+                    }
                 }, true); // immediate save
 
                 // Remember which arrow was pressed for focus restoration
-                const arrowClass = button.classList.contains(DOM_CLASSES.MOVE_UP) ? DOM_CLASSES.MOVE_UP : DOM_CLASSES.MOVE_DOWN;
+                const arrowClass = movingUp ? DOM_CLASSES.MOVE_UP : DOM_CLASSES.MOVE_DOWN;
 
                 // Re-render from state (await to ensure DOM is ready)
                 await this.deps.refreshUIFromState?.();
@@ -830,15 +899,19 @@ export class DragDropManager {
 
                 // Task options are now restored automatically by _restoreActiveTaskOptions in renderTasks
 
-                // Restore focus to the same arrow button on the moved task (a11y)
+                // Put focus back where it was on the moved task (a11y). The
+                // re-render replaced the row, so without this focus fell to the
+                // page and the next keypress went nowhere.
                 // Use rAF to ensure the browser has completed layout before focusing
-                if (taskId) {
-                    requestAnimationFrame(() => {
-                        // Escaped builder, not an inline template — an id with a
-                        // quote/bracket would throw DOMException here otherwise.
-                        const movedTask = document.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
-                        if (!movedTask) return;
+                requestAnimationFrame(() => {
+                    // Escaped builder, not an inline template — an id with a
+                    // quote/bracket would throw DOMException here otherwise.
+                    const movedTask = document.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
+                    if (!movedTask) return;
 
+                    if (via === 'keyboard') {
+                        movedTask.querySelector(focusSelector)?.focus();
+                    } else {
                         // Ensure task options are visible on the moved task
                         const taskOptions = movedTask.querySelector(DOM_SELECTORS.TASK_OPTIONS);
                         if (taskOptions) {
@@ -862,13 +935,19 @@ export class DragDropManager {
                             // All arrows hidden — focus task text as fallback
                             movedTask.querySelector(DOM_SELECTORS.TASK_TEXT)?.focus();
                         }
-                    });
-                }
+                    }
 
-                // Announce move to screen readers via live region
-                announce(getLabel(arrowClass === DOM_CLASSES.MOVE_UP
-                        ? 'accessibility.taskMovedUp'
-                        : 'accessibility.taskMovedDown'));
+                    // Announce AFTER focus lands: the screen reader speaks the
+                    // newly focused control first, and this polite message
+                    // queues behind it instead of being cut off by it. Name and
+                    // place, not just a direction — "moved up" said nothing
+                    // about where the task now is among the ones on screen.
+                    const visible = Array.from(document.getElementById(DOM_IDS.TASK_LIST)?.children || [])
+                        .filter(row => row.style.display !== 'none');
+                    announce(getLabel('accessibility.taskMovedTo', {
+                        vars: { name, position: visible.indexOf(movedTask) + 1, total: visible.length }
+                    }));
+                });
 
             } else {
                 console.warn('⚠️ AppState not ready for arrow reordering');
@@ -881,6 +960,11 @@ export class DragDropManager {
             // Release guard after a brief delay to absorb any duplicate events
             setTimeout(() => { this._arrowMoveInProgress = false; }, 200);
         }
+    }
+
+    /** The task's visible name, for announcements. @private */
+    _taskName(taskItem) {
+        return (taskItem.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || '').trim();
     }
 
     /**
@@ -1019,6 +1103,12 @@ export class DragDropManager {
         if (taskList?._arrowClickHandler) {
             taskList.removeEventListener('click', taskList._arrowClickHandler);
             taskList._arrowClickHandler = null;
+        }
+        if (this._reorderKeydownHandler) {
+            [DOM_IDS.TASK_LIST, DOM_IDS.COMPLETED_TASK_LIST].forEach((id) => {
+                document.getElementById(id)?.removeEventListener('keydown', this._reorderKeydownHandler);
+            });
+            this._reorderKeydownHandler = null;
         }
 
         this.rearrangeInitialized = false;
