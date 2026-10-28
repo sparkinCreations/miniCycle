@@ -9,7 +9,7 @@
         difficultyEasy: 'Easy',
         difficultyNormal: 'Normal',
         difficultyHard: 'Hard',
-        instructions: 'Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!',
+        instructions: 'Click your tasks in routine order (1, 2, 3, ...). They move faster each round!',
         scoreboard: 'Round: {round} | Score: {score}',
         roundComplete: 'Round complete! \u{1F389}',
         wrongOrder: 'Wrong order! Game Over! \u{274C}',
@@ -37,6 +37,7 @@
     var SPAWN_ATTEMPTS    = 40;   // random spots tried per button before accepting an overlap
     var SPAWN_GAP         = 6;    // px kept between spawned buttons
     var MAX_FRAME_DT      = 0.05; // s — a longer frame (tab hidden, stall) moves as if it were this long
+    var TASKS_PER_ROUND   = 10;   // buttons in one round; a longer routine is dealt in windows of this size
 
     // The app's document (read only) and this game's own bests. The bests have
     // their own key: until Oct 2026 the game rewrote the whole miniCycleData to
@@ -134,8 +135,13 @@
     }
 
     /***** Bests (own key) *****/
+    // A best is the most rounds CLEARED in one game, with the time it took to
+    // clear them; a tie on rounds goes to the faster time. Every game can set
+    // it, and a quick early loss cannot (fewer rounds always loses). Until Oct
+    // 2026 the best time counted only a game won outright (10 or 15 rounds),
+    // so for most players it never left "--".
     function emptyStats() {
-        return { bestRound: 0, bestTime: null, gamesPlayed: 0 };
+        return { bestRounds: 0, bestTime: null, gamesPlayed: 0 };
     }
 
     /** A stored best time in ms, or null. JSON turned the old Infinity into null. */
@@ -146,8 +152,16 @@
     function normalizeStats(stats) {
         var out = emptyStats();
         if (!stats || typeof stats !== 'object') return out;
-        out.bestRound = typeof stats.bestRound === 'number' && stats.bestRound > 0 ? stats.bestRound : 0;
-        out.bestTime = validTime(stats.bestTime);
+        if (typeof stats.bestRounds === 'number') {
+            out.bestRounds = stats.bestRounds > 0 ? stats.bestRounds : 0;
+            out.bestTime = out.bestRounds > 0 ? validTime(stats.bestTime) : null;
+        } else if (typeof stats.bestRound === 'number' && stats.bestRound > 0) {
+            // Older shape: bestRound was the round REACHED, and a best time
+            // existed only for a won game, whose reached round was all cleared.
+            var won = validTime(stats.bestTime) !== null;
+            out.bestRounds = won ? stats.bestRound : stats.bestRound - 1;
+            out.bestTime = won ? validTime(stats.bestTime) : null;
+        }
         out.gamesPlayed = typeof stats.gamesPlayed === 'number' && stats.gamesPlayed > 0 ? stats.gamesPlayed : 0;
         if (typeof stats.lastPlayed === 'number') out.lastPlayed = stats.lastPlayed;
         return out;
@@ -172,18 +186,24 @@
     }
 
     /**
-     * Record one finished game. The best round counts any game; the best time
-     * only a WON game (all rounds cleared), or losing quickly would set a
-     * "best" time.
+     * Record one finished game (won or lost).
+     * @param {string} difficulty
+     * @param {number} roundsCleared - rounds fully cleared this game
+     * @param {number} clearMs - ms from the start to clearing the last of them
      * @returns {{saved: boolean, isNewBest: boolean}}
      */
-    function saveGameStats(difficulty, roundReached, elapsedMs, won) {
+    function saveGameStats(difficulty, roundsCleared, clearMs) {
         try {
             var all = loadAllStats();
             var stats = normalizeStats(all[difficulty]);
-            var isNewBest = false;
-            if (roundReached > stats.bestRound) { stats.bestRound = roundReached; isNewBest = true; }
-            if (won && (stats.bestTime === null || elapsedMs < stats.bestTime)) { stats.bestTime = elapsedMs; isNewBest = true; }
+            var time = validTime(clearMs);
+            var isNewBest = roundsCleared > stats.bestRounds ||
+                (roundsCleared > 0 && roundsCleared === stats.bestRounds && time !== null &&
+                 (stats.bestTime === null || time < stats.bestTime));
+            if (isNewBest) {
+                stats.bestRounds = roundsCleared;
+                stats.bestTime = time;
+            }
             stats.gamesPlayed += 1;
             stats.lastPlayed = Date.now();
             all[difficulty] = stats;
@@ -205,6 +225,7 @@
     var expectedOrder = 1;
     var gameActive = true;
     var gameStartTime = null;
+    var lastClearMs = 0;      // ms from the start to the last round cleared
     var timerInterval = null;
 
     var taskWindow = document.getElementById("taskWindow");
@@ -228,6 +249,7 @@
     function startTimer() {
         stopTimer();
         gameStartTime = Date.now();
+        lastClearMs = 0;
         timerEl.textContent = '0:00';
         timerInterval = setInterval(function () {
             if (!gameStartTime) return;
@@ -291,8 +313,8 @@
     }
 
     /***** Leaderboard Functions *****/
-    function updateLeaderboard(currentRound, elapsedTime, won) {
-        var result = saveGameStats(currentDifficulty, currentRound, elapsedTime, won);
+    function updateLeaderboard(roundsCleared, clearMs) {
+        var result = saveGameStats(currentDifficulty, roundsCleared, clearMs);
         updateLeaderboardDisplay();
         return result;
     }
@@ -302,7 +324,7 @@
         var difficultyLabel = DIFFICULTY_SETTINGS[currentDifficulty].label;
 
         lbTitleEl.textContent = LABELS.yourBest.replace('{difficulty}', difficultyLabel);
-        bestRoundEl.textContent = stats.bestRound;
+        bestRoundEl.textContent = stats.bestRounds;
         bestTimeEl.textContent = stats.bestTime === null ? LABELS.noTime :
             Math.floor(stats.bestTime / 1000) + 's';
         gamesPlayedEl.textContent = stats.gamesPlayed;
@@ -319,11 +341,7 @@
         expectedOrder = 1;
         updateScoreboard();
 
-        var roundTasks = shuffleArray(tasks);
-        if (roundTasks.length > 10) {
-            roundTasks = roundTasks.slice(0, 10);
-        }
-        currentTasks = roundTasks.map(function (task, index) {
+        currentTasks = tasksForRound(round).map(function (task, index) {
             return { order: index + 1, text: task };
         });
 
@@ -372,13 +390,15 @@
                 if (expectedOrder > currentTasks.length) {
                     var diffSettings = DIFFICULTY_SETTINGS[currentDifficulty];
 
+                    score++;
+                    lastClearMs = Date.now() - gameStartTime;
+
                     if (round >= diffSettings.maxRounds) {
-                        score++;
                         updateScoreboard();
                         stopMovement();
                         stopTimer();
-                        var elapsedTime = Date.now() - gameStartTime;
-                        var result = updateLeaderboard(round, elapsedTime, true);
+                        var elapsedTime = lastClearMs;
+                        var result = updateLeaderboard(score, lastClearMs);
                         feedbackEl.textContent = LABELS.winner.replace('{time}', Math.floor(elapsedTime / 1000));
                         feedbackEl.className = "feedback success";
                         if (result.isNewBest) showNewBest();
@@ -387,7 +407,6 @@
                         return;
                     }
 
-                    score++;
                     feedbackEl.textContent = LABELS.roundComplete;
                     feedbackEl.className = "feedback success";
                     stopMovement();
@@ -400,8 +419,8 @@
             } else {
                 stopMovement();
                 stopTimer();
-                var elapsedTime2 = Date.now() - gameStartTime;
-                var result2 = updateLeaderboard(round, elapsedTime2, false);
+                // Rounds cleared before this one, at the moment the last was cleared.
+                var result2 = updateLeaderboard(score, lastClearMs);
                 feedbackEl.textContent = LABELS.wrongOrder;
                 feedbackEl.className = "feedback error";
                 if (result2.isNewBest) {
@@ -459,15 +478,21 @@
         return pos;
     }
 
-    function shuffleArray(arr) {
-        var array = arr.slice();
-        for (var i = array.length - 1; i > 0; i--) {
-            var j = Math.floor(Math.random() * (i + 1));
-            var temp = array[i];
-            array[i] = array[j];
-            array[j] = temp;
+    /**
+     * The tasks for a round, numbered in ROUTINE order: button 1 is the
+     * routine's first task. Until Oct 2026 they were shuffled, so the numbers
+     * had nothing to do with the routine. A routine longer than one round is
+     * dealt in consecutive windows that carry on round to round, wrapping at
+     * the end, so every task comes up and each round keeps routine order.
+     */
+    function tasksForRound(roundNumber) {
+        if (tasks.length <= TASKS_PER_ROUND) return tasks.slice();
+        var start = ((roundNumber - 1) * TASKS_PER_ROUND) % tasks.length;
+        var dealt = [];
+        for (var i = 0; i < TASKS_PER_ROUND; i++) {
+            dealt.push(tasks[(start + i) % tasks.length]);
         }
-        return array;
+        return dealt;
     }
 
     function clearTasks() {
