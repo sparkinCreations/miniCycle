@@ -507,6 +507,28 @@ export const BREAKPOINTS = Object.freeze({
  * Touch and mouse gesture thresholds
  * @constant {Object}
  */
+/**
+ * App-wide keyboard shortcuts: Alt+Shift+<key> (Option+Shift on a Mac).
+ * Values are KeyboardEvent.code — the PHYSICAL key — because on a Mac
+ * Option+Shift+N reports event.key as "˜", not "N".
+ *
+ * Why Alt+Shift and not Ctrl/Cmd or single letters: Ctrl/Cmd+N and +O belong
+ * to the browser (Chrome never hands Ctrl+N to a page); single letters collide
+ * with screen-reader quick navigation (H = next heading, B = next button) and
+ * WCAG 2.1.4 would require a way to turn them off. NVDA, JAWS and VoiceOver do
+ * not use Alt+Shift+letter, and the app declares no accesskey (Firefox's
+ * accesskey modifier is Alt+Shift). Handled in uiBoot.handleAppShortcut;
+ * documented in legal/user-manual.html#keyboard-shortcuts — keep the two in step.
+ */
+export const KEYBOARD_SHORTCUTS = Object.freeze({
+    NEW_ROUTINE:      'KeyN',   // create a new routine
+    OPEN_ROUTINE:     'KeyO',   // open the routine switcher
+    NEXT_MODE:        'KeyM',   // Auto Cycle → Manual Cycle → To-Do → Auto Cycle
+    FOCUS_VIEW:       'KeyF',   // Focus View on / off
+    TOGGLE_INPUT_BAR: 'KeyI',   // show / hide the add-task input bar
+    USER_MANUAL:      'KeyU'    // open the user manual
+});
+
 export const GESTURE = Object.freeze({
     SWIPE_THRESHOLD: 400,          // Minimum distance for swipe recognition
     MOUSE_DRAG_THRESHOLD: 400,     // Minimum distance for mouse drag

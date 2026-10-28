@@ -391,7 +391,10 @@ export class ModeManager {
 
         // Update body classes
         const body = this.deps.getBody();
-        body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+        // todo-mode-mode FIRST, as routineManager has it: `\b` matches at a hyphen,
+        // so `todo-mode` alone stripped half of `todo-mode-mode` and left a stray
+        // `-mode` class on <body> after every To-Do switch (Oct 2026).
+        body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, '');
         body.classList.add(mode + '-mode');
 
         // ✅ FIXED: Update container visibility based on mode, not just autoReset
@@ -1499,7 +1502,7 @@ export class ModeManager {
 
             // Update body class
             const body = this.deps.getBody();
-            body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+            body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''); // see the note above in the mode sync
             body.classList.add(correctMode + '-mode');
 
             // Refresh UI to reflect correct mode

@@ -6096,7 +6096,136 @@ async function journeyKeyboardReorder(browser, baseURL) {
     return { name: 'Alt+arrow reorders a task from the keyboard', failures };
 }
 
+// ── App keyboard shortcuts: Alt+Shift+<key> ────────────────────────────────
+// Each shortcut clicks the control it stands for (uiBoot.handleAppShortcut),
+// is advertised on that control with aria-keyshortcuts, and stays out of the
+// way where it would do harm: in a text field (it must not eat a character),
+// behind an open dialog, and on the first-run screen.
+async function journeyAppShortcuts(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const press = async (letter) => {
+            await page.keyboard.press(`Alt+Shift+Key${letter}`);
+            await page.waitForTimeout(900);
+        };
+        const reset = async () => {
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(400);
+            await page.evaluate(() => {
+                document.querySelectorAll('dialog[open]').forEach(d => d.close());
+                document.querySelectorAll('.notification .close-btn').forEach(b => b.click());
+                if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
+            });
+            await page.waitForTimeout(400);
+        };
+        const state = () => page.evaluate(() => ({
+            focus: document.body.classList.contains('focus-mode'),
+            mode: document.getElementById('mode-selector').value,
+            inputShown: !document.getElementById('task-input-row')?.classList.contains('hidden'),
+            dialog: [...document.querySelectorAll('dialog[open]')].map(d => d.id || d.className).join(',')
+        }));
+
+        // Start in Home View with nothing open.
+        await page.evaluate(() => document.body.classList.contains('focus-mode') && document.getElementById('focus-mode-exit-btn')?.click());
+        await page.waitForTimeout(1000);
+        await reset();
+
+        const keys = await page.evaluate(() => Object.fromEntries(
+            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual']
+                .map(id => [id, document.getElementById(id)?.getAttribute('aria-keyshortcuts') || null])));
+        const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-selector': 'Alt+Shift+M',
+            'focus-mode-btn': 'Alt+Shift+F', 'focus-mode-exit-btn': 'Alt+Shift+F', 'toggle-task-input-btn': 'Alt+Shift+I', 'open-user-manual': 'Alt+Shift+U' };
+        const wrongKeys = Object.keys(wantKeys).filter(id => keys[id] !== wantKeys[id]);
+        record('every shortcut is advertised on its control (aria-keyshortcuts)', wrongKeys.length === 0,
+            wrongKeys.map(id => `${id}=${keys[id]}`).join(', '));
+
+        await press('O');
+        record('Alt+Shift+O opens the routine switcher', (await state()).dialog.includes('routine-switcher-modal'), `open: ${(await state()).dialog || 'none'}`);
+        const modeBefore = (await state()).mode;
+        await press('M');
+        record('…and shortcuts do nothing behind an open dialog', (await state()).mode === modeBefore, `mode changed to ${(await state()).mode}`);
+        await reset();
+
+        await press('N');
+        const afterN = await state();
+        record('Alt+Shift+N starts a new routine (its dialog opens)', afterN.dialog.length > 0, 'no dialog opened');
+        await reset();
+
+        const seen = [(await state()).mode];
+        for (let i = 0; i < 3; i++) { await press('M'); seen.push((await state()).mode); await reset(); }
+        record('Alt+Shift+M steps Auto → Manual → To-Do → Auto', seen.join(' ') === 'auto-cycle manual-cycle todo-mode auto-cycle', seen.join(' → '));
+        // modeManager stripped `todo-mode` out of `todo-mode-mode` (\b matches at
+        // a hyphen) and left a stray `-mode` class after every To-Do switch.
+        const modeClasses = await page.evaluate(() => [...document.body.classList].filter(c => /mode$/.test(c) && c !== 'dark-mode'));
+        record('after the round trip <body> carries exactly one mode class', modeClasses.join(' ') === 'auto-cycle-mode',
+            `mode classes: ${modeClasses.join(' ')}`);
+        // The same through the dropdown itself, so this pins modeManager whatever
+        // the shortcut does.
+        for (const m of ['todo-mode', 'auto-cycle']) {
+            await page.selectOption('#mode-selector', m);
+            await page.waitForTimeout(900);
+        }
+        await reset();
+        const viaDropdown = await page.evaluate(() => [...document.body.classList].filter(c => /mode$/.test(c) && c !== 'dark-mode'));
+        record('…and after To-Do → Auto through the dropdown too', viaDropdown.join(' ') === 'auto-cycle-mode',
+            `mode classes: ${viaDropdown.join(' ')}`);
+
+        // No reset() between the two presses: its Escape leaves Focus View by itself.
+        await press('F');
+        const onF = (await state()).focus;
+        await page.waitForTimeout(600);
+        await press('F');
+        const offF = (await state()).focus;
+        record('Alt+Shift+F turns Focus View on, then off', onF === true && offF === false, `after 1st: ${onF}, after 2nd: ${offF}`);
+        await reset();
+
+        const shownBefore = (await state()).inputShown;
+        await press('I');
+        const shownAfter = (await state()).inputShown;
+        record('Alt+Shift+I toggles the input bar', shownAfter !== shownBefore, `before ${shownBefore}, after ${shownAfter}`);
+        await reset();
+
+        // Typing: the shortcut must not act from a text field.
+        if (!(await state()).inputShown) { await press('I'); await reset(); }
+        await page.focus('#taskInput');
+        const modeTyping = (await state()).mode;
+        await page.keyboard.press('Alt+Shift+KeyM');
+        await page.waitForTimeout(800);
+        record('shortcuts do nothing while typing in a text field', (await state()).mode === modeTyping, `mode changed to ${(await state()).mode}`);
+        await reset();
+
+        await Promise.all([
+            page.waitForURL(/legal\/user-manual\.html/, { timeout: 8000 }).then(() => true, () => false),
+            page.keyboard.press('Alt+Shift+KeyU')
+        ]).then(([ok]) => record('Alt+Shift+U opens the user manual', ok, `url ${page.url()}`));
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+
+    // First-run screen: nothing to act on yet.
+    const fresh = await openFresh(browser, baseURL, { noNavigate: true });
+    try {
+        await fresh.page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await fresh.page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 25000 });
+        await fresh.page.keyboard.press('Alt+Shift+KeyN');
+        await fresh.page.keyboard.press('Alt+Shift+KeyO');
+        await fresh.page.waitForTimeout(900);
+        const opened = await fresh.page.evaluate(() => [...document.querySelectorAll('dialog[open]')].map(d => d.id).join(','));
+        record('shortcuts do nothing on the first-run choice screen', !opened, `opened ${opened}`);
+    } catch (e) {
+        failures.push(`harness error (first run): ${e.message}`);
+    } finally {
+        await fresh.context.close();
+    }
+    return { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', failures };
+}
+
 const JOURNEYS = [
+    { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', fn: journeyAppShortcuts },
     { name: 'Alt+arrow reorders a task from the keyboard', fn: journeyKeyboardReorder },
     { name: 'keyboard focus stays on the welcome choice screen', fn: journeyChoiceScreenKeepsFocus },
     { name: 'the intro reads Done once it is finished; skipping it explains Focus View', fn: journeyIntroDoneAndFocusNotice },

@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
@@ -193,6 +193,12 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     '__miniCycleUiBootGlobalKeydownHandler',
     handleGlobalKeydown
   );
+  labelShortcutTargets();
+  // Focus View's two buttons are built by focusMode.js, possibly after this
+  // runs; label them when the view first changes. Stored key: a boot retry
+  // replaces it instead of stacking another.
+  replaceStoredEventListener(document, EVENTS.FOCUS_MODE_ACTIVATED, '__miniCycleShortcutLabelOn', labelShortcutTargets);
+  replaceStoredEventListener(document, EVENTS.FOCUS_MODE_DEACTIVATED, '__miniCycleShortcutLabelOff', labelShortcutTargets);
 
   // ========== Global Click: Hide Task Buttons ==========
   replaceStoredEventListener(
@@ -439,10 +445,90 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
 // EVENT HANDLERS
 // ============================================================================
 
+// Mode order for Alt+Shift+M — the order the mode selector lists them.
+const SHORTCUT_MODE_ORDER = ['auto-cycle', 'manual-cycle', 'todo-mode'];
+
+// The control each shortcut stands for. aria-keyshortcuts on it lets a screen
+// reader that supports the attribute say the key when the control is focused.
+const SHORTCUT_TARGETS = Object.freeze({
+  NEW_ROUTINE:      [DOM_IDS.NEW_MINI_CYCLE],
+  OPEN_ROUTINE:     [DOM_IDS.ROUTINE_SWITCHER_BTN],
+  NEXT_MODE:        [DOM_IDS.MODE_SELECTOR],
+  FOCUS_VIEW:       [DOM_IDS.FOCUS_MODE_BTN, DOM_IDS.FOCUS_MODE_EXIT_BTN],
+  TOGGLE_INPUT_BAR: [DOM_IDS.TOGGLE_TASK_INPUT_BTN],
+  USER_MANUAL:      [DOM_IDS.OPEN_USER_MANUAL]
+});
+
+/**
+ * Write aria-keyshortcuts onto each shortcut's control, from KEYBOARD_SHORTCUTS
+ * so the advertised key cannot drift from the handled one. Idempotent; called
+ * again when Focus View builds its buttons late (they are created in JS).
+ */
+function labelShortcutTargets() {
+  Object.keys(SHORTCUT_TARGETS).forEach((action) => {
+    const keys = `Alt+Shift+${KEYBOARD_SHORTCUTS[action].replace(/^Key/, '')}`;
+    SHORTCUT_TARGETS[action].forEach((id) => document.getElementById(id)?.setAttribute('aria-keyshortcuts', keys));
+  });
+}
+
+/**
+ * Alt+Shift+<key> app shortcuts (KEYBOARD_SHORTCUTS in constants.js).
+ *
+ * Each one clicks the control a user would — the same pattern as Quick
+ * Actions, the main menu and the Focus View menu — so a shortcut cannot drift
+ * from the button it stands for (and is counted the same way in action usage).
+ * The buttons exist in the DOM even where they are hidden (Focus View hides the
+ * header chrome); a DOM .click() still runs them.
+ *
+ * Off while typing (a letter shortcut must never eat a character), while a
+ * dialog or the menu is open (the shortcut would act behind it), and on the
+ * first-run screen (there is no routine yet).
+ * @param {KeyboardEvent} e
+ * @returns {boolean} true when the key was an app shortcut and was handled
+ */
+function handleAppShortcut(e) {
+  if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey || e.repeat) return false;
+  const action = Object.keys(KEYBOARD_SHORTCUTS).find((name) => KEYBOARD_SHORTCUTS[name] === e.code);
+  if (!action) return false;
+
+  const target = e.target;
+  if (target?.closest?.('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return false;
+  if (isOverlayActive()) return false;
+  if (document.body.classList.contains(DOM_CLASSES.APP_LOADING)) return false;
+
+  const click = (id) => document.getElementById(id)?.click();
+  switch (action) {
+    case 'NEW_ROUTINE':      click(DOM_IDS.NEW_MINI_CYCLE); break;
+    case 'OPEN_ROUTINE':     click(DOM_IDS.ROUTINE_SWITCHER_BTN); break;
+    case 'TOGGLE_INPUT_BAR': click(DOM_IDS.TOGGLE_TASK_INPUT_BTN); break;
+    case 'USER_MANUAL':      click(DOM_IDS.OPEN_USER_MANUAL); break;
+    case 'FOCUS_VIEW':
+      click(document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)
+        ? DOM_IDS.FOCUS_MODE_EXIT_BTN
+        : DOM_IDS.FOCUS_MODE_BTN);
+      break;
+    case 'NEXT_MODE': {
+      // Drive the selector, as Focus View's Switch Mode dialog does: its change
+      // handler owns the switch, the save and the notification (which the
+      // notification container's live region reads out).
+      const selector = document.getElementById(DOM_IDS.MODE_SELECTOR);
+      if (!selector) break;
+      const next = SHORTCUT_MODE_ORDER[(SHORTCUT_MODE_ORDER.indexOf(selector.value) + 1) % SHORTCUT_MODE_ORDER.length];
+      selector.value = next;
+      selector.dispatchEvent(new Event('change', { bubbles: true }));
+      break;
+    }
+  }
+  e.preventDefault();
+  return true;
+}
+
 /**
  * Global keyboard shortcut handler
  */
 function handleGlobalKeydown(e) {
+  if (handleAppShortcut(e)) return;
+
   // Undo: Ctrl/Cmd + Z
   if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
     e.preventDefault();
