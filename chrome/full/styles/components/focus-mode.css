@@ -268,6 +268,25 @@ body.focus-mode #quick-dark-toggle {
                 visibility 0s linear var(--focus-chrome-fade);
 }
 
+/* With its chrome hidden, the header is an invisible strip that still caught
+   every click over it: .fixed-header-container is position:fixed at
+   --z-header, and the task view is a fixed stacking context at z-index 1, so
+   nothing inside the task view can rise above the strip. On a short window
+   (1024×768, Oct 2026) the Add task row slid under the strip's bottom edge and
+   could not be clicked or focused, while the ⋯ button, a fixed element of its
+   own far above --z-header, worked. Let clicks through the strip; only the
+   logo keeps them (its hover). Nothing else in here is interactive in focus
+   view: the main menu lives outside the container, and the quick-actions menu
+   is inside .mode-selector-wrapper, hidden above. */
+body.focus-mode .fixed-header-container,
+body.focus-mode .mini-cycle-header-row {
+    pointer-events: none;
+}
+
+body.focus-mode .header-branding {
+    pointer-events: auto;
+}
+
 /* =============================================================================
    FOCUS MODE — BRANDING: THE MARK ALONE
    ============================================================================= */

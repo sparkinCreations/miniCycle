@@ -42,7 +42,10 @@ const di = createDIModule('TitleScreen', {
     hideMainMenu: optional(null),
     // Phase 7, reached only when the user clicks the rotating tip. Routed through
     // depMappings as a lazy opener (the house pattern for cross-phase modals).
-    openTipArchive: optional(null)
+    openTipArchive: optional(null),
+    // "How cycles work": the onboarding walkthrough, replayed without changing
+    // anything (onboardingManager.replayOnboarding).
+    replayOnboarding: optional(null)
 });
 
 /**
@@ -214,6 +217,36 @@ class TitleScreen {
         btn.className = className;
         btn.textContent = getLabel(labelKey);
         this._bind(btn, 'click', () => this._delegate(targetId));
+        return btn;
+    }
+
+    /**
+     * "How cycles work": close this screen and replay the onboarding of the
+     * view the user is in (Focus View: the welcome banner; Home View: the
+     * three-step modal). Not a delegated menu click: the one control that already
+     * owns onboarding (Settings → Reset Onboarding) re-arms it for the NEXT
+     * launch, and the first-run screen's "Learn How Cycles Work" sets up a
+     * Getting Started routine, which a returning user did not ask for.
+     * @returns {HTMLButtonElement}
+     */
+    _buildReplayLink() {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = DOM_IDS.TITLE_SCREEN_HOW_CYCLES_WORK;
+        btn.className = 'first-run-restore';
+        btn.textContent = getLabel('titleScreen.howCyclesWork');
+        this._bind(btn, 'click', () => {
+            this.close();
+            // Same tick as _delegate: let the dialog's teardown settle first.
+            setTimeout(() => {
+                // true = shown; false or undefined (module not loaded) = say so.
+                if (this.deps.replayOnboarding() !== true) {
+                    this.deps.showNotification?.(
+                        getLabel('titleScreen.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG
+                    );
+                }
+            }, 0);
+        });
         return btn;
     }
 
@@ -406,12 +439,21 @@ class TitleScreen {
         // injects that template before Phase 2 and backupRestoreManager binds the
         // listener at init — so this works without Settings ever being opened
         // (verified live, not assumed).
-        actions.appendChild(this._buildAction(
+        // Quiet links, one line: "How cycles work" (a returning user who
+        // skipped onboarding, or forgot, has no other short way back to the
+        // cycle demo) and the restore path above.
+        const links = document.createElement('div');
+        links.className = DOM_CLASSES.TITLE_SCREEN_LINKS;
+        if (typeof this.deps.replayOnboarding === 'function') {
+            links.appendChild(this._buildReplayLink());
+        }
+        links.appendChild(this._buildAction(
             DOM_IDS.TITLE_SCREEN_RESTORE_BACKUP,
             'titleScreen.restoreBackup',
             DOM_IDS.RESTORE_MINI_CYCLES,
             'first-run-restore'
         ));
+        actions.appendChild(links);
 
         inner.appendChild(actions);
 

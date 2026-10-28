@@ -390,7 +390,7 @@ export const MODULE_MANIFESTS = {
         requires: ['appInit', 'AppState', 'showNotification'],
         optionalDeps: ['checkCompleteAllButton', 'updateProgressBar', 'updateStatsPanel'],  // UI refresh after a due-date edit
         provides: ['checkOverdueTasks', 'createDueDateInput'],
-        provideInstance: 'dueDates',  // depMappings setupDueDateButtonInteraction resolves via deps.features.dueDates
+        provideInstance: 'dueDates',
         api: 'features',
         after: ['taskDOM']
     },
@@ -413,7 +413,7 @@ export const MODULE_MANIFESTS = {
         path: '../routine/modeManager.js',
         phase: PHASES.CYCLE,
         requires: ['appInit', 'AppState', 'showNotification', 'switchMiniCycle', 'createNewMiniCycle'],
-        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'captureStateSnapshot', 'isPerformingUndoRedo', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'setupDueDateButtonInteraction', 'showTaskView', 'statsPanelManager', 'syncAllTasksWithMode'],
+        optionalDeps: ['checkCompleteAllButton', 'checkMiniCycle', 'captureStateSnapshot', 'isPerformingUndoRedo', 'createTaskButtonContainer', 'helpWindowManager', 'recurringCore', 'showTaskView', 'statsPanelManager', 'syncAllTasksWithMode'],
         provides: ['setupModeSelector', 'refreshTaskButtonsForModeChange', 'updateCycleModeDescription', 'syncModeFromToggles'],
         api: 'cycle',
         provideInstance: 'modeManager',
@@ -626,7 +626,8 @@ export const MODULE_MANIFESTS = {
         path: '../ui/titleScreen.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['AppState', 'safeAddEventListener'],
-        optionalDeps: ['showNotification', 'hideMainMenu'],
+        // replayOnboarding: onboardingManager is Phase 2, earlier than this one.
+        optionalDeps: ['showNotification', 'hideMainMenu', 'replayOnboarding'],
         // tipArchive is Phase 7 (FEATURES) — later than this module. Only reached
         // when the user clicks the rotating tip, so it is a lazy cross-phase dep.
         lazyRequires: ['openTipArchive'],

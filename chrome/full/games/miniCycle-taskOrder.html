@@ -195,7 +195,9 @@
       font-weight: 600;
       cursor: pointer;
       user-select: none;
-      transition: all 0.15s ease;
+      /* NOT `all`: the game moves these by left/top every frame, and easing
+         those over 150ms left each button trailing where the game had put it. */
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
       box-shadow: 0 2px 8px var(--game-btn-shadow);
       white-space: nowrap;
       max-width: 200px;
@@ -389,13 +391,13 @@
 
     <!-- Difficulty Selector -->
     <div class="difficulty-selector">
-      <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
-      <button class="difficulty-btn" data-difficulty="normal">Normal</button>
-      <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+      <button class="difficulty-btn active" data-difficulty="easy" aria-pressed="true">Easy</button>
+      <button class="difficulty-btn" data-difficulty="normal" aria-pressed="false">Normal</button>
+      <button class="difficulty-btn" data-difficulty="hard" aria-pressed="false">Hard</button>
     </div>
 
     <div id="instructions">
-      Click the tasks in the correct order (1, 2, 3, ...). They will move faster each round!
+      Click your tasks in routine order (1, 2, 3, ...). They move faster each round!
     </div>
     <div class="scoreboard-row">
       <span id="scoreboard" aria-live="polite">Round: 1 | Score: 0</span>
@@ -410,11 +412,11 @@
       <div class="lb-title" id="lbTitle">Your Best (Easy):</div>
       <div class="lb-stat">
         <span class="lb-value" id="bestRound">0</span>
-        <span class="lb-label">Best Round</span>
+        <span class="lb-label">Rounds Cleared</span>
       </div>
       <div class="lb-stat">
         <span class="lb-value" id="bestTime">--</span>
-        <span class="lb-label">Best Time</span>
+        <span class="lb-label">Time</span>
       </div>
       <div class="lb-stat">
         <span class="lb-value" id="gamesPlayed">0</span>

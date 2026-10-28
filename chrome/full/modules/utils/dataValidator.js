@@ -33,6 +33,20 @@ const di = createDIModule('DataValidator', {
  */
 export const setDataValidatorDependencies = (dependencies) => di.setDependencies(dependencies);
 
+/**
+ * A task's dueTime: "HH:MM" (24-hour) beside a dueDate, or null.
+ * Lenient on purpose: a malformed time is dropped, never a reason to reject
+ * the task, because a build that predates the field never wrote one and the
+ * date alone is still a complete due date.
+ * @param {*} time
+ * @param {*} date - the task's (already validated) dueDate
+ * @returns {string|null}
+ */
+function validDueTimeOrNull(time, date) {
+    const valid = typeof time === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
+    return valid && date ? time : null;
+}
+
 // ============================================================================
 // DATA VALIDATOR CLASS
 // ============================================================================
@@ -259,6 +273,8 @@ export class DataValidator {
                 throw new TypeError('Task dueDate must be an ISO date string (YYYY-MM-DD), number timestamp, or null');
             }
         }
+
+        if ('dueTime' in task) task.dueTime = validDueTimeOrNull(task.dueTime, task.dueDate);
 
         return task;
     }

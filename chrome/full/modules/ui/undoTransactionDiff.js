@@ -126,7 +126,8 @@ export function describeChange(fromSnapshot, toSnapshot) {
       if (toTask.remindersEnabled) fieldCounts.remindersOn++;
       else fieldCounts.remindersOff++;
     }
-    if ((fromTask.dueDate || null) !== (toTask.dueDate || null)) {
+    if ((fromTask.dueDate || null) !== (toTask.dueDate || null)
+        || (fromTask.dueTime || null) !== (toTask.dueTime || null)) {
       if (!fromTask.dueDate && toTask.dueDate) fieldCounts.dueDateSet++;
       else if (fromTask.dueDate && !toTask.dueDate) fieldCounts.dueDateRemoved++;
       else fieldCounts.dueDateChanged++;
@@ -302,7 +303,8 @@ export function computeTransactionDiff(fromSnapshot, toSnapshot) {
     if (getPriorityLevel(fromTask) !== getPriorityLevel(toTask)) {
       taskFieldsChanged.push('priority');
     }
-    if (fromTask.dueDate !== toTask.dueDate) {
+    // One DOM patch ('dueDate') renders the due-date line from both fields.
+    if (fromTask.dueDate !== toTask.dueDate || (fromTask.dueTime || null) !== (toTask.dueTime || null)) {
       taskFieldsChanged.push('dueDate');
     }
     if (fromTask.recurring !== toTask.recurring) {

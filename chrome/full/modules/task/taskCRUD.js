@@ -28,6 +28,7 @@
  * @property {boolean} [completed=false] - Initial completion state
  * @property {boolean} [shouldSave=true] - Whether to persist immediately
  * @property {string|null} [dueDate=null] - Due date in ISO format
+ * @property {string|null} [dueTime=null] - Due time "HH:MM", only with a dueDate
  * @property {boolean} [highPriority=false] - Priority flag
  * @property {boolean} [isLoading=false] - Loading from storage (skip animations/limits)
  * @property {boolean} [remindersEnabled=false] - Enable reminders for task
@@ -213,6 +214,8 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         completed = false,
         shouldSave = true,
         dueDate = null,
+        // "HH:MM" or null — stored apart from dueDate (utils/dueDateUtils.js)
+        dueTime = null,
         // false, not null: the schema requires a boolean, and a null here was
         // written straight into the stored task — so every UI-created task was
         // schema-invalid and got coerced + re-saved by routineLoader's repair
@@ -303,7 +306,7 @@ export async function addTaskImpl(taskText, options = {}, deps = {}) {
         const loadContextFn = deps.loadTaskContext || _deps.loadTaskContext;
         const taskContext = loadContextFn?.(validatedInput, taskId, {
             // hasPriority is the DOM's on/off view of the level (class, aria-pressed); the level itself is `priority`.
-            completed, dueDate, priority: priorityLevel, hasPriority: priorityLevel !== null,
+            completed, dueDate, dueTime, priority: priorityLevel, hasPriority: priorityLevel !== null,
             remindersEnabled, recurring, recurringSettings,
             deleteWhenComplete, autoClear: autoClear ?? deleteWhenCompleteSettings
         }, isLoading);

@@ -82,6 +82,7 @@ export function taskToAddTaskOptions(task) {
         completed: task.completed || false,
         shouldSave: false,
         dueDate: task.dueDate || null,
+        dueTime: task.dueDate ? (task.dueTime || null) : null,
         ...priorityFields(task),
         isLoading: true,
         remindersEnabled: task.remindersEnabled || false,
@@ -207,7 +208,7 @@ export class TaskUtils {
     static createOrUpdateTaskData(taskContext, saveRoutineToState, AppState) {
         const {
             cycleTasks, assignedTaskId, taskTextTrimmed, completed, dueDate,
-            priority, remindersEnabled, recurring, recurringSettings,
+            dueTime, priority, remindersEnabled, recurring, recurringSettings,
             currentCycle, cycles, activeCycle, isLoading, deleteWhenComplete,
             autoClear
         } = taskContext;
@@ -233,6 +234,7 @@ export class TaskUtils {
                 text: taskTextTrimmed,
                 completed,
                 dueDate,
+                dueTime: dueDate ? (dueTime || null) : null,
                 // A level or null, never undefined: the stored shape is explicit
                 // about "no priority" (dataValidator rejects anything else).
                 priority: isPriorityLevel(priority) ? priority : null,
@@ -250,6 +252,7 @@ export class TaskUtils {
                 recurringSettings: structuredClone(recurringSettings),
                 priority: isPriorityLevel(priority) ? priority : null,
                 dueDate: dueDate || null,
+                dueTime: dueDate ? (dueTime || null) : null,
                 remindersEnabled: remindersEnabled || false,
                 // Without this the template never fires — recurringWatcher gates on
                 // `nextScheduledOccurrence == null`, which matches undefined too.

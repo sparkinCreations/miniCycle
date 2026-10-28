@@ -55,6 +55,7 @@ import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILEST
 import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
+import { renderDueDateChip } from '../utils/dueDateUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -427,10 +428,7 @@ function resetTasksData(context, deps) {
             // announcing "Completed" over an unchecked box.
             applyTaskStatusLabel(taskEl, false);
             taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
-            if (dueDateInput) {
-                dueDateInput.value = "";
-                dueDateInput.classList.add(DOM_CLASSES.HIDDEN);
-            }
+            renderDueDateChip(dueDateInput, null);
         } else {
             const delay = animationIndex * STAGGER_DELAY;
             trackTimeout(setTimeout(() => {
@@ -438,10 +436,7 @@ function resetTasksData(context, deps) {
                 if (checkbox) checkbox.checked = false;
                 applyTaskStatusLabel(taskEl, false);
                 taskEl.classList.remove(DOM_CLASSES.OVERDUE_TASK);
-                if (dueDateInput) {
-                    dueDateInput.value = "";
-                    dueDateInput.classList.add(DOM_CLASSES.HIDDEN);
-                }
+                renderDueDateChip(dueDateInput, null);
                 // Remove animation class after it completes
                 trackTimeout(setTimeout(() => {
                     taskEl.classList.remove(DOM_CLASSES.TASK_RESETTING);
@@ -497,13 +492,17 @@ function resetTasksData(context, deps) {
                         // template, so a date left here came back on every
                         // recurrence (Oct 2026). Same rule the non-recurring tasks
                         // below have always had.
-                        if (removedIdSet.has(templateId)) template.dueDate = null;
+                        if (removedIdSet.has(templateId)) {
+                            template.dueDate = null;
+                            template.dueTime = null;
+                        }
                     }
                 });
                 cycle.tasks.forEach(task => {
                     if (!task.recurring) {
                         task.completed = false;
                         task.dueDate = null;
+                        task.dueTime = null;
                     }
                 });
             }
@@ -791,6 +790,7 @@ function buildClearedRecord(task, routine) {
         text: task.text,
         ...priorityFields(task),
         dueDate: task.dueDate,
+        dueTime: task.dueDate ? (task.dueTime || null) : null,
         remindersEnabled: task.remindersEnabled || false,
         ...autoClearFields({
             settings: getAutoClearSettings(task),

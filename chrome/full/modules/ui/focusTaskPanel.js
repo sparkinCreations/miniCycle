@@ -28,6 +28,7 @@ import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, GESTU
          DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getTaskText } from '../task/taskUtils.js';
+import { formatDueLabel } from '../utils/dueDateUtils.js';
 import { sortTasksBySort, TASK_SORT_DATASET_KEY, TASK_SORT_DIRECTION_DATASET_KEY } from '../utils/taskSort.js';
 import { getActiveRoutine, getActiveRoutineId, getAllDoneHintKey, getCycleMode, getAutoClearMode, getRoutine, getTaskResetIndicator, getAutoClearForMode } from '../utils/cycleMode.js';
 
@@ -260,8 +261,10 @@ export class FocusTaskPanel {
         // Indicators
         recurringIndicator.classList.toggle(DOM_CLASSES.HIDDEN, !task.recurring);
         this._renderResetIndicator(resetIndicator, task);
-        if (task.dueDate) {
-            dueIndicator.textContent = getLabel('focusTask.dueLabel', { vars: { date: task.dueDate } });
+        // Same wording as the task list's due-date line ("Due Today · 3:00 PM").
+        const dueLabel = formatDueLabel(task);
+        if (dueLabel) {
+            dueIndicator.textContent = getLabel('focusTask.dueLabel', { vars: { date: dueLabel } });
             dueIndicator.classList.remove(DOM_CLASSES.HIDDEN);
         } else {
             dueIndicator.classList.add(DOM_CLASSES.HIDDEN);

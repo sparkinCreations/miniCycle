@@ -29,7 +29,6 @@ const di = createDIModule('ModeManager', {
     appInit: optional(null),
     AppState: optional(null),
     createTaskButtonContainer: optional(null),
-    setupDueDateButtonInteraction: optional(null),
     checkCompleteAllButton: optional(null),
     showNotification: optional(null),
     helpWindowManager: optional(null),
@@ -265,16 +264,8 @@ export class ModeManager {
             // Replace old container with new one
             oldButtonContainer.replaceWith(newButtonContainer);
 
-            // ✅ CRITICAL: Attach due date button listener to newly created buttons
-            const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
-            if (dueDateInput && this.deps.setupDueDateButtonInteraction) {
-                // Remove the guard flag first to allow re-attaching
-                const dueDateButton = newButtonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
-                if (dueDateButton) {
-                    delete dueDateButton.dataset.listenerAttached;
-                }
-                this.deps.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
-            }
+            // The new due-date button needs no listener of its own: dueDates.js
+            // opens the picker for it from one document listener.
 
             successCount++;
         });

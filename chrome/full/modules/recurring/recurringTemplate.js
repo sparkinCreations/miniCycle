@@ -98,6 +98,7 @@ export function getRecurringPauseState(routine, template) {
  * @param {Object} fields.recurringSettings - Normalised recurrence settings (cloned by the caller)
  * @param {number|null} fields.nextScheduledOccurrence - Epoch ms of the next due occurrence
  * @param {string|null} [fields.dueDate=null]
+ * @param {string|null} [fields.dueTime=null] - "HH:MM"; only kept beside a dueDate
  * @param {'high'|'medium'|'low'|null} [fields.priority=null] - Priority level
  * @param {boolean} [fields.remindersEnabled=false]
  * @param {Object|null} [fields.autoClear=null] - Per-mode clear map; defaults to the recurring preset
@@ -113,6 +114,7 @@ export function buildRecurringTemplate({
     recurringSettings,
     nextScheduledOccurrence,
     dueDate = null,
+    dueTime = null,
     priority = null,
     remindersEnabled = false,
     autoClear = null,
@@ -139,6 +141,7 @@ export function buildRecurringTemplate({
         recurring: true,
         recurringSettings,
         dueDate,
+        dueTime: dueDate ? (dueTime || null) : null,
         priority: isPriorityLevel(priority) ? priority : null,
         remindersEnabled,
         ...autoClearFields({ settings: autoClear, defaults: DEFAULT_RECURRING_DELETE_SETTINGS }),
@@ -164,7 +167,7 @@ export function buildRecurringTemplate({
  * Pure: mutates the draft routine inside an AppState.update producer.
  * @param {Object|null|undefined} routine - draft routine
  * @param {string} taskId
- * @param {{text?: string, dueDate?: string|null, priority?: string|null, remindersEnabled?: boolean}} fields
+ * @param {{text?: string, dueDate?: string|null, dueTime?: string|null, priority?: string|null, remindersEnabled?: boolean}} fields
  * @param {{dryRun?: boolean}} [options] - dryRun only reports whether anything differs
  * @returns {boolean} true when a template exists and at least one field differed
  */
@@ -179,6 +182,12 @@ export function syncTemplateFromTask(routine, taskId, fields, { dryRun = false }
     };
     if (typeof fields.text === 'string' && fields.text.trim()) put('text', fields.text);
     if ('dueDate' in fields) put('dueDate', fields.dueDate || null);
+    // Templates written before Oct 2026 have no dueTime key; missing and null
+    // mean the same, so only a real difference counts as a repair.
+    if ('dueTime' in fields) {
+        const time = fields.dueDate === undefined || fields.dueDate ? (fields.dueTime || null) : null;
+        if ((template.dueTime ?? null) !== time) put('dueTime', time);
+    }
     if ('priority' in fields) put('priority', isPriorityLevel(fields.priority) ? fields.priority : null);
     if ('remindersEnabled' in fields) put('remindersEnabled', fields.remindersEnabled === true);
     return changed;
@@ -202,6 +211,7 @@ export function healTemplatesFromTasks(routine, { dryRun = false } = {}) {
         const differed = syncTemplateFromTask(routine, task.id, {
             text: task.text,
             dueDate: task.dueDate,
+            dueTime: task.dueTime,
             priority: getPriorityLevel(task),
             remindersEnabled: task.remindersEnabled === true
         }, { dryRun });

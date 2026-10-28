@@ -381,21 +381,148 @@ body.onboarding-active .complete-all-and-help-window-container {
 
 /* =============================================================================
    DUE DATE
+   The line under a task that reads "Today" or "Fri · 3:00 PM" (a button: a tap
+   opens the due-date picker). Only rendered visible for a task with a date.
    ============================================================================= */
 
-.due-date {
+.task .due-date {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1-5);
+    /* Line up under the task text: checkbox width + the .task-content gap */
+    margin-left: calc(22px + var(--space-2-5));
+    max-width: calc(100% - 22px - var(--space-2-5));
+    padding: var(--space-1) var(--space-2-5);
+    border: 1px solid var(--theme-input-border, rgba(0, 0, 0, 0.12));
+    border-radius: var(--radius-full);
+    background: var(--theme-input-bg, rgba(0, 0, 0, 0.05));
+    color: var(--theme-task-text, var(--theme-text-on-surface));
     font-size: var(--font-size-sm);
-    border: 1px solid var(--theme-input-border, var(--theme-input-border));
-    border-radius: var(--radius-5);
-    margin-left: 15%;
-    width: 100%;
-    max-width: 180px;
-    background-color: var(--theme-input-bg, #c8c8c868);
-    color: var(--theme-input-text, var(--theme-text-on-surface));
+    font-weight: normal;
+    line-height: 1.2;
+    text-align: left;
 }
 
-.due-date.hidden {
+.task .due-date .icon,
+.task .due-date .icon svg {
+    width: 0.95em;
+    height: 0.95em;
+    flex-shrink: 0;
+}
+
+.task .due-date-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Overdue: the line itself turns red (the row keeps its .overdue-task tint) */
+.task .due-date.due-date-overdue {
+    color: var(--overdue-task-text, var(--color-red));
+    border-color: currentColor;
+    font-weight: 600;
+}
+
+.task .due-date:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
+    outline-offset: 2px;
+}
+
+.task .due-date.hidden {
     display: none;
+}
+
+/* ---- Due date picker (one shared <dialog>, dueDates.js) ---- */
+
+dialog.due-date-picker-overlay::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+dialog.due-date-picker-overlay[open] {
+    justify-content: center;
+    align-items: center;
+}
+
+.due-date-picker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    width: 340px;
+    max-width: 95%;
+    margin: auto;
+    padding: var(--space-5);
+    border-radius: var(--radius-xl);
+    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    box-shadow:
+        var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.25)),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+}
+
+.due-date-picker h3 {
+    margin: 0;
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    text-align: center;
+}
+
+.due-date-picker p {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.due-date-picker-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.due-date-picker-field input {
+    min-height: 40px;
+    padding: var(--space-2);
+    border: 1px solid var(--theme-input-border, rgba(0, 0, 0, 0.2));
+    border-radius: var(--radius-sm);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--theme-text-on-surface));
+    font-size: var(--font-size-base);
+    font-weight: normal;
+}
+
+.due-date-picker-field input:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
+    outline-offset: 1px;
+}
+
+.due-date-picker-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
+}
+
+.due-date-picker-actions button {
+    padding: var(--space-2) var(--space-3);
+}
+
+.due-date-picker-actions .due-date-picker-clear {
+    margin-right: auto;
+}
+
+.due-date-picker-actions .hidden {
+    display: none;
+}
+
+.due-date-picker-actions button[type="submit"] {
+    background: var(--theme-button-primary-bg, var(--color-primary));
+    color: var(--theme-button-primary-text, var(--color-white));
 }
 
 /* =============================================================================

@@ -39,14 +39,19 @@ export class OnboardingCarousel {
      * Show the floating first-run welcome banner above the input bar.
      * No-op if the user has already dismissed it (state.settings.firstRunWelcomeDismissed)
      * or if the banner is already in the DOM. Idempotent.
+     * @param {Object} [options]
+     * @param {boolean} [options.replay=false] — A returning user asked to see it
+     *   again (Welcome Screen → "How cycles work" while in Focus View): skip the
+     *   dismissed gate, and closing it writes nothing (_hideFirstRunWelcome).
      * @private
      */
-    _showFirstRunWelcome() {
+    _showFirstRunWelcome({ replay = false } = {}) {
         const state = this.m.deps.AppState?.get?.();
-        if (state?.settings?.firstRunWelcomeDismissed) return;
+        if (!replay && state?.settings?.firstRunWelcomeDismissed) return;
 
         const existing = document.getElementById(DOM_IDS.FIRST_RUN_WELCOME);
         if (existing) return;
+        this.m._firstRunWelcomeReplay = replay;
 
         const banner = document.createElement('div');
         banner.id = DOM_IDS.FIRST_RUN_WELCOME;
@@ -495,11 +500,13 @@ export class OnboardingCarousel {
         setTimeout(() => banner.remove(), UI_TIMEOUTS.NOTIFICATION_BRIEF);
         this.m._firstRunWelcomeBanner = null;
 
-        if (persist) {
+        // A replay leaves the user's settings as they were (they had graduated).
+        if (persist && !this.m._firstRunWelcomeReplay) {
             this.m.deps.AppState?.update?.(state => {
                 state.settings.firstRunWelcomeDismissed = true;
             }, true);
         }
+        this.m._firstRunWelcomeReplay = false;
     }
 
     /**

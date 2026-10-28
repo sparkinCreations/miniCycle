@@ -3,7 +3,10 @@
  * Handles task due dates, overdue detection, and due date reminders
  *
  * Features:
- * - Per-task due date assignment
+ * - Per-task due date, with an optional due time stored separately
+ *   (task.dueDate "YYYY-MM-DD", task.dueTime "HH:MM" or null)
+ * - A due-date line under the task; tapping it (or the calendar button)
+ *   opens one shared picker dialog
  * - Overdue task detection and visual indicators
  * - Integration with auto-reset mode
  * - Due date reminder notifications
@@ -15,8 +18,12 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, DEFAULT_REMINDERS, LIMITS, DEBOUNCE, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_REMINDERS, LIMITS, DEBOUNCE, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+// What a due date means (overdue, notify moment, label) and the line that
+// shows it. A task stores dueDate and, separately, an optional dueTime.
+import { createDueDateChip, renderDueDateChip, isTaskOverdue, getDueMoment, normalizeDueTime, formatDueTime } from '../utils/dueDateUtils.js';
+import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 // Date-only strings ("YYYY-MM-DD", which is exactly what <input type="date">.value
 // yields) parse as UTC midnight via new Date(). In any negative UTC offset that
 // lands on the PREVIOUS local day, so due dates compared or displayed with
@@ -32,16 +39,19 @@ import { isNativeApp, scheduleNativeDueDateNotifications, cancelNativeDueDateNot
 const DUE_DATE_NOTIFY_SUBSCRIBER = 'dueDates:systemNotifications';
 
 /**
- * The moments at which a due-day system notification should fire, one per
- * day that has open dated tasks, across EVERY routine (a due date is a
- * promise about that task, whichever routine it lives in). A moment is the
- * due day at `hour` local time; moments already past are dropped — an
- * overdue task gets the in-app banner on open, never a repeat notification.
+ * The moments at which a due-date system notification should fire across
+ * EVERY routine (a due date is a promise about that task, whichever routine
+ * it lives in). A task with a due time fires at that time; one without fires
+ * at `hour` local time on the due day, so all of a day's untimed tasks share
+ * one notification. Tasks due at the same moment are grouped. Moments
+ * already past are dropped — an overdue task gets the in-app banner on open,
+ * never a repeat notification.
  *
  * @param {Object|null} state - Schema 2.6 state
  * @param {number} [now=Date.now()] - epoch ms
- * @param {number} [hour=LIMITS.DUE_DATE_NOTIFY_HOUR] - local hour on the due day
- * @returns {Array<{at:number, tasks:string[]}>} ascending by `at`
+ * @param {number} [hour=LIMITS.DUE_DATE_NOTIFY_HOUR] - local hour for tasks with no due time
+ * @returns {Array<{at:number, tasks:string[], timed:boolean}>} ascending by `at`;
+ *   `timed` is true when every task in the slot has its own due time
  */
 export function computeDueDateNotificationSlots(state, now = Date.now(), hour = LIMITS.DUE_DATE_NOTIFY_HOUR) {
     const routines = getRoutines(state) || {};
@@ -49,23 +59,23 @@ export function computeDueDateNotificationSlots(state, now = Date.now(), hour = 
     for (const routine of Object.values(routines)) {
         for (const task of routine?.tasks || []) {
             if (!task?.dueDate || task.completed) continue;
-            const day = parseDateAsLocal(task.dueDate);
-            if (!day) continue;
-            const at = new Date(day);
-            at.setHours(hour, 0, 0, 0);
+            const at = getDueMoment(task, hour);
+            if (!at) continue;
             const ts = at.getTime();
             if (ts <= now) continue;
-            if (!byMoment.has(ts)) byMoment.set(ts, []);
-            byMoment.get(ts).push(task.text || getLabel('notify.dueDateUnnamed'));
+            if (!byMoment.has(ts)) byMoment.set(ts, { tasks: [], timed: true });
+            const slot = byMoment.get(ts);
+            slot.tasks.push(task.text || getLabel('notify.dueDateUnnamed'));
+            if (!normalizeDueTime(task.dueTime)) slot.timed = false;
         }
     }
     return [...byMoment.entries()]
         .sort((a, b) => a[0] - b[0])
-        .map(([at, tasks]) => ({ at, tasks }));
+        .map(([at, slot]) => ({ at, tasks: slot.tasks, timed: slot.timed }));
 }
 
 /**
- * Keep a recurring template's due date in step with its live task.
+ * Keep a recurring template's due date (and time) in step with its live task.
  *
  * The template is what the watcher recreates the task from, and until Oct
  * 2026 only recurring activation wrote its due date — so a date changed or
@@ -74,10 +84,13 @@ export function computeDueDateNotificationSlots(state, now = Date.now(), hour = 
  * @param {Object|null|undefined} routine - The draft routine inside AppState.update
  * @param {string} taskId
  * @param {string|null} dueDate - '' and undefined are stored as null
+ * @param {string|null} [dueTime=null] - dropped when there is no date
  */
-function syncTemplateDueDate(routine, taskId, dueDate) {
+function syncTemplateDueDate(routine, taskId, dueDate, dueTime = null) {
     const template = routine?.recurringTemplates?.[taskId];
-    if (template) template.dueDate = dueDate || null;
+    if (!template) return;
+    template.dueDate = dueDate || null;
+    template.dueTime = dueDate ? normalizeDueTime(dueTime) : null;
 }
 
 // ============================================================================
@@ -192,9 +205,10 @@ export class MiniCycleDueDates {
      * Save due date for a specific task
      * @param {string} taskId - The ID of the task
      * @param {string|null} newDueDate - The due date to assign, or null to clear
+     * @param {string|null} [newDueTime=null] - "HH:MM", or null for a date-only due date
      * @returns {Promise<void>}
      */
-    async saveTaskDueDate(taskId, newDueDate) {
+    async saveTaskDueDate(taskId, newDueDate, newDueTime = null) {
 
         await _deps.appInit?.waitForCore();
 
@@ -228,8 +242,9 @@ export class MiniCycleDueDates {
                     const taskToUpdate = getRoutine(state, activeCycle).tasks?.find(t => t.id === taskId);
                     if (taskToUpdate) {
                         taskToUpdate.dueDate = newDueDate;
+                        taskToUpdate.dueTime = newDueDate ? normalizeDueTime(newDueTime) : null;
                     }
-                    syncTemplateDueDate(getRoutine(state, activeCycle), taskId, newDueDate);
+                    syncTemplateDueDate(getRoutine(state, activeCycle), taskId, newDueDate, newDueTime);
                 }
             }, true);
         } catch (error) {
@@ -238,8 +253,17 @@ export class MiniCycleDueDates {
     }
 
     /**
-     * Check for overdue tasks and apply visual styling
-     * @param {HTMLElement|null} taskToCheck - Specific task to check, or null to check all
+     * Check for overdue tasks: style their rows, keep their due-date lines
+     * current ("Today" turns into "Yesterday" overnight), and announce the
+     * ones that just became overdue.
+     *
+     * Everything is read from the task record in state, never from the row
+     * (CLAUDE.md #14). Until Oct 2026 this read the inline date input, so a
+     * task already checked off was still styled, labelled and announced as
+     * overdue. A completed task is never shown as overdue now, but its
+     * remembered overdue state is kept, so unchecking it again restores the
+     * style without a second banner.
+     * @param {HTMLElement|null} taskToCheck - Specific task row, or null for all rendered rows
      * @returns {Promise<void>}
      */
     async checkOverdueTasks(taskToCheck = null) {
@@ -261,39 +285,36 @@ export class MiniCycleDueDates {
         // ✅ Track tasks that just became overdue (by ID, display text for notification)
         const newlyOverdueTasks = [];
 
-        // Completion state for the rows below, keyed by task id. Read from state
-        // rather than the checkbox — rule 14: the DOM holds only what is
-        // currently rendered, and this label must describe the task, not the view.
         const activeCycleId = getActiveRoutineId(currentState);
         const cycleTasks = new Map(
             (getRoutine(currentState, activeCycleId)?.tasks || []).map(t => [t.id, t])
         );
+        const now = new Date();
 
         tasks.forEach(task => {
             // ✅ FIX: Use task ID instead of task text for tracking (prevents issues when renaming tasks)
             const taskId = task.dataset?.taskId;
-            const taskText = task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent;
-            const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
-            if (!dueDateInput || !taskId) return;
+            const stateTask = taskId ? cycleTasks.get(taskId) : null;
+            // A row with no record (a tour or demo row) is not ours to judge.
+            if (!stateTask) return;
 
-            const dueDateValue = dueDateInput.value;
-            if (!dueDateValue) {
-                // ✅ Date was cleared — remove overdue class
+            renderDueDateChip(task.querySelector(DOM_SELECTORS.DUE_DATE), stateTask, now);
+
+            const displayName = stateTask.text || task.querySelector(DOM_SELECTORS.TASK_TEXT)?.textContent || getLabel('notify.dueDateUnnamed');
+            const completed = stateTask.completed === true;
+
+            if (!stateTask.dueDate) {
+                // ✅ Date was cleared — remove overdue class, and the "Overdue"
+                // accessible name with it (it outlived the date until Oct 2026)
+                if (task.classList.contains(DOM_CLASSES.OVERDUE_TASK)) {
+                    applyTaskStatusLabel(task, completed, { name: displayName });
+                }
                 task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
                 delete overdueTaskStates[taskId];
                 return;
             }
 
-            // parseDateAsLocal already returns LOCAL midnight, so no setHours
-            // on dueDate is needed (or correct); today still needs flooring.
-            const dueDate = parseDateAsLocal(dueDateValue);
-            if (!dueDate) return; // unparsable — leave overdue state untouched
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
-            const displayName = taskText || getLabel('notify.dueDateUnnamed');
-
-            if (dueDate < today) {
+            if (isTaskOverdue(stateTask, now)) {
                 if (!overdueTaskStates[taskId]) {
                     newlyOverdueTasks.push(displayName); // Display text for notification
                 }
@@ -301,17 +322,17 @@ export class MiniCycleDueDates {
                 applyTaskStatusLabel(task, false,
                     { name: displayName, status: getLabel('nav.overdue') });
                 overdueTaskStates[taskId] = true;
-            } else {
-                task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
-                // Restore the completion status rather than dropping the label.
-                // removeAttribute() left every task with a FUTURE due date with no
-                // accessible name at all — measured: "…, Not completed" became null
-                // — so the row lost the one thing a screen reader needs from it.
-                // Completion is read from state, never from the checkbox: the DOM
-                // holds only what is currently rendered.
-                const stateTask = cycleTasks.get(taskId);
-                applyTaskStatusLabel(task, stateTask?.completed === true,
-                    { name: displayName });
+                return;
+            }
+
+            task.classList.remove(DOM_CLASSES.OVERDUE_TASK);
+            // Restore the completion status rather than dropping the label.
+            // removeAttribute() left every task with a FUTURE due date with no
+            // accessible name at all — measured: "…, Not completed" became null
+            // — so the row lost the one thing a screen reader needs from it.
+            applyTaskStatusLabel(task, completed, { name: displayName });
+            // Past due but checked off: keep the memory (see the doc comment).
+            if (!(completed && isTaskOverdue({ ...stateTask, completed: false }, now))) {
                 delete overdueTaskStates[taskId];
             }
         });
@@ -333,96 +354,24 @@ export class MiniCycleDueDates {
     }
 
     /**
-     * Create a due date input element for a task
+     * Create the due-date line for a task row: a button reading "Today" or
+     * "Today · 3:00 PM", hidden while the task has no due date. A tap opens
+     * the picker. Keeps its historical DI name (it used to return an inline
+     * <input type="date">).
      * @param {string} assignedTaskId - Task ID
-     * @param {string|null} dueDate - Initial due date value
-     * @param {boolean} autoResetEnabled - Whether auto-reset is enabled
-     * @param {Object} currentCycle - Current cycle data
-     * @param {string} activeCycle - Active cycle ID
-     * @returns {HTMLInputElement} The created due date input element
+     * @param {string|null} dueDate - "YYYY-MM-DD" or null
+     * @param {boolean} autoResetEnabled - Unused; kept for the call signature
+     * @param {Object} currentCycle - The routine the task belongs to (for its completion)
+     * @param {string} activeCycle - Unused; kept for the call signature
+     * @param {string|null} [dueTime=null] - "HH:MM" or null
+     * @returns {HTMLButtonElement} The due-date line
      */
-    createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle) {
-        const dueDateInput = document.createElement("input");
-        dueDateInput.type = "date";
-        dueDateInput.id = `due-date-input-${assignedTaskId}`;
-        dueDateInput.name = `taskDueDate-${assignedTaskId}`;
-        dueDateInput.classList.add(DOM_CLASSES.DUE_DATE);
-        dueDateInput.setAttribute("aria-describedby", `task-desc-${assignedTaskId}`);
-        dueDateInput.setAttribute("aria-label", getLabel('taskOption.dueDate'));
-
-        if (dueDate) {
-            dueDateInput.value = dueDate;
-            dueDateInput.classList.remove(DOM_CLASSES.HIDDEN);
-        } else {
-            dueDateInput.classList.add(DOM_CLASSES.HIDDEN);
-        }
-
-        const safeAdd = this.deps.safeAddEventListener;
-        dueDateInput._changeHandler = async () => {
-            // ✅ Read fresh state (source of truth)
-            await _deps.appInit?.waitForCore();
-
-            const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-            if (!AppState?.isReady?.()) {
-                console.error('❌ Cannot update due date - no data available');
-                return;
-            }
-
-            const currentActiveCycle = getActiveRoutineId(AppState.get());
-            let taskToUpdate = null;
-            await AppState.update(state => {
-                taskToUpdate = getRoutine(state, currentActiveCycle)?.tasks?.find(t => t.id === assignedTaskId) || null;
-                if (taskToUpdate) {
-                    taskToUpdate.dueDate = dueDateInput.value;
-                }
-                syncTemplateDueDate(getRoutine(state, currentActiveCycle), assignedTaskId, dueDateInput.value);
-            }, true);
-
-            this.deps.updateStatsPanel();
-            this.deps.updateProgressBar();
-            this.deps.checkCompleteAllButton();
-
-            const taskText = taskToUpdate?.text || getLabel('notify.dueDateUnnamed');
-            if (dueDateInput.value) {
-                this.deps.showNotification("📅 " + getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-
-                // Auto-enable due date notifications when a due date is set
-                this._autoEnableDueDateReminders();
-            } else {
-                this.deps.showNotification("📅 " + getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
-            }
-        };
-        safeAdd(dueDateInput, "change", dueDateInput._changeHandler);
-
-        return dueDateInput;
-    }
-
-    /**
-     * Set up due date button click interaction
-     * @param {HTMLElement} buttonContainer - Container with task buttons
-     * @param {HTMLInputElement} dueDateInput - The due date input element
-     * @returns {void}
-     */
-    setupDueDateButtonInteraction(buttonContainer, dueDateInput) {
-        const dueDateButton = buttonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
-        if (!dueDateButton) {
-            console.warn('⚠️ Due date button not found in container');
-            return;
-        }
-
-        // ✅ Store the handler so we can check if it's already attached
-        if (dueDateButton.dataset.listenerAttached === 'true') {
-            return; // Already has listener
-        }
-
-        const safeAdd = this.deps.safeAddEventListener;
-        dueDateButton._clickHandler = () => {
-            dueDateInput.classList.toggle(DOM_CLASSES.HIDDEN);
-            dueDateButton.classList.toggle(DOM_CLASSES.ACTIVE, !dueDateInput.classList.contains(DOM_CLASSES.HIDDEN));
-        };
-        safeAdd(dueDateButton, "click", dueDateButton._clickHandler);
-
-        dueDateButton.dataset.listenerAttached = 'true';
+    createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle, dueTime = null) {
+        const chip = createDueDateChip(assignedTaskId);
+        chip.setAttribute('aria-describedby', `task-desc-${assignedTaskId}`);
+        const completed = currentCycle?.tasks?.find(t => t.id === assignedTaskId)?.completed === true;
+        renderDueDateChip(chip, { dueDate, dueTime, completed });
+        return chip;
     }
 
     /**
@@ -430,6 +379,11 @@ export class MiniCycleDueDates {
      * Attaches event listeners and initializes visibility
      */
     setupDueDateSystem() {
+
+        // The calendar button and the due-date line open the picker, for every
+        // row, through ONE document listener. Capture phase: the option buttons
+        // stop propagation in their own click handler (taskEvents).
+        this.deps.safeAddEventListener(document, "click", this._handleDueDateClick, true);
 
         if (!this.toggleAutoReset) {
             console.warn('⚠️ toggleAutoReset not available, skipping setup');
@@ -472,89 +426,234 @@ export class MiniCycleDueDates {
             safeAdd(this.toggleAutoReset, "change", this.toggleAutoReset._dueDateChangeHandler);
         }
 
-        // ✅ Use safeAddEventListener for document change handler
-        safeAdd(document, "change", this.handleDueDateChange);
-
         // ✅ Apply initial visibility state on load
         const autoReset = this.toggleAutoReset.checked;
         this.updateDueDateVisibility(autoReset);
 
     }
 
+    // ============================================
+    // DUE DATE PICKER
+    // ============================================
+    //
+    // One shared <dialog>: a date field, an optional time field, Clear,
+    // Cancel and Save. Opened from a task's calendar button or its due-date
+    // line. Built once on first use; its listeners live as long as it does
+    // and destroy() removes both.
+
     /**
-     * Handle due date input changes
-     * @param {Event} event - The change event
+     * The task record with this id in the active routine, or null.
+     * @param {string} taskId
+     * @returns {Object|null}
+     */
+    _findActiveTask(taskId) {
+        const state = this._state();
+        if (!state) return null;
+        return getRoutine(state, getActiveRoutineId(state))?.tasks?.find(t => t.id === taskId) || null;
+    }
+
+    /**
+     * Document click (capture): a task's calendar button or due-date line.
+     * @param {MouseEvent} event
+     */
+    _handleDueDateClick = (event) => {
+        const trigger = event.target?.closest?.(`${DOM_SELECTORS.SET_DUE_DATE}, ${DOM_SELECTORS.DUE_DATE}`);
+        if (!trigger) return;
+        const taskId = trigger.closest(DOM_SELECTORS.TASK)?.dataset?.taskId;
+        if (!taskId || !this._findActiveTask(taskId)) return;
+        this.openDueDatePicker(taskId, trigger);
+    };
+
+    /**
+     * Build the picker dialog on first use.
+     * @returns {HTMLDialogElement}
+     */
+    _ensurePicker() {
+        if (this._picker?.isConnected) return this._picker;
+
+        const dialog = document.createElement('dialog');
+        dialog.id = DOM_IDS.DUE_DATE_PICKER;
+        dialog.className = DOM_CLASSES.DUE_DATE_PICKER_OVERLAY;
+        dialog.setAttribute('data-modal', '');
+        dialog.setAttribute('aria-labelledby', DOM_IDS.DUE_DATE_PICKER_TITLE);
+
+        const form = document.createElement('form');
+        form.className = DOM_CLASSES.DUE_DATE_PICKER;
+
+        const title = document.createElement('h3');
+        title.id = DOM_IDS.DUE_DATE_PICKER_TITLE;
+        title.textContent = getLabel('dueDate.pickerTitle');
+        form.appendChild(title);
+
+        const taskName = document.createElement('p');
+        taskName.id = DOM_IDS.DUE_DATE_PICKER_TASK;
+        form.appendChild(taskName);
+        dialog.setAttribute('aria-describedby', DOM_IDS.DUE_DATE_PICKER_TASK);
+
+        const makeField = (id, type, labelKey) => {
+            const label = document.createElement('label');
+            label.className = DOM_CLASSES.DUE_DATE_PICKER_FIELD;
+            label.htmlFor = id;
+            label.textContent = getLabel(labelKey);
+            const input = document.createElement('input');
+            input.type = type;
+            input.id = id;
+            input.name = id;
+            label.appendChild(input);
+            form.appendChild(label);
+            return input;
+        };
+        const dateInput = makeField(DOM_IDS.DUE_DATE_PICKER_DATE, 'date', 'dueDate.dateLabel');
+        const timeInput = makeField(DOM_IDS.DUE_DATE_PICKER_TIME, 'time', 'dueDate.timeLabel');
+
+        const hint = document.createElement('p');
+        const notifyHour = `${String(LIMITS.DUE_DATE_NOTIFY_HOUR).padStart(2, '0')}:00`;
+        hint.textContent = getLabel('dueDate.timeHint', { vars: { time: formatDueTime(notifyHour) } });
+        form.appendChild(hint);
+
+        const actions = document.createElement('div');
+        actions.className = DOM_CLASSES.DUE_DATE_PICKER_ACTIONS;
+        const makeButton = (type, labelKey, className = '') => {
+            const button = document.createElement('button');
+            button.type = type;
+            button.textContent = getLabel(labelKey);
+            if (className) button.className = className;
+            actions.appendChild(button);
+            return button;
+        };
+        const clearButton = makeButton('button', 'dueDate.clear', DOM_CLASSES.DUE_DATE_PICKER_CLEAR);
+        const cancelButton = makeButton('button', 'button.cancel');
+        makeButton('submit', 'button.save');
+        form.appendChild(actions);
+        dialog.appendChild(form);
+
+        this._pickerHandlers = {
+            submit: (event) => {
+                event.preventDefault();
+                this._savePicker(dateInput.value || null, timeInput.value || null);
+            },
+            clear: () => this._savePicker(null, null),
+            cancel: () => dialog.close(),
+            backdrop: (event) => { if (event.target === dialog) dialog.close(); },
+            close: () => {
+                const row = this._pickerTaskId
+                    ? this.deps.querySelectorAll(DATA_SELECTORS.taskById(this._pickerTaskId))[0]
+                    : null;
+                this._pickerTaskId = null;
+                restoreFocusAfterClose(dialog, { fallbacks: [row?.querySelector(DOM_SELECTORS.TASK_TEXT)] });
+            }
+        };
+        form.addEventListener('submit', this._pickerHandlers.submit);
+        clearButton.addEventListener('click', this._pickerHandlers.clear);
+        cancelButton.addEventListener('click', this._pickerHandlers.cancel);
+        dialog.addEventListener('click', this._pickerHandlers.backdrop);
+        dialog.addEventListener('close', this._pickerHandlers.close);
+        installDialogTabWrap(dialog);
+
+        this._pickerParts = { form, taskName, dateInput, timeInput, clearButton, cancelButton };
+        document.body.appendChild(dialog);
+        this._picker = dialog;
+        return dialog;
+    }
+
+    /**
+     * Open the picker for a task in the active routine.
+     * @param {string} taskId
+     * @param {HTMLElement|null} [opener=null] - gets focus back on close
+     * @returns {void}
+     */
+    openDueDatePicker(taskId, opener = null) {
+        const task = this._findActiveTask(taskId);
+        if (!task) return;
+        const dialog = this._ensurePicker();
+        const { taskName, dateInput, timeInput, clearButton } = this._pickerParts;
+
+        this._pickerTaskId = taskId;
+        taskName.textContent = task.text || getLabel('notify.dueDateUnnamed');
+        // Only a "YYYY-MM-DD" string is a value a date input accepts.
+        dateInput.value = parseDateAsLocal(task.dueDate) ? task.dueDate : '';
+        timeInput.value = normalizeDueTime(task.dueTime) || '';
+        clearButton.classList.toggle(DOM_CLASSES.HIDDEN, !task.dueDate);
+
+        dialog._previousFocus = opener || document.activeElement;
+        if (!dialog.open) dialog.showModal();
+        dateInput.focus();
+    }
+
+    /**
+     * Close the picker and apply what it holds.
+     * @param {string|null} date
+     * @param {string|null} time
      * @returns {Promise<void>}
      */
-    handleDueDateChange = async (event) => {
-        if (!event.target.classList.contains(DOM_CLASSES.DUE_DATE)) return;
+    async _savePicker(date, time) {
+        const taskId = this._pickerTaskId;
+        if (this._picker?.open) this._picker.close();
+        if (taskId) await this.applyTaskDueDate(taskId, date, time);
+    }
 
-        const taskItem = event.target.closest(".task");
-        const taskId = taskItem?.dataset.taskId;
-        const dueDateValue = event.target.value;
+    /**
+     * Set or clear a task's due date and time, then refresh what shows it.
+     * A time without a date is dropped. No-op when nothing changed.
+     * @param {string} taskId
+     * @param {string|null} date - "YYYY-MM-DD" or null to clear
+     * @param {string|null} [time=null] - "HH:MM" or null
+     * @returns {Promise<void>}
+     */
+    async applyTaskDueDate(taskId, date, time = null) {
+        const before = this._findActiveTask(taskId);
+        if (!before) return;
+        const newDate = date || null;
+        const newTime = newDate ? normalizeDueTime(time) : null;
+        if ((before.dueDate || null) === newDate && normalizeDueTime(before.dueTime) === newTime) return;
 
-        const AppState = typeof this.deps.AppState === 'function' ? this.deps.AppState() : this.deps.AppState;
-        if (!AppState?.isReady?.()) {
-            console.error('❌ State data required for handleDueDateChange');
-            return;
+        await this.saveTaskDueDate(taskId, newDate, newTime);
+
+        this.deps.updateStatsPanel();
+        this.deps.updateProgressBar();
+        this.deps.checkCompleteAllButton();
+
+        const taskText = before.text || getLabel('notify.dueDateUnnamed');
+        if (newDate) {
+            this.deps.showNotification("📅 " + getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            // Auto-enable due date notifications when a due date is set
+            this._autoEnableDueDateReminders();
+        } else {
+            this.deps.showNotification("📅 " + getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
-        const state = AppState.get();
-        const activeCycle = getActiveRoutineId(state);
-        const routine = getRoutine(state, activeCycle);
-        const reminders = state.customReminders || DEFAULT_REMINDERS;
+        const row = this.deps.querySelectorAll(DATA_SELECTORS.taskById(taskId))[0];
+        if (row) await this.checkOverdueTasks(row);
 
-        if (!activeCycle || !routine) {
-            console.error("❌ Error: Active routine not found in state.");
-            return;
-        }
+        this._announceDueSoon(taskText, newDate);
+    }
 
-        const task = routine.tasks?.find(t => t.id === taskId);
+    /**
+     * The in-app "due soon" banner, for a date within the next three days,
+     * when due-date notices are on.
+     * @param {string} taskText
+     * @param {string|null} dueDate
+     * @returns {void}
+     */
+    _announceDueSoon(taskText, dueDate) {
+        if (!dueDate) return;
+        const state = this._state();
+        const reminders = state?.customReminders || DEFAULT_REMINDERS;
+        if (!reminders.dueDatesReminders) return;
 
-        if (!task) {
-            console.warn(`⚠️ Task with ID "${taskId}" not found in active cycle`);
-            return;
-        }
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        // Local-midnight parse — see the import note; new Date() here fired
+        // the due-soon reminder a day early in negative UTC offsets.
+        const selectedDate = parseDateAsLocal(dueDate);
+        if (!selectedDate) return;
 
-        try {
-            await AppState.update(state => {
-                const taskToUpdate = getRoutine(state, activeCycle)?.tasks?.find(t => t.id === taskId);
-                if (taskToUpdate) {
-                    taskToUpdate.dueDate = dueDateValue;
-                }
-                syncTemplateDueDate(getRoutine(state, activeCycle), taskId, dueDateValue);
-            }, true);
-        } catch (error) {
-            console.error('❌ Error saving due date:', error);
-            return;
-        }
+        // Only show "due soon" if the date is within the next 3 days
+        const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
+        const daysUntilDue = selectedDate - today;
 
-        this.checkOverdueTasks(taskItem);
-
-        // ✅ Load Due Date Notification Setting from state
-        const remindersSettings = reminders || {};
-        const dueDatesRemindersEnabled = remindersSettings.dueDatesReminders;
-
-        if (!dueDatesRemindersEnabled) {
-            return;
-        }
-
-        if (dueDateValue) {
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            // Local-midnight parse — see the import note; new Date() here fired
-            // the due-soon reminder a day early in negative UTC offsets.
-            const selectedDate = parseDateAsLocal(dueDateValue);
-            if (!selectedDate) return;
-
-            // Only show "due soon" if the date is within the next 3 days
-            const threeDaysMs = 3 * 24 * 60 * 60 * 1000;
-            const daysUntilDue = selectedDate - today;
-
-            if (daysUntilDue > 0 && daysUntilDue <= threeDaysMs) {
-                const taskText = task.text || getLabel('notify.dueDateUnnamed');
-                this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
-            }
+        if (daysUntilDue > 0 && daysUntilDue <= threeDaysMs) {
+            this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
         }
     }
 
@@ -606,13 +705,15 @@ export class MiniCycleDueDates {
     }
 
     /**
-     * Title and body for one due-day slot.
-     * @param {{at:number, tasks:string[]}} slot
+     * Title and body for one due-date slot ("due now" when every task in it
+     * has its own due time, else "due today").
+     * @param {{at:number, tasks:string[], timed?:boolean}} slot
      * @returns {{title:string, body:string}}
      */
     _dueDateSlotContent(slot) {
+        const titleKey = slot.timed ? 'notify.dueDateNotificationTitleTimed' : 'notify.dueDateNotificationTitle';
         return {
-            title: getLabel('notify.dueDateNotificationTitle', { count: slot.tasks.length }),
+            title: getLabel(titleKey, { count: slot.tasks.length }),
             body: slot.tasks.map(name => getLabel('notify.dueDateNotificationLine', { vars: { name } })).join('\n')
         };
     }
@@ -716,19 +817,11 @@ export class MiniCycleDueDates {
         //     button.classList.toggle("hidden", autoReset);
         // });
 
-        // Show due dates that have a value, hide empty ones (all modes)
-        this.deps.querySelectorAll(DOM_SELECTORS.DUE_DATE).forEach(input => {
-            if (input.value) {
-                input.classList.remove(DOM_CLASSES.HIDDEN);
-            } else {
-                input.classList.add(DOM_CLASSES.HIDDEN);
-            }
-        });
-
         // Due date reminders option: only relevant when reminders are meaningful
         // (kept visible in all modes so users can configure)
 
-        // Recheck and reapply overdue classes as needed
+        // Re-render every due-date line from state (shown only for a task with
+        // a date, in all modes) and reapply overdue classes as needed.
         this.checkOverdueTasks();
 
     }
@@ -769,7 +862,23 @@ export class MiniCycleDueDates {
      * Remove document-level listeners for cleanup
      */
     destroy() {
-        document.removeEventListener("change", this.handleDueDateChange);
+        document.removeEventListener("click", this._handleDueDateClick, true);
+        if (this._picker) {
+            const { form, clearButton, cancelButton } = this._pickerParts;
+            form.removeEventListener('submit', this._pickerHandlers.submit);
+            clearButton.removeEventListener('click', this._pickerHandlers.clear);
+            cancelButton.removeEventListener('click', this._pickerHandlers.cancel);
+            this._picker.removeEventListener('click', this._pickerHandlers.backdrop);
+            this._picker.removeEventListener('close', this._pickerHandlers.close);
+            if (this._picker._tabWrapHandler) {
+                this._picker.removeEventListener('keydown', this._picker._tabWrapHandler);
+            }
+            if (this._picker.open) this._picker.close();
+            this._picker.remove();
+            this._picker = null;
+            this._pickerParts = null;
+            this._pickerHandlers = null;
+        }
         clearTimeout(this._dueDateTimerId);
         clearTimeout(this._dueDateSyncDebounce);
         this._dueDateTimerId = null;

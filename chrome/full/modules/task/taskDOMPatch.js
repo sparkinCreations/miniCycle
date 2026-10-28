@@ -20,7 +20,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, DEFAULT_DELETE_WHE
 import { ICONS } from '../utils/icons.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" values — new Date() treats
 // them as UTC midnight, displaying the previous day in negative UTC offsets.
-import { parseDateAsLocal } from '../recurring/recurringDateUtils.js';
+import { renderDueDateChip, isTaskOverdue } from '../utils/dueDateUtils.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { getActiveRoutine, getAutoClear } from '../utils/cycleMode.js';
 import { hasPriority } from '../utils/priorityLevel.js';
@@ -71,6 +71,8 @@ export class TaskDOMPatch {
                 switch (field) {
                     case 'completed':
                         this._patchCompleted(taskElement, taskData);
+                        // A checked-off task is never shown as overdue.
+                        if (!fields.includes('dueDate')) this._patchDueDate(taskElement, taskData);
                         break;
                     case 'text':
                         this._patchText(taskElement, taskData);
@@ -178,21 +180,13 @@ export class TaskDOMPatch {
     }
 
     /**
-     * Patch due date display
+     * Patch due date display (the due-date line, covering dueDate AND dueTime)
+     * and the row's overdue style.
      * @private
      */
     _patchDueDate(taskElement, taskData) {
-        const dueDateSpan = taskElement.querySelector(DOM_SELECTORS.DUE_DATE);
-        if (dueDateSpan) {
-            if (taskData.dueDate) {
-                const date = parseDateAsLocal(taskData.dueDate);
-                dueDateSpan.textContent = date ? date.toLocaleDateString() : taskData.dueDate;
-                dueDateSpan.classList.remove(DOM_CLASSES.HIDDEN);
-            } else {
-                dueDateSpan.textContent = '';
-                dueDateSpan.classList.add(DOM_CLASSES.HIDDEN);
-            }
-        }
+        renderDueDateChip(taskElement.querySelector(DOM_SELECTORS.DUE_DATE), taskData);
+        taskElement.classList.toggle(DOM_CLASSES.OVERDUE_TASK, isTaskOverdue(taskData));
     }
 
     /**

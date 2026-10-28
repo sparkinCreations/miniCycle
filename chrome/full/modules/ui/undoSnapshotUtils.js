@@ -118,6 +118,7 @@ export function buildSnapshotSignature(s) {
     c: s.activeCycleId,
     t: (s.tasks || []).map(t => ({
       id: t.id, txt: t.text, c: !!t.completed, p: getPriorityLevel(t), d: t.dueDate || null,
+      dt: t.dueTime || null,
       r: !!t.recurring, re: !!t.remindersEnabled,
       // Settings OBJECTS, not just their booleans — an edit touching only
       // these would otherwise dedup-skip its snapshot (same class of bug as

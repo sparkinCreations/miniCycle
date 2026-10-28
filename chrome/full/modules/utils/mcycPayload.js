@@ -56,6 +56,9 @@ export function buildMcycPayload(cycleKey, cycle, { includeHistory }) {
                 text: task.text || '',
                 completed: task.completed || false,
                 dueDate: task.dueDate || null,
+                // Added Oct 2026, beside dueDate rather than inside it, so an
+                // older reader still gets a plain date and ignores this key.
+                dueTime: task.dueDate ? (task.dueTime || null) : null,
                 // Format 2.6 only. The 2.5 pair (highPriority + priorityColor,
                 // deleteWhenCompleteSettings + deleteWhenComplete) was dual-written
                 // from Sep 19 to Oct 13 2026 while the platform builds caught up;

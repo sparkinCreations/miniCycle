@@ -1,3 +1,10 @@
+## [2.651] - 2026-10-28
+- fix(welcome-screen): "How cycles work" replays the onboarding of the current view
+- feat(welcome-screen): "How cycles work" link replays the walkthrough for returning users
+- fix(games): Whack-a-Order bests count every game; buttons follow routine order
+- fix(games): Whack-a-Order reads 2.6 data, saves scores, and opens offline once unlocked
+
+
 ## [2.650] - 2026-10-28
 - feat(reminders): turning a task's bell on switches reminders on
 - fix(focus-view): the hidden header strip no longer blocks the Add task field

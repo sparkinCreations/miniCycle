@@ -108,6 +108,16 @@
     margin-top: var(--space-5);
 }
 
+/* The quiet text links ("How cycles work", "Restore from a backup file"). They
+   share a line where it fits; in the 300px button column they need ~317px, so
+   they stack, each keeping .first-run-restore's own top margin. */
+.title-screen-links {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    column-gap: var(--space-5);
+}
+
 /* Credit line, mirroring the app footer's #copyright. Sits with the legal row as
    the reference tier, beneath the actions. */
 .title-screen-credit {

@@ -6,6 +6,7 @@
  * - Check game unlock status via AppState
  * - Unlock games and update AppState
  * - Modal panel interactions with click-outside-to-close
+ * - Once a game is unlocked, ask the service worker to keep it offline
  *
  * Note: document.*, window.location are browser APIs, not dependencies.
  *
@@ -15,6 +16,11 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+
+/** The unlock flag a played-for game is stored under (settings.unlockedFeatures). */
+const TASK_ORDER_GAME_FEATURE = 'task-order-game';
+/** AppState subscription key: watch for the unlock to cache the game offline. */
+const OFFLINE_GAMES_SUBSCRIBER = 'gamesManager:offlineGames';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -86,6 +92,10 @@ class GamesManager {
         // Defer checkGamesUnlock until AppState is ready
         this.deferredCheckGamesUnlock();
 
+        // The game can be unlocked by several modules (stats rewards, cycle
+        // completion, achievements); watch state rather than each of them.
+        this._subscribeOfflineGames();
+
         this.initialized = true;
     }
 
@@ -144,13 +154,62 @@ class GamesManager {
             return;
         }
 
-        const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
-        const hasGameUnlock = unlockedFeatures.includes("task-order-game");
+        const hasGameUnlock = this._isGameUnlocked(currentState);
 
         const gamesMenuOption = document.getElementById(DOM_IDS.GAMES_MENU_OPTION);
         if (gamesMenuOption) {
             gamesMenuOption.style.display = hasGameUnlock ? "block" : "none";
         }
+
+        if (hasGameUnlock) this._requestOfflineGames();
+    }
+
+    /**
+     * @param {Object|null} state
+     * @returns {boolean} whether Whack-a-Order is unlocked
+     */
+    _isGameUnlocked(state) {
+        return (state?.settings?.unlockedFeatures || []).includes(TASK_ORDER_GAME_FEATURE);
+    }
+
+    /**
+     * Ask the service worker to keep the unlocked game available offline.
+     *
+     * Sent only once the game is unlocked: a locked game is never cached. Once
+     * per page load is enough; the worker keeps the files in a versioned cache
+     * that each release drops, and the first boot after an update sends this
+     * again. Where there is no service worker (the native apps, the extension),
+     * `ready` never settles and nothing happens; those builds carry the game
+     * in their own files.
+     * @returns {void}
+     */
+    _requestOfflineGames() {
+        if (this._offlineGamesRequested) return;
+        const serviceWorker = globalThis.navigator?.serviceWorker;
+        if (!serviceWorker) return;
+        this._offlineGamesRequested = true;
+        this._unsubscribeOfflineGames();
+        serviceWorker.ready.then(registration => {
+            registration.active?.postMessage({ type: 'CACHE_UNLOCKED_GAMES' });
+        }).catch(() => {
+            this._offlineGamesRequested = false;
+        });
+    }
+
+    /** Watch state for the unlock, wherever it happens. */
+    _subscribeOfflineGames() {
+        const AppState = this._getAppState();
+        if (!AppState?.subscribe || this._onStateForOfflineGames) return;
+        this._onStateForOfflineGames = (newState) => {
+            if (this._isGameUnlocked(newState)) this._requestOfflineGames();
+        };
+        AppState.subscribe(OFFLINE_GAMES_SUBSCRIBER, this._onStateForOfflineGames);
+    }
+
+    _unsubscribeOfflineGames() {
+        if (!this._onStateForOfflineGames) return;
+        this._getAppState()?.unsubscribe?.(OFFLINE_GAMES_SUBSCRIBER, this._onStateForOfflineGames);
+        this._onStateForOfflineGames = null;
     }
 
     /**
@@ -171,13 +230,12 @@ class GamesManager {
             return;
         }
 
-        const unlockedFeatures = currentState.settings?.unlockedFeatures || [];
-        if (!unlockedFeatures.includes("task-order-game")) {
+        if (!this._isGameUnlocked(currentState)) {
             AppState.update(state => {
                 if (!state.settings.unlockedFeatures) {
                     state.settings.unlockedFeatures = [];
                 }
-                state.settings.unlockedFeatures.push("task-order-game");
+                state.settings.unlockedFeatures.push(TASK_ORDER_GAME_FEATURE);
                 state.userProgress.rewardMilestones.push("task-order-game-100");
             }, true);
 
@@ -339,6 +397,8 @@ class GamesManager {
             gamesPanel.removeEventListener('close', this._gamesPanelCloseHandler);
             this._gamesPanelCloseHandler = null;
         }
+
+        this._unsubscribeOfflineGames();
 
         this._eventListenersInitialized = false;
     }

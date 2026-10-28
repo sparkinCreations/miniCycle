@@ -1568,9 +1568,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         syncRecurringStateToDOM: (...args) => deps.task?.syncRecurringStateToDOM?.(...args),
         toggleHoverTaskOptions: (...args) => deps.task?.toggleHoverTaskOptions?.(...args),
 
-        // ─── Feature modules ───
-        setupDueDateButtonInteraction: (...args) => deps.features?.dueDates?.setupDueDateButtonInteraction?.(...args),
-
         // ─── Storage / backup ───
         // Returns the backupManager INSTANCE (matches statsPanelManager / completedTasksManager pattern)
         BackupManager: () => deps.storage?.backupManager,
@@ -1683,6 +1680,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // an entry here the dep resolves to undefined and the caller's `?.`
         // silently drops the feature.
         openTipArchive: (...args) => deps.features?.tipArchive?.openModal?.(...args),
+        // Welcome Screen → "How cycles work": the onboarding walkthrough, shown now
+        // and changing nothing (onboardingManager.replayOnboarding).
+        replayOnboarding: (...args) => deps.ui?.onboardingManager?.replayOnboarding?.(...args),
 
         // Achievements manager (from deps.features) - use Proxy for lazy resolution
         achievementsManager: new Proxy({}, {

@@ -155,6 +155,18 @@ function validateImportedDate(dateValue) {
     return Number.isNaN(new Date(dateValue).getTime()) ? null : dateValue;
 }
 
+/**
+ * An imported due time: "HH:MM" (24-hour) beside a valid due date, else null.
+ * Files written before Oct 2026 have no dueTime at all, which reads as null.
+ * @param {*} timeValue
+ * @param {string|null} dateValue - the already-validated due date
+ * @returns {string|null}
+ */
+function validateImportedTime(timeValue, dateValue) {
+    if (!dateValue || typeof timeValue !== 'string') return null;
+    return /^([01]\d|2[0-3]):[0-5]\d$/.test(timeValue) ? timeValue : null;
+}
+
 // ============================================================================
 // FALLBACK IMPORT-TEXT NORMALIZATION (when DataValidator not available)
 // ============================================================================
@@ -697,6 +709,7 @@ export async function processImportedData(fileContent) {
             text: sanitizedText,
             completed: task.completed === true,
             dueDate: validateImportedDate(task.dueDate),
+            dueTime: validateImportedTime(task.dueTime, validateImportedDate(task.dueDate)),
             ...priority,
             remindersEnabled: task.remindersEnabled === true,
             recurring: task.recurring === true,
@@ -743,6 +756,7 @@ export async function processImportedData(fileContent) {
                     // instances go back to this spot, not the bottom of the routine.
                     position: index,
                     dueDate: task.dueDate || null,
+                    dueTime: task.dueTime || null,
                     priority: task.priority,
                     remindersEnabled: task.remindersEnabled || false,
                     recurringSettings: structuredClone(task.recurringSettings),
@@ -759,6 +773,7 @@ export async function processImportedData(fileContent) {
         mappedTasks.forEach(task => {
             task.completed = false;
             task.dueDate = null;
+            task.dueTime = null;
         });
         importedData.cycleCount = 0;
         importedData.history = null;
@@ -901,6 +916,7 @@ export async function processImportedData(fileContent) {
             text: normalizeImportedText(imported.text || '', MAX_TASK_TEXT_LENGTH)
                 || getLabel('noun.untitledTask'),
             dueDate: validateImportedDate(imported.dueDate),
+            dueTime: validateImportedTime(imported.dueTime, validateImportedDate(imported.dueDate)),
             ...orphanPriority,
             remindersEnabled: imported.remindersEnabled === true,
             recurringSettings: orphanSettings,
@@ -1012,6 +1028,7 @@ export async function processImportedData(fileContent) {
                     ...importedPriorityFields(e),
                     hadDueDate: e.hadDueDate === true,
                     dueDate: typeof e.dueDate === 'string' ? e.dueDate : null,
+                    dueTime: validateImportedTime(e.dueTime, typeof e.dueDate === 'string' ? e.dueDate : null),
                     remindersEnabled: e.remindersEnabled === true,
                     autoClear: (() => {
                         const map = importedAutoClearMap(e);

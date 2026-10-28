@@ -78,6 +78,7 @@ export class ClearedTasksManager {
             ...priorityFields(task),
             hadDueDate: !!task.dueDate,
             dueDate: task.dueDate || null,
+            dueTime: task.dueDate ? (task.dueTime || null) : null,
             remindersEnabled: task.remindersEnabled || false,
             ...autoClearFields({
                 settings: getAutoClearSettings(task) ? structuredClone(getAutoClearSettings(task)) : null,
@@ -294,7 +295,10 @@ export class ClearedTasksManager {
                     priority: getPriorityLevel(entry)
                 };
                 // Restore preserved attributes (backward-compatible with older entries)
-                if (entry.dueDate) recreateOptions.dueDate = entry.dueDate;
+                if (entry.dueDate) {
+                    recreateOptions.dueDate = entry.dueDate;
+                    recreateOptions.dueTime = entry.dueTime || null;
+                }
                 if (entry.remindersEnabled) recreateOptions.remindersEnabled = true;
                 // Pass the per-mode map only — createOrUpdateTaskData reads it for
                 // the current mode

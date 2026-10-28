@@ -64,6 +64,18 @@ function validateDateString(dateValue) {
 }
 
 /**
+ * A due time is "HH:MM" (24-hour) beside a due date, or null. Anything else,
+ * or a time with no date, is dropped. Same rule as dueDateUtils.normalizeDueTime.
+ * @param {*} timeValue
+ * @param {*} dateValue - the sanitized dueDate it belongs to
+ * @returns {string|null}
+ */
+function validateDueTime(timeValue, dateValue) {
+    if (!dateValue || typeof timeValue !== 'string') return null;
+    return /^([01]\d|2[0-3]):[0-5]\d$/.test(timeValue) ? timeValue : null;
+}
+
+/**
  * Sanitize text content to prevent XSS
  * @param {string} text - Text to sanitize
  * @param {number} maxLength - Maximum length
@@ -88,6 +100,9 @@ function sanitizeTask(task) {
     }
     if (task.dueDate !== undefined) {
         task.dueDate = validateDateString(task.dueDate);
+    }
+    if (task.dueTime !== undefined) {
+        task.dueTime = validateDueTime(task.dueTime, task.dueDate);
     }
     if (task.recurringTemplate?.text) {
         task.recurringTemplate.text = sanitizeText(task.recurringTemplate.text, 500);
@@ -147,6 +162,9 @@ function sanitizeCycle(cycle) {
             }
             if (template.dueDate !== undefined) {
                 template.dueDate = validateDateString(template.dueDate);
+            }
+            if (template.dueTime !== undefined) {
+                template.dueTime = validateDueTime(template.dueTime, template.dueDate);
             }
         });
     }
