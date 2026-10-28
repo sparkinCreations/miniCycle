@@ -1039,11 +1039,18 @@ export class RoutineSwitcher {
         listItem.appendChild(leftSide);
         listItem.appendChild(sizeSpan);
 
+        // The inline rename box lives INSIDE this row, so every event typed or
+        // clicked in it bubbles here first. The row's shortcuts must not see
+        // them: Enter and Space opened the routine (committing a half-typed
+        // name — Space could never be typed), and Backspace/Delete raised
+        // "Delete Routine?" for the routine being renamed (Oct 2026).
+        const fromRenameBox = (event) => !!event?.target?.closest?.(DOM_SELECTORS.CYCLE_ITEM_EDIT_INPUT);
+
         // Click handler with double-tap detection
         const safeAdd = this.deps.safeAddEventListener;
         listItem._lastClickTime = 0;
         listItem._clickHandler = (event) => {
-            if (event?.target?.classList?.contains('cycle-item-edit-input')) return;
+            if (fromRenameBox(event)) return;
 
             const now = Date.now();
             const timeSinceLastClick = now - listItem._lastClickTime;
@@ -1078,6 +1085,7 @@ export class RoutineSwitcher {
 
         // Keyboard activation
         listItem._keyHandler = (e) => {
+            if (fromRenameBox(e)) return;
             if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
                 if (listItem.classList.contains(DOM_CLASSES.SELECTED)) {
@@ -1102,7 +1110,9 @@ export class RoutineSwitcher {
         safeAdd(listItem, "keydown", listItem._keyHandler);
 
         // Double-click fallback (desktop)
-        listItem._dblClickHandler = () => {
+        listItem._dblClickHandler = (event) => {
+            // Double-clicking a word in the rename box selects it; it must not open the routine.
+            if (fromRenameBox(event)) return;
             if (listItem._selectTimeout) {
                 clearTimeout(listItem._selectTimeout);
                 listItem._selectTimeout = null;

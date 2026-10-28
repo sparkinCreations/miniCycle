@@ -5261,6 +5261,64 @@ async function journeyRoutineRenameUndo(browser, baseURL) {
     return { name: 'renaming the routine can be undone', failures };
 }
 
+// The inline rename box sits inside the routine's row in Open Routine, and the
+// row's keyboard shortcuts used to hear every key typed into it (Oct 2026):
+// Space and Enter opened the routine and closed the dialog, committing a
+// half-typed name (a space could never be typed), and Backspace raised
+// "Delete Routine?" for the routine being renamed. Desktop only: touch devices
+// rename in a separate dialog.
+async function journeySwitcherInlineRename(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const snap = () => page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData'));
+        const input = document.querySelector('.cycle-item-edit-input');
+        return {
+            box: input ? input.value : null,
+            switcherOpen: !!document.querySelector('#routine-switcher-modal[open]'),
+            otherDialogs: [...document.querySelectorAll('dialog[open]')].filter(x => x.id !== 'routine-switcher-modal').map(x => x.textContent.trim().slice(0, 60)),
+            titles: Object.values(d.data.routine).map(r => r.title),
+            activeExists: Object.prototype.hasOwnProperty.call(d.data.routine, d.appState.activeRoutineId)
+        };
+    });
+    try {
+        const activeId = (await persisted(page)).activeId;
+        await clickEl(page, '#routine-switcher-btn');
+        const row = `.mini-cycle-switch-item[data-cycle-key="${activeId}"]`;
+        await page.waitForSelector(row, { state: 'visible', timeout: 10000 });
+        await clickEl(page, row);
+        await page.waitForFunction((sel) => document.querySelector(sel)?.classList.contains('selected'), row, { timeout: 5000 });
+        await clickEl(page, '#switch-rename');
+        await page.waitForFunction(() => document.activeElement?.classList.contains('cycle-item-edit-input'), null, { timeout: 5000 });
+
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a');
+        await page.keyboard.type('Two words');
+        await page.waitForTimeout(400);
+        let s = await snap();
+        record('Space types a space in the rename box', s.box === 'Two words' && s.switcherOpen,
+            `box=${JSON.stringify(s.box)}, Open Routine open=${s.switcherOpen}`);
+
+        await page.keyboard.press('Backspace');
+        await page.waitForTimeout(400);
+        s = await snap();
+        record('Backspace deletes a character, and asks nothing', s.box === 'Two word' && s.otherDialogs.length === 0,
+            `box=${JSON.stringify(s.box)}, other dialogs: ${JSON.stringify(s.otherDialogs)}`);
+
+        await page.keyboard.type('s');
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(900);
+        s = await snap();
+        record('Enter saves the name', s.titles.includes('Two words'), `routines: ${JSON.stringify(s.titles)}`);
+        record('Enter keeps Open Routine open', s.switcherOpen && s.otherDialogs.length === 0,
+            `Open Routine open=${s.switcherOpen}, other dialogs: ${JSON.stringify(s.otherDialogs)}`);
+        record('the active routine still exists after the rename', s.activeExists,
+            s.activeExists ? 'activeRoutineId resolves' : 'activeRoutineId points at a routine that is no longer stored');
+    } finally {
+        await context.close();
+    }
+    return { name: 'renaming a routine inline in Open Routine stays in the box', failures };
+}
+
 async function journeyFocusTabFollowsSort(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const { context, page } = await openFresh(browser, baseURL);
@@ -5450,6 +5508,7 @@ async function journeyQuickActionPickerKeepsMenuOpen(browser, baseURL) {
 }
 
 const JOURNEYS = [
+    { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },
     { name: 'adding a quick action from the menu keeps the menu open', fn: journeyQuickActionPickerKeepsMenuOpen },
     { name: 'recreating a cleared task lands in the routine list', fn: journeyRecreateLandsInList },
     { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },

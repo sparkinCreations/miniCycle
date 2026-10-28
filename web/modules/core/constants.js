@@ -847,6 +847,7 @@ export const DOM_CLASSES = Object.freeze({
     EDIT_FOCUS_RAISED: 'edit-focus-raised',
     EDIT_FOCUS_TARGET: 'edit-focus-target',
     EDIT_FOCUS_ACTIVE: 'active',
+    CYCLE_ITEM_EDIT_INPUT: 'cycle-item-edit-input',  // routine switcher's inline rename box
     SEARCH_PAGE_OVERLAY: 'search-page-overlay',
 
     // ---- Theme ----
@@ -2014,6 +2015,7 @@ export const DOM_SELECTORS = Object.freeze({
     // ---- Edit Focus ----
     EDIT_FOCUS_OVERLAY: '.edit-focus-overlay',
     EDIT_FOCUS_TARGET: '.edit-focus-target',
+    CYCLE_ITEM_EDIT_INPUT: '.cycle-item-edit-input',
     FOCUS_SAFE: '.focus-safe',
 
     // ---- Loading & UI ----
