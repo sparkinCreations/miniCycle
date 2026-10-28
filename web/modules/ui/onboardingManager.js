@@ -945,20 +945,43 @@ export class OnboardingManager {
      * Show the welcome walkthrough again NOW, for a returning user (Welcome
      * Screen → "How cycles work").
      *
-     * Settings → Reset Onboarding is the other way in, and it differs on
-     * purpose: it re-arms the walkthrough for the next launch. This shows the
-     * same three steps (welcome, the cycle demo, the tour) in the current
-     * session and changes nothing. No routine is created or switched, no
-     * setting is written, and on close none of the first-launch setup runs
-     * (completeOnboarding's replay branch). Only "Start Tour" on the last step
-     * does something: it starts the guided tour on the user's own routine.
+     * Plays the onboarding of the view the user is in, as the boot path does
+     * after Settings → Reset Onboarding (appInit, keyed on focusModeActive):
+     *   - Focus View: the typewriter splash and the welcome banner carousel
+     *     above the input bar (the "learn" first-run surface). Closing it, or
+     *     leaving Focus View, removes it.
+     *   - Home View: the three-step modal (welcome, the cycle demo, the tour).
+     *
+     * It differs from Reset Onboarding on purpose: that re-arms onboarding
+     * for the next launch; this shows it in the current session and changes
+     * nothing. No routine is created or switched, no setting is written
+     * (the banner's close skips its dismissed flag, the modal's close skips
+     * the first-launch setup). Only the tour/create actions inside them do
+     * anything, and only when the user presses them.
      * @returns {boolean} false when the walkthrough could not be shown
      */
     replayOnboarding() {
         if (document.getElementById(DOM_IDS.ONBOARDING_MODAL)) return true; // already open
+        if (document.getElementById(DOM_IDS.FIRST_RUN_WELCOME)) return true; // already open
         if (!this.deps.AppState?.isReady?.()) return false;
         const state = this.deps.AppState.get();
         if (!state) return false;
+
+        if (state.settings?.focusModeActive === true) {
+            this._carousel._showFirstRunWelcome({ replay: true });
+            if (!document.getElementById(DOM_IDS.FIRST_RUN_WELCOME)) return false;
+            this._splash._showFirstRunSplash({ replay: true });
+            // The banner belongs to Focus View; the real first-run flow hides it
+            // on the first exit too.
+            this._detachReplayFocusExit();
+            this._replayFocusExitHandler = () => {
+                this._replayFocusExitHandler = null;
+                this._carousel._hideFirstRunWelcome();
+            };
+            document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._replayFocusExitHandler, { once: true });
+            return true;
+        }
+
         this._replaying = true;
         this.showOnboarding(getRoutines(state) || {}, getActiveRoutineId(state), state);
         if (!document.getElementById(DOM_IDS.ONBOARDING_MODAL)) {
@@ -967,6 +990,12 @@ export class OnboardingManager {
             return false;
         }
         return true;
+    }
+
+    _detachReplayFocusExit() {
+        if (!this._replayFocusExitHandler) return;
+        document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._replayFocusExitHandler);
+        this._replayFocusExitHandler = null;
     }
 
     /**
@@ -1017,6 +1046,9 @@ export class OnboardingManager {
         // Without this, a destroy() during the 3-30s window would leak the
         // setTimeout + AppState subscription.
         this._cancelStartTourFlow?.();
+
+        // A Focus View replay's one-shot "left Focus View" listener.
+        this._detachReplayFocusExit();
 
         // First-run focus-first lifecycle listeners (focusMode:deactivated +
         // beforeunload). Idempotent — no-op if no first-run flow ran.

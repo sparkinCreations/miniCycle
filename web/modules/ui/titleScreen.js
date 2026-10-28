@@ -221,8 +221,9 @@ class TitleScreen {
     }
 
     /**
-     * "How cycles work": close this screen and replay the onboarding
-     * walkthrough. Not a delegated menu click: the one control that already
+     * "How cycles work": close this screen and replay the onboarding of the
+     * view the user is in (Focus View: the welcome banner; Home View: the
+     * three-step modal). Not a delegated menu click: the one control that already
      * owns onboarding (Settings → Reset Onboarding) re-arms it for the NEXT
      * launch, and the first-run screen's "Learn How Cycles Work" sets up a
      * Getting Started routine, which a returning user did not ask for.

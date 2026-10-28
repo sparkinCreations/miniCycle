@@ -1469,6 +1469,9 @@ export async function runOnboardingManagerTests(resultsDiv) {
     }
 
     await test('replayOnboarding shows the walkthrough and changes nothing on close', async () => {
+        // Earlier tests in this file can leave a first-run banner mounted, and an
+        // open banner counts as "already showing" (replayOnboarding returns early).
+        document.getElementById('first-run-welcome')?.remove();
         const calls = { updates: 0, setup: 0, sample: 0 };
         setOnboardingManagerDependencies(replayDeps(calls));
         const om = new OnboardingManager();
@@ -1483,6 +1486,35 @@ export async function runOnboardingManagerTests(resultsDiv) {
         if (calls.updates !== 0) throw new Error(`a replay wrote state ${calls.updates} time(s)`);
         if (calls.setup !== 0) throw new Error('a replay re-ran the first-launch setup');
         if (calls.sample !== 0) throw new Error('a replay loaded the sample routine');
+    });
+
+    await test('replay in Focus View plays the Focus View onboarding (banner), not the Home View modal', async () => {
+        const calls = { updates: 0, setup: 0, sample: 0 };
+        const deps = replayDeps(calls);
+        deps.AppState.get().settings.focusModeActive = true;
+        deps.AppState.get().settings.firstRunWelcomeDismissed = true; // a graduated user
+        setOnboardingManagerDependencies(deps);
+        const om = new OnboardingManager();
+        try {
+            if (om.replayOnboarding() !== true) throw new Error('replay reported failure');
+            if (document.getElementById('onboarding-modal')) throw new Error('showed the Home View modal in Focus View');
+            if (!document.getElementById('first-run-welcome')) throw new Error('no Focus View welcome banner');
+            document.getElementById('first-run-welcome-dismiss').click();
+            if (calls.updates !== 0) throw new Error(`closing the replayed banner wrote state ${calls.updates} time(s)`);
+
+            // A second replay, then leaving Focus View removes it.
+            await new Promise(r => setTimeout(r, 1200)); // the first banner's fade-out
+            om.replayOnboarding();
+            if (!document.getElementById('first-run-welcome')) throw new Error('second replay showed nothing');
+            document.dispatchEvent(new Event('focusMode:deactivated'));
+            await new Promise(r => setTimeout(r, 1200));
+            if (document.getElementById('first-run-welcome')) throw new Error('leaving Focus View left the replayed banner up');
+            if (calls.updates !== 0) throw new Error('a Focus View replay wrote state');
+        } finally {
+            om._hideFirstRunSplash();
+            om._carousel._hideFirstRunWelcome();
+            om.destroy();
+        }
     });
 
     await test('after a replay, a real onboarding still records completion', async () => {

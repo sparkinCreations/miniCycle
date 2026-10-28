@@ -1351,7 +1351,8 @@ export const DEFAULT_LABELS = deepFreeze({
         createRoutine:   'Create a new routine',
         openRoutine:     'Open existing routine',
         restoreBackup:   'Restore from a backup file',
-        // Replays the welcome walkthrough (the cycle demo) for a returning user.
+        // Replays the onboarding of the current view (Focus View banner or Home
+        // View modal) for a returning user.
         // Same idea as the first-run screen's "Learn How Cycles Work", but it
         // changes nothing: no routine is created, no setting written.
         howCyclesWork:   'How cycles work',

@@ -45,13 +45,15 @@ export class OnboardingSplash {
      *   that just want the visual can ignore it — the splash is self-managing.
      * @private
      */
-    _showFirstRunSplash({ standalone = false } = {}) {
+    _showFirstRunSplash({ standalone = false, replay = false } = {}) {
         // Same gate as the welcome banner — once the user dismisses the
         // welcome (× on the banner) OR exits focus mode (which sets
         // onboardingCompleted), neither the splash nor the banner show on
         // subsequent reloads. App close alone does NOT graduate them.
+        // A replay (onboardingManager.replayOnboarding) is asked for, so it
+        // skips the gate, exactly as the banner's replay does.
         const state = this.m.deps.AppState?.get?.();
-        if (state?.settings?.firstRunWelcomeDismissed) {
+        if (!replay && state?.settings?.firstRunWelcomeDismissed) {
             // A pre-boot splash may already be on screen (mounted by the tap
             // handler before this state was readable). Never strand it.
             this._discardPrebootSplash();
