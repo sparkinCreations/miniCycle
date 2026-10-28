@@ -5362,6 +5362,63 @@ async function journeySwitcherInlineRename(browser, baseURL) {
     return { name: 'renaming a routine inline in Open Routine stays in the box', failures };
 }
 
+// The search box in Open Routine filtered the rows in place, but the mode
+// filter and the sort chips rebuild the list from scratch, so changing either
+// showed every routine again until the search was retyped (Oct 2026). The
+// rebuild now re-applies the search.
+async function journeySwitcherSearchSurvivesFilter(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const origId = (await persisted(page)).activeId;
+        await openMenu(page);
+        await page.waitForSelector('#new-mini-cycle', { state: 'visible', timeout: 10000 });
+        await clickEl(page, '#new-mini-cycle');
+        await page.waitForSelector('#sample-creation-input', { state: 'visible', timeout: 10000 });
+        await page.fill('#sample-creation-input', 'Zebra Routine');
+        await clickEl(page, '.miniCycle-btn-confirm');
+        await page.waitForFunction((prev) => JSON.parse(localStorage.getItem('miniCycleData')).appState.activeRoutineId !== prev, origId, { timeout: 15000 });
+        await bootApp(page);
+        await page.evaluate(() => document.querySelectorAll('#notification-container .close-btn').forEach(b => b.click()));
+
+        await clickEl(page, '#routine-switcher-btn');
+        await page.waitForSelector(`.mini-cycle-switch-item[data-cycle-key="${origId}"]`, { state: 'visible', timeout: 10000 });
+        await page.waitForTimeout(800);
+        const visible = () => page.evaluate(() => [...document.querySelectorAll('#miniCycleList .mini-cycle-switch-item')]
+            .filter(el => el.style.display !== 'none').map(el => el.dataset.cycleName));
+        const marked = () => page.evaluate(() => !!document.querySelector('#miniCycleList .cycle-item-title mark'));
+
+        await page.fill('#routine-search-input', 'zebra');
+        await page.waitForTimeout(300);
+        let rows = await visible();
+        record('typing a search narrows the list', rows.length === 1 && rows[0] === 'Zebra Routine' && await marked(), `visible: ${JSON.stringify(rows)}`);
+
+        // The new routine is in the same mode as the first one, so filtering by
+        // that mode keeps both candidates and only the search can hide the other.
+        const mode = await page.evaluate(() => document.querySelector('#miniCycleList .mini-cycle-switch-item:not([style*="none"])')?.dataset.cycleMode
+            || document.querySelector('#routine-filter-select option:not([value="all"])')?.value);
+        await page.selectOption('#routine-filter-select', mode);
+        await page.waitForTimeout(600);
+        rows = await visible();
+        record(`changing the mode filter (${mode}) keeps the search applied`, rows.length === 1 && rows[0] === 'Zebra Routine' && await marked(),
+            `visible: ${JSON.stringify(rows)} — the rebuilt list forgot the search box`);
+
+        await clickEl(page, '#sort-recent');
+        await page.waitForTimeout(600);
+        rows = await visible();
+        record('changing the sort keeps the search applied', rows.length === 1 && rows[0] === 'Zebra Routine' && await marked(),
+            `visible: ${JSON.stringify(rows)}`);
+
+        await page.fill('#routine-search-input', '');
+        await page.waitForTimeout(300);
+        rows = await visible();
+        record('clearing the search shows the routines again', rows.length === 2, `visible: ${JSON.stringify(rows)}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a routine search survives a mode filter or sort change', failures };
+}
+
 // A tap in Open Routine used to show nothing for 300ms: the whole selection
 // waited out the double-tap window. Now the row is highlighted at once and only
 // the part that moves the layout (actions + preview, which grow the centred card)
@@ -5664,6 +5721,7 @@ async function journeyQuickActionPickerKeepsMenuOpen(browser, baseURL) {
 
 const JOURNEYS = [
     { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },
+    { name: 'a routine search survives a mode filter or sort change', fn: journeySwitcherSearchSurvivesFilter },
     { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', fn: journeySwitcherTapResponds },
     { name: 'Settings explain themselves; the tour-prompts button turns prompts on and off', fn: journeySettingsDescribedAndTourToggle },
     { name: 'adding a quick action from the menu keeps the menu open', fn: journeyQuickActionPickerKeepsMenuOpen },

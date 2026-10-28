@@ -907,6 +907,13 @@ export class RoutineSwitcher {
             this._renderListItem(cycleKey, cycleData, index, activeCycleId, miniCycleList, currentState);
         });
 
+        // The list was just rebuilt from scratch, so re-apply whatever is in the
+        // search box. Changing the mode filter or the sort (and a rename or
+        // delete, which also reload) used to show every routine again until the
+        // search was retyped (Oct 2026).
+        const searchInput = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_INPUT);
+        if (searchInput?.value.trim()) this.filterRoutineList(searchInput.value);
+
         this.deps.updateReminderButtons();
     }
 
