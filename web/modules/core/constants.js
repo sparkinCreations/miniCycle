@@ -149,6 +149,7 @@ export const UI_TIMEOUTS = Object.freeze({
     RECREATE_LANDING_DELAY: 350,   // modal close animation + panel switch before scrolling to a recreated task
     RECREATE_FLASH: 2000,          // how long a recreated row keeps its highlight
     CYCLE_SWITCH_TRANSITION: 300,  // 300ms - Delay during cycle switch
+    SWITCHER_DOUBLE_TAP: 300,      // 300ms - Open Routine: a second tap on the same row within this opens it. The row is highlighted at once; revealing its actions and preview (which moves the rows) waits this long so a double-tap's second tap still lands on it
     STATS_UPDATE_DELAY: 100,       // 100ms - Stats panel update delay
     WHEEL_RESET_DELAY: 200,        // 200ms - horizontal wheel/trackpad accumulation resets after this much silence. Was 15ms, SHORTER than a 60Hz trackpad's ~16.7ms event gap, so each event accumulated alone and flicks rarely reached the threshold
     WHEEL_NAVIGATE_LOCKOUT: 450,   // 450ms - after a wheel navigation, further horizontal wheel is ignored: one flick's momentum tail used to step a second panel on 120Hz input

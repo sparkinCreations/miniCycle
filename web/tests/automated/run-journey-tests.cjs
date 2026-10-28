@@ -5319,6 +5319,59 @@ async function journeySwitcherInlineRename(browser, baseURL) {
     return { name: 'renaming a routine inline in Open Routine stays in the box', failures };
 }
 
+// A tap in Open Routine used to show nothing for 300ms: the whole selection
+// waited out the double-tap window. Now the row is highlighted at once and only
+// the part that moves the layout (actions + preview, which grow the centred card)
+// waits, so a double-tap's second tap still lands on the row it opened (Oct 2026).
+async function journeySwitcherTapResponds(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const origId = (await persisted(page)).activeId;
+        await openMenu(page);
+        await page.waitForSelector('#new-mini-cycle', { state: 'visible', timeout: 10000 });
+        await clickEl(page, '#new-mini-cycle');
+        await page.waitForSelector('#sample-creation-input', { state: 'visible', timeout: 10000 });
+        await page.fill('#sample-creation-input', 'Tap Routine Two');
+        await clickEl(page, '.miniCycle-btn-confirm');
+        await page.waitForFunction((prev) => JSON.parse(localStorage.getItem('miniCycleData')).appState.activeRoutineId !== prev, origId, { timeout: 15000 });
+        await bootApp(page);
+        await page.evaluate(() => document.querySelectorAll('#notification-container .close-btn').forEach(b => b.click()));
+
+        await clickEl(page, '#routine-switcher-btn');
+        const row = `.mini-cycle-switch-item[data-cycle-key="${origId}"]`;
+        await page.waitForSelector(row, { state: 'visible', timeout: 10000 });
+        await page.waitForTimeout(800); // the list's deferred re-render replaces the rows
+        const tap = await page.evaluate((sel) => {
+            const el = document.querySelector(sel); el.click();
+            const now = document.querySelector(sel);
+            const actions = document.getElementById('switch-items-row');
+            return { highlighted: now.classList.contains('selected'), actionsShown: !!actions && getComputedStyle(actions).display !== 'none' };
+        }, row);
+        record('a single tap highlights the routine at once', tap.highlighted, 'nothing showed the tap — the selection is waiting out the double-tap window again');
+        record('…while the layout-moving actions row waits out the double-tap window', !tap.actionsShown,
+            'the actions row appeared on the first tap; it grows the centred card and moves the rows under a double-tap');
+        await page.waitForTimeout(700);
+
+        // Close and reopen so nothing is selected, then double-tap the row at one screen point.
+        await page.evaluate(() => document.getElementById('miniCycleSwitchClose')?.click());
+        await page.waitForTimeout(500);
+        await clickEl(page, '#routine-switcher-btn');
+        await page.waitForSelector(row, { state: 'visible', timeout: 10000 });
+        await page.waitForTimeout(800);
+        const box = await page.locator(row).boundingBox();
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForTimeout(120);
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        await page.waitForFunction((id) => JSON.parse(localStorage.getItem('miniCycleData')).appState.activeRoutineId === id, origId, { timeout: 5000 }).catch(() => {});
+        const after = await persisted(page);
+        record('a double-tap opens the routine that was tapped', after.activeId === origId, `active=${after.activeId}, expected ${origId}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', failures };
+}
+
 async function journeyFocusTabFollowsSort(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const { context, page } = await openFresh(browser, baseURL);
@@ -5509,6 +5562,7 @@ async function journeyQuickActionPickerKeepsMenuOpen(browser, baseURL) {
 
 const JOURNEYS = [
     { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },
+    { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', fn: journeySwitcherTapResponds },
     { name: 'adding a quick action from the menu keeps the menu open', fn: journeyQuickActionPickerKeepsMenuOpen },
     { name: 'recreating a cleared task lands in the routine list', fn: journeyRecreateLandsInList },
     { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },

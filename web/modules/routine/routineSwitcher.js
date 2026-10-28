@@ -530,32 +530,21 @@ export class RoutineSwitcher {
         // ✅ Close modal first to avoid UI conflicts
         this.hideSwitchMiniCycleModal();
 
-        // ✅ Add a small delay to ensure state is fully propagated
-        // Store expected cycle to verify it hasn't changed during delay
-        const expectedCycleKey = cycleKey;
-        setTimeout(() => {
-            // ✅ FIX: Verify cycle hasn't changed during delay (prevents stale load)
-            const freshState = this.deps.AppState.get();
-            const currentActiveCycle = getActiveRoutineId(freshState);
+        // Load straight away. A 100ms timer used to sit here "to ensure state is
+        // fully propagated", but AppState.update is synchronous and the check
+        // above has already read the new routine back; the pause only left the
+        // old routine on screen after the dialog closed (Oct 2026: ~400ms of a
+        // phone switch was this plus the tap delay).
+        if (typeof this.deps.loadMiniCycle === 'function') {
+            this.deps.loadMiniCycle();
+        } else {
+            console.error('❌ loadMiniCycle function not available');
+            // Fallback refresh
+            setTimeout(() => window.location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
+        }
 
-            if (currentActiveCycle !== expectedCycleKey) {
-                console.warn('⚠️ Cycle changed during switch delay, aborting stale load');
-                return;
-            }
-
-            // Load the new cycle
-            if (typeof this.deps.loadMiniCycle === 'function') {
-                this.deps.loadMiniCycle();
-            } else {
-                console.error('❌ loadMiniCycle function not available');
-                // Fallback refresh
-                setTimeout(() => window.location.reload(), UI_TIMEOUTS.PAGE_RELOAD);
-            }
-
-            // ✅ Get cycle name from state for confirmation (use fresh state)
-            const cycleName = getRoutine(freshState, currentActiveCycle)?.title || currentActiveCycle;
-            this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
-        }, 100);
+        const cycleName = getRoutine(this.deps.AppState.get(), cycleKey)?.title || cycleKey;
+        this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -735,6 +724,16 @@ export class RoutineSwitcher {
      * @returns {void}
      */
     _selectRoutine(cycleKey) {
+        this._markRoutineSelected(cycleKey);
+        this._revealRoutineSelection(cycleKey);
+    }
+
+    /**
+     * The instant half of a selection: record it and highlight the row. Nothing
+     * here changes the layout, so it is safe inside the double-tap window.
+     * @param {string} cycleKey
+     */
+    _markRoutineSelected(cycleKey) {
         // Record the selection in the tracked source of truth FIRST; the `.selected`
         // class set below is a projection of it.
         this._selectedCycleKey = cycleKey || null;
@@ -756,7 +755,14 @@ export class RoutineSwitcher {
                 miniCycleList.setAttribute('aria-activedescendant', listItem.id);
             }
         }
+    }
 
+    /**
+     * The half of a selection that moves the layout: the action row and the
+     * preview make the centred card taller, which shifts every row.
+     * @param {string} cycleKey
+     */
+    _revealRoutineSelection(cycleKey) {
         // Show action buttons
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         if (switchItemsRow) {
@@ -1056,8 +1062,8 @@ export class RoutineSwitcher {
             const timeSinceLastClick = now - listItem._lastClickTime;
             listItem._lastClickTime = now;
 
-            // Double-tap/click detected (within 300ms)
-            if (timeSinceLastClick < 300) {
+            // Double-tap/click detected
+            if (timeSinceLastClick < UI_TIMEOUTS.SWITCHER_DOUBLE_TAP) {
                 if (listItem._selectTimeout) {
                     clearTimeout(listItem._selectTimeout);
                     listItem._selectTimeout = null;
@@ -1074,12 +1080,17 @@ export class RoutineSwitcher {
                 return;
             }
 
-            // No selection — delay to allow double-tap to bypass
+            // No selection yet. Highlight the row NOW, so the tap visibly lands
+            // (it used to show nothing for 300ms), but hold the part that moves
+            // the layout: revealing the actions and preview grows the centred
+            // card and shifts every row, and a double-tap's second tap would then
+            // land on a different row and open the wrong routine.
+            this._markRoutineSelected(cycleKey);
             if (listItem._selectTimeout) clearTimeout(listItem._selectTimeout);
             listItem._selectTimeout = setTimeout(() => {
                 listItem._selectTimeout = null;
                 this._selectRoutine(cycleKey);
-            }, 300);
+            }, UI_TIMEOUTS.SWITCHER_DOUBLE_TAP);
         };
         safeAdd(listItem, "click", listItem._clickHandler);
 
