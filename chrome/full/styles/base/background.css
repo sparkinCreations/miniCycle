@@ -106,6 +106,43 @@ body.has-bg-image::before {
     display: none;
 }
 
+/* Text that sits straight on the photo: white with a dark ring
+   (--text-shadow-photo). The defaults are tuned for the theme gradients and
+   failed on photos in both directions — measured Oct 2026 on test photos:
+   "ROUTINE MANAGER" (black) 1.10:1 on a dark one, the footer and the
+   help-window line (white) 1.14–1.17:1 on a light one. A photo can be dark
+   and light under the same word, so picking one colour from its brightness
+   cannot work; the ring does. Only with a photo: the gradient look is unchanged.
+   The ID selector outranks the subtitle's theme and dark-mode colours. Both
+   footer colours are overridden: Golden Glow sets --footer-text dark, and on
+   phones Increase Contrast, High Contrast and a picked app colour switch the
+   copyright to --footer-text-contrast (#111) — dark letters inside a dark
+   ring would be mud on a dark photo. */
+body.has-bg-image {
+    --footer-text: var(--color-white);
+    --footer-text-contrast: var(--color-white);
+}
+
+body.has-bg-image #app-subtitle {
+    color: var(--color-white);
+    opacity: 1;
+    text-shadow: var(--text-shadow-photo);
+}
+
+/* The text elements themselves, by ID: dark mode colours #copyright and the
+   footer items directly (80% white) and .help-window at the same specificity
+   as a class rule here, so styling the containers alone was not enough. */
+body.has-bg-image #footer-container,
+body.has-bg-image #footer-container #copyright,
+body.has-bg-image #footer-container #copyright a,
+body.has-bg-image #footer-container .footer-item,
+body.has-bg-image #footer-container .footer-item a,
+body.has-bg-image #help-window,
+body.has-bg-image #help-window h4 {
+    color: var(--color-white);
+    text-shadow: var(--text-shadow-photo);
+}
+
 /* Background image display modes - specificity (0,4,1) to override pattern rules */
 body.has-bg-image.bg-mode-cover,
 body.has-bg-image.bg-mode-cover:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {

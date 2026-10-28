@@ -1,3 +1,7 @@
+## [2.645] - 2026-10-28
+- fix(personalization): text on a photo background is white with a dark ring, so it reads on any photo
+
+
 ## [2.644] - 2026-10-27
 - fix(menu): adding a quick action from the ☰ menu no longer closes the menu
 - feat(history): Recreate closes History, lands on the Routine tab and highlights the new rows
