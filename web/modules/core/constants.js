@@ -1005,6 +1005,7 @@ export const DOM_CLASSES = Object.freeze({
     // ACTIVE ('active') above — that one is unrelated task/panel state.
     IS_ACTIVE: 'is-active',
     TITLE_SCREEN_ACTIONS: 'title-screen-actions',
+    TITLE_SCREEN_LINKS: 'title-screen-links',   // the quiet text links under the buttons
     TITLE_SCREEN_LEGAL: 'title-screen-legal',
     TIP_ARCHIVE_STAGE: 'tip-archive-stage',
     TIP_ARCHIVE_TEXT: 'tip-archive-text',
@@ -1226,6 +1227,7 @@ export const DOM_IDS = Object.freeze({
     TITLE_SCREEN_CREATE_ROUTINE: 'title-screen-create-routine',
     TITLE_SCREEN_OPEN_ROUTINE: 'title-screen-open-routine',
     TITLE_SCREEN_RESTORE_BACKUP: 'title-screen-restore-backup',
+    TITLE_SCREEN_HOW_CYCLES_WORK: 'title-screen-how-cycles-work',
     TITLE_SCREEN_USER_MANUAL: 'title-screen-user-manual',
     TITLE_SCREEN_WEBSITE: 'title-screen-website',
     TITLE_SCREEN_TIP_BTN: 'title-screen-tip-btn',

@@ -45,7 +45,10 @@ export async function runTitleScreenTests(resultsDiv) {
             AppState: appState,
             safeAddEventListener: (el, type, fn) => el.addEventListener(type, fn),
             showNotification: () => {},
-            hideMainMenu: () => {}
+            hideMainMenu: () => {},
+            // Explicit: setDependencies MERGES, so a test that sets it would
+            // otherwise leave it set for every later one.
+            replayOnboarding: null
         });
     };
     wire(makeAppState());
@@ -314,6 +317,62 @@ export async function runTitleScreenTests(resultsDiv) {
         const opened = !!document.getElementById(DOM_IDS.TITLE_SCREEN);
         titleScreen.destroy();
         if (opened) throw new Error('opened the overlay for a user with no state');
+    });
+
+    await test('"How cycles work" closes the screen and replays the walkthrough', async () => {
+        let replays = 0;
+        let notified = 0;
+        setTitleScreenDependencies({
+            AppState: makeAppState(),
+            safeAddEventListener: (el, type, fn) => el.addEventListener(type, fn),
+            showNotification: () => { notified++; },
+            hideMainMenu: () => {},
+            replayOnboarding: () => { replays++; return true; }
+        });
+        try {
+            titleScreen.open();
+            const link = document.getElementById(DOM_IDS.TITLE_SCREEN_HOW_CYCLES_WORK);
+            if (!link) throw new Error('no "How cycles work" link');
+            if (!link.classList.contains('first-run-restore')) throw new Error('the link should be a quiet text link, not a primary action');
+            if (link.nextElementSibling?.id !== DOM_IDS.TITLE_SCREEN_RESTORE_BACKUP) throw new Error('should sit just before the restore link');
+            link.click();
+            await new Promise(r => setTimeout(r, 10));
+            if (document.getElementById(DOM_IDS.TITLE_SCREEN)) throw new Error('the Welcome Screen stayed open');
+            if (replays !== 1) throw new Error(`replayOnboarding called ${replays} time(s)`);
+            if (notified !== 0) throw new Error('a successful replay must not show an error');
+        } finally {
+            titleScreen.close();
+            wire(makeAppState());
+        }
+    });
+
+    await test('"How cycles work" says so when the walkthrough cannot be shown', async () => {
+        let notified = 0;
+        setTitleScreenDependencies({
+            AppState: makeAppState(),
+            safeAddEventListener: (el, type, fn) => el.addEventListener(type, fn),
+            showNotification: () => { notified++; },
+            hideMainMenu: () => {},
+            replayOnboarding: () => undefined   // module not loaded
+        });
+        try {
+            titleScreen.open();
+            document.getElementById(DOM_IDS.TITLE_SCREEN_HOW_CYCLES_WORK).click();
+            await new Promise(r => setTimeout(r, 10));
+            if (notified !== 1) throw new Error('a failed replay was silent');
+        } finally {
+            titleScreen.close();
+            wire(makeAppState());
+        }
+    });
+
+    await test('no replay dependency → no "How cycles work" link', () => {
+        try {
+            titleScreen.open();
+            if (document.getElementById(DOM_IDS.TITLE_SCREEN_HOW_CYCLES_WORK)) throw new Error('rendered a link with nothing to call');
+        } finally {
+            titleScreen.close();
+        }
     });
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${Math.round((passed.count / total.count) * 100)}%)</h3>`;

@@ -1680,6 +1680,9 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // an entry here the dep resolves to undefined and the caller's `?.`
         // silently drops the feature.
         openTipArchive: (...args) => deps.features?.tipArchive?.openModal?.(...args),
+        // Welcome Screen → "How cycles work": the onboarding walkthrough, shown now
+        // and changing nothing (onboardingManager.replayOnboarding).
+        replayOnboarding: (...args) => deps.ui?.onboardingManager?.replayOnboarding?.(...args),
 
         // Achievements manager (from deps.features) - use Proxy for lazy resolution
         achievementsManager: new Proxy({}, {

@@ -1447,6 +1447,62 @@ export async function runOnboardingManagerTests(resultsDiv) {
         }
     });
 
+    // ===== REPLAY (Welcome Screen → "How cycles work") =====
+
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 Replay for a returning user</h4>';
+
+    function replayDeps(calls) {
+        const state = {
+            settings: { onboardingCompleted: true, theme: 'default' },
+            data: { routine: { r1: { title: 'Mine', tasks: [{ id: 't1', text: 'A' }] } } },
+            appState: { activeRoutineId: 'r1' }
+        };
+        return createMockDeps({
+            AppState: {
+                isReady: () => true,
+                get: () => state,
+                update: (fn) => { calls.updates++; fn(state); return state; }
+            },
+            completeInitialSetup: () => { calls.setup++; },
+            preloadGettingStartedCycle: () => { calls.sample++; return Promise.resolve(true); }
+        });
+    }
+
+    await test('replayOnboarding shows the walkthrough and changes nothing on close', async () => {
+        const calls = { updates: 0, setup: 0, sample: 0 };
+        setOnboardingManagerDependencies(replayDeps(calls));
+        const om = new OnboardingManager();
+        if (om.replayOnboarding() !== true) throw new Error('replay reported failure');
+        if (!document.getElementById('onboarding-modal')) throw new Error('no walkthrough shown');
+        if (document.body.classList.contains('onboarding-active')) {
+            throw new Error('a replay must not swap the routine for the first-run placeholder');
+        }
+        document.getElementById('onboarding-skip').click();
+        await new Promise(r => setTimeout(r, 350));
+        if (document.getElementById('onboarding-modal')) throw new Error('walkthrough still open after Skip');
+        if (calls.updates !== 0) throw new Error(`a replay wrote state ${calls.updates} time(s)`);
+        if (calls.setup !== 0) throw new Error('a replay re-ran the first-launch setup');
+        if (calls.sample !== 0) throw new Error('a replay loaded the sample routine');
+    });
+
+    await test('after a replay, a real onboarding still records completion', async () => {
+        const calls = { updates: 0, setup: 0, sample: 0 };
+        const deps = replayDeps(calls);
+        setOnboardingManagerDependencies(deps);
+        const om = new OnboardingManager();
+        om.replayOnboarding();
+        document.getElementById('onboarding-skip').click();
+        const state = deps.AppState.get();
+        state.settings.onboardingCompleted = false;
+        om.showOnboarding(state.data.routine, 'r1', state);
+        document.getElementById('onboarding-skip').click();
+        if (state.settings.onboardingCompleted !== true || calls.updates !== 1) {
+            throw new Error('the replay flag leaked into the next onboarding');
+        }
+        if (calls.setup !== 1) throw new Error('the real onboarding should run the first-launch setup');
+        document.body.classList.remove('onboarding-active');
+    });
+
     // ===== SUMMARY =====
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

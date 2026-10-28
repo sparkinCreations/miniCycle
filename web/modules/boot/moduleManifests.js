@@ -626,7 +626,8 @@ export const MODULE_MANIFESTS = {
         path: '../ui/titleScreen.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['AppState', 'safeAddEventListener'],
-        optionalDeps: ['showNotification', 'hideMainMenu'],
+        // replayOnboarding: onboardingManager is Phase 2, earlier than this one.
+        optionalDeps: ['showNotification', 'hideMainMenu', 'replayOnboarding'],
         // tipArchive is Phase 7 (FEATURES) — later than this module. Only reached
         // when the user clicks the rotating tip, so it is a lazy cross-phase dep.
         lazyRequires: ['openTipArchive'],

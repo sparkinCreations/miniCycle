@@ -1351,6 +1351,10 @@ export const DEFAULT_LABELS = deepFreeze({
         createRoutine:   'Create a new routine',
         openRoutine:     'Open existing routine',
         restoreBackup:   'Restore from a backup file',
+        // Replays the welcome walkthrough (the cycle demo) for a returning user.
+        // Same idea as the first-run screen's "Learn How Cycles Work", but it
+        // changes nothing: no routine is created, no setting written.
+        howCyclesWork:   'How cycles work',
         userManual:      'User Manual',
         // Footer-style credit line, mirroring #copyright in miniCycle.html.
         // Year is computed, not baked, so it cannot go stale.

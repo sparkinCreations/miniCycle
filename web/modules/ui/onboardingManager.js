@@ -30,7 +30,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { OnboardingDemo } from './onboardingDemo.js';
 import { OnboardingSplash } from './onboardingSplash.js';
 import { OnboardingCarousel } from './onboardingCarousel.js';
-import { getActiveRoutineId } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -482,8 +482,10 @@ export class OnboardingManager {
      */
     showOnboarding(cycles, activeCycle, schemaData = null) {
 
-        // ✅ Hide task list area during onboarding (show placeholder instead)
-        document.body.classList.add(DOM_CLASSES.ONBOARDING_ACTIVE);
+        // ✅ Hide task list area during onboarding (show placeholder instead).
+        // Not on a replay: that placeholder reads "Create your first routine",
+        // and a returning user's routine is right there.
+        if (!this._replaying) document.body.classList.add(DOM_CLASSES.ONBOARDING_ACTIVE);
 
         // ✅ FIX: Use passed schemaData if available (avoids race condition on initial load)
         // AppState may not be ready yet when createInitialSchemaData just created the data
@@ -728,15 +730,22 @@ export class OnboardingManager {
         // Remove onboarding body class to restore normal UI
         document.body.classList.remove(DOM_CLASSES.ONBOARDING_ACTIVE);
 
+        // A replay (replayOnboarding) only closes: no flag to write, and the app
+        // is already set up, so none of the first-launch work below applies.
+        const replay = this._replaying === true;
+        this._replaying = false;
+
         // ✅ Use AppState as source of truth
         const appState = this.deps.AppState;
 
         // Ensure AppState is ready (reload from localStorage if needed)
-        if (!appState?.isReady?.()) {
+        if (!replay && !appState?.isReady?.()) {
             appState?.reload?.();
         }
 
-        if (appState?.isReady?.()) {
+        if (replay) {
+            // nothing to persist
+        } else if (appState?.isReady?.()) {
             appState.update(state => {
                 state.settings.onboardingCompleted = true;
             }, true);
@@ -755,6 +764,16 @@ export class OnboardingManager {
         if (modal?._clickHandler) modal.removeEventListener('click', modal._clickHandler);
 
         modal.remove();
+
+        if (replay) {
+            // "Start Tour" on the last step still means start the tour, on the
+            // routine the user already has (no sample, so no welcome toast).
+            if (this._startTourImmediately) {
+                this._startTourImmediately = false;
+                this._scheduleStartTourFlow({ withWelcomeToast: false });
+            }
+            return;
+        }
 
         // Always transition to sample load or complete setup
         if (!activeCycle || !cycles[activeCycle]) {
@@ -920,6 +939,34 @@ export class OnboardingManager {
                 }
             }
         );
+    }
+
+    /**
+     * Show the welcome walkthrough again NOW, for a returning user (Welcome
+     * Screen → "How cycles work").
+     *
+     * Settings → Reset Onboarding is the other way in, and it differs on
+     * purpose: it re-arms the walkthrough for the next launch. This shows the
+     * same three steps (welcome, the cycle demo, the tour) in the current
+     * session and changes nothing. No routine is created or switched, no
+     * setting is written, and on close none of the first-launch setup runs
+     * (completeOnboarding's replay branch). Only "Start Tour" on the last step
+     * does something: it starts the guided tour on the user's own routine.
+     * @returns {boolean} false when the walkthrough could not be shown
+     */
+    replayOnboarding() {
+        if (document.getElementById(DOM_IDS.ONBOARDING_MODAL)) return true; // already open
+        if (!this.deps.AppState?.isReady?.()) return false;
+        const state = this.deps.AppState.get();
+        if (!state) return false;
+        this._replaying = true;
+        this.showOnboarding(getRoutines(state) || {}, getActiveRoutineId(state), state);
+        if (!document.getElementById(DOM_IDS.ONBOARDING_MODAL)) {
+            // Not shown: don't leave a later, real onboarding marked as a replay.
+            this._replaying = false;
+            return false;
+        }
+        return true;
     }
 
     /**
