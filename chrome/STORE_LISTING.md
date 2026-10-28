@@ -6,6 +6,15 @@ whenever it changes, and change it HERE first so the repo stays the source.
 Plain text only — the dashboard strips formatting; the `•` bullets and ALL-CAPS
 headings are the convention that survives. Limit is 16,000 characters.
 
+The WHAT'S NEW block at the end is the one part that changes every upload. The
+dashboard has no changelog field and store builds lag the web by several
+versions, so it summarises everything since the PREVIOUS store build in one
+block (three to six user-facing bullets, app labels not commit lines) and is
+rewritten, never appended to. The month line is the maintained signal shoppers
+look for; the link carries the full history. A listing edit goes through review
+like a package upload, so change this text together with the zip, not between
+releases.
+
 Positioning mirrors `web/pages/product.html` (Oct 2026): reusable checklists for
 routines and repeatable procedures lead; "lightweight SOP" is a bridge one
 section down, never the identity. Feature names use the app's own labels
@@ -54,6 +63,16 @@ IN CHROME
 miniCycle opens in Chrome's side panel, so your routine stays visible beside whatever you're working on and you can tick tasks off as you actually do them. Need more room? Open it in a full tab anytime.
 
 Build the routines that build you.
+
+WHAT'S NEW (October 2026)
+• Open Routine: a search stays applied when you change the mode filter or the sort.
+• Open Routine: renaming a routine is easier to read, and a long name shows from its start.
+• Open Routine responds the moment you tap a routine.
+• Settings: every control explains what it does, and tour prompts can be turned off as well as on.
+• History: Recreate returns you to the routine list and highlights the restored tasks.
+• Personalization: uploading a background photo turns Show Image on, and text stays readable on any photo.
+
+Full changelog: https://minicycle.app/pages/product.html#changelog
 
 ---
 ---
