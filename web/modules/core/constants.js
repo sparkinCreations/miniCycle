@@ -432,7 +432,8 @@ export const LIMITS = Object.freeze({
     LAYOUT_DOCK_GAP: 20,                  // px - Task View Layout: vertical gap between an anchor element and its docked dependent
     LAYOUT_KEY_STEP: 10,                  // px - Task View Layout: how far one arrow key press moves a draggable (Shift = 1px)
     LAYOUT_MIN_VISIBLE_OVERLAP: 40,       // px - Task View Layout: how much of a restored element must stay inside #task-view, so a layout saved on a wider display can never strand it (and its drag handle) out of reach
-    DUE_DATE_NOTIFY_HOUR: 9,              // Local hour on the due day at which a dated task's system notification fires (due dates are date-only)
+    DUE_DATE_NOTIFY_HOUR: 9,              // Local hour on the due day at which a dated task's system notification fires when the task has no due time
+    DUE_DATE_WEEKDAY_SPAN: 6,             // days - A due date up to this many days ahead is shown as its weekday ("Fri"); further out as a short date
     NATIVE_DUE_DATE_SCHEDULE_MAX: 30,     // Max due-day notifications pre-scheduled natively (one per day that has due tasks); also the cancel range
     NATIVE_REMINDER_SCHEDULE_MAX: 24      // Max future reminder occurrences pre-scheduled as native notifications (iOS caps pending local notifications at 64 app-wide)
 });
@@ -827,7 +828,15 @@ export const DOM_CLASSES = Object.freeze({
     DELETE_WHEN_COMPLETE_ACTIVE: 'delete-when-complete-active',
     REMINDER_ACTIVE: 'reminder-active',
     OVERDUE_TASK: 'overdue-task',
-    DUE_DATE: 'due-date',
+    DUE_DATE: 'due-date',                 // The due-date line under a task (a button that opens the picker)
+    DUE_DATE_TEXT: 'due-date-text',
+    DUE_DATE_ICON: 'due-date-icon',
+    DUE_DATE_OVERDUE: 'due-date-overdue',
+    DUE_DATE_PICKER: 'due-date-picker',
+    DUE_DATE_PICKER_OVERLAY: 'due-date-picker-overlay',
+    DUE_DATE_PICKER_FIELD: 'due-date-picker-field',
+    DUE_DATE_PICKER_ACTIONS: 'due-date-picker-actions',
+    DUE_DATE_PICKER_CLEAR: 'due-date-picker-clear',
 
     // ---- Drag & Drop ----
     DRAGGING: 'dragging',
@@ -1609,6 +1618,13 @@ export const DOM_IDS = Object.freeze({
     QUICK_ACTIONS_SLOTS: 'quick-actions-slots',
     QUICK_ACTIONS_MENU_SLOTS: 'quick-actions-menu-slots',
     QUICK_ACTIONS_PICKER_OVERLAY: 'quick-actions-picker-overlay',
+
+    // ---- Due date picker (one shared dialog, dueDates.js) ----
+    DUE_DATE_PICKER: 'due-date-picker',
+    DUE_DATE_PICKER_TITLE: 'due-date-picker-title',
+    DUE_DATE_PICKER_TASK: 'due-date-picker-task',
+    DUE_DATE_PICKER_DATE: 'due-date-picker-date',
+    DUE_DATE_PICKER_TIME: 'due-date-picker-time',
     QUICK_ACTIONS_TOOLTIP: 'quick-actions-tooltip',
     LONG_PRESS_HINT: 'long-press-hint',
     QUICK_ACTIONS_BTN: 'quick-actions-btn',

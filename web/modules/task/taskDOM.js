@@ -32,6 +32,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
+import { createDueDateChip, renderDueDateChip } from '../utils/dueDateUtils.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getTaskResetIndicator, resolveAutoClear } from '../utils/cycleMode.js';
 
@@ -805,11 +806,11 @@ export class TaskDOMManager {
     }
 
     /**
-     * Create task content elements (checkbox, label, due date input)
+     * Create task content elements (checkbox, label, due-date line)
      */
     createTaskContentElements(taskContext) {
         const {
-            assignedTaskId, taskTextTrimmed, completed, dueDate,
+            assignedTaskId, taskTextTrimmed, completed, dueDate, dueTime,
             autoResetEnabled, recurring, currentCycle, activeCycle
         } = taskContext;
 
@@ -819,17 +820,16 @@ export class TaskDOMManager {
         // Create task label
         const taskLabel = this.createTaskLabel(taskTextTrimmed, assignedTaskId, recurring);
 
-        // Create due date input (from dueDates module)
+        // Create the due-date line (from dueDates module). The name dueDateInput
+        // is historical: since Oct 2026 it is a button, not an <input>.
         let dueDateInput;
         if (typeof this.deps.createDueDateInput === 'function') {
-            dueDateInput = this.deps.createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle);
+            dueDateInput = this.deps.createDueDateInput(assignedTaskId, dueDate, autoResetEnabled, currentCycle, activeCycle, dueTime);
         } else {
-            // Fallback: create basic input
-            dueDateInput = document.createElement("input");
-            dueDateInput.type = "date";
-            dueDateInput.id = `due-date-${assignedTaskId}`;
-            dueDateInput.name = `dueDate-${assignedTaskId}`;
-            dueDateInput.classList.add(DOM_CLASSES.DUE_DATE, DOM_CLASSES.HIDDEN);
+            // Fallback (dueDates not loaded yet): the same line, filled in
+            // later by checkOverdueTasks.
+            dueDateInput = createDueDateChip(assignedTaskId);
+            renderDueDateChip(dueDateInput, { dueDate, dueTime, completed });
         }
 
         return { checkbox, taskLabel, dueDateInput };

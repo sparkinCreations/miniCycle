@@ -973,10 +973,11 @@ export async function runAccessibilityTests(resultsDiv, isPartOfSuite = false) {
             throw new Error(`recurring task with a template should be aria-pressed="true", got "${recTmpl.getAttribute('aria-pressed')}"`);
         }
 
-        // due-date uses aria-expanded (reveals an input), not aria-pressed
+        // due-date opens the picker dialog: aria-haspopup, not aria-pressed/expanded
         const due = makeBtn('set-due-date');
         inst.setupButtonAriaStates(due, 'set-due-date', false, false, false, 't1', {}, false);
-        if (due.getAttribute('aria-expanded') !== 'false') throw new Error('due-date should start aria-expanded=false');
+        if (due.getAttribute('aria-haspopup') !== 'dialog') throw new Error('due-date should declare aria-haspopup="dialog"');
+        if (due.hasAttribute('aria-expanded')) throw new Error('due-date no longer reveals an inline input, so no aria-expanded');
     });
 
     await test('TaskButtons keyboard handler activates on Space (real handler)', () => {

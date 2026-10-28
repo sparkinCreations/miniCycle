@@ -102,6 +102,7 @@ export function activateTaskRecurringState(cycle, taskId, normalizedSettings, ca
         recurringSettings: structuredClone(normalizedSettings),
         ...priorityFields(task),
         dueDate: task?.dueDate || null,
+        dueTime: task?.dueTime || null,
         remindersEnabled: task?.remindersEnabled || false,
         nextScheduledOccurrence: calculateNextOccurrenceFn(normalizedSettings, Date.now())
     });

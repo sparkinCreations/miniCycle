@@ -22,6 +22,13 @@ import {
 // The module compares against LOCAL midnight (parseDateAsLocal), so tests must
 // build date strings the same way. See the yesterday computation below.
 import { formatLocalDate } from '../modules/recurring/recurringDateUtils.js';
+import {
+    createDueDateChip,
+    formatDueLabel,
+    isTaskOverdue,
+    normalizeDueTime,
+    getDueMoment
+} from '../modules/utils/dueDateUtils.js';
 
 export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
     resultsDiv.innerHTML = '<h2>Due Dates Module Tests</h2><h3>Setting up mocks...</h3>';
@@ -102,6 +109,35 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
                     }
                 }
             };
+        }
+
+        /** Add a task to the stored test routine (checkOverdueTasks reads state, not the row). */
+        function putTask(task) {
+            const data = JSON.parse(localStorage.getItem('miniCycleData'));
+            data.data.routine['test-cycle'].tasks.push(task);
+            localStorage.setItem('miniCycleData', JSON.stringify(data));
+        }
+
+        /** A rendered task row with its due-date line, mounted in the test container. */
+        function makeRow(taskId, text) {
+            const row = document.createElement('div');
+            row.classList.add('task');
+            row.dataset.taskId = taskId;
+            const label = document.createElement('span');
+            label.classList.add('task-text');
+            label.textContent = text;
+            const chip = createDueDateChip(taskId);
+            row.appendChild(label);
+            row.appendChild(chip);
+            testContainer.appendChild(row);
+            return { row, chip };
+        }
+
+        /** "YYYY-MM-DD" for today + offset days, from LOCAL parts (never toISOString). */
+        function localDay(offset = 0) {
+            const d = new Date();
+            d.setDate(d.getDate() + offset);
+            return formatLocalDate(d);
         }
 
         async function test(name, testFn) {
@@ -257,75 +293,119 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             }
         });
 
-        await test('createDueDateInput returns valid input element', async () => {
+        await test('createDueDateInput returns the due-date line (a button) showing the date', async () => {
             const instance = new MiniCycleDueDates();
 
-            const input = instance.createDueDateInput('task-1', '2025-12-31', false, {}, 'test-cycle');
+            const chip = instance.createDueDateInput('task-1', localDay(1), false, {}, 'test-cycle');
 
-            if (input.type !== 'date' || !input.classList.contains('due-date')) {
-                throw new Error('Invalid due date input created');
+            if (chip.tagName !== 'BUTTON' || !chip.classList.contains('due-date')) {
+                throw new Error(`expected a .due-date button, got <${chip.tagName.toLowerCase()} class="${chip.className}">`);
             }
-
-            if (input.value !== '2025-12-31') {
-                throw new Error('Due date value not set correctly');
-            }
+            if (chip.classList.contains('hidden')) throw new Error('a dated task must show its line');
+            if (chip.textContent.trim() !== 'Tomorrow') throw new Error(`line text: "${chip.textContent}"`);
+            if (chip.getAttribute('aria-haspopup') !== 'dialog') throw new Error('the line opens the picker dialog');
         });
 
-        await test('createDueDateInput hides when no value and autoReset enabled', async () => {
+        await test('createDueDateInput shows the time beside the date, and hides without a date', async () => {
             const instance = new MiniCycleDueDates();
 
-            const input = instance.createDueDateInput('task-1', null, true, {}, 'test-cycle');
+            const timed = instance.createDueDateInput('task-1', localDay(1), false, {}, 'test-cycle', '15:30');
+            if (!/Tomorrow · .*3:30/.test(timed.textContent)) throw new Error(`timed line: "${timed.textContent}"`);
 
-            if (!input.classList.contains('hidden')) {
-                throw new Error('Input should be hidden when no value and autoReset enabled');
-            }
+            const none = instance.createDueDateInput('task-1', null, true, {}, 'test-cycle');
+            if (!none.classList.contains('hidden')) throw new Error('an undated task must hide its line');
         });
 
-        await test('checkOverdueTasks identifies overdue tasks', async () => {
+        await test('checkOverdueTasks identifies overdue tasks (from state)', async () => {
             const instance = new MiniCycleDueDates({
                 querySelectorAll: () => [],
                 AppState: createMockAppStateForDueDates()
             });
 
-            // Create mock task element
-            const taskDiv = document.createElement('div');
-            taskDiv.classList.add('task');
-            // Set taskId - required by checkOverdueTasks (uses task.dataset.taskId, not text)
-            taskDiv.dataset.taskId = 'overdue-task-1';
-            const taskText = document.createElement('span');
-            taskText.classList.add('task-text');
-            taskText.textContent = 'Overdue Task';
-            const dueDateInput = document.createElement('input');
-            dueDateInput.type = 'date';
-            dueDateInput.classList.add('due-date');
+            // Yesterday via LOCAL date parts, not toISOString() — in any negative
+            // UTC offset an evening "yesterday" serialises as TODAY's date (this
+            // test once failed every evening after 20:00 EDT for that reason).
+            putTask({ id: 'overdue-task-1', text: 'Overdue Task', completed: false, dueDate: localDay(-1) });
+            const { row, chip } = makeRow('overdue-task-1', 'Overdue Task');
 
-            // Set to yesterday — via LOCAL date parts, not toISOString().
-            //
-            // toISOString() converts to UTC, so in any negative UTC offset an
-            // evening "yesterday" serialises as TODAY's date: at 21:42 EDT this
-            // produced 2026-08-16 for a date meant to be 2026-08-15, the task was
-            // not overdue, and the test failed. It passed all day and broke after
-            // 20:00 local, which is why it read as flaky rather than wrong.
-            //
-            // This is the exact hazard dueDates.js documents at the top of the
-            // file and fixed in the implementation with parseDateAsLocal — the
-            // test kept the bug the module had already removed.
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            dueDateInput.value = formatLocalDate(yesterday);
-
-            taskDiv.appendChild(taskText);
-            taskDiv.appendChild(dueDateInput);
-            testContainer.appendChild(taskDiv);
-
-            await instance.checkOverdueTasks(taskDiv);
+            await instance.checkOverdueTasks(row);
 
             const savedData = JSON.parse(localStorage.getItem('miniCycleData'));
-
             // Implementation stores by task ID, not task text
             if (!savedData.appState.overdueTaskStates['overdue-task-1']) {
                 throw new Error('Overdue task not tracked in overdueTaskStates');
             }
+            if (!row.classList.contains('overdue-task')) throw new Error('row should carry the overdue class');
+            if (!chip.classList.contains('due-date-overdue')) throw new Error('the due-date line should turn overdue');
+            if (!/Overdue/.test(row.getAttribute('aria-label') || '')) throw new Error(`row label: ${row.getAttribute('aria-label')}`);
+        });
+
+        await test('checkOverdueTasks: a completed task is never shown as overdue (but its memory is kept)', async () => {
+            // Until Oct 2026 the overdue check read the inline date input and never
+            // looked at completion, so a checked-off task was styled, announced
+            // ("Overdue Tasks: …") and labelled "Overdue" anyway.
+            let banner = null;
+            const instance = new MiniCycleDueDates({
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates(),
+                showNotification: (msg) => { banner = msg; }
+            });
+            putTask({ id: 'done-late', text: 'Done Late', completed: true, dueDate: localDay(-2) });
+            const data = JSON.parse(localStorage.getItem('miniCycleData'));
+            data.appState.overdueTaskStates = { 'done-late': true };
+            localStorage.setItem('miniCycleData', JSON.stringify(data));
+            const { row, chip } = makeRow('done-late', 'Done Late');
+            row.classList.add('overdue-task');
+
+            await instance.checkOverdueTasks(row);
+
+            if (row.classList.contains('overdue-task')) throw new Error('completed task kept the overdue class');
+            if (chip.classList.contains('due-date-overdue')) throw new Error('completed task line still overdue');
+            if (!/Completed/.test(row.getAttribute('aria-label') || '')) throw new Error(`row label: ${row.getAttribute('aria-label')}`);
+            if (banner) throw new Error(`no overdue banner for a completed task: ${banner}`);
+            const saved = JSON.parse(localStorage.getItem('miniCycleData'));
+            if (!saved.appState.overdueTaskStates['done-late']) {
+                throw new Error('the remembered overdue state should survive, so unchecking does not re-announce it');
+            }
+        });
+
+        await test('checkOverdueTasks: a due time already past today is overdue; a later one is not', async () => {
+            const now = new Date();
+            // Skip the edges of the day, where "an hour ago" or "in an hour" is another date.
+            if (now.getHours() < 1 || now.getHours() > 22) return;
+            const hh = (h) => `${String(h).padStart(2, '0')}:00`;
+            const instance = new MiniCycleDueDates({
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates()
+            });
+            putTask({ id: 'past', text: 'Past', completed: false, dueDate: localDay(0), dueTime: hh(now.getHours() - 1) });
+            putTask({ id: 'later', text: 'Later', completed: false, dueDate: localDay(0), dueTime: hh(now.getHours() + 1) });
+            const past = makeRow('past', 'Past');
+            const later = makeRow('later', 'Later');
+
+            await instance.checkOverdueTasks(past.row);
+            await instance.checkOverdueTasks(later.row);
+
+            if (!past.row.classList.contains('overdue-task')) throw new Error('a time an hour ago today should be overdue');
+            if (later.row.classList.contains('overdue-task')) throw new Error('a time an hour from now should not be overdue');
+            if (!/Today · /.test(later.chip.textContent)) throw new Error(`line: "${later.chip.textContent}"`);
+        });
+
+        await test('checkOverdueTasks: clearing the date drops the class AND the "Overdue" label', async () => {
+            const instance = new MiniCycleDueDates({
+                querySelectorAll: () => [],
+                AppState: createMockAppStateForDueDates()
+            });
+            putTask({ id: 'cleared', text: 'Cleared', completed: false, dueDate: null });
+            const { row, chip } = makeRow('cleared', 'Cleared');
+            row.classList.add('overdue-task');
+            row.setAttribute('aria-label', 'Cleared, Overdue');
+
+            await instance.checkOverdueTasks(row);
+
+            if (row.classList.contains('overdue-task')) throw new Error('class kept after the date was cleared');
+            if (/Overdue/.test(row.getAttribute('aria-label') || '')) throw new Error(`label kept: ${row.getAttribute('aria-label')}`);
+            if (!chip.classList.contains('hidden')) throw new Error('an undated task must hide its line');
         });
 
         // === SCHEMA 2.5 STORAGE TESTS ===
@@ -406,59 +486,91 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
         // === INTEGRATION TESTS ===
         resultsDiv.innerHTML += '<h4>🔗 Integration Tests</h4>';
 
-        await test('setupDueDateButtonInteraction attaches event listener', async () => {
-            const instance = new MiniCycleDueDates();
+        await test('the calendar button opens the picker; Save stores date and time as separate fields', async () => {
+            const instance = new MiniCycleDueDates({
+                AppState: createMockAppStateForDueDates(),
+                showNotification: () => {}
+            });
+            // No auto-reset toggle in the harness: setup still installs the one
+            // document listener the picker hangs off, then returns.
+            instance.setupDueDateSystem();
+            try {
+                const { row } = makeRow('task-1', 'Test Task 1');
+                const button = document.createElement('button');
+                button.classList.add('task-btn', 'set-due-date');
+                row.appendChild(button);
 
-            const buttonContainer = document.createElement('div');
-            const dueDateButton = document.createElement('button');
-            dueDateButton.classList.add('set-due-date');
-            buttonContainer.appendChild(dueDateButton);
+                button.click();
+                const dialog = document.getElementById('due-date-picker');
+                if (!dialog?.open) throw new Error('the picker did not open');
+                const date = document.getElementById('due-date-picker-date');
+                const time = document.getElementById('due-date-picker-time');
+                if (date.value !== '' || time.value !== '') throw new Error('an undated task opens with empty fields');
 
-            const dueDateInput = document.createElement('input');
-            dueDateInput.type = 'date';
-            dueDateInput.classList.add('due-date', 'hidden');
+                date.value = '2026-11-02';
+                time.value = '14:45';
+                dialog.querySelector('form').requestSubmit();
+                await waitForAsyncOperations(50);
 
-            instance.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
+                if (dialog.open) throw new Error('Save should close the picker');
+                const task = JSON.parse(localStorage.getItem('miniCycleData')).data.routine['test-cycle'].tasks.find(t => t.id === 'task-1');
+                if (task.dueDate !== '2026-11-02' || task.dueTime !== '14:45') {
+                    throw new Error(`stored ${JSON.stringify({ dueDate: task.dueDate, dueTime: task.dueTime })}`);
+                }
+            } finally {
+                instance.destroy();
+            }
+            if (document.getElementById('due-date-picker')) throw new Error('destroy should remove the picker');
+        });
 
-            if (dueDateButton.dataset.listenerAttached !== 'true') {
-                throw new Error('Event listener not attached');
+        await test('the picker: tapping the due-date line opens it filled in; Clear drops date AND time', async () => {
+            const instance = new MiniCycleDueDates({
+                AppState: createMockAppStateForDueDates(),
+                showNotification: () => {}
+            });
+            instance.setupDueDateSystem();
+            try {
+                putTask({ id: 'timed', text: 'Timed', completed: false, dueDate: '2026-12-01', dueTime: '08:15' });
+                const { chip } = makeRow('timed', 'Timed');
+                chip.classList.remove('hidden');
+
+                chip.click();
+                const dialog = document.getElementById('due-date-picker');
+                if (!dialog?.open) throw new Error('the due-date line should open the picker');
+                if (document.getElementById('due-date-picker-date').value !== '2026-12-01') throw new Error('date not prefilled');
+                if (document.getElementById('due-date-picker-time').value !== '08:15') throw new Error('time not prefilled');
+
+                dialog.querySelector('.due-date-picker-clear').click();
+                await waitForAsyncOperations(50);
+
+                const task = JSON.parse(localStorage.getItem('miniCycleData')).data.routine['test-cycle'].tasks.find(t => t.id === 'timed');
+                if (task.dueDate !== null || task.dueTime !== null) {
+                    throw new Error(`Clear left ${JSON.stringify({ dueDate: task.dueDate, dueTime: task.dueTime })}`);
+                }
+            } finally {
+                instance.destroy();
             }
         });
 
-        await test('updateDueDateVisibility hides dates when autoReset on', async () => {
-            const mockInput = document.createElement('input');
-            mockInput.classList.add('due-date');
-            // No value set — should be hidden
-
-            const mockInputWithValue = document.createElement('input');
-            mockInputWithValue.classList.add('due-date');
-            mockInputWithValue.value = '2026-01-15';
-            mockInputWithValue.classList.add('hidden'); // Start hidden — should be shown
+        await test('due-date lines render from state: shown with a date, hidden without', async () => {
+            putTask({ id: 'dated', text: 'Dated', completed: false, dueDate: localDay(3) });
+            putTask({ id: 'undated', text: 'Undated', completed: false, dueDate: null });
+            const dated = makeRow('dated', 'Dated');
+            const undated = makeRow('undated', 'Undated');
+            undated.chip.classList.remove('hidden');
 
             const instance = new MiniCycleDueDates({
                 getElementById: () => null,
-                querySelectorAll: (selector) => {
-                    if (selector === '.due-date') return [mockInput, mockInputWithValue];
-                    if (selector === '.set-due-date') return [];
-                    // checkOverdueTasks queries for '.task' — return empty to skip overdue logic
-                    if (selector === '.task') return [];
-                    return [];
-                },
-                AppState: {
-                    isReady: () => false,
-                    get: () => null
-                }
+                querySelectorAll: (selector) => selector === '.task' ? [dated.row, undated.row] : [],
+                AppState: createMockAppStateForDueDates()
             });
 
-            instance.updateDueDateVisibility(true);
+            await instance.checkOverdueTasks();
 
-            if (!mockInput.classList.contains('hidden')) {
-                throw new Error('Due date input without value should be hidden');
+            if (dated.chip.classList.contains('hidden') || !dated.chip.textContent.trim()) {
+                throw new Error('a dated task must show its line with text');
             }
-
-            if (mockInputWithValue.classList.contains('hidden')) {
-                throw new Error('Due date input with value should be visible');
-            }
+            if (!undated.chip.classList.contains('hidden')) throw new Error('an undated task must hide its line');
         });
 
         // === PERFORMANCE TESTS ===
@@ -616,19 +728,8 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
                 AppState: createMockAppStateForDueDates()
             });
 
-            const taskDiv = document.createElement('div');
-            taskDiv.classList.add('task');
-            taskDiv.dataset.taskId = 'due-today-task';
-            const taskText = document.createElement('span');
-            taskText.classList.add('task-text');
-            taskText.textContent = 'Due Today';
-            const dueDateInput = document.createElement('input');
-            dueDateInput.type = 'date';
-            dueDateInput.classList.add('due-date');
-            dueDateInput.value = todayLocal;
-            taskDiv.appendChild(taskText);
-            taskDiv.appendChild(dueDateInput);
-            testContainer.appendChild(taskDiv);
+            putTask({ id: 'due-today-task', text: 'Due Today', completed: false, dueDate: todayLocal });
+            const { row: taskDiv } = makeRow('due-today-task', 'Due Today');
 
             await instance.checkOverdueTasks(taskDiv);
 
@@ -684,6 +785,51 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             const afterNine = new Date(2026, 9, 13, 9, 30, 0).getTime();
             const state = stateWith({ r1: { id: 'r1', tasks: [{ id: 'a', text: 'Today', dueDate: '2026-10-13', completed: false }] } });
             if (computeDueDateNotificationSlots(state, afterNine).length !== 0) throw new Error('9:00 today has passed, so no slot');
+        });
+
+        await test('slots: a task with a due time fires at that time, apart from the 9:00 group', () => {
+            const state = stateWith({ r1: { id: 'r1', tasks: [
+                { id: 'a', text: 'Dentist', dueDate: '2026-10-14', dueTime: '15:30', completed: false },
+                { id: 'b', text: 'Rent', dueDate: '2026-10-14', completed: false },
+                { id: 'c', text: 'Early', dueDate: '2026-10-13', dueTime: '07:00', completed: false }
+            ] } });
+            const slots = computeDueDateNotificationSlots(state, NOW);
+            const nine = at(2026, 9, 14);
+            const half3 = new Date(2026, 9, 14, 15, 30, 0).getTime();
+            if (slots.length !== 2) throw new Error(`expected 2 slots (07:00 today has passed): ${JSON.stringify(slots)}`);
+            if (slots[0].at !== nine || slots[0].tasks.join() !== 'Rent' || slots[0].timed) throw new Error(`9:00 slot: ${JSON.stringify(slots[0])}`);
+            if (slots[1].at !== half3 || slots[1].tasks.join() !== 'Dentist' || !slots[1].timed) throw new Error(`15:30 slot: ${JSON.stringify(slots[1])}`);
+        });
+
+        await test('content: a slot of timed tasks says "due now", not "due today"', () => {
+            const instance = wireDueDateNotifications(stateWith({}));
+            try {
+                const timed = instance._dueDateSlotContent({ at: 0, tasks: ['Dentist'], timed: true });
+                if (!/1 task due now/.test(timed.title)) throw new Error(`timed title: "${timed.title}"`);
+            } finally { instance.destroy(); }
+        });
+
+        // === DUE DATE MEANING (utils/dueDateUtils.js) ===
+        await test('dueDateUtils: labels, overdue rule and time validation', () => {
+            const now = new Date(2026, 9, 28, 14, 0); // Wed 2026-10-28 14:00
+            const label = (dueDate, dueTime = null) => formatDueLabel({ dueDate, dueTime }, now);
+            if (label('2026-10-28') !== 'Today') throw new Error(`today: ${label('2026-10-28')}`);
+            if (label('2026-10-29') !== 'Tomorrow') throw new Error(`tomorrow: ${label('2026-10-29')}`);
+            if (label('2026-10-27') !== 'Yesterday') throw new Error(`yesterday: ${label('2026-10-27')}`);
+            if (!/^Today · .*9:15/.test(label('2026-10-28', '09:15'))) throw new Error(`with time: ${label('2026-10-28', '09:15')}`);
+            if (!/2027/.test(label('2027-01-02'))) throw new Error(`another year shows the year: ${label('2027-01-02')}`);
+            if (label(null) !== '') throw new Error('no date, no label');
+
+            if (isTaskOverdue({ dueDate: '2026-10-28' }, now)) throw new Error('due today (no time) is not overdue');
+            if (!isTaskOverdue({ dueDate: '2026-10-28', dueTime: '09:15' }, now)) throw new Error('a passed time today is overdue');
+            if (isTaskOverdue({ dueDate: '2026-10-28', dueTime: '18:00' }, now)) throw new Error('a later time today is not overdue');
+            if (isTaskOverdue({ dueDate: '2026-10-20', completed: true }, now)) throw new Error('a completed task is never overdue');
+
+            if (normalizeDueTime('24:00') !== null || normalizeDueTime('7:05') !== null || normalizeDueTime('07:05') !== '07:05') {
+                throw new Error('dueTime must be strict "HH:MM"');
+            }
+            const fallback = getDueMoment({ dueDate: '2026-10-28', dueTime: 'nonsense' });
+            if (fallback.getHours() !== 9 || fallback.getMinutes() !== 0) throw new Error('a bad time falls back to the 9:00 moment');
         });
 
         await test('slots: a nameless task is listed under the unnamed label, never blank', () => {

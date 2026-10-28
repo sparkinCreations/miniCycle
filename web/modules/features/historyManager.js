@@ -1157,7 +1157,10 @@ export class HistoryManager {
                     priority: getPriorityLevel(entry)
                 };
                 // Restore preserved attributes (backward-compatible with older entries)
-                if (entry.dueDate) recreateOptions.dueDate = entry.dueDate;
+                if (entry.dueDate) {
+                    recreateOptions.dueDate = entry.dueDate;
+                    recreateOptions.dueTime = entry.dueTime || null;
+                }
                 if (entry.remindersEnabled) recreateOptions.remindersEnabled = true;
                 // Pass the per-mode map only — createOrUpdateTaskData reads it for
                 // the current mode

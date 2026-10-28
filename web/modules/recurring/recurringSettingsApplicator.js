@@ -136,6 +136,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         id: taskId,
                         text: templateText,
                         dueDate: task?.dueDate || existingTemplate?.dueDate || null,
+                        dueTime: task?.dueDate ? (task.dueTime || null) : (existingTemplate?.dueTime || null),
                         priority: getPriorityLevel(task) ?? getPriorityLevel(existingTemplate),
                         remindersEnabled: task?.remindersEnabled || existingTemplate?.remindersEnabled || false,
                         autoClear: getAutoClearSettings(task)

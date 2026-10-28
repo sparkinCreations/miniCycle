@@ -122,7 +122,6 @@ const di = createDIModule('ModeManager', {
     appInit: optional(null),
     AppState: optional(null),
     createTaskButtonContainer: optional(null),
-    setupDueDateButtonInteraction: optional(null),
     checkCompleteAllButton: optional(null),
     showNotification: optional(null),
     helpWindowManager: optional(null),
@@ -406,15 +405,8 @@ async refreshTaskButtonsForModeChange() {
             // Replace old with new
             oldButtonContainer.replaceWith(newButtonContainer);
 
-            // ✅ CRITICAL: Re-attach due date listener
-            const dueDateInput = task.querySelector(DOM_SELECTORS.DUE_DATE);
-            if (dueDateInput && this.deps.setupDueDateButtonInteraction) {
-                const dueDateButton = newButtonContainer.querySelector(DOM_SELECTORS.SET_DUE_DATE);
-                if (dueDateButton) {
-                    delete dueDateButton.dataset.listenerAttached;
-                }
-                this.deps.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
-            }
+            // The new due-date button needs no listener of its own: dueDates.js
+            // opens the picker for it from one document listener.
 
             successCount++;
         });
@@ -599,15 +591,13 @@ Button visibility updates correctly within 100ms of mode change.
 **Problem:**
 Due date buttons stopped working after mode switch.
 
-**Solution:**
-```javascript
-// ✅ CRITICAL: Remove guard flag before re-attaching
-const dueDateButton = newButtonContainer.querySelector('.set-due-date');
-if (dueDateButton) {
-    delete dueDateButton.dataset.listenerAttached;
-}
-this.deps.setupDueDateButtonInteraction(newButtonContainer, dueDateInput);
-```
+**Solution (Oct 2026):**
+There is no per-button listener to re-attach any more. `dueDates.js` listens for
+clicks on `.set-due-date` (and on the task's due-date line) once, on the document,
+in the capture phase, and opens the due-date picker. A button container rebuilt by
+a mode switch works with no extra wiring. (The earlier fix deleted the button's
+`listenerAttached` flag and re-ran `setupDueDateButtonInteraction`; that function
+and its DI wiring are gone.)
 
 **Impact:**
 All button interactions work correctly after refresh.

@@ -79,6 +79,20 @@ export async function runMcycPayloadTests(resultsDiv) {
         }
     });
 
+    await test('dueTime is exported beside dueDate (an older reader keeps the plain date)', () => {
+        const cycle = makeCycle();
+        cycle.tasks[0].dueTime = '07:30';
+        const t = buildMcycPayload('my-cycle', cycle, { includeHistory: false }).tasks[0];
+        if (t.dueDate !== '2026-07-30') throw new Error(`dueDate must stay a plain date: ${t.dueDate}`);
+        if (t.dueTime !== '07:30') throw new Error(`dueTime lost: ${t.dueTime}`);
+        const undated = makeCycle();
+        undated.tasks[0].dueDate = null;
+        undated.tasks[0].dueTime = '07:30';
+        if (buildMcycPayload('my-cycle', undated, { includeHistory: false }).tasks[0].dueTime !== null) {
+            throw new Error('a time without a date must not be exported');
+        }
+    });
+
     await test('autoUncheckDaily survives (dropped by the old switcher copy)', () => {
         const payload = buildMcycPayload('my-cycle', makeCycle(), { includeHistory: true });
         if (payload.autoUncheckDaily?.time !== '04:00') throw new Error('autoUncheckDaily lost');

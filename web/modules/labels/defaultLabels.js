@@ -7,7 +7,7 @@
  * Every user-facing string in the app should be represented here.
  *
  * STRUCTURE:
- * - 31 category objects, each frozen
+ * - 32 category objects, each frozen
  * - Nouns use { one, other } for pluralization
  * - Everything else is a flat string
  * - Template variables use {varName} syntax
@@ -928,6 +928,9 @@ export const DEFAULT_LABELS = deepFreeze({
         // System notification posted at DUE_DATE_NOTIFY_HOUR on a due day
         // (dueDates.js syncDueDateNotifications); one per day, listing the tasks.
         dueDateNotificationTitle: { one: '1 task due today', other: '{count} tasks due today' },
+        // Same notification for a slot whose tasks all have a due time: it
+        // fires at that time, so "today" would undersell it.
+        dueDateNotificationTitleTimed: { one: '1 task due now', other: '{count} tasks due now' },
         dueDateNotificationLine:  '~ {name}',
 
         // Routine management notifications
@@ -1764,6 +1767,22 @@ export const DEFAULT_LABELS = deepFreeze({
         indicatorKeep:    'Kept when other tasks are removed'
     },
 
+    // The due-date line under a task and the picker it opens (dueDateUtils.js,
+    // dueDates.js). A task stores dueDate and, separately, an optional dueTime.
+    dueDate: {
+        today:           'Today',
+        tomorrow:        'Tomorrow',
+        yesterday:       'Yesterday',
+        withTime:        '{date} · {time}',
+        chipAria:        'Due {when}. Change due date',
+        chipAriaOverdue: 'Overdue, was due {when}. Change due date',
+        pickerTitle:     'Due date',
+        dateLabel:       'Date',
+        timeLabel:       'Time (optional)',
+        timeHint:        'Without a time, the due-day notification comes at {time}.',
+        clear:           'Clear'
+    },
+
     focusMode: {
         enter:          'Focus View',
         enterTitle:     'Hide distractions and focus on tasks',
@@ -2186,8 +2205,8 @@ export const DEFAULT_LABELS = deepFreeze({
         // showNotification, never the Notification API or the native series.
         dueDatesNoteSummary: 'How these differ from task reminders',
         dueDatesNote:    {
-            browser: 'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with Browser Notifications on, you also get one at 9:00 on the due day while miniCycle is open in a tab.',
-            app:     'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with System Notifications on, you also get one at 9:00 on the due day, even when the app is closed.'
+            browser: 'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with Browser Notifications on, you also get one at the task\'s due time (9:00 on the due day if it has none) while miniCycle is open in a tab.',
+            app:     'Due-date notices cover every task with a due date, no 🔔 needed, and setting a first due date switches them on. They do not follow the reminder schedule. You get a banner when miniCycle opens with overdue tasks and when you set a due date within three days; with System Notifications on, you also get one at the task\'s due time (9:00 on the due day if it has none), even when the app is closed.'
         },
 
         // "Next reminder" summary line in the reminders modal (renderNextReminderSummary).

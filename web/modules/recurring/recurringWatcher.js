@@ -277,6 +277,7 @@ function buildRecurringInstance(template) {
         text: template.text,
         completed: false,
         dueDate: template.dueDate,
+        dueTime: template.dueDate ? (template.dueTime || null) : null,
         ...priorityFields(template),
         remindersEnabled: template.remindersEnabled,
         recurring: true,

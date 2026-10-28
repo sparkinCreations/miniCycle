@@ -280,6 +280,7 @@ Every task in the `tasks` array uses this structure:
 | `completed` | boolean | **Yes** | `false` | Completion status |
 | `schemaVersion` | number | **Yes** | `2` | Task schema version |
 | `dueDate` | string\|null | No | `null` | ISO 8601 date string |
+| `dueTime` | string\|null | No | `null` | Due time of day, `"HH:MM"` 24-hour local time (e.g. `"15:30"`), only meaningful beside a `dueDate`. Written since Oct 2026, kept as its own key so `dueDate` stays a plain date: a reader that predates it ignores the key and treats the task as date-only (notification at 9:00, overdue from the next day). Malformed values, or a time with no date, import as `null`. Not in the immutable 2.6 schema file; the schema's open task object accepts it. |
 | `priority` | string\|null | No | `null` | Priority LEVEL: `"high"`, `"medium"`, `"low"` or `null`. The app shows it as the reader's theme colour for that level — no colour travels in the file. *(2.5 spelling, still accepted: `highPriority` + `priorityColor`; a swatch colour of any theme names its level, any other hex its colour family; ignored when `priority` is present.)* |
 | `remindersEnabled` | boolean | No | `false` | Enable reminders for this task |
 | `recurring` | boolean | No | `false` | Is this a recurring task? |

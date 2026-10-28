@@ -1568,9 +1568,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         syncRecurringStateToDOM: (...args) => deps.task?.syncRecurringStateToDOM?.(...args),
         toggleHoverTaskOptions: (...args) => deps.task?.toggleHoverTaskOptions?.(...args),
 
-        // ─── Feature modules ───
-        setupDueDateButtonInteraction: (...args) => deps.features?.dueDates?.setupDueDateButtonInteraction?.(...args),
-
         // ─── Storage / backup ───
         // Returns the backupManager INSTANCE (matches statsPanelManager / completedTasksManager pattern)
         BackupManager: () => deps.storage?.backupManager,

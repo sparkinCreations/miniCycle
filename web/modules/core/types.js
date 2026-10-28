@@ -22,6 +22,7 @@
  * @property {boolean} completed - Whether task is checked/complete
  * @property {('high'|'medium'|'low'|null)} [priority=null] - Priority LEVEL; the colour on screen is the active theme's swatch for it (utils/priorityLevel.js). No colour is stored.
  * @property {string|null} [dueDate=null] - Due date in ISO format or null
+ * @property {string|null} [dueTime=null] - Due time "HH:MM" (24-hour, local), only beside a dueDate; absent in data written before Oct 2026
  * @property {boolean} [remindersEnabled=false] - Whether reminders are enabled
  * @property {boolean} [recurring=false] - Whether this is a recurring task
  * @property {RecurringSettings|Object} [recurringSettings={}] - Recurrence configuration

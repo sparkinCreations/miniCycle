@@ -61,7 +61,10 @@ export function compareTasksBySort(sort, a, b, direction = SORT_DIRECTION.ASC) {
         case TASK_SORT.DUE_DATE: {
             const emptyA = !a?.dueDate, emptyB = !b?.dueDate;
             if (emptyA !== emptyB) return emptyA ? 1 : -1;
-            return flip * String(a.dueDate).localeCompare(String(b.dueDate));
+            // Same day: timed tasks in time order, then the untimed ones
+            // ("24:00" sorts after every real "HH:MM").
+            const key = t => `${t.dueDate}T${t.dueTime || '24:00'}`;
+            return flip * key(a).localeCompare(key(b));
         }
         default:
             return 0;

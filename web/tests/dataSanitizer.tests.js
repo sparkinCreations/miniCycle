@@ -71,6 +71,29 @@ export async function runDataSanitizerTests(resultsDiv) {
         if (ct.totalCleared !== 2) throw new Error(`totalCleared should be repaired, got ${ct.totalCleared}`);
     });
 
+    await test('dueTime: a valid "HH:MM" beside a date survives; junk, or a time with no date, becomes null', () => {
+        const data = {
+            schemaVersion: '2.6',
+            data: { routine: { c1: {
+                title: 'C1', tasks: [
+                    { id: 'a', text: 'ok', dueDate: '2026-11-02', dueTime: '14:45' },
+                    { id: 'b', text: 'junk', dueDate: '2026-11-02', dueTime: '<img src=x>' },
+                    { id: 'c', text: 'orphan', dueDate: null, dueTime: '09:00' },
+                    { id: 'd', text: 'old build', dueDate: '2026-11-02' }
+                ],
+                recurringTemplates: { a: { id: 'a', text: 'ok', dueDate: '2026-11-02', dueTime: '25:00' } }
+            } } }
+        };
+        const result = sanitizeImportedData({ schemaVersion: '2.6', miniCycleData: JSON.stringify(data) });
+        const routine = JSON.parse(result.miniCycleData).data.routine.c1;
+        const [a, b, c, d] = routine.tasks;
+        if (a.dueTime !== '14:45') throw new Error(`valid time lost: ${a.dueTime}`);
+        if (b.dueTime !== null) throw new Error(`junk time kept: ${b.dueTime}`);
+        if (c.dueTime !== null) throw new Error(`a time with no date kept: ${c.dueTime}`);
+        if ('dueTime' in d) throw new Error('a task written by an older build must not gain the key');
+        if (routine.recurringTemplates.a.dueTime !== null) throw new Error('template time not validated');
+    });
+
     await test('sanitizeText returns clean text unchanged', () => {
         const result = sanitizeText('Buy groceries');
         if (result !== 'Buy groceries') throw new Error(`Expected "Buy groceries", got "${result}"`);

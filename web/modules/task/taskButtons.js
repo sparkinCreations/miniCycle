@@ -374,8 +374,8 @@ export class TaskButtons {
             button.classList.toggle(DOM_CLASSES.DELETE_WHEN_COMPLETE_ACTIVE, isActive);
             button.setAttribute("aria-pressed", isActive.toString());
         } else if (btnClass === "set-due-date") {
-            // Due date button shows/hides an input — use aria-expanded
-            button.setAttribute("aria-expanded", "false");
+            // Due date button opens the due-date picker dialog (dueDates.js)
+            button.setAttribute("aria-haspopup", "dialog");
         } else if (["recurring-btn", "priority-btn"].includes(btnClass)) {
             let isActive;
 

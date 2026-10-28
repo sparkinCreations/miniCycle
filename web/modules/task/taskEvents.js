@@ -42,13 +42,12 @@ const di = createDIModule('TaskEvents', {
     showTaskOptions: optional(null),
     hideTaskOptions: optional(null),
     TaskOptionsVisibilityController: optional(null),
-    setupDueDateButtonInteraction: optional(null),
     attachKeyboardTaskOptionToggle: optional(null),
     AppMeta: optional(null)
 });
 
 // Late-binding deps via Proxy
-/** @type {{AppState: Object|null, taskCore: Object|null, showNotification: Function|null, autoSave: Function|null, showTaskOptions: Function|null, hideTaskOptions: Function|null, TaskOptionsVisibilityController: Object|null, setupDueDateButtonInteraction: Function|null, attachKeyboardTaskOptionToggle: Function|null, AppMeta: Object|null}} */
+/** @type {{AppState: Object|null, taskCore: Object|null, showNotification: Function|null, autoSave: Function|null, showTaskOptions: Function|null, hideTaskOptions: Function|null, TaskOptionsVisibilityController: Object|null, attachKeyboardTaskOptionToggle: Function|null, AppMeta: Object|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -115,7 +114,6 @@ export class TaskEvents {
             showTaskOptions: this._constructorDeps.showTaskOptions || _deps.showTaskOptions,
             hideTaskOptions: this._constructorDeps.hideTaskOptions || _deps.hideTaskOptions,
             TaskOptionsVisibilityController: this._constructorDeps.TaskOptionsVisibilityController || _deps.TaskOptionsVisibilityController,
-            setupDueDateButtonInteraction: _deps.setupDueDateButtonInteraction,
             attachKeyboardTaskOptionToggle: this._constructorDeps.attachKeyboardTaskOptionToggle || _deps.attachKeyboardTaskOptionToggle,
 
             // DOM helpers (from constructor)
@@ -136,7 +134,6 @@ export class TaskEvents {
             // Get task elements (✅ checkbox has no class, use type selector)
             const checkbox = taskItem.querySelector(DOM_SELECTORS.TASK_CHECKBOX);
             const buttonContainer = taskItem.querySelector(DOM_SELECTORS.TASK_OPTIONS);
-            const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
 
             // ✅ Early return if checkbox not found (incomplete task structure)
             if (!checkbox) {
@@ -148,12 +145,12 @@ export class TaskEvents {
             // any button anywhere inside the task (three-dots, option buttons, icon children),
             // the three-dots button by class (belt-and-suspenders for the button check above),
             // anything inside the task-options container (catches non-button descendants too),
-            // the due date input, or the inline edit input (cursor repositioning).
+            // the due-date line (a button, caught above), or the inline edit input
+            // (cursor repositioning).
             if (event.target === checkbox) return;
             if (event.target.closest('button')) return;
             if (event.target.closest(DOM_SELECTORS.THREE_DOTS_BTN)) return;
             if (buttonContainer?.contains(event.target)) return;
-            if (event.target === dueDateInput) return;
             if (event.target.closest(DOM_SELECTORS.TASK_EDIT_INPUT)) return;
 
             // Toggle completion by delegating to the checkbox's own change
@@ -305,19 +302,10 @@ export class TaskEvents {
             }
             shouldSave = false;
         } else if (button.classList.contains(DOM_CLASSES.SET_DUE_DATE)) {
-            // Toggle due date input visibility
-            const dueDateInput = taskItem.querySelector(DOM_SELECTORS.DUE_DATE);
-            if (dueDateInput) {
-                const isHidden = dueDateInput.classList.contains(DOM_CLASSES.HIDDEN);
-                dueDateInput.classList.toggle(DOM_CLASSES.HIDDEN, !isHidden);
-                button.setAttribute("aria-expanded", isHidden.toString());
-                if (isHidden) {
-                    // Focus the input when showing
-                    dueDateInput.focus();
-                }
-            } else {
-                console.warn('⚠️ Due date input not found for task');
-            }
+            // Nothing here: dueDates.js opens the due-date picker for this
+            // button (and the due-date line) from one document listener. Until
+            // Oct 2026 this branch toggled an inline date input, which could
+            // hide a date that was still set.
             shouldSave = false;
         }
 
@@ -455,7 +443,7 @@ export class TaskEvents {
      * @returns {void}
      */
     setupTaskInteractions(taskElements, taskContext) {
-        const { taskItem, buttonContainer, checkbox, dueDateInput } = taskElements;
+        const { taskItem, buttonContainer } = taskElements;
         const { settings } = taskContext;
 
         // ✅ MEMORY LEAK FIX: Task click is now handled by event delegation
@@ -471,10 +459,8 @@ export class TaskEvents {
         // Setup focus interactions
         this.setupTaskFocusInteractions(taskItem);
 
-        // Setup due date button interaction (DI-pure)
-        if (typeof this.deps.setupDueDateButtonInteraction === 'function') {
-            this.deps.setupDueDateButtonInteraction(buttonContainer, dueDateInput);
-        }
+        // The due-date button needs no per-row setup: dueDates.js listens for
+        // it (and the due-date line) once, on the document.
     }
 
     /**

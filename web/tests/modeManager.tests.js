@@ -100,7 +100,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
                 container.className = 'task-options';
                 return container;
             },
-            setupDueDateButtonInteraction: () => {},
             checkCompleteAllButton: () => {},
             showNotification: () => {},
             helpWindowManager: () => ({ showModeDescription: () => {} }),
@@ -185,7 +184,6 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         const expectedDeps = [
             'AppState',
             'createTaskButtonContainer',
-            'setupDueDateButtonInteraction',
             'checkCompleteAllButton',
             'showNotification',
             'helpWindowManager',
