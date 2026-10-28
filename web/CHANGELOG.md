@@ -1,3 +1,7 @@
+## [2.649] - 2026-10-28
+- site(product): five gold stars on Isaiah's testimonial card, labelled for screen readers
+
+
 ## [2.648] - 2026-10-28
 - docs(chrome): flag the backup bullet for rewording on the next store upload
 - site(product): the October backup entry is about visible, restorable backups, not automatic backups (those date to 1.66x)
