@@ -54,6 +54,24 @@ The SW maintains two caches:
 
 Both are versioned. When a new SW activates, it creates fresh caches and **keeps the most recent old pair** as a fallback (all older pairs are deleted).
 
+### The Games Cache (Oct 2026)
+
+A third, optional cache, `miniCycle-games-v<N>`, holds the unlocked mini-game
+(Whack-a-Order: its page and two scripts) so it opens offline. It is **never filled
+on its own**: `gamesManager` posts `CACHE_UNLOCKED_GAMES` to the worker once the
+`task-order-game` feature is unlocked (it watches state, so every unlock path counts),
+and the worker fetches the files into it. `/games/…` requests are network-first and
+fall back to this cache only, never the general caches, so a locked game still gets the
+app shell offline. Like the others it is versioned; activation keeps the previous
+release's copy, because `gamesManager` loads only when the menu is first opened and
+until then an offline open needs the old files.
+
+Why it exists: the app links to `games/miniCycle-taskOrder.html`, which Netlify answers
+with a 301 to `/games/minicycle-taskorder`. The navigation cache only ever held the
+redirect target, so the game never opened offline, even after visits.
+`cacheUnlockedGames()` stores the page body under both URLs. Covered by Test 5 of
+`npm run test:sw`.
+
 ### Cache Key Normalization
 
 All `?v=` query parameters are **stripped** before cache operations:

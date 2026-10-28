@@ -513,6 +513,68 @@ export async function runGamesManagerTests(resultsDiv) {
         document.body.removeChild(mockElement);
     });
 
+    // ===== OFFLINE CACHING (only once unlocked) =====
+
+    /** Swap navigator.serviceWorker for a recorder for the length of fn. */
+    async function withFakeServiceWorker(fn) {
+        const posted = [];
+        const fake = { ready: Promise.resolve({ active: { postMessage: (msg) => posted.push(msg) } }) };
+        Object.defineProperty(navigator, 'serviceWorker', { value: fake, configurable: true });
+        try {
+            await fn(posted);
+        } finally {
+            delete navigator.serviceWorker; // back to the prototype getter
+        }
+    }
+
+    await test('locked: never asks the service worker to cache the game', async () => {
+        await withFakeServiceWorker(async (posted) => {
+            setGamesManagerDependencies(createMockDeps());
+            const gm = new GamesManager();
+            gm.checkGamesUnlock();
+            await Promise.resolve();
+            await Promise.resolve();
+            if (posted.length !== 0) throw new Error(`a locked game was cached: ${JSON.stringify(posted)}`);
+        });
+    });
+
+    await test('unlocked: asks the service worker once to cache the game for offline', async () => {
+        await withFakeServiceWorker(async (posted) => {
+            const deps = createMockDeps();
+            deps.AppState.get().settings.unlockedFeatures.push('task-order-game');
+            setGamesManagerDependencies(deps);
+            const gm = new GamesManager();
+            gm.checkGamesUnlock();
+            gm.checkGamesUnlock();
+            await new Promise(r => setTimeout(r, 0));
+            if (posted.length !== 1 || posted[0].type !== 'CACHE_UNLOCKED_GAMES') {
+                throw new Error(`expected one CACHE_UNLOCKED_GAMES, got ${JSON.stringify(posted)}`);
+            }
+        });
+    });
+
+    await test('an unlock that happens later (any module) is picked up from state', async () => {
+        await withFakeServiceWorker(async (posted) => {
+            const listeners = {};
+            const deps = createMockDeps();
+            deps.AppState.subscribe = (key, fn) => { listeners[key] = fn; };
+            deps.AppState.unsubscribe = (key) => { delete listeners[key]; return true; };
+            setGamesManagerDependencies(deps);
+            const gm = new GamesManager();
+            gm._subscribeOfflineGames();
+            const state = deps.AppState.get();
+            Object.values(listeners).forEach(fn => fn(state));
+            await new Promise(r => setTimeout(r, 0));
+            if (posted.length !== 0) throw new Error('cached before the unlock');
+            state.settings.unlockedFeatures.push('task-order-game');
+            Object.values(listeners).forEach(fn => fn(state));
+            await new Promise(r => setTimeout(r, 0));
+            if (posted.length !== 1) throw new Error(`the later unlock was not picked up: ${JSON.stringify(posted)}`);
+            if (Object.keys(listeners).length !== 0) throw new Error('the subscription should end once the request is sent');
+            gm.destroy();
+        });
+    });
+
     // ===== SUMMARY =====
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

@@ -195,7 +195,9 @@
       font-weight: 600;
       cursor: pointer;
       user-select: none;
-      transition: all 0.15s ease;
+      /* NOT `all`: the game moves these by left/top every frame, and easing
+         those over 150ms left each button trailing where the game had put it. */
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
       box-shadow: 0 2px 8px var(--game-btn-shadow);
       white-space: nowrap;
       max-width: 200px;
@@ -389,9 +391,9 @@
 
     <!-- Difficulty Selector -->
     <div class="difficulty-selector">
-      <button class="difficulty-btn active" data-difficulty="easy">Easy</button>
-      <button class="difficulty-btn" data-difficulty="normal">Normal</button>
-      <button class="difficulty-btn" data-difficulty="hard">Hard</button>
+      <button class="difficulty-btn active" data-difficulty="easy" aria-pressed="true">Easy</button>
+      <button class="difficulty-btn" data-difficulty="normal" aria-pressed="false">Normal</button>
+      <button class="difficulty-btn" data-difficulty="hard" aria-pressed="false">Hard</button>
     </div>
 
     <div id="instructions">

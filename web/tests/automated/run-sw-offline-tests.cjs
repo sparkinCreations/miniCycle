@@ -340,8 +340,79 @@ async function run() {
         failures.push(`mid-session takeover run error: ${e.message}`);
     } finally {
         await ctx2.close();
-        await browser.close();
         if (srv2) await srv2.close();
+    }
+
+    // ── Test 5: Whack-a-Order offline — only once it is unlocked ─────────────
+    // The game is network-first and is cached ONLY when the page sends
+    // CACHE_UNLOCKED_GAMES (gamesManager does, once the game is unlocked). So
+    // offline a locked game gets the app shell, and an unlocked one opens and
+    // plays. Before Oct 2026 it never opened offline at all.
+    console.log(`\n${colors.cyan}▸ Whack-a-Order offline: locked → app shell, unlocked → the game${colors.reset}`);
+    let srv3;
+    const ctx3 = await browser.newContext();
+    try {
+        // Not PORT + 2: that is 8080, the dev server's port (npm start).
+        const port3 = PORT - 3;
+        srv3 = await startStaticServer(WEB_ROOT, port3);
+        const base3 = srv3.url;
+        const p3 = await ctx3.newPage();
+        const gameUrl = `${base3}/games/miniCycle-taskOrder.html`;
+        const openApp = async () => {
+            await p3.goto(`${base3}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+            await p3.waitForFunction(() => navigator.serviceWorker.controller !== null && document.documentElement.dataset.appLoaded === 'true', null, { timeout: 30000 });
+        };
+        await p3.goto(`${base3}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await p3.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 30000 });
+        await p3.evaluate(() => navigator.serviceWorker.ready);
+        await p3.waitForFunction(async () => { for (const n of await caches.keys()) { const c = await caches.open(n); if (await c.match('/modules/core/constants.js') || await c.match('./modules/core/constants.js')) return true; } return false; }, null, { timeout: 30000 });
+        await openApp();
+        // Visit the game online once while locked: no visit may cache it.
+        await p3.goto(gameUrl, { waitUntil: 'load', timeout: 20000 });
+        const isGame = () => p3.evaluate(() => !!document.querySelector('#taskWindow') && document.querySelectorAll('#taskWindow .task-btn').length > 0);
+        const onlineGame = await isGame();
+        record('fixture: the game opens online', onlineGame, onlineGame ? '' : 'no task buttons online');
+
+        // Offline = the server is DOWN (as in Test 3): context.setOffline does
+        // not reach the worker's own fetches, so with it the worker still got
+        // the game from the network. Each check starts on the app, so a failed
+        // navigation cannot leave a previously loaded game on screen.
+        const openGameWithServerDown = async () => {
+            await openApp();
+            await srv3.close();
+            srv3 = null;
+            await new Promise(r => setTimeout(r, 600));
+            await p3.goto(gameUrl, { waitUntil: 'load', timeout: 25000 }).catch(() => {});
+            const opened = await isGame().catch(() => false);
+            srv3 = await startStaticServer(WEB_ROOT, port3);
+            return opened;
+        };
+
+        const lockedOffline = await openGameWithServerDown();
+        record('locked: the game does NOT open offline (nothing cached it)', !lockedOffline, lockedOffline ? 'the game opened offline while locked' : '(app shell instead)');
+
+        // Unlock: the message gamesManager sends once the game is unlocked.
+        await openApp();
+        await p3.evaluate(() => navigator.serviceWorker.controller.postMessage({ type: 'CACHE_UNLOCKED_GAMES' }));
+        let cachedFiles = 0;
+        for (let i = 0; i < 75 && cachedFiles < 3; i++) {
+            cachedFiles = await p3.evaluate(async () => {
+                const name = (await caches.keys()).find(k => k.indexOf('miniCycle-games-') === 0);
+                return name ? (await (await caches.open(name)).keys()).length : 0;
+            }).catch(() => 0);
+            if (cachedFiles < 3) await p3.waitForTimeout(200);
+        }
+        record('unlocked: the game files are cached', cachedFiles >= 3, `${cachedFiles} file(s) in the games cache`);
+
+        const unlockedOffline = await openGameWithServerDown();
+        record('unlocked: the game opens and deals its buttons offline', unlockedOffline, unlockedOffline ? '' : 'no game offline after the unlock message');
+    } catch (e) {
+        console.error(`\n${colors.red}❌ Test 5 errored: ${e.message}${colors.reset}`);
+        failures.push(`offline game run error: ${e.message}`);
+    } finally {
+        await ctx3.close();
+        await browser.close();
+        if (srv3) await srv3.close();
     }
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);

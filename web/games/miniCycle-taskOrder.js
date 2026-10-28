@@ -33,9 +33,17 @@
     /***** Game Constants *****/
     // Self-contained page — local constants by design (core/constants.js is the
     // app-side home; games are outside the DI system).
-    var BTN_CLEARANCE_X   = 140;  // spawn margin ≈ widest task button, keeps buttons fully inside the window
-    var BTN_CLEARANCE_Y   = 50;   // spawn margin ≈ button height
     var TASK_LABEL_MAX    = 22;   // chars before truncation
+    var SPAWN_ATTEMPTS    = 40;   // random spots tried per button before accepting an overlap
+    var SPAWN_GAP         = 6;    // px kept between spawned buttons
+    var MAX_FRAME_DT      = 0.05; // s — a longer frame (tab hidden, stall) moves as if it were this long
+
+    // The app's document (read only) and this game's own bests. The bests have
+    // their own key: until Oct 2026 the game rewrote the whole miniCycleData to
+    // save them, which could overwrite newer changes from the app open in
+    // another tab. Mirrored in core/constants.js STORAGE_KEYS.TASK_ORDER_GAME_STATS.
+    var APP_DATA_KEY      = 'miniCycleData';
+    var STATS_KEY         = 'miniCycleTaskOrderStats';
 
     var PARTICLE_COUNT    = 12;
     var PARTICLE_MIN_DIST = 50;   // px — burst radius = MIN + random * SPREAD
@@ -92,80 +100,99 @@
 
     var currentDifficulty = 'easy';
 
-    /***** Schema 2.5 Integration *****/
-    function getSchema25Data() {
+    /***** App data (read only) *****/
+    function readJson(key) {
         try {
-            var rawData = localStorage.getItem("miniCycleData");
-            if (!rawData) return null;
-            var schemaData = JSON.parse(rawData);
-            if (!schemaData || schemaData.schemaVersion !== "2.5") return null;
-            return schemaData;
+            var raw = localStorage.getItem(key);
+            var parsed = raw ? JSON.parse(raw) : null;
+            return parsed && typeof parsed === 'object' ? parsed : null;
         } catch (error) {
-            console.error('Error reading Schema 2.5 data:', error);
+            console.error('Error reading ' + key + ':', error);
             return null;
         }
     }
 
-    function saveGameStatsToSchema25(difficulty, round, time) {
+    /**
+     * The active routine's task names. Reads format 2.6 (data.routine,
+     * appState.activeRoutineId) and still 2.5 (data.cycles, activeCycleId).
+     * Until Oct 2026 this accepted ONLY a document marked "2.5", so after the
+     * 2.6 migration (Sep 2026) every player got the built-in placeholder tasks.
+     */
+    function getTaskNames() {
+        var appData = readJson(APP_DATA_KEY);
+        if (!appData) return [];
+        var data = appData.data || {};
+        var appState = appData.appState || {};
+        var routines = data.routine || data.cycles;
+        var activeId = appState.activeRoutineId || appState.activeCycleId;
+        var routine = routines && activeId ? routines[activeId] : null;
+        if (!routine || !Array.isArray(routine.tasks)) return [];
+
+        return routine.tasks
+            .map(function (task) { return task && task.text; })
+            .filter(function (text) { return typeof text === 'string' && text.trim() !== ''; });
+    }
+
+    /***** Bests (own key) *****/
+    function emptyStats() {
+        return { bestRound: 0, bestTime: null, gamesPlayed: 0 };
+    }
+
+    /** A stored best time in ms, or null. JSON turned the old Infinity into null. */
+    function validTime(time) {
+        return typeof time === 'number' && isFinite(time) && time > 0 ? time : null;
+    }
+
+    function normalizeStats(stats) {
+        var out = emptyStats();
+        if (!stats || typeof stats !== 'object') return out;
+        out.bestRound = typeof stats.bestRound === 'number' && stats.bestRound > 0 ? stats.bestRound : 0;
+        out.bestTime = validTime(stats.bestTime);
+        out.gamesPlayed = typeof stats.gamesPlayed === 'number' && stats.gamesPlayed > 0 ? stats.gamesPlayed : 0;
+        if (typeof stats.lastPlayed === 'number') out.lastPlayed = stats.lastPlayed;
+        return out;
+    }
+
+    /**
+     * All difficulties' bests. First read after Oct 2026: carry over what the
+     * old version kept in the app document (settings.gameStats.taskOrderGame,
+     * written only while data was 2.5).
+     */
+    function loadAllStats() {
+        var stored = readJson(STATS_KEY);
+        if (stored) return stored;
+        var appData = readJson(APP_DATA_KEY);
+        var legacy = appData && appData.settings && appData.settings.gameStats &&
+            appData.settings.gameStats.taskOrderGame;
+        return legacy && typeof legacy === 'object' ? legacy : {};
+    }
+
+    function loadGameStats(difficulty) {
+        return normalizeStats(loadAllStats()[difficulty]);
+    }
+
+    /**
+     * Record one finished game. The best round counts any game; the best time
+     * only a WON game (all rounds cleared), or losing quickly would set a
+     * "best" time.
+     * @returns {{saved: boolean, isNewBest: boolean}}
+     */
+    function saveGameStats(difficulty, roundReached, elapsedMs, won) {
         try {
-            var schemaData = getSchema25Data();
-            if (!schemaData) return { saved: false };
-
-            if (!schemaData.settings) schemaData.settings = {};
-            if (!schemaData.settings.gameStats) {
-                schemaData.settings.gameStats = { taskOrderGame: {} };
-            }
-            if (!schemaData.settings.gameStats.taskOrderGame) {
-                schemaData.settings.gameStats.taskOrderGame = {};
-            }
-            if (!schemaData.settings.gameStats.taskOrderGame[difficulty]) {
-                schemaData.settings.gameStats.taskOrderGame[difficulty] = {
-                    bestRound: 0, bestTime: Infinity, gamesPlayed: 0
-                };
-            }
-
-            var stats = schemaData.settings.gameStats.taskOrderGame[difficulty];
+            var all = loadAllStats();
+            var stats = normalizeStats(all[difficulty]);
             var isNewBest = false;
-            if (round > stats.bestRound) { stats.bestRound = round; isNewBest = true; }
-            if (time < stats.bestTime) { stats.bestTime = time; isNewBest = true; }
-            stats.gamesPlayed = (stats.gamesPlayed || 0) + 1;
+            if (roundReached > stats.bestRound) { stats.bestRound = roundReached; isNewBest = true; }
+            if (won && (stats.bestTime === null || elapsedMs < stats.bestTime)) { stats.bestTime = elapsedMs; isNewBest = true; }
+            stats.gamesPlayed += 1;
             stats.lastPlayed = Date.now();
-
-            localStorage.setItem("miniCycleData", JSON.stringify(schemaData));
+            all[difficulty] = stats;
+            localStorage.setItem(STATS_KEY, JSON.stringify(all));
             return { saved: true, isNewBest: isNewBest };
         } catch (error) {
             console.error('Error saving game stats:', error);
-            return { saved: false };
+            return { saved: false, isNewBest: false };
         }
-    }
-
-    function loadGameStatsFromSchema25(difficulty) {
-        try {
-            var schemaData = getSchema25Data();
-            if (!schemaData || !schemaData.settings || !schemaData.settings.gameStats || !schemaData.settings.gameStats.taskOrderGame) {
-                return { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
-            }
-            return schemaData.settings.gameStats.taskOrderGame[difficulty] ||
-                   { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
-        } catch (error) {
-            return { bestRound: 0, bestTime: Infinity, gamesPlayed: 0 };
-        }
-    }
-
-    /***** Game Setup *****/
-    function getTaskNames() {
-        var schemaData = getSchema25Data();
-        if (!schemaData) return [];
-
-        var activeCycleId = schemaData.appState && schemaData.appState.activeCycleId;
-        if (!activeCycleId) return [];
-
-        var currentCycle = schemaData.data && schemaData.data.cycles && schemaData.data.cycles[activeCycleId];
-        if (!currentCycle || !Array.isArray(currentCycle.tasks)) return [];
-
-        return currentCycle.tasks
-            .map(function (task) { return task.text; })
-            .filter(function (text) { return text && text.trim() !== ""; });
     }
 
     var tasks = getTaskNames();
@@ -195,6 +222,7 @@
     var currentTasks = [];
     var movementAnimationFrame = null;
     var lastTimestamp = null;
+    var nextRoundTimer = null;
 
     /***** Timer *****/
     function startTimer() {
@@ -218,16 +246,25 @@
     }
 
     /***** Difficulty Selection *****/
+    // Picking a difficulty always starts a fresh game at it. Speeds are set when
+    // a round's buttons are made, so until Oct 2026 a change during round 1 only
+    // relabelled the game (Easy speeds, recorded under Hard), and after a loss
+    // past round 1 the buttons did nothing at all.
     difficultyButtons.forEach(function (btn) {
         btn.addEventListener('click', function () {
-            if (!gameActive && round > 1) return;
+            var picked = this.dataset.difficulty;
+            if (!DIFFICULTY_SETTINGS[picked]) return;
+            var changed = picked !== currentDifficulty;
 
-            difficultyButtons.forEach(function (b) { b.classList.remove('active'); });
-            this.classList.add('active');
-            currentDifficulty = this.dataset.difficulty;
+            difficultyButtons.forEach(function (b) {
+                var on = b === btn;
+                b.classList.toggle('active', on);
+                b.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+            currentDifficulty = picked;
             updateLeaderboardDisplay();
 
-            if (round > 1) restartGame();
+            if (changed || !gameActive) restartGame();
         });
     });
 
@@ -254,21 +291,21 @@
     }
 
     /***** Leaderboard Functions *****/
-    function updateLeaderboard(currentRound, elapsedTime) {
-        var result = saveGameStatsToSchema25(currentDifficulty, currentRound, elapsedTime);
+    function updateLeaderboard(currentRound, elapsedTime, won) {
+        var result = saveGameStats(currentDifficulty, currentRound, elapsedTime, won);
         updateLeaderboardDisplay();
         return result;
     }
 
     function updateLeaderboardDisplay() {
-        var stats = loadGameStatsFromSchema25(currentDifficulty);
+        var stats = loadGameStats(currentDifficulty);
         var difficultyLabel = DIFFICULTY_SETTINGS[currentDifficulty].label;
 
         lbTitleEl.textContent = LABELS.yourBest.replace('{difficulty}', difficultyLabel);
         bestRoundEl.textContent = stats.bestRound;
-        bestTimeEl.textContent = stats.bestTime === Infinity ? LABELS.noTime :
+        bestTimeEl.textContent = stats.bestTime === null ? LABELS.noTime :
             Math.floor(stats.bestTime / 1000) + 's';
-        gamesPlayedEl.textContent = stats.gamesPlayed || 0;
+        gamesPlayedEl.textContent = stats.gamesPlayed;
     }
 
     /***** Game Functions *****/
@@ -280,9 +317,7 @@
         feedbackEl.textContent = "";
         feedbackEl.className = "feedback";
         expectedOrder = 1;
-        scoreboardEl.textContent = LABELS.scoreboard
-            .replace('{round}', round)
-            .replace('{score}', score);
+        updateScoreboard();
 
         var roundTasks = shuffleArray(tasks);
         if (roundTasks.length > 10) {
@@ -298,15 +333,17 @@
         startMovement();
     }
 
+    function updateScoreboard() {
+        scoreboardEl.textContent = LABELS.scoreboard
+            .replace('{round}', round)
+            .replace('{score}', score);
+    }
+
     function createMovingTaskButton(taskObj) {
         var btn = document.createElement("button");
         btn.className = "task-btn";
         btn.textContent = taskObj.order + '. ' + cleanTaskName(taskObj.text);
         btn.dataset.order = taskObj.order;
-
-        var pos = getRandomPosition();
-        btn.style.left = pos.x + "px";
-        btn.style.top = pos.y + "px";
 
         var settings = DIFFICULTY_SETTINGS[currentDifficulty];
         var speedMultiplier = settings.baseSpeed + (round - 1) * settings.speedIncrease;
@@ -337,10 +374,11 @@
 
                     if (round >= diffSettings.maxRounds) {
                         score++;
+                        updateScoreboard();
                         stopMovement();
                         stopTimer();
                         var elapsedTime = Date.now() - gameStartTime;
-                        var result = updateLeaderboard(round, elapsedTime);
+                        var result = updateLeaderboard(round, elapsedTime, true);
                         feedbackEl.textContent = LABELS.winner.replace('{time}', Math.floor(elapsedTime / 1000));
                         feedbackEl.className = "feedback success";
                         if (result.isNewBest) showNewBest();
@@ -354,13 +392,16 @@
                     feedbackEl.className = "feedback success";
                     stopMovement();
                     round++;
-                    setTimeout(startRound, NEXT_ROUND_DELAY_MS);
+                    nextRoundTimer = setTimeout(function () {
+                        nextRoundTimer = null;
+                        startRound();
+                    }, NEXT_ROUND_DELAY_MS);
                 }
             } else {
                 stopMovement();
                 stopTimer();
                 var elapsedTime2 = Date.now() - gameStartTime;
-                var result2 = updateLeaderboard(round, elapsedTime2);
+                var result2 = updateLeaderboard(round, elapsedTime2, false);
                 feedbackEl.textContent = LABELS.wrongOrder;
                 feedbackEl.className = "feedback error";
                 if (result2.isNewBest) {
@@ -378,7 +419,14 @@
             }
         });
 
+        // Measured in place, then put somewhere it does not cover a button
+        // already out (overlapping spawns hid each other's numbers).
+        btn.style.visibility = 'hidden';
         taskWindow.appendChild(btn);
+        var pos = getSpawnPosition(btn.offsetWidth, btn.offsetHeight);
+        btn.style.left = pos.x + "px";
+        btn.style.top = pos.y + "px";
+        btn.style.visibility = '';
     }
 
     function showNewBest() {
@@ -386,14 +434,29 @@
         feedbackEl.className = "feedback new-best";
     }
 
-    function getRandomPosition() {
-        var rect = taskWindow.getBoundingClientRect();
-        var maxX = rect.width - BTN_CLEARANCE_X;
-        var maxY = rect.height - BTN_CLEARANCE_Y;
-        return {
-            x: Math.max(0, Math.floor(Math.random() * maxX)),
-            y: Math.max(0, Math.floor(Math.random() * maxY))
-        };
+    /**
+     * A random spot inside the field for a w×h button that overlaps no button
+     * already placed, when one can be found in SPAWN_ATTEMPTS tries (a crowded
+     * small field may have none; the last try is used then).
+     */
+    function getSpawnPosition(w, h) {
+        var maxX = Math.max(0, taskWindow.clientWidth - w);
+        var maxY = Math.max(0, taskWindow.clientHeight - h);
+        var placed = [];
+        document.querySelectorAll('#taskWindow .task-btn').forEach(function (other) {
+            if (other.style.visibility === 'hidden') return;
+            placed.push({ x: parseFloat(other.style.left), y: parseFloat(other.style.top), w: other.offsetWidth, h: other.offsetHeight });
+        });
+        var pos = { x: 0, y: 0 };
+        for (var attempt = 0; attempt < SPAWN_ATTEMPTS; attempt++) {
+            pos = { x: Math.floor(Math.random() * (maxX + 1)), y: Math.floor(Math.random() * (maxY + 1)) };
+            var clear = placed.every(function (o) {
+                return pos.x + w + SPAWN_GAP <= o.x || o.x + o.w + SPAWN_GAP <= pos.x ||
+                       pos.y + h + SPAWN_GAP <= o.y || o.y + o.h + SPAWN_GAP <= pos.y;
+            });
+            if (clear) break;
+        }
+        return pos;
     }
 
     function shuffleArray(arr) {
@@ -415,7 +478,9 @@
     /***** Smooth Movement using requestAnimationFrame *****/
     function animateButtons(timestamp) {
         if (!lastTimestamp) lastTimestamp = timestamp;
-        var dt = (timestamp - lastTimestamp) / 1000;
+        // Capped: after the tab was hidden, rAF resumes with a gap of seconds,
+        // and moving by all of it threw every button against a wall at once.
+        var dt = Math.min((timestamp - lastTimestamp) / 1000, MAX_FRAME_DT);
         lastTimestamp = timestamp;
 
         var rect = taskWindow.getBoundingClientRect();
@@ -456,6 +521,12 @@
 
     /***** Restart Game Handler *****/
     function restartGame() {
+        // A round that was about to start would otherwise start on top of this
+        // game (and reset its timer).
+        if (nextRoundTimer) {
+            clearTimeout(nextRoundTimer);
+            nextRoundTimer = null;
+        }
         gameActive = true;
         round = 1;
         score = 0;

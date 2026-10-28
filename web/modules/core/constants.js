@@ -710,6 +710,10 @@ export const STORAGE_KEYS = Object.freeze({
     FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
+    // Whack-a-Order bests, per difficulty. Written by the self-contained game
+    // page (games/miniCycle-taskOrder.js, which spells the literal itself), kept
+    // apart from DATA so the game never rewrites the app's document (Oct 2026).
+    TASK_ORDER_GAME_STATS: 'miniCycleTaskOrderStats',
     TIME_TRACKER: 'timeTrackerData'
 });
 

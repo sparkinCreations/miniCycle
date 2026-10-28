@@ -36,6 +36,11 @@ var CACHE_VERSION = 'v1493';
 var CACHE_VERSION_NUMBER = 1493; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
+// Unlocked mini-games, filled only on the page's CACHE_UNLOCKED_GAMES message
+// (gamesManager sends it once the game is unlocked). Versioned like the others,
+// so activation deletes the old copy and the app's next boot refills it.
+var GAMES_CACHE_PREFIX = 'miniCycle-games-';
+var GAMES_CACHE = GAMES_CACHE_PREFIX + CACHE_VERSION;
 
 // __BUILD_MODULE_MAP_START__  (scripts/build-web.cjs replaces this in the dist
 // copy with the source-path → hashed-URL map so the synthetic version.js
@@ -69,6 +74,8 @@ var MAX_CACHE_AGE_MS = 7 * 24 * 60 * 60 * 1000; // dynamic entries expire after 
 // REQUEST ROUTING MAP — the fetch handler (§7) walks these branches in order:
 //
 //   bypass   non-GET · non-http(s) · /tests/ · version.js?_cb= (heal probes)
+//   §7-games /games/… → NETWORK-FIRST, offline from GAMES_CACHE — which only
+//            exists once a game is unlocked (CACHE_UNLOCKED_GAMES, §8)
 //   §7-nav   navigations → CACHE-FIRST + background revalidation
 //            (instant open; staleness is healed page-side by verifyVersionFresh)
 //   §7a      /build/… (dist only) → CACHE-FIRST, immutable, no revalidation
@@ -568,10 +575,19 @@ self.addEventListener('activate', function (event) {
         var keepDynamic = oldDynamicCaches.length > 0
           ? oldDynamicCaches[oldDynamicCaches.length - 1]
           : null;
+        // The unlocked game too: the page refills GAMES_CACHE only when the
+        // (menu-deferred) games module loads, so until then an offline open
+        // needs the previous release's copy.
+        var oldGamesCaches = keys.filter(function(k) {
+          return k.indexOf(GAMES_CACHE_PREFIX) === 0 && k !== GAMES_CACHE;
+        }).sort();
+        var keepGames = oldGamesCaches.length > 0
+          ? oldGamesCaches[oldGamesCaches.length - 1]
+          : null;
 
         return Promise.all(keys.map(function (k) {
-          if (k === STATIC_CACHE || k === DYNAMIC_CACHE) return;
-          if (k === keepStatic || k === keepDynamic) {
+          if (k === STATIC_CACHE || k === DYNAMIC_CACHE || k === GAMES_CACHE) return;
+          if (k === keepStatic || k === keepDynamic || k === keepGames) {
             console.log('📦 Keeping previous cache as offline fallback:', k);
             return; // Don't delete — caches.match() will find entries here
           }
@@ -838,6 +854,42 @@ self.addEventListener('fetch', function (event) {
   // No respondWith at all, so the browser handles it with normal HTTP
   // semantics (which do honour no-store).
   if (url.pathname.indexOf('/.netlify/functions/') === 0) {
+    return;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // §7-games MINI-GAMES: network-first, offline only once unlocked
+  // ═══════════════════════════════════════════════════════════════════════
+  // The game pages are served no-store and have no verifyVersionFresh, so
+  // online they always come from the network. Offline they come from
+  // GAMES_CACHE, which the page asks for only after the game is unlocked
+  // (CACHE_UNLOCKED_GAMES). Locked, a game page offline gets the app shell, as
+  // before; nothing here caches a game on its own.
+  //
+  // Before Oct 2026 the game never opened offline, even after visits: the app
+  // links to games/miniCycle-taskOrder.html, which Netlify answers with a 301 to
+  // /games/minicycle-taskorder, so the navigation cache only ever held the
+  // redirect target and the link itself missed.
+  if (url.pathname.indexOf(new URL(fromScope('games/')).pathname) === 0) {
+    event.respondWith(
+      fetchWithTimeout(request, FETCH_TIMEOUT_MS).catch(function () {
+        return matchGamesCache(request).then(function (cached) {
+          if (cached) {
+            console.log('🎮 Offline game file:', url.pathname);
+            return cached;
+          }
+          if (request.mode === 'navigate') {
+            return caches.match(fromScope('miniCycle.html')).then(function (shell) {
+              return shell || new Response('Offline - No cached version available', {
+                status: 503,
+                headers: { 'Content-Type': 'text/plain' }
+              });
+            });
+          }
+          return new Response('', { status: 503, statusText: 'Offline' });
+        });
+      })
+    );
     return;
   }
 
@@ -1494,7 +1546,73 @@ self.addEventListener('fetch', function (event) {
 //   GET_VERSION       ensureControllingWorkerFresh + testing modal
 //   WARM_CACHE        post-boot gap-fill (orchestrator, after online boot)
 //   GET_CACHE_STATUS  testing modal cache inventory
+//   CACHE_UNLOCKED_GAMES  gamesManager, once a game is unlocked: fill GAMES_CACHE
 // ============================================================================
+
+// The files an unlocked Whack-a-Order needs offline (its page and two scripts).
+var GAME_FILES = [
+  'games/miniCycle-taskOrder.html',
+  'games/miniCycle-taskOrder.js',
+  'games/miniCycle-taskOrder-init.js'
+];
+
+/**
+ * Look a game file up in the games caches only (the current one first, then
+ * the previous release's, kept at activation). Never the general caches: a
+ * locked game must not open offline from a stray copy.
+ * @param {Request} request
+ * @returns {Promise<Response|undefined>}
+ */
+function matchGamesCache(request) {
+  return caches.keys().then(function (keys) {
+    var names = keys.filter(function (k) {
+      return k.indexOf(GAMES_CACHE_PREFIX) === 0;
+    }).sort(function (a, b) {
+      if (a === GAMES_CACHE) return -1;
+      if (b === GAMES_CACHE) return 1;
+      return a < b ? 1 : -1;
+    });
+    return names.reduce(function (found, name) {
+      return found.then(function (hit) {
+        if (hit) return hit;
+        return caches.open(name).then(function (cache) {
+          return cache.match(request, { ignoreSearch: true });
+        });
+      });
+    }, Promise.resolve(undefined));
+  });
+}
+
+/**
+ * Fetch the unlocked game's files into GAMES_CACHE. The .html is answered with
+ * a 301 to an extensionless canonical URL on Netlify, so its body is stored
+ * under BOTH the URL the app links to and the one the browser lands on, as a
+ * fresh Response (Safari rejects a `redirected` response for a navigation).
+ */
+function cacheUnlockedGames() {
+  return caches.open(GAMES_CACHE).then(function (cache) {
+    return Promise.all(GAME_FILES.map(function (file) {
+      var fileUrl = fromScope(file);
+      return fetch(fileUrl, { cache: 'no-store' }).then(function (res) {
+        if (!res || res.status !== 200) return;
+        if (!res.redirected) return safeCachePut(cache, fileUrl, res);
+        return res.blob().then(function (body) {
+          var copy = function () {
+            return new Response(body, { status: res.status, statusText: res.statusText, headers: res.headers });
+          };
+          return Promise.all([
+            safeCachePut(cache, fileUrl, copy()),
+            safeCachePut(cache, res.url, copy())
+          ]);
+        });
+      }).catch(function (err) {
+        console.warn('🎮 Could not cache game file:', file, err);
+      });
+    }));
+  }).then(function () {
+    console.log('🎮 Unlocked game cached for offline:', GAMES_CACHE);
+  });
+}
 
 self.addEventListener('message', function (event) {
   var data = event.data || {};
@@ -1569,6 +1687,10 @@ self.addEventListener('message', function (event) {
     }).catch(function(err) {
       console.warn('⚠️ Warm cache failed:', err);
     });
+  }
+
+  if (data.type === 'CACHE_UNLOCKED_GAMES' && !DISABLE_CACHING) {
+    event.waitUntil(cacheUnlockedGames());
   }
 
   // ✅ ADDED: Cache status reporting
