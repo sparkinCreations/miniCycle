@@ -1,3 +1,10 @@
+## [2.650] - 2026-10-28
+- feat(reminders): turning a task's bell on switches reminders on
+- fix(focus-view): the hidden header strip no longer blocks the Add task field
+- feat(due-dates): show the due date on the task, open a picker to change it, optional due time
+- site(product): credit Isaiah's card as a Chrome Web Store review; docs(chrome): reworded backup bullet for the next upload
+
+
 ## [2.649] - 2026-10-28
 - site(product): five gold stars on Isaiah's testimonial card, labelled for screen readers
 
