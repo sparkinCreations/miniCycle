@@ -72,11 +72,11 @@ Privacy focused so your information remains under your control.
 
 WHAT'S NEW (October 2026)
 
-• Open Routine: a search stays applied when you change the mode filter or the sort.
-• Open Routine: renaming a routine is easier to read, and a long name shows from its start.
+• Open Routine: searching a routine now stays applied when you change the mode filter or sort.
+• Open Routine: renaming a routine is easier to read, and long names start from the beginning.
 • Open Routine responds the moment you tap a routine.
 • Settings: every control explains what it does, and tour prompts can be turned off as well as on.
-• History: Recreate returns you to the routine list and highlights the restored tasks.
+• History: Recreate now returns you to the routine list and highlights the restored tasks.
 • Personalization: uploading a background photo turns Show Image on, and text stays readable on any photo.
 
 Full changelog: https://minicycle.app/pages/product.html#changelog
