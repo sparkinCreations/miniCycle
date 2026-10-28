@@ -18,7 +18,9 @@ releases.
 Positioning mirrors `web/pages/product.html` (Oct 2026): reusable checklists for
 routines and repeatable procedures lead; "lightweight SOP" is a bridge one
 section down, never the identity. The wording below is the dashboard's as of
-Oct 2026 (synced from the live listing on 2026-10-28), with WHAT'S NEW added. Feature names use the app's own labels
+Oct 2026 (synced from the live listing on 2026-10-28), with WHAT'S NEW added.
+The WHAT'S NEW below is what the 2.647 submission carried, covering the gap
+from the previously published store build (2.602). Feature names use the app's own labels
 (Auto Cycle / Manual Cycle / To-Do Mode, Focus View, the four vocabulary
 themes) so the listing never promises something the UI calls something else.
 
@@ -72,12 +74,15 @@ Privacy focused so your information remains under your control.
 
 WHAT'S NEW (October 2026)
 
-• Open Routine: searching a routine now stays applied when you change the mode filter or sort.
-• Open Routine: renaming a routine is easier to read, and long names start from the beginning.
-• Open Routine responds the moment you tap a routine.
+• Automatic daily backups — a backup file is kept on your device, and each one is listed under Data Management, ready to restore.
+• Recurring tasks can be paused and resumed, and removing one offers to put it back.
+• Due dates can send a system notification on the due day, and Reminders now says when the next one fires and which tasks it covers.
+• Open Routine: sort and filter chips have tooltips, a second tap reverses the sort, searching stays applied when you change the filter or sort, and renaming is easier to read.
+• Open Routine responds the moment you tap a routine, and the app starts faster on a first visit.
 • Settings: every control explains what it does, and tour prompts can be turned off as well as on.
 • History: Recreate now returns you to the routine list and highlights the restored tasks.
 • Personalization: uploading a background photo turns Show Image on, and text stays readable on any photo.
+• A modern routine progress bar, and tasks animate into and out of the completed list.
 
 Full changelog: https://minicycle.app/pages/product.html#changelog
 
