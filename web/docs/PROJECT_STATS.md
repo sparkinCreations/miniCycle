@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.645 |
+| **App Version** | 2.646 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
 | **Total Modules** | 167 |
-| **Total Tests** | 4295 |
+| **Total Tests** | 4303 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1606 |
+| **JSDoc Blocks** | 1607 |
 | **Documentation Files** | 253 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -64,8 +64,8 @@
 | `modules/boot/orchestrator.js` | ~1301 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~770 | Core state & init |
 | `modules/boot/featureBoot.js` | ~622 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1374 | UI handlers |
-| **Total** | **~4117** | |
+| `modules/boot/uiBoot.js` | ~1382 | UI handlers |
+| **Total** | **~4125** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4295 |
+| Total Tests | 4303 |
 | Test Files | 152 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

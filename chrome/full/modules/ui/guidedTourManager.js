@@ -156,6 +156,11 @@ export class GuidedTourManager {
         await this.deps.appInit.waitForCore?.();
         this.initialized = true;
 
+        // Both tour-prompt buttons start out reading "Enable"; correct them for a
+        // user who already has prompts on. (The dialog templates are injected
+        // before any module inits, so the Settings button exists by now.)
+        this._syncTourPromptButtons();
+
         const state = this.deps.AppState.get?.();
         const guidedTourStep = state?.settings?.guidedTourStep ?? null;
         if (guidedTourStep === 'done') {
@@ -582,7 +587,8 @@ export class GuidedTourManager {
     }
 
     /**
-     * Switch prompts on and clear every tour's progress so they all come back.
+     * Switch prompts on and clear every tour's progress so they all come back —
+     * or, with `false`, switch them off and leave every tour's progress alone.
      *
      * The stateKeys are derived from TOUR_DEFINITIONS rather than listed by hand.
      * Two buttons trigger this (the menu's and the settings modal's) and each
@@ -590,24 +596,51 @@ export class GuidedTourManager {
      * remembering to edit both — the "fix it in one place, miss the copy" trap.
      * Now a new tour is covered the moment it is defined.
      *
+     * Until Oct 2026 prompts could only be switched ON: pressing the button again
+     * just restarted every tour. Both buttons now read "Disable Tour Prompts"
+     * while they are on, and this is the one place that relabels them.
+     *
+     * @param {boolean} [enabled=true]
      * @returns {Promise<void>}
      */
-    async enableTourPrompts() {
+    async enableTourPrompts(enabled = true) {
         const AppState = this.deps.AppState;
         if (!AppState.isReady()) return;
 
         await AppState.update((state) => {
             if (!state.settings) state.settings = {};
-            state.settings.tourPromptsEnabled = true;
-            for (const [, tour] of TOUR_DEFINITIONS) {
-                if (tour.stateKey) state.settings[tour.stateKey] = null;
+            state.settings.tourPromptsEnabled = enabled;
+            if (enabled) {
+                for (const [, tour] of TOUR_DEFINITIONS) {
+                    if (tour.stateKey) state.settings[tour.stateKey] = null;
+                }
             }
-            // Quick Actions view tips are prompts of the same family, surfaced by
-            // quickActionsManager rather than by a tour definition.
-            state.settings.quickActionsTipPinned = false;
-            state.settings.quickActionsTipRecent = false;
-            state.settings.quickActionsTipFrequent = false;
+            // The Quick Actions view tip is a prompt of the same family, surfaced
+            // by quickActionsManager rather than by a tour definition: enabling
+            // brings it back once more, disabling means no more prompts at all.
+            const tipSeen = !enabled;
+            state.settings.quickActionsTipPinned = tipSeen;
+            state.settings.quickActionsTipRecent = tipSeen;
+            state.settings.quickActionsTipFrequent = tipSeen;
         }, true);
+
+        this._syncTourPromptButtons();
+    }
+
+    /**
+     * Label both tour-prompt buttons (Settings → Reset Options, and the menu's
+     * Help & Support) for what a press will do now: enable when prompts are
+     * off, disable when they are on.
+     */
+    _syncTourPromptButtons() {
+        const on = this._promptsEnabled();
+        for (const id of [DOM_IDS.RETAKE_GUIDED_TOUR, DOM_IDS.MENU_RETAKE_TOURS]) {
+            const btn = this.deps.getElementById(id);
+            if (!btn) continue;
+            const label = btn.querySelector(DOM_SELECTORS.TOUR_PROMPTS_BTN_LABEL);
+            if (label) label.textContent = getLabel(on ? 'tour.disableTourPrompts' : 'tour.retakeTour');
+            btn.title = getLabel(on ? 'tour.disablePromptsHint' : 'tour.enablePromptsHint');
+        }
     }
 
     _showTourPrompt(tourId, message, buttonLabel) {

@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.645">
+<meta name="app-version" content="2.646">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -132,17 +132,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.645" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.645" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.645" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.645" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.645" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.645" as="style">
+<link rel="preload" href="styles/main.css?v=2.646" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.646" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.646" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.646" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.646" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.646" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.645" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.646" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.645"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.646"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -153,7 +153,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.645"></script>
+<script src="./version.js?v=2.646"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -261,7 +261,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.645" defer></script>
+    <script src="boot-sw.js?v=2.646" defer></script>
 
 
 
@@ -562,7 +562,7 @@
                     <button id="share-app" title="Share miniCycle with someone" aria-label="Share miniCycle with someone"><i class="fas fa-share-nodes"></i>Share App</button>
                     <button id="menu-check-updates" title="Check for app updates"><i class="fas fa-sync-alt"></i>Check for Updates</button>
                     <button id="open-tip-archive" title="Browse every loading tip"><i class="fas fa-lightbulb"></i><span class="menu-item-label">Tips</span></button>
-                    <button id="menu-retake-tours" title="Turn on tour prompts for major features"><i class="fas fa-route"></i>Enable Tour Prompts</button>
+                    <button id="menu-retake-tours" title="Offer a tour the first time you open each feature"><i class="fas fa-route"></i><span class="tour-prompts-btn-label">Enable Tour Prompts</span></button>
                 </div>
             </div>
       
@@ -1355,7 +1355,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.645"></script>
+ <script type="module" src="miniCycle-main.js?v=2.646"></script>
 
 <script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

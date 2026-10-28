@@ -465,7 +465,7 @@ export class RoutineSwitcherActions {
         // Create input element
         const input = document.createElement('input');
         input.type = 'text';
-        input.className = 'cycle-item-edit-input';
+        input.className = DOM_CLASSES.CYCLE_ITEM_EDIT_INPUT;
         input.value = currentName;
         input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
 

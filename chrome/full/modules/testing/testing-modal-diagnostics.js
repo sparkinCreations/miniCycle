@@ -8,7 +8,7 @@
  */
 
 import { UI_TIMEOUTS, SCHEMA, PRIORITY_LEVELS } from '../core/constants.js';
-import { getLocalStorageQuota } from '../utils/storageUtils.js';
+import { getLocalStorageQuota, getLocalStorageUsedBytes, formatBytes } from '../utils/storageUtils.js';
 import { GlobalUtils } from '../utils/globalUtils.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { collectSwatchSets } from '../utils/priorityLevel.js';
@@ -405,14 +405,11 @@ export function showAppInfo() {
 export function showStorageInfo() {
     appendToTestResults("Storage Analysis:\n");
 
-    // Measure the KEYS AND VALUES, not JSON.stringify(localStorage) — that
-    // counted braces, quotes, colons and escape characters as if they were
-    // stored data, inflating the total. Bytes are length × 2 (UTF-16), matching
-    // how storageUtils meters the quota.
-    let storageUsed = 0;
-    for (const key of Object.keys(localStorage)) {
-        storageUsed += (key.length + (localStorage.getItem(key) || '').length) * 2;
-    }
+    // Keys and values at 2 bytes a character, from storageUtils — the same
+    // meter as the switcher's storage bar, the debug report and the storage
+    // viewer. (This file used to carry its own copy of the loop; the debug
+    // report still had the older JSON.stringify(localStorage) count.)
+    const storageUsed = getLocalStorageUsedBytes();
     // The app's own quota figure rather than an assumed 5MB — storageUtils
     // probes this lazily and browsers differ. Still labelled "Estimated": this
     // returns a conservative default until a detection pass has run, so
@@ -420,7 +417,7 @@ export function showStorageInfo() {
     const storageLimit = getLocalStorageQuota();
     const usagePercent = ((storageUsed / storageLimit) * 100).toFixed(2);
 
-    appendToTestResults(`- Storage Used: ${(storageUsed / 1024).toFixed(2)} KB\n`);
+    appendToTestResults(`- Storage Used: ${formatBytes(storageUsed)}\n`);
     appendToTestResults(`- Estimated Limit: ${(storageLimit / 1024 / 1024).toFixed(2)} MB\n`);
     appendToTestResults(`- Usage: ${usagePercent}%\n`);
     appendToTestResults(`- Keys Stored: ${Object.keys(localStorage).length}\n\n`);

@@ -1,3 +1,10 @@
+## [2.646] - 2026-10-28
+- feat(settings): every control says what it does; tour prompts turn off as well as on; one Quick Actions tip
+- fix(testing): debug report names the real version and active routine; one storage meter everywhere
+- perf(switcher): a tap highlights the routine at once; Open loads it without a 100ms pause
+- fix(switcher): keys typed in the inline rename box no longer trigger the row's shortcuts
+
+
 ## [2.645] - 2026-10-28
 - fix(personalization): text on a photo background is white with a dark ring, so it reads on any photo
 

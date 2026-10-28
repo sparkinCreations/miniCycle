@@ -7,7 +7,9 @@
  * @module testing-modal-debug
  */
 
-import { UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
+import { UI_TIMEOUTS, SCHEMA, APP_VERSION } from '../core/constants.js';
+import { getLocalStorageUsedBytes, formatBytes } from '../utils/storageUtils.js';
+import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import {
     getDeps,
     showNotification,
@@ -113,9 +115,10 @@ export function setupConsoleCaptureButtons() {
 export function generateDebugReport() {
     const deps = getDeps();
     appendToTestResults("Generating Debug Report...\n");
-    showNotification(getLabel('notify.debugReportGenerating'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
 
-    setTimeout(() => {
+    // Built at once. It used to sit behind a 2-second timer that waited on
+    // nothing — every value below is read synchronously.
+    {
         const state = deps.AppState?.get();
         if (!state) {
             appendToTestResults("No state data available\n\n");
@@ -124,11 +127,14 @@ export function generateDebugReport() {
 
         const { data, metadata } = state;
         const cycles = data.routine || {};
+        const activeRoutineId = getActiveRoutineId(state);
 
         const report = {
             timestamp: new Date().toISOString(),
             appInfo: {
-                version: metadata?.version || "unknown",
+                // The build's version. metadata has no `version` field, so this
+                // read "unknown" on every report.
+                version: APP_VERSION,
                 schemaVersion: metadata?.schemaVersion || SCHEMA.CURRENT,
                 name: "miniCycle",
                 developer: "Sparkin Creations"
@@ -143,9 +149,14 @@ export function generateDebugReport() {
             },
             dataInfo: {
                 totalRoutines: Object.keys(cycles).length,
-                activeCycle: data.activeCycle,
+                // Was data.activeCycle, a 2.5 field that no longer exists: the
+                // key was undefined and JSON.stringify dropped it silently.
+                activeRoutineId: activeRoutineId ?? null,
+                activeRoutine: getRoutine(state, activeRoutineId)?.title ?? null,
                 totalTasks: Object.values(cycles).reduce((sum, c) => sum + (c.tasks?.length || 0), 0),
-                storageUsed: `${(JSON.stringify(localStorage).length / 1024).toFixed(2)} KB`
+                // The same meter as the switcher's storage bar (storageUtils),
+                // not the character count of JSON.stringify(localStorage).
+                storageUsed: formatBytes(getLocalStorageUsedBytes())
             }
         };
 
@@ -154,7 +165,7 @@ export function generateDebugReport() {
         appendToTestResults("\n====================\n\n");
 
         showNotification(getLabel('notify.debugReportGenerated'), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
-    }, 2000);
+    }
 }
 
 /**

@@ -169,12 +169,7 @@ export function getLocalStorageUsedBytes() {
     try {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
-            if (key) {
-                // Each character in JavaScript is 2 bytes (UTF-16)
-                const keyBytes = key.length * 2;
-                const valueBytes = (localStorage.getItem(key) || '').length * 2;
-                totalBytes += keyBytes + valueBytes;
-            }
+            if (key) totalBytes += getLocalStorageEntryBytes(key);
         }
     } catch (error) {
         console.warn('Error calculating localStorage usage:', error);
@@ -187,6 +182,19 @@ export function getLocalStorageUsedBytes() {
  * Get localStorage quota - uses conservative default until detection is triggered
  * @returns {number} Quota in bytes
  */
+/**
+ * Bytes one localStorage entry costs: its key and its value, 2 bytes a character
+ * (UTF-16). The one meter for storage size — the switcher's storage bar, the
+ * Testing modal's reports and its storage viewer all read this, so their figures
+ * agree and the per-key sizes add up to the total (Oct 2026: the same data read
+ * 37 KB, 36.6 KB, 22 KB and 18.2 KB depending on where you looked).
+ * @param {string} key
+ * @returns {number}
+ */
+export function getLocalStorageEntryBytes(key) {
+    return (key.length + (localStorage.getItem(key) || '').length) * 2;
+}
+
 export function getLocalStorageQuota() {
     // Return cached if available, otherwise use conservative default
     // Actual detection happens lazily via detectStorageQuota()

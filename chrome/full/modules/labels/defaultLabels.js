@@ -1480,6 +1480,25 @@ export const DEFAULT_LABELS = deepFreeze({
         addRemoveTaskButtons: 'Add or Remove Task Buttons',
         enableNotifications:  'Enable Notifications',
         clearUndoHistory:     'Clear Undo History',
+        // One line under each control in Settings, saying what it does (and, for
+        // the resets, whether it can be undone). Oct 2026: there were none.
+        showCompletedDesc:      'Checked tasks move into a list below the routine that you can open and close.',
+        darkModeDesc:           'Dark colors throughout the app.',
+        showHelpWindowDesc:     'The line under your list with tasks remaining, cycles completed and tips.',
+        showQuickActionsDesc:   'A row of shortcut buttons: your pinned, recent and most-used actions.',
+        oneSectionAtATimeDesc:  'Opening a section of the main menu closes the one that was open.',
+        reducedMotionDesc:      'Turns off most animations and movement.',
+        highContrastDesc:       'Stronger colors and borders, for easier reading.',
+        scrollToNewDesc:        'After you add a task, the list scrolls to show it.',
+        scrollToLastDesc:       'Opening a routine scrolls its list to the last task.',
+        enableNotificationsDesc: 'The short messages that confirm what you did. Error messages always show.',
+        resetOnboardingDesc:    'Shows the welcome screens again the next time you open the app.',
+        tourPromptsDesc:        'Offers a short tour the first time you open each feature.',
+        resetNotifPositionDesc: 'Moves notifications back to their usual place if you dragged them.',
+        resetRecurringDefaultDesc: 'New recurring tasks start as Daily, repeating indefinitely, again.',
+        resetAchievementsDesc:  'Locks every badge and sets progress toward them back to zero. Your routines and their own stats stay. This cannot be undone.',
+        clearUndoHistoryDesc:   'Deletes the undo steps saved for every routine. This cannot be undone.',
+        debugModeDesc:          'Writes the app\'s detailed log to the browser console, for troubleshooting.',
         ariaToggleDisplay:    'Toggle Display settings',
         ariaToggleAccessibility: 'Toggle Accessibility settings',
         ariaToggleBehavior:   'Toggle Behavior settings',
@@ -1510,10 +1529,15 @@ export const DEFAULT_LABELS = deepFreeze({
         step6:           'Everything else lives in this menu. Want prompts like this for other features? Turn on Enable Tour Prompts under Help & Support.',
         complete:        'You\'re all set! Enjoy building your routines.',
         retakeTour:      'Enable Tour Prompts',
+        // The same button reads this while prompts are on, and turns them off.
+        disableTourPrompts: 'Disable Tour Prompts',
+        enablePromptsHint:  'Offer a tour the first time you open each feature',
+        disablePromptsHint: 'Stop offering tours when you open a feature',
+        promptsDisabled:    'Tour prompts are off. You will not be offered tours when you open a feature.',
         // Prompts are opt-in (Sep 2026), so this fires on ENABLING them, not on a
         // bare reset. Kept as a separate key from the old toursReset wording so a
         // stale translation cannot claim tours were merely "reset".
-        promptsEnabled:  'Tour prompts are on. You will be offered a tour the first time you open each feature.',
+        promptsEnabled:  'Tour prompts are on. You will be offered a tour the first time you open each feature. Press the same button to turn them off.',
         startTourAction: 'Start Tour',
         closeDialogHint: 'Close the open dialog to start the tour'
     },
@@ -1936,9 +1960,9 @@ export const DEFAULT_LABELS = deepFreeze({
         userManual:     'User Manual',
         toggleInput:    'Toggle Task Input',
         taskOptions:    'Task Options',
-        tipPinned:      'Pin your favorite actions for quick access.',
-        tipRecent:      'Your most recently used actions appear here.',
-        tipFrequent:    'Actions you use often show up here automatically.'
+        // One tip, on the first switch between the three views (it was one per
+        // view, so the first three switches each raised a notification).
+        tipViews:       'Use the arrows or swipe to switch between Pinned (your favorites), Recent and Frequent actions.'
     },
 
     // ========================================================================

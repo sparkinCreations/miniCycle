@@ -12,6 +12,7 @@ import {
     safeAddEventListenerById
 } from './testing-modal-core.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, Z_INDEX } from '../core/constants.js';
+import { getLocalStorageEntryBytes, formatBytes } from '../utils/storageUtils.js';
 
 // ==========================================
 // BUTTON SETUP
@@ -76,8 +77,8 @@ export function openStorageViewer() {
             keyTitle.textContent = key;
 
             const sizeIndicator = document.createElement("small");
-            const sizeKB = (rawValue.length / 1024).toFixed(2);
-            sizeIndicator.textContent = `(${sizeKB} KB)`;
+            // Key + value in bytes: the meter the totals use, so these add up to them.
+            sizeIndicator.textContent = `(${formatBytes(getLocalStorageEntryBytes(key))})`;
             sizeIndicator.className = "storage-key-size";
 
             keyHeader.appendChild(keyToggle);
