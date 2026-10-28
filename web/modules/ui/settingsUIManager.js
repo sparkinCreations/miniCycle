@@ -1147,12 +1147,19 @@ export function setupRetakeGuidedTourButton() {
             return;
         }
 
-        // Shared with the main menu's button — see guidedTourManager.
-        // enableTourPrompts(), which derives the key list from TOUR_DEFINITIONS
-        // so the two call sites cannot drift apart.
-        await _deps.enableTourPrompts?.();
+        // One button, both ways: it reads "Disable Tour Prompts" while they are
+        // on (guidedTourManager relabels it). Shared with the main menu's button
+        // — see guidedTourManager.enableTourPrompts(), which derives the key
+        // list from TOUR_DEFINITIONS so the two call sites cannot drift apart.
+        const wasOn = appState.get()?.settings?.tourPromptsEnabled === true;
+        await _deps.enableTourPrompts?.(!wasOn);
 
         document.getElementById(DOM_IDS.CLOSE_SETTINGS)?.click();
+
+        if (wasOn) {
+            _deps.showNotification(getLabel('tour.promptsDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+            return;
+        }
 
         // Ask user if they want to start the tour instead of launching immediately
         _deps.showNotification(

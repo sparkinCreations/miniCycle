@@ -825,38 +825,38 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-section-content" id="settings-section-display">
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-completed-dropdown" name="toggle-completed-dropdown">
+                                <input type="checkbox" id="toggle-completed-dropdown" name="toggle-completed-dropdown" aria-describedby="toggle-completed-dropdown-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.showCompleted')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.showCompleted')}</span><span class="settings-desc" id="toggle-completed-dropdown-desc">${getLabel('settings.showCompletedDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="darkModeToggle" name="darkModeToggle">
+                                <input type="checkbox" id="darkModeToggle" name="darkModeToggle" aria-describedby="darkModeToggle-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.darkMode')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.darkMode')}</span><span class="settings-desc" id="darkModeToggle-desc">${getLabel('settings.darkModeDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="settings-toggle-help-window" name="settings-toggle-help-window" checked>
+                                <input type="checkbox" id="settings-toggle-help-window" name="settings-toggle-help-window" checked aria-describedby="settings-toggle-help-window-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.showHelpWindow')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.showHelpWindow')}</span><span class="settings-desc" id="settings-toggle-help-window-desc">${getLabel('settings.showHelpWindowDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="settings-toggle-quick-actions" name="settings-toggle-quick-actions" checked>
+                                <input type="checkbox" id="settings-toggle-quick-actions" name="settings-toggle-quick-actions" checked aria-describedby="settings-toggle-quick-actions-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.showQuickActions')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.showQuickActions')}</span><span class="settings-desc" id="settings-toggle-quick-actions-desc">${getLabel('settings.showQuickActionsDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="settings-toggle-one-section" name="settings-toggle-one-section" checked>
+                                <input type="checkbox" id="settings-toggle-one-section" name="settings-toggle-one-section" checked aria-describedby="settings-toggle-one-section-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.oneSectionAtATime')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.oneSectionAtATime')}</span><span class="settings-desc" id="settings-toggle-one-section-desc">${getLabel('settings.oneSectionAtATimeDesc')}</span></span>
                         </label>
                         <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">+/-</span> ${getLabel('settings.addRemoveTaskButtons')}</button>
                     </div>
@@ -872,31 +872,31 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-section-content" id="settings-section-accessibility">
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows">
+                                <input type="checkbox" id="toggle-move-arrows" name="toggle-move-arrows" aria-describedby="toggle-move-arrows-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.showMoveArrows')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.showMoveArrows')}</span><span class="settings-desc" id="toggle-move-arrows-desc">${getLabel('taskOptions.moveArrowsDescription')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots">
+                                <input type="checkbox" id="toggle-three-dots" name="toggle-three-dots" aria-describedby="toggle-three-dots-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.showThreeDots')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.showThreeDots')}</span><span class="settings-desc" id="toggle-three-dots-desc">${getLabel('taskOptions.threeDotsDescription')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-reduced-motion" name="toggle-reduced-motion">
+                                <input type="checkbox" id="toggle-reduced-motion" name="toggle-reduced-motion" aria-describedby="toggle-reduced-motion-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span data-label-key="settings.reducedMotion">${getLabel('settings.reducedMotion')}</span>
+                            <span class="settings-option-text"><span data-label-key="settings.reducedMotion">${getLabel('settings.reducedMotion')}</span><span class="settings-desc" id="toggle-reduced-motion-desc">${getLabel('settings.reducedMotionDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-high-contrast" name="toggle-high-contrast">
+                                <input type="checkbox" id="toggle-high-contrast" name="toggle-high-contrast" aria-describedby="toggle-high-contrast-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span data-label-key="settings.highContrast">${getLabel('settings.highContrast')}</span>
+                            <span class="settings-option-text"><span data-label-key="settings.highContrast">${getLabel('settings.highContrast')}</span><span class="settings-desc" id="toggle-high-contrast-desc">${getLabel('settings.highContrastDesc')}</span></span>
                         </label>
                         <div class="settings-option settings-option-vertical">
                             <label for="font-size-select" data-label-key="settings.fontSize">${getLabel('settings.fontSize')}</label>
@@ -920,24 +920,24 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-section-content" id="settings-section-behavior">
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked>
+                                <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked aria-describedby="toggle-scroll-to-new-task-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span data-label-key="settings.scrollToNew">${getLabel('settings.scrollToNew')}</span>
+                            <span class="settings-option-text"><span data-label-key="settings.scrollToNew">${getLabel('settings.scrollToNew')}</span><span class="settings-desc" id="toggle-scroll-to-new-task-desc">${getLabel('settings.scrollToNewDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-scroll-on-load" name="toggle-scroll-on-load">
+                                <input type="checkbox" id="toggle-scroll-on-load" name="toggle-scroll-on-load" aria-describedby="toggle-scroll-on-load-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span data-label-key="settings.scrollToLast">${getLabel('settings.scrollToLast')}</span>
+                            <span class="settings-option-text"><span data-label-key="settings.scrollToLast">${getLabel('settings.scrollToLast')}</span><span class="settings-desc" id="toggle-scroll-on-load-desc">${getLabel('settings.scrollToLastDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-notifications" name="toggle-notifications" checked>
+                                <input type="checkbox" id="toggle-notifications" name="toggle-notifications" checked aria-describedby="toggle-notifications-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.enableNotifications')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.enableNotifications')}</span><span class="settings-desc" id="toggle-notifications-desc">${getLabel('settings.enableNotificationsDesc')}</span></span>
                         </label>
                     </div>
                 </div>
@@ -976,13 +976,20 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-reset">
-                        <button id="${DOM_IDS.RESET_ONBOARDING}" class="settings-btn settings-btn-ghost"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
-                        <button id="retake-guided-tour" class="settings-btn settings-btn-ghost"><i class="fas fa-route"></i> ${getLabel('tour.retakeTour')}</button>
-                        <button id="reset-notification-position" class="settings-btn settings-btn-ghost"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
-                        <button id="reset-task-view-layout" class="settings-btn settings-btn-ghost"><i class="fas fa-arrows-alt"></i> ${getLabel('settings.resetTaskViewLayout')}</button>
-                        <button id="reset-recurring-default" class="settings-btn settings-btn-ghost"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>
-                        <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost"><i class="fas fa-trophy"></i> ${getLabel('settings.resetAchievements')}</button>
-                        <button id="clear-undo-history" class="settings-btn settings-btn-ghost"><i class="fas fa-history"></i> ${getLabel('settings.clearUndoHistory')}</button>
+                        <button id="${DOM_IDS.RESET_ONBOARDING}" class="settings-btn settings-btn-ghost" aria-describedby="reset-onboarding-desc"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
+                        <p class="settings-desc settings-btn-desc" id="reset-onboarding-desc">${getLabel('settings.resetOnboardingDesc')}</p>
+                        <button id="retake-guided-tour" class="settings-btn settings-btn-ghost" aria-describedby="retake-guided-tour-desc"><i class="fas fa-route"></i> <span class="${DOM_CLASSES.TOUR_PROMPTS_BTN_LABEL}">${getLabel('tour.retakeTour')}</span></button>
+                        <p class="settings-desc settings-btn-desc" id="retake-guided-tour-desc">${getLabel('settings.tourPromptsDesc')}</p>
+                        <button id="reset-notification-position" class="settings-btn settings-btn-ghost" aria-describedby="reset-notification-position-desc"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
+                        <p class="settings-desc settings-btn-desc" id="reset-notification-position-desc">${getLabel('settings.resetNotifPositionDesc')}</p>
+                        <button id="reset-task-view-layout" class="settings-btn settings-btn-ghost" aria-describedby="reset-task-view-layout-desc"><i class="fas fa-arrows-alt"></i> ${getLabel('settings.resetTaskViewLayout')}</button>
+                        <p class="settings-desc settings-btn-desc" id="reset-task-view-layout-desc">${getLabel('settings.resetTaskViewLayoutDesc')}</p>
+                        <button id="reset-recurring-default" class="settings-btn settings-btn-ghost" aria-describedby="reset-recurring-default-desc"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>
+                        <p class="settings-desc settings-btn-desc" id="reset-recurring-default-desc">${getLabel('settings.resetRecurringDefaultDesc')}</p>
+                        <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost" aria-describedby="reset-achievement-progress-desc"><i class="fas fa-trophy"></i> ${getLabel('settings.resetAchievements')}</button>
+                        <p class="settings-desc settings-btn-desc" id="reset-achievement-progress-desc">${getLabel('settings.resetAchievementsDesc')}</p>
+                        <button id="clear-undo-history" class="settings-btn settings-btn-ghost" aria-describedby="clear-undo-history-desc"><i class="fas fa-history"></i> ${getLabel('settings.clearUndoHistory')}</button>
+                        <p class="settings-desc settings-btn-desc" id="clear-undo-history-desc">${getLabel('settings.clearUndoHistoryDesc')}</p>
                     </div>
                 </div>
 
@@ -996,10 +1003,10 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-section-content" id="settings-section-advanced">
                         <label class="settings-option">
                             <span class="toggle-switch">
-                                <input type="checkbox" id="toggle-debug-mode" name="toggle-debug-mode">
+                                <input type="checkbox" id="toggle-debug-mode" name="toggle-debug-mode" aria-describedby="toggle-debug-mode-desc">
                                 <span class="toggle-slider"></span>
                             </span>
-                            <span>${getLabel('settings.debugMode')}</span>
+                            <span class="settings-option-text"><span>${getLabel('settings.debugMode')}</span><span class="settings-desc" id="toggle-debug-mode-desc">${getLabel('settings.debugModeDesc')}</span></span>
                         </label>
                         <button id="open-testing-modal" class="settings-btn"><i class="fas fa-flask"></i> ${getLabel('settings.diagnostics')}</button>
                         <button id="${DOM_IDS.CHECK_FOR_UPDATES}" class="settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>

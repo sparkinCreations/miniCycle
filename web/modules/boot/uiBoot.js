@@ -1050,11 +1050,14 @@ export function setupMenuRetakeTours() {
     const AppState = getAppState();
     if (!AppState?.isReady?.()) return;
 
-    // Switch prompts ON and clear every tour's progress. The key list used to be
-    // spelled out here AND in settingsUIManager's copy of this button; it now
-    // derives from TOUR_DEFINITIONS inside guidedTourManager, so a new tour
-    // cannot be forgotten by one of the two call sites.
-    await getUiApi()?.enableTourPrompts?.();
+    // One button, both ways: it reads "Disable Tour Prompts" while they are on
+    // (guidedTourManager relabels it). Switching ON clears every tour's
+    // progress; switching OFF keeps it. The key list used to be spelled out here
+    // AND in settingsUIManager's copy of this button; it now derives from
+    // TOUR_DEFINITIONS inside guidedTourManager, so a new tour cannot be
+    // forgotten by one of the two call sites.
+    const wasOn = AppState.get()?.settings?.tourPromptsEnabled === true;
+    await getUiApi()?.enableTourPrompts?.(!wasOn);
 
     // Hide menu
     try {
@@ -1063,8 +1066,13 @@ export function setupMenuRetakeTours() {
       // Menu API not ready
     }
 
-    // Ask user if they want to start the tour
     const showNotification = getShowNotification();
+    if (wasOn) {
+      showNotification?.(getLabel('tour.promptsDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+      return;
+    }
+
+    // Ask user if they want to start the tour
     showNotification?.(
       getLabel('tour.promptsEnabled'),
       'info',

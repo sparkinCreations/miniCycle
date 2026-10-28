@@ -5372,6 +5372,65 @@ async function journeySwitcherTapResponds(browser, baseURL) {
     return { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', failures };
 }
 
+// Settings had no descriptions; the tour-prompts button could only switch
+// prompts ON (a second press restarted every tour); and each Quick Actions view
+// had its own tip, so the first three switches each raised one (Oct 2026).
+async function journeySettingsDescribedAndTourToggle(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const labels = () => page.evaluate(() => ['retake-guided-tour', 'menu-retake-tours']
+        .map(id => document.querySelector(`#${id} .tour-prompts-btn-label`)?.textContent.trim() ?? null));
+    const promptsOn = () => page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.tourPromptsEnabled === true);
+    const toastText = () => page.evaluate(() => document.getElementById('notification-container')?.textContent || '');
+    const dismissToasts = () => page.evaluate(() => document.querySelectorAll('#notification-container .close-btn').forEach(b => b.click()));
+    try {
+        // Every Settings control says what it does.
+        const undescribed = await page.evaluate(() =>
+            [...document.querySelectorAll('#settings-modal input[type="checkbox"], #settings-section-reset .settings-btn')]
+                .filter(el => { const d = document.getElementById(el.getAttribute('aria-describedby') || ''); return !d || !d.textContent.trim(); })
+                .map(el => el.id));
+        record('every Settings toggle and reset button has a description', undescribed.length === 0,
+            `no description: ${undescribed.join(', ')}`);
+
+        // Off for a new user; both buttons offer to enable.
+        record('a new user starts with prompts off and both buttons offering "Enable"',
+            !(await promptsOn()) && (await labels()).every(t => t === 'Enable Tour Prompts'), JSON.stringify(await labels()));
+
+        await dismissToasts();
+        await clickEl(page, '#retake-guided-tour');
+        await page.waitForTimeout(600);
+        record('pressing it in Settings turns prompts on', await promptsOn(), 'tourPromptsEnabled is not true');
+        record('…and says so, with the way to turn them off', (await toastText()).includes('Press the same button to turn them off'),
+            `notification: ${(await toastText()).slice(0, 160)}`);
+        record('…and both buttons now offer "Disable"', (await labels()).every(t => t === 'Disable Tour Prompts'), JSON.stringify(await labels()));
+
+        // The one Quick Actions tip: once, on the first switch (prompts were just enabled, so it is due).
+        await dismissToasts();
+        await page.waitForTimeout(300);
+        const tip = 'switch between Pinned';
+        let tips = 0;
+        for (let i = 0; i < 3; i++) {
+            await page.evaluate(() => document.querySelector('.quick-actions-next')?.click());
+            await page.waitForTimeout(250);
+            if ((await toastText()).includes(tip)) { tips++; await dismissToasts(); await page.waitForTimeout(150); }
+        }
+        record('the Quick Actions tip shows once across three switches', tips === 1, `${tips} tip notification(s)`);
+
+        // Off again from the menu: progress kept, a short "off" message, no Start Tour.
+        await dismissToasts();
+        await page.evaluate(() => document.getElementById('menu-retake-tours').click());
+        await page.waitForTimeout(600);
+        record('pressing it again (menu) turns prompts off', !(await promptsOn()), 'tourPromptsEnabled is still true');
+        record('…with the "off" message and no Start Tour button',
+            (await toastText()).includes('Tour prompts are off') && !(await toastText()).includes('Start Tour'),
+            `notification: ${(await toastText()).slice(0, 160)}`);
+        record('…and both buttons offer "Enable" again', (await labels()).every(t => t === 'Enable Tour Prompts'), JSON.stringify(await labels()));
+    } finally {
+        await context.close();
+    }
+    return { name: 'Settings explain themselves; the tour-prompts button turns prompts on and off', failures };
+}
+
 async function journeyFocusTabFollowsSort(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const { context, page } = await openFresh(browser, baseURL);
@@ -5563,6 +5622,7 @@ async function journeyQuickActionPickerKeepsMenuOpen(browser, baseURL) {
 const JOURNEYS = [
     { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },
     { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', fn: journeySwitcherTapResponds },
+    { name: 'Settings explain themselves; the tour-prompts button turns prompts on and off', fn: journeySettingsDescribedAndTourToggle },
     { name: 'adding a quick action from the menu keeps the menu open', fn: journeyQuickActionPickerKeepsMenuOpen },
     { name: 'recreating a cleared task lands in the routine list', fn: journeyRecreateLandsInList },
     { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },

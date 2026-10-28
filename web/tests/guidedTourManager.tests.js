@@ -3,6 +3,8 @@
  * Tests for modules/ui/guidedTourManager.js
  */
 
+import { getLabel } from '../modules/labels/labelResolver.js';
+
 let GuidedTourModule;
 
 function createRect(left, top, width, height) {
@@ -1978,6 +1980,46 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
         if (missed.length) {
             throw new Error(`tours not cleared: ${missed.join(', ')}`);
+        }
+    });
+
+    await test('enableTourPrompts(false) turns prompts off and keeps every tour\'s progress', async () => {
+        // There was no way to turn prompts off until Oct 2026: pressing the
+        // button again restarted every tour instead.
+        const manager = await createManager({
+            settings: { tourPromptsEnabled: true, statsTourStep: 'done', menuTourStep: 4, quickActionsTipPinned: false }
+        });
+        await manager.enableTourPrompts(false);
+        if (mockState.settings.tourPromptsEnabled !== false) throw new Error('prompts were not switched off');
+        if (mockState.settings.statsTourStep !== 'done' || mockState.settings.menuTourStep !== 4) {
+            throw new Error(`tour progress changed: stats=${mockState.settings.statsTourStep}, menu=${mockState.settings.menuTourStep}`);
+        }
+        for (const key of ['quickActionsTipPinned', 'quickActionsTipRecent', 'quickActionsTipFrequent']) {
+            if (mockState.settings[key] !== true) throw new Error(`${key} should be marked seen, so the Quick Actions tip stays quiet`);
+        }
+    });
+
+    await test('both tour-prompt buttons say what a press will do', async () => {
+        const make = (id) => {
+            const btn = document.createElement('button');
+            btn.id = id;
+            btn.innerHTML = '<span class="tour-prompts-btn-label">Enable Tour Prompts</span>';
+            document.body.appendChild(btn);
+            return btn;
+        };
+        const buttons = [make('retake-guided-tour'), make('menu-retake-tours')];
+        try {
+            const text = () => buttons.map(b => b.querySelector('.tour-prompts-btn-label').textContent);
+            const manager = await createManager({ settings: { tourPromptsEnabled: true } });
+            const disable = getLabel('tour.disableTourPrompts'), enable = getLabel('tour.retakeTour');
+            if (text().some(t => t !== disable)) throw new Error(`with prompts on at boot, both should read "${disable}": ${JSON.stringify(text())}`);
+            if (buttons.some(b => b.title !== getLabel('tour.disablePromptsHint'))) throw new Error('tooltip should describe disabling');
+            await manager.enableTourPrompts(false);
+            if (text().some(t => t !== enable)) throw new Error(`after disabling, both should read "${enable}": ${JSON.stringify(text())}`);
+            await manager.enableTourPrompts(true);
+            if (text().some(t => t !== disable)) throw new Error(`after enabling, both should read "${disable}": ${JSON.stringify(text())}`);
+        } finally {
+            buttons.forEach(b => b.remove());
         }
     });
 

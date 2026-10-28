@@ -258,6 +258,29 @@
     flex: 1;
 }
 
+/* One line under each control saying what it does (Oct 2026: Settings had
+   none). Under a toggle it sits in .settings-option-text beside the name; under
+   a button it follows the button, tucked up against it. */
+.settings-option-text {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-0-5);
+}
+
+.settings-desc {
+    display: block;
+    font-size: var(--font-size-xs);
+    line-height: 1.35;
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
+    opacity: 0.8;
+}
+
+.settings-btn-desc {
+    margin: calc(-1 * var(--space-0-5)) 0 var(--space-2-5);
+    padding: 0 var(--space-1);
+    text-align: center;   /* the buttons' own labels are centred */
+}
+
 /* =============================================================================
    SETTINGS BUTTONS
    ============================================================================= */

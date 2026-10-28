@@ -4,6 +4,7 @@
  */
 
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+import { getLabel } from '../modules/labels/labelResolver.js';
 
 export async function runQuickActionsManagerTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
@@ -146,17 +147,29 @@ export async function runQuickActionsManagerTests(resultsDiv) {
         inst.cycleView('prev'); if (view() !== 'frequent') throw new Error('prev from pinned wraps → frequent');
     });
 
-    await test('a view tip notification fires once then stays silent', () => {
+    await test('one view tip fires on the first switch, then every switch stays silent', () => {
+        // It was one tip per view, so the first three switches each raised a
+        // notification — the last on landing back on Pinned (Oct 2026).
         const notifications = [];
         const { inst, state } = freshInstance({ quickActions: { ...baseQA(), activeView: 'pinned' }, notifications });
-        inst.cycleView('next'); // → recent (first landing)
-        if (state.settings.quickActionsTipRecent !== true) throw new Error('recent tip-seen flag should be set');
-        if (notifications.length === 0) throw new Error('the recent tip should fire on first landing');
+        inst.cycleView('next'); // → recent: the first switch
+        if (notifications.length !== 1) throw new Error(`the first switch should raise one tip, got ${notifications.length}`);
+        if (notifications[0].msg !== getLabel('quickAction.tipViews')) throw new Error(`the tip should name all three views: "${notifications[0].msg}"`);
+        for (const key of ['quickActionsTipPinned', 'quickActionsTipRecent', 'quickActionsTipFrequent']) {
+            if (state.settings[key] !== true) throw new Error(`${key} should be set by the one tip`);
+        }
         inst.cycleView('next'); // frequent
         inst.cycleView('next'); // pinned
-        const before = notifications.length;
-        inst.cycleView('next'); // recent again — must be silent (already seen)
-        if (notifications.length !== before) throw new Error('the recent tip must not fire a second time');
+        inst.cycleView('prev'); // frequent
+        if (notifications.length !== 1) throw new Error(`later switches must be silent, got ${notifications.length} tips`);
+    });
+
+    await test('a user who saw an old per-view tip is not shown the new one', () => {
+        const notifications = [];
+        const { inst } = freshInstance({ quickActions: { ...baseQA(), activeView: 'pinned' }, notifications });
+        inst.deps.AppState.get().settings.quickActionsTipRecent = true; // seen under the old one-per-view tips
+        inst.cycleView('next');
+        if (notifications.length !== 0) throw new Error('the views were already introduced; no tip expected');
     });
 
     await test('trackAction increments counts and keeps a deduped MRU recent list', () => {

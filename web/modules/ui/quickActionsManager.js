@@ -420,38 +420,31 @@ export class QuickActionsManager {
     }
 
     /**
-     * Show a one-time tip notification for each Quick Actions view.
-     * Each view's tip is shown only once, tracked via settings keys.
+     * Show the one-time Quick Actions tip on the first switch between views.
+     * @param {string} view - the view just switched to
      */
     _showViewTip(view) {
-        const tipKeys = {
-            pinned: 'quickActionsTipPinned',
-            recent: 'quickActionsTipRecent',
-            frequent: 'quickActionsTipFrequent'
-        };
-        const tipLabelKeys = {
-            pinned: 'quickAction.tipPinned',
-            recent: 'quickAction.tipRecent',
-            frequent: 'quickAction.tipFrequent'
-        };
-
-        const stateKey = tipKeys[view];
-        if (!stateKey) return;
+        // ONE tip for all three views, on the first switch, then never again —
+        // until Enable Tour Prompts clears these flags (Disable sets them). It
+        // used to be one tip per view, so the first three switches each raised
+        // a notification, the last one on landing back on Pinned where the user
+        // had started (Oct 2026). The three per-view flags are kept as the
+        // record: any one set means the user has already been shown the views.
+        const tipKeys = ['quickActionsTipPinned', 'quickActionsTipRecent', 'quickActionsTipFrequent'];
+        if (!VIEWS.includes(view)) return;
 
         const state = this.deps.AppState.get();
-        if (state?.settings?.[stateKey]) return; // Already shown
+        if (tipKeys.some(key => state?.settings?.[key])) return; // Already shown
 
-        // Mark as seen
         this.deps.AppState.update(s => {
             if (!s.settings) s.settings = {};
-            s.settings[stateKey] = true;
+            for (const key of tipKeys) s.settings[key] = true;
         });
 
-        // Show the tip notification
         this.deps.showNotification(
-            getLabel(tipLabelKeys[view]),
+            getLabel('quickAction.tipViews'),
             'info',
-            UI_TIMEOUTS.NOTIFICATION_MEDIUM
+            UI_TIMEOUTS.NOTIFICATION_LONG
         );
     }
 

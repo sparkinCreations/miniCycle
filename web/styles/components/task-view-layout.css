@@ -13,14 +13,18 @@
    The "Reset Home View Layout" button is only meaningful on desktop —
    drag-customization is desktop-only, so a tablet/mobile user has no
    custom layout to reset. Hide it everywhere except true desktop input
-   (matching the same media query that gates handle visibility).
+   (matching the same media query that gates handle visibility). Its
+   description line (Settings → Reset Options) goes with it, or it would sit
+   under the button above as if it described that one.
    ----------------------------------------------------------------------------- */
-#reset-task-view-layout {
+#reset-task-view-layout,
+#reset-task-view-layout-desc {
     display: none;
 }
 
 @media (hover: hover) and (pointer: fine) and (min-width: 1024px) {
-    #reset-task-view-layout {
+    #reset-task-view-layout,
+    #reset-task-view-layout-desc {
         display: revert;
     }
 }

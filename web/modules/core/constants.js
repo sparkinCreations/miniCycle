@@ -849,6 +849,7 @@ export const DOM_CLASSES = Object.freeze({
     EDIT_FOCUS_TARGET: 'edit-focus-target',
     EDIT_FOCUS_ACTIVE: 'active',
     CYCLE_ITEM_EDIT_INPUT: 'cycle-item-edit-input',  // routine switcher's inline rename box
+    TOUR_PROMPTS_BTN_LABEL: 'tour-prompts-btn-label', // text of the Enable/Disable Tour Prompts buttons (Settings + menu)
     SEARCH_PAGE_OVERLAY: 'search-page-overlay',
 
     // ---- Theme ----
@@ -2017,6 +2018,7 @@ export const DOM_SELECTORS = Object.freeze({
     EDIT_FOCUS_OVERLAY: '.edit-focus-overlay',
     EDIT_FOCUS_TARGET: '.edit-focus-target',
     CYCLE_ITEM_EDIT_INPUT: '.cycle-item-edit-input',
+    TOUR_PROMPTS_BTN_LABEL: '.tour-prompts-btn-label',
     FOCUS_SAFE: '.focus-safe',
 
     // ---- Loading & UI ----
