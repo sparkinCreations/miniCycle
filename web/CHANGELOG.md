@@ -1,3 +1,9 @@
+## [2.647] - 2026-10-28
+- fix(switcher): keep the routine search applied when the mode filter or sort changes
+- fix(switcher): keep the inline rename box readable and show the start of a long name
+- chore(platforms): sync iOS, Android and desktop stamps to 2.646 (builds 64 / 72 / 2.646.0)
+
+
 ## [2.646] - 2026-10-28
 - feat(settings): every control says what it does; tour prompts turn off as well as on; one Quick Actions tip
 - fix(testing): debug report names the real version and active routine; one storage meter everywhere
