@@ -1,3 +1,13 @@
+## [2.648] - 2026-10-28
+- docs(chrome): flag the backup bullet for rewording on the next store upload
+- site(product): the October backup entry is about visible, restorable backups, not automatic backups (those date to 1.66x)
+- site(product): October highlights lead What's New; Isaiah's beta-tester testimonial
+- docs(chrome): record the WHAT'S NEW block submitted with the 2.647 store build
+- docs(chrome): match the WHAT'S NEW wording pasted into the dashboard
+- docs(chrome): sync the store description to the live dashboard wording
+- docs(chrome): add the rewritten-per-upload WHAT'S NEW block to the store listing
+
+
 ## [2.647] - 2026-10-28
 - fix(switcher): keep the routine search applied when the mode filter or sort changes
 - fix(switcher): keep the inline rename box readable and show the start of a long name
