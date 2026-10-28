@@ -1562,7 +1562,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'View a timeline of completed cycles and cleared tasks.',
         step3:           'Track your achievement badges and milestones as you build consistency.',
         step4:           'Your total cycles across all routines and progress toward the next milestone.',
-        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Click and drag right to return to your tasks.' }
+        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Drag right or press Shift+← to return to your tasks.' }
     },
 
     prefsTour: {
@@ -1933,7 +1933,10 @@ export const DEFAULT_LABELS = deepFreeze({
         titleCelebration:    'First Cycle Complete!',
         // To-Do mode never counts a cycle; its first success is a clear.
         titleCelebrationTodo: 'First Clear Complete!',
-        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click and drag left for stats and achievements 📊' },
+        // The pointer variant is what keyboard users see too, so it names a way
+        // in for them: the move arrows (off by default) and Shift+→, which
+        // gesturePanelManager already maps to the next panel (review, Oct 2026).
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange, or turn on Show Move Arrows in Settings.|Drag left or press Shift+→ for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
@@ -1946,9 +1949,13 @@ export const DEFAULT_LABELS = deepFreeze({
         cycleDemoAria:        'Demonstration: three tasks get completed and the cycle counter advances each time.',
         dismiss:           'Skip',
         dismissAria:       'Skip welcome',
-        // The same corner button on the LAST slide: nothing is left to skip.
+        // The same corner button from "Try it yourself" on: nothing is left to skip.
         dismissDone:       'Done',
         dismissDoneAria:   'Done with welcome',
+        // Shown once, after Skip, to a user who skipped before the slide that
+        // explains Focus View. The button described is the exit control under
+        // the routine list (same description as focusMode.exitMovedNotice).
+        skippedInFocusView: 'You\'re in {focusName}, which shows just your tasks. To open {homeName}, use the button with inward-pointing brackets just under your list.',
         pauseAria:         'Pause welcome slides',
         playAria:          'Resume welcome slides',
         replayAria:        'Replay welcome slides',

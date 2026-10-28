@@ -262,6 +262,11 @@ function rearmFirstRunChoiceScreen() {
     if (!loader || !choice) return false;
 
     document.documentElement.classList.add(DOM_CLASSES.MC_FIRST_RUN);
+    // The same state a first-run page load starts in: critical.css hides the
+    // app and the footer under .app-loading, which is also what keeps Tab on
+    // this screen instead of running into the controls under it. Removed again
+    // by the choice handler below.
+    document.body.classList.add(DOM_CLASSES.APP_LOADING);
     loader.classList.add(DOM_CLASSES.FIRST_RUN_MODE);
     loader.classList.remove(DOM_CLASSES.FADE_OUT);
     loader.style.display = '';
@@ -305,6 +310,7 @@ function rearmFirstRunChoiceScreen() {
     // is long gone and boot's fade-out already ran.
     document.addEventListener('firstrun:choice', () => {
         document.documentElement.classList.remove(DOM_CLASSES.MC_FIRST_RUN);
+        document.body.classList.remove(DOM_CLASSES.APP_LOADING);
         loader.classList.remove(DOM_CLASSES.FIRST_RUN_MODE);
         loader.setAttribute('data-awaiting-choice', 'false');
         _deps.hideLoader?.();

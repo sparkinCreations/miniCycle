@@ -432,14 +432,18 @@ html:not(.mc-first-run) .first-run-choice,
   text-shadow: var(--text-shadow-lg);
   opacity: 0;
   pointer-events: none;
+  /* opacity:0 alone left the unrevealed link a Tab stop: keyboard focus landed
+     on an invisible link. visibility takes it out of the Tab order, and the
+     reveal below switches it back on (visibility animates as a single step). */
+  visibility: hidden;
   animation: first-run-lite-in 0.6s ease-out 10s forwards;
 }
 .first-run-lite:hover {
   opacity: 1;
 }
 @keyframes first-run-lite-in {
-  from { opacity: 0; transform: translateY(4px); pointer-events: none; }
-  to { opacity: 0.72; transform: translateY(0); pointer-events: auto; }
+  from { opacity: 0; transform: translateY(4px); pointer-events: none; visibility: visible; }
+  to { opacity: 0.72; transform: translateY(0); pointer-events: auto; visibility: visible; }
 }
 /* Gate: once boot completes (uiBoot sets html[data-app-loaded]), cancel the
    reveal — even though the choice screen lingers awaiting a tap. This is what
@@ -451,12 +455,14 @@ html[data-app-loaded="true"] .first-run-lite {
   animation: none !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  visibility: hidden !important;
 }
 @media (prefers-reduced-motion: reduce) {
   /* Keep the timed reveal (it's a functional gate, not decoration) but drop the slide. */
   .first-run-lite { animation: first-run-lite-fade 0.1s linear 10s forwards; }
   @keyframes first-run-lite-fade {
-    to { opacity: 0.72; pointer-events: auto; }
+    from { visibility: visible; }
+    to { opacity: 0.72; pointer-events: auto; visibility: visible; }
   }
 }
 
@@ -484,6 +490,24 @@ html[data-app-loaded="true"] .first-run-lite {
 }
 .first-run-restore:hover {
   opacity: 0.95;
+}
+
+/* Keyboard focus on the choice screen. The global ring is 2px of brand blue,
+   which all but vanished on this blue-tinted photo (review, Oct 2026) — and
+   the photo varies, so no single colour is safe on it. A white ring between
+   two dark bands reads on light and dark parts of any photo: the box-shadow
+   paints dark from the edge out to 9px, and the outline covers the middle of
+   it in white. Hardcoded colours for the same reason as .first-run-btn. */
+.first-run-btn:focus-visible,
+.first-run-lite:focus-visible,
+.first-run-restore:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 9px rgba(0, 0, 0, 0.6);
+}
+.first-run-lite:focus-visible,
+.first-run-restore:focus-visible {
+  border-radius: 4px;
 }
 
 /* Thin, quiet progress strip pinned to the bottom edge — continuous creep,
@@ -735,6 +759,18 @@ body.onboarding-active .onboarding-placeholder {
 /* App loading state - hide main content to prevent CLS measurement during boot */
 body.app-loading #app-container,
 body.app-loading .fixed-header-container {
+  visibility: hidden;
+}
+
+/* The same state also has to take the rest of the page out of the Tab order:
+   visibility:hidden is what removes a control from focus, and these two sit
+   outside #app-container. Without it, Tab on the first-run screen ran past
+   "Restore from a backup file" into the footer's view buttons and links, under
+   the splash where nothing visible happens — and the skip link, the first Tab
+   stop, sent focus to an app that wasn't there yet (review, Oct 2026). Both
+   come back with everything else when uiBoot removes .app-loading. */
+body.app-loading #footer-container,
+body.app-loading .skip-to-content {
   visibility: hidden;
 }
 

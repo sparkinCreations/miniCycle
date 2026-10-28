@@ -75,7 +75,10 @@ export class OnboardingCarousel {
             },
             {
                 title:   getLabel('firstRunWelcome.titleReset'),
-                message: getLabel('firstRunWelcome.messageReset')
+                message: getLabel('firstRunWelcome.messageReset'),
+                // Its second line is the only place the intro says why the
+                // app opened in Focus View — see _onFirstRunWelcomeDismiss.
+                explainsFocusView: true
             },
             {
                 // Slide 3 — passive demonstration, right-side caption explains.
@@ -89,10 +92,14 @@ export class OnboardingCarousel {
                 // / complete / unchecked states. Render returns a cleanup
                 // that unsubscribes when the carousel leaves the slide.
                 title:   getLabel('firstRunWelcome.titleTryIt'),
-                render: (container) => this.m._demo._buildTryItDynamic(container)
+                render: (container) => this.m._demo._buildTryItDynamic(container),
+                // From here on there is nothing left to skip — see
+                // _syncFirstRunWelcomeDismissLabel.
+                pastIntro: true
             }
         ];
         this.m._firstRunWelcomeSlideIndex = 0;
+        this._furthestSlideShown = 0;
         this.m._firstRunWelcomePaused = false;
         this.m._firstRunWelcomeSlideTimer = null;
         this.m._firstRunWelcomeBodyCleanup = null;
@@ -157,7 +164,7 @@ export class OnboardingCarousel {
         dismissBtn.setAttribute('aria-label', getLabel('firstRunWelcome.dismissAria'));
         dismissBtn.textContent = getLabel('firstRunWelcome.dismiss');
 
-        this.m._firstRunWelcomeDismissHandler = () => this._hideFirstRunWelcome({ persist: true });
+        this.m._firstRunWelcomeDismissHandler = () => this._onFirstRunWelcomeDismiss();
         dismissBtn.addEventListener('click', this.m._firstRunWelcomeDismissHandler);
 
         // Subtle prev/next navigation arrows on the left/right edges of the
@@ -315,14 +322,16 @@ export class OnboardingCarousel {
                 // Hold this slide longer than usual so it doesn't auto-advance
                 // while the app's cycle-completion celebration overlay is
                 // still on screen. Total hold = base SLIDE_HOLD + this extra.
-                extraHold: UI_TIMEOUTS.NOTIFICATION_OVERLAY
+                extraHold: UI_TIMEOUTS.NOTIFICATION_OVERLAY,
+                pastIntro: true
             },
             {
                 // Slide 6 — "All Set!" with a CTA button that opens the
                 // create-routine modal. render-mode so the body can host
                 // both the message and the button.
                 title:  getLabel('firstRunWelcome.titleFocusView'),
-                render: (container) => this._buildFocusViewWithCta(container)
+                render: (container) => this._buildFocusViewWithCta(container),
+                pastIntro: true
             }
         );
 
@@ -510,6 +519,38 @@ export class OnboardingCarousel {
     }
 
     /**
+     * The corner Skip/Done button. The first run opens in Focus View, and the
+     * one line that says so is on the second slide — so a user who pressed
+     * Skip before it was shown was left in a stripped-down view with no word
+     * of what it is or how to leave it (review, Oct 2026). Pressing Skip is an
+     * action they just took, so the answer is a notification (see
+     * MESSAGING_SURFACES.md), and only for that case: anyone who saw the line,
+     * a replay, or a user no longer in Focus View gets nothing extra.
+     * @private
+     */
+    _onFirstRunWelcomeDismiss() {
+        // Read before the hide below clears the slide list.
+        const slides = this.m._firstRunWelcomeSlides || [];
+        const explainerIndex = slides.findIndex((slide) => slide.explainsFocusView);
+        const missedExplainer = !this.m._firstRunWelcomeReplay
+            && explainerIndex !== -1
+            && (this._furthestSlideShown || 0) < explainerIndex
+            && document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+
+        this._hideFirstRunWelcome({ persist: true });
+
+        if (missedExplainer) {
+            this.m.deps.showNotification(
+                getLabel('firstRunWelcome.skippedInFocusView', {
+                    vars: { focusName: getLabel('focusMode.enter'), homeName: getLabel('homeView.name') }
+                }),
+                'info',
+                UI_TIMEOUTS.NOTIFICATION_PERSISTENT
+            );
+        }
+    }
+
+    /**
      * Build the slide-6 ("All Set!") body — short copy with a CTA button
      * that opens the create-routine modal. Catches users who'd otherwise
      * never exit Focus View (the home-view notification's matching CTA
@@ -566,6 +607,8 @@ export class OnboardingCarousel {
 
         // Reconcile the prev/next arrow visibility with the current index.
         this._updateFirstRunWelcomeNavVisibility();
+
+        this._furthestSlideShown = Math.max(this._furthestSlideShown || 0, this.m._firstRunWelcomeSlideIndex);
 
         const isLast = this.m._firstRunWelcomeSlideIndex
             === this.m._firstRunWelcomeSlides.length - 1;
@@ -750,9 +793,12 @@ export class OnboardingCarousel {
 
     /**
      * The corner dismiss button is one control shared by every slide. "Skip"
-     * is right while slides remain; on "All Set!" nothing is left to skip, so
-     * it reads "Done" (copy review, Oct 2026). Looked up by id rather than
-     * stored on the manager so the field inventory stays as it is.
+     * is right while explainer slides remain; once the user reaches "Try it
+     * yourself" the explaining is over, so it reads "Done" there and on every
+     * slide after it (copy review, Oct 2026). Keying this off "is the last
+     * slide" made it flip Done → Skip → Done, because finishing the sample
+     * routine appends two slides behind "Try it yourself". Looked up by id
+     * rather than stored on the manager so the field inventory stays as it is.
      * @param {boolean} isLast - whether the current slide is the final one
      * @private
      */
@@ -760,8 +806,10 @@ export class OnboardingCarousel {
         const banner = this.m._firstRunWelcomeBanner;
         const btn = banner?.querySelector?.(`#${DOM_IDS.FIRST_RUN_WELCOME_DISMISS}`);
         if (!btn) return;
-        btn.textContent = getLabel(isLast ? 'firstRunWelcome.dismissDone' : 'firstRunWelcome.dismiss');
-        btn.setAttribute('aria-label', getLabel(isLast ? 'firstRunWelcome.dismissDoneAria' : 'firstRunWelcome.dismissAria'));
+        const slide = this.m._firstRunWelcomeSlides?.[this.m._firstRunWelcomeSlideIndex];
+        const done = isLast || !!slide?.pastIntro;
+        btn.textContent = getLabel(done ? 'firstRunWelcome.dismissDone' : 'firstRunWelcome.dismiss');
+        btn.setAttribute('aria-label', getLabel(done ? 'firstRunWelcome.dismissDoneAria' : 'firstRunWelcome.dismissAria'));
     }
 
     _advanceFirstRunWelcomeSlide() {

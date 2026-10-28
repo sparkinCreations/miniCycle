@@ -5719,7 +5719,221 @@ async function journeyQuickActionPickerKeepsMenuOpen(browser, baseURL) {
     return { name: 'adding a quick action from the menu keeps the menu open', failures };
 }
 
+// ── Keyboard focus on the first-run choice screen ──────────────────────────
+// The choice screen is the splash; the app is laid out under it, hidden. Tab
+// used to run past "Restore from a backup file" into the footer's view buttons
+// and links, under the splash where nothing visible happens, and the skip link
+// (the first Tab stop) sent focus into that hidden app (review, Oct 2026). Every
+// Tab stop must be on the screen the user can see — the splash, or a toast's
+// close button — on a first-run load AND after an in-place factory reset, which
+// brings the screen back without a page load. Once the app is open, the skip
+// link and the footer must be reachable again.
+async function journeyChoiceScreenKeepsFocus(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { noNavigate: true, saveDialog: 'save' });
+
+    // Walk the Tab order from the top of the document until it wraps.
+    const tabStops = async () => {
+        // Start from the top of the document. blur() alone keeps the blurred
+        // element as the Tab starting point; removing a focused element moves
+        // the starting point to where it stood — here, the start of <body>.
+        await page.evaluate(() => {
+            const anchor = document.createElement('span');
+            anchor.tabIndex = -1;
+            document.body.prepend(anchor);
+            anchor.focus();
+            anchor.remove();
+        });
+        const stops = [];
+        for (let i = 0; i < 40; i++) {
+            await page.keyboard.press('Tab');
+            const stop = await page.evaluate(() => {
+                const a = document.activeElement;
+                if (!a || a === document.body) return null;
+                return {
+                    desc: a.id || `${a.tagName.toLowerCase()}.${String(a.className || '').split(' ')[0]} "${(a.textContent || '').trim().slice(0, 24)}"`,
+                    onScreen: !!a.closest('#app-loader, #notification-container'),
+                    toast: !!a.closest('#notification-container'),
+                    skipLink: a.classList.contains('skip-to-content'),
+                    footer: !!a.closest('#footer-container')
+                };
+            });
+            if (!stop) break;                                   // left the document
+            if (stops.length && stop.desc === stops[0].desc) break;   // wrapped
+            stops.push(stop);
+        }
+        return stops;
+    };
+    const waitForChoiceScreen = () => page.waitForFunction(() => {
+        const loader = document.getElementById('app-loader');
+        const btns = [...document.querySelectorAll('.first-run-btn')];
+        return !!loader && document.documentElement.classList.contains('mc-first-run')
+            && getComputedStyle(loader).display !== 'none'
+            && btns.length === 3 && btns.every(b => !b.disabled);
+    }, null, { timeout: 25000 });
+    const checkScreen = async (when) => {
+        const stops = await tabStops();
+        const off = stops.filter(s => !s.onScreen);
+        record(`${when}: every Tab stop is on the choice screen`, stops.length > 0 && off.length === 0,
+            off.length ? `reached hidden controls: ${off.map(s => s.desc).join(', ')}` : 'no Tab stops at all');
+        const first = stops.find(s => !s.toast);
+        record(`${when}: the first Tab stop is the first choice, not a skip link into the hidden app`,
+            first && /^button\.first-run-btn/.test(first.desc),
+            `first stop was ${first ? first.desc : 'nothing'}`);
+    };
+
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await waitForChoiceScreen();
+        await page.waitForFunction(() => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 25000 });
+        await page.waitForTimeout(500);
+        await checkScreen('first-run load');
+
+        // The ring has to read on a photo whose colours are unknown: white with
+        // a dark band around it, not the app's 2px brand blue.
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').focus());
+        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press('Tab');
+        await page.waitForTimeout(400);   // the button transitions its box-shadow
+        const ring = await page.evaluate(() => {
+            const cs = getComputedStyle(document.activeElement);
+            return { color: cs.outlineColor, width: parseFloat(cs.outlineWidth), shadow: cs.boxShadow };
+        });
+        record('the focused choice shows a white ring with a dark band around it',
+            ring.color === 'rgb(255, 255, 255)' && ring.width >= 3 && /rgba\(0, 0, 0, [\d.]+\) 0px 0px 0px \d+px/.test(ring.shadow),
+            `outline ${ring.color} ${ring.width}px, shadow ${ring.shadow}`);
+
+        // Pick, let the app open, and make sure nothing was left hidden.
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+        await page.waitForFunction(() => getComputedStyle(document.getElementById('app-loader')).display === 'none',
+            null, { timeout: 25000 });
+        await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+        await page.waitForTimeout(800);
+        await clickEl(page, '#focus-mode-exit-btn');
+        await page.waitForFunction(() => !document.body.classList.contains('focus-mode'), null, { timeout: 8000 });
+        await page.waitForTimeout(800);
+        // Toasts (the Home View welcome among them) are reachable on purpose.
+        const appStops = (await tabStops()).filter(s => !s.toast);
+        record('once the app is open the skip link is the first Tab stop again',
+            appStops[0] && appStops[0].skipLink, `first stop was ${appStops[0] ? appStops[0].desc : 'nothing'}`);
+        record('once the app is open the footer is reachable again', appStops.some(s => s.footer),
+            'no Tab stop in #footer-container');
+
+        // In-place factory reset: the screen comes back without a page load.
+        await openMenu(page).catch(() => {});
+        await clickEl(page, '#open-settings');
+        await page.waitForTimeout(1200);
+        await clickEl(page, '#factory-reset');
+        await page.waitForTimeout(1000);
+        await clickEl(page, 'button.btn-confirm.btn-destructive');
+        await waitForChoiceScreen();
+        await page.waitForTimeout(800);
+        await checkScreen('after an in-place factory reset');
+
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+        await page.waitForFunction(() => getComputedStyle(document.getElementById('app-loader')).display === 'none',
+            null, { timeout: 25000 });
+        await page.waitForTimeout(800);
+        // (The pick lands in Focus View, which hides the footer by design — so
+        // the check is the loading state itself and the task area under it.)
+        record('after the reset and a pick, the app is visible again',
+            await page.evaluate(() => !document.body.classList.contains('app-loading')
+                && getComputedStyle(document.getElementById('app-container')).visibility === 'visible'),
+            'body still carries .app-loading, or the task area is still hidden');
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'keyboard focus stays on the welcome choice screen', failures };
+}
+
+// ── The intro carousel's corner button and the Focus View notice ────────────
+// The button read Skip, Skip, Skip, Done on "Try it yourself", Skip again on
+// "First Cycle Complete!" and Done on "All Set!" — keyed off "last slide", and
+// finishing the sample routine appends two slides. From "Try it yourself" on it
+// is Done. Separately: the intro opens in Focus View and only its second slide
+// says so, so Skip before that slide leaves the user in a stripped-down view
+// with no word of what it is — Skip then gets a one-time notice (review, Oct 2026).
+async function journeyIntroDoneAndFocusNotice(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const NOTICE = /which shows just your tasks/;
+
+    const openIntro = async () => {
+        const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
+        await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+        await page.waitForSelector('#first-run-welcome', { timeout: 25000 });
+        await page.waitForTimeout(800);
+        return { context, page };
+    };
+    const corner = (page) => page.evaluate(() => {
+        const bn = document.getElementById('first-run-welcome');
+        return { slide: bn ? bn.dataset.slideIndex : null, text: document.getElementById('first-run-welcome-dismiss')?.textContent };
+    });
+    const noticeShown = (page) => page.evaluate((src) => [...document.querySelectorAll('.notification')]
+        .some(n => new RegExp(src).test(n.textContent)), NOTICE.source);
+
+    // 1. Walk the slides, finish the sample routine, read the button on each.
+    let ctx = null;
+    try {
+        const { context, page } = await openIntro(); ctx = context;
+        const seen = [];
+        seen.push(await corner(page));
+        for (let i = 0; i < 3; i++) {
+            await clickEl(page, '#first-run-welcome-next');
+            await page.waitForTimeout(700);
+            seen.push(await corner(page));
+        }
+        const n = await page.locator('#taskList li .task-text').count();
+        for (let i = 0; i < n; i++) {
+            await page.locator('#taskList li .task-text').nth(i).click();
+            await page.waitForTimeout(400);
+        }
+        await page.waitForFunction(() => /^(4|5)$/.test(document.getElementById('first-run-welcome')?.dataset.slideIndex || ''),
+            null, { timeout: 15000 });
+        seen.push(await corner(page));
+        const labels = seen.map(c => `${c.slide}:${c.text}`).join(' ');
+        record('Skip on the explainer slides', seen.slice(0, 3).every(c => c.text === 'Skip'), labels);
+        record('Done from "Try it yourself" on, including the slides finishing the routine adds',
+            seen.slice(3).every(c => c.text === 'Done'), labels);
+
+        // Leaving with Done after seeing everything: no extra notice.
+        await clickEl(page, '#first-run-welcome-dismiss');
+        await page.waitForTimeout(1200);
+        record('no Focus View notice for a user who saw the intro', !(await noticeShown(page)),
+            'the notice appeared although the Focus View slide was shown');
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        if (ctx) await ctx.close();
+    }
+
+    // 2. Skip on the very first slide: the notice explains where they are.
+    ctx = null;
+    try {
+        const { context, page } = await openIntro(); ctx = context;
+        record('the intro opens in Focus View', await page.evaluate(() => document.body.classList.contains('focus-mode')),
+            'not in Focus View — the notice below has nothing to explain');
+        await clickEl(page, '#first-run-welcome-dismiss');
+        await page.waitForTimeout(1200);
+        record('Skip on the first slide explains Focus View and how to leave it', await noticeShown(page),
+            'no notice after skipping before the Focus View slide');
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        if (ctx) await ctx.close();
+    }
+    return { name: 'the intro reads Done once it is finished; skipping it explains Focus View', failures };
+}
+
 const JOURNEYS = [
+    { name: 'keyboard focus stays on the welcome choice screen', fn: journeyChoiceScreenKeepsFocus },
+    { name: 'the intro reads Done once it is finished; skipping it explains Focus View', fn: journeyIntroDoneAndFocusNotice },
     { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },
     { name: 'a routine search survives a mode filter or sort change', fn: journeySwitcherSearchSurvivesFilter },
     { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', fn: journeySwitcherTapResponds },
