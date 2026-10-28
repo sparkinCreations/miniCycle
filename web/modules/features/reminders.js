@@ -1084,23 +1084,33 @@ export class MiniCycleReminders {
             button.setAttribute("aria-pressed", isActive.toString());
 
             await this.saveTaskReminderState(assignedTaskId, isActive);
+            // Turning a bell ON is a request to be reminded, and with the global
+            // switch off nothing would ever fire. Switch it on, the way a first
+            // due date switches due-date notices on (Oct 2026). Turning a bell
+            // OFF leaves the global switch alone: other tasks may still have theirs.
+            let autoEnabled = false;
+            if (isActive && state.customReminders?.enabled !== true) {
+                autoEnabled = await this._autoEnableReminders();
+            }
             // No autoSaveReminders() here. This button lives on the TASK LIST, not in
             // the reminders modal, so it is reachable while that form is still at its
             // HTML defaults — and the rebuild-from-DOM save then wiped the global
-            // settings. It never had anything to save either: the task state is
-            // persisted above, and the global settings are unchanged by this click.
+            // settings. The task state is persisted above, and the one global
+            // change this click can make (switching reminders on) is patched into
+            // state by _autoEnableReminders(), not read back from the form.
             this.startReminders();
 
             // Update undo/redo button states
             this.deps.updateUndoRedoButtons();
 
             if (isActive) {
-                const reminderSettings = state.customReminders || {};
+                // Fresh read: the auto-enable above may have just changed it.
+                const reminderSettings = this._state()?.customReminders || state.customReminders || {};
 
-                // The task's own flag is saved either way — the user's intent is
-                // recorded and takes effect the moment they flip the global switch.
-                // But the MESSAGE must not claim a reminder is running when the
-                // global switch is off: startReminders() returns immediately on
+                // Normally the switch is on by now (switched on above if it was
+                // off). If that failed (state not ready), the task's own flag is
+                // still saved, and the MESSAGE must not claim a reminder is running
+                // while the global switch is off: startReminders() returns immediately on
                 // `!remindersSettings.enabled`, so nothing fires. Worse, the
                 // enabled-copy interpolates the stored frequency, promising a
                 // schedule ("Every 1 hours") read from the very object whose
@@ -1119,7 +1129,8 @@ export class MiniCycleReminders {
                     const settingsText = freq > 0
                         ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
                         : getLabel('notify.reminderCustomSettings');
-                    message = `🔔 ${getLabel('notify.reminderEnabledWithSettings', { vars: { settings: settingsText } })}`;
+                    const messageKey = autoEnabled ? 'notify.reminderAutoEnabled' : 'notify.reminderEnabledWithSettings';
+                    message = `🔔 ${getLabel(messageKey, { vars: { settings: settingsText } })}`;
                     notificationType = 'success';
                     actionLabel = getLabel('notify.reminderOpenSettings');
                 } else {
@@ -1152,6 +1163,42 @@ export class MiniCycleReminders {
             }
         };
         safeAdd(button, "click", button._reminderClickHandler);
+    }
+
+    /**
+     * Switch global reminders on for a task's 🔔, keeping the saved schedule.
+     *
+     * Patches state directly (updateReminderSettings), never autoSaveReminders():
+     * the bell is reachable while the reminders form is still at its HTML
+     * defaults, and a whole-form save from there wipes the user's settings.
+     * The timer fields start the way the main switch starts them. A schedule
+     * that could never fire is repaired: a frequency of 0 takes the default,
+     * and "not indefinite, repeat 0 times" (what new data is created with)
+     * becomes indefinite. A real repeat cap the user set is kept.
+     * @returns {Promise<boolean>} true when reminders were switched on
+     */
+    async _autoEnableReminders() {
+        const current = { ...DEFAULT_REMINDERS, ...(this._state()?.customReminders || {}) };
+        const frequencyValue = current.frequencyValue > 0 ? current.frequencyValue : DEFAULT_REMINDERS.frequencyValue;
+        const frequencyUnit = FREQUENCY_MS[current.frequencyUnit] ? current.frequencyUnit : DEFAULT_REMINDERS.frequencyUnit;
+        const indefinite = current.indefinite === true || !(current.repeatCount >= 1);
+        const now = Date.now();
+        const saved = await this.updateReminderSettings({
+            enabled: true,
+            indefinite,
+            frequencyValue,
+            frequencyUnit,
+            nextReminderTime: now + frequencyValue * FREQUENCY_MS[frequencyUnit],
+            reminderStartTime: now,
+            timesReminded: 0
+        });
+        if (!saved) return false;
+
+        // Keep the reminders form in step if it has been built.
+        const enableReminders = this.deps.getElementById(DOM_IDS.ENABLE_REMINDERS);
+        if (enableReminders) enableReminders.checked = true;
+        this.deps.getElementById(DOM_IDS.FREQUENCY_SECTION)?.classList.remove(DOM_CLASSES.HIDDEN);
+        return true;
     }
 
     /**

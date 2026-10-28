@@ -826,9 +826,13 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
         // regardless — interpolating the stored frequency out of the very object
         // whose enabled:false made it inert, i.e. promising a specific schedule
         // that could never arrive. Reported by a user, not caught by a test.
-        function wireTaskReminder({ globalEnabled, freq = 1, unit = 'hours' }) {
+        //
+        // Since Oct 2026 turning a bell ON switches the global setting on
+        // instead (like a first due date switches due-date notices on), so the
+        // message names a schedule that is really running.
+        function wireTaskReminder({ globalEnabled, freq = 1, unit = 'hours', extra = {} }) {
             const state = {
-                customReminders: { enabled: globalEnabled, frequencyValue: freq, frequencyUnit: unit },
+                customReminders: { enabled: globalEnabled, frequencyValue: freq, frequencyUnit: unit, ...extra },
                 appState: { activeRoutineId: 'r1' },
                 data: { routine: { r1: { id: 'r1', title: 'R', tasks: [{ id: 't1', text: 'task', remindersEnabled: false }] } } },
                 settings: {}
@@ -852,23 +856,47 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             return { instance, button, notifications, state };
         }
 
-        await test('global reminders OFF: does not claim the reminder is enabled, and names no schedule', async () => {
-            const { button, notifications } = wireTaskReminder({ globalEnabled: false, freq: 1, unit: 'hours' });
+        await test('global reminders OFF: turning a bell on switches reminders on, with a live schedule', async () => {
+            const before = Date.now();
+            const { button, notifications, state } = wireTaskReminder({ globalEnabled: false, freq: 1, unit: 'hours' });
             await button._reminderClickHandler();
+            const r = state.customReminders;
+            if (r.enabled !== true) throw new Error('the global switch should now be on');
+            if (r.frequencyValue !== 1 || r.frequencyUnit !== 'hours') {
+                throw new Error(`the saved schedule must be kept: ${JSON.stringify(r)}`);
+            }
+            if (!(r.nextReminderTime >= before + 60 * 60 * 1000 - 1000) || r.timesReminded !== 0) {
+                throw new Error(`the timer should start like the main switch starts it: ${JSON.stringify(r)}`);
+            }
             const n = notifications[notifications.length - 1];
             if (!n) throw new Error('no notification was shown at all');
-            if (/reminder enabled/i.test(n.msg)) {
-                throw new Error(`claimed the reminder is enabled while global reminders are off: ${JSON.stringify(n.msg)}`);
+            if (!/reminders turned on/i.test(n.msg) || !/1/.test(n.msg)) {
+                throw new Error(`should say reminders were turned on and name the schedule: ${JSON.stringify(n.msg)}`);
             }
-            if (/every\s*1/i.test(n.msg)) {
-                throw new Error(`promised a schedule that cannot fire (global reminders are off): ${JSON.stringify(n.msg)}`);
-            }
-            if (n.type === 'success') {
-                throw new Error('reported success for a reminder that will not fire');
-            }
-            if (!/enable reminders/i.test(n.msg)) {
-                throw new Error(`should tell the user what to turn on, got: ${JSON.stringify(n.msg)}`);
-            }
+            if (n.type !== 'success') throw new Error(`expected success, got ${n.type}`);
+        });
+
+        await test('global reminders OFF: a schedule that could never fire is repaired, a real cap is kept', async () => {
+            // New data is created with indefinite:false + repeatCount:0, which the
+            // reminder loop reads as "already sent all 0" and stops at once.
+            const fresh = wireTaskReminder({ globalEnabled: false, freq: 0, unit: 'minutes', extra: { indefinite: false, repeatCount: 0 } });
+            await fresh.button._reminderClickHandler();
+            const a = fresh.state.customReminders;
+            if (a.indefinite !== true) throw new Error(`"repeat 0 times" should become indefinite: ${JSON.stringify(a)}`);
+            if (!(a.frequencyValue > 0)) throw new Error(`a 0 frequency should take the default: ${JSON.stringify(a)}`);
+
+            const capped = wireTaskReminder({ globalEnabled: false, freq: 2, unit: 'hours', extra: { indefinite: false, repeatCount: 3 } });
+            await capped.button._reminderClickHandler();
+            const b = capped.state.customReminders;
+            if (b.indefinite !== false || b.repeatCount !== 3) throw new Error(`a user's repeat cap must be kept: ${JSON.stringify(b)}`);
+        });
+
+        await test('turning a bell OFF leaves the global switch alone', async () => {
+            const { button, state } = wireTaskReminder({ globalEnabled: true });
+            state.data.routine.r1.tasks[0].remindersEnabled = true;
+            await button._reminderClickHandler();
+            if (state.data.routine.r1.tasks[0].remindersEnabled !== false) throw new Error('fixture: the bell should be off now');
+            if (state.customReminders.enabled !== true) throw new Error('other tasks may still have their bell on; the global switch must stay on');
         });
 
         await test('global reminders OFF: the task flag is still saved, so it works once the switch is on', async () => {
