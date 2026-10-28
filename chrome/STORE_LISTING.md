@@ -17,54 +17,61 @@ releases.
 
 Positioning mirrors `web/pages/product.html` (Oct 2026): reusable checklists for
 routines and repeatable procedures lead; "lightweight SOP" is a bridge one
-section down, never the identity. Feature names use the app's own labels
+section down, never the identity. The wording below is the dashboard's as of
+Oct 2026 (synced from the live listing on 2026-10-28), with WHAT'S NEW added. Feature names use the app's own labels
 (Auto Cycle / Manual Cycle / To-Do Mode, Focus View, the four vocabulary
 themes) so the listing never promises something the UI calls something else.
 
 ---
 
-miniCycle is a reusable checklist for routines and repeatable procedures — not another to-do list.
+miniCycle is a reusable checklist app for routines and repeatable procedures.
 
-Most task apps treat tasks as one-and-done. miniCycle is built for the things you do over and over: morning routines, opening and closing procedures, inspection rounds, workout circuits, study sessions, cleaning routines. Build the checklist once. When you complete every task, the routine "cycles": the tasks reset, your cycle count ticks up, and it's ready to run again.
+miniCycle is for the things you do again and again: morning routines, opening and closing procedures, inspection rounds, workout circuits, study sessions, and cleaning routines.
+
+Build your checklist once and run it repeatedly. In Auto Cycle mode, completing every task resets the checklist, increases your cycle count, and prepares it for the next run. Prefer more control? Choose Manual Cycle or use miniCycle as a traditional to-do list.
 
 That simple loop turns repetition into momentum.
 
+miniCycle opens in Chrome’s side panel, so your routine stays visible beside whatever you’re working on. Check off each step as you complete it, or open the app in a full tab whenever you need more room.
+
 HOW IT WORKS
+
 • Create a routine and add its tasks.
-• Check tasks off as you go.
-• Complete them all and the routine resets automatically, counting each cycle you've run.
-• Stay consistent to reach milestones, earn achievements, and unlock new themes.
+• Choose Auto Cycle, Manual Cycle, or To-Do Mode.
+• Check off tasks as you work through the routine.
+• Complete cycles to track your consistency, reach milestones, earn achievements, and unlock themes.
 
 FEATURES
-• Multiple routines — switch between as many as you like.
-• Recurring tasks — schedule tasks to reappear daily, weekly, or on your own pattern.
-• Reminders and due dates — gentle nudges, fully optional.
-• Priorities and per-task options you can show or hide.
-• Three modes — Auto Cycle, Manual Cycle (reset when you say so), or a plain To-Do Mode when you just need a list.
-• Focus View — strip away everything but the task in front of you.
-• Stats, history, and achievements to see your consistency over time.
-• Vocabulary themes — reframe the app as a Habit Tracker, a Fitness log, a Scholar study planner, or a Cleaning checklist, unlocked as you go.
-• Dark mode, high contrast, reduced motion, and adjustable font size.
+
+• Multiple routines — create and switch between different checklists.
+• Recurring tasks — schedule tasks daily, weekly, monthly, or with a custom pattern.
+• Reminders and due dates — optional nudges when you need them.
+• Priorities and customizable task controls.
+• Three modes — Auto Cycle, Manual Cycle, and To-Do Mode.
+• Focus View — a distraction-reduced workspace for running your routine.
+• Stats, history, and achievements that show your progress over time.
+• Vocabulary themes that adapt the app for habits, fitness, studying, cleaning, and more.
+• Dark mode, high contrast, reduced motion, and adjustable font sizes.
 • Undo and redo across the app.
-• Share routines as .mcyc files — export yours or import one from a friend or a colleague.
+• Portable .mcyc routine files — export your routines or import one from a friend or colleague.
 
 AT WORK OR AT HOME
-The same checklist that runs a shift inspection or an opening procedure also runs a workout or a study session. For individuals and small operations that don't need process-management software, miniCycle works as a lightweight standard operating procedure (SOP) checklist.
+
+The same kind of checklist that runs a shift inspection or opening procedure can also guide a workout, study session, or household routine.
+
+For individuals and small operations that don’t need full-scale process-management software, miniCycle can also serve as a lightweight standard operating procedure—or SOP—checklist.
 
 PRIVATE BY DESIGN
-• No accounts. No sign-up.
-• No tracking, no analytics inside the app, no ads.
-• No cloud — everything stays in your browser, on your device.
+
+• No account or sign-up.
+• No ads, tracking, or analytics inside the app.
+• No cloud storage — your routines, tasks, and progress stay in your browser on your device.
 • Works offline.
 
-The only time any data leaves your device is if you choose to send feedback through the in-app form. Your routines, tasks, and progress are yours alone.
-
-IN CHROME
-miniCycle opens in Chrome's side panel, so your routine stays visible beside whatever you're working on and you can tick tasks off as you actually do them. Need more room? Open it in a full tab anytime.
-
-Build the routines that build you.
+Privacy focused so your information remains under your control.
 
 WHAT'S NEW (October 2026)
+
 • Open Routine: a search stays applied when you change the mode filter or the sort.
 • Open Routine: renaming a routine is easier to read, and a long name shows from its start.
 • Open Routine responds the moment you tap a routine.
