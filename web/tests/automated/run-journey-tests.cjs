@@ -5313,6 +5313,49 @@ async function journeySwitcherInlineRename(browser, baseURL) {
             `Open Routine open=${s.switcherOpen}, other dialogs: ${JSON.stringify(s.otherDialogs)}`);
         record('the active routine still exists after the rename', s.activeExists,
             s.activeExists ? 'activeRoutineId resolves' : 'activeRoutineId points at a routine that is no longer stored');
+
+        // The box has to be readable while it is open (Oct 2026): the dim overlay
+        // used to be appended to the <dialog>, beside the card, and the card's
+        // backdrop blur makes it a stacking context, so the overlay painted over
+        // the raised row too and the selected name looked faded. And select()
+        // parked the caret at the end, so a long name showed only its tail.
+        const longName = 'Daily Routine With A Deliberately Long Title, Biweekly Recurrence';
+        const startRename = async () => {
+            const id = (await persisted(page)).activeId;
+            const sel = `.mini-cycle-switch-item[data-cycle-key="${id}"]`;
+            await page.waitForSelector(sel, { state: 'visible', timeout: 10000 });
+            await clickEl(page, sel);
+            await page.waitForFunction((x) => document.querySelector(x)?.classList.contains('selected'), sel, { timeout: 5000 });
+            await clickEl(page, '#switch-rename');
+            await page.waitForFunction(() => document.activeElement?.classList.contains('cycle-item-edit-input'), null, { timeout: 5000 });
+            await page.waitForTimeout(400);
+        };
+        await startRename();
+        await page.keyboard.press(process.platform === 'darwin' ? 'Meta+a' : 'Control+a');
+        await page.keyboard.type(longName);
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(900);
+        await startRename();
+        const box = await page.evaluate(() => {
+            const input = document.querySelector('.cycle-item-edit-input');
+            const overlay = document.querySelector('#routine-switcher-modal .edit-focus-overlay');
+            const row = input?.closest('.mini-cycle-switch-item');
+            return {
+                value: input?.value,
+                overlayInCard: !!overlay && overlay.parentElement === row?.closest('.mini-cycle-switch-modal-content'),
+                overlayZ: overlay ? parseInt(getComputedStyle(overlay).zIndex, 10) : null,
+                rowZ: row ? parseInt(getComputedStyle(row).zIndex, 10) : null,
+                scrollLeft: input?.scrollLeft, overflows: input ? input.scrollWidth > input.clientWidth : false,
+                selected: input ? [input.selectionStart, input.selectionEnd] : null
+            };
+        });
+        record('the rename box opens with the long name', box.value === longName, `box=${JSON.stringify(box.value)}`);
+        record('the dim overlay sits inside the card, below the raised row', box.overlayInCard && box.rowZ > box.overlayZ,
+            `overlay in card=${box.overlayInCard}, overlay z=${box.overlayZ}, row z=${box.rowZ}`);
+        record('a long name is selected from its start, not scrolled to its tail',
+            box.overflows && box.scrollLeft === 0 && box.selected?.[0] === 0 && box.selected?.[1] === longName.length,
+            `overflows=${box.overflows}, scrollLeft=${box.scrollLeft}, selection=${JSON.stringify(box.selected)}`);
+        await page.keyboard.press('Escape');
     } finally {
         await context.close();
     }

@@ -469,13 +469,18 @@ export class RoutineSwitcherActions {
         input.value = currentName;
         input.setAttribute('aria-label', getLabel('accessibility.editRoutineName'));
 
-        // Add focus overlay to dim the modal
+        // Add focus overlay to dim the modal. It must live INSIDE the card, not
+        // on the <dialog>: the card's backdrop-filter makes it a stacking context,
+        // so an overlay beside it painted over the whole card, raised row and all
+        // (Oct 2026: the rename box looked faded). Inside the card the row's
+        // z-index wins and only the rest of the card dims.
         const dialog = this.m.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_MODAL);
+        const card = dialog?.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT) || dialog;
         const overlay = document.createElement('div');
         overlay.className = DOM_CLASSES.EDIT_FOCUS_OVERLAY;
-        if (dialog) {
-            dialog.style.position = 'relative';
-            dialog.appendChild(overlay);
+        if (card) {
+            card.style.position = 'relative';
+            card.appendChild(overlay);
         }
         listItem.classList.add(DOM_CLASSES.EDIT_FOCUS_TARGET);
         // Double rAF ensures browser registers initial opacity:0 before transitioning
@@ -485,9 +490,12 @@ export class RoutineSwitcherActions {
         titleSpan.style.display = 'none';
         titleSpan.parentNode.insertBefore(input, titleSpan.nextSibling);
 
-        // Focus and select all text
+        // Focus and select all text. select() parks the caret at the END, which
+        // scrolls a long name so only its tail shows; anchoring the selection
+        // backward keeps the start in view (Oct 2026).
         input.focus();
-        input.select();
+        input.setSelectionRange(0, input.value.length, 'backward');
+        input.scrollLeft = 0;
 
         // Handle blur (save on blur)
         const handleBlur = () => {
