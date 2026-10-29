@@ -1,3 +1,23 @@
+## [2.654] - 2026-10-29
+- fix(shortcuts): keyboard-only items stay hidden on a phone held sideways
+- chore(tests): test-count manifest from the full run (4098 tests)
+- fix(settings): three toggles stacked a save per Settings open
+- feat(shortcuts): opt-in single keys, Alt+? for the list; Shift+arrows and grid scroll in Browse
+- feat(shortcuts): Alt+Shift+S opens Settings; Alt+Shift+. opens the view's menu
+- feat(routines): drag in Browse, fixed arrows, Import, first-run links, Alt+Shift+[ / ]
+- feat(routines): the entry points follow the setting; Settings uses radios
+- feat(routines): search in Browse — the matches show as a grid
+- feat(routines): the user's Cards icon; Browse's Open matches the List's
+- feat(routines): Expand the routine list; phone cards peek; notifications wait for Browse
+- feat(routines): Browse drops the jump list and the card's mode label
+- feat(routines): Browse — neighbours peek beside the routine, a Grid layout
+- test(routines): Browse swipe tests run on WebKit; each test starts clean
+- refactor(routines): Browse Routines follows the house patterns
+- fix(routines): Browse contrast and hovers; list journey says it wants the list
+- fix(routines): set up the routine button in init, not the constructor
+- feat(routines): Browse Routines — one routine at a time, full screen
+
+
 ## [2.653] - 2026-10-29
 - test(journey): wait for the main menu's own initial focus before using it
 - revert(switcher): phone routine actions stay icon-only (long press names them)
