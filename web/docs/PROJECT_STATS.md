@@ -18,11 +18,11 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.652 |
+| **App Version** | 2.653 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
 | **Total Modules** | 168 |
-| **Total Tests** | 4329 |
+| **Total Tests** | 4332 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
 | **JSDoc Blocks** | 1627 |
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4329 |
+| Total Tests | 4332 |
 | Test Files | 152 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

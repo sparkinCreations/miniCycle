@@ -1,3 +1,9 @@
+## [2.653] - 2026-10-29
+- test(journey): wait for the main menu's own initial focus before using it
+- revert(switcher): phone routine actions stay icon-only (long press names them)
+- fix(switcher): instant first open, keyboard listbox, phone layout
+
+
 ## [2.652] - 2026-10-29
 - test(focusMode): menu tests include Keyboard Shortcuts
 - feat(keyboard): Focus View takes two Escapes to leave; Keyboard Shortcuts list in the menus
