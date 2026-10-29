@@ -163,10 +163,17 @@ export class RoutineSwitcher {
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
 
-        // The routine button shows the icon and name of whichever view it will
-        // open (Settings → "When you open routines, show"). Watched in state, not
-        // wired from Settings: the value also arrives when a brand-new user's
-        // first data is created, and with a restore or an import.
+    }
+
+    /**
+     * The routine button shows the icon and name of whichever view it will open
+     * (Settings → "When you open routines, show"). Watched in state, not wired
+     * from Settings: the value also arrives when a brand-new user's first data
+     * is created, and with a restore or an import. Called by initRoutineSwitcher,
+     * not the constructor, so a bare instance (tests) touches no page element.
+     */
+    watchOpenView() {
+        if (this._openViewWatch) return;
         this._openViewWatch = (newData, oldData) => {
             const now = this._routineOpenView(newData);
             if (now === this._routineOpenView(oldData) && this._entryPointsView === now) return;
@@ -175,7 +182,6 @@ export class RoutineSwitcher {
         };
         this.deps.AppState?.subscribe?.('routineOpenView', this._openViewWatch);
         if (this.deps.AppState?.isReady?.()) this.syncEntryPoints();
-
     }
 
     /**
@@ -646,10 +652,10 @@ export class RoutineSwitcher {
             });
         }
 
-        // ✅ Close modal first to avoid UI conflicts. Only when it is open: from
-        // Browse Routines the list is not on screen, and closing it again would
-        // send focus to whatever opened the list last time.
-        if (this.deps.getModal('routineSwitcher')?.open) this.hideSwitchMiniCycleModal();
+        // ✅ Close modal first to avoid UI conflicts. From Browse Routines the
+        // list is not on screen: its cleanup still runs, but focus is not sent to
+        // whatever opened the list last time.
+        this.hideSwitchMiniCycleModal({ restoreFocus: !!this.deps.getModal('routineSwitcher')?.open });
 
         // Load straight away. A 100ms timer used to sit here "to ensure state is
         // fully propagated", but AppState.update is synchronous and the check
@@ -1794,6 +1800,7 @@ export async function initRoutineSwitcher(dependencies) {
 
     // Now create the instance
     routineSwitcher = new RoutineSwitcher(dependencies);
+    routineSwitcher.watchOpenView();
     return routineSwitcher;
 }
 
