@@ -44,7 +44,7 @@
  * @module routine/routineBrowser
  */
 
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, GESTURE, LIMITS, BREAKPOINTS, ROUTINE_BROWSER_SORT, ROUTINE_BROWSER_LAYOUT, ROUTINE_OPEN_VIEW } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, GESTURE, LIMITS, BREAKPOINTS, EVENTS, ROUTINE_BROWSER_SORT, ROUTINE_BROWSER_LAYOUT, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getIcon } from '../utils/icons.js';
@@ -285,6 +285,9 @@ export class RoutineBrowser {
         actions.append(createBtn, openBtn);
 
         dialog.append(top, stage, grid, info, actions);
+        // However it closes, say so: notifications held while Browse was on
+        // screen show now (notifications.js). Lives as long as the dialog.
+        dialog.addEventListener('close', () => document.dispatchEvent(new CustomEvent(EVENTS.ROUTINE_BROWSER_CLOSED)));
         document.body.appendChild(dialog);
 
         this._dialog = dialog;

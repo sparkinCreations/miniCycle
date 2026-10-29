@@ -837,6 +837,7 @@ export const EVENTS = Object.freeze({
         reveals, drag marks, body classes, long-press hints) runs before the
         event; this is for state only its owner can see. */
     UI_ESCAPE_RESET: 'ui:escapeReset',
+    ROUTINE_BROWSER_CLOSED: 'routines:browserClosed', // routineBrowser's dialog closed: notifications held while Browse was on screen show now
     ROUTINE_OPEN_VIEW_CHANGED: 'routines:openViewChanged', // routineSwitcher when settings.routineOpenView changes (detail.view 'list' | 'browse'): Quick Actions and the Focus View menu relabel their open-routines entry
     /** Dispatched on document by the undo wrapper just before it captures the
         pre-write snapshot for a user action. A module holding coalesced writes
@@ -862,6 +863,7 @@ export const DOM_CLASSES = Object.freeze({
     // Browse Routines (routine/routineBrowser.js). Own classes on purpose — NOT
     // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
     // drag, counts) and would sweep up the read-only preview's copies.
+    ROUTINE_LIST_EXPANDED: 'routine-list-expanded',   // on .mini-cycle-switch-modal-content: the routine list has the window
     RB_TOP: 'rb-top',
     RB_CORNER_BTN: 'rb-corner-btn',
     RB_CLOSE_BTN: 'rb-close-btn',
@@ -1319,6 +1321,7 @@ export const DOM_IDS = Object.freeze({
     ROUTINE_BROWSER: 'routine-browser',              // Browse Routines — one routine at a time (routineBrowser.js)
     ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
     ROUTINE_BROWSER_GRID: 'routine-browser-grid',
+    ROUTINE_LIST_EXPAND_BTN: 'routine-list-expand-btn', // Open Routine: the list heading's Expand / Collapse
     SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
     ROUTINE_OPEN_VIEW_SELECT: 'routine-open-view-select', // Settings → When you open routines, show: List / Browse
     SHORTCUTS_MODAL: 'shortcuts-modal',

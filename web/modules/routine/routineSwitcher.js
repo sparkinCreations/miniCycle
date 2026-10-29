@@ -274,6 +274,7 @@ export class RoutineSwitcher {
         switchModal._previousFocus = returnFocus || document.activeElement;
         if (!switchModal.open) switchModal.showModal();
         this._wireBrowseCorner(switchModal);
+        this._wireListExpand(switchModal);
 
         // Re-arm the blank-click deselect. _cleanup() removes it on every close
         // (Apr 2026) but until Sep 2026 it was only ever attached in the
@@ -503,6 +504,80 @@ export class RoutineSwitcher {
         btn.addEventListener('click', btn._clickHandler);
     }
 
+    /** @returns {boolean} whether the routine list has the window (Expand) */
+    isListExpanded() {
+        return !!this._listExpanded;
+    }
+
+    /**
+     * Expand the routine list to fill the window, or put it back. Expanded, the
+     * search stays and everything else steps aside (sort row, recents, preview,
+     * actions, storage); a tap selects AND collapses, so the routine's preview
+     * and actions are right there (the user's design, Oct 2026). On every screen
+     * size, for consistency.
+     * @param {boolean} on
+     */
+    setListExpanded(on) {
+        this._listExpanded = !!on;
+        const content = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+        content?.classList.toggle(DOM_CLASSES.ROUTINE_LIST_EXPANDED, this._listExpanded);
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_EXPAND_BTN);
+        if (btn) {
+            // Both icons are built once and swapped by `hidden`, never by
+            // innerHTML: replacing the button's contents mid-click detached the
+            // clicked <svg>, and the window's click-outside check, seeing a
+            // target no longer inside it, closed the whole window.
+            if (!btn.dataset.iconsBuilt) {
+                btn.replaceChildren(...['expand', 'compress'].map(icon => {
+                    const span = document.createElement('span');
+                    span.dataset.icon = icon;
+                    span.innerHTML = getIcon(icon);   // ICONS registry: trusted static markup
+                    return span;
+                }));
+                btn.dataset.iconsBuilt = '1';
+            }
+            btn.querySelector('[data-icon="expand"]').hidden = this._listExpanded;
+            btn.querySelector('[data-icon="compress"]').hidden = !this._listExpanded;
+            const name = getLabel(this._listExpanded ? 'routine.collapseList' : 'routine.expandList');
+            btn.setAttribute('aria-expanded', String(this._listExpanded));
+            btn.setAttribute('aria-label', name);
+            btn.title = name;
+        }
+        const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        if (this._listExpanded && switchItemsRow) {
+            // The one part shown by an inline style (_revealRoutineSelection), so
+            // the expanded CSS cannot hide it without !important; hide it here.
+            switchItemsRow.style.display = 'none';
+        } else if (this._selectedCycleKey) {
+            // Back to the normal layout: the selection, its actions and preview.
+            this._revealRoutineSelection(this._selectedCycleKey);
+        }
+    }
+
+    /**
+     * The list heading's Expand / Collapse. Re-wired on every open (it always
+     * opens collapsed) and removed by _cleanup(), like the other buttons. Escape
+     * collapses an expanded list before it closes the window.
+     * @param {HTMLDialogElement} switchModal
+     * @private
+     */
+    _wireListExpand(switchModal) {
+        this.setListExpanded(false);
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_EXPAND_BTN);
+        if (btn) {
+            if (btn._clickHandler) btn.removeEventListener('click', btn._clickHandler);
+            btn._clickHandler = () => this.setListExpanded(!this._listExpanded);
+            btn.addEventListener('click', btn._clickHandler);
+        }
+        if (switchModal._expandCancelHandler) switchModal.removeEventListener('cancel', switchModal._expandCancelHandler);
+        switchModal._expandCancelHandler = (e) => {
+            if (!this._listExpanded) return;
+            e.preventDefault();
+            this.setListExpanded(false);
+        };
+        switchModal.addEventListener('cancel', switchModal._expandCancelHandler);
+    }
+
     hideSwitchMiniCycleModal({ restoreFocus = true } = {}) {
 
         const switchModal = this.deps.getModal('routineSwitcher');
@@ -527,6 +602,13 @@ export class RoutineSwitcher {
     _cleanup() {
         const switchModal = this.deps.getModal('routineSwitcher');
 
+        // Expand / Collapse: closed collapsed, and its Escape handler goes.
+        if (switchModal?._expandCancelHandler) {
+            switchModal.removeEventListener('cancel', switchModal._expandCancelHandler);
+            switchModal._expandCancelHandler = null;
+        }
+        if (this._listExpanded) this.setListExpanded(false);
+
         // Remove touchmove guard (prevents iOS rubber-band drag)
         if (switchModal?._touchmoveHandler) {
             switchModal.removeEventListener('touchmove', switchModal._touchmoveHandler);
@@ -545,7 +627,7 @@ export class RoutineSwitcher {
             DOM_IDS.SWITCH_DUPLICATE, DOM_IDS.SWITCH_RENAME, DOM_IDS.SWITCH_DELETE,
             DOM_IDS.SWITCH_DOWNLOAD, DOM_IDS.SWITCH_THEME_BTN,
             DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE,
-            DOM_IDS.SWITCH_BROWSE_BTN
+            DOM_IDS.SWITCH_BROWSE_BTN, DOM_IDS.ROUTINE_LIST_EXPAND_BTN
         ];
         buttonIds.forEach(id => {
             const btn = this.deps.getElementById(id);
@@ -720,6 +802,10 @@ export class RoutineSwitcher {
             // click; that same click then bubbles here and would close the list
             // it just opened.
             const browser = this.deps.getElementById(DOM_IDS.ROUTINE_BROWSER);
+
+            // A target the click itself removed from the page (a button that
+            // redraws its own contents) cannot be "outside" — it was inside.
+            if (!event.target.isConnected) return;
 
             // ✅ If clicked area is NOT inside the modal, main menu, routine switcher button, or confirmation modal, close it
             if (
@@ -915,7 +1001,9 @@ export class RoutineSwitcher {
     _revealRoutineSelection(cycleKey) {
         // Show action buttons
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
-        if (switchItemsRow) {
+        // Not while the list is expanded: it has the window. setListExpanded(false)
+        // calls back in here, which shows the row then.
+        if (switchItemsRow && !this._listExpanded) {
             switchItemsRow.style.display = "flex";
         }
 
@@ -1244,9 +1332,11 @@ export class RoutineSwitcher {
                 return;
             }
 
-            // If a routine is already selected, select immediately
+            // If a routine is already selected, select immediately — unless the
+            // list is expanded: that tap also collapses it, which moves every
+            // row, so it waits out the double-tap window like a first tap does.
             const hasSelection = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
-            if (hasSelection) {
+            if (hasSelection && !this._listExpanded) {
                 this._selectRoutine(cycleKey);
                 return;
             }
@@ -1261,6 +1351,8 @@ export class RoutineSwitcher {
             listItem._selectTimeout = setTimeout(() => {
                 listItem._selectTimeout = null;
                 this._selectRoutine(cycleKey);
+                // Expanded: the tap that chooses a routine hands the window back.
+                if (this._listExpanded) this.setListExpanded(false);
             }, UI_TIMEOUTS.SWITCHER_DOUBLE_TAP);
         };
         safeAdd(listItem, "click", listItem._clickHandler);
@@ -1280,6 +1372,10 @@ export class RoutineSwitcher {
                     this.confirmMiniCycle();
                 } else {
                     this._selectRoutine(cycleKey);
+                    if (this._listExpanded) {
+                        this.setListExpanded(false);
+                        listItem.focus();
+                    }
                 }
             } else if (e.key === 'd' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();

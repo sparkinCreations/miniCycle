@@ -1779,7 +1779,8 @@
 
         <div class="routine-switcher-body">
             <div class="routine-switcher-left">
-                <div class="routine-panel-title">Routines</div>
+                <!-- The list's heading, with Expand / Collapse (icon + label set by routineSwitcher._wireListExpand) -->
+                <div class="routine-panel-title routine-list-title"><span>Routines</span><button type="button" id="routine-list-expand-btn" class="routine-list-expand-btn" aria-expanded="false" aria-controls="miniCycleList" aria-label="Expand the routine list" title="Expand the routine list"></button></div>
                 <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
                 <div id="routine-list-hint" class="routine-list-hint"></div>
             </div>

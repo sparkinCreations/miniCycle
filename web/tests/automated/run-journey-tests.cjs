@@ -6637,6 +6637,38 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 return { name: b.getAttribute('aria-label'), icon: !!b.querySelector('svg'), overlap: r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top };
             });
             record('the list has a named Browse corner button with its own icon, clear of the title', !!corner.name && corner.icon && !corner.overlap, JSON.stringify(corner));
+
+            // The list heading's Expand: the list takes the window; a tap selects and collapses.
+            // The list's own height: with six routines every row may already fit,
+            // so rows-in-view would not move; the room the list has does.
+            const rows = () => page.evaluate(() => Math.round(document.getElementById('miniCycleList').getBoundingClientRect().height));
+            await page.waitForFunction(() => document.querySelectorAll('#miniCycleList .mini-cycle-switch-item').length > 0, null, { timeout: 5000 });
+            const rowsBefore = await rows();
+            await page.click('#routine-list-expand-btn');
+            await page.waitForTimeout(400);
+            const ex = await page.evaluate(() => ({
+                open: document.getElementById('routine-switcher-modal').open,
+                expanded: document.getElementById('routine-list-expand-btn').getAttribute('aria-expanded'),
+                actions: getComputedStyle(document.getElementById('switch-items-row')).display,
+                storage: getComputedStyle(document.querySelector('.storage-bar-container')).display
+            }));
+            const rowsAfter = await rows();
+            record('Expand gives the routine list the window (and does not close it)', ex.open && ex.expanded === 'true' && rowsAfter > rowsBefore && ex.storage === 'none', JSON.stringify({ ...ex, rowsBefore, rowsAfter }));
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(400);
+            const esc = await page.evaluate(() => ({ open: document.getElementById('routine-switcher-modal').open, expanded: document.getElementById('routine-list-expand-btn').getAttribute('aria-expanded') }));
+            record('Escape collapses the expanded list before it closes the window', esc.open && esc.expanded === 'false', JSON.stringify(esc));
+            await page.click('#routine-list-expand-btn');
+            await page.waitForTimeout(300);
+            await page.click('#miniCycleList .mini-cycle-switch-item[data-cycle-key="r1"]');
+            await page.waitForTimeout(800);
+            const tapped = await page.evaluate(() => ({
+                expanded: document.getElementById('routine-list-expand-btn').getAttribute('aria-expanded'),
+                selected: document.querySelector('#miniCycleList .mini-cycle-switch-item.selected')?.dataset.cycleKey,
+                actions: getComputedStyle(document.getElementById('switch-items-row')).display,
+                open: document.getElementById('routine-switcher-modal').open
+            }));
+            record('…a tap in the expanded list selects that routine and collapses the list', tapped.open && tapped.expanded === 'false' && tapped.selected === 'r1' && tapped.actions !== 'none', JSON.stringify(tapped));
             await page.click('#switch-browse-btn');
             await page.waitForTimeout(500);
             record('Browse corner: Browse opens on the CURRENT routine', (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
@@ -6788,12 +6820,18 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 }
                 const card = d.querySelector('.rb-card[data-pos="0"]').getBoundingClientRect();
                 const open = d.querySelector('.rb-open-btn').getBoundingClientRect();
-                const neighbours = [...d.querySelectorAll('.rb-card:not([data-pos="0"])')].map(c => Number(getComputedStyle(c).opacity));
-                return { overlap, sideways: d.scrollWidth > d.clientWidth + 1, cardH: Math.round(card.height), openVisible: open.bottom <= innerHeight && open.top >= 0, neighboursHidden: neighbours.every(o => o === 0) };
+                // A strip of the next routine shows at the right edge (the user,
+                // Oct 2026): partly on screen, behind the front card, not readable.
+                const next = d.querySelector('.rb-card[data-pos="1"]');
+                const nr = next.getBoundingClientRect();
+                const strip = Math.round(Math.min(innerWidth, nr.right) - card.right);
+                const far = [...d.querySelectorAll('.rb-card[data-pos="2"], .rb-card[data-pos="-2"]')].map(c => Number(getComputedStyle(c).opacity));
+                return { overlap, sideways: d.scrollWidth > d.clientWidth + 1, cardH: Math.round(card.height), openVisible: open.bottom <= innerHeight && open.top >= 0,
+                    strip, stripShows: Number(getComputedStyle(next).opacity) > 0 && strip >= 12, farHidden: far.every(o => o === 0) };
             });
             record(`${width}px: top controls do not overlap, nothing scrolls sideways, Open is on screen`,
                 !layout.overlap && !layout.sideways && layout.openVisible && layout.cardH > 200, JSON.stringify(layout));
-            record(`${width}px: no neighbours on a phone (no room) — they wait off-screen`, layout.neighboursHidden, JSON.stringify(layout));
+            record(`${width}px: a thinner card with a strip of the next routine showing at the edge`, layout.stripShows && layout.farHidden, JSON.stringify(layout));
 
             const swipe = (from, to) => page.evaluate(([from, to]) => {
                 const s = document.querySelector('#routine-browser .rb-stage');
@@ -6848,7 +6886,7 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 return { open: document.getElementById('routine-switcher-modal').open,
                     overlap: b.left < t.right - 1 && b.right > t.left + 1 && b.top < t.bottom - 1 && b.bottom > t.top + 1 };
             });
-            record(`${width}px: Open Routine in Browse's corner opens the list`, list.open, JSON.stringify(list));
+            record(`${width}px: List in Browse's corner opens the routine list`, list.open, JSON.stringify(list));
             record(`${width}px: the list's Browse corner button does not cover its title`, !list.overlap, JSON.stringify(list));
 
             // One routine: nothing to switch to, a way to make another.

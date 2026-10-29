@@ -221,6 +221,8 @@ export const DEFAULT_LABELS = deepFreeze({
         duplicateTitle:  'Duplicate the current routine',
         switchAria:      'Switch routine',
         browseAria:      'Browse routines',   // the same button when Settings → routines open in Browse
+        expandList:      'Expand the routine list',
+        collapseList:    'Collapse the routine list',
         untitled:        'Untitled Routine',
         untitledCycle:   'Untitled Cycle',
         noSelected:      'No Routine Selected'
@@ -1869,8 +1871,8 @@ export const DEFAULT_LABELS = deepFreeze({
     routineBrowser: {
         title:          'Browse Routines',
         closeAria:      'Close Browse Routines',
-        toList:         'Open Routine',
-        toListAria:     'Show the Open Routine list',
+        toList:         'List',      // the setting's word for the other view; "Open Routine" read as a second Open button
+        toListAria:     'Show the routine list',
         fromListBtn:    'Browse',
         fromListAria:   'Browse routines one at a time',
         sortAria:       'Order',

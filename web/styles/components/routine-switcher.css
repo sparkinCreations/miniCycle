@@ -1280,6 +1280,95 @@ input.routine-search-input:focus {
 
 
 /* =============================================================================
+   OPEN ROUTINE — THE LIST'S HEADING AND EXPAND / COLLAPSE (routineSwitcher.setListExpanded)
+   The heading shows on every screen size (it used to be desktop-only) because
+   it carries the Expand button, which is on every size for consistency.
+   Expanded, the list takes the window: the search stays, everything else
+   steps aside, and a tap selects a routine and hands the window back.
+   ============================================================================= */
+
+.routine-switcher-left .routine-list-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    position: relative;
+    padding: var(--space-1-5) var(--space-2-5);
+    border-radius: var(--radius-5) var(--radius-5) 0 0;
+    background: var(--color-primary);
+    color: var(--color-white);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.routine-list-expand-btn {
+    position: absolute;
+    right: var(--space-1-5);
+    top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--space-7);
+    height: var(--space-7);
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-white);
+    cursor: pointer;
+}
+
+.routine-list-expand-btn svg {
+    width: var(--space-3-75);
+    height: var(--space-3-75);
+}
+
+.routine-list-expand-btn:hover {
+    background: var(--browse-control-hover-bg);
+}
+
+.routine-list-expand-btn:focus-visible {
+    outline: 2px solid var(--color-white);
+    outline-offset: 1px;
+}
+
+/* Expanded: a fixed height for the window, so the list has room to fill. */
+.mini-cycle-switch-modal-content.routine-list-expanded {
+    height: calc(100vh - var(--modal-viewport-inset));
+    height: calc(100dvh - var(--modal-viewport-inset));
+}
+
+@media (min-width: 768px) {
+    .mini-cycle-switch-modal-content.routine-list-expanded {
+        height: min(95vh, 900px);
+    }
+}
+
+/* The actions row is not in this list: it is shown by an inline style, so
+   setListExpanded() hides it in JS rather than outranking that here. */
+.routine-list-expanded :is(.routine-sort-filter-row, .recent-routines-section, .routine-switcher-right, .theme-picker-row, .switch-action-row, .storage-bar-container, .routine-list-hint) {
+    display: none;
+}
+
+.routine-list-expand-btn [hidden] {
+    display: none;
+}
+
+.routine-list-expand-btn span {
+    display: inline-flex;
+}
+
+.routine-list-expanded .routine-switcher-left {
+    flex: 1 1 auto;
+}
+
+.routine-list-expanded .routine-switcher-left .mini-cycle-switch-list {
+    flex: 1 1 auto;
+    max-height: none;
+}
+
+/* =============================================================================
    OPEN ROUTINE → BROWSE CORNER BUTTON
    Top-right of the switcher card; Browse's own corner button sits in the same
    spot and leads back, so the way between the two is learned once.
@@ -1888,16 +1977,25 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     }
 }
 
+/* A phone or a narrow window: a thinner card, with a strip of each neighbour
+   showing at the sides — enough to say "there is more this way", not enough to
+   read; a swipe or a tap on the strip brings it in (the user, Oct 2026). The
+   neighbours tuck partly behind the front card (offset < its width), flat, so
+   the strips stay wide enough to tap. Two away waits past the edge. */
 @media (max-width: 899px) {
     #routine-browser {
-        --browse-peek-offset: 105%;
-        --browse-peek-offset-far: 105%;
+        --browse-peek-offset: var(--browse-peek-offset-narrow);
+        --browse-peek-offset-far: calc(2 * var(--browse-peek-offset-narrow));
         --browse-peek-angle: 0deg;
-        --browse-peek-scale: 1;
-        --browse-peek-scale-far: 1;
+        --browse-peek-scale: var(--browse-peek-scale-narrow);
     }
 
-    .rb-card:not([data-pos="0"]) {
+    .rb-card {
+        width: min(var(--browse-card-narrow-width), var(--browse-card-max-width));
+    }
+
+    .rb-card[data-pos="-2"],
+    .rb-card[data-pos="2"] {
         opacity: 0;
         pointer-events: none;
     }

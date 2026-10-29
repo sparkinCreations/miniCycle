@@ -218,6 +218,50 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Browse Routines: a toast over it covers the routine being read (the user,
+    // Oct 2026). Held while its dialog is open, shown when it closes; errors
+    // still show at once.
+    await test('while Browse Routines is open, a notification waits and shows when it closes', () => {
+        setupMockGlobals();
+        const container = createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+        const browse = document.createElement('dialog');
+        browse.id = 'routine-browser';
+        document.body.appendChild(browse);
+        try {
+            browse.showModal();
+            notifications.show('Held tip', 'info', 3000);
+            notifications.show('Held tip', 'info', 3000);   // the same text twice → once
+            if (container.querySelector('.notification')) throw new Error('a notification showed over Browse');
+            browse.close();
+            document.dispatchEvent(new CustomEvent('routines:browserClosed'));
+            const shown = container.querySelectorAll('.notification');
+            if (shown.length !== 1) throw new Error(`${shown.length} notifications after Browse closed (want 1)`);
+        } finally {
+            if (browse.open) browse.close();
+            browse.remove();
+            notifications.destroy();
+        }
+    });
+
+    await test('an error still shows over Browse Routines', () => {
+        setupMockGlobals();
+        const container = createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+        const browse = document.createElement('dialog');
+        browse.id = 'routine-browser';
+        document.body.appendChild(browse);
+        try {
+            browse.showModal();
+            notifications.show('Save failed', 'error', 3000);
+            if (!container.querySelector('.notification')) throw new Error('the error was held');
+        } finally {
+            browse.close();
+            browse.remove();
+            notifications.destroy();
+        }
+    });
+
     // Hardening regression: setupMockGlobals() does NOT inject escapeHtml, so this
     // exercises the un-wired path. Before the fix this path fell back to the raw
     // message and parsed injected markup; getEscapeHtml() now guarantees a
