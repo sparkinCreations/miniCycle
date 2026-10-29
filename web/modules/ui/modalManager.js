@@ -45,7 +45,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -148,6 +148,7 @@ export class ModalManager {
 
         this.setupFeedbackModal();
         this.setupAboutModal();
+        this.setupShortcutsModal();
         this.setupSettingsModalClickOutside();
         this.setupRemindersModalHandlers();
         this.setupGlobalKeyHandlers();
@@ -476,6 +477,135 @@ export class ModalManager {
         // Restore focus when dialog closes (including native ESC)
         safeAdd(aboutModal, "close", () => {
             restoreFocusAfterClose(aboutModal);
+        });
+    }
+
+    /**
+     * Keyboard Shortcuts dialog (main menu → Help & Support; Focus View's ⋯
+     * menu clicks the same button). Same open/close/backdrop pattern as the
+     * About dialog above. The rows are rebuilt on every open from
+     * KEYBOARD_SHORTCUTS and labels, so the list cannot drift from the keys
+     * uiBoot and dragDropManager actually handle, and the modifier names match
+     * the platform (Option and ⌘ on Apple devices).
+     */
+    setupShortcutsModal() {
+        const modal = _deps.getModal('shortcuts');
+        const openBtn = document.getElementById(DOM_IDS.OPEN_SHORTCUTS_MODAL);
+        if (!modal || !openBtn) {
+            console.warn('⚠️ Keyboard shortcuts modal elements not found');
+            return;
+        }
+
+        const safeAdd = _deps.safeAddEventListener;
+        const closeBtn = modal.querySelector(DOM_SELECTORS.CLOSE_MODAL);
+
+        const label = openBtn.querySelector(`.${DOM_CLASSES.MENU_ITEM_LABEL}`);
+        if (label) label.textContent = getLabel('shortcuts.menuItem');
+        openBtn.title = getLabel('shortcuts.menuItemTitle');
+        const title = document.getElementById(DOM_IDS.SHORTCUTS_MODAL_TITLE);
+        if (title) title.textContent = getLabel('shortcuts.title');
+        closeBtn?.setAttribute('aria-label', getLabel('shortcuts.closeAria'));
+
+        openBtn._clickHandler = () => {
+            modal._previousFocus = document.activeElement;
+            this.renderShortcutsList(document.getElementById(DOM_IDS.SHORTCUTS_LIST));
+            if (!modal.open) modal.showModal();
+        };
+        safeAdd(openBtn, "click", openBtn._clickHandler);
+
+        if (closeBtn) {
+            closeBtn._clickHandler = () => {
+                modal.close();
+                restoreFocusAfterClose(modal);
+            };
+            safeAdd(closeBtn, "click", closeBtn._clickHandler);
+        }
+
+        modal._outsideClickHandler = (event) => {
+            if (event.target === modal && !isClickOnNotification(event)) {
+                modal.close();
+                restoreFocusAfterClose(modal);
+            }
+        };
+        safeAdd(modal, "click", modal._outsideClickHandler);
+
+        // Restore focus when the dialog closes (including native Escape)
+        safeAdd(modal, "close", () => {
+            restoreFocusAfterClose(modal);
+        });
+    }
+
+    /**
+     * Fill the Keyboard Shortcuts list. textContent throughout — no innerHTML.
+     * @param {HTMLElement|null} container
+     */
+    renderShortcutsList(container) {
+        if (!container) return;
+        const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '')
+            || navigator.userAgentData?.platform === 'macOS';
+        const mod = getLabel(apple ? 'shortcuts.keyOption' : 'shortcuts.keyAlt');
+        const shift = getLabel('shortcuts.keyShift');
+        const cmd = getLabel(apple ? 'shortcuts.keyCmd' : 'shortcuts.keyCtrl');
+        const esc = getLabel('shortcuts.keyEscape');
+        const app = (name) => [mod, shift, KEYBOARD_SHORTCUTS[name].replace(/^Key/, '')];
+
+        // Each row: [alternatives (each a list of keys pressed together), label key]
+        const groups = [
+            ['shortcuts.groupApp', [
+                [[app('NEW_ROUTINE')], 'shortcuts.newRoutine'],
+                [[app('OPEN_ROUTINE')], 'shortcuts.openRoutine'],
+                [[app('NEXT_MODE')], 'shortcuts.nextMode'],
+                [[app('FOCUS_VIEW')], 'shortcuts.focusView'],
+                [[app('TOGGLE_INPUT_BAR')], 'shortcuts.toggleInput'],
+                [[app('USER_MANUAL')], 'shortcuts.userManual']
+            ]],
+            ['shortcuts.groupTasks', [
+                [[[mod, '↑'], [mod, '↓']], 'shortcuts.moveTask'],
+                [[['↑'], ['↓']], 'shortcuts.moveBetween'],
+                [[[getLabel('shortcuts.keySpace')]], 'shortcuts.toggleTask']
+            ]],
+            ['shortcuts.groupViews', [
+                [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
+                [[[esc]], 'shortcuts.leaveFocus']
+            ]],
+            ['shortcuts.groupGeneral', [
+                [[[cmd, 'Z']], 'shortcuts.undo'],
+                [[[cmd, 'Y'], [cmd, shift, 'Z']], 'shortcuts.redo'],
+                [[[esc]], 'shortcuts.closeWindow']
+            ]]
+        ];
+
+        container.replaceChildren();
+        const intro = document.createElement('p');
+        intro.className = DOM_CLASSES.SHORTCUTS_INTRO;
+        intro.textContent = getLabel('shortcuts.intro');
+        container.appendChild(intro);
+
+        groups.forEach(([groupKey, rows]) => {
+            const section = document.createElement('section');
+            const heading = document.createElement('h3');
+            heading.textContent = getLabel(groupKey);
+            const list = document.createElement('dl');
+            rows.forEach(([alternatives, labelKey]) => {
+                const row = document.createElement('div');
+                row.className = DOM_CLASSES.SHORTCUTS_ROW;
+                const keys = document.createElement('dt');
+                alternatives.forEach((combo, i) => {
+                    if (i > 0) keys.appendChild(document.createTextNode(' / '));
+                    combo.forEach((key, j) => {
+                        if (j > 0) keys.appendChild(document.createTextNode('+'));
+                        const kbd = document.createElement('kbd');
+                        kbd.textContent = key;
+                        keys.appendChild(kbd);
+                    });
+                });
+                const what = document.createElement('dd');
+                what.textContent = getLabel(labelKey);
+                row.append(keys, what);
+                list.appendChild(row);
+            });
+            section.append(heading, list);
+            container.appendChild(section);
         });
     }
 

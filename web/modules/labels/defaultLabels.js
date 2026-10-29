@@ -1814,6 +1814,10 @@ export const DEFAULT_LABELS = deepFreeze({
         welcomeScreen:  'Welcome Screen',
         settings:       'Settings',
         exitItem:       'Exit Focus View',
+        keyboardShortcuts: 'Keyboard Shortcuts',
+        // A single Escape in Focus View no longer leaves it (a stray press changed
+        // the remembered view); the first press says how, the second leaves.
+        escapeAgainToExit: 'Press Escape again to leave Focus View',
         modeItemPrefix: 'Mode',
         modeAutoName:   'Auto Cycle',
         modeManualName: 'Manual Cycle',
@@ -1847,6 +1851,42 @@ export const DEFAULT_LABELS = deepFreeze({
     // The default home of the app — paired with Focus View. Use these
     // strings whenever copy needs to point at the non-focus state by name.
     // ========================================================================
+
+    // Keyboard Shortcuts dialog (main menu → Help & Support, and Focus View's ⋯
+    // menu). Rows are built from KEYBOARD_SHORTCUTS in modalManager, so the keys
+    // shown cannot drift from the keys handled. {mod} is "Alt" or "Option".
+    shortcuts: {
+        menuItem:      'Keyboard Shortcuts',
+        menuItemTitle: 'See every keyboard shortcut',
+        title:         'Keyboard Shortcuts',
+        closeAria:     'Close keyboard shortcuts',
+        intro:         'App shortcuts work anywhere except while you are typing in a field or a window is open.',
+        groupApp:      'App',
+        groupTasks:    'Tasks',
+        groupViews:    'Views',
+        groupGeneral:  'General',
+        newRoutine:    'Create a new routine',
+        openRoutine:   'Open the routine switcher',
+        nextMode:      'Next mode (Auto Cycle → Manual Cycle → To-Do)',
+        focusView:     'Focus View on or off',
+        toggleInput:   'Show or hide the input bar',
+        userManual:    'Open the user manual',
+        moveTask:      'Move the selected task up or down',
+        moveBetween:   'Move between tasks',
+        toggleTask:    'Check or uncheck the selected task',
+        switchViews:   'Switch views (Task, Routine, Stats)',
+        leaveFocus:    'Leave Focus View (press twice)',
+        closeWindow:   'Close a window or menu',
+        undo:          'Undo',
+        redo:          'Redo',
+        keyEscape:     'Esc',
+        keySpace:      'Space',
+        keyAlt:        'Alt',
+        keyOption:     'Option',
+        keyShift:      'Shift',
+        keyCtrl:       'Ctrl',
+        keyCmd:        '⌘',
+    },
 
     homeView: {
         name:                     'Home View',

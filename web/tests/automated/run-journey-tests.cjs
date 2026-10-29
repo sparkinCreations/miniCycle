@@ -3636,10 +3636,14 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
         const afterFirst = await page.evaluate(() => ({ inView: document.body.classList.contains('focus-mode'), actionsOpen: !!document.querySelector('.task-options-visible'), active: document.activeElement.className || document.activeElement.tagName }));
         record('Focus View: the first Escape closes the actions and keeps the view',
             afterFirst.inView && !afterFirst.actionsOpen, JSON.stringify(afterFirst));
+        // Leaving the view takes two presses since Oct 2026 (focusMode's key
+        // handler): a single stray Escape changed the remembered view.
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(150);
         await page.keyboard.press('Escape');
         await page.waitForTimeout(600);
         const afterSecond = await page.evaluate(() => { const a = document.activeElement; return { inView: document.body.classList.contains('focus-mode'), active: a.id || a.className || a.tagName, visible: a !== document.body && a.checkVisibility({ visibilityProperty: true }) }; });
-        record('Focus View: the second Escape leaves the view and lands on a visible control (what entered it, else its button)',
+        record('Focus View: the next two Escapes leave the view and land on a visible control (what entered it, else its button)',
             !afterSecond.inView && afterSecond.visible, JSON.stringify(afterSecond));
 
         // 5. Reduced Motion (the app's own switch) stops the inline progress transition
@@ -6224,7 +6228,154 @@ async function journeyAppShortcuts(browser, baseURL) {
     return { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', failures };
 }
 
+// ── Escape in Focus View, and the Keyboard Shortcuts list ──────────────────
+// Focus View is where new users start and it is remembered, so a single stray
+// Escape no longer leaves it: the first press says how, a second within 1.5s
+// leaves. Escape while typing in a field is about the field — it used to leave
+// the view mid-edit (add-task bar, routine title, search). And every shortcut
+// is listed in a Keyboard Shortcuts dialog, reachable from the main menu and
+// Focus View's ⋯ menu (Oct 2026).
+async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const inFocus = () => page.evaluate(() => document.body.classList.contains('focus-mode'));
+        const clearToasts = () => page.evaluate(() => document.querySelectorAll('.notification .close-btn').forEach(b => b.click()));
+        const enterFocus = async () => {
+            if (!(await inFocus())) await page.evaluate(() => document.getElementById('focus-mode-btn')?.click());
+            await page.waitForTimeout(1200);
+            await clearToasts();
+            await page.evaluate(() => document.activeElement && document.activeElement !== document.body && document.activeElement.blur());
+            await page.waitForTimeout(300);
+        };
+
+        await enterFocus();
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        const hint = await page.evaluate(() => [...document.querySelectorAll('.notification')].some(n => /Escape again/.test(n.textContent)));
+        record('one Escape keeps Focus View and says to press again', (await inFocus()) && hint, `inFocus ${await inFocus()}, hint ${hint}`);
+        await page.waitForTimeout(1800);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(300);
+        record('two Escapes far apart do not leave', await inFocus(), 'left Focus View');
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(700);
+        record('two Escapes close together leave Focus View', !(await inFocus()), 'still in Focus View');
+
+        // An Escape that dismisses a toast is about the toast (modalManager
+        // closes toasts on Escape), so it must not count toward leaving.
+        await enterFocus();
+        await page.evaluate(() => document.dispatchEvent(new CustomEvent('app:showNotification', { detail: { message: 'Some other message', type: 'info', duration: 8000 } })));
+        await page.waitForTimeout(400);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(150);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(600);
+        record('an Escape that closes a toast does not count toward leaving', await inFocus(), 'left Focus View after closing a toast');
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(150);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(700);
+
+        // Fields: the Escape is about the field, never the view.
+        const fieldCase = async (name, setup) => {
+            await enterFocus();
+            await setup();
+            await page.waitForTimeout(200);
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            const after = await page.evaluate(() => ({ focus: document.body.classList.contains('focus-mode'), active: document.activeElement?.id || document.activeElement?.tagName }));
+            record(`Escape while ${name} keeps Focus View`, after.focus, JSON.stringify(after));
+            return after;
+        };
+        await page.evaluate(() => document.getElementById('task-input-row')?.classList.remove('hidden'));
+        const typed = await fieldCase('typing in the add-task bar', async () => {
+            await page.focus('#taskInput');
+            await page.keyboard.type('half a task');
+        });
+        record('…steps out of the add-task bar and keeps the text',
+            typed.active !== 'taskInput' && (await page.inputValue('#taskInput')) === 'half a task', `active ${typed.active}`);
+        await page.fill('#taskInput', '');
+        await fieldCase('renaming the routine title', async () => {
+            await page.evaluate(() => { const t = document.getElementById('mini-cycle-title'); t.focus(); t.click(); });
+            await page.keyboard.type('x');
+        });
+        await fieldCase('typing in task search', async () => {
+            await page.evaluate(() => document.getElementById('task-search-btn')?.click());
+            await page.waitForTimeout(400);
+            await page.focus('#task-search-input');
+            await page.keyboard.type('dr');
+        });
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(150);
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(700);
+
+        // An Alt+Shift shortcut with a task's CHECKBOX focused still works —
+        // a checkbox is an <input> but not a text field.
+        if (await inFocus()) { await page.evaluate(() => document.getElementById('focus-mode-exit-btn')?.click()); await page.waitForTimeout(1000); }
+        await clearToasts();
+        const modeBefore = await page.evaluate(() => document.getElementById('mode-selector').value);
+        await page.evaluate(() => document.querySelector('#taskList li input[type="checkbox"]')?.focus());
+        await page.keyboard.press('Alt+Shift+KeyM');
+        await page.waitForTimeout(900);
+        const modeAfter = await page.evaluate(() => document.getElementById('mode-selector').value);
+        record('Alt+Shift+M works with a task checkbox focused', modeAfter !== modeBefore, `${modeBefore} → ${modeAfter}`);
+        await page.selectOption('#mode-selector', modeBefore);
+        await page.waitForTimeout(800);
+        await clearToasts();
+
+        // The list, from the main menu.
+        await openMenu(page);
+        // openMenu expands the sections; the grid is visibility:hidden until
+        // its transition ends, and a hidden button cannot take focus.
+        await page.waitForFunction(() => {
+            const b = document.getElementById('open-shortcuts-modal');
+            return b && getComputedStyle(b).visibility === 'visible';
+        }, null, { timeout: 5000 });
+        await page.evaluate(() => document.getElementById('open-shortcuts-modal')?.focus());
+        await page.keyboard.press('Enter');
+        await page.waitForTimeout(500);
+        const list = await page.evaluate(() => {
+            const d = document.getElementById('shortcuts-modal');
+            const rows = [...d.querySelectorAll('.shortcuts-row')].map(r => r.querySelector('dt').textContent);
+            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent, rows,
+                label: d.getAttribute('aria-labelledby'), closeName: d.querySelector('.close-modal')?.getAttribute('aria-label') };
+        });
+        const want = ['Alt+Shift+N', 'Alt+Shift+O', 'Alt+Shift+M', 'Alt+Shift+F', 'Alt+Shift+I', 'Alt+Shift+U', 'Alt+↑ / Alt+↓', 'Shift+← / Shift+→', 'Ctrl+Z'];
+        const missing = want.filter(k => !list.rows.includes(k));
+        record('Keyboard Shortcuts opens from the main menu', list.open && list.title === 'Keyboard Shortcuts', JSON.stringify({ open: list.open, title: list.title }));
+        record('…and lists every shortcut', missing.length === 0 && list.rows.length >= 14, `missing ${missing.join(', ') || 'none'}; ${list.rows.length} rows`);
+        record('…named for assistive tech (labelled dialog, named close button)', list.label === 'shortcuts-modal-title' && !!list.closeName, JSON.stringify(list));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        const closed = await page.evaluate(() => ({ open: document.getElementById('shortcuts-modal').open, active: document.activeElement?.id }));
+        record('Escape closes it and focus returns to the menu item', !closed.open && closed.active === 'open-shortcuts-modal', JSON.stringify(closed));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(400);
+
+        // …and from Focus View's ⋯ menu.
+        await enterFocus();
+        await clickEl(page, '#focus-mode-menu-btn');
+        await page.waitForTimeout(400);
+        await page.evaluate(() => document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]')?.click());
+        await page.waitForTimeout(600);
+        const fromFocus = await page.evaluate(() => ({ open: document.getElementById('shortcuts-modal').open, focus: document.body.classList.contains('focus-mode') }));
+        record('Keyboard Shortcuts opens from Focus View\'s ⋯ menu', fromFocus.open && fromFocus.focus, JSON.stringify(fromFocus));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(400);
+        record('…and the Escape that closes it does not count toward leaving', await inFocus(), 'left Focus View');
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', failures };
+}
+
 const JOURNEYS = [
+    { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', fn: journeyFocusEscapeAndShortcutList },
     { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', fn: journeyAppShortcuts },
     { name: 'Alt+arrow reorders a task from the keyboard', fn: journeyKeyboardReorder },
     { name: 'keyboard focus stays on the welcome choice screen', fn: journeyChoiceScreenKeepsFocus },

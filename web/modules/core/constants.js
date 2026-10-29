@@ -194,6 +194,7 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_EXTRA_LONG: 6000, // 6000ms - Extra-long notification (migration, milestones)
     NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
+    FOCUS_EXIT_DOUBLE_ESCAPE: 1500, // 1500ms - In Focus View, a second Escape within this leaves the view; also how long the "press again" hint stays up
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
@@ -822,6 +823,8 @@ export const EVENTS = Object.freeze({
  * @constant {Object}
  */
 export const DOM_CLASSES = Object.freeze({
+    SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
+    SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
     // ---- Visibility ----
     HIDDEN: 'hidden',
     VISIBLE: 'visible',
@@ -1242,6 +1245,10 @@ export const DOM_IDS = Object.freeze({
     MENU_TASK_OPTIONS: 'menu-task-options',
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
+    OPEN_SHORTCUTS_MODAL: 'open-shortcuts-modal',   // main menu → Keyboard Shortcuts
+    SHORTCUTS_MODAL: 'shortcuts-modal',
+    SHORTCUTS_MODAL_TITLE: 'shortcuts-modal-title',
+    SHORTCUTS_LIST: 'shortcuts-list',
     OPEN_TIP_ARCHIVE: 'open-tip-archive',
     MENU_OPEN_TITLE_SCREEN: 'menu-open-title-screen',
     TITLE_SCREEN: 'title-screen',

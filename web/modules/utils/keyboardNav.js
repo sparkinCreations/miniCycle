@@ -160,3 +160,23 @@ export function handleGridArrowNav(event, container, selector) {
 
     return moveFocus(boxes, current, next, event);
 }
+
+/** Input types that take typed text. Everything else (checkbox, radio, button…) is a control, not a field. */
+const NON_TEXT_INPUT_TYPES = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image']);
+
+/**
+ * Is the user typing here? True for text inputs, textareas, selects and
+ * contenteditable — false for a task's checkbox, which is an <input> too.
+ * A `closest('input, …')` test treated a focused checkbox as a text field, so
+ * a shortcut pressed on a task silently did nothing.
+ * @param {EventTarget|null} el
+ * @returns {boolean}
+ */
+export function isTextEntryTarget(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (tag !== 'INPUT') return false;
+    return !NON_TEXT_INPUT_TYPES.has(String(el.type || 'text').toLowerCase());
+}

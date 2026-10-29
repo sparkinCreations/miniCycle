@@ -64,6 +64,7 @@ import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
+import { isTextEntryTarget } from '../utils/keyboardNav.js';
 
 let _appContextMod = null;
 
@@ -491,8 +492,9 @@ function handleAppShortcut(e) {
   const action = Object.keys(KEYBOARD_SHORTCUTS).find((name) => KEYBOARD_SHORTCUTS[name] === e.code);
   if (!action) return false;
 
-  const target = e.target;
-  if (target?.closest?.('input, textarea, select, [contenteditable="true"], [contenteditable=""]')) return false;
+  // A text field only — a task's checkbox is an <input> too, and a shortcut
+  // pressed with a task selected must still work.
+  if (isTextEntryTarget(e.target)) return false;
   if (isOverlayActive()) return false;
   if (document.body.classList.contains(DOM_CLASSES.APP_LOADING)) return false;
 

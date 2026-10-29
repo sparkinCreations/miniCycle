@@ -1384,6 +1384,7 @@
                 </div>
                 <div class="menu-section-grid" id="menu-section-help">
                     <button id="open-user-manual" class="open-user-manual" title="Open the user manual"><i class="fas fa-book"></i>User Manual</button>
+                    <button id="open-shortcuts-modal" class="open-shortcuts-modal" title="See every keyboard shortcut"><i class="fas fa-keyboard" aria-hidden="true"></i><span class="menu-item-label">Keyboard Shortcuts</span></button>
                     <button id="open-feedback-modal" class="open-feedback-modal"><i class="fas fa-comment"></i>Feedback</button>
                     <button id="menu-lite-version" title="Switch to the lightweight version"><i class="fas fa-mobile-alt"></i>Lite Version</button>
                     <button id="share-app" title="Share miniCycle with someone" aria-label="Share miniCycle with someone"><i class="fas fa-share-nodes"></i>Share App</button>
@@ -1826,6 +1827,19 @@
 
 
 
+
+<!-- Keyboard Shortcuts — rows are built from KEYBOARD_SHORTCUTS + labels by
+     modalManager.setupShortcutsModal() each time it opens, so the keys listed
+     cannot drift from the keys handled. Top level, not inside #main-menu:
+     Focus View makes the menu inert, and an inert ancestor would make this
+     dialog unusable there. -->
+<dialog id="shortcuts-modal" class="modal shortcuts-modal" data-modal aria-labelledby="shortcuts-modal-title" aria-modal="true">
+    <div class="modal-content shortcuts-modal-content">
+        <button class="close-modal" aria-label="Close keyboard shortcuts">&times;</button>
+        <h2 id="shortcuts-modal-title">Keyboard Shortcuts</h2>
+        <div id="shortcuts-list" class="shortcuts-list"></div>
+    </div>
+</dialog>
 
 <dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal aria-modal="true">
     <div class="feedback-modal-content has-corner-logo">
