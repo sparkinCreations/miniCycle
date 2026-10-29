@@ -1,9 +1,17 @@
 ## [2.655] - 2026-10-29
-- chore(tests): test-count manifest from the full run (4107 tests)
-- feat(tours): an optional Browse Routines tour; the switcher tour shows Expand and Browse
-- chore(tests): test-count manifest from the full run (4104 tests)
-- fix: post-2.654 feedback — iPad status bar, Recent order, Browse keys, menu and manual shortcuts
-- docs(changelog): 2.654 in two parts — Browse Routines, and Shortcuts & polish
+
+### Tours
+- New, optional: a short Browse Routines tour (offered once Enable Tour Prompts is on) — moving between routines, Cards or Grid, sorting and search, and the way back to the list
+- The routine switcher tour now shows the Expand button and the way to Browse
+
+### Fixes & polish
+- iPad in landscape (installed app): Focus View's ⋯ button no longer sits under the status bar
+- The routine list's Recent order is now by when you last used a routine, the same as Browse — the routine you were on no longer drops down the list
+- Browse's arrow keys work as soon as it opens, wherever focus is; Shift+arrows move too
+- Alt+Shift+. closes the menu on a second press, as well as opening it
+- User Manual opens in a new tab in a browser, so the app stays where you left it (in the installed app it opens in place)
+- Reduce Motion now also stops the smooth scrolling in the menu, after adding a task, and on Recently used routines
+- The list's sort buttons tell screen readers which sort is on
 
 
 ## [2.654] - 2026-10-29
