@@ -6763,9 +6763,17 @@ async function journeyBrowseRoutines(browser, baseURL) {
 
             const swipe = (from, to) => page.evaluate(([from, to]) => {
                 const s = document.querySelector('#routine-browser .rb-stage');
-                const t = (x) => new Touch({ identifier: 1, target: s, clientX: x, clientY: 400 });
-                s.dispatchEvent(new TouchEvent('touchstart', { touches: [t(from)], changedTouches: [t(from)], bubbles: true }));
-                s.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t(to)], bubbles: true }));
+                // Plain events with the touch points: desktop WebKit has no Touch
+                // constructor (test:journey:webkit), and the handlers read only these.
+                const ev = (type, x) => {
+                    const e = new Event(type, { bubbles: true });
+                    const points = [{ identifier: 1, clientX: x, clientY: 400 }];
+                    Object.defineProperty(e, 'touches', { value: type === 'touchend' ? [] : points });
+                    Object.defineProperty(e, 'changedTouches', { value: points });
+                    return e;
+                };
+                s.dispatchEvent(ev('touchstart', from));
+                s.dispatchEvent(ev('touchend', to));
             }, [from, to]);
             await swipe(width - 40, 40);
             await page.waitForTimeout(350);

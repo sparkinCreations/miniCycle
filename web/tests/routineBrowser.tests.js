@@ -56,6 +56,9 @@ export async function runRoutineBrowserTests(resultsDiv) {
     }
 
     function setup({ routines = THREE, active = 'a', settings = {} } = {}) {
+        // A test that threw before its own cleanup() must not leave its open
+        // dialog behind: the next test would find and click THAT one by id.
+        cleanup();
         const state = {
             data: { routine: structuredClone(routines) },
             appState: { activeRoutineId: active },
@@ -230,9 +233,18 @@ export async function runRoutineBrowserTests(resultsDiv) {
         const { browser, calls } = setup({ active: 'b' });
         browser.open();
         const stage = dialog().querySelector('.rb-stage');
-        const touch = (x) => new Touch({ identifier: 1, target: stage, clientX: x, clientY: 300 });
-        stage.dispatchEvent(new TouchEvent('touchstart', { touches: [touch(300)], changedTouches: [touch(300)], bubbles: true }));
-        stage.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [touch(150)], bubbles: true }));
+        // Plain events carrying the touch points: desktop WebKit (the CI WebKit
+        // run) has no Touch constructor — "Illegal constructor" — though a real
+        // iPhone makes them natively. The handlers read only these fields.
+        const touchEvent = (type, x) => {
+            const e = new Event(type, { bubbles: true });
+            const points = [{ identifier: 1, clientX: x, clientY: 300 }];
+            Object.defineProperty(e, 'touches', { value: type === 'touchend' ? [] : points });
+            Object.defineProperty(e, 'changedTouches', { value: points });
+            return e;
+        };
+        stage.dispatchEvent(touchEvent('touchstart', 300));
+        stage.dispatchEvent(touchEvent('touchend', 150));
         if (titleShown() !== 'charlie') throw new Error(`swipe left showed ${titleShown()}`);
         dialog().querySelector('.rb-card').click();
         if (calls.opened.length) throw new Error('the click after a swipe opened the routine');
@@ -342,8 +354,8 @@ export async function runRoutineBrowserTests(resultsDiv) {
     });
 
     await test('dark mode: no theme colours on the card, as app-wide', () => {
+        const { browser } = setup({ active: 'b' });   // setup() clears body classes first
         document.body.classList.add('dark-mode');
-        const { browser } = setup({ active: 'b' });
         browser.open();
         const v = dialog().querySelector('.rb-card').style.getPropertyValue('--pref-task-bg');
         if (v) throw new Error(`--pref-task-bg set to "${v}" in dark mode`);
