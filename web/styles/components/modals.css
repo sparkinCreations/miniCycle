@@ -199,6 +199,37 @@ dialog.due-date-picker-overlay[open] {
     margin: 0;
 }
 
+/* "All shortcuts": each group a <details>, closed until opened, so a first
+   look is the five keys above it. */
+.shortcuts-group {
+    border-top: 1px solid var(--theme-border);
+}
+
+.shortcuts-group > summary {
+    padding: var(--space-2) 0;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.shortcuts-group > summary:focus-visible {
+    outline: 2px solid var(--theme-accent, var(--color-primary));
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+.shortcuts-group[open] > summary {
+    padding-bottom: var(--space-1);
+}
+
+.shortcuts-group > dl {
+    padding-bottom: var(--space-2);
+}
+
+.shortcuts-note {
+    margin: 0 0 var(--space-2) 0;
+    font-size: var(--font-size-sm);
+}
+
 .shortcuts-row {
     display: grid;
     grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);

@@ -955,6 +955,9 @@ export const DOM_CLASSES = Object.freeze({
     RB_CREATE_BTN: 'rb-create-btn',
     SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
     SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
+    SHORTCUTS_START: 'shortcuts-start',     // Keyboard Shortcuts dialog: "Start with these", the view's five keys
+    SHORTCUTS_GROUP: 'shortcuts-group',     // Keyboard Shortcuts dialog: a collapsed <details> group under "All shortcuts"
+    SHORTCUTS_NOTE: 'shortcuts-note',       // Keyboard Shortcuts dialog: a group's note ("Hold Alt+Shift…") or the single-keys line
     // ---- Visibility ----
     HIDDEN: 'hidden',
     VISIBLE: 'visible',

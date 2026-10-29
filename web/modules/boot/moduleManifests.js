@@ -212,7 +212,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/modalManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'safeAddEventListener', 'getModal'],
-        optionalDeps: ['hideMainMenu', 'waitForCore'],
+        optionalDeps: ['hideMainMenu', 'waitForCore', 'AppState'],
         provides: ['hasActiveNotifications'],
         provideInstance: 'modalManager',
         api: 'ui'

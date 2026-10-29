@@ -68,7 +68,8 @@ const di = createDIModule('ModalManager', {
     safeAddEventListener: optional(null),
     waitForCore: optional(() => Promise.resolve(false)),
     AppMeta: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    AppState: optional(null)   // the Keyboard Shortcuts list shows the single keys only when they are on
 });
 
 // Late-binding deps via Proxy
@@ -537,6 +538,17 @@ export class ModalManager {
 
     /**
      * Fill the Keyboard Shortcuts list. textContent throughout — no innerHTML.
+     *
+     * Built for a first look (Oct 2026: 28 rows over two screens, "Alt + Shift"
+     * eleven times, and the keys that matter in Focus View eighteen rows down):
+     *   - "Start with these": five keys for the view you are in;
+     *   - every group after it collapsed (<details>, so keyboard and screen
+     *     readers get it natively, and there is nothing to clean up);
+     *   - the app group says "Hold Alt+Shift" once and lists the keys;
+     *   - the single keys only when they are on, else one line on where to
+     *     turn them on.
+     * Every row is still built from KEYBOARD_SHORTCUTS / SINGLE_KEY_SHORTCUTS,
+     * so the list cannot drift from the keys handled.
      * @param {HTMLElement|null} container
      */
     renderShortcutsList(container) {
@@ -547,37 +559,43 @@ export class ModalManager {
         const shift = getLabel('shortcuts.keyShift');
         const cmd = getLabel(apple ? 'shortcuts.keyCmd' : 'shortcuts.keyCtrl');
         const esc = getLabel('shortcuts.keyEscape');
-        const app = (name) => [mod, shift, shortcutKeyName(KEYBOARD_SHORTCUTS[name])];
-        // The opt-in single keys, from SINGLE_KEY_SHORTCUTS so the list cannot
-        // drift from the keys handled; each says what its action already says.
-        const SINGLE_KEY_LABELS = {
-            OPEN_MENU: 'shortcuts.openMenu', OPEN_SETTINGS: 'shortcuts.openSettings',
+        const space = getLabel('shortcuts.keySpace');
+        const key = (name) => shortcutKeyName(KEYBOARD_SHORTCUTS[name]);
+        const app = (name) => [mod, shift, key(name)];
+        const focusView = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+        const singleKeysOn = _deps.AppState?.get?.()?.settings?.singleKeyShortcuts === true;
+
+        // The app shortcuts, by action — each row's label. The group lists them
+        // all, so a new KEYBOARD_SHORTCUTS entry without a label shows up here.
+        const APP_LABELS = {
+            NEW_ROUTINE: 'shortcuts.newRoutine', OPEN_ROUTINE: 'shortcuts.openRoutine',
             PREVIOUS_ROUTINE: 'shortcuts.previousRoutine', NEXT_ROUTINE: 'shortcuts.nextRoutine',
-            SHOW_SHORTCUTS: 'shortcuts.showList'
+            OPEN_SETTINGS: 'shortcuts.openSettings', OPEN_MENU: 'shortcuts.openMenu', SHOW_SHORTCUTS: 'shortcuts.showList',
+            NEXT_MODE: 'shortcuts.nextMode', FOCUS_VIEW: 'shortcuts.focusView',
+            TOGGLE_INPUT_BAR: 'shortcuts.toggleInput', USER_MANUAL: 'shortcuts.userManual'
         };
-        const singleKeyRows = Object.entries(SINGLE_KEY_SHORTCUTS)
-            .map(([key, action]) => [[[key.toUpperCase()]], SINGLE_KEY_LABELS[action]]);
 
         // Each row: [alternatives (each a list of keys pressed together), label key]
+        const startRows = focusView ? [
+            [[[space]], 'shortcuts.toggleTask'],
+            [[['↑'], ['↓']], 'shortcuts.moveBetween'],
+            [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
+            [[[esc]], 'shortcuts.leaveFocus'],
+            [[app('SHOW_SHORTCUTS')], 'shortcuts.showList']
+        ] : [
+            [[app('NEW_ROUTINE')], 'shortcuts.newRoutine'],
+            [[app('OPEN_ROUTINE')], 'shortcuts.openRoutine'],
+            [[[space]], 'shortcuts.toggleTask'],
+            [[['↑'], ['↓']], 'shortcuts.moveBetween'],
+            [[app('FOCUS_VIEW')], 'shortcuts.focusView']
+        ];
         const groups = [
-            ['shortcuts.groupApp', [
-                [[app('NEW_ROUTINE')], 'shortcuts.newRoutine'],
-                [[app('OPEN_ROUTINE')], 'shortcuts.openRoutine'],
-                [[app('PREVIOUS_ROUTINE')], 'shortcuts.previousRoutine'],
-                [[app('NEXT_ROUTINE')], 'shortcuts.nextRoutine'],
-                [[app('OPEN_SETTINGS')], 'shortcuts.openSettings'],
-                [[app('OPEN_MENU')], 'shortcuts.openMenu'],
-                [[app('SHOW_SHORTCUTS')], 'shortcuts.showList'],
-                [[app('NEXT_MODE')], 'shortcuts.nextMode'],
-                [[app('FOCUS_VIEW')], 'shortcuts.focusView'],
-                [[app('TOGGLE_INPUT_BAR')], 'shortcuts.toggleInput'],
-                [[app('USER_MANUAL')], 'shortcuts.userManual']
-            ]],
-            ['shortcuts.groupSingle', singleKeyRows],
+            ['shortcuts.groupApp', Object.keys(KEYBOARD_SHORTCUTS).map(name => [[[key(name)]], APP_LABELS[name]]),
+                getLabel('shortcuts.appHold', { vars: { mod, shift } })],
             ['shortcuts.groupTasks', [
                 [[[mod, '↑'], [mod, '↓']], 'shortcuts.moveTask'],
                 [[['↑'], ['↓']], 'shortcuts.moveBetween'],
-                [[[getLabel('shortcuts.keySpace')]], 'shortcuts.toggleTask']
+                [[[space]], 'shortcuts.toggleTask']
             ]],
             ['shortcuts.groupViews', [
                 [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
@@ -595,17 +613,12 @@ export class ModalManager {
                 [[[esc]], 'shortcuts.closeWindow']
             ]]
         ];
+        if (singleKeysOn) {
+            groups.push(['shortcuts.groupSingle', Object.entries(SINGLE_KEY_SHORTCUTS)
+                .map(([k, action]) => [[[k.toUpperCase()]], APP_LABELS[action]])]);
+        }
 
-        container.replaceChildren();
-        const intro = document.createElement('p');
-        intro.className = DOM_CLASSES.SHORTCUTS_INTRO;
-        intro.textContent = getLabel('shortcuts.intro');
-        container.appendChild(intro);
-
-        groups.forEach(([groupKey, rows]) => {
-            const section = document.createElement('section');
-            const heading = document.createElement('h3');
-            heading.textContent = getLabel(groupKey);
+        const rowsList = (rows) => {
             const list = document.createElement('dl');
             rows.forEach(([alternatives, labelKey]) => {
                 const row = document.createElement('div');
@@ -613,10 +626,10 @@ export class ModalManager {
                 const keys = document.createElement('dt');
                 alternatives.forEach((combo, i) => {
                     if (i > 0) keys.appendChild(document.createTextNode(' / '));
-                    combo.forEach((key, j) => {
+                    combo.forEach((k, j) => {
                         if (j > 0) keys.appendChild(document.createTextNode('+'));
                         const kbd = document.createElement('kbd');
-                        kbd.textContent = key;
+                        kbd.textContent = k;
                         keys.appendChild(kbd);
                     });
                 });
@@ -625,9 +638,47 @@ export class ModalManager {
                 row.append(keys, what);
                 list.appendChild(row);
             });
-            section.append(heading, list);
-            container.appendChild(section);
+            return list;
+        };
+
+        container.replaceChildren();
+        const intro = document.createElement('p');
+        intro.className = DOM_CLASSES.SHORTCUTS_INTRO;
+        intro.textContent = getLabel('shortcuts.intro');
+        container.appendChild(intro);
+
+        const start = document.createElement('section');
+        start.className = DOM_CLASSES.SHORTCUTS_START;
+        const startHeading = document.createElement('h3');
+        startHeading.textContent = getLabel('shortcuts.groupStart');
+        start.append(startHeading, rowsList(startRows));
+        container.appendChild(start);
+
+        const allHeading = document.createElement('h3');
+        allHeading.textContent = getLabel('shortcuts.allHeading');
+        container.appendChild(allHeading);
+        groups.forEach(([groupKey, rows, note]) => {
+            const group = document.createElement('details');
+            group.className = DOM_CLASSES.SHORTCUTS_GROUP;
+            const summary = document.createElement('summary');
+            summary.textContent = getLabel(groupKey);
+            group.appendChild(summary);
+            if (note) {
+                const p = document.createElement('p');
+                p.className = DOM_CLASSES.SHORTCUTS_NOTE;
+                p.textContent = note;
+                group.appendChild(p);
+            }
+            group.appendChild(rowsList(rows));
+            container.appendChild(group);
         });
+
+        if (!singleKeysOn) {
+            const off = document.createElement('p');
+            off.className = DOM_CLASSES.SHORTCUTS_NOTE;
+            off.textContent = getLabel('shortcuts.singleKeysOff');
+            container.appendChild(off);
+        }
     }
 
     /**

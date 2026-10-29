@@ -6615,14 +6615,29 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
         await page.evaluate(() => document.getElementById('open-shortcuts-modal')?.focus());
         await page.keyboard.press('Enter');
         await page.waitForTimeout(500);
+        // A first look: five keys, then every group collapsed (Oct 2026). Open
+        // them all, as a user would, and read every row.
+        const firstLook = await page.evaluate(() => {
+            const d = document.getElementById('shortcuts-modal');
+            return { start: d.querySelectorAll('.shortcuts-start .shortcuts-row').length,
+                closed: [...d.querySelectorAll('details.shortcuts-group')].every(g => !g.open),
+                fits: d.querySelector('.shortcuts-modal-content').scrollHeight <= innerHeight };
+        });
+        record('…a first look is five keys, every group collapsed, on one screen', firstLook.start === 5 && firstLook.closed && firstLook.fits, JSON.stringify(firstLook));
+        await page.evaluate(() => document.querySelectorAll('#shortcuts-modal details.shortcuts-group summary').forEach(s => s.click()));
+        await page.waitForTimeout(200);
         const list = await page.evaluate(() => {
             const d = document.getElementById('shortcuts-modal');
-            const rows = [...d.querySelectorAll('.shortcuts-row')].map(r => r.querySelector('dt').textContent);
-            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent, rows,
+            const group = (name) => [...d.querySelectorAll('details.shortcuts-group')].find(g => g.querySelector('summary').textContent === name);
+            const rowsOf = (el) => [...(el?.querySelectorAll('.shortcuts-row') || [])].map(r => r.querySelector('dt').textContent);
+            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent,
+                rows: [...rowsOf(group('App')), ...[...d.querySelectorAll('details.shortcuts-group')].slice(1).flatMap(rowsOf)],
+                appNote: group('App')?.querySelector('.shortcuts-note')?.textContent || '',
                 label: d.getAttribute('aria-labelledby'), closeName: d.querySelector('.close-modal')?.getAttribute('aria-label') };
         });
-        const want = ['Alt+Shift+N', 'Alt+Shift+O', 'Alt+Shift+M', 'Alt+Shift+F', 'Alt+Shift+I', 'Alt+Shift+U', 'Alt+↑ / Alt+↓', 'Shift+← / Shift+→', 'Ctrl+Z'];
-        const missing = want.filter(k => !list.rows.includes(k));
+        // The App group says "Hold Alt+Shift" once and lists the keys alone.
+        const want = ['N', 'O', 'M', 'F', 'I', 'U', '[', ']', 'S', '.', '?', 'Alt+↑ / Alt+↓', 'Shift+← / Shift+→', 'Ctrl+Z'];
+        const missing = want.filter(k => !list.rows.includes(k)).concat(/Alt\+Shift/.test(list.appNote) ? [] : ['the "Hold Alt+Shift" note']);
         record('Keyboard Shortcuts opens from the main menu', list.open && list.title === 'Keyboard Shortcuts', JSON.stringify({ open: list.open, title: list.title }));
         record('…and lists every shortcut', missing.length === 0 && list.rows.length >= 14, `missing ${missing.join(', ') || 'none'}; ${list.rows.length} rows`);
         record('…named for assistive tech (labelled dialog, named close button)', list.label === 'shortcuts-modal-title' && !!list.closeName, JSON.stringify(list));
@@ -7152,7 +7167,7 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.evaluate(() => document.getElementById('open-shortcuts-modal').click());
             await page.waitForTimeout(400);
             const listed = await page.evaluate(() => document.getElementById('shortcuts-list').textContent);
-            record('…and both are in the Keyboard Shortcuts list', /\[/.test(listed) && /\]/.test(listed) && /used before this one/.test(listed), listed.slice(0, 120));
+            record('…and both are in the Keyboard Shortcuts list', /\[/.test(listed) && /\]/.test(listed) && /the one you used before/.test(listed), listed.slice(0, 120));
             await page.keyboard.press('Escape');
         } catch (e) {
             console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);

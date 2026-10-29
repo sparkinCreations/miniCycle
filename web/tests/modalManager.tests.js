@@ -1011,6 +1011,51 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
+    // ===== Keyboard Shortcuts list: approachable on a first look (Oct 2026) =====
+    resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Keyboard Shortcuts list</h4>';
+    const { KEYBOARD_SHORTCUTS } = await import('../modules/core/constants.js');
+    const renderList = ({ focusView = false, singleKeys = false } = {}) => {
+        setModalManagerDependencies({ AppState: { get: () => ({ settings: { singleKeyShortcuts: singleKeys } }) } });
+        document.body.classList.toggle('focus-mode', focusView);
+        const box = document.createElement('div');
+        try {
+            new ModalManager().renderShortcutsList(box);
+        } finally {
+            document.body.classList.remove('focus-mode');
+            setModalManagerDependencies({ AppState: null });
+        }
+        return box;
+    };
+
+    await test('it starts with five keys for the view you are in', () => {
+        const focusStart = [...renderList({ focusView: true }).querySelectorAll('.shortcuts-start dd')].map(d => d.textContent);
+        const homeStart = [...renderList().querySelectorAll('.shortcuts-start dd')].map(d => d.textContent);
+        if (focusStart.length !== 5 || homeStart.length !== 5) throw new Error(`start rows: Focus ${focusStart.length}, Home ${homeStart.length}`);
+        if (!focusStart.some(t => /Leave Focus View/.test(t))) throw new Error(`Focus View start: ${focusStart.join(' | ')}`);
+        if (!homeStart.some(t => /new routine/i.test(t))) throw new Error(`Home View start: ${homeStart.join(' | ')}`);
+    });
+
+    await test('every other group is collapsed, and the app group lists every app shortcut once, after one "Hold Alt+Shift"', () => {
+        const box = renderList();
+        const groups = [...box.querySelectorAll('details.shortcuts-group')];
+        if (!groups.length || groups.some(g => g.open)) throw new Error('groups missing or open on a first look');
+        const appGroup = groups[0];
+        const rows = [...appGroup.querySelectorAll('.shortcuts-row')];
+        if (rows.length !== Object.keys(KEYBOARD_SHORTCUTS).length) throw new Error(`${rows.length} app rows for ${Object.keys(KEYBOARD_SHORTCUTS).length} shortcuts`);
+        if (rows.some(r => !r.querySelector('dd').textContent || /shortcuts\./.test(r.querySelector('dd').textContent))) throw new Error('an app row has no label');
+        if (rows.some(r => r.querySelectorAll('kbd').length !== 1)) throw new Error('app rows repeat the modifiers');
+        if (!/Shift/.test(appGroup.querySelector('.shortcuts-note')?.textContent || '')) throw new Error('no "Hold Alt+Shift" note');
+    });
+
+    await test('single keys are listed only while they are on; otherwise one line says where to turn them on', () => {
+        const off = renderList({ singleKeys: false });
+        const on = renderList({ singleKeys: true });
+        const names = (box) => [...box.querySelectorAll('summary')].map(s => s.textContent);
+        if (names(off).includes('Single keys')) throw new Error('single keys listed while off');
+        if (!/Settings → Behavior/.test(off.textContent)) throw new Error('no line on turning them on');
+        if (!names(on).includes('Single keys')) throw new Error('single keys not listed while on');
+    });
+
     // ===== SUMMARY =====
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${Math.round((passed.count / total.count) * 100)}%)</h3>`;
