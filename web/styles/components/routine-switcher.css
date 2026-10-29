@@ -1409,7 +1409,26 @@ input.routine-search-input:focus {
     gap: var(--space-1);
 }
 
-.rb-sort-btn.active {
+/* Own hovers: the app-wide button:hover is a light grey, and white text on it
+   measured 1.54:1. */
+#routine-browser :is(.rb-close-btn, .rb-sort-btn, .rb-all-btn, .rb-corner-btn, .rb-nav-btn, .rb-create-btn):hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.24);
+    color: #ffffff;
+}
+
+#routine-browser .rb-nav-btn:disabled:hover {
+    background: var(--rb-control-bg);
+}
+
+#routine-browser .rb-open-btn:hover {
+    background: var(--color-blue-pale);
+    color: var(--color-primary-dark);
+}
+
+#routine-browser .rb-sort-btn.active,
+#routine-browser .rb-sort-btn.active:hover,
+#routine-browser .rb-all-btn[aria-expanded="true"],
+#routine-browser .rb-all-btn[aria-expanded="true"]:hover {
     background: #ffffff;
     color: var(--color-primary-dark);
     border-color: #ffffff;
@@ -1767,8 +1786,7 @@ body.dark-mode .rb-panel-title {
 
 .rb-jump-date {
     flex: 0 0 auto;
-    opacity: 0.7;
-    font-size: var(--font-size-xs);
+    font-size: var(--font-size-xs);   /* full colour: dimmed, it fell under 4.5:1 */
 }
 
 @media (max-width: 600px) {

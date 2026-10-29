@@ -6410,6 +6410,9 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
             d.appState.activeRoutineId = 'm0';
             d.settings = d.settings || {};
             d.settings.focusModeActive = false;
+            // This journey is about the LIST. A brand-new phone user now starts
+            // with Browse Routines (journeyBrowseRoutines covers that), so say which.
+            d.settings.routineOpenView = 'list';
             d.metadata = d.metadata || {};
             if (quota === 'none') delete d.metadata.storageQuota;
             else d.metadata.storageQuota = { detectedBytes: 10 * 1024 * 1024, detectedAt: Date.now(), detectedVersion: '0.0.1', method: 2 };
