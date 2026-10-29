@@ -6648,8 +6648,14 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.keyboard.press('ArrowRight');
             await page.waitForTimeout(350);
             record('→ shows the next routine (Recent order)', (await shown(page)) === 'Gym Pull Day', `showing ${await shown(page)}`);
-            const named = await page.evaluate(() => document.querySelector('#routine-browser .rb-card').getAttribute('aria-label'));
+            const named = await page.evaluate(() => document.querySelector('#routine-browser .rb-card[data-pos="0"]').getAttribute('aria-label'));
             record('the card is named for screen readers', /Gym Pull Day/.test(named || ''), `aria-label "${named}"`);
+            const peek = await page.evaluate(() => {
+                const c = document.querySelector('#routine-browser .rb-card[data-pos="1"]');
+                const r = c.getBoundingClientRect();
+                return { onScreen: r.left < innerWidth && r.right > 0, opacity: Number(getComputedStyle(c).opacity), turned: getComputedStyle(c).transform !== 'none' };
+            });
+            record('a wide screen shows the next routine peeking beside it, turned toward it', peek.onScreen && peek.opacity > 0 && peek.turned, JSON.stringify(peek));
 
             // The wheel: one routine per gesture, outside the task list.
             await page.mouse.move(60, 400);
@@ -6659,11 +6665,11 @@ async function journeyBrowseRoutines(browser, baseURL) {
             record('one wheel gesture moves one routine', (await shown(page)) === 'Weekly Review', `showing ${await shown(page)}`);
 
             // Over a long task list the wheel scrolls the list first.
-            const box = await page.locator('#routine-browser .rb-tasks').boundingBox();
+            const box = await page.locator('#routine-browser .rb-card[data-pos="0"] .rb-tasks').boundingBox();
             await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
             await page.mouse.wheel(0, 150);
             await page.waitForTimeout(500);
-            const scrolled = await page.evaluate(() => document.querySelector('#routine-browser .rb-tasks').scrollTop);
+            const scrolled = await page.evaluate(() => document.querySelector('#routine-browser .rb-card[data-pos="0"] .rb-tasks').scrollTop);
             record('over a long task list the wheel scrolls the list, not the routine', (await shown(page)) === 'Weekly Review' && scrolled > 0, `showing ${await shown(page)}, scrollTop ${scrolled}`);
 
             // All routines: shows, does not open.
@@ -6711,13 +6717,38 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.waitForTimeout(1200);
             record('Enter opens the routine shown', (await activeTitle(page)) === 'Evening Wind-down' && (await shown(page)) === null, `active ${await activeTitle(page)}, browse ${await shown(page)}`);
 
+            // The grid: a tap selects and shows, a tap on the selected tile opens.
+            await page.keyboard.press('Alt+Shift+KeyO');
+            await page.waitForTimeout(500);
+            await page.click('#routine-browser .rb-layout-btn[data-layout="grid"]');
+            await page.waitForTimeout(500);
+            const tiles = await page.evaluate(() => document.querySelectorAll('#routine-browser .rb-tile').length);
+            record('Grid shows a tile for every routine', tiles === NAMES.length, `${tiles} tiles`);
+            await page.click('#routine-browser .rb-tile[data-key="r3"]');
+            await page.waitForTimeout(300);
+            record('…a tap on a tile shows it without opening it', (await shown(page)) === 'Gym Pull Day' && (await activeTitle(page)) === 'Evening Wind-down', `showing ${await shown(page)}, active ${await activeTitle(page)}`);
+            await page.click('#routine-browser .rb-tile[data-key="r3"]');
+            await page.waitForTimeout(1200);
+            record('…a tap on the selected tile opens it', (await activeTitle(page)) === 'Gym Pull Day' && (await shown(page)) === null, `active ${await activeTitle(page)}`);
+            await page.keyboard.press('Alt+Shift+KeyO');
+            await page.waitForTimeout(500);
+            const kept = await page.evaluate(() => !!document.querySelector('#routine-browser .rb-tile') && JSON.parse(localStorage.getItem('miniCycleData')).settings.routineBrowserLayout);
+            record('…and Browse opens in the grid next time', kept === 'grid', `layout ${kept}`);
+            await page.click('#routine-browser .rb-layout-btn[data-layout="cards"]');
+            await page.waitForTimeout(400);
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(400);
+
             // Reduced motion: no slide.
             await page.emulateMedia({ reducedMotion: 'reduce' });
             await page.keyboard.press('Alt+Shift+KeyO');
             await page.waitForTimeout(500);
             await page.keyboard.press('ArrowRight');
-            const anim = await page.evaluate(() => getComputedStyle(document.querySelector('#routine-browser .rb-card')).animationName);
-            record('no slide animation with reduced motion', anim === 'none', `animation ${anim}`);
+            const motion = await page.evaluate(() => {
+                const c = document.querySelector('#routine-browser .rb-card[data-pos="0"]');
+                return getComputedStyle(c).transitionDuration.split(',').map(d => parseFloat(d));
+            });
+            record('no slide with reduced motion', motion.every(d => d === 0), `transition ${motion}`);
             await page.keyboard.press('Escape');
         } catch (e) {
             console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
@@ -6748,18 +6779,20 @@ async function journeyBrowseRoutines(browser, baseURL) {
             record(`${width}px: the routine button opens Browse`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
             const layout = await page.evaluate(() => {
                 const d = document.getElementById('routine-browser');
-                const rects = [...d.querySelectorAll('.rb-top > button, .rb-sort')].map(e => e.getBoundingClientRect());
+                const rects = [...d.querySelectorAll('.rb-top > button:not([hidden]), .rb-sort, .rb-layout')].map(e => e.getBoundingClientRect());
                 let overlap = false;
                 for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
                     const a = rects[i], b = rects[j];
                     if (a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1) overlap = true;
                 }
-                const card = d.querySelector('.rb-card').getBoundingClientRect();
+                const card = d.querySelector('.rb-card[data-pos="0"]').getBoundingClientRect();
                 const open = d.querySelector('.rb-open-btn').getBoundingClientRect();
-                return { overlap, sideways: d.scrollWidth > d.clientWidth + 1, cardH: Math.round(card.height), openVisible: open.bottom <= innerHeight && open.top >= 0 };
+                const neighbours = [...d.querySelectorAll('.rb-card:not([data-pos="0"])')].map(c => Number(getComputedStyle(c).opacity));
+                return { overlap, sideways: d.scrollWidth > d.clientWidth + 1, cardH: Math.round(card.height), openVisible: open.bottom <= innerHeight && open.top >= 0, neighboursHidden: neighbours.every(o => o === 0) };
             });
             record(`${width}px: top controls do not overlap, nothing scrolls sideways, Open is on screen`,
                 !layout.overlap && !layout.sideways && layout.openVisible && layout.cardH > 200, JSON.stringify(layout));
+            record(`${width}px: no neighbours on a phone (no room) — they wait off-screen`, layout.neighboursHidden, JSON.stringify(layout));
 
             const swipe = (from, to) => page.evaluate(([from, to]) => {
                 const s = document.querySelector('#routine-browser .rb-stage');
@@ -6781,6 +6814,18 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await swipe(40, width - 40);
             await page.waitForTimeout(350);
             record(`${width}px: swiping right goes back`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
+
+            await page.tap('#routine-browser .rb-layout-btn[data-layout="grid"]');
+            await page.waitForTimeout(500);
+            const grid = await page.evaluate(() => {
+                const g = document.getElementById('routine-browser-grid');
+                const tiles = [...g.querySelectorAll('.rb-tile')].map(t => t.getBoundingClientRect());
+                return { sideways: g.scrollWidth > g.clientWidth + 1, columns: new Set(tiles.map(r => Math.round(r.top))).size < tiles.length, minH: Math.round(Math.min(...tiles.map(r => r.height))) };
+            });
+            record(`${width}px: the grid fits the phone (two or more to a row, nothing sideways, tiles not squashed)`,
+                !grid.sideways && grid.columns && grid.minH > 80, JSON.stringify(grid));
+            await page.tap('#routine-browser .rb-layout-btn[data-layout="cards"]');
+            await page.waitForTimeout(400);
 
             await page.tap('#routine-browser .rb-corner-btn');
             await page.waitForTimeout(700);

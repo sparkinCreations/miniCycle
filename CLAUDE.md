@@ -452,7 +452,7 @@ Seven facade modules load their sub-modules themselves instead of declaring them
 | `statsPanel` | statsPanelGestures, statsPanelRewards |
 | `notifications` | educationalTips *(static import — see below)* |
 | `onboardingManager` | onboardingSplash, onboardingDemo, onboardingCarousel *(all three STATIC imports, constructed in the manager's constructor)* |
-| `routineSwitcher` | routineSwitcherActions, routineBrowser *(static imports)* |
+| `routineSwitcher` | routineSwitcherActions, routineBrowser (+ its drawing helpers, routineBrowserRender) *(static imports)* |
 
 **Why:** Sub-modules are tightly coupled to their facade. Where the import is dynamic, `?v=${APP_VERSION}` cache busting ensures fresh loads.
 

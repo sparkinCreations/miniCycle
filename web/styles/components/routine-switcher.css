@@ -1326,14 +1326,18 @@ input.routine-search-input:focus {
     }
 }
 
+
 /* =============================================================================
-   BROWSE ROUTINES (routine/routineBrowser.js)
-   Full screen, one routine at a time, read-only. The card draws the task list
-   from the same --pref-* variables and --task-* defaults the real list uses
-   (task-list.css §CUSTOM PREFERENCE COLORS), set on the card itself from the
-   routine's own theme, so each routine wears its colours. Like the real list,
-   those apply only outside dark mode and the dark colour themes — the
-   `body:not(…)` prefix below is that same condition.
+   BROWSE ROUTINES (routine/routineBrowser.js, routineBrowserRender.js)
+   Full screen, read-only. Cards: one routine in front, its neighbours peeking
+   at the sides on a wide screen. Grid: every routine as a tile. Each card and
+   tile draws the task list from the same --pref-* variables and --task-*
+   defaults the real list uses (task-list.css §CUSTOM PREFERENCE COLORS), set on
+   the element itself from its routine's theme, so each wears its own colours.
+   Like the real list, those apply only outside dark mode and the dark colour
+   themes — the `body:not(…)` prefix below is that same condition. Every motion
+   here runs on --transition-normal, which the motion tokens zero under reduced
+   motion (the OS setting or the app's own).
    ============================================================================= */
 
 #routine-browser {
@@ -1356,10 +1360,26 @@ input.routine-search-input:focus {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
+    animation: rb-fade-in var(--transition-normal) ease-out;
 }
 
 #routine-browser::backdrop {
     background: var(--overlay-heavy);
+}
+
+@keyframes rb-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes rb-rise-in {
+    from { opacity: 0; transform: translateY(var(--space-3)); }
+    to { opacity: 1; transform: none; }
+}
+
+@keyframes rb-drop-in {
+    from { opacity: 0; transform: translateY(calc(-1 * var(--space-3))); }
+    to { opacity: 1; transform: none; }
 }
 
 /* :where() keeps this at element specificity, so each button's own class
@@ -1374,6 +1394,8 @@ input.routine-search-input:focus {
     outline-offset: 2px;
 }
 
+/* ── top bar ─────────────────────────────────────────────────────────────── */
+
 .rb-top {
     display: flex;
     align-items: center;
@@ -1382,6 +1404,7 @@ input.routine-search-input:focus {
 }
 
 .rb-close-btn,
+.rb-layout-btn,
 .rb-sort-btn,
 .rb-all-btn,
 .rb-corner-btn {
@@ -1397,6 +1420,12 @@ input.routine-search-input:focus {
     cursor: pointer;
 }
 
+.rb-layout-btn svg,
+.rb-corner-btn svg {
+    width: 1em;
+    height: 1em;
+}
+
 .rb-close-btn {
     width: var(--browse-close-size);
     height: var(--browse-close-size);
@@ -1406,6 +1435,7 @@ input.routine-search-input:focus {
     line-height: 1;
 }
 
+.rb-layout,
 .rb-sort {
     display: inline-flex;
     gap: var(--space-1);
@@ -1416,46 +1446,19 @@ input.routine-search-input:focus {
     margin-left: auto;
 }
 
-.rb-stage {
-    flex: 1;
-    min-height: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-2);
-    touch-action: pan-y;   /* the browser keeps vertical scrolling; sideways is ours */
-}
-
-.rb-nav-btn {
-    flex: 0 0 auto;
-    width: var(--browse-nav-size);
-    height: var(--browse-nav-size);
-    border: 1px solid var(--browse-control-border);
-    border-radius: 50%;
-    background: var(--browse-control-bg);
-    font-size: var(--font-size-3xl);
-    line-height: 1;
-    cursor: pointer;
-}
-
-.rb-nav-btn:disabled {
-    opacity: 0.3;
-    cursor: default;
+.rb-all-btn[hidden] {
+    display: none;
 }
 
 /* Own hovers: the app-wide button:hover is a light grey, and white text on it
    measured 1.54:1. */
-#routine-browser :is(.rb-close-btn, .rb-sort-btn, .rb-all-btn, .rb-corner-btn, .rb-nav-btn, .rb-create-btn):hover:not(:disabled) {
+#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-all-btn, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
     background: var(--browse-control-hover-bg);
     color: var(--browse-surround-text);
 }
 
-#routine-browser .rb-nav-btn:disabled:hover {
-    background: var(--browse-control-bg);
-}
-
-#routine-browser .rb-sort-btn.active,
-#routine-browser .rb-sort-btn.active:hover,
+#routine-browser :is(.rb-layout-btn, .rb-sort-btn).active,
+#routine-browser :is(.rb-layout-btn, .rb-sort-btn).active:hover,
 #routine-browser .rb-all-btn[aria-expanded="true"],
 #routine-browser .rb-all-btn[aria-expanded="true"]:hover {
     background: var(--color-white);
@@ -1463,13 +1466,40 @@ input.routine-search-input:focus {
     border-color: var(--color-white);
 }
 
-/* The routine, as the app draws it. Read-only: a tap anywhere opens it. */
+/* ── Cards: the carousel ─────────────────────────────────────────────────── */
+
+.rb-stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    touch-action: pan-y;   /* the browser keeps vertical scrolling; sideways is ours */
+}
+
+.rb-stage[hidden] {
+    display: none;
+}
+
+.rb-track {
+    position: relative;
+    flex: 1;
+    perspective: var(--browse-perspective);
+    overflow: hidden;
+}
+
+/* Every card sits centred; its data-pos (-3…3, set by routineBrowser) moves,
+   turns, shrinks and dims it, and the transition between positions is the
+   animation. ±3 is past the edge: where a card comes in from and goes out to. */
 .rb-card {
-    flex: 1 1 auto;
-    width: 100%;
-    max-width: var(--browse-card-max-width);
-    height: 100%;
+    --rb-x: 0px;
+    --rb-turn: 0deg;
+    --rb-scale: 1;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    width: min(100%, var(--browse-card-max-width));
     max-height: var(--browse-card-max-height);
+    margin: auto 0;
     display: flex;
     flex-direction: column;
     gap: var(--space-2-5);
@@ -1481,35 +1511,52 @@ input.routine-search-input:focus {
     color: var(--theme-text-on-surface);
     cursor: pointer;
     overflow: hidden;
+    transform: translateX(calc(-50% + var(--rb-x))) rotateY(var(--rb-turn)) scale(var(--rb-scale));
+    /* Dimmed by brightness, not opacity: see-through neighbours let the ones
+       behind them show through (measured at 1500px). */
+    filter: brightness(var(--rb-dim, 1));
+    transition: transform var(--transition-normal) ease, opacity var(--transition-normal) ease, filter var(--transition-normal) ease;
+    z-index: var(--browse-z-front);
+}
+
+.rb-card[data-pos="-1"],
+.rb-card[data-pos="1"] {
+    --rb-scale: var(--browse-peek-scale);
+    --rb-dim: var(--browse-peek-dim);
+    z-index: var(--browse-z-peek);
+}
+
+.rb-card[data-pos="-1"] { --rb-x: calc(-1 * var(--browse-peek-offset)); --rb-turn: var(--browse-peek-angle); }
+.rb-card[data-pos="1"]  { --rb-x: var(--browse-peek-offset); --rb-turn: calc(-1 * var(--browse-peek-angle)); }
+
+.rb-card[data-pos="-2"],
+.rb-card[data-pos="2"],
+.rb-card[data-pos="-3"],
+.rb-card[data-pos="3"] {
+    --rb-scale: var(--browse-peek-scale-far);
+    --rb-dim: var(--browse-peek-dim-far);
+    z-index: var(--browse-z-far);
+}
+
+.rb-card[data-pos="-2"] { --rb-x: calc(-1 * var(--browse-peek-offset-far)); --rb-turn: var(--browse-peek-angle); }
+.rb-card[data-pos="2"]  { --rb-x: var(--browse-peek-offset-far); --rb-turn: calc(-1 * var(--browse-peek-angle)); }
+
+.rb-card[data-pos="-3"],
+.rb-card[data-pos="3"] {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.rb-card[data-pos="-3"] { --rb-x: calc(-2 * var(--browse-peek-offset-far)); --rb-turn: var(--browse-peek-angle); }
+.rb-card[data-pos="3"]  { --rb-x: calc(2 * var(--browse-peek-offset-far)); --rb-turn: calc(-1 * var(--browse-peek-angle)); }
+
+/* Only the routine in front scrolls; a neighbour is one click target. */
+.rb-card:not([data-pos="0"]) .rb-tasks {
+    overflow: hidden;
 }
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-card {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
-}
-
-.rb-card--enter-next { animation: rb-enter-next var(--transition-normal) ease-out; }
-.rb-card--enter-prev { animation: rb-enter-prev var(--transition-normal) ease-out; }
-
-@keyframes rb-enter-next {
-    from { transform: translateX(var(--space-8)); opacity: 0.4; }
-    to { transform: none; opacity: 1; }
-}
-
-@keyframes rb-enter-prev {
-    from { transform: translateX(calc(-1 * var(--space-8))); opacity: 0.4; }
-    to { transform: none; opacity: 1; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-    .rb-card--enter-next,
-    .rb-card--enter-prev {
-        animation: none;
-    }
-}
-
-html.reduced-motion .rb-card--enter-next,
-html.reduced-motion .rb-card--enter-prev {
-    animation: none;
 }
 
 /* Home View shows the mode above the list; Focus View does not. */
@@ -1522,6 +1569,8 @@ html.reduced-motion .rb-card--enter-prev {
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
 }
+
+/* ── the task panel (cards and tiles) ────────────────────────────────────── */
 
 .rb-panel {
     flex: 1;
@@ -1639,26 +1688,9 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-task--do
     text-align: center;
 }
 
-.rb-progress {
-    flex: 0 0 auto;
-    height: var(--browse-progress-height);
-    border-radius: var(--radius-full);
-    background: var(--theme-progress-track-bg);
-    overflow: hidden;
-}
-
-.rb-progress-fill {
-    height: 100%;
-    background: var(--theme-progress-fill-bg);
-}
-
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-progress-fill {
-    background: var(--pref-progress-bar, var(--theme-progress-fill-bg));
-}
-
-/* Dark mode drops theme colours app-wide; the card follows the real dark
+/* Dark mode drops theme colours app-wide; cards and tiles follow the real dark
    Home View (dark-mode.css: body, .task-list-container, the title bar). */
-body.dark-mode .rb-card {
+body.dark-mode :is(.rb-card, .rb-tile) {
     background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
     color: var(--theme-text-primary);
 }
@@ -1678,12 +1710,143 @@ body.dark-mode .rb-panel-title {
     color: var(--dark-text-light);
 }
 
-/* Under the routine: its name, mode and place, and its size. */
+/* ── Grid ────────────────────────────────────────────────────────────────── */
+
+.rb-grid {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(var(--browse-tile-min), 1fr));
+    grid-auto-rows: var(--browse-tile-height);
+    align-content: start;
+    gap: var(--space-4);
+    padding: var(--space-2);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    animation: rb-rise-in var(--transition-normal) ease-out;
+}
+
+.rb-grid[hidden] {
+    display: none;
+}
+
+.rb-tile {
+    display: flex;
+    padding: var(--space-2-5);
+    box-sizing: border-box;
+    border-radius: var(--radius-lg);
+    background: var(--theme-bg-gradient);
+    box-shadow: var(--browse-card-shadow);
+    color: var(--theme-text-on-surface);
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform var(--transition-normal) ease;
+}
+
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+}
+
+.rb-tile[aria-selected="true"] {
+    outline: 3px solid var(--color-white);
+    outline-offset: 3px;
+    transform: scale(1.03);
+}
+
+.rb-tile:focus-visible {
+    outline: 3px solid var(--color-white);
+    outline-offset: 3px;
+}
+
+.rb-tile .rb-panel-title {
+    padding: var(--space-1-5) var(--space-2);
+    font-size: var(--font-size-sm);
+}
+
+.rb-tile-name {
+    overflow-wrap: anywhere;
+}
+
+.rb-tile .rb-tasks {
+    flex: 0 0 auto;   /* its few rows, not "fill": a phone tile is content-high */
+    padding: var(--space-1-5);
+    overflow: hidden;
+}
+
+.rb-tile .rb-task {
+    gap: var(--space-2);
+    margin-bottom: var(--space-1);
+    padding: var(--space-1) var(--space-2);
+    font-size: var(--font-size-xs);
+}
+
+.rb-tile .rb-check {
+    width: var(--space-3);
+    height: var(--space-3);
+    border-width: 1px;
+}
+
+.rb-tile .rb-task--done .rb-check::after {
+    font-size: var(--font-size-xs);
+}
+
+.rb-tile .rb-empty {
+    padding: var(--space-2);
+    font-size: var(--font-size-xs);
+}
+
+.rb-tile-more {
+    padding: 0 var(--space-2) var(--space-1-5);
+    font-size: var(--font-size-xs);
+    opacity: 0.85;
+    text-align: center;
+}
+
+/* ── under the routine: ‹ name ›, its details, the actions ───────────────── */
+
 .rb-info {
     text-align: center;
 }
 
+.rb-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
+/* Just the chevron — no background, no border. */
+.rb-nav-btn {
+    flex: 0 0 auto;
+    width: var(--browse-nav-size);
+    height: var(--browse-nav-size);
+    padding: 0;
+    border: none;
+    background: none;
+    color: var(--browse-surround-text);
+    font-size: var(--font-size-3xl);
+    line-height: 1;
+    cursor: pointer;
+    transition: transform var(--transition-normal) ease;
+}
+
+#routine-browser .rb-nav-btn:hover:not(:disabled) {
+    background: none;
+    color: var(--browse-surround-text);
+    transform: scale(1.15);
+}
+
+.rb-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+#routine-browser .rb-nav-btn:disabled:hover {
+    background: none;
+}
+
 .rb-title {
+    min-width: 0;
     font-size: var(--font-size-xl);
     font-weight: var(--font-weight-bold);
     overflow-wrap: anywhere;
@@ -1727,9 +1890,10 @@ body.dark-mode .rb-panel-title {
     background: var(--browse-control-bg);
 }
 
-/* All routines: a plain jump list — names (and dates in Recent), nothing else.
-   Drops down under its button (top left) on a wide screen, rises from the
-   bottom on a phone. Opaque: it sits over the routine. */
+/* ── All routines: a plain jump list ─────────────────────────────────────────
+   Names (and dates in Recent), nothing else. Drops down under its button (top
+   left) on a wide screen, rises from the bottom on a phone. Opaque: it sits
+   over the routine. */
 .rb-jump {
     position: absolute;
     top: calc(var(--space-3) + var(--safe-area-top) + var(--browse-top-bar-height));
@@ -1745,6 +1909,7 @@ body.dark-mode .rb-panel-title {
     overflow-y: auto;
     overscroll-behavior: contain;
     z-index: var(--z-elevated);
+    animation: rb-drop-in var(--transition-normal) ease-out;
 }
 
 .rb-jump[hidden] {
@@ -1792,19 +1957,53 @@ body.dark-mode .rb-panel-title {
     font-size: var(--font-size-xs);   /* full colour: dimmed, it fell under 4.5:1 */
 }
 
+/* ── widths ──────────────────────────────────────────────────────────────────
+   Room for one neighbour each side but not two: the far ones wait past the
+   edge. Narrower still (a phone, a small window): no neighbours on screen —
+   they wait just past the edge, so a swipe or step still slides. */
+@media (max-width: 1399px) {
+    .rb-card[data-pos="-2"],
+    .rb-card[data-pos="2"] {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+@media (max-width: 1099px) {
+    #routine-browser {
+        --browse-peek-offset: 360px;
+    }
+}
+
+@media (max-width: 899px) {
+    #routine-browser {
+        --browse-peek-offset: 105%;
+        --browse-peek-offset-far: 105%;
+        --browse-peek-angle: 0deg;
+        --browse-peek-scale: 1;
+        --browse-peek-scale-far: 1;
+    }
+
+    .rb-card:not([data-pos="0"]) {
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
 @media (max-width: 600px) {
     #routine-browser {
         padding-left: var(--space-2-5);
         padding-right: var(--space-2-5);
+        --browse-tile-min: 130px;   /* two to a row down to 320px */
+        /* Content height: a fixed one cut a task row in half at 17px text. */
+        --browse-tile-height: max-content;   /* `auto` let the grid squeeze rows to 0 */
     }
 
-    .rb-nav-btn {
-        width: var(--browse-nav-size-phone);
-        height: var(--browse-nav-size-phone);
-        font-size: var(--font-size-2xl);
+    .rb-grid {
+        gap: var(--space-2-5);
     }
 
-    /* Two rows: close and the way back to the list, then order and jump. */
+    /* Two rows: close and the way back to the list, then the rest. */
     .rb-top::after {
         content: '';
         order: 1;
@@ -1812,8 +2011,20 @@ body.dark-mode .rb-panel-title {
     }
 
     .rb-corner-btn { order: 1; }
-    .rb-sort { order: 2; }
-    .rb-all-btn { order: 3; margin-left: auto; }
+    .rb-layout { order: 2; }
+    .rb-sort { order: 3; }
+    .rb-all-btn { order: 4; margin-left: auto; }
+
+    /* Icons only for the layout switch on a phone; each is named by its text
+       for screen readers (visually hidden, not removed). */
+    .rb-layout-btn span {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip: rect(0 0 0 0);
+        white-space: nowrap;
+    }
 
     .rb-jump {
         top: auto;
@@ -1821,5 +2032,6 @@ body.dark-mode .rb-panel-title {
         right: var(--space-2-5);
         width: auto;
         max-height: 62vh;
+        animation-name: rb-rise-in;
     }
 }

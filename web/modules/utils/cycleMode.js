@@ -29,7 +29,7 @@
  * @module utils/cycleMode
  */
 
-import { ROUTINE_OPEN_VIEW, ROUTINE_BROWSER_SORT } from '../core/constants.js';
+import { ROUTINE_OPEN_VIEW, ROUTINE_BROWSER_SORT, ROUTINE_BROWSER_LAYOUT } from '../core/constants.js';
 
 /**
  * @param {Object|null|undefined} cycle - A routine from state.data.routine
@@ -471,4 +471,15 @@ export function getRoutineBrowserSort(state) {
     return state?.settings?.routineBrowserSort === ROUTINE_BROWSER_SORT.ALPHA
         ? ROUTINE_BROWSER_SORT.ALPHA
         : ROUTINE_BROWSER_SORT.RECENT;
+}
+
+/**
+ * Browse Routines' layout. Cards unless Grid was chosen.
+ * @param {Object|null|undefined} state - AppState.get()
+ * @returns {'cards'|'grid'} a ROUTINE_BROWSER_LAYOUT value
+ */
+export function getRoutineBrowserLayout(state) {
+    return state?.settings?.routineBrowserLayout === ROUTINE_BROWSER_LAYOUT.GRID
+        ? ROUTINE_BROWSER_LAYOUT.GRID
+        : ROUTINE_BROWSER_LAYOUT.CARDS;
 }

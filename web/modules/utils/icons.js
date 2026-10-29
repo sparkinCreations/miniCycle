@@ -78,6 +78,9 @@ const ICONS = {
     'folder': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
     'cards': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7.5" y="2" width="14" height="17" rx="2.5"/><path d="M3 7.5h2.4V19a1.6 1.6 0 0 0 1.6 1.6h10.5V23H7a4 4 0 0 1-4-4z"/></svg>',
 
+    // Grid - Browse Routines' grid layout (beside 'cards' for its card layout)
+    'grid': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.8"/></svg>',
+
     // Folder open - used for open routine
     'folder-open': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor"><path d="M88.7 223.8L0 375.8V96C0 60.7 28.7 32 64 32H181.5c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7H416c35.3 0 64 28.7 64 64v32H144c-22.8 0-43.8 12.1-55.3 31.8zM534.7 272.8c8.8 15.5 8.2 34.5-1.4 49.4S508.4 352 490.7 352H64c-17.7 0-32-14.3-32-32V379.8L123.3 256H490.7c11.5 0 22.2 6.2 27.9 16.3l16.1 .5z"/></svg>',
 

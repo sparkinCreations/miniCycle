@@ -284,10 +284,25 @@
   --browse-jump-width: 340px;
   --browse-top-bar-height: 52px;    /* the jump list drops from under it */
   --browse-close-size: 40px;
-  --browse-nav-size: 48px;
-  --browse-nav-size-phone: 36px;
+  --browse-nav-size: 48px;          /* the ‹ › beside the name: no background, just the chevron */
   --browse-check-size: 22px;
-  --browse-progress-height: 8px;
+  /* The carousel: neighbours peek either side, a little smaller, dimmer and
+     turned toward the routine in front. Wide screens only (routine-switcher.css
+     sets the offsets per width; on a phone they wait off-screen so a swipe
+     still slides). */
+  --browse-perspective: 1400px;
+  --browse-peek-offset: 430px;      /* centre of the next routine, from the front one's */
+  --browse-peek-offset-far: 760px;  /* the one after that */
+  --browse-peek-angle: 28deg;
+  --browse-peek-scale: 0.8;
+  --browse-peek-scale-far: 0.66;
+  --browse-peek-dim: 0.55;          /* brightness — dimmed, still opaque */
+  --browse-peek-dim-far: 0.35;
+  --browse-z-front: 3;              /* stacking inside the carousel only */
+  --browse-z-peek: 2;
+  --browse-z-far: 1;
+  --browse-tile-min: 220px;         /* grid: narrowest a tile gets before the row reflows */
+  --browse-tile-height: 230px;
   --browse-action-min-width: 140px;   /* Open / Create another routine */
 
   /* ═══════════════════════════════════════════════════════════════════════════

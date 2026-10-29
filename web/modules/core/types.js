@@ -223,6 +223,7 @@
  * @property {boolean} [showTaskInput=true] - Show task input bar
  * @property {'list'|'browse'} [routineOpenView] - What opening routines shows: the Open Routine list or Browse Routines; absent = list
  * @property {'recent'|'alpha'} [routineBrowserSort='recent'] - Browse Routines' order
+ * @property {'cards'|'grid'} [routineBrowserLayout='cards'] - Browse Routines' layout
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding
  * @property {boolean} [onboardingResetRequested=false] - Set by Reset Onboarding; the boot gate shows the refresher modal once for it, then clears it
  * @property {number|'done'|null} [guidedTourStep=null] - Guided tour progress state

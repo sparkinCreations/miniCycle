@@ -26,7 +26,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
     const { RoutineSwitcher, initRoutineSwitcher } = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
     const { orderRoutines, routineRecency } = await import(`../modules/routine/routineBrowser.js?v=${cacheBuster}`);
     const { getLabel } = await import(`../modules/labels/labelResolver.js?v=${cacheBuster}`);
-    const { getRoutineOpenView, getRoutineBrowserSort } = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
+    const { getRoutineOpenView, getRoutineBrowserSort, getRoutineBrowserLayout } = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
 
     // The size line reads formatBytes/getStorageInfo, bindings init fills in.
     await initRoutineSwitcher({
@@ -98,6 +98,9 @@ export async function runRoutineBrowserTests(resultsDiv) {
     const titleShown = () => dialog()?.querySelector('.rb-title')?.textContent;
     const metaLines = () => [...dialog().querySelectorAll('.rb-meta')].map(e => e.textContent);
     const key = (k) => dialog().dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true }));
+    // The routine in front of the carousel (its neighbours have cards too).
+    const front = () => dialog().querySelector('.rb-card[data-pos="0"]');
+    const tile = (k) => dialog().querySelector(`.rb-tile[data-key="${k}"]`);
 
     // ── orders ───────────────────────────────────────────────────────────────
     await test('A-Z ignores case', () => {
@@ -138,6 +141,16 @@ export async function runRoutineBrowserTests(resultsDiv) {
         if (got.join() !== 'browse,list,list,list,list') throw new Error(`got ${got}`);
     });
 
+    await test('getRoutineBrowserLayout: only "grid" is the grid; absent or unknown is Cards', () => {
+        const got = [
+            getRoutineBrowserLayout({ settings: { routineBrowserLayout: 'grid' } }),
+            getRoutineBrowserLayout({ settings: {} }),
+            getRoutineBrowserLayout({ settings: { routineBrowserLayout: 'list' } }),
+            getRoutineBrowserLayout(null)
+        ];
+        if (got.join() !== 'grid,cards,cards,cards') throw new Error(`got ${got}`);
+    });
+
     await test('getRoutineBrowserSort: only "alpha" is A-Z; absent or unknown is Recent', () => {
         const got = [
             getRoutineBrowserSort({ settings: { routineBrowserSort: 'alpha' } }),
@@ -171,9 +184,10 @@ export async function runRoutineBrowserTests(resultsDiv) {
     await test('the current routine is tagged; others are not', () => {
         const { browser } = setup({ active: 'a' });
         browser.open();
-        if (!dialog().querySelector('.rb-current-tag')) throw new Error('current routine not tagged');
+        if (!front().querySelector('.rb-current-tag')) throw new Error('current routine not tagged');
         browser.move(-1);
-        if (dialog().querySelector('.rb-current-tag')) throw new Error('another routine tagged as current');
+        if (front().querySelector('.rb-current-tag')) throw new Error('another routine tagged as current');
+        if (dialog().querySelectorAll('.rb-current-tag').length !== 1) throw new Error('more than one card tagged');
         cleanup();
     });
 
@@ -246,7 +260,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
         stage.dispatchEvent(touchEvent('touchstart', 300));
         stage.dispatchEvent(touchEvent('touchend', 150));
         if (titleShown() !== 'charlie') throw new Error(`swipe left showed ${titleShown()}`);
-        dialog().querySelector('.rb-card').click();
+        front().click();
         if (calls.opened.length) throw new Error('the click after a swipe opened the routine');
         cleanup();
     });
@@ -266,7 +280,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
         const { browser, calls } = setup({ active: 'a' });
         browser.open();
         browser.move(-1);
-        dialog().querySelector('.rb-card').click();
+        front().click();
         browser.open();
         browser.move(-2);
         key('Enter');
@@ -314,6 +328,84 @@ export async function runRoutineBrowserTests(resultsDiv) {
         cleanup();
     });
 
+    // ── the carousel ─────────────────────────────────────────────────────────
+    await test('Cards: the neighbours either side have cards, the routine in front is the one named', () => {
+        const { browser } = setup({ active: 'c' }); // Recent: b, c, a — c in the middle
+        browser.open();
+        const cards = [...dialog().querySelectorAll('.rb-card')].map(c => `${c.dataset.key}@${c.dataset.pos}`).sort();
+        if (cards.join() !== 'a@1,b@-1,c@0') throw new Error(`cards ${cards}`);
+        if (front().getAttribute('aria-hidden') === 'true') throw new Error('the routine in front is hidden from screen readers');
+        const neighbourHidden = [...dialog().querySelectorAll('.rb-card:not([data-pos="0"])')].every(c => c.getAttribute('aria-hidden') === 'true');
+        if (!neighbourHidden) throw new Error('a neighbour is exposed to screen readers');
+        cleanup();
+    });
+
+    await test('Cards: a click on a neighbour brings it to the front, it does not open it', () => {
+        const { browser, calls } = setup({ active: 'c' });
+        browser.open();
+        dialog().querySelector('.rb-card[data-pos="1"]').click();
+        if (titleShown() !== 'alpha') throw new Error(`showing ${titleShown()}`);
+        if (front()?.dataset.key !== 'a') throw new Error(`in front: ${front()?.dataset.key}`);
+        if (calls.opened.length) throw new Error('a neighbour click opened a routine');
+        cleanup();
+    });
+
+    await test('Cards: no progress bar on the card', () => {
+        const { browser } = setup({ active: 'a' });
+        browser.open();
+        if (front().querySelector('[class*="progress"]')) throw new Error('the card still has a progress bar');
+        cleanup();
+    });
+
+    await test('the ‹ › sit under the routine, beside its name', () => {
+        const { browser } = setup({ active: 'c' });
+        browser.open();
+        const row = dialog().querySelector('.rb-title-row');
+        if (!row?.querySelector('.rb-nav-btn[data-dir="-1"]') || !row.querySelector('.rb-title') || !row.querySelector('.rb-nav-btn[data-dir="1"]')) {
+            throw new Error('arrows are not in the title row');
+        }
+        if (dialog().querySelector('.rb-stage .rb-nav-btn')) throw new Error('arrows are still beside the card');
+        cleanup();
+    });
+
+    // ── the grid ─────────────────────────────────────────────────────────────
+    await test('Grid: a tile per routine, the current one selected; the jump list button goes', () => {
+        const { browser, state } = setup({ active: 'c' });
+        browser.open();
+        dialog().querySelector('.rb-layout-btn[data-layout="grid"]').click();
+        const tiles = [...dialog().querySelectorAll('.rb-tile')];
+        if (tiles.length !== 3) throw new Error(`${tiles.length} tiles`);
+        if (tile('c').getAttribute('aria-selected') !== 'true') throw new Error('current routine not selected');
+        if (tiles.filter(t => t.tabIndex === 0).length !== 1) throw new Error('the grid is not a single Tab stop');
+        if (!dialog().querySelector('.rb-all-btn').hidden) throw new Error('All routines shown with the grid');
+        if (!dialog().querySelector('.rb-stage').hidden) throw new Error('the carousel is still showing');
+        if (state.settings.routineBrowserLayout !== 'grid') throw new Error('layout not saved');
+        cleanup();
+    });
+
+    await test('Grid: a tap selects and shows it; a tap on the selected tile opens it', () => {
+        const { browser, calls } = setup({ active: 'c', settings: { routineBrowserLayout: 'grid' } });
+        browser.open();
+        tile('a').click();
+        if (titleShown() !== 'alpha') throw new Error(`showing ${titleShown()}`);
+        if (tile('a').getAttribute('aria-selected') !== 'true') throw new Error('tap did not select');
+        if (calls.opened.length) throw new Error('the first tap opened it');
+        tile('a').click();
+        if (calls.opened.join() !== 'a') throw new Error(`opened ${calls.opened}`);
+        cleanup();
+    });
+
+    await test('Grid: the saved layout is used on open; Enter opens the selection', () => {
+        const { browser, calls } = setup({ active: 'c', settings: { routineBrowserLayout: 'grid' } });
+        browser.open();
+        if (!dialog().querySelector('.rb-tile')) throw new Error('opened without the grid');
+        key('ArrowRight');
+        if (tile('a').getAttribute('aria-selected') !== 'true') throw new Error('→ did not move the selection');
+        key('Enter');
+        if (calls.opened.join() !== 'a') throw new Error(`opened ${calls.opened}`);
+        cleanup();
+    });
+
     // ── one routine ──────────────────────────────────────────────────────────
     await test('one routine: nothing to flip to, and a way to make another', () => {
         const { browser, calls } = setup({ routines: { a: THREE.a }, active: 'a' });
@@ -339,7 +431,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
     await test('a themed routine wears its theme on the card', () => {
         const { browser } = setup({ active: 'b' });
         browser.open();
-        const v = dialog().querySelector('.rb-card').style.getPropertyValue('--pref-task-bg');
+        const v = front().style.getPropertyValue('--pref-task-bg');
         if (!v || v === 'initial') throw new Error(`--pref-task-bg is "${v}"`);
         cleanup();
     });
@@ -348,7 +440,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
         const { browser } = setup({ active: 'b' });
         browser.open();
         browser.move(1); // c, classic
-        const v = dialog().querySelector('.rb-card').style.getPropertyValue('--pref-task-bg');
+        const v = front().style.getPropertyValue('--pref-task-bg');
         if (v !== 'initial') throw new Error(`--pref-task-bg is "${v}", expected initial`);
         cleanup();
     });
@@ -357,7 +449,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
         const { browser } = setup({ active: 'b' });   // setup() clears body classes first
         document.body.classList.add('dark-mode');
         browser.open();
-        const v = dialog().querySelector('.rb-card').style.getPropertyValue('--pref-task-bg');
+        const v = front().style.getPropertyValue('--pref-task-bg');
         if (v) throw new Error(`--pref-task-bg set to "${v}" in dark mode`);
         cleanup();
     });

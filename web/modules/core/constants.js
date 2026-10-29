@@ -196,6 +196,7 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     ROUTINE_BROWSER_WHEEL_QUIET: 250, // 250ms - Browse Routines: a wheel/trackpad gesture moves ONE routine; further wheel events are ignored until they pause this long (a trackpad flick fires dozens)
+    ROUTINE_BROWSER_CARD_EXIT: 400,   // ms - Browse Routines: a card sliding out of the carousel is removed after this (its --transition-normal slide, plus margin) if no transitionend arrives
     ROUTINE_BROWSER_SWIPE_CLICK_GUARD: 350, // ms - Browse Routines: the click a browser sends after a swipe's touchend is ignored for this long, so ending a swipe on the routine does not open it
     FOCUS_EXIT_DOUBLE_ESCAPE: 1500, // 1500ms - In Focus View, a second Escape within this leaves the view; also how long the "press again" hint stays up
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
@@ -401,6 +402,7 @@ export const LIMITS = Object.freeze({
     UNDO_STACK: 20,                // Max items in undo/redo stack
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
+    ROUTINE_BROWSER_TILE_TASKS: 4, // Browse Routines grid: tasks a tile shows before "+N more"
     MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
     RECURRING_SEARCH_THRESHOLD: 5,  // Show the recurring panel's search only once the list is long enough to scroll past. Below this a search box is chrome, not help — the whole list is already on screen
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
@@ -538,6 +540,15 @@ export const ROUTINE_OPEN_VIEW = Object.freeze({
  * Browse Routines' two orders — the stored values of `settings.routineBrowserSort`;
  * read through cycleMode.getRoutineBrowserSort().
  */
+/**
+ * Browse Routines' two layouts — the stored values of `settings.routineBrowserLayout`;
+ * read through cycleMode.getRoutineBrowserLayout().
+ */
+export const ROUTINE_BROWSER_LAYOUT = Object.freeze({
+    CARDS: 'cards',   // one routine, its neighbours peeking at the sides (the default)
+    GRID:  'grid'     // every routine as a tile
+});
+
 export const ROUTINE_BROWSER_SORT = Object.freeze({
     RECENT: 'recent',   // last used first (the default)
     ALPHA:  'alpha'     // A-Z by title
@@ -855,12 +866,18 @@ export const DOM_CLASSES = Object.freeze({
     RB_SORT: 'rb-sort',
     RB_SORT_BTN: 'rb-sort-btn',
     RB_ALL_BTN: 'rb-all-btn',
+    RB_LAYOUT: 'rb-layout',
+    RB_LAYOUT_BTN: 'rb-layout-btn',
     RB_STAGE: 'rb-stage',
+    RB_TRACK: 'rb-track',
     RB_NAV_BTN: 'rb-nav-btn',
     RB_CARD: 'rb-card',
     RB_CARD_FOCUS_STYLE: 'rb-card--focus-style',
-    RB_CARD_ENTER_NEXT: 'rb-card--enter-next',
-    RB_CARD_ENTER_PREV: 'rb-card--enter-prev',
+    RB_GRID: 'rb-grid',
+    RB_TILE: 'rb-tile',
+    RB_TILE_HEAD: 'rb-tile-head',
+    RB_TILE_NAME: 'rb-tile-name',
+    RB_TILE_MORE: 'rb-tile-more',
     RB_MODE_PILL: 'rb-mode-pill',
     RB_PANEL: 'rb-panel',
     RB_PANEL_TITLE: 'rb-panel-title',
@@ -870,9 +887,8 @@ export const DOM_CLASSES = Object.freeze({
     RB_TASK_DONE: 'rb-task--done',
     RB_CHECK: 'rb-check',
     RB_EMPTY: 'rb-empty',
-    RB_PROGRESS: 'rb-progress',
-    RB_PROGRESS_FILL: 'rb-progress-fill',
     RB_INFO: 'rb-info',
+    RB_TITLE_ROW: 'rb-title-row',
     RB_TITLE: 'rb-title',
     RB_META: 'rb-meta',
     RB_ACTIONS: 'rb-actions',
@@ -1308,6 +1324,7 @@ export const DOM_IDS = Object.freeze({
     ROUTINE_BROWSER: 'routine-browser',              // Browse Routines — one routine at a time (routineBrowser.js)
     ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
     ROUTINE_BROWSER_JUMP_LIST: 'routine-browser-jump-list',
+    ROUTINE_BROWSER_GRID: 'routine-browser-grid',
     SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
     ROUTINE_OPEN_VIEW_SELECT: 'routine-open-view-select', // Settings → When you open routines, show: List / Browse
     SHORTCUTS_MODAL: 'shortcuts-modal',

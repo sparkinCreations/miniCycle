@@ -570,6 +570,7 @@ export class ModalManager {
             ]],
             ['shortcuts.groupBrowse', [
                 [[['←'], ['→']], 'shortcuts.browseFlip'],
+                [[['↑'], ['↓']], 'shortcuts.browseGridRow'],
                 [[['Home'], ['End']], 'shortcuts.browseEnds'],
                 [[['Enter']], 'shortcuts.browseOpen']
             ]],
