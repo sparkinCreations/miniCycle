@@ -52,23 +52,16 @@ import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
 import { getActiveRoutineId, getRoutineBrowserLayout, getRoutineBrowserSort, getRoutines } from '../utils/cycleMode.js';
 import { applyRoutineTheme, buildTile, describeMode, fillCard } from './routineBrowserRender.js';
-import { routineNameMatches } from './routineSwitcherListTransforms.js';
+import { routineNameMatches, routineRecency } from './routineSwitcherListTransforms.js';
+
+// Re-exported: tests and callers have always reached it here.
+export { routineRecency };
 
 /** How many routines either side of the one in front get a card. */
 const CAROUSEL_SPAN = 2;
 
 /** The keys that move through the routines — with or without Shift. */
 const BROWSE_NAV_KEYS = Object.freeze(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
-
-/**
- * When the routine was last used: opened, else edited, else created. Routines
- * opened before lastAccessedAt was recorded have none, and must still sort.
- * @param {Object} routine
- * @returns {number} epoch ms, 0 when nothing is known
- */
-export function routineRecency(routine) {
-    return routine?.lastAccessedAt || routine?.lastModified || routine?.createdAt || 0;
-}
 
 /**
  * "Oct 24", or "Oct 24, 2025" when it is not this year.
@@ -124,6 +117,7 @@ export class RoutineBrowser {
         this._mouse = null;           // where a mouse drag on the cards started
         this._suppressClick = false;
         this._clickGuardTimer = null;
+        this._focusFrame = null;      // the re-check that focus landed inside, a frame after open
     }
 
     get deps() {
@@ -175,6 +169,12 @@ export class RoutineBrowser {
         this._render(0);
         if (!this._dialog.open) this._dialog.showModal();
         this._focusSelection();
+        // And once more after the frame, if focus did not land inside (a
+        // browser may move it after showModal returns).
+        cancelAnimationFrame(this._focusFrame);
+        this._focusFrame = requestAnimationFrame(() => {
+            if (this.isOpen() && !this._dialog.contains(document.activeElement)) this._focusSelection();
+        });
         this._announce();
     }
 
@@ -185,6 +185,9 @@ export class RoutineBrowser {
         if (!this._dialog) return;
         this._detachListeners();
         this._clearCards();
+        // The grid's tiles go too: hidden, they were kept until the next open.
+        this._els?.grid.replaceChildren();
+        cancelAnimationFrame(this._focusFrame);
         if (this._dialog.open) this._dialog.close();
         const back = this._previousFocus;
         this._previousFocus = null;
@@ -199,6 +202,7 @@ export class RoutineBrowser {
 
     /** Called by the switcher's destroy path and boot retries. */
     destroy() {
+        cancelAnimationFrame(this._focusFrame);
         this._detachListeners();
         this._clearCards();
         if (this._dialog?.open) this._dialog.close();
@@ -825,7 +829,14 @@ export class RoutineBrowser {
             this._clearCards();
         });
 
-        this._on(dialog, 'keydown', (e) => {
+        // On the document, not the dialog: the keys must work wherever focus
+        // is. Safari on an iPad left it outside Browse after opening, so the
+        // arrows did nothing until a Tab moved it in (user report, Oct 2026).
+        // Attached on open and removed on close like the rest, and the page
+        // behind is inert while the dialog is modal, so nothing else wants
+        // these keys meanwhile.
+        this._on(document, 'keydown', (e) => {
+            if (!this.isOpen()) return;
             if (e.altKey || e.ctrlKey || e.metaKey) return;
             // Shift+arrows (and Shift+Home/End) move through the routines like
             // the plain keys: elsewhere in the app Shift+←/→ is how you move

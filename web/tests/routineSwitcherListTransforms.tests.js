@@ -102,6 +102,18 @@ export async function runRoutineSwitcherListTransformsTests(resultsDiv) {
         if (out.join('|') !== 'New|Mid|Old') throw new Error(`wrong order: ${out}`);
     });
 
+    await test('recency is when the routine was last USED: lastAccessedAt beats lastModified', async () => {
+        // Switching stamps lastModified on the routine you leave, so sorting by
+        // it sank the routine you were on. Last used is what Browse's Recent
+        // and the "Recently used" chips go by; the list now agrees.
+        const entries = [
+            ['edited', { title: 'Edited recently', lastAccessedAt: 1000, lastModified: 9000 }],
+            ['opened', { title: 'Opened recently', lastAccessedAt: 5000, lastModified: 2000 }]
+        ];
+        const out = titles(make({ sortMode: 'recent' })._sortCycles(entries));
+        if (out[0] !== 'Opened recently') throw new Error(`last-used order not used: ${out}`);
+    });
+
     await test('recency falls back to createdAt when lastModified is absent', async () => {
         const entries = [
             ['a', { title: 'Created early', createdAt: 1000 }],

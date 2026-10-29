@@ -1930,6 +1930,39 @@ async function journeyKeyboardOnlyItems(browser, baseURL) {
     return { name: 'keyboard-only items: hidden on a phone either way up, kept on tablets and computers', failures };
 }
 
+// Focus View's ⋯ button clears the status bar on a wide installed app: an
+// iPad in landscape (1180px) is wider than the ≤1023px rules that clear it
+// for phones, so as an installed app (24px inset) it sat under the clock.
+// A desktop browser has no inset and must not move.
+async function journeyFocusMenuSafeArea(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    for (const [name, viewport, inset, wantTop] of [
+        ['iPad landscape, installed app', { width: 1180, height: 820 }, 24, 24],
+        ['desktop browser', { width: 1280, height: 800 }, 0, 16]
+    ]) {
+        const context = await browser.newContext({ viewport, isMobile: inset > 0, hasTouch: inset > 0 });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            const cdp = await context.newCDPSession(page);
+            await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: inset, left: 0, bottom: 0, right: 0 } });
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
+            await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+            await page.waitForFunction(() => document.body.classList.contains('focus-mode') && !!document.getElementById('focus-mode-menu-btn')?.getClientRects().length, null, { timeout: 20000 });
+            const top = await page.evaluate(() => Math.round(document.getElementById('focus-mode-menu-btn').getBoundingClientRect().top));
+            const ok = inset > 0 ? top >= wantTop : top === wantTop;
+            record(`${name}: the ⋯ button ${inset > 0 ? 'starts below the status bar' : 'stays where it was'}`, ok, `top ${top}px, inset ${inset}px`);
+        } catch (e) {
+            failures.push(`harness error (${name}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: "Focus View's ⋯ button clears the status bar on a wide installed app", failures };
+}
+
 async function journeyFirstRunRestore(browser, baseURL) {
     const { failures, record } = makeRecorder();
 
@@ -6241,6 +6274,10 @@ async function journeyAppShortcuts(browser, baseURL) {
         await page.waitForTimeout(900);
         const homeMenu = await menuState();
         record('Alt+Shift+. opens the main menu in Home View, with focus in it', homeMenu.home && homeMenu.homeFocus, JSON.stringify(homeMenu));
+        await page.keyboard.press('Alt+Shift+Period');
+        await page.waitForTimeout(600);
+        const homeClosed = await page.evaluate(() => ({ open: document.querySelector('.menu-container').classList.contains('visible'), inMenu: !!document.activeElement?.closest?.('.menu-container') }));
+        record('…and a second press closes it, focus leaving the menu', !homeClosed.open && !homeClosed.inMenu, JSON.stringify(homeClosed));
         await reset();
 
         await press('N');
@@ -6285,10 +6322,9 @@ async function journeyAppShortcuts(browser, baseURL) {
         await page.keyboard.press('Alt+Shift+Period');
         await page.waitForTimeout(700);
         const fvMenuAgain = await menuState();
-        record('Alt+Shift+. opens Focus View\'s ⋯ menu, with focus in it, and a second press leaves it open',
-            fvMenu.focusMenu && fvMenu.focusMenuFocus && !fvMenu.home && fvMenuAgain.focusMenu, JSON.stringify({ fvMenu, fvMenuAgain }));
-        await page.keyboard.press('Escape');
-        await page.waitForTimeout(500);
+        const fvFocusAfter = await page.evaluate(() => document.activeElement?.id);
+        record('Alt+Shift+. opens Focus View\'s ⋯ menu, with focus in it, and a second press closes it (focus back on ⋯)',
+            fvMenu.focusMenu && fvMenu.focusMenuFocus && !fvMenu.home && !fvMenuAgain.focusMenu && fvFocusAfter === 'focus-mode-menu-btn', JSON.stringify({ fvMenu, fvMenuAgain, fvFocusAfter }));
         await press('S');
         const fvSettings = await state();
         record('Alt+Shift+S opens Settings in Focus View too', fvSettings.focus && fvSettings.dialog.includes('settings-modal'), JSON.stringify(fvSettings));
@@ -6361,10 +6397,17 @@ async function journeyAppShortcuts(browser, baseURL) {
         record('shortcuts do nothing while typing in a text field', (await state()).mode === modeTyping, `mode changed to ${(await state()).mode}`);
         await reset();
 
-        await Promise.all([
-            page.waitForURL(/legal\/user-manual\.html/, { timeout: 8000 }).then(() => true, () => false),
+        // In a browser the manual opens in a NEW tab and the app stays put (an
+        // installed app has no tabs, so it opens in place there).
+        const [manualTab] = await Promise.all([
+            page.context().waitForEvent('page', { timeout: 8000 }).catch(() => null),
             page.keyboard.press('Alt+Shift+KeyU')
-        ]).then(([ok]) => record('Alt+Shift+U opens the user manual', ok, `url ${page.url()}`));
+        ]);
+        if (manualTab) await manualTab.waitForLoadState('domcontentloaded').catch(() => {});
+        record('Alt+Shift+U opens the user manual in a new tab, leaving the app where it was',
+            !!manualTab && /legal\/user-manual\.html/.test(manualTab.url()) && /miniCycle\.html/.test(page.url()),
+            `new tab ${manualTab?.url()}, app ${page.url()}`);
+        await manualTab?.close();
     } catch (e) {
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
         failures.push(`harness error: ${e.message}`);
@@ -7243,6 +7286,7 @@ const JOURNEYS = [
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
     { name: 'first-run screen links: company, product site, manual', fn: journeyFirstRunLinks },
     { name: 'keyboard-only items: hidden on a phone either way up, kept on tablets and computers', fn: journeyKeyboardOnlyItems },
+    { name: "Focus View's ⋯ button clears the status bar on a wide installed app", fn: journeyFocusMenuSafeArea },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },

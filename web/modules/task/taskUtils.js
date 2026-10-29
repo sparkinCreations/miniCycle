@@ -28,6 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { scrollBehavior } from '../utils/motionPreference.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import { priorityFields, isPriorityLevel } from '../utils/priorityLevel.js';
 import {
@@ -313,7 +314,7 @@ export class TaskUtils {
         if (taskListContainer && taskList) {
             taskListContainer.scrollTo({
                 top: taskList.scrollHeight,
-                behavior: "smooth"
+                behavior: scrollBehavior()
             });
         }
     }

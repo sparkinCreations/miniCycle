@@ -765,6 +765,39 @@ export async function runRoutineBrowserTests(resultsDiv) {
         cleanup();
     });
 
+    await test('focus is inside Browse once it opens (on the Open button, or the Grid\'s selected tile)', async () => {
+        const { browser } = setup({ active: 'b' });
+        browser.open();
+        await new Promise(r => requestAnimationFrame(() => r()));
+        if (!dialog().contains(document.activeElement)) throw new Error(`focus on ${document.activeElement?.tagName}.${document.activeElement?.className}`);
+        browser.close();
+        const grid = setup({ active: 'b', settings: { routineBrowserLayout: 'grid' } });
+        grid.browser.open();
+        await new Promise(r => requestAnimationFrame(() => r()));
+        if (!document.activeElement?.classList.contains('rb-tile')) throw new Error(`Grid focus on ${document.activeElement?.className}`);
+        cleanup();
+    });
+
+    await test('the keys work even when focus is outside Browse', () => {
+        const { browser } = setup({ active: 'b' });
+        browser.open();
+        document.activeElement?.blur();
+        document.body.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        if (titleShown() !== 'charlie') throw new Error(`→ with focus on <body> showed ${titleShown()}`);
+        cleanup();
+    });
+
+    await test('closing Browse removes the Grid\'s tiles too, and opening in the Grid draws them again', () => {
+        const { browser } = setup({ active: 'b', settings: { routineBrowserLayout: 'grid' } });
+        browser.open();
+        if (!dialog().querySelectorAll('.rb-tile').length) throw new Error('no tiles while open');
+        browser.close();
+        if (dialog().querySelectorAll('.rb-tile').length) throw new Error('tiles kept after close');
+        browser.open();
+        if (dialog().querySelectorAll('.rb-tile').length !== 3) throw new Error('tiles not redrawn on open');
+        cleanup();
+    });
+
     await test('close removes the listeners (a closed Browse ignores keys)', () => {
         const { browser } = setup({ active: 'b' });
         browser.open();

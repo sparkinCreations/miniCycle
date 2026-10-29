@@ -54,6 +54,20 @@ function stripLeadingEmoji(text) {
 }
 
 /**
+ * When the routine was last used: opened, else edited, else created. Routines
+ * opened before lastAccessedAt was recorded have none, and must still sort.
+ * The one definition of "Recent" — the list's Recent sort, Browse's Recent
+ * order and Alt+Shift+[ / ] all read it, so they agree. (The list used to sort
+ * by lastModified, which is stamped on the routine you LEAVE when switching:
+ * the routine you were on sank down its own Recent list — Oct 2026.)
+ * @param {Object} routine
+ * @returns {number} epoch ms, 0 when nothing is known
+ */
+export function routineRecency(routine) {
+    return routine?.lastAccessedAt || routine?.lastModified || routine?.createdAt || 0;
+}
+
+/**
  * Order routine entries for display.
  *
  * `direction` means different things per mode, which is deliberate — 'asc' is
@@ -71,11 +85,10 @@ export function sortCycles(cycleEntries, { mode, direction, sizeOf } = {}) {
     const isAsc = direction === 'asc';
 
     if (mode === 'recent') {
-        // Sort by lastModified, fall back to createdAt
-        // asc = newest first, desc = oldest first
+        // Last used (routineRecency); asc = newest first, desc = oldest first
         return cycleEntries.sort((a, b) => {
-            const aTime = a[1].lastModified || a[1].createdAt || 0;
-            const bTime = b[1].lastModified || b[1].createdAt || 0;
+            const aTime = routineRecency(a[1]);
+            const bTime = routineRecency(b[1]);
             return isAsc ? bTime - aTime : aTime - bTime;
         });
     } else if (mode === 'size') {

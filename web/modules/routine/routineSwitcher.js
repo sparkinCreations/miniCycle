@@ -34,6 +34,7 @@ import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
+import { scrollBehavior } from '../utils/motionPreference.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -1285,7 +1286,7 @@ export class RoutineSwitcher {
                 this._selectRoutine(cycleKey);
                 const listItem = miniCycleList.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
                 if (listItem) {
-                    listItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    listItem.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
                 }
             });
 
@@ -1779,6 +1780,13 @@ export class RoutineSwitcher {
         const sortAlpha = this.deps.getElementById(DOM_IDS.SORT_ALPHA);
         const sortRecent = this.deps.getElementById(DOM_IDS.SORT_RECENT);
         const sortSize = this.deps.getElementById(DOM_IDS.SORT_SIZE);
+
+        // Which sort is on, for screen readers too — the colour alone said it.
+        // Each label already names the CURRENT order (A-Z, then Z-A once
+        // pressed again), not the one a press would give.
+        [[sortAlpha, 'alpha'], [sortRecent, 'recent'], [sortSize, 'size']].forEach(([btn, mode]) => {
+            btn?.setAttribute('aria-pressed', String(this._sortMode === mode));
+        });
 
         if (sortAlpha) {
             sortAlpha.classList.toggle(DOM_CLASSES.ACTIVE, this._sortMode === 'alpha');

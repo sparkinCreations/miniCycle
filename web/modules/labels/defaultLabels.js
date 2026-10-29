@@ -261,7 +261,7 @@ export const DEFAULT_LABELS = deepFreeze({
         sortAlphaTitle:     'Sort alphabetically',
         sortZA:             'Z-A',
         sortRecent:         'Recent',
-        sortRecentTitle:    'Sort by recently modified',
+        sortRecentTitle:    'Sort by recently used',
         sortOldest:         'Oldest',
         sortSize:           'Size',
         sortSizeTitle:      'Sort by file size',

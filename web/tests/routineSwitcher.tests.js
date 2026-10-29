@@ -958,6 +958,27 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('the sort buttons say which sort is on (aria-pressed), and the label names the current order', async () => {
+        const ids = ['sort-alpha', 'sort-recent', 'sort-size'];
+        const btns = ids.map(id => { const b = document.createElement('button'); b.id = id; document.body.appendChild(b); return b; });
+        try {
+            const instance = new RoutineSwitcher({ getElementById: (id) => document.getElementById(id) });
+            instance._sortMode = 'alpha';
+            instance._sortDirection = 'desc';
+            instance._updateSortButtonStates();
+            const pressed = btns.map(b => b.getAttribute('aria-pressed')).join();
+            if (pressed !== 'true,false,false') throw new Error(`aria-pressed ${pressed}`);
+            if (btns[0].textContent !== 'Z-A') throw new Error(`descending A-Z reads "${btns[0].textContent}"`);
+            instance._sortMode = 'size';
+            instance._sortDirection = 'asc';
+            instance._updateSortButtonStates();
+            if (btns.map(b => b.getAttribute('aria-pressed')).join() !== 'false,false,true') throw new Error('size not pressed');
+            if (btns[0].textContent !== 'A-Z') throw new Error(`an inactive A-Z reads "${btns[0].textContent}"`);
+        } finally {
+            btns.forEach(b => b.remove());
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

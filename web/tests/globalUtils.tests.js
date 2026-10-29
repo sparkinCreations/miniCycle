@@ -569,6 +569,20 @@ export async function runGlobalUtilsTests(resultsDiv) {
         }
     });
 
+    // Script-driven smooth scrolls go through scrollBehavior(): CSS cannot
+    // stop a scroll a script asked to be smooth.
+    await test('scrollBehavior is "auto" under reduced motion and "smooth" otherwise', async () => {
+        const { scrollBehavior } = await import(`../modules/utils/motionPreference.js?v=${window.testCacheBuster || Date.now()}`);
+        const osReduces = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!osReduces && scrollBehavior() !== 'smooth') throw new Error(`no preference gave ${scrollBehavior()}`);
+        document.documentElement.classList.add('reduced-motion');
+        try {
+            if (scrollBehavior() !== 'auto') throw new Error(`reduced motion gave ${scrollBehavior()}`);
+        } finally {
+            document.documentElement.classList.remove('reduced-motion');
+        }
+    });
+
     // Summary
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

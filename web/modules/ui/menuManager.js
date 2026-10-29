@@ -28,6 +28,7 @@ import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { getRoutines, getRoutine, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
+import { scrollBehavior } from '../utils/motionPreference.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -486,7 +487,7 @@ export class MenuManager {
      */
     _scrollSectionIntoView(section) {
         setTimeout(() => {
-            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            section.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
         }, 150);
     }
 

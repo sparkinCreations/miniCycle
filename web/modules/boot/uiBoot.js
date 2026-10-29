@@ -521,6 +521,17 @@ function handleAppShortcut(e) {
   // A text field only — a task's checkbox is an <input> too, and a shortcut
   // pressed with a task selected must still work.
   if (isTextEntryTarget(e.target)) return false;
+  // The menu key also CLOSES the main menu, which counts as an overlay below
+  // — as Escape does, through the same close path, focus going back to where
+  // it was. A dialog open on top still wins.
+  if (action === 'OPEN_MENU' && !document.querySelector('dialog[open]')) {
+    const openMenu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE);
+    if (openMenu) {
+      closeMainMenu(openMenu, document.querySelector(DOM_SELECTORS.MENU_BUTTON), { restoreFocus: true });
+      e.preventDefault();
+      return true;
+    }
+  }
   if (isOverlayActive()) return false;
   if (document.body.classList.contains(DOM_CLASSES.APP_LOADING)) return false;
 
@@ -534,12 +545,17 @@ function handleAppShortcut(e) {
     case 'SHOW_SHORTCUTS':   click(DOM_IDS.OPEN_SHORTCUTS_MODAL); break;
     case 'OPEN_MENU': {
       // One key for the view you are in: Focus View's ⋯ menu, or the header's
-      // ☰. Opens only — both buttons toggle, so a second press while the ⋯ is
-      // open would close it (the ☰ already counts as an overlay above, which
-      // stops it). Escape closes either; each moves focus into itself.
-      const focusView = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
-      if (focusView && document.body.classList.contains(DOM_CLASSES.FOCUS_MODE_MENU_OPEN)) break;
-      click(focusView ? DOM_IDS.FOCUS_MODE_MENU_BTN : DOM_IDS.MENU_BUTTON);
+      // ☰ — and a second press closes it (the user's call, Oct 2026; the ☰'s
+      // close is above). Opening moves focus into the menu; the ⋯ button
+      // toggles, so closing it by a click leaves focus on a hidden item —
+      // give it back to the button, as Escape does.
+      if (document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)) {
+        const wasOpen = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE_MENU_OPEN);
+        click(DOM_IDS.FOCUS_MODE_MENU_BTN);
+        if (wasOpen) document.getElementById(DOM_IDS.FOCUS_MODE_MENU_BTN)?.focus();
+      } else {
+        click(DOM_IDS.MENU_BUTTON);
+      }
       break;
     }
     // No button to click: there is no control for "the routine before this
@@ -1162,12 +1178,41 @@ export function setupUserManual(_GlobalUtils) {
     // Disable button briefly to prevent multiple clicks
     openUserManual.disabled = true;
 
+    // In a browser: a new tab, so the app stays open where it was (Alt+Shift+U
+    // left the app; user report, Oct 2026). Opened NOW, in the click — a
+    // popup blocker refuses window.open from a timer. In the installed app
+    // there are no tabs (a new one would throw the user into the browser), so
+    // it opens here, as before — and so does a blocked popup.
+    if (!runsAsInstalledApp()) {
+      const tab = window.open(USER_MANUAL_PATH, '_blank');
+      if (tab) {
+        tab.opener = null;
+        openUserManual.disabled = false;
+        return;
+      }
+    }
+
     // Redirect to the User Manual page after a short delay
     setTimeout(() => {
-      window.location.href = "legal/user-manual.html";
+      window.location.href = USER_MANUAL_PATH;
       openUserManual.disabled = false;
     }, 200);
   });
+}
+
+/** The user manual, relative to the app page. */
+const USER_MANUAL_PATH = 'legal/user-manual.html';
+
+/**
+ * Whether miniCycle is running as an installed app — home-screen web app,
+ * installed PWA, or the iOS/Android/desktop shells — rather than in a
+ * browser tab. Installed apps have no tabs to open a page in.
+ * @returns {boolean}
+ */
+function runsAsInstalledApp() {
+  if (isNativeApp() || isDesktopApp()) return true;
+  if (navigator.standalone === true) return true;   // iOS home-screen web app
+  return ['standalone', 'fullscreen', 'minimal-ui'].some((mode) => window.matchMedia?.(`(display-mode: ${mode})`)?.matches);
 }
 
 /**
