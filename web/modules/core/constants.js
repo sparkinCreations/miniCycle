@@ -869,6 +869,10 @@ export const DOM_CLASSES = Object.freeze({
     RB_CLOSE_BTN: 'rb-close-btn',
     RB_SORT: 'rb-sort',
     RB_SORT_BTN: 'rb-sort-btn',
+    RB_SEARCH_BTN: 'rb-search-btn',
+    RB_SEARCH: 'rb-search',
+    RB_SEARCH_INPUT: 'rb-search-input',
+    RB_SEARCH_CLOSE: 'rb-search-close',
     RB_LAYOUT: 'rb-layout',
     RB_LAYOUT_BTN: 'rb-layout-btn',
     RB_STAGE: 'rb-stage',
@@ -1321,6 +1325,7 @@ export const DOM_IDS = Object.freeze({
     ROUTINE_BROWSER: 'routine-browser',              // Browse Routines — one routine at a time (routineBrowser.js)
     ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
     ROUTINE_BROWSER_GRID: 'routine-browser-grid',
+    ROUTINE_BROWSER_SEARCH: 'routine-browser-search',
     ROUTINE_LIST_EXPAND_BTN: 'routine-list-expand-btn', // Open Routine: the list heading's Expand / Collapse
     SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
     ROUTINE_OPEN_VIEW_SELECT: 'routine-open-view-select', // Settings → When you open routines, show: List / Browse

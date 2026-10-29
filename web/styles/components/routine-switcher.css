@@ -1490,6 +1490,7 @@ input.routine-search-input:focus {
 .rb-close-btn,
 .rb-layout-btn,
 .rb-sort-btn,
+.rb-search-btn,
 .rb-corner-btn {
     display: inline-flex;
     align-items: center;
@@ -1524,6 +1525,70 @@ input.routine-search-input:focus {
     gap: var(--space-1);
 }
 
+/* Shown and hidden by `hidden` (search swaps them); the display above would
+   otherwise outrank the attribute. */
+.rb-layout[hidden],
+.rb-sort[hidden],
+.rb-search-btn[hidden],
+.rb-search[hidden] {
+    display: none;
+}
+
+.rb-search-btn {
+    width: var(--browse-close-size);
+    height: var(--browse-close-size);
+    justify-content: center;
+    padding: 0;
+}
+
+.rb-search-btn svg {
+    width: 1em;
+    height: 1em;
+}
+
+/* The field takes the place of the layout and sort buttons. */
+.rb-search {
+    flex: 1 1 auto;
+    min-width: 0;
+    max-width: var(--browse-search-max-width);
+    display: flex;
+    align-items: center;
+    gap: var(--space-1);
+    animation: rb-fade-in var(--transition-normal) ease-out;
+}
+
+.rb-search-input {
+    flex: 1 1 auto;
+    min-width: 0;
+    height: var(--browse-close-size);
+    padding: 0 var(--space-3);
+    box-sizing: border-box;
+    border: 1px solid var(--browse-control-border);
+    border-radius: var(--radius-full);
+    background: var(--color-white);
+    color: var(--color-navy);   /* not --theme-input-text: dark mode lightens that, and the field stays white */
+    font-family: inherit;
+    font-size: var(--font-size-base);
+}
+
+.rb-search-input:focus-visible {
+    outline: 3px solid var(--color-white);
+    outline-offset: 2px;
+}
+
+.rb-search-close {
+    flex: 0 0 auto;
+    width: var(--browse-close-size);
+    height: var(--browse-close-size);
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    font-size: var(--font-size-xl);
+    line-height: 1;
+    cursor: pointer;
+}
+
 /* Back to the list: top-right, the same spot as Open Routine's Browse button. */
 .rb-corner-btn {
     margin-left: auto;
@@ -1531,7 +1596,7 @@ input.routine-search-input:focus {
 
 /* Own hovers: the app-wide button:hover is a light grey, and white text on it
    measured 1.54:1. */
-#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
+#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-search-btn, .rb-search-close, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
     background: var(--browse-control-hover-bg);
     color: var(--browse-surround-text);
 }
@@ -1864,6 +1929,12 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     font-size: var(--font-size-xs);
 }
 
+/* "No routines match" across the whole grid, not in one tile's cell. */
+.rb-grid > .rb-empty {
+    grid-column: 1 / -1;
+    color: var(--browse-surround-muted);
+}
+
 .rb-tile-more {
     padding: 0 var(--space-2) var(--space-1-5);
     font-size: var(--font-size-xs);
@@ -1932,6 +2003,10 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     display: flex;
     justify-content: center;
     gap: var(--space-3);
+}
+
+.rb-open-btn:disabled {
+    border-style: none;   /* buttons.css dashes every disabled button's border; this one has none */
 }
 
 .rb-open-btn,
@@ -2040,6 +2115,8 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     .rb-corner-btn { order: 1; }
     .rb-layout { order: 2; }
     .rb-sort { order: 3; margin-left: auto; }
+    .rb-search-btn { order: 4; }
+    .rb-search { order: 2; max-width: none; }
 
     /* Icons only for the layout switch on a phone; each is named by its text
        for screen readers (visually hidden, not removed). */

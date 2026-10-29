@@ -133,3 +133,16 @@ export function filterCycles(cycleEntries, filterMode) {
         return getCycleMode(cycleData) === filterMode;
     });
 }
+
+/**
+ * Whether a routine's name matches a search — the one rule the Open Routine
+ * list and Browse Routines' search share: case-insensitive, anywhere in the
+ * name, surrounding spaces ignored. An empty search matches everything.
+ * @param {string} name
+ * @param {string} query
+ * @returns {boolean}
+ */
+export function routineNameMatches(name, query) {
+    const q = String(query || '').toLowerCase().trim();
+    return q === '' || String(name || '').toLowerCase().includes(q);
+}

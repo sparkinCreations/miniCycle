@@ -1605,7 +1605,7 @@ export class RoutineSwitcher {
 
         items.forEach(item => {
             const cycleName = (item.dataset.cycleName || '');
-            const matches = lowerQuery === '' || cycleName.toLowerCase().includes(lowerQuery);
+            const matches = listTransforms.routineNameMatches(cycleName, query);
             item.style.display = matches ? '' : 'none';
 
             // Highlight matching text in title

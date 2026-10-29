@@ -414,6 +414,89 @@ export async function runRoutineBrowserTests(resultsDiv) {
         cleanup();
     });
 
+    // ── search ───────────────────────────────────────────────────────────────
+    const typeSearch = (text) => {
+        const input = dialog().querySelector('.rb-search-input');
+        input.value = text;
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+        return input;
+    };
+
+    await test('Search: typing shows the matches as a grid, whatever the layout, without saving it', () => {
+        const { browser, state } = setup({ active: 'a' });   // Cards
+        browser.open();
+        dialog().querySelector('.rb-search-btn').click();
+        typeSearch('AR');                                      // only "charlie" contains "ar"
+        const tiles = [...dialog().querySelectorAll('.rb-tile')].map(t => t.dataset.key);
+        if (tiles.join() !== 'c') throw new Error(`tiles ${tiles}`);
+        if (!dialog().querySelector('.rb-stage').hidden) throw new Error('the cards still show while there are results');
+        if (state.settings.routineBrowserLayout) throw new Error('searching saved a layout');
+        if (!metaLines()[0].includes(getLabel('routineBrowser.onlyMatch'))) throw new Error(`meta "${metaLines()[0]}"`);
+        cleanup();
+    });
+
+    await test('Search: the List\'s rule — any part of the name, any case', () => {
+        const { browser } = setup({ active: 'a' });
+        browser.open();
+        dialog().querySelector('.rb-search-btn').click();
+        typeSearch('  a ');
+        const tiles = [...dialog().querySelectorAll('.rb-tile')].map(t => t.dataset.key).sort();
+        if (tiles.join() !== 'a,b,c') throw new Error(`tiles ${tiles}`);
+        cleanup();
+    });
+
+    await test('Search: no matches says so and leaves nothing to open', () => {
+        const { browser, calls } = setup({ active: 'a' });
+        browser.open();
+        dialog().querySelector('.rb-search-btn').click();
+        const input = typeSearch('zzz');
+        if (dialog().querySelector('.rb-tile')) throw new Error('tiles shown');
+        if (!dialog().querySelector('.rb-open-btn').disabled) throw new Error('Open is enabled with no match');
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        if (calls.opened.length) throw new Error('Enter opened something');
+        cleanup();
+    });
+
+    await test('Search: Enter in the field opens the selected match; ← → type, they do not flip', () => {
+        const { browser, calls } = setup({ active: 'a' });
+        browser.open();
+        dialog().querySelector('.rb-search-btn').click();
+        const input = typeSearch('brav');
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+        if (titleShown() !== 'Bravo') throw new Error(`→ in the field moved to ${titleShown()}`);
+        input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        if (calls.opened.join() !== 'b') throw new Error(`opened ${calls.opened}`);
+        cleanup();
+    });
+
+    await test('Search: closing goes back to Cards on the routine picked in the results', () => {
+        const { browser } = setup({ active: 'a' });
+        browser.open();
+        dialog().querySelector('.rb-search-btn').click();
+        typeSearch('charl');
+        dialog().dispatchEvent(new Event('cancel', { cancelable: true }));   // Escape
+        if (!dialog().open) throw new Error('Escape closed Browse instead of the search');
+        if (!dialog().querySelector('.rb-search').hidden) throw new Error('the search is still open');
+        if (dialog().querySelector('.rb-stage').hidden) throw new Error('not back to Cards');
+        if (front()?.dataset.key !== 'c') throw new Error(`in front: ${front()?.dataset.key}`);
+        const want = getLabel('routineBrowser.position', { vars: { position: 2, total: 3 } });
+        if (!metaLines()[0].includes(want)) throw new Error(`meta "${metaLines()[0]}"`);
+        cleanup();
+    });
+
+    await test('Search: not remembered — Browse opens with it closed and empty', () => {
+        const { browser } = setup({ active: 'a' });
+        browser.open();
+        dialog().querySelector('.rb-search-btn').click();
+        typeSearch('brav');
+        browser.close();
+        browser.open();
+        if (!dialog().querySelector('.rb-search').hidden) throw new Error('the search reopened');
+        if (dialog().querySelector('.rb-search-input').value) throw new Error('the query was kept');
+        if (dialog().querySelectorAll('.rb-card').length < 2) throw new Error('still filtered');
+        cleanup();
+    });
+
     // ── one routine ──────────────────────────────────────────────────────────
     await test('one routine: nothing to flip to, and a way to make another', () => {
         const { browser, calls } = setup({ routines: { a: THREE.a }, active: 'a' });

@@ -303,6 +303,7 @@
   --browse-tile-min: 220px;         /* grid: narrowest a tile gets before the row reflows */
   --browse-tile-height: 230px;
   --browse-action-min-width: 140px;   /* Open / Create another routine */
+  --browse-search-max-width: 420px;   /* the search field on a wide screen */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Progress

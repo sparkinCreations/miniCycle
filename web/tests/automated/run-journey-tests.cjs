@@ -6772,6 +6772,25 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.keyboard.press('Escape');
             await page.waitForTimeout(400);
 
+            // Search: from Cards, typing shows the matches as a grid; Escape goes back.
+            await page.keyboard.press('Alt+Shift+KeyO');
+            await page.waitForTimeout(500);
+            await page.click('#routine-browser .rb-search-btn');
+            await page.keyboard.type('gym');
+            await page.waitForTimeout(300);
+            const found = await page.evaluate(() => ({
+                tiles: [...document.querySelectorAll('#routine-browser .rb-tile')].map(t => t.dataset.key).sort(),
+                cards: !document.querySelector('#routine-browser .rb-stage').hidden,
+                saved: JSON.parse(localStorage.getItem('miniCycleData')).settings.routineBrowserLayout
+            }));
+            record('search shows the matches as a grid, and does not change the saved layout', found.tiles.join() === 'r2,r3' && !found.cards && found.saved === 'cards', JSON.stringify(found));
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(400);
+            const afterSearch = await page.evaluate(() => ({ open: document.getElementById('routine-browser').open, cards: !document.querySelector('#routine-browser .rb-stage').hidden, search: !document.querySelector('#routine-browser .rb-search').hidden }));
+            record('…Escape closes the search and goes back to Cards', afterSearch.open && afterSearch.cards && !afterSearch.search, JSON.stringify(afterSearch));
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(400);
+
             // Reduced motion: no slide.
             await page.emulateMedia({ reducedMotion: 'reduce' });
             await page.keyboard.press('Alt+Shift+KeyO');
@@ -6872,6 +6891,18 @@ async function journeyBrowseRoutines(browser, baseURL) {
             });
             record(`${width}px: grid tiles show at most 3 tasks, one line each`, rows.most <= 3 && rows.nowrap, JSON.stringify(rows));
             await page.tap('#routine-browser .rb-layout-btn[data-layout="cards"]');
+            await page.waitForTimeout(400);
+
+            await page.tap('#routine-browser .rb-search-btn');
+            await page.keyboard.type('pull');
+            await page.waitForTimeout(300);
+            const phoneSearch = await page.evaluate(() => {
+                const d = document.getElementById('routine-browser');
+                const f = d.querySelector('.rb-search-input').getBoundingClientRect();
+                return { tiles: d.querySelectorAll('.rb-tile').length, sideways: d.scrollWidth > d.clientWidth + 1, fieldW: Math.round(f.width), fits: f.right <= innerWidth };
+            });
+            record(`${width}px: search fits the phone and finds the routine`, phoneSearch.tiles === 1 && !phoneSearch.sideways && phoneSearch.fits && phoneSearch.fieldW > 150, JSON.stringify(phoneSearch));
+            await page.tap('#routine-browser .rb-search-close');
             await page.waitForTimeout(400);
 
             await page.tap('#routine-browser .rb-corner-btn');

@@ -49,8 +49,10 @@ import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getIcon } from '../utils/icons.js';
 import { prefersReducedMotion } from '../utils/motionPreference.js';
+import { isTextEntryTarget } from '../utils/keyboardNav.js';
 import { getActiveRoutineId, getRoutineBrowserLayout, getRoutineBrowserSort, getRoutines } from '../utils/cycleMode.js';
 import { applyRoutineTheme, buildTile, describeMode, fillCard } from './routineBrowserRender.js';
+import { routineNameMatches } from './routineSwitcherListTransforms.js';
 
 /** How many routines either side of the one in front get a card. */
 const CAROUSEL_SPAN = 2;
@@ -106,6 +108,8 @@ export class RoutineBrowser {
         this._index = 0;
         this._sort = ROUTINE_BROWSER_SORT.RECENT;
         this._layout = ROUTINE_BROWSER_LAYOUT.CARDS;
+        this._searching = false;      // the search field is open
+        this._query = '';             // what is typed in it (never remembered)
         this._cards = new Map();      // routine key → its card in the carousel
         this._exitTimers = new Set(); // cards sliding out, removed when done
         this._fromList = false;
@@ -151,7 +155,11 @@ export class RoutineBrowser {
         this._previousFocus = returnFocus || document.activeElement;
         this._sort = getRoutineBrowserSort(state);
         this._layout = getRoutineBrowserLayout(state);
-        this._order = orderRoutines(routines, this._sort);
+        // Search starts clear every time (the user's call: not remembered).
+        this._searching = false;
+        this._query = '';
+        this._syncSearch();
+        this._order = this._orderFor(routines);
         this._index = Math.max(0, this._order.indexOf(getActiveRoutineId(state)));
 
         this.deps.hideMainMenu?.();
@@ -249,12 +257,31 @@ export class RoutineBrowser {
             sort.appendChild(b);
         }
 
+        // Search: a magnifier that opens a field in place of the layout and sort
+        // buttons. Typing shows the matches as a grid, whatever the layout.
+        const searchBtn = el('button', DOM_CLASSES.RB_SEARCH_BTN, {
+            type: 'button', 'aria-label': getLabel('routineBrowser.searchAria'), title: getLabel('routineBrowser.searchAria'),
+            'aria-expanded': 'false', 'aria-controls': DOM_IDS.ROUTINE_BROWSER_SEARCH
+        });
+        searchBtn.innerHTML = getIcon('search');
+        const search = el('div', DOM_CLASSES.RB_SEARCH);
+        search.hidden = true;
+        const searchInput = el('input', DOM_CLASSES.RB_SEARCH_INPUT, {
+            // Text, not type="search": that adds the browser's own clear ×
+            // beside ours, and its Escape clears instead of closing the search.
+            type: 'text', role: 'searchbox', enterkeyhint: 'search', id: DOM_IDS.ROUTINE_BROWSER_SEARCH, autocomplete: 'off',
+            'aria-label': getLabel('routineBrowser.searchAria'), placeholder: getLabel('switcher.search')
+        });
+        const searchClose = el('button', DOM_CLASSES.RB_SEARCH_CLOSE, { type: 'button', 'aria-label': getLabel('routineBrowser.searchClose'), title: getLabel('routineBrowser.searchClose') });
+        searchClose.textContent = '×';
+        search.append(searchInput, searchClose);
+
         // Top-right corner: back to the list, with the list's own folder icon.
         const toList = iconButton(DOM_CLASSES.RB_CORNER_BTN, 'folder', 'routineBrowser.toList', {
             'aria-label': getLabel('routineBrowser.toListAria'), title: getLabel('routineBrowser.toListAria')
         });
 
-        top.append(closeBtn, heading, layout, sort, toList);
+        top.append(closeBtn, heading, layout, sort, searchBtn, search, toList);
 
         // ── the two layouts
         const stage = el('div', DOM_CLASSES.RB_STAGE);
@@ -291,7 +318,7 @@ export class RoutineBrowser {
         document.body.appendChild(dialog);
 
         this._dialog = dialog;
-        this._els = { closeBtn, layoutBtns, sortBtns, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn };
+        this._els = { closeBtn, layoutBtns, sortBtns, layout, sort, searchBtn, search, searchInput, searchClose, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn };
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -310,8 +337,21 @@ export class RoutineBrowser {
         return this._order[this._index] || null;
     }
 
+    /** Typing in the search shows the matches as a grid (the user's design). */
+    _showingResults() {
+        return this._searching && this._query.trim() !== '';
+    }
+
+    /** The layout on screen: the chosen one, or the grid while there are results. */
     _isGrid() {
-        return this._layout === ROUTINE_BROWSER_LAYOUT.GRID;
+        return this._layout === ROUTINE_BROWSER_LAYOUT.GRID || this._showingResults();
+    }
+
+    /** The order to flip through: every routine, or only the matches while searching. */
+    _orderFor(routines) {
+        const order = orderRoutines(routines, this._sort);
+        if (!this._showingResults()) return order;
+        return order.filter(key => routineNameMatches(routines[key]?.title || key, this._query));
     }
 
     /**
@@ -323,28 +363,54 @@ export class RoutineBrowser {
         const routines = this._routines();
         const key = this._currentKey();
         const routine = routines[key];
-        if (!routine) return;
 
         const { stage, grid } = this._els;
         stage.hidden = this._isGrid();
         grid.hidden = !this._isGrid();
+        if (!routine) {
+            this._renderNoMatches();
+            return;
+        }
 
         if (this._isGrid()) this._syncGridSelection();
         else this._renderTrack(step);
         this._renderInfo(routine);
     }
 
+    /** A search with no matches: say so, and leave nothing to open. */
+    _renderNoMatches() {
+        const { grid, prevBtn, nextBtn, title, metaMode, metaSize, createBtn, openBtn } = this._els;
+        const empty = document.createElement('p');
+        empty.className = DOM_CLASSES.RB_EMPTY;
+        empty.textContent = getLabel('routineBrowser.noMatches');
+        grid.replaceChildren(empty);
+        title.textContent = getLabel('routineBrowser.noMatches');
+        metaMode.textContent = '';
+        metaSize.textContent = '';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        createBtn.hidden = true;
+        openBtn.disabled = true;
+    }
+
     _renderInfo(routine) {
         const { prevBtn, nextBtn, title, metaMode, metaSize, createBtn, openBtn } = this._els;
+        openBtn.disabled = false;
         const name = routine.title || this._currentKey();
         const total = this._order.length;
         const single = total < 2;
         const { emoji, name: modeName } = describeMode(routine);
 
         title.textContent = name;
-        const parts = [`${emoji} ${modeName}`, single
-            ? getLabel('routineBrowser.onlyOne')
-            : getLabel('routineBrowser.position', { vars: { position: this._index + 1, total } })];
+        let place;
+        if (this._showingResults()) {
+            place = total === 1
+                ? getLabel('routineBrowser.onlyMatch')
+                : getLabel('routineBrowser.matchPosition', { vars: { position: this._index + 1, total } });
+        }
+        else if (single) place = getLabel('routineBrowser.onlyOne');
+        else place = getLabel('routineBrowser.position', { vars: { position: this._index + 1, total } });
+        const parts = [`${emoji} ${modeName}`, place];
         // When it was last used — what the old "All routines" list showed.
         const when = routineRecency(routine);
         if (when) parts.push(getLabel('routineBrowser.lastUsed', { vars: { date: formatDay(when) } }));
@@ -353,7 +419,7 @@ export class RoutineBrowser {
 
         prevBtn.disabled = single || this._index === 0;
         nextBtn.disabled = single || this._index === total - 1;
-        createBtn.hidden = !single;
+        createBtn.hidden = !single || this._showingResults();
         openBtn.setAttribute('aria-label', getLabel('routineBrowser.openAria', { vars: { name } }));
     }
 
@@ -540,7 +606,7 @@ export class RoutineBrowser {
         if (!Object.values(ROUTINE_BROWSER_SORT).includes(sort)) return;
         const key = this._currentKey();
         this._sort = sort;
-        this._order = orderRoutines(this._routines(), sort);
+        this._order = this._orderFor(this._routines());
         // Stay on the routine being looked at; only its neighbours change.
         this._index = Math.max(0, this._order.indexOf(key));
         this._syncToggles();
@@ -566,10 +632,61 @@ export class RoutineBrowser {
         });
     }
 
+    // ── search ──────────────────────────────────────────────────────────────
+
+    /** Show or hide the search field in place of the layout and sort buttons. */
+    _syncSearch() {
+        if (!this._els) return;
+        const { layout, sort, searchBtn, search, searchInput } = this._els;
+        search.hidden = !this._searching;
+        layout.hidden = this._searching;
+        sort.hidden = this._searching;
+        searchBtn.hidden = this._searching;
+        searchBtn.setAttribute('aria-expanded', String(this._searching));
+        if (!this._searching) searchInput.value = '';
+    }
+
+    openSearch() {
+        if (this._searching) return;
+        this._searching = true;
+        this._syncSearch();
+        this._els.searchInput.focus();
+    }
+
+    /**
+     * Close the search and go back to the layout the user chose — on the
+     * routine selected in the results, so a search from Cards is also a jump.
+     */
+    closeSearch() {
+        if (!this._searching) return;
+        const key = this._currentKey();
+        this._searching = false;
+        this._query = '';
+        this._syncSearch();
+        this._order = this._orderFor(this._routines());
+        this._index = Math.max(0, this._order.indexOf(key));
+        this._clearCards();
+        if (this._isGrid()) this._fillGrid();
+        this._render(0);
+        this._els.searchBtn.focus({ focusVisible: false });
+        this._announce();
+    }
+
+    /** Typing: narrow to the matches, staying on the selected one if it still matches. */
+    _onSearchInput() {
+        const key = this._currentKey();
+        this._query = this._els.searchInput.value;
+        this._order = this._orderFor(this._routines());
+        this._index = Math.max(0, this._order.indexOf(key));
+        this._clearCards();
+        if (this._isGrid()) this._fillGrid();
+        this._render(0);
+    }
+
     /** Open the routine shown — through the switcher, exactly as the list does. */
     openCurrent() {
         const key = this._currentKey();
-        if (!key) return;
+        if (!key || !this._routines()[key]) return;
         const isCurrent = key === getActiveRoutineId(this._state());
         this.close();
         if (!isCurrent) this.m._openRoutineByKey(key);
@@ -607,7 +724,7 @@ export class RoutineBrowser {
 
     _attachListeners() {
         this._detachListeners();
-        const { closeBtn, layoutBtns, sortBtns, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn } = this._els;
+        const { closeBtn, layoutBtns, sortBtns, searchBtn, searchInput, searchClose, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn } = this._els;
         const dialog = this._dialog;
 
         this._on(closeBtn, 'click', () => this.close());
@@ -617,6 +734,9 @@ export class RoutineBrowser {
             this._focusSelection();
         }));
         Object.values(sortBtns).forEach(b => this._on(b, 'click', () => this.setSort(b.dataset.sort)));
+        this._on(searchBtn, 'click', () => this.openSearch());
+        this._on(searchClose, 'click', () => this.closeSearch());
+        this._on(searchInput, 'input', () => this._onSearchInput());
         this._on(prevBtn, 'click', () => this.move(-1));
         this._on(nextBtn, 'click', () => this.move(1));
         this._on(openBtn, 'click', () => this.openCurrent());
@@ -648,10 +768,11 @@ export class RoutineBrowser {
             if (this._isGrid()) { this._fillGrid(); this._syncGridSelection(); }
         });
 
-        // Escape is "back": returns to the list when Browse was opened from it,
-        // else closes Browse.
+        // Escape is "back": closes the search first; then returns to the list
+        // when Browse was opened from it, else closes Browse.
         this._on(dialog, 'cancel', (e) => {
             e.preventDefault();
+            if (this._searching) { this.closeSearch(); return; }
             this.close({ toList: this._fromList });
         });
 
@@ -664,6 +785,13 @@ export class RoutineBrowser {
 
         this._on(dialog, 'keydown', (e) => {
             if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+            // In the search field the keys type; only Enter (open the selected
+            // match) and ↓ (into the results) reach through, as in the List.
+            if (isTextEntryTarget(e.target)) {
+                if (e.key === 'Enter') { e.preventDefault(); this.openCurrent(); }
+                else if (e.key === 'ArrowDown' && this._isGrid()) { e.preventDefault(); this._selectedTile()?.focus(); }
+                return;
+            }
             const onControl = e.target.closest?.(DOM_SELECTORS.NATIVE_CONTROL);
             const rowStep = this._isGrid() ? this._gridColumns() : 0;
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
