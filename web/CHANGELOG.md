@@ -1,3 +1,11 @@
+## [2.652] - 2026-10-29
+- test(focusMode): menu tests include Keyboard Shortcuts
+- feat(keyboard): Focus View takes two Escapes to leave; Keyboard Shortcuts list in the menus
+- feat(keyboard): Alt+Shift app shortcuts; fix stray body class after To-Do mode
+- feat(tasks): Alt+Up/Down reorders the focused task; filtered moves skip hidden rows
+- fix(first-run): keep keyboard focus on the welcome screen; intro Done/Skip and wording
+
+
 ## [2.651] - 2026-10-28
 - fix(welcome-screen): "How cycles work" replays the onboarding of the current view
 - feat(welcome-screen): "How cycles work" link replays the walkthrough for returning users
