@@ -956,8 +956,8 @@ export const DOM_CLASSES = Object.freeze({
     SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
     SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
     SHORTCUTS_START: 'shortcuts-start',     // Keyboard Shortcuts dialog: "Start with these", the view's five keys
-    SHORTCUTS_GROUP: 'shortcuts-group',     // Keyboard Shortcuts dialog: a collapsed <details> group under "All shortcuts"
-    SHORTCUTS_NOTE: 'shortcuts-note',       // Keyboard Shortcuts dialog: a group's note ("Hold Alt+Shift…") or the single-keys line
+    SHORTCUTS_MORE: 'shortcuts-more',       // Keyboard Shortcuts dialog: the link to the user manual's complete list
+    SHORTCUTS_NOTE: 'shortcuts-note',       // Keyboard Shortcuts dialog: the line on turning single keys on
     // ---- Visibility ----
     HIDDEN: 'hidden',
     VISIBLE: 'visible',

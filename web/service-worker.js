@@ -160,6 +160,7 @@ var BOOT_CRITICAL = [
   // Utils - ALL utility modules
   './modules/utils/globalUtils.js',
   './modules/utils/motionPreference.js',
+  './modules/utils/userManualLink.js',
   './modules/utils/announce.js',
   './modules/utils/landOnTasks.js',
   './modules/utils/mcycPayload.js',

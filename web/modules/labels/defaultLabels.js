@@ -1923,55 +1923,32 @@ export const DEFAULT_LABELS = deepFreeze({
         announce:       '{name}, {mode}, {position} of {total}',
     },
 
-    // Keyboard Shortcuts dialog (main menu → Help & Support, and Focus View's ⋯
-    // menu). Rows are built from KEYBOARD_SHORTCUTS in modalManager, so the keys
-    // shown cannot drift from the keys handled. {mod} is "Alt" or "Option".
+    // Keyboard Shortcuts dialog (main menu → Help & Support, Focus View's ⋯
+    // menu, Alt+?): five keys for the view you are in, built from
+    // KEYBOARD_SHORTCUTS in modalManager, and a link to the user manual's
+    // complete list (kept in step with KEYBOARD_SHORTCUTS by a journey).
     shortcuts: {
         menuItem:      'Keyboard Shortcuts',
-        menuItemTitle: 'See every keyboard shortcut',
+        menuItemTitle: 'The keyboard shortcuts to start with, and where to find the rest',
         title:         'Keyboard Shortcuts',
         closeAria:     'Close keyboard shortcuts',
         intro:         'You don\'t need any of these: everything works by tapping or clicking too. They just make it faster.',
         groupStart:    'Start with these',
-        allHeading:    'All shortcuts',
-        appHold:       'Hold {mod}+{shift}, then press the key. Not while you are typing in a field or a window is open.',
+        allInManual:   'Every shortcut is in the User Manual',
         singleKeysOff: 'Prefer single keys, like M for the menu? Turn them on in Settings → Behavior.',
-        groupApp:      'App',
-        groupTasks:    'Tasks',
-        groupViews:    'Views',
-        groupBrowse:   'Browse Routines',
-        groupSingle:   'Single keys',   // listed only while they are on (else singleKeysOff)
         showList:      'Show this list',
-        groupGeneral:  'General',
         newRoutine:    'Create a new routine',
         openRoutine:   'Open routines (the list or Browse)',
-        previousRoutine: 'Previous routine (the one you used before)',
-        nextRoutine:   'Next routine',
-        openSettings:  'Open Settings',
-        openMenu:      'Open the menu (☰ in Home View, ⋯ in Focus View)',
-        browseFlip:    'Previous or next routine',
-        browseGridRow: 'The routine above or below (Grid)',
-        browseEnds:    'First or last routine',
-        browseOpen:    'Open the routine on screen',
-        nextMode:      'Next mode (Auto Cycle → Manual Cycle → To-Do)',
         focusView:     'Focus View on or off',
-        toggleInput:   'Show or hide the input bar',
-        userManual:    'Open the user manual',
-        moveTask:      'Move the selected task up or down',
         moveBetween:   'Move between tasks',
         toggleTask:    'Check or uncheck the selected task',
         switchViews:   'Switch views (Task, Routine, Stats)',
         leaveFocus:    'Leave Focus View (press twice)',
-        closeWindow:   'Close a window or menu',
-        undo:          'Undo',
-        redo:          'Redo',
         keyEscape:     'Esc',
         keySpace:      'Space',
         keyAlt:        'Alt',
         keyOption:     'Option',
         keyShift:      'Shift',
-        keyCtrl:       'Ctrl',
-        keyCmd:        '⌘',
     },
 
     homeView: {

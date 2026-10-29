@@ -6440,8 +6440,7 @@ async function journeyAppShortcuts(browser, baseURL) {
         record('…S opens Settings', (await state()).dialog.includes('settings-modal'), `open: ${(await state()).dialog || 'none'}`);
         await reset();
         await plain('Shift+Slash');
-        record('…? opens the Keyboard Shortcuts list, which lists the single keys', (await state()).dialog.includes('shortcuts')
-            && await page.evaluate(() => /Single keys/.test(document.getElementById('shortcuts-list').textContent)), `open: ${(await state()).dialog || 'none'}`);
+        record('…? opens the Keyboard Shortcuts list', (await state()).dialog.includes('shortcuts'), `open: ${(await state()).dialog || 'none'}`);
         await reset();
         await plain('Shift+KeyM');
         record('…Shift+M is not M', !(await menuState()).home, JSON.stringify(await menuState()));
@@ -6615,31 +6614,19 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
         await page.evaluate(() => document.getElementById('open-shortcuts-modal')?.focus());
         await page.keyboard.press('Enter');
         await page.waitForTimeout(500);
-        // A first look: five keys, then every group collapsed (Oct 2026). Open
-        // them all, as a user would, and read every row.
-        const firstLook = await page.evaluate(() => {
-            const d = document.getElementById('shortcuts-modal');
-            return { start: d.querySelectorAll('.shortcuts-start .shortcuts-row').length,
-                closed: [...d.querySelectorAll('details.shortcuts-group')].every(g => !g.open),
-                fits: d.querySelector('.shortcuts-modal-content').scrollHeight <= innerHeight };
-        });
-        record('…a first look is five keys, every group collapsed, on one screen', firstLook.start === 5 && firstLook.closed && firstLook.fits, JSON.stringify(firstLook));
-        await page.evaluate(() => document.querySelectorAll('#shortcuts-modal details.shortcuts-group summary').forEach(s => s.click()));
-        await page.waitForTimeout(200);
+        // Short on purpose (Oct 2026): five keys for the view, then a link to the
+        // manual's complete list (whose coverage modalManager.tests checks).
         const list = await page.evaluate(() => {
             const d = document.getElementById('shortcuts-modal');
-            const group = (name) => [...d.querySelectorAll('details.shortcuts-group')].find(g => g.querySelector('summary').textContent === name);
-            const rowsOf = (el) => [...(el?.querySelectorAll('.shortcuts-row') || [])].map(r => r.querySelector('dt').textContent);
+            const link = d.querySelector('.shortcuts-more a');
             return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent,
-                rows: [...rowsOf(group('App')), ...[...d.querySelectorAll('details.shortcuts-group')].slice(1).flatMap(rowsOf)],
-                appNote: group('App')?.querySelector('.shortcuts-note')?.textContent || '',
+                rows: d.querySelectorAll('.shortcuts-row').length, fits: d.querySelector('.shortcuts-modal-content').scrollHeight <= innerHeight,
+                href: link?.getAttribute('href'), target: link?.target,
                 label: d.getAttribute('aria-labelledby'), closeName: d.querySelector('.close-modal')?.getAttribute('aria-label') };
         });
-        // The App group says "Hold Alt+Shift" once and lists the keys alone.
-        const want = ['N', 'O', 'M', 'F', 'I', 'U', '[', ']', 'S', '.', '?', 'Alt+↑ / Alt+↓', 'Shift+← / Shift+→', 'Ctrl+Z'];
-        const missing = want.filter(k => !list.rows.includes(k)).concat(/Alt\+Shift/.test(list.appNote) ? [] : ['the "Hold Alt+Shift" note']);
         record('Keyboard Shortcuts opens from the main menu', list.open && list.title === 'Keyboard Shortcuts', JSON.stringify({ open: list.open, title: list.title }));
-        record('…and lists every shortcut', missing.length === 0 && list.rows.length >= 14, `missing ${missing.join(', ') || 'none'}; ${list.rows.length} rows`);
+        record('…showing five keys on one screen, and a link to every shortcut in the user manual',
+            list.rows === 5 && list.fits && /user-manual\.html#keyboard-shortcuts$/.test(list.href || '') && list.target === '_blank', JSON.stringify(list));
         record('…named for assistive tech (labelled dialog, named close button)', list.label === 'shortcuts-modal-title' && !!list.closeName, JSON.stringify(list));
         await page.keyboard.press('Escape');
         await page.waitForTimeout(500);
@@ -6665,7 +6652,7 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
     } finally {
         await context.close();
     }
-    return { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', failures };
+    return { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts shows the first five and links the manual', failures };
 }
 
 // ── Open Routine with many routines: speed, keyboard, phone layout ─────────
@@ -7166,8 +7153,8 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 walked.join() === [recent[1], recent[2], recent[1]].join(), `recent ${recent.join(' > ')}; walked ${walked.join(' > ')}`);
             await page.evaluate(() => document.getElementById('open-shortcuts-modal').click());
             await page.waitForTimeout(400);
-            const listed = await page.evaluate(() => document.getElementById('shortcuts-list').textContent);
-            record('…and both are in the Keyboard Shortcuts list', /\[/.test(listed) && /\]/.test(listed) && /the one you used before/.test(listed), listed.slice(0, 120));
+            const listed = await page.evaluate(() => !!document.querySelector('#shortcuts-list .shortcuts-more a'));
+            record('…and the Keyboard Shortcuts list points to the manual, which lists them', listed, `link present: ${listed}`);
             await page.keyboard.press('Escape');
         } catch (e) {
             console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
@@ -7330,7 +7317,7 @@ async function journeyBrowseRoutines(browser, baseURL) {
 const JOURNEYS = [
     { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', fn: journeyBrowseRoutines },
     { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', fn: journeySwitcherManyRoutines },
-    { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', fn: journeyFocusEscapeAndShortcutList },
+    { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts shows the first five and links the manual', fn: journeyFocusEscapeAndShortcutList },
     { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', fn: journeyAppShortcuts },
     { name: 'Alt+arrow reorders a task from the keyboard', fn: journeyKeyboardReorder },
     { name: 'keyboard focus stays on the welcome choice screen', fn: journeyChoiceScreenKeepsFocus },

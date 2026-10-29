@@ -45,7 +45,8 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { USER_MANUAL_SHORTCUTS_HASH, linkToUserManual } from '../utils/userManualLink.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -539,16 +540,13 @@ export class ModalManager {
     /**
      * Fill the Keyboard Shortcuts list. textContent throughout — no innerHTML.
      *
-     * Built for a first look (Oct 2026: 28 rows over two screens, "Alt + Shift"
-     * eleven times, and the keys that matter in Focus View eighteen rows down):
-     *   - "Start with these": five keys for the view you are in;
-     *   - every group after it collapsed (<details>, so keyboard and screen
-     *     readers get it natively, and there is nothing to clean up);
-     *   - the app group says "Hold Alt+Shift" once and lists the keys;
-     *   - the single keys only when they are on, else one line on where to
-     *     turn them on.
-     * Every row is still built from KEYBOARD_SHORTCUTS / SINGLE_KEY_SHORTCUTS,
-     * so the list cannot drift from the keys handled.
+     * Short on purpose (Oct 2026): it was 28 rows over two screens, "Alt +
+     * Shift" eleven times, and in Focus View the keys that matter there came
+     * eighteen rows down. Now it is five keys for the view you are in, a link
+     * to the user manual's complete list, and — while they are off — one line
+     * on where to turn on single keys. The manual is the full reference; a
+     * journey checks it lists every KEYBOARD_SHORTCUTS key, so the two cannot
+     * drift.
      * @param {HTMLElement|null} container
      */
     renderShortcutsList(container) {
@@ -557,26 +555,14 @@ export class ModalManager {
             || navigator.userAgentData?.platform === 'macOS';
         const mod = getLabel(apple ? 'shortcuts.keyOption' : 'shortcuts.keyAlt');
         const shift = getLabel('shortcuts.keyShift');
-        const cmd = getLabel(apple ? 'shortcuts.keyCmd' : 'shortcuts.keyCtrl');
         const esc = getLabel('shortcuts.keyEscape');
         const space = getLabel('shortcuts.keySpace');
-        const key = (name) => shortcutKeyName(KEYBOARD_SHORTCUTS[name]);
-        const app = (name) => [mod, shift, key(name)];
+        const app = (name) => [mod, shift, shortcutKeyName(KEYBOARD_SHORTCUTS[name])];
         const focusView = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
         const singleKeysOn = _deps.AppState?.get?.()?.settings?.singleKeyShortcuts === true;
 
-        // The app shortcuts, by action — each row's label. The group lists them
-        // all, so a new KEYBOARD_SHORTCUTS entry without a label shows up here.
-        const APP_LABELS = {
-            NEW_ROUTINE: 'shortcuts.newRoutine', OPEN_ROUTINE: 'shortcuts.openRoutine',
-            PREVIOUS_ROUTINE: 'shortcuts.previousRoutine', NEXT_ROUTINE: 'shortcuts.nextRoutine',
-            OPEN_SETTINGS: 'shortcuts.openSettings', OPEN_MENU: 'shortcuts.openMenu', SHOW_SHORTCUTS: 'shortcuts.showList',
-            NEXT_MODE: 'shortcuts.nextMode', FOCUS_VIEW: 'shortcuts.focusView',
-            TOGGLE_INPUT_BAR: 'shortcuts.toggleInput', USER_MANUAL: 'shortcuts.userManual'
-        };
-
         // Each row: [alternatives (each a list of keys pressed together), label key]
-        const startRows = focusView ? [
+        const rows = focusView ? [
             [[[space]], 'shortcuts.toggleTask'],
             [[['↑'], ['↓']], 'shortcuts.moveBetween'],
             [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
@@ -589,57 +575,6 @@ export class ModalManager {
             [[['↑'], ['↓']], 'shortcuts.moveBetween'],
             [[app('FOCUS_VIEW')], 'shortcuts.focusView']
         ];
-        const groups = [
-            ['shortcuts.groupApp', Object.keys(KEYBOARD_SHORTCUTS).map(name => [[[key(name)]], APP_LABELS[name]]),
-                getLabel('shortcuts.appHold', { vars: { mod, shift } })],
-            ['shortcuts.groupTasks', [
-                [[[mod, '↑'], [mod, '↓']], 'shortcuts.moveTask'],
-                [[['↑'], ['↓']], 'shortcuts.moveBetween'],
-                [[[space]], 'shortcuts.toggleTask']
-            ]],
-            ['shortcuts.groupViews', [
-                [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
-                [[[esc]], 'shortcuts.leaveFocus']
-            ]],
-            ['shortcuts.groupBrowse', [
-                [[['←'], ['→']], 'shortcuts.browseFlip'],
-                [[['↑'], ['↓']], 'shortcuts.browseGridRow'],
-                [[['Home'], ['End']], 'shortcuts.browseEnds'],
-                [[['Enter']], 'shortcuts.browseOpen']
-            ]],
-            ['shortcuts.groupGeneral', [
-                [[[cmd, 'Z']], 'shortcuts.undo'],
-                [[[cmd, 'Y'], [cmd, shift, 'Z']], 'shortcuts.redo'],
-                [[[esc]], 'shortcuts.closeWindow']
-            ]]
-        ];
-        if (singleKeysOn) {
-            groups.push(['shortcuts.groupSingle', Object.entries(SINGLE_KEY_SHORTCUTS)
-                .map(([k, action]) => [[[k.toUpperCase()]], APP_LABELS[action]])]);
-        }
-
-        const rowsList = (rows) => {
-            const list = document.createElement('dl');
-            rows.forEach(([alternatives, labelKey]) => {
-                const row = document.createElement('div');
-                row.className = DOM_CLASSES.SHORTCUTS_ROW;
-                const keys = document.createElement('dt');
-                alternatives.forEach((combo, i) => {
-                    if (i > 0) keys.appendChild(document.createTextNode(' / '));
-                    combo.forEach((k, j) => {
-                        if (j > 0) keys.appendChild(document.createTextNode('+'));
-                        const kbd = document.createElement('kbd');
-                        kbd.textContent = k;
-                        keys.appendChild(kbd);
-                    });
-                });
-                const what = document.createElement('dd');
-                what.textContent = getLabel(labelKey);
-                row.append(keys, what);
-                list.appendChild(row);
-            });
-            return list;
-        };
 
         container.replaceChildren();
         const intro = document.createElement('p');
@@ -649,29 +584,37 @@ export class ModalManager {
 
         const start = document.createElement('section');
         start.className = DOM_CLASSES.SHORTCUTS_START;
-        const startHeading = document.createElement('h3');
-        startHeading.textContent = getLabel('shortcuts.groupStart');
-        start.append(startHeading, rowsList(startRows));
+        const heading = document.createElement('h3');
+        heading.textContent = getLabel('shortcuts.groupStart');
+        const list = document.createElement('dl');
+        rows.forEach(([alternatives, labelKey]) => {
+            const row = document.createElement('div');
+            row.className = DOM_CLASSES.SHORTCUTS_ROW;
+            const keys = document.createElement('dt');
+            alternatives.forEach((combo, i) => {
+                if (i > 0) keys.appendChild(document.createTextNode(' / '));
+                combo.forEach((k, j) => {
+                    if (j > 0) keys.appendChild(document.createTextNode('+'));
+                    const kbd = document.createElement('kbd');
+                    kbd.textContent = k;
+                    keys.appendChild(kbd);
+                });
+            });
+            const what = document.createElement('dd');
+            what.textContent = getLabel(labelKey);
+            row.append(keys, what);
+            list.appendChild(row);
+        });
+        start.append(heading, list);
         container.appendChild(start);
 
-        const allHeading = document.createElement('h3');
-        allHeading.textContent = getLabel('shortcuts.allHeading');
-        container.appendChild(allHeading);
-        groups.forEach(([groupKey, rows, note]) => {
-            const group = document.createElement('details');
-            group.className = DOM_CLASSES.SHORTCUTS_GROUP;
-            const summary = document.createElement('summary');
-            summary.textContent = getLabel(groupKey);
-            group.appendChild(summary);
-            if (note) {
-                const p = document.createElement('p');
-                p.className = DOM_CLASSES.SHORTCUTS_NOTE;
-                p.textContent = note;
-                group.appendChild(p);
-            }
-            group.appendChild(rowsList(rows));
-            container.appendChild(group);
-        });
+        // Everything else: the manual, opened the way the menu's User Manual is.
+        const more = document.createElement('p');
+        more.className = DOM_CLASSES.SHORTCUTS_MORE;
+        const link = linkToUserManual(document.createElement('a'), USER_MANUAL_SHORTCUTS_HASH);
+        link.textContent = getLabel('shortcuts.allInManual');
+        more.appendChild(link);
+        container.appendChild(more);
 
         if (!singleKeysOn) {
             const off = document.createElement('p');

@@ -1011,9 +1011,9 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
-    // ===== Keyboard Shortcuts list: approachable on a first look (Oct 2026) =====
+    // ===== Keyboard Shortcuts list: short, with the manual for the rest (Oct 2026) =====
     resultsDiv.innerHTML += '<h4 class="test-section">⌨️ Keyboard Shortcuts list</h4>';
-    const { KEYBOARD_SHORTCUTS } = await import('../modules/core/constants.js');
+    const { KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS } = await import('../modules/core/constants.js');
     const renderList = ({ focusView = false, singleKeys = false } = {}) => {
         setModalManagerDependencies({ AppState: { get: () => ({ settings: { singleKeyShortcuts: singleKeys } }) } });
         document.body.classList.toggle('focus-mode', focusView);
@@ -1027,33 +1027,44 @@ export async function runModalManagerTests(resultsDiv) {
         return box;
     };
 
-    await test('it starts with five keys for the view you are in', () => {
-        const focusStart = [...renderList({ focusView: true }).querySelectorAll('.shortcuts-start dd')].map(d => d.textContent);
-        const homeStart = [...renderList().querySelectorAll('.shortcuts-start dd')].map(d => d.textContent);
-        if (focusStart.length !== 5 || homeStart.length !== 5) throw new Error(`start rows: Focus ${focusStart.length}, Home ${homeStart.length}`);
-        if (!focusStart.some(t => /Leave Focus View/.test(t))) throw new Error(`Focus View start: ${focusStart.join(' | ')}`);
-        if (!homeStart.some(t => /new routine/i.test(t))) throw new Error(`Home View start: ${homeStart.join(' | ')}`);
+    await test('it shows five keys for the view you are in, and nothing more', () => {
+        const focusBox = renderList({ focusView: true });
+        const focusStart = [...focusBox.querySelectorAll('.shortcuts-row dd')].map(d => d.textContent);
+        const homeStart = [...renderList().querySelectorAll('.shortcuts-row dd')].map(d => d.textContent);
+        if (focusStart.length !== 5 || homeStart.length !== 5) throw new Error(`rows: Focus ${focusStart.length}, Home ${homeStart.length}`);
+        if (!focusStart.some(t => /Leave Focus View/.test(t))) throw new Error(`Focus View: ${focusStart.join(' | ')}`);
+        if (!homeStart.some(t => /new routine/i.test(t))) throw new Error(`Home View: ${homeStart.join(' | ')}`);
     });
 
-    await test('every other group is collapsed, and the app group lists every app shortcut once, after one "Hold Alt+Shift"', () => {
-        const box = renderList();
-        const groups = [...box.querySelectorAll('details.shortcuts-group')];
-        if (!groups.length || groups.some(g => g.open)) throw new Error('groups missing or open on a first look');
-        const appGroup = groups[0];
-        const rows = [...appGroup.querySelectorAll('.shortcuts-row')];
-        if (rows.length !== Object.keys(KEYBOARD_SHORTCUTS).length) throw new Error(`${rows.length} app rows for ${Object.keys(KEYBOARD_SHORTCUTS).length} shortcuts`);
-        if (rows.some(r => !r.querySelector('dd').textContent || /shortcuts\./.test(r.querySelector('dd').textContent))) throw new Error('an app row has no label');
-        if (rows.some(r => r.querySelectorAll('kbd').length !== 1)) throw new Error('app rows repeat the modifiers');
-        if (!/Shift/.test(appGroup.querySelector('.shortcuts-note')?.textContent || '')) throw new Error('no "Hold Alt+Shift" note');
+    await test('it links to the user manual\'s Keyboard Shortcuts section, in a new tab in a browser', () => {
+        const link = renderList().querySelector('.shortcuts-more a');
+        if (!link) throw new Error('no link to the manual');
+        if (!/legal\/user-manual\.html#keyboard-shortcuts$/.test(link.getAttribute('href'))) throw new Error(`href ${link.getAttribute('href')}`);
+        if (link.target !== '_blank' || !/noopener/.test(link.rel)) throw new Error(`target ${link.target}, rel ${link.rel}`);
     });
 
-    await test('single keys are listed only while they are on; otherwise one line says where to turn them on', () => {
-        const off = renderList({ singleKeys: false });
-        const on = renderList({ singleKeys: true });
-        const names = (box) => [...box.querySelectorAll('summary')].map(s => s.textContent);
-        if (names(off).includes('Single keys')) throw new Error('single keys listed while off');
-        if (!/Settings → Behavior/.test(off.textContent)) throw new Error('no line on turning them on');
-        if (!names(on).includes('Single keys')) throw new Error('single keys not listed while on');
+    await test('while single keys are off, one line says where to turn them on; while on, it is gone', () => {
+        if (!/Settings → Behavior/.test(renderList({ singleKeys: false }).textContent)) throw new Error('no line while off');
+        if (/Settings → Behavior/.test(renderList({ singleKeys: true }).textContent)) throw new Error('line still there while on');
+    });
+
+    // The manual is the complete list now, so it must not fall behind the code.
+    await test('the user manual lists every app shortcut and every single key', async () => {
+        const html = await (await fetch(`/legal/user-manual.html?v=${Date.now()}`)).text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const section = doc.getElementById('keyboard-shortcuts')?.textContent || '';
+        if (!section) throw new Error('no #keyboard-shortcuts section');
+        const physical = { Slash: '/', Period: '.', BracketLeft: '[', BracketRight: ']' };
+        const missing = Object.entries(KEYBOARD_SHORTCUTS)
+            .map(([name, code]) => [name, `Alt+Shift+${physical[code] || code.replace(/^Key/, '')}`])
+            .filter(([, combo]) => !section.includes(combo));
+        // The single keys: the bold keys of the list under "Single-Key Shortcuts".
+        const singleHeading = [...doc.querySelectorAll('#keyboard-shortcuts h3')].find(h => /Single-Key/.test(h.textContent));
+        let list = singleHeading?.nextElementSibling;
+        while (list && list.tagName !== 'UL') list = list.nextElementSibling;
+        const listed = new Set([...(list?.querySelectorAll('strong') || [])].map(b => b.textContent.replace(/:$/, '').trim()));
+        const singles = Object.keys(SINGLE_KEY_SHORTCUTS).filter(k => !listed.has(k.toUpperCase()));
+        if (missing.length || singles.length) throw new Error(`missing from the manual: ${missing.map(([n, c]) => `${n} (${c})`).join(', ')} ${singles.join(' ')}`);
     });
 
     // ===== SUMMARY =====

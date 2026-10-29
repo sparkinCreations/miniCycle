@@ -65,6 +65,7 @@ import { goToLiteVersion } from '../utils/liteVersion.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
+import { USER_MANUAL_PATH, runsAsInstalledApp } from '../utils/userManualLink.js';
 
 let _appContextMod = null;
 
@@ -1200,20 +1201,6 @@ export function setupUserManual(_GlobalUtils) {
   });
 }
 
-/** The user manual, relative to the app page. */
-const USER_MANUAL_PATH = 'legal/user-manual.html';
-
-/**
- * Whether miniCycle is running as an installed app — home-screen web app,
- * installed PWA, or the iOS/Android/desktop shells — rather than in a
- * browser tab. Installed apps have no tabs to open a page in.
- * @returns {boolean}
- */
-function runsAsInstalledApp() {
-  if (isNativeApp() || isDesktopApp()) return true;
-  if (navigator.standalone === true) return true;   // iOS home-screen web app
-  return ['standalone', 'fullscreen', 'minimal-ui'].some((mode) => window.matchMedia?.(`(display-mode: ${mode})`)?.matches);
-}
 
 /**
  * Setup menu "Enable Tour Prompts" button handler (Help & Support section)
