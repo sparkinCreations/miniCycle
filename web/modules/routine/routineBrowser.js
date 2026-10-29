@@ -13,9 +13,10 @@
  *   Grid  — every routine as a tile. A tap selects (shows its details below);
  *           a tap on the selected tile, the Open button or Enter opens it.
  *
- * The "All routines" list jumps to any routine without opening it. Settings →
- * "When you open routines, show" decides whether the routine button opens this
- * or the list, and each view has a corner button to the other.
+ * (An "All routines" jump list went once Grid existed: Grid shows them all,
+ * and better — the user's call, Oct 2026.) Settings → "When you open routines,
+ * show" decides whether the routine button opens this or the list, and each
+ * view has a corner button to the other.
  *
  * ── PATTERN: MANAGER BACK-REFERENCE, AS IN routineSwitcherActions ─────────────
  * `this.m` is the owning RoutineSwitcher. Its deps are this module's deps
@@ -43,11 +44,10 @@
  * @module routine/routineBrowser
  */
 
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, GESTURE, ROUTINE_BROWSER_SORT, ROUTINE_BROWSER_LAYOUT, ROUTINE_OPEN_VIEW } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, GESTURE, LIMITS, BREAKPOINTS, ROUTINE_BROWSER_SORT, ROUTINE_BROWSER_LAYOUT, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
 import { getIcon } from '../utils/icons.js';
-import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { getActiveRoutineId, getRoutineBrowserLayout, getRoutineBrowserSort, getRoutines } from '../utils/cycleMode.js';
 import { applyRoutineTheme, buildTile, describeMode, fillCard } from './routineBrowserRender.js';
@@ -63,6 +63,18 @@ const CAROUSEL_SPAN = 2;
  */
 export function routineRecency(routine) {
     return routine?.lastAccessedAt || routine?.lastModified || routine?.createdAt || 0;
+}
+
+/**
+ * "Oct 24", or "Oct 24, 2025" when it is not this year.
+ * @param {number} ms - epoch ms
+ * @returns {string}
+ */
+function formatDay(ms) {
+    const date = new Date(ms);
+    const opts = { month: 'short', day: 'numeric' };
+    if (date.getFullYear() !== new Date().getFullYear()) opts.year = 'numeric';
+    return date.toLocaleDateString(undefined, opts);
 }
 
 /**
@@ -145,7 +157,6 @@ export class RoutineBrowser {
         this.deps.hideMainMenu?.();
         this._attachListeners();
         this._syncToggles();
-        this._closeJumpList({ restoreFocus: false });
         this._clearCards();
         if (this._layout === ROUTINE_BROWSER_LAYOUT.GRID) this._fillGrid();
         this._render(0);
@@ -238,18 +249,12 @@ export class RoutineBrowser {
             sort.appendChild(b);
         }
 
-        const allBtn = el('button', DOM_CLASSES.RB_ALL_BTN, {
-            type: 'button', 'aria-expanded': 'false', 'aria-controls': DOM_IDS.ROUTINE_BROWSER_JUMP_LIST,
-            'aria-label': getLabel('routineBrowser.allRoutinesAria')
-        });
-        allBtn.textContent = `☰ ${getLabel('routineBrowser.allRoutines')}`;
-
         // Top-right corner: back to the list, with the list's own folder icon.
         const toList = iconButton(DOM_CLASSES.RB_CORNER_BTN, 'folder', 'routineBrowser.toList', {
             'aria-label': getLabel('routineBrowser.toListAria'), title: getLabel('routineBrowser.toListAria')
         });
 
-        top.append(closeBtn, heading, layout, sort, allBtn, toList);
+        top.append(closeBtn, heading, layout, sort, toList);
 
         // ── the two layouts
         const stage = el('div', DOM_CLASSES.RB_STAGE);
@@ -279,16 +284,11 @@ export class RoutineBrowser {
         openBtn.textContent = getLabel('routineBrowser.open');
         actions.append(createBtn, openBtn);
 
-        const jump = el('div', DOM_CLASSES.RB_JUMP, { id: DOM_IDS.ROUTINE_BROWSER_JUMP_LIST, role: 'region', 'aria-label': getLabel('routineBrowser.jumpListAria') });
-        jump.hidden = true;
-        const jumpList = el('ul', '');
-        jump.appendChild(jumpList);
-
-        dialog.append(top, stage, grid, info, actions, jump);
+        dialog.append(top, stage, grid, info, actions);
         document.body.appendChild(dialog);
 
         this._dialog = dialog;
-        this._els = { closeBtn, layoutBtns, sortBtns, allBtn, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn, jump, jumpList };
+        this._els = { closeBtn, layoutBtns, sortBtns, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn };
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -322,11 +322,9 @@ export class RoutineBrowser {
         const routine = routines[key];
         if (!routine) return;
 
-        const { stage, grid, allBtn } = this._els;
+        const { stage, grid } = this._els;
         stage.hidden = this._isGrid();
         grid.hidden = !this._isGrid();
-        // The grid already shows every routine; its jump list would repeat it.
-        allBtn.hidden = this._isGrid();
 
         if (this._isGrid()) this._syncGridSelection();
         else this._renderTrack(step);
@@ -341,9 +339,13 @@ export class RoutineBrowser {
         const { emoji, name: modeName } = describeMode(routine);
 
         title.textContent = name;
-        metaMode.textContent = single
-            ? `${emoji} ${modeName} · ${getLabel('routineBrowser.onlyOne')}`
-            : `${emoji} ${modeName} · ${getLabel('routineBrowser.position', { vars: { position: this._index + 1, total } })}`;
+        const parts = [`${emoji} ${modeName}`, single
+            ? getLabel('routineBrowser.onlyOne')
+            : getLabel('routineBrowser.position', { vars: { position: this._index + 1, total } })];
+        // When it was last used — what the old "All routines" list showed.
+        const when = routineRecency(routine);
+        if (when) parts.push(getLabel('routineBrowser.lastUsed', { vars: { date: formatDay(when) } }));
+        metaMode.textContent = parts.join(' · ');
         metaSize.textContent = this._storageLine(routine);
 
         prevBtn.disabled = single || this._index === 0;
@@ -362,8 +364,7 @@ export class RoutineBrowser {
         card.dataset.key = key;
         fillCard(card, routine, {
             name: routine.title || key,
-            isCurrent: key === getActiveRoutineId(state),
-            focusStyle: document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)
+            isCurrent: key === getActiveRoutineId(state)
         });
         applyRoutineTheme(card, routine, routines[getActiveRoutineId(state)] || null);
         return card;
@@ -439,18 +440,26 @@ export class RoutineBrowser {
         this._els?.track.replaceChildren();
     }
 
-    /** One tile per routine, in the current order. */
+    /** One tile per routine, in the current order. Fewer tasks a tile on a phone. */
     _fillGrid() {
         const state = this._state();
         const routines = getRoutines(state) || {};
         const activeId = getActiveRoutineId(state);
+        const maxTasks = this._phoneQuery().matches ? LIMITS.ROUTINE_BROWSER_TILE_TASKS_PHONE : LIMITS.ROUTINE_BROWSER_TILE_TASKS;
         const tiles = this._order.map(key => buildTile(routines[key], {
             key,
             name: routines[key]?.title || key,
             isCurrent: key === activeId,
-            activeRoutine: routines[activeId] || null
+            activeRoutine: routines[activeId] || null,
+            maxTasks
         }));
         this._els.grid.replaceChildren(...tiles);
+    }
+
+    /** Browse's phone width — the same one its CSS lays the phone out at. */
+    _phoneQuery() {
+        if (!this._phoneMql) this._phoneMql = window.matchMedia(`(max-width: ${BREAKPOINTS.BROWSE_PHONE_MAX}px)`);
+        return this._phoneMql;
     }
 
     _gridTiles() {
@@ -524,16 +533,6 @@ export class RoutineBrowser {
         return true;
     }
 
-    /** Jump straight to a routine (the All routines list). */
-    jumpTo(key) {
-        const i = this._order.indexOf(key);
-        if (i === -1 || i === this._index) return;
-        const step = i - this._index;
-        this._index = i;
-        this._render(step);
-        this._announce();
-    }
-
     setSort(sort) {
         if (!Object.values(ROUTINE_BROWSER_SORT).includes(sort)) return;
         const key = this._currentKey();
@@ -545,7 +544,6 @@ export class RoutineBrowser {
         this._clearCards();
         if (this._isGrid()) this._fillGrid();
         this._render(0);
-        if (!this._els.jump.hidden) this._fillJumpList();
         this.deps.AppState.update(state => {
             if (!state.settings) state.settings = {};
             state.settings.routineBrowserSort = sort;
@@ -555,7 +553,6 @@ export class RoutineBrowser {
     setLayout(layout) {
         if (!Object.values(ROUTINE_BROWSER_LAYOUT).includes(layout) || layout === this._layout) return;
         this._layout = layout;
-        this._closeJumpList({ restoreFocus: false });
         this._syncToggles();
         this._clearCards();
         if (this._isGrid()) this._fillGrid();
@@ -578,57 +575,6 @@ export class RoutineBrowser {
     createAnother() {
         this.close();
         this.deps.showCycleCreationModal?.();
-    }
-
-    // ────────────────────────────────────────────────────────────────────────
-    // All routines (jump list)
-    // ────────────────────────────────────────────────────────────────────────
-
-    _fillJumpList() {
-        const routines = this._routines();
-        const current = this._currentKey();
-        const { jumpList } = this._els;
-        jumpList.replaceChildren();
-        const dateFmt = { month: 'short', day: 'numeric', year: 'numeric' };
-        for (const key of this._order) {
-            const li = document.createElement('li');
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.className = DOM_CLASSES.RB_JUMP_ITEM + (key === current ? ` ${DOM_CLASSES.RB_JUMP_ITEM_CURRENT}` : '');
-            btn.dataset.key = key;
-            if (key === current) btn.setAttribute('aria-current', 'true');
-            const name = document.createElement('span');
-            name.textContent = routines[key]?.title || key;
-            btn.appendChild(name);
-            if (this._sort === ROUTINE_BROWSER_SORT.RECENT) {
-                const when = routineRecency(routines[key]);
-                const date = document.createElement('span');
-                date.className = DOM_CLASSES.RB_JUMP_DATE;
-                date.textContent = when ? new Date(when).toLocaleDateString(undefined, dateFmt) : getLabel('routineBrowser.dateUnknown');
-                btn.appendChild(date);
-            }
-            li.appendChild(btn);
-            jumpList.appendChild(li);
-        }
-    }
-
-    _openJumpList() {
-        const { jump, allBtn, jumpList } = this._els;
-        this._fillJumpList();
-        jump.hidden = false;
-        allBtn.setAttribute('aria-expanded', 'true');
-        const current = jumpList.querySelector(`.${DOM_CLASSES.RB_JUMP_ITEM_CURRENT}`) || jumpList.querySelector('button');
-        current?.scrollIntoView({ block: 'nearest' });
-        current?.focus();
-    }
-
-    _closeJumpList({ restoreFocus = true } = {}) {
-        if (!this._els) return;
-        const { jump, allBtn } = this._els;
-        const wasOpen = !jump.hidden;
-        jump.hidden = true;
-        allBtn.setAttribute('aria-expanded', 'false');
-        if (wasOpen && restoreFocus) allBtn.focus();
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -658,7 +604,7 @@ export class RoutineBrowser {
 
     _attachListeners() {
         this._detachListeners();
-        const { closeBtn, layoutBtns, sortBtns, allBtn, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn, jump } = this._els;
+        const { closeBtn, layoutBtns, sortBtns, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn } = this._els;
         const dialog = this._dialog;
 
         this._on(closeBtn, 'click', () => this.close());
@@ -668,7 +614,6 @@ export class RoutineBrowser {
             this._focusSelection();
         }));
         Object.values(sortBtns).forEach(b => this._on(b, 'click', () => this.setSort(b.dataset.sort)));
-        this._on(allBtn, 'click', () => (jump.hidden ? this._openJumpList() : this._closeJumpList()));
         this._on(prevBtn, 'click', () => this.move(-1));
         this._on(nextBtn, 'click', () => this.move(1));
         this._on(openBtn, 'click', () => this.openCurrent());
@@ -694,21 +639,16 @@ export class RoutineBrowser {
             this.move(this._order.indexOf(tile.dataset.key) - this._index);
         });
 
-        this._on(jump, 'click', (e) => {
-            const item = e.target.closest(`.${DOM_CLASSES.RB_JUMP_ITEM}`);
-            if (!item) return;
-            this.jumpTo(item.dataset.key);
-            this._closeJumpList();
-        });
-        this._on(jump, 'keydown', (e) => {
-            handleVerticalArrowNav(e, this._els.jumpList, `.${DOM_CLASSES.RB_JUMP_ITEM}`, { wrap: false, skipHidden: true });
+        // A phone turned, or a window resized, across the phone width: the grid's
+        // tiles show a different number of tasks there.
+        this._on(this._phoneQuery(), 'change', () => {
+            if (this._isGrid()) { this._fillGrid(); this._syncGridSelection(); }
         });
 
-        // Escape is "back": closes the jump list first; then returns to the list
-        // when Browse was opened from it, else closes Browse.
+        // Escape is "back": returns to the list when Browse was opened from it,
+        // else closes Browse.
         this._on(dialog, 'cancel', (e) => {
             e.preventDefault();
-            if (!this._els.jump.hidden) { this._closeJumpList(); return; }
             this.close({ toList: this._fromList });
         });
 
@@ -721,7 +661,6 @@ export class RoutineBrowser {
 
         this._on(dialog, 'keydown', (e) => {
             if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-            if (!this._els.jump.hidden && this._els.jump.contains(e.target)) return;
             const onControl = e.target.closest?.(DOM_SELECTORS.NATIVE_CONTROL);
             const rowStep = this._isGrid() ? this._gridColumns() : 0;
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {

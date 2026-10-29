@@ -1377,11 +1377,6 @@ input.routine-search-input:focus {
     to { opacity: 1; transform: none; }
 }
 
-@keyframes rb-drop-in {
-    from { opacity: 0; transform: translateY(calc(-1 * var(--space-3))); }
-    to { opacity: 1; transform: none; }
-}
-
 /* :where() keeps this at element specificity, so each button's own class
    (sizes, weights, the active sort's colours) still wins over it. */
 :where(#routine-browser) button {
@@ -1406,7 +1401,6 @@ input.routine-search-input:focus {
 .rb-close-btn,
 .rb-layout-btn,
 .rb-sort-btn,
-.rb-all-btn,
 .rb-corner-btn {
     display: inline-flex;
     align-items: center;
@@ -1446,21 +1440,15 @@ input.routine-search-input:focus {
     margin-left: auto;
 }
 
-.rb-all-btn[hidden] {
-    display: none;
-}
-
 /* Own hovers: the app-wide button:hover is a light grey, and white text on it
    measured 1.54:1. */
-#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-all-btn, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
+#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
     background: var(--browse-control-hover-bg);
     color: var(--browse-surround-text);
 }
 
 #routine-browser :is(.rb-layout-btn, .rb-sort-btn).active,
-#routine-browser :is(.rb-layout-btn, .rb-sort-btn).active:hover,
-#routine-browser .rb-all-btn[aria-expanded="true"],
-#routine-browser .rb-all-btn[aria-expanded="true"]:hover {
+#routine-browser :is(.rb-layout-btn, .rb-sort-btn).active:hover {
     background: var(--color-white);
     color: var(--color-primary-dark);
     border-color: var(--color-white);
@@ -1557,17 +1545,6 @@ input.routine-search-input:focus {
 
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-card {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
-}
-
-/* Home View shows the mode above the list; Focus View does not. */
-.rb-mode-pill {
-    align-self: center;
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-md);
-    background: var(--browse-mode-pill-bg);
-    color: var(--color-primary-dark);
-    font-size: var(--font-size-sm);
-    font-weight: var(--font-weight-semibold);
 }
 
 /* ── the task panel (cards and tiles) ────────────────────────────────────── */
@@ -1695,11 +1672,6 @@ body.dark-mode :is(.rb-card, .rb-tile) {
     color: var(--theme-text-primary);
 }
 
-body.dark-mode .rb-mode-pill {
-    background: var(--theme-modal-header-bg);
-    color: var(--theme-text-primary);
-}
-
 body.dark-mode .rb-panel {
     background: var(--dark-task-panel-bg);
     border: 1px solid var(--dark-overlay-subtle);
@@ -1778,6 +1750,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     margin-bottom: var(--space-1);
     padding: var(--space-1) var(--space-2);
     font-size: var(--font-size-xs);
+}
+
+/* One line a task: a long one ends in "…" rather than wrapping the tile taller. */
+.rb-tile .rb-task > span:last-child {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .rb-tile .rb-check {
@@ -1890,73 +1870,6 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     background: var(--browse-control-bg);
 }
 
-/* ── All routines: a plain jump list ─────────────────────────────────────────
-   Names (and dates in Recent), nothing else. Drops down under its button (top
-   left) on a wide screen, rises from the bottom on a phone. Opaque: it sits
-   over the routine. */
-.rb-jump {
-    position: absolute;
-    top: calc(var(--space-3) + var(--safe-area-top) + var(--browse-top-bar-height));
-    left: var(--space-4);
-    bottom: calc(var(--space-3) + var(--safe-area-bottom));
-    width: min(var(--browse-jump-width), calc(100% - 2 * var(--space-4)));
-    padding: var(--space-2);
-    box-sizing: border-box;
-    border-radius: var(--radius-lg);
-    background: var(--theme-modal-bg);
-    color: var(--theme-modal-text);
-    box-shadow: var(--browse-card-shadow);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    z-index: var(--z-elevated);
-    animation: rb-drop-in var(--transition-normal) ease-out;
-}
-
-.rb-jump[hidden] {
-    display: none;
-}
-
-.rb-jump ul {
-    margin: 0;
-    padding: 0;
-    list-style: none;
-}
-
-.rb-jump-item {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    gap: var(--space-3);
-    padding: var(--space-2-5) var(--space-3);
-    border: none;
-    border-radius: var(--radius-md);
-    background: transparent;
-    color: var(--theme-modal-text);
-    text-align: left;
-    cursor: pointer;
-}
-
-#routine-browser .rb-jump-item:hover,
-#routine-browser .rb-jump-item:focus-visible {
-    background: var(--browse-jump-hover-bg);
-    color: var(--theme-modal-text);
-}
-
-#routine-browser .rb-jump-item:focus-visible {
-    outline-color: var(--color-primary-dark);
-}
-
-.rb-jump-item--current {
-    font-weight: var(--font-weight-bold);
-    background: var(--browse-jump-hover-bg);
-}
-
-.rb-jump-date {
-    flex: 0 0 auto;
-    font-size: var(--font-size-xs);   /* full colour: dimmed, it fell under 4.5:1 */
-}
-
 /* ── widths ──────────────────────────────────────────────────────────────────
    Room for one neighbour each side but not two: the far ones wait past the
    edge. Narrower still (a phone, a small window): no neighbours on screen —
@@ -2012,8 +1925,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
 
     .rb-corner-btn { order: 1; }
     .rb-layout { order: 2; }
-    .rb-sort { order: 3; }
-    .rb-all-btn { order: 4; margin-left: auto; }
+    .rb-sort { order: 3; margin-left: auto; }
 
     /* Icons only for the layout switch on a phone; each is named by its text
        for screen readers (visually hidden, not removed). */
@@ -2024,14 +1936,5 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
         overflow: hidden;
         clip: rect(0 0 0 0);
         white-space: nowrap;
-    }
-
-    .rb-jump {
-        top: auto;
-        left: var(--space-2-5);
-        right: var(--space-2-5);
-        width: auto;
-        max-height: 62vh;
-        animation-name: rb-rise-in;
     }
 }

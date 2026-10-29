@@ -217,17 +217,26 @@ export async function runRoutineBrowserTests(resultsDiv) {
         cleanup();
     });
 
-    await test('All routines: picking one SHOWS it, it does not open it', () => {
-        const { browser, calls } = setup({ active: 'a' });
+    await test('the line under the routine says when it was last used (what the old jump list showed)', () => {
+        const { browser } = setup({ active: 'b' });
         browser.open();
-        dialog().querySelector('.rb-all-btn').click();
-        const items = [...dialog().querySelectorAll('.rb-jump-item')];
-        if (items.length !== 3) throw new Error(`${items.length} items`);
-        if (!items[0].querySelector('.rb-jump-date')) throw new Error('Recent order should show dates');
-        items.find(i => i.dataset.key === 'c').click();
-        if (titleShown() !== 'charlie') throw new Error(`showing ${titleShown()}`);
-        if (calls.opened.length) throw new Error('jump list opened a routine');
-        if (!dialog().querySelector('.rb-jump').hidden) throw new Error('jump list stayed open');
+        const prefix = getLabel('routineBrowser.lastUsed', { vars: { date: '' } }).trim();
+        if (!metaLines()[0].includes(prefix)) throw new Error(`meta "${metaLines()[0]}"`);
+        cleanup();
+    });
+
+    await test('no "All routines" jump list any more — Grid shows them all', () => {
+        const { browser } = setup();
+        browser.open();
+        if (dialog().querySelector('.rb-all-btn, .rb-jump')) throw new Error('the jump list is still there');
+        cleanup();
+    });
+
+    await test('no mode label on the card — the line under it says the mode', () => {
+        const { browser } = setup({ active: 'a' });
+        browser.open();
+        if (front().textContent.includes(getLabel('focusMode.modeAutoName'))) throw new Error('the card still shows its mode');
+        if (!metaLines()[0].includes(getLabel('focusMode.modeAutoName'))) throw new Error('the mode is missing from the line under it');
         cleanup();
     });
 
@@ -369,7 +378,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
     });
 
     // ── the grid ─────────────────────────────────────────────────────────────
-    await test('Grid: a tile per routine, the current one selected; the jump list button goes', () => {
+    await test('Grid: a tile per routine, the current one selected, one Tab stop', () => {
         const { browser, state } = setup({ active: 'c' });
         browser.open();
         dialog().querySelector('.rb-layout-btn[data-layout="grid"]').click();
@@ -377,7 +386,6 @@ export async function runRoutineBrowserTests(resultsDiv) {
         if (tiles.length !== 3) throw new Error(`${tiles.length} tiles`);
         if (tile('c').getAttribute('aria-selected') !== 'true') throw new Error('current routine not selected');
         if (tiles.filter(t => t.tabIndex === 0).length !== 1) throw new Error('the grid is not a single Tab stop');
-        if (!dialog().querySelector('.rb-all-btn').hidden) throw new Error('All routines shown with the grid');
         if (!dialog().querySelector('.rb-stage').hidden) throw new Error('the carousel is still showing');
         if (state.settings.routineBrowserLayout !== 'grid') throw new Error('layout not saved');
         cleanup();

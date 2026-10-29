@@ -1882,9 +1882,6 @@ export const DEFAULT_LABELS = deepFreeze({
         gridAria:       'Routines',
         tileAria:       '{name}, {mode}',
         moreTasks:      '+{count} more',
-        allRoutines:    'All routines',
-        allRoutinesAria: 'Jump to a routine',
-        jumpListAria:   'All routines',
         prev:           'Previous routine',
         next:           'Next routine',
         open:           'Open',
@@ -1896,7 +1893,7 @@ export const DEFAULT_LABELS = deepFreeze({
         onlyOne:        'Only one routine, nothing to switch to yet',
         storageLine:    '{size} · {used} of {total} used',
         createAnother:  'Create another routine',
-        dateUnknown:    'No date',
+        lastUsed:       'Last used {date}',
         announce:       '{name}, {mode}, {position} of {total}',
     },
 

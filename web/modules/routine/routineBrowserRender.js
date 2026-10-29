@@ -19,7 +19,7 @@
  * @module routine/routineBrowserRender
  */
 
-import { DOM_CLASSES, LIMITS } from '../core/constants.js';
+import { DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { getCycleMode } from '../utils/cycleMode.js';
@@ -95,23 +95,15 @@ function currentTag() {
 }
 
 /**
- * Fill a card with a routine as Home View or Focus View draws it: the mode
- * (Home View only), then the task panel with its title.
+ * Fill a card with a routine's task panel and its title, as the task list draws
+ * it. No mode label on the card: the line under it already says the mode (the
+ * user's call, Oct 2026).
  * @param {HTMLElement} card
  * @param {Object} routine
- * @param {{name: string, isCurrent: boolean, focusStyle: boolean}} opts
+ * @param {{name: string, isCurrent: boolean}} opts
  */
-export function fillCard(card, routine, { name, isCurrent, focusStyle }) {
+export function fillCard(card, routine, { name, isCurrent }) {
     card.replaceChildren();
-    card.classList.toggle(DOM_CLASSES.RB_CARD_FOCUS_STYLE, focusStyle);
-
-    if (!focusStyle) {
-        const { emoji, name: modeName } = describeMode(routine);
-        const pill = document.createElement('div');
-        pill.className = DOM_CLASSES.RB_MODE_PILL;
-        pill.textContent = `${modeName} ${emoji}`;
-        card.appendChild(pill);
-    }
 
     const panel = document.createElement('div');
     panel.className = DOM_CLASSES.RB_PANEL;
@@ -140,10 +132,11 @@ export function fillCard(card, routine, { name, isCurrent, focusStyle }) {
  * A grid tile: the routine's name and mode over its first few tasks, in its
  * theme. A listbox option — selecting shows it, it does not open it.
  * @param {Object} routine
- * @param {{key: string, name: string, isCurrent: boolean, activeRoutine: Object|null}} opts
+ * @param {{key: string, name: string, isCurrent: boolean, activeRoutine: Object|null, maxTasks: number}} opts
+ *   maxTasks: tasks shown before "+N more" (fewer on a phone — LIMITS)
  * @returns {HTMLElement}
  */
-export function buildTile(routine, { key, name, isCurrent, activeRoutine }) {
+export function buildTile(routine, { key, name, isCurrent, activeRoutine, maxTasks }) {
     const { emoji, name: modeName } = describeMode(routine);
     const tile = document.createElement('div');
     tile.className = DOM_CLASSES.RB_TILE;
@@ -176,9 +169,9 @@ export function buildTile(routine, { key, name, isCurrent, activeRoutine }) {
     } else {
         const list = document.createElement('ul');
         list.className = DOM_CLASSES.RB_TASKS;
-        tasks.slice(0, LIMITS.ROUTINE_BROWSER_TILE_TASKS).forEach(task => list.appendChild(taskRow(task)));
+        tasks.slice(0, maxTasks).forEach(task => list.appendChild(taskRow(task)));
         panel.appendChild(list);
-        const more = tasks.length - LIMITS.ROUTINE_BROWSER_TILE_TASKS;
+        const more = tasks.length - maxTasks;
         if (more > 0) {
             const moreEl = document.createElement('div');
             moreEl.className = DOM_CLASSES.RB_TILE_MORE;

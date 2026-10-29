@@ -6672,14 +6672,15 @@ async function journeyBrowseRoutines(browser, baseURL) {
             const scrolled = await page.evaluate(() => document.querySelector('#routine-browser .rb-card[data-pos="0"] .rb-tasks').scrollTop);
             record('over a long task list the wheel scrolls the list, not the routine', (await shown(page)) === 'Weekly Review' && scrolled > 0, `showing ${await shown(page)}, scrollTop ${scrolled}`);
 
-            // All routines: shows, does not open.
-            await page.click('#routine-browser .rb-all-btn');
-            await page.waitForTimeout(300);
-            const items = await page.evaluate(() => [...document.querySelectorAll('#routine-browser .rb-jump-item')].map(i => i.textContent));
-            record('All routines lists every routine, with dates in Recent order', items.length === NAMES.length && /\d{4}/.test(items[0]), JSON.stringify(items.slice(0, 2)));
-            await page.click('#routine-browser .rb-jump-item[data-key="r5"]');
-            await page.waitForTimeout(300);
-            record('picking one shows it without opening it', (await shown(page)) === 'Grocery Run' && (await activeTitle(page)) === 'Gym Push Day', `showing ${await shown(page)}, active ${await activeTitle(page)}`);
+            // Under the routine: mode, place and when it was last used — not on the card.
+            const under = await page.evaluate(() => ({
+                meta: document.querySelector('#routine-browser .rb-meta').textContent,
+                onCard: document.querySelector('#routine-browser .rb-card[data-pos="0"]').textContent,
+                jump: !!document.querySelector('#routine-browser .rb-all-btn, #routine-browser .rb-jump')
+            }));
+            record('the line under the routine gives its mode, place and when it was last used', /Manual Cycle/.test(under.meta) && /Last used/.test(under.meta), under.meta);
+            record('…and the card itself carries no mode label', !/Manual Cycle|Auto Cycle|To-Do/.test(under.onCard), under.onCard.slice(0, 80));
+            record('no "All routines" jump list (Grid replaced it)', !under.jump, `jump list present: ${under.jump}`);
 
             // Escape: back to the list it came from; then the list closes to the routine button.
             await page.keyboard.press('Escape');
@@ -6824,6 +6825,14 @@ async function journeyBrowseRoutines(browser, baseURL) {
             });
             record(`${width}px: the grid fits the phone (two or more to a row, nothing sideways, tiles not squashed)`,
                 !grid.sideways && grid.columns && grid.minH > 80, JSON.stringify(grid));
+            const rows = await page.evaluate(() => {
+                const tiles = [...document.querySelectorAll('#routine-browser .rb-tile')];
+                const most = Math.max(...tiles.map(t => t.querySelectorAll('.rb-task').length));
+                const texts = [...document.querySelectorAll('#routine-browser .rb-tile .rb-task > span:last-child')];
+                const oneLine = texts.every(el => el.getBoundingClientRect().height <= parseFloat(getComputedStyle(el).lineHeight || '0') * 1.5 + 1 || el.scrollHeight <= el.clientHeight + 1);
+                return { most, oneLine, nowrap: texts.every(el => getComputedStyle(el).whiteSpace === 'nowrap') };
+            });
+            record(`${width}px: grid tiles show at most 3 tasks, one line each`, rows.most <= 3 && rows.nowrap, JSON.stringify(rows));
             await page.tap('#routine-browser .rb-layout-btn[data-layout="cards"]');
             await page.waitForTimeout(400);
 

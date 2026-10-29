@@ -403,6 +403,7 @@ export const LIMITS = Object.freeze({
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
     ROUTINE_BROWSER_TILE_TASKS: 4, // Browse Routines grid: tasks a tile shows before "+N more"
+    ROUTINE_BROWSER_TILE_TASKS_PHONE: 3, // …on a phone (BREAKPOINTS.BROWSE_PHONE_MAX), where the tiles are narrow and a longer list made the grid too long (the user, Oct 2026)
     MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
     RECURRING_SEARCH_THRESHOLD: 5,  // Show the recurring panel's search only once the list is long enough to scroll past. Below this a search box is chrome, not help — the whole list is already on screen
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
@@ -502,7 +503,8 @@ export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
 // desktop check = `innerWidth >= BREAKPOINTS.DESKTOP_MIN` (negate for not-desktop).
 export const BREAKPOINTS = Object.freeze({
     MOBILE_MAX: 768,    // ≤ 768px → mobile layout
-    DESKTOP_MIN: 1024   // ≥ 1024px → desktop layout
+    DESKTOP_MIN: 1024,  // ≥ 1024px → desktop layout
+    BROWSE_PHONE_MAX: 600 // ≤ 600px → Browse Routines' phone layout; same width as routine-switcher.css §BROWSE ROUTINES' `max-width: 600px`
 });
 
 // ============================================================================
@@ -865,20 +867,17 @@ export const DOM_CLASSES = Object.freeze({
     RB_CLOSE_BTN: 'rb-close-btn',
     RB_SORT: 'rb-sort',
     RB_SORT_BTN: 'rb-sort-btn',
-    RB_ALL_BTN: 'rb-all-btn',
     RB_LAYOUT: 'rb-layout',
     RB_LAYOUT_BTN: 'rb-layout-btn',
     RB_STAGE: 'rb-stage',
     RB_TRACK: 'rb-track',
     RB_NAV_BTN: 'rb-nav-btn',
     RB_CARD: 'rb-card',
-    RB_CARD_FOCUS_STYLE: 'rb-card--focus-style',
     RB_GRID: 'rb-grid',
     RB_TILE: 'rb-tile',
     RB_TILE_HEAD: 'rb-tile-head',
     RB_TILE_NAME: 'rb-tile-name',
     RB_TILE_MORE: 'rb-tile-more',
-    RB_MODE_PILL: 'rb-mode-pill',
     RB_PANEL: 'rb-panel',
     RB_PANEL_TITLE: 'rb-panel-title',
     RB_CURRENT_TAG: 'rb-current-tag',
@@ -894,10 +893,6 @@ export const DOM_CLASSES = Object.freeze({
     RB_ACTIONS: 'rb-actions',
     RB_OPEN_BTN: 'rb-open-btn',
     RB_CREATE_BTN: 'rb-create-btn',
-    RB_JUMP: 'rb-jump',
-    RB_JUMP_ITEM: 'rb-jump-item',
-    RB_JUMP_ITEM_CURRENT: 'rb-jump-item--current',
-    RB_JUMP_DATE: 'rb-jump-date',
     SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
     SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
     // ---- Visibility ----
@@ -1323,7 +1318,6 @@ export const DOM_IDS = Object.freeze({
     OPEN_SHORTCUTS_MODAL: 'open-shortcuts-modal',   // main menu → Keyboard Shortcuts
     ROUTINE_BROWSER: 'routine-browser',              // Browse Routines — one routine at a time (routineBrowser.js)
     ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
-    ROUTINE_BROWSER_JUMP_LIST: 'routine-browser-jump-list',
     ROUTINE_BROWSER_GRID: 'routine-browser-grid',
     SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
     ROUTINE_OPEN_VIEW_SELECT: 'routine-open-view-select', // Settings → When you open routines, show: List / Browse
