@@ -116,6 +116,9 @@ export function _resetForTesting() {
     _initialized.fontSizeSelect = false;
     _initialized.routineOpenViewRadios = false;
     _initialized.singleKeyShortcutsToggle = false;
+    _initialized.oneSectionAtATimeToggle = false;
+    _initialized.scrollToNewTaskToggle = false;
+    _initialized.scrollOnLoadToggle = false;
     _initialized.notificationsToggle = false;
 }
 
@@ -140,6 +143,9 @@ const _initialized = {
     fontSizeSelect: false,
     routineOpenViewRadios: false,
     singleKeyShortcutsToggle: false,
+    oneSectionAtATimeToggle: false,
+    scrollToNewTaskToggle: false,
+    scrollOnLoadToggle: false,
     notificationsToggle: false,
 };
 
@@ -634,6 +640,13 @@ export function setupOneSectionAtATimeToggle() {
         toggle.checked = usesExclusiveSections(AppState.get()?.settings);
     }
 
+    // Wired once: initAllToggles() runs on every Settings open, and a fresh
+    // handler per call is never removed (safeAddEventListener drops only the
+    // same function), so each open stacked another save. The value above is
+    // re-synced every time.
+    if (_initialized.oneSectionAtATimeToggle) return;
+    _initialized.oneSectionAtATimeToggle = true;
+
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
         const AppState = _deps.AppState();
@@ -836,6 +849,13 @@ export function setupScrollToNewTaskToggle() {
 
     scrollToggle.checked = scrollEnabled;
 
+    // Wired once: initAllToggles() runs on every Settings open, and a fresh
+    // handler per call is never removed (safeAddEventListener drops only the
+    // same function), so each open stacked another save. The value above is
+    // re-synced every time.
+    if (_initialized.scrollToNewTaskToggle) return;
+    _initialized.scrollToNewTaskToggle = true;
+
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
 
@@ -878,6 +898,13 @@ export function setupScrollOnLoadToggle() {
     }
 
     scrollToggle.checked = scrollEnabled;
+
+    // Wired once: initAllToggles() runs on every Settings open, and a fresh
+    // handler per call is never removed (safeAddEventListener drops only the
+    // same function), so each open stacked another save. The value above is
+    // re-synced every time.
+    if (_initialized.scrollOnLoadToggle) return;
+    _initialized.scrollOnLoadToggle = true;
 
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;

@@ -339,6 +339,53 @@ export async function runSettingsUIManagerTests(resultsDiv) {
 
 
     // ============================================
+    // 🔁 One save per flip, however many times Settings has opened
+    // initAllToggles() runs on every Settings open. These three built a fresh
+    // handler each call, which safeAddEventListener (production's removes only
+    // the SAME function) never dropped: N opens → N saves per flip.
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🔁 One Save Per Flip</h4>';
+
+    const TOGGLES_WIRED_ON_EVERY_OPEN = [
+        ['setupOneSectionAtATimeToggle', 'settings-toggle-one-section', 'oneMenuSectionAtATime'],
+        ['setupScrollToNewTaskToggle', 'toggle-scroll-to-new-task', 'scrollToNewTask'],
+        ['setupScrollOnLoadToggle', 'toggle-scroll-on-load', 'scrollOnLoad']
+    ];
+    for (const [setupName, id, settingKey] of TOGGLES_WIRED_ON_EVERY_OPEN) {
+        await test(`${setupName}: Settings opened three times, one flip saves once (and still re-syncs)`, async () => {
+            mod._resetForTesting();
+            const toggle = document.createElement('input');
+            toggle.type = 'checkbox';
+            toggle.id = id;
+            document.body.appendChild(toggle);
+            const state = { settings: { [settingKey]: false } };
+            let updates = 0;
+            mod.setSettingsUIManagerDependencies({
+                AppState: () => ({ isReady: () => true, get: () => state, update: async (fn) => { updates++; fn(state); } }),
+                // As production's GlobalUtils.safeAddEventListener: drop the same function, then add.
+                safeAddEventListener: (el, ev, fn) => { el.removeEventListener(ev, fn); el.addEventListener(ev, fn); },
+                showNotification: () => {}
+            });
+            try {
+                mod[setupName]();
+                mod[setupName]();
+                mod[setupName]();
+                toggle.checked = !toggle.checked;
+                toggle.dispatchEvent(new Event('change'));
+                await new Promise(r => setTimeout(r, 0));
+                if (updates !== 1) throw new Error(`one flip saved ${updates} times`);
+                if (state.settings[settingKey] !== toggle.checked) throw new Error('the flip was not saved');
+                // The guard skips the wiring only: a later open still shows the stored value.
+                state.settings[settingKey] = !toggle.checked;
+                mod[setupName]();
+                if (toggle.checked !== state.settings[settingKey]) throw new Error('a later open did not re-sync the toggle');
+            } finally {
+                toggle.remove();
+            }
+        });
+    }
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
