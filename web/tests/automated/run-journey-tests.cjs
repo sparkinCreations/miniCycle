@@ -6328,10 +6328,14 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
         // The list, from the main menu.
         await openMenu(page);
         // openMenu expands the sections; the grid is visibility:hidden until
-        // its transition ends, and a hidden button cannot take focus.
+        // its transition ends, and a hidden button cannot take focus. And the
+        // menu moves focus to its first control on a short timer
+        // (uiBoot FOCUS_DELAY_SHORT): focusing before that fired lost the race
+        // under load — the timer moved focus to About and Enter opened that.
         await page.waitForFunction(() => {
             const b = document.getElementById('open-shortcuts-modal');
-            return b && getComputedStyle(b).visibility === 'visible';
+            return b && getComputedStyle(b).visibility === 'visible'
+                && !!document.activeElement?.closest?.('#main-menu');
         }, null, { timeout: 5000 });
         await page.evaluate(() => document.getElementById('open-shortcuts-modal')?.focus());
         await page.keyboard.press('Enter');
