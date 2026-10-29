@@ -1908,6 +1908,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
 .rb-nav-btn:disabled {
     opacity: 0.3;
     cursor: default;
+    border-style: none;   /* buttons.css dashes every disabled button's border; this one has none */
 }
 
 #routine-browser .rb-nav-btn:disabled:hover {
@@ -1943,15 +1944,30 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     cursor: pointer;
 }
 
+/* The List's Open button (.mini-cycle-switch-btn.open-btn), so the same action
+   looks the same in both views — bigger here, the main action of a full-screen
+   view. Its text is large (20px bold, WCAG's 3:1 tier): white on the gradient's
+   light end measures about 3.7:1, short of the 4.5:1 normal text needs. */
 .rb-open-btn {
     border: none;
-    background: var(--color-white);
-    color: var(--color-primary-dark);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--color-white);
+    font-size: var(--font-size-xl);
+    box-shadow: var(--shadow-button);
+    transition: transform var(--transition-fast) ease, box-shadow var(--transition-fast) ease, filter var(--transition-fast) ease;
 }
 
 #routine-browser .rb-open-btn:hover {
-    background: var(--color-blue-pale);
-    color: var(--color-primary-dark);
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+    color: var(--color-white);
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-button-hover);
+}
+
+#routine-browser .rb-open-btn:active {
+    transform: translateY(0) scale(0.98);
+    box-shadow: var(--shadow-sm);
 }
 
 .rb-create-btn {

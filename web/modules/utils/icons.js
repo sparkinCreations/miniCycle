@@ -72,11 +72,12 @@ const ICONS = {
 
     // Folder and Cards - the two ways to open routines, so they are never
     // confused: 'folder' is the Open Routine LIST (the routine button's icon
-    // since it shipped), 'cards' is BROWSE ROUTINES, a stack of cards with the
-    // front one solid. Fill-only on purpose: `.routine-switcher-btn svg` sets
+    // since it shipped), 'cards' is BROWSE ROUTINES: one card in front with
+    // one peeking each side, as its Cards layout shows them (the user's drawing,
+    // Oct 2026 — the old stacked pair read as "copy"). Fill-only on purpose: `.routine-switcher-btn svg` sets
     // `fill`, which would fill in a stroked outline.
     'folder': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
-    'cards': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7.5" y="2" width="14" height="17" rx="2.5"/><path d="M3 7.5h2.4V19a1.6 1.6 0 0 0 1.6 1.6h10.5V23H7a4 4 0 0 1-4-4z"/></svg>',
+    'cards': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M9 2h6a3 3 0 0 1 3 3v14a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V5a3 3 0 0 1 3-3zm.5 2A1.5 1.5 0 0 0 8 5.5v13A1.5 1.5 0 0 0 9.5 20h5a1.5 1.5 0 0 0 1.5-1.5v-13A1.5 1.5 0 0 0 14.5 4z"/><path fill-rule="evenodd" d="M6 6H4.5A3 3 0 0 0 1.5 9v6a3 3 0 0 0 3 3H6v-2H4.5a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1H6zm12 0h1.5a3 3 0 0 1 3 3v6a3 3 0 0 1-3 3H18v-2h1.5a1 1 0 0 0 1-1V9a1 1 0 0 0-1-1H18z"/></svg>',
 
     // Grid - Browse Routines' grid layout (beside 'cards' for its card layout)
     'grid': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="3" y="3" width="8" height="8" rx="1.8"/><rect x="13" y="3" width="8" height="8" rx="1.8"/><rect x="3" y="13" width="8" height="8" rx="1.8"/><rect x="13" y="13" width="8" height="8" rx="1.8"/></svg>',
