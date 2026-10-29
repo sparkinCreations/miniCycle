@@ -6382,7 +6382,7 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
 // routine was its own Tab stop, the arrows never changed the preview, Enter on a
 // row only selected it, and the search box had no way into its results. On a
 // phone the routine just tapped scrolled out of sight under its own preview,
-// "A-Z" wrapped onto two lines, and the actions were unlabelled icons.
+// and "A-Z" wrapped onto two lines.
 async function journeySwitcherManyRoutines(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const NAMES = ['Morning Routine', 'Evening Wind-down', 'Gym Push Day', 'Gym Pull Day', 'Gym Legs', 'Weekly Review',
@@ -6537,9 +6537,17 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
                 return { visible: r.bottom > lb.top + 4 && r.top < lb.bottom - 4, name: sel.dataset.cycleName };
             });
             record(`${width}px: the routine just tapped stays in view once its preview opens`, chosen.visible, JSON.stringify(chosen));
-            const labels = await page.evaluate(() => [...document.querySelectorAll('#switch-items-row .switch-buttons')].filter(b => b.offsetParent)
-                .map(b => { const l = b.querySelector('.switch-btn-label'); return l && l.offsetParent && l.scrollWidth <= l.clientWidth + 1 ? l.textContent : `(${l ? 'clipped' : 'none'})`; }));
-            record(`${width}px: the routine actions are labelled, not icons alone`, labels.length >= 4 && labels.every(t => !t.startsWith('(')), JSON.stringify(labels));
+            // Icons only on a phone, by design — each names itself on a long press
+            // and to a screen reader. They must share one line, unclipped.
+            const actions = await page.evaluate(() => {
+                const row = document.getElementById('switch-items-row');
+                const btns = [...row.querySelectorAll('.switch-buttons')].filter(b => b.offsetParent);
+                return { count: btns.length, overflow: row.scrollWidth > row.clientWidth + 1,
+                    oneLine: new Set(btns.map(b => Math.round(b.getBoundingClientRect().top))).size === 1,
+                    named: btns.every(b => !!b.getAttribute('aria-label')) };
+            });
+            record(`${width}px: the routine actions fit on one line, each with a name`,
+                actions.count >= 4 && !actions.overflow && actions.oneLine && actions.named, JSON.stringify(actions));
         } catch (e) {
             console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
             failures.push(`harness error (${width}px): ${e.message}`);

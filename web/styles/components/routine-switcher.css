@@ -1219,25 +1219,13 @@ input.routine-search-input:focus {
     .switch-buttons {
         flex: 1 1 0;
         min-width: 0;
-        max-width: 72px;
-        padding-left: var(--space-0-5);
-        padding-right: var(--space-0-5);
+        max-width: 56px;
     }
-
-    /* Labels back under the icons (they were display:none here). Icon-only,
-       Duplicate / Rename / Delete / Download / Theme were guesswork on a
-       touch screen, where there is no hover title to explain them (Oct 2026).
-       A size below --font-size-xs: at 13px "Duplicate" needed ~60px and the
-       buttons have ~50-60px. */
-    .switch-btn-label {
-        display: block;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        letter-spacing: 0;
-        font-size: calc(var(--font-size-xs) - 2px);
-    }
+    /* Icons only on a phone, by design: each one names itself on a long press
+       (routineSwitcher._attachActionHints → attachLongPressHint) and carries
+       an aria-label. Labels were tried in Oct 2026 and dropped: with the 🎨
+       Theme button unlocked there are five, "Download" was cut to "Downlo…"
+       even at 390px, and the taller emoji knocked the row out of line. */
 }
 
 @media (max-width: 480px) {
