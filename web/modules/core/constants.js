@@ -914,6 +914,7 @@ export const DOM_CLASSES = Object.freeze({
     // Browse Routines (routine/routineBrowser.js). Own classes on purpose — NOT
     // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
     // drag, counts) and would sweep up the read-only preview's copies.
+    KEYBOARD_ONLY: 'keyboard-only',   // hidden on phones, which have no keyboard (modals.css, with the Keyboard Shortcuts items)
     ROUTINE_SWITCHER_BTN_LABEL: 'routine-switcher-btn-label',   // "Routines" beside the Home View routine button's icon when it opens Browse
     ROUTINE_LIST_EXPANDED: 'routine-list-expanded',   // on .mini-cycle-switch-modal-content: the routine list has the window
     RB_TOP: 'rb-top',

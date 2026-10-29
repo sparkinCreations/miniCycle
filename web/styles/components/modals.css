@@ -230,10 +230,16 @@ dialog.due-date-picker-overlay[open] {
 }
 
 /* Phones have no keyboard to use these with; the item would only add noise
-   to the menu there. A tablet keeps it — it may have a keyboard attached. */
-@media (hover: none) and (pointer: coarse) and (max-width: 600px) {
+   to the menu there. A tablet keeps it — it may have a keyboard attached.
+   "Phone" is the SHORT side, not the width: a phone held sideways is wider
+   than 600px and showed the item again (Oct 2026). The Settings switch for
+   single-key shortcuts goes with it — it does nothing without a keyboard.
+   Alt+? still opens the list, and the user manual has every shortcut. */
+@media (hover: none) and (pointer: coarse) and (max-width: 600px),
+       (hover: none) and (pointer: coarse) and (max-height: 600px) {
     #open-shortcuts-modal,
-    .focus-mode-menu-item[data-action="keyboard-shortcuts"] {
+    .focus-mode-menu-item[data-action="keyboard-shortcuts"],
+    .settings-option.keyboard-only {
         display: none;
     }
 }

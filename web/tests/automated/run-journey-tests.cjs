@@ -1892,6 +1892,44 @@ async function journeyFirstRunLinks(browser, baseURL) {
     return { name: 'first-run screen links: company, product site, manual', failures };
 }
 
+// Keyboard-only items — the Keyboard Shortcuts menu items and the single-key
+// switch in Settings — are hidden on a phone, held either way (sideways it is
+// wider than 600px, which used to bring them back), and kept on a tablet (it
+// may have a keyboard) and a computer.
+async function journeyKeyboardOnlyItems(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const DEVICES = [
+        ['phone, upright', { width: 390, height: 844 }, true, false],
+        ['phone, sideways', { width: 844, height: 390 }, true, false],
+        ['tablet', { width: 820, height: 1180 }, true, true],
+        ['computer', { width: 1280, height: 800 }, false, true]
+    ];
+    for (const [name, viewport, touch, shown] of DEVICES) {
+        const context = await browser.newContext({ viewport, isMobile: touch, hasTouch: touch });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
+            await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+            await page.waitForFunction(() => !!document.getElementById('toggle-single-key-shortcuts') && !!document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]'), null, { timeout: 20000 });
+            const seen = await page.evaluate(() => Object.fromEntries([
+                ['menu', document.getElementById('open-shortcuts-modal')],
+                ['focusMenu', document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]')],
+                ['setting', document.getElementById('toggle-single-key-shortcuts').closest('label')]
+            ].map(([k, el]) => [k, getComputedStyle(el).display !== 'none'])));
+            const ok = Object.values(seen).every(v => v === shown);
+            record(`${name}: the Keyboard Shortcuts items and the single-key switch are ${shown ? 'shown' : 'hidden'}`, ok, JSON.stringify(seen));
+        } catch (e) {
+            failures.push(`harness error (${name}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'keyboard-only items: hidden on a phone either way up, kept on tablets and computers', failures };
+}
+
 async function journeyFirstRunRestore(browser, baseURL) {
     const { failures, record } = makeRecorder();
 
@@ -7204,6 +7242,7 @@ const JOURNEYS = [
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
     { name: 'first-run screen links: company, product site, manual', fn: journeyFirstRunLinks },
+    { name: 'keyboard-only items: hidden on a phone either way up, kept on tablets and computers', fn: journeyKeyboardOnlyItems },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
