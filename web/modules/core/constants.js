@@ -156,6 +156,7 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_NEXT_TICK: 20,           // 20ms - Focus a control just after a dialog/modal renders
     MODAL_ENTER_ARM_DELAY: 100,    // 100ms - Arm the Enter-anywhere confirm handler after a modal opens (avoids catching the opening keypress)
     IDLE_CALLBACK_FALLBACK: 100,   // 100ms - setTimeout fallback where requestIdleCallback is unavailable
+    STORAGE_QUOTA_DETECT_DELAY: 500, // 500ms - storage-bar quota probe waits this long before asking for idle time, so the routine switcher's list paints first
     TRANSITION_FALLBACK: 300,      // 300ms - Safety fallback when a CSS transitionend never fires (fast transitions)
     EDIT_OVERLAY_REMOVE: 500,      // 500ms - Edit-focus overlay removal fallback (matches its CSS transition)
     EXPORT_FALLBACK_SUCCESS: 3000, // 3000ms - Assume export saved if no focus/save-dialog signal arrives by then

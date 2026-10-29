@@ -755,6 +755,33 @@ export class RoutineSwitcher {
                 miniCycleList.setAttribute('aria-activedescendant', listItem.id);
             }
         }
+        this._syncListTabStop();
+    }
+
+    /**
+     * The list is ONE Tab stop (roving tabindex): the selected row if it is
+     * showing, else the first row showing. Every row used to be its own stop,
+     * so getting past 25 routines took 25 Tabs (Oct 2026); inside the list
+     * the arrow keys move.
+     * @private
+     */
+    _syncListTabStop() {
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+        if (!miniCycleList) return;
+        const rows = Array.from(miniCycleList.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM));
+        const showing = rows.filter(row => row.style.display !== 'none');
+        const stop = showing.find(row => row.classList.contains(DOM_CLASSES.SELECTED)) || showing[0] || null;
+        rows.forEach(row => { row.tabIndex = row === stop ? 0 : -1; });
+    }
+
+    /**
+     * The first row the search and filter leave showing, or null.
+     * @private
+     */
+    _firstShowingRow() {
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+        return Array.from(miniCycleList?.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM) || [])
+            .find(row => row.style.display !== 'none') || null;
     }
 
     /**
@@ -771,6 +798,13 @@ export class RoutineSwitcher {
 
         // Update preview
         this.updatePreview(cycleKey);
+
+        // Revealing the actions and preview grows the card, and on a phone the
+        // list shrinks to a row or two — the row just chosen ended up scrolled
+        // out of sight, with its preview showing under someone else's name
+        // (Oct 2026). Bring it back once the new layout is in.
+        const chosenRow = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST)?.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
+        if (chosenRow) requestAnimationFrame(() => chosenRow.scrollIntoView({ block: 'nearest' }));
 
         // Refresh theme picker if open
         const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
@@ -795,6 +829,7 @@ export class RoutineSwitcher {
         // Clear the listbox activedescendant
         const listbox = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
         if (listbox) listbox.removeAttribute('aria-activedescendant');
+        this._syncListTabStop();
         // Hide actions row
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         if (switchItemsRow) switchItemsRow.style.display = 'none';
@@ -874,13 +909,18 @@ export class RoutineSwitcher {
         const prevRecent = modalContent?.querySelector(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
         if (prevRecent) prevRecent.remove();
 
-        // Delegated arrow key navigation
+        // Delegated arrow key navigation. Selection follows focus: arrowing to a
+        // routine used to move focus only, so the preview and the actions never
+        // changed and Enter on the new row only selected it (Oct 2026).
         this.deps.safeAddEventListener(miniCycleList, "keydown", (event) => {
             const item = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-            if (!item) return;
-            handleVerticalArrowNav(event, miniCycleList, DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM, {
+            // Arrow keys inside the inline rename box move the caret, never the selection.
+            if (!item || event.target.closest(DOM_SELECTORS.CYCLE_ITEM_EDIT_INPUT)) return;
+            const moved = handleVerticalArrowNav(event, miniCycleList, DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM, {
                 wrap: false, skipHidden: true
             });
+            const now = moved ? document.activeElement?.closest?.(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM) : null;
+            if (now && now !== item && now.dataset.cycleKey) this._selectRoutine(now.dataset.cycleKey);
         });
 
         // Empty state
@@ -913,6 +953,7 @@ export class RoutineSwitcher {
         // search was retyped (Oct 2026).
         const searchInput = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_INPUT);
         if (searchInput?.value.trim()) this.filterRoutineList(searchInput.value);
+        this._syncListTabStop();
 
         this.deps.updateReminderButtons();
     }
@@ -999,7 +1040,7 @@ export class RoutineSwitcher {
         const listItem = document.createElement("div");
         listItem.classList.add(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM);
         listItem.id = `routine-option-${index}`;
-        listItem.setAttribute("tabindex", "0");
+        listItem.setAttribute("tabindex", "-1"); // _syncListTabStop picks the one stop
         listItem.setAttribute("role", "option");
         listItem.dataset.cycleName = cycleData.title || cycleKey;
         listItem.dataset.cycleKey = cycleKey;
@@ -1104,7 +1145,13 @@ export class RoutineSwitcher {
         // Keyboard activation
         listItem._keyHandler = (e) => {
             if (fromRenameBox(e)) return;
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter') {
+                // Opens the focused routine. It used to take two presses on a
+                // row that was not already selected — the first only selected.
+                e.preventDefault();
+                this._selectRoutine(cycleKey);
+                this.confirmMiniCycle();
+            } else if (e.key === ' ') {
                 e.preventDefault();
                 if (listItem.classList.contains(DOM_CLASSES.SELECTED)) {
                     this.confirmMiniCycle();
@@ -1285,7 +1332,43 @@ export class RoutineSwitcher {
             searchInput.addEventListener('input', searchInput._inputHandler);
         }
 
-        // Don't auto-focus search — let the user tap it if they want to search
+        // From the search box into the results (once). Down Arrow moves to the
+        // first match; Enter opens it when it is the only one, otherwise moves
+        // to it. Before, neither key did anything here: a keyboard user who had
+        // just typed a search had to Tab past the filter and three sort buttons
+        // to reach the routine they had found (Oct 2026).
+        if (!searchInput._keyHandler) {
+            searchInput._keyHandler = (e) => {
+                if (e.key !== 'ArrowDown' && e.key !== 'Enter') return;
+                const first = this._firstShowingRow();
+                if (!first?.dataset.cycleKey) return;
+                e.preventDefault();
+                const showing = Array.from(this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST)
+                    .querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)).filter(row => row.style.display !== 'none');
+                this._selectRoutine(first.dataset.cycleKey);
+                if (e.key === 'Enter' && showing.length === 1) {
+                    this.confirmMiniCycle();
+                } else {
+                    first.focus();
+                }
+            };
+            searchInput.addEventListener('keydown', searchInput._keyHandler);
+        }
+
+        // Keyboard and mouse: start in the search box, the way most pickers do.
+        // Not on touch — focusing would throw the on-screen keyboard over the
+        // list before the user has asked to type.
+        if (globalThis.matchMedia?.('(hover: hover) and (pointer: fine)').matches) {
+            requestAnimationFrame(() => {
+                const modal = this.deps.getModal('routineSwitcher');
+                const active = document.activeElement;
+                // Only from where showModal() left focus (the card itself) —
+                // never pull it away from somewhere the user already went.
+                const untouched = !active || active === document.body || active === modal
+                    || active.matches?.(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+                if (modal?.open && untouched) searchInput.focus();
+            });
+        }
     }
 
     /**
@@ -1329,6 +1412,8 @@ export class RoutineSwitcher {
         if (selectedItem && selectedItem.style.display === 'none') {
             this._deselectRoutine();
         }
+        // The Tab stop must sit on a row that is still showing.
+        this._syncListTabStop();
     }
 
     /**

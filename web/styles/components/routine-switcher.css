@@ -242,6 +242,9 @@ input.routine-search-input:focus {
 }
 
 .routine-sort-btn {
+    /* "A-Z" broke onto two lines on a phone (Oct 2026) — a label this short
+       should never wrap. */
+    white-space: nowrap;
     padding: var(--space-1) var(--space-2-5);
     font-size: var(--font-size-xs);
     border: 1px solid var(--border-blue-subtle-hover);
@@ -1216,7 +1219,24 @@ input.routine-search-input:focus {
     .switch-buttons {
         flex: 1 1 0;
         min-width: 0;
-        max-width: 56px;
+        max-width: 72px;
+        padding-left: var(--space-0-5);
+        padding-right: var(--space-0-5);
+    }
+
+    /* Labels back under the icons (they were display:none here). Icon-only,
+       Duplicate / Rename / Delete / Download / Theme were guesswork on a
+       touch screen, where there is no hover title to explain them (Oct 2026).
+       A size below --font-size-xs: at 13px "Duplicate" needed ~60px and the
+       buttons have ~50-60px. */
+    .switch-btn-label {
+        display: block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        letter-spacing: 0;
+        font-size: calc(var(--font-size-xs) - 2px);
     }
 }
 
@@ -1247,5 +1267,25 @@ input.routine-search-input:focus {
 
     .routine-filter-select {
         max-width: 90px;
+    }
+
+    /* The filter + "Sort:" + three buttons need ~312px and a phone card
+       gives 256-308px. Tighter spacing fits them from ~360px up; below that
+       the sort group drops onto its own line as a unit, instead of running
+       off the card or squeezing "A-Z" onto two lines (Oct 2026). */
+    .routine-sort-filter-row {
+        flex-wrap: wrap;
+        row-gap: var(--space-1-5);
+        gap: var(--space-1-5);
+    }
+    .routine-sort-controls {
+        gap: var(--space-1);
+        flex-wrap: nowrap;
+    }
+    .routine-sort-label {
+        margin-right: 0;
+    }
+    .routine-sort-btn {
+        padding: var(--space-1) var(--space-1-5);
     }
 }

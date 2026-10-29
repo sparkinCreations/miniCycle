@@ -6374,7 +6374,184 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
     return { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', failures };
 }
 
+// ── Open Routine with many routines: speed, keyboard, phone layout ─────────
+// Measured Oct 2026 with 25 routines. The first open after any update showed an
+// EMPTY list for ~2s on desktop: the storage bar's quota probe wrote 100KB,
+// 200KB, 300KB… until full, its cache died on every app version, and its idle
+// callback ran ahead of the list's own 50ms render. From the keyboard every
+// routine was its own Tab stop, the arrows never changed the preview, Enter on a
+// row only selected it, and the search box had no way into its results. On a
+// phone the routine just tapped scrolled out of sight under its own preview,
+// "A-Z" wrapped onto two lines, and the actions were unlabelled icons.
+async function journeySwitcherManyRoutines(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const NAMES = ['Morning Routine', 'Evening Wind-down', 'Gym Push Day', 'Gym Pull Day', 'Gym Legs', 'Weekly Review',
+        'Grocery Run', 'Beach Packing', 'Business Trip Packing', 'Opening Shift', 'Closing Shift', 'Nurse Rounds',
+        'Pre-flight', 'Kitchen Clean', 'Bathroom Clean', 'Laundry', 'Calculus', 'Spanish', 'Meal Prep', 'Car Care'];
+    const seedMany = async (page, { quota } = {}) => {
+        const doc = await page.evaluate(({ NAMES, quota }) => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const base = d.data.routine[d.appState.activeRoutineId];
+            const out = {};
+            NAMES.forEach((n, i) => {
+                const r = JSON.parse(JSON.stringify(base));
+                r.title = n;
+                r.autoReset = i % 3 === 0;
+                r.deleteCheckedTasks = i % 3 === 2;
+                r.tasks = Array.from({ length: 2 + (i % 6) }, (_, k) => ({ ...base.tasks[0], id: `m${i}t${k}`, text: `${n} step ${k + 1}`, completed: false }));
+                r.history = { events: [], maxEvents: 100 };
+                out['m' + i] = r;
+            });
+            d.data.routine = out;
+            d.appState.activeRoutineId = 'm0';
+            d.settings = d.settings || {};
+            d.settings.focusModeActive = false;
+            d.metadata = d.metadata || {};
+            if (quota === 'none') delete d.metadata.storageQuota;
+            else d.metadata.storageQuota = { detectedBytes: 10 * 1024 * 1024, detectedAt: Date.now(), detectedVersion: '0.0.1', method: 2 };
+            return JSON.stringify(d);
+        }, { NAMES, quota });
+        await reloadWithSeed(page, doc);
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        await page.evaluate(() => document.querySelectorAll('.notification .close-btn').forEach(b => b.click()));
+    };
+    const openTimed = (page) => page.evaluate(() => new Promise((resolve) => {
+        const t0 = performance.now();
+        document.getElementById('routine-switcher-btn').click();
+        const tick = () => {
+            if (document.querySelectorAll('#miniCycleList .mini-cycle-switch-item').length > 0) return resolve(Math.round(performance.now() - t0));
+            if (performance.now() - t0 > 6000) return resolve(9999);
+            requestAnimationFrame(tick);
+        };
+        tick();
+    }));
+    const closeSwitcher = async (page) => {
+        await page.evaluate(() => document.getElementById('miniCycleSwitchClose')?.click());
+        await page.waitForTimeout(700);
+    };
+    const active = (page) => page.evaluate(() => {
+        const a = document.activeElement;
+        return a?.id === 'routine-search-input' ? 'search' : (a?.dataset?.cycleName || a?.id || a?.tagName);
+    });
+
+    // ---- desktop
+    {
+        const { context, page } = await openFresh(browser, baseURL);
+        try {
+            // A cache written by an older APP version must be kept: the quota is the browser's.
+            await seedMany(page, { quota: 'old-app-version' });
+            const kept = await openTimed(page);
+            await page.waitForTimeout(1500);
+            const cache = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).metadata.storageQuota);
+            record('a quota cached by an older app version is kept (no re-probe after an update)',
+                cache && cache.detectedVersion === '0.0.1', JSON.stringify(cache));
+            record('the list fills at once when the quota is cached', kept < 500, `${kept}ms`);
+            await closeSwitcher(page);
+
+            // No cache at all: the probe runs, but never ahead of the list.
+            await seedMany(page, { quota: 'none' });
+            const fresh = await openTimed(page);
+            record('the list fills at once even when the quota has to be detected', fresh < 500, `${fresh}ms (was ~2100ms)`);
+            await page.waitForTimeout(1500);
+            const detected = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).metadata.storageQuota);
+            record('…and the detection still runs afterwards', detected && detected.method === 2, JSON.stringify(detected));
+            await page.waitForTimeout(300);
+
+            record('opening puts keyboard focus in the search box (mouse/keyboard device)', (await active(page)) === 'search', `focus on ${await active(page)}`);
+            const tabbable = await page.evaluate(() => [...document.querySelectorAll('#miniCycleList .mini-cycle-switch-item')].filter(r => r.tabIndex === 0).length);
+            record('the routine list is a single Tab stop', tabbable === 1, `${tabbable} rows are Tab stops`);
+
+            await page.keyboard.type('gym');
+            await page.waitForTimeout(300);
+            await page.keyboard.press('ArrowDown');
+            await page.waitForTimeout(400);
+            const onFirst = await active(page);
+            const preview1 = await page.evaluate(() => document.getElementById('desktop-preview-title').textContent);
+            record('Down Arrow in the search box moves to the first match and previews it', onFirst === 'Gym Legs' && preview1 === 'Gym Legs', `focus ${onFirst}, preview ${preview1}`);
+            await page.keyboard.press('ArrowDown');
+            await page.waitForTimeout(400);
+            const preview2 = await page.evaluate(() => document.getElementById('desktop-preview-title').textContent);
+            record('arrowing through the list updates the preview', preview2 === (await active(page)) && preview2 !== preview1, `preview ${preview2}`);
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(1500);
+            const afterEnter = await page.evaluate(() => ({ open: document.getElementById('routine-switcher-modal').open, title: document.getElementById('mini-cycle-title').textContent }));
+            record('one Enter opens the focused routine', !afterEnter.open && afterEnter.title === preview2, JSON.stringify(afterEnter));
+
+            await page.evaluate(() => document.getElementById('routine-switcher-btn').click());
+            await page.waitForTimeout(700);
+            await page.keyboard.type('weekly');
+            await page.waitForTimeout(300);
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(1500);
+            const single = await page.evaluate(() => ({ open: document.getElementById('routine-switcher-modal').open, title: document.getElementById('mini-cycle-title').textContent }));
+            record('Enter in the search box opens the only match', !single.open && single.title === 'Weekly Review', JSON.stringify(single));
+
+            // A real close and reopen starts with an empty search.
+            await page.evaluate(() => document.getElementById('routine-switcher-btn').click());
+            await page.waitForTimeout(700);
+            await page.keyboard.type('gym');
+            await closeSwitcher(page);
+            await page.evaluate(() => document.getElementById('routine-switcher-btn').click());
+            await page.waitForTimeout(700);
+            const reopened = await page.evaluate(() => ({ q: document.getElementById('routine-search-input').value, showing: [...document.querySelectorAll('#miniCycleList .mini-cycle-switch-item')].filter(r => r.style.display !== 'none').length }));
+            record('closing and reopening clears the search', reopened.q === '' && reopened.showing === NAMES.length, JSON.stringify(reopened));
+            await closeSwitcher(page);
+        } catch (e) {
+            console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+            failures.push(`harness error (desktop): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+
+    // ---- phone sizes
+    for (const width of [320, 390]) {
+        const context = await browser.newContext({ viewport: { width, height: 780 }, isMobile: true, hasTouch: true });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
+            await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+            await page.waitForFunction(() => { const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); return p && Object.keys(p.data?.routine || {}).length > 0; }, null, { timeout: 20000 });
+            await page.waitForTimeout(1500);
+            await seedMany(page);
+            await page.evaluate(() => document.getElementById('routine-switcher-btn').click());
+            await page.waitForTimeout(900);
+            record(`${width}px: no automatic focus in search on touch (no surprise keyboard)`, (await active(page)) !== 'search', `focus on ${await active(page)}`);
+            const sortRow = await page.evaluate(() => {
+                const row = document.querySelector('.routine-sort-filter-row');
+                const h = (id) => Math.round(document.getElementById(id).getBoundingClientRect().height);
+                return { overflow: row.scrollWidth > row.clientWidth + 1, az: h('sort-alpha'), recent: h('sort-recent') };
+            });
+            record(`${width}px: the sort row fits and "A-Z" stays on one line`, !sortRow.overflow && sortRow.az === sortRow.recent, JSON.stringify(sortRow));
+            await page.locator('#miniCycleList .mini-cycle-switch-item').nth(6).tap();
+            await page.waitForTimeout(1000);
+            const chosen = await page.evaluate(() => {
+                const list = document.getElementById('miniCycleList');
+                const sel = list.querySelector('.mini-cycle-switch-item.selected');
+                if (!sel) return { visible: false, why: 'nothing selected' };
+                const lb = list.getBoundingClientRect(), r = sel.getBoundingClientRect();
+                return { visible: r.bottom > lb.top + 4 && r.top < lb.bottom - 4, name: sel.dataset.cycleName };
+            });
+            record(`${width}px: the routine just tapped stays in view once its preview opens`, chosen.visible, JSON.stringify(chosen));
+            const labels = await page.evaluate(() => [...document.querySelectorAll('#switch-items-row .switch-buttons')].filter(b => b.offsetParent)
+                .map(b => { const l = b.querySelector('.switch-btn-label'); return l && l.offsetParent && l.scrollWidth <= l.clientWidth + 1 ? l.textContent : `(${l ? 'clipped' : 'none'})`; }));
+            record(`${width}px: the routine actions are labelled, not icons alone`, labels.length >= 4 && labels.every(t => !t.startsWith('(')), JSON.stringify(labels));
+        } catch (e) {
+            console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+            failures.push(`harness error (${width}px): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', failures };
+}
+
 const JOURNEYS = [
+    { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', fn: journeySwitcherManyRoutines },
     { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', fn: journeyFocusEscapeAndShortcutList },
     { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', fn: journeyAppShortcuts },
     { name: 'Alt+arrow reorders a task from the keyboard', fn: journeyKeyboardReorder },

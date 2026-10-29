@@ -178,6 +178,59 @@ export async function runStorageUtilsTests(resultsDiv) {
     });
 
     // ============================================
+    // 🧪 QUOTA DETECTION (Oct 2026)
+    // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🧪 Quota Detection</h4>';
+
+    // Each test imports a FRESH copy, so no session-cached quota carries over.
+    let freshCopy = 0;
+    const freshModule = () => import(`../modules/utils/storageUtils.js?v=${cacheBuster}-quota-${++freshCopy}`);
+    const countProbeWrites = (fn) => {
+        const orig = Storage.prototype.setItem;
+        let writes = 0;
+        Storage.prototype.setItem = function (key, value) {
+            if (key === '__storage_quota_test__') writes++;
+            return orig.call(this, key, value);
+        };
+        try { return { result: fn(), writes }; } finally { Storage.prototype.setItem = orig; }
+    };
+    const stateWith = (storageQuota) => ({
+        isReady: () => true,
+        get: () => ({ metadata: { storageQuota } }),
+        update: () => {}
+    });
+
+    await test('quota detection is a binary search: a handful of writes, not one per 100KB', async () => {
+        const m = await freshModule();
+        m.setStorageDependencies({ AppState: null });
+        const { result, writes } = countProbeWrites(() => m.detectStorageQuota(true));
+        // The old walk wrote 100KB, 200KB, 300KB… — ~50 writes on a 5MB quota,
+        // about 2s on desktop with the routine switcher's list waiting behind it.
+        if (writes > 12) throw new Error(`${writes} probe writes — expected ~7`);
+        if (result < 5 * 1024 * 1024) throw new Error(`detected ${result} bytes, below the 5MB floor`);
+        if (localStorage.getItem('__storage_quota_test__') !== null) throw new Error('probe key left behind');
+    });
+
+    await test('a cached quota survives an app update (only a detection-method change re-runs it)', async () => {
+        const m = await freshModule();
+        m.setStorageDependencies({ AppState: stateWith({
+            detectedBytes: 7 * 1024 * 1024, detectedAt: Date.now(), detectedVersion: '0.0.1', method: 2
+        }) });
+        const { result, writes } = countProbeWrites(() => m.detectStorageQuota());
+        if (writes !== 0) throw new Error(`re-ran the probe (${writes} writes) for a cache from an older app version`);
+        if (result !== 7 * 1024 * 1024) throw new Error(`expected the cached 7MB, got ${result}`);
+    });
+
+    await test('a cache from the old detection method is re-detected', async () => {
+        const m = await freshModule();
+        m.setStorageDependencies({ AppState: stateWith({
+            detectedBytes: 7 * 1024 * 1024, detectedAt: Date.now(), detectedVersion: '0.0.1'   // no method: pre-Oct-2026
+        }) });
+        const { writes } = countProbeWrites(() => m.detectStorageQuota());
+        if (writes === 0) throw new Error('kept a cache written by the old linear probe');
+    });
+
+    // ============================================
     // 📊 RESULTS
     // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
