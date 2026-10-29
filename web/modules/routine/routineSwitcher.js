@@ -33,7 +33,7 @@ import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 import { RoutineBrowser } from './routineBrowser.js';
-import { getIcon } from '../utils/icons.js';
+import { createIconElement, getIcon } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -186,20 +186,44 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Give the routine button the icon and name of the view it opens, so the two
-     * are never confused: folder for the list, cards for Browse.
+     * Give the routine buttons the icon and name of the view they open, so the
+     * two are never confused: folder for the list, cards for Browse.
+     *   Home View button — List: the folder alone. Browse: the cards and
+     *     "Routines" (CSS drops the word where the header has no room).
+     *   Menu → Routine Actions — List: folder, "Switch". Browse: cards, "Browse".
      * @param {'list'|'browse'} [view] - a ROUTINE_OPEN_VIEW value; defaults to the setting
      */
     syncEntryPoints(view = getRoutineOpenView(this.deps.AppState?.get?.())) {
         this._entryPointsView = view;
-        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
-        if (!btn) return;
         const browse = view === ROUTINE_OPEN_VIEW.BROWSE;
-        btn.innerHTML = getIcon(browse ? 'cards' : 'folder');
-        const name = getLabel(browse ? 'routine.browseAria' : 'routine.switchAria');
-        btn.setAttribute('aria-label', name);
-        btn.title = name;
-        btn.dataset.routineView = view;
+
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
+        if (btn) {
+            btn.innerHTML = getIcon(browse ? 'cards' : 'folder');
+            if (browse) {
+                const text = document.createElement('span');
+                text.className = DOM_CLASSES.ROUTINE_SWITCHER_BTN_LABEL;
+                text.textContent = getLabel('routine.browseShort');
+                btn.appendChild(text);
+            }
+            const name = getLabel(browse ? 'routine.browseAria' : 'routine.switchAria');
+            btn.setAttribute('aria-label', name);
+            btn.title = name;
+            btn.dataset.routineView = view;
+            // The + across the header matches this button's width (CSS reads it here).
+            const wrapper = btn.closest(DOM_SELECTORS.MODE_SELECTOR_WRAPPER);
+            if (wrapper) wrapper.dataset.routineView = view;
+        }
+
+        const menuBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
+        if (menuBtn) {
+            menuBtn.replaceChildren(
+                createIconElement(browse ? 'cards' : 'folder-open'),
+                document.createTextNode(getLabel(browse ? 'routine.menuBrowse' : 'routine.menuSwitch'))
+            );
+            menuBtn.title = getLabel(browse ? 'routine.browseAria' : 'routine.switchTitle');
+            menuBtn.dataset.routineView = view;
+        }
     }
 
     /** Browse Routines, for tests and the shortcuts. */

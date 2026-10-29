@@ -52,6 +52,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
         built.forEach(inst => inst.browser.destroy());
         built = [];
         document.getElementById('routine-switcher-btn-test')?.remove();
+        document.getElementById('open-mini-cycle-test')?.remove();
         document.body.classList.remove('dark-mode', 'focus-mode');
     }
 
@@ -69,10 +70,13 @@ export async function runRoutineBrowserTests(resultsDiv) {
         const btn = document.createElement('button');
         btn.id = 'routine-switcher-btn-test';
         document.body.appendChild(btn);
+        const menuBtn = document.createElement('button');
+        menuBtn.id = 'open-mini-cycle-test';
+        document.body.appendChild(menuBtn);
         const instance = new RoutineSwitcher({
             safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
             getModal: () => null,
-            getElementById: (id) => (id === 'routine-switcher-btn' ? btn : document.getElementById(id)),
+            getElementById: (id) => (id === 'routine-switcher-btn' ? btn : id === 'open-mini-cycle' ? menuBtn : document.getElementById(id)),
             querySelector: (sel) => document.querySelector(sel),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
             AppState: {
@@ -91,7 +95,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
             realSwitch(opts);
         };
         built.push(instance);
-        return { instance, browser: instance.browser, state, calls, btn };
+        return { instance, browser: instance.browser, state, calls, btn, menuBtn };
     }
 
     const dialog = () => document.getElementById('routine-browser');
@@ -572,6 +576,34 @@ export async function runRoutineBrowserTests(resultsDiv) {
         instance.syncEntryPoints('list');
         if (btn.getAttribute('aria-label') !== getLabel('routine.switchAria')) throw new Error(`label "${btn.getAttribute('aria-label')}"`);
         if (btn.innerHTML === '' ) throw new Error('no icon');
+        cleanup();
+    });
+
+    await test('in Browse the routine button says "Routines"; for the list it is the folder alone', () => {
+        const { instance, btn } = setup();
+        instance.syncEntryPoints('browse');
+        const word = btn.querySelector('.routine-switcher-btn-label');
+        if (word?.textContent !== getLabel('routine.browseShort')) throw new Error(`text "${word?.textContent}"`);
+        // The visible word must be part of the accessible name (WCAG 2.5.3).
+        if (!btn.getAttribute('aria-label').toLowerCase().includes(word.textContent.toLowerCase())) throw new Error('name does not contain the visible word');
+        instance.syncEntryPoints('list');
+        if (btn.textContent.trim() !== '') throw new Error(`list button has text "${btn.textContent.trim()}"`);
+        if (!btn.querySelector('svg')) throw new Error('no folder');
+        cleanup();
+    });
+
+    await test('the menu button follows the setting: Switch for the list, Browse for Browse', () => {
+        const { instance, menuBtn } = setup();
+        instance.syncEntryPoints('browse');
+        if (menuBtn.textContent !== getLabel('routine.menuBrowse')) throw new Error(`text "${menuBtn.textContent}"`);
+        if (menuBtn.title !== getLabel('routine.browseAria')) throw new Error(`title "${menuBtn.title}"`);
+        if (!menuBtn.querySelector('.icon svg')) throw new Error('no icon');
+        const browseIcon = menuBtn.querySelector('svg').innerHTML;
+        instance.syncEntryPoints('list');
+        if (menuBtn.textContent !== getLabel('routine.menuSwitch')) throw new Error(`text "${menuBtn.textContent}"`);
+        if (menuBtn.title !== getLabel('routine.switchTitle')) throw new Error(`title "${menuBtn.title}"`);
+        if (menuBtn.querySelector('svg').innerHTML === browseIcon) throw new Error('the list kept the cards icon');
+        if (menuBtn.querySelectorAll('.icon').length !== 1) throw new Error('icons piled up');
         cleanup();
     });
 

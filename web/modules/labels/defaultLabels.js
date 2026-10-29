@@ -213,14 +213,18 @@ export const DEFAULT_LABELS = deepFreeze({
         createMenu:      'New',
         download:        'Download',
         downloadTitle:   'Download the current routine as a file',
-        open:            'Open',
-        openTitle:       'Open an existing routine',
+        // The menu's routine button names the view Settings chose (Behavior →
+        // "When you open routines, show"); one word each, to fit a menu cell.
+        menuSwitch:      'Switch',
+        menuBrowse:      'Browse',
+        switchTitle:     'Switch routines',
         import:          'Import',
         importTitle:     'Import a routine from a file',
         duplicate:       'Duplicate',
         duplicateTitle:  'Duplicate the current routine',
         switchAria:      'Switch routine',
         browseAria:      'Browse routines',   // the same button when Settings → routines open in Browse
+        browseShort:     'Routines',          // its visible text in Browse, beside the icon (the name above contains it)
         expandList:      'Expand the routine list',
         collapseList:    'Collapse the routine list',
         untitled:        'Untitled Routine',
@@ -2836,11 +2840,12 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'routine.create',
     'routine.createTitle',
     'routine.downloadTitle',
-    'routine.openTitle',
+    'routine.switchTitle',
     'routine.importTitle',
     'routine.duplicateTitle',
     'routine.switchAria',
     'routine.browseAria',
+    'routine.browseShort',
     'routine.untitled',
     'routine.duplicate',
 

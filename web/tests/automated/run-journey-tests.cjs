@@ -6623,8 +6623,17 @@ async function journeyBrowseRoutines(browser, baseURL) {
             record('a brand-new user on a mouse/keyboard device starts with the list', fresh === 'list', `routineOpenView=${fresh}`);
 
             await seed(page); // no setting at all: every user from before Browse
-            const btnView = await page.evaluate(() => document.getElementById('routine-switcher-btn').dataset.routineView);
+            const listButtons = await page.evaluate(() => {
+                const home = document.getElementById('routine-switcher-btn');
+                const menu = document.getElementById('open-mini-cycle');
+                return { view: home.dataset.routineView, homeText: home.textContent.trim(), menuText: menu.textContent.trim(), menuTitle: menu.title };
+            });
+            const btnView = listButtons.view;
             record('an existing user (no setting) keeps the list', btnView === 'list', `button shows ${btnView}`);
+            const pairList = await page.evaluate(() => ['quick-actions-btn', 'routine-switcher-btn'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().width)));
+            record('…the + and the routine button are the same width', pairList[0] === pairList[1], JSON.stringify(pairList));
+            record('…the Home View button is the folder alone, the menu button reads "Switch"',
+                listButtons.homeText === '' && listButtons.menuText === 'Switch' && listButtons.menuTitle === 'Switch routines', JSON.stringify(listButtons));
 
             await page.click('#routine-switcher-btn');
             await page.waitForFunction(() => document.getElementById('routine-switcher-modal').open, null, { timeout: 5000 });
@@ -6728,14 +6737,28 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.waitForTimeout(400);
             await page.click('[data-toggle="behavior"]');
             await page.waitForTimeout(300);
-            await page.selectOption('#routine-open-view-select', 'browse');
+            const radios = await page.evaluate(() => [...document.querySelectorAll('#routine-open-view-group input[type="radio"]')]
+                .map(r => ({ value: r.value, checked: r.checked, name: r.closest('label').textContent.trim() })));
+            record('Settings shows List / Browse as radio buttons, List chosen', radios.length === 2 && radios[0].checked && radios[1].value === 'browse', JSON.stringify(radios));
+            await page.click('#routine-open-view-group input[value="browse"]');
             await page.waitForTimeout(400);
-            const after = await page.evaluate(() => ({
-                btn: document.getElementById('routine-switcher-btn').dataset.routineView,
-                qa: [...document.querySelectorAll('[data-action-id="open-routine"]')].map(e => e.getAttribute('aria-label')),
-                saved: JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView
-            }));
+            const after = await page.evaluate(() => {
+                const home = document.getElementById('routine-switcher-btn');
+                const menu = document.getElementById('open-mini-cycle');
+                return {
+                    btn: home.dataset.routineView,
+                    homeText: home.textContent.trim(),
+                    menuText: menu.textContent.trim(),
+                    menuTitle: menu.title,
+                    qa: [...document.querySelectorAll('[data-action-id="open-routine"]')].map(e => e.getAttribute('aria-label')),
+                    saved: JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView
+                };
+            });
             record('Settings → Browse: the routine button switches to the Browse icon', after.btn === 'browse', JSON.stringify(after));
+            record('…and says "Routines" beside it', after.homeText === 'Routines', JSON.stringify(after));
+            const pairBrowse = await page.evaluate(() => ['quick-actions-btn', 'routine-switcher-btn'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().width)));
+            record('…and the + widens with it', pairBrowse[0] === pairBrowse[1], JSON.stringify(pairBrowse));
+            record('…and the menu button reads "Browse"', after.menuText === 'Browse' && after.menuTitle === 'Browse routines', JSON.stringify(after));
             record('…and is saved', after.saved === 'browse', JSON.stringify(after));
             record('…and the Quick Action is renamed when pinned', after.qa.every(l => l === 'Browse Routines'), JSON.stringify(after.qa));
             await page.keyboard.press('Escape');
@@ -6826,6 +6849,25 @@ async function journeyBrowseRoutines(browser, baseURL) {
             record(`${width}px: a brand-new user on a touch device starts with Browse`, fresh === 'browse', `routineOpenView=${fresh}`);
 
             await seed(page, { view: 'browse' });
+            const header = await page.evaluate(() => {
+                const btn = document.getElementById('routine-switcher-btn');
+                const label = btn.querySelector('.routine-switcher-btn-label');
+                const r = btn.getBoundingClientRect();
+                const mode = document.getElementById('mode-selector').getBoundingClientRect();
+                const plus = document.getElementById('quick-actions-btn').getBoundingClientRect();
+                return {
+                    plusW: Math.round(plus.width), btnW: Math.round(r.width), plusClear: plus.right <= mode.left,
+                    word: !!label && label.getBoundingClientRect().width > 0,
+                    fits: !!label && label.scrollWidth <= label.clientWidth + 1,
+                    clear: r.left >= mode.right - 1, inView: r.right <= innerWidth,   // 1px: the list's folder already meets it at 320
+                    name: btn.getAttribute('aria-label')
+                };
+            });
+            // "Routines" only where it fits beside the mode selector (≥375px); the name is there either way.
+            record(`${width}px: the Browse routine button ${width >= 375 ? 'says "Routines"' : 'is the cards alone'}, clear of the mode selector`,
+                header.word === (width >= 375) && header.fits && header.clear && header.inView && header.name === 'Browse routines', JSON.stringify(header));
+            record(`${width}px: the + is the same width as the Browse routine button, and clear of the mode selector`,
+                header.plusW === header.btnW && header.plusClear, JSON.stringify(header));
             await page.tap('#routine-switcher-btn');
             await page.waitForTimeout(800);
             record(`${width}px: the routine button opens Browse`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);

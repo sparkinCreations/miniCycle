@@ -1169,6 +1169,34 @@ body.high-contrast *:focus-visible {
     margin-bottom: var(--space-3);
 }
 
+/* The same setting as two radio buttons (one choice of two reads at a glance;
+   a dropdown hid the other). A fieldset, so the question names the group; the
+   rows are the Themes modal's .theme-radio-option, dark and high-contrast
+   variants included. */
+.settings-radio-group {
+    border: 0;
+    padding: 0;
+    margin-inline: 0;
+    min-width: 0;
+}
+
+.settings-radio-group > legend {
+    padding: 0;
+    margin-bottom: var(--space-2);
+}
+
+.settings-radio-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.settings-radio-row .theme-radio-option {
+    margin: 0;
+    padding: var(--space-2-5) var(--space-3);
+}
+
 .settings-select {
     width: 100%;
     padding: 8px 12px;

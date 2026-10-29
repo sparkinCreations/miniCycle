@@ -114,7 +114,7 @@ export function _resetForTesting() {
     _initialized.reducedMotionToggle = false;
     _initialized.highContrastToggle = false;
     _initialized.fontSizeSelect = false;
-    _initialized.routineOpenViewSelect = false;
+    _initialized.routineOpenViewRadios = false;
     _initialized.notificationsToggle = false;
 }
 
@@ -137,7 +137,7 @@ const _initialized = {
     reducedMotionToggle: false,
     highContrastToggle: false,
     fontSizeSelect: false,
-    routineOpenViewSelect: false,
+    routineOpenViewRadios: false,
     notificationsToggle: false,
 };
 
@@ -1412,25 +1412,27 @@ export function setupFontSizeSelect() {
  * Focus View menu follow the stored value on their own (routineSwitcher
  * watches it), so this only writes it.
  */
-export function setupRoutineOpenViewSelect() {
-    const select = document.getElementById(DOM_IDS.ROUTINE_OPEN_VIEW_SELECT);
-    if (!select) return;
-    if (currentSettings()) select.value = getRoutineOpenView(_deps.AppState().get());
+export function setupRoutineOpenViewRadios() {
+    const radios = Array.from(document.querySelectorAll(DOM_SELECTORS.ROUTINE_OPEN_VIEW_RADIO));
+    if (radios.length === 0) return;
+    const check = (view) => radios.forEach(radio => { radio.checked = radio.value === view; });
+    if (currentSettings()) check(getRoutineOpenView(_deps.AppState().get()));
 
-    if (_initialized.routineOpenViewSelect) return;
+    if (_initialized.routineOpenViewRadios) return;
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('SettingsUIManager: safeAddEventListener dependency not injected');
         return;
     }
-    _initialized.routineOpenViewSelect = true;
+    _initialized.routineOpenViewRadios = true;
 
-    select._changeHandler = async () => {
-        const view = select.value === ROUTINE_OPEN_VIEW.BROWSE ? ROUTINE_OPEN_VIEW.BROWSE : ROUTINE_OPEN_VIEW.LIST;
+    const changeHandler = async (event) => {
+        if (!event.target.checked) return;
+        const view = event.target.value === ROUTINE_OPEN_VIEW.BROWSE ? ROUTINE_OPEN_VIEW.BROWSE : ROUTINE_OPEN_VIEW.LIST;
         const AppState = _deps.AppState();
         if (!AppState?.isReady?.()) {
             _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
-            select.value = ROUTINE_OPEN_VIEW.LIST;
+            check(ROUTINE_OPEN_VIEW.LIST);
             return;
         }
         await AppState.update(state => {
@@ -1439,7 +1441,10 @@ export function setupRoutineOpenViewSelect() {
         }, true);
     };
 
-    safeAddEventListener(select, 'change', select._changeHandler);
+    radios.forEach(radio => {
+        radio._changeHandler = changeHandler;
+        safeAddEventListener(radio, 'change', changeHandler);
+    });
 }
 
 /**
@@ -1530,7 +1535,7 @@ export function initAllToggles() {
     setupReducedMotionToggle();
     setupHighContrastToggle();
     setupFontSizeSelect();
-    setupRoutineOpenViewSelect();
+    setupRoutineOpenViewRadios();
     setupNotificationsToggle();
     applyPriorityColor();
 }

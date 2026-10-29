@@ -167,6 +167,56 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
    QUICK ACTIONS
    ============================================================================= */
 
+/* The + (left) and the routine button (right) are one width, always — the pair
+   frames the mode selector (the user's call, Oct 2026). Both read this, so
+   neither can drift: before it the + was 60px to the routine button's 70 at
+   ≤480px, and 70 to its 88 at exactly 768. In Browse the routine button carries
+   "Routines" beside its cards (routineSwitcher.syncEntryPoints puts the view on
+   this wrapper), so the pair widens to fit the word; below 375px the word is
+   dropped (routine-switcher.css) and they are back to 70.
+   The word's room is in --font-size-xs units, so a larger Font Size widens the
+   pair rather than clipping it. */
+.mode-selector-wrapper {
+    --header-side-btn-width: 88px;
+    --header-side-btn-browse-width: calc(var(--font-size-xs) * 4.6 + 34px);   /* "Routines" + icon, gap, padding, border */
+}
+
+.mode-selector-wrapper[data-routine-view="browse"] {
+    --header-side-btn-width: max(88px, var(--header-side-btn-browse-width));
+}
+
+@media (max-width: 767px) {
+    .mode-selector-wrapper {
+        --header-side-btn-width: 70px;
+    }
+
+    .mode-selector-wrapper[data-routine-view="browse"] {
+        --header-side-btn-width: max(70px, var(--header-side-btn-browse-width));
+    }
+}
+
+/* Too narrow for the word: back to 70. Measured in em of the header row, so a
+   larger Font Size drops the word sooner (at 20px it met the mode selector at
+   any phone width) — 22em is 374px at the default size. The container query
+   needs Safari 16; the 374px media query is the floor for older browsers. The
+   word itself is dropped at the same two points (routine-switcher.css). */
+.mode-selector-wrapper {
+    container-type: inline-size;
+}
+
+@container (max-width: 22em) {
+    .quick-actions-btn,
+    .routine-switcher-btn {
+        --header-side-btn-width: 70px;
+    }
+}
+
+@media (max-width: 374px) {
+    .mode-selector-wrapper[data-routine-view="browse"] {
+        --header-side-btn-width: 70px;
+    }
+}
+
 .quick-actions-container {
     position: absolute;
     left: 15px;
@@ -178,7 +228,7 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     border: 1px solid #0c20913f;
     color: rgb(44, 50, 112);
     border-radius: var(--radius-5);
-    width: 88px;
+    width: var(--header-side-btn-width);   /* = the routine button's (above) */
     /* Match the mode selector's height. The selector is a native <select> whose
        height stays ~25px (browsers don't reliably scale a closed select's box
        with font-size), so a fixed height on the same token keeps all three
@@ -342,11 +392,6 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
         max-width: 200px;
     }
 
-    .quick-actions-btn {
-        width: 70px;
-        /* height inherits var(--space-6-25) from the base rule so it stays
-           level with the mode selector (which keeps that height here too). */
-    }
 }
 
 @media (max-width: 480px) {
@@ -355,7 +400,6 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     }
 
     .quick-actions-btn {
-        width: 60px;
         font-size: var(--font-size-xs);
     }
 }

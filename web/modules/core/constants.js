@@ -863,6 +863,7 @@ export const DOM_CLASSES = Object.freeze({
     // Browse Routines (routine/routineBrowser.js). Own classes on purpose — NOT
     // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
     // drag, counts) and would sweep up the read-only preview's copies.
+    ROUTINE_SWITCHER_BTN_LABEL: 'routine-switcher-btn-label',   // "Routines" beside the Home View routine button's icon when it opens Browse
     ROUTINE_LIST_EXPANDED: 'routine-list-expanded',   // on .mini-cycle-switch-modal-content: the routine list has the window
     RB_TOP: 'rb-top',
     RB_CORNER_BTN: 'rb-corner-btn',
@@ -1328,7 +1329,7 @@ export const DOM_IDS = Object.freeze({
     ROUTINE_BROWSER_SEARCH: 'routine-browser-search',
     ROUTINE_LIST_EXPAND_BTN: 'routine-list-expand-btn', // Open Routine: the list heading's Expand / Collapse
     SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
-    ROUTINE_OPEN_VIEW_SELECT: 'routine-open-view-select', // Settings → When you open routines, show: List / Browse
+    ROUTINE_OPEN_VIEW_GROUP: 'routine-open-view-group', // Settings → When you open routines, show: List / Browse (radios)
     SHORTCUTS_MODAL: 'shortcuts-modal',
     SHORTCUTS_MODAL_TITLE: 'shortcuts-modal-title',
     SHORTCUTS_LIST: 'shortcuts-list',
@@ -1911,6 +1912,7 @@ export const DOM_SELECTORS = Object.freeze({
     FOCUS_MODE_MENU_ITEM: '.focus-mode-menu-item',
     FOCUS_MODE_MODE_RADIO: '.focus-mode-mode-option input[type="radio"]',
     MODE_RADIO: '#mode-radio-group input[type="radio"]',
+    ROUTINE_OPEN_VIEW_RADIO: '#routine-open-view-group input[type="radio"]',   // Settings → When you open routines, show
     MODE_RADIO_OPTION: '.mode-radio-option',
     MODE_RADIO_LABEL: '.mode-radio-label',
     MODE_RADIO_INPUT: 'input[type="radio"]',

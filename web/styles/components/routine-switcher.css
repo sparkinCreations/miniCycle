@@ -15,7 +15,7 @@
     border: 1px solid var(--border-blue-subtle-hover);
     color: var(--color-navy);
     border-radius: var(--radius-5);
-    width: 88px;
+    width: var(--header-side-btn-width);   /* shared with the + (mode-selector.css) */
     /* Match the mode selector's height (see .quick-actions-btn in
        mode-selector.css). The selector is a native <select> that stays ~25px,
        so a fixed height on the same token keeps the header controls level.
@@ -50,6 +50,27 @@
     fill: var(--color-navy);
     width: 16px;
     height: 16px;
+    flex-shrink: 0;
+}
+
+/* Opening Browse, the button says so: the cards and "Routines" (the folder
+   alone opens the list). Its width — and the +'s, which matches it — comes from
+   --header-side-btn-width (mode-selector.css). It keeps its right edge, so the
+   extra width grows toward the mode selector; below 375px there is no room and
+   the word goes (the name is still in aria-label and title). */
+.routine-switcher-btn[data-routine-view="browse"] {
+    gap: var(--space-1);
+    padding: 0 var(--space-1-5);
+}
+
+.routine-switcher-btn-label {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
 }
 
 /* =============================================================================
@@ -1200,12 +1221,6 @@ input.routine-search-input:focus {
    ============================================================================= */
 
 @media (max-width: 767px) {
-    .routine-switcher-btn {
-        width: 70px;
-        /* height inherits var(--space-6-25) from the base rule so it stays
-           level with the mode selector on small screens too. */
-    }
-
     .mini-cycle-switch-modal-content {
         min-width: 280px;
         max-width: 95%;
@@ -1226,6 +1241,24 @@ input.routine-search-input:focus {
        an aria-label. Labels were tried in Oct 2026 and dropped: with the 🎨
        Theme button unlocked there are five, "Download" was cut to "Downlo…"
        even at 390px, and the taller emoji knocked the row out of line. */
+}
+
+/* Too narrow for "Routines" beside the mode selector: the cards alone. At
+   375px (iPhone SE / mini) and the default Font Size the word and the selector
+   are 2px apart. The container query is the header row's width in em, so a
+   larger Font Size drops the word sooner; the media query is its floor for
+   browsers without container queries (mode-selector.css sets the widths at the
+   same two points). */
+@container (max-width: 22em) {
+    .routine-switcher-btn-label {
+        display: none;
+    }
+}
+
+@media (max-width: 374px) {
+    .routine-switcher-btn-label {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {

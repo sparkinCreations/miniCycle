@@ -918,14 +918,14 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-behavior">
-                        <div class="settings-option settings-option-vertical settings-option-described">
-                            <label for="${DOM_IDS.ROUTINE_OPEN_VIEW_SELECT}">${getLabel('settings.routineOpenView')}</label>
-                            <select id="${DOM_IDS.ROUTINE_OPEN_VIEW_SELECT}" class="settings-select" aria-describedby="routine-open-view-desc">
-                                <option value="${ROUTINE_OPEN_VIEW.LIST}" selected>${getLabel('settings.routineOpenViewList')}</option>
-                                <option value="${ROUTINE_OPEN_VIEW.BROWSE}">${getLabel('settings.routineOpenViewBrowse')}</option>
-                            </select>
+                        <fieldset id="${DOM_IDS.ROUTINE_OPEN_VIEW_GROUP}" class="settings-option settings-option-vertical settings-option-described settings-radio-group" aria-describedby="routine-open-view-desc">
+                            <legend>${getLabel('settings.routineOpenView')}</legend>
+                            <div class="settings-radio-row">
+                                <label class="theme-radio-option"><input type="radio" name="routine-open-view" value="${ROUTINE_OPEN_VIEW.LIST}" checked><span class="theme-radio-label">${getLabel('settings.routineOpenViewList')}</span></label>
+                                <label class="theme-radio-option"><input type="radio" name="routine-open-view" value="${ROUTINE_OPEN_VIEW.BROWSE}"><span class="theme-radio-label">${getLabel('settings.routineOpenViewBrowse')}</span></label>
+                            </div>
                             <span class="settings-desc" id="routine-open-view-desc">${getLabel('settings.routineOpenViewDesc')}</span>
-                        </div>
+                        </fieldset>
                         <label class="settings-option">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked aria-describedby="toggle-scroll-to-new-task-desc">
