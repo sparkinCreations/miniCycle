@@ -70,6 +70,14 @@ const ICONS = {
     // Sparkles - used for new routine
     'sparkles': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"/><path d="M20 3v4M22 5h-4M4 17v2M5 18H3"/></svg>',
 
+    // Folder and Cards - the two ways to open routines, so they are never
+    // confused: 'folder' is the Open Routine LIST (the routine button's icon
+    // since it shipped), 'cards' is BROWSE ROUTINES, a stack of cards with the
+    // front one solid. Fill-only on purpose: `.routine-switcher-btn svg` sets
+    // `fill`, which would fill in a stroked outline.
+    'folder': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>',
+    'cards': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="7.5" y="2" width="14" height="17" rx="2.5"/><path d="M3 7.5h2.4V19a1.6 1.6 0 0 0 1.6 1.6h10.5V23H7a4 4 0 0 1-4-4z"/></svg>',
+
     // Folder open - used for open routine
     'folder-open': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512" fill="currentColor"><path d="M88.7 223.8L0 375.8V96C0 60.7 28.7 32 64 32H181.5c17 0 33.3 6.7 45.3 18.7l26.5 26.5c12 12 28.3 18.7 45.3 18.7H416c35.3 0 64 28.7 64 64v32H144c-22.8 0-43.8 12.1-55.3 31.8zM534.7 272.8c8.8 15.5 8.2 34.5-1.4 49.4S508.4 352 490.7 352H64c-17.7 0-32-14.3-32-32V379.8L123.3 256H490.7c11.5 0 22.2 6.2 27.9 16.3l16.1 .5z"/></svg>',
 

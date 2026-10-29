@@ -29,6 +29,8 @@
  * @module utils/cycleMode
  */
 
+import { ROUTINE_OPEN_VIEW, ROUTINE_BROWSER_SORT } from '../core/constants.js';
+
 /**
  * @param {Object|null|undefined} cycle - A routine from state.data.routine
  * @returns {'todo'|'auto'|'manual'}
@@ -440,4 +442,33 @@ export function setAutoClear(task, routine, value, defaults) {
         ? Object.fromEntries(Object.keys(task.autoClear).map(key => [key, next]))
         : { ...task.autoClear, [mode]: next };
     return mode;
+}
+
+// ============================================================================
+// OPENING ROUTINES — Settings → "When you open routines, show"
+// One reader each, so the routine button, Quick Actions and the Focus View
+// menu cannot disagree about what an absent or unknown value means.
+// ============================================================================
+
+/**
+ * Which view opening routines shows. Anything but Browse is the list —
+ * including no value at all, which is every user from before Browse existed.
+ * @param {Object|null|undefined} state - AppState.get()
+ * @returns {'list'|'browse'} a ROUTINE_OPEN_VIEW value
+ */
+export function getRoutineOpenView(state) {
+    return state?.settings?.routineOpenView === ROUTINE_OPEN_VIEW.BROWSE
+        ? ROUTINE_OPEN_VIEW.BROWSE
+        : ROUTINE_OPEN_VIEW.LIST;
+}
+
+/**
+ * Browse Routines' order. Recent unless A-Z was chosen.
+ * @param {Object|null|undefined} state - AppState.get()
+ * @returns {'recent'|'alpha'} a ROUTINE_BROWSER_SORT value
+ */
+export function getRoutineBrowserSort(state) {
+    return state?.settings?.routineBrowserSort === ROUTINE_BROWSER_SORT.ALPHA
+        ? ROUTINE_BROWSER_SORT.ALPHA
+        : ROUTINE_BROWSER_SORT.RECENT;
 }

@@ -1278,6 +1278,7 @@ input.routine-search-input:focus {
     }
 }
 
+
 /* =============================================================================
    OPEN ROUTINE → BROWSE CORNER BUTTON
    Top-right of the switcher card; Browse's own corner button sits in the same
@@ -1288,7 +1289,7 @@ input.routine-search-input:focus {
     position: absolute;
     top: var(--space-3);
     right: var(--space-3);
-    z-index: 1;
+    z-index: var(--z-content);
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
@@ -1306,6 +1307,12 @@ input.routine-search-input:focus {
     border-color: var(--color-primary-dark);
 }
 
+.switch-browse-btn svg,
+.rb-corner-btn svg {
+    width: 1em;
+    height: 1em;
+}
+
 /* On a phone the word would run into the centred "Open Routine" title (measured
    at 320 and 390px), so the cards icon stands alone — named by its aria-label
    and, like the routine actions, by a press-and-hold hint. */
@@ -1321,20 +1328,15 @@ input.routine-search-input:focus {
 
 /* =============================================================================
    BROWSE ROUTINES (routine/routineBrowser.js)
-   Full screen, one routine at a time, read-only. The card reads the same
-   --pref-* variables the real task list does (task-list.css §CUSTOM PREFERENCE
-   COLORS), set on the card itself from the routine's own theme, so each routine
-   wears its colours. Like the task list, those only apply outside dark mode.
+   Full screen, one routine at a time, read-only. The card draws the task list
+   from the same --pref-* variables and --task-* defaults the real list uses
+   (task-list.css §CUSTOM PREFERENCE COLORS), set on the card itself from the
+   routine's own theme, so each routine wears its colours. Like the real list,
+   those apply only outside dark mode and the dark colour themes — the
+   `body:not(…)` prefix below is that same condition.
    ============================================================================= */
 
 #routine-browser {
-    /* The surround: dark blue, so the routine is the only bright thing. */
-    --rb-surround: rgba(10, 22, 48, 0.96);
-    --rb-surround-text: #ffffff;
-    --rb-surround-muted: rgba(255, 255, 255, 0.78);
-    --rb-control-bg: rgba(255, 255, 255, 0.12);
-    --rb-control-border: rgba(255, 255, 255, 0.32);
-
     position: fixed;
     inset: 0;
     width: 100%;
@@ -1344,8 +1346,8 @@ input.routine-search-input:focus {
     margin: 0;
     border: none;
     padding: calc(var(--space-3) + var(--safe-area-top)) var(--space-4) calc(var(--space-3) + var(--safe-area-bottom));
-    background: var(--rb-surround);
-    color: var(--rb-surround-text);
+    background: var(--browse-surround-bg);
+    color: var(--browse-surround-text);
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -1357,7 +1359,7 @@ input.routine-search-input:focus {
 }
 
 #routine-browser::backdrop {
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--overlay-heavy);
 }
 
 /* :where() keeps this at element specificity, so each button's own class
@@ -1368,7 +1370,7 @@ input.routine-search-input:focus {
 }
 
 #routine-browser button:focus-visible {
-    outline: 3px solid #ffffff;
+    outline: 3px solid var(--color-white);
     outline-offset: 2px;
 }
 
@@ -1387,17 +1389,17 @@ input.routine-search-input:focus {
     align-items: center;
     gap: var(--space-1);
     padding: var(--space-1-5) var(--space-3);
-    border: 1px solid var(--rb-control-border);
+    border: 1px solid var(--browse-control-border);
     border-radius: var(--radius-full);
-    background: var(--rb-control-bg);
+    background: var(--browse-control-bg);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
     cursor: pointer;
 }
 
 .rb-close-btn {
-    width: 40px;
-    height: 40px;
+    width: var(--browse-close-size);
+    height: var(--browse-close-size);
     justify-content: center;
     padding: 0;
     font-size: var(--font-size-xl);
@@ -1407,31 +1409,6 @@ input.routine-search-input:focus {
 .rb-sort {
     display: inline-flex;
     gap: var(--space-1);
-}
-
-/* Own hovers: the app-wide button:hover is a light grey, and white text on it
-   measured 1.54:1. */
-#routine-browser :is(.rb-close-btn, .rb-sort-btn, .rb-all-btn, .rb-corner-btn, .rb-nav-btn, .rb-create-btn):hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.24);
-    color: #ffffff;
-}
-
-#routine-browser .rb-nav-btn:disabled:hover {
-    background: var(--rb-control-bg);
-}
-
-#routine-browser .rb-open-btn:hover {
-    background: var(--color-blue-pale);
-    color: var(--color-primary-dark);
-}
-
-#routine-browser .rb-sort-btn.active,
-#routine-browser .rb-sort-btn.active:hover,
-#routine-browser .rb-all-btn[aria-expanded="true"],
-#routine-browser .rb-all-btn[aria-expanded="true"]:hover {
-    background: #ffffff;
-    color: var(--color-primary-dark);
-    border-color: #ffffff;
 }
 
 /* Back to the list: top-right, the same spot as Open Routine's Browse button. */
@@ -1451,12 +1428,12 @@ input.routine-search-input:focus {
 
 .rb-nav-btn {
     flex: 0 0 auto;
-    width: 48px;
-    height: 48px;
-    border: 1px solid var(--rb-control-border);
+    width: var(--browse-nav-size);
+    height: var(--browse-nav-size);
+    border: 1px solid var(--browse-control-border);
     border-radius: 50%;
-    background: var(--rb-control-bg);
-    font-size: 30px;
+    background: var(--browse-control-bg);
+    font-size: var(--font-size-3xl);
     line-height: 1;
     cursor: pointer;
 }
@@ -1466,13 +1443,33 @@ input.routine-search-input:focus {
     cursor: default;
 }
 
+/* Own hovers: the app-wide button:hover is a light grey, and white text on it
+   measured 1.54:1. */
+#routine-browser :is(.rb-close-btn, .rb-sort-btn, .rb-all-btn, .rb-corner-btn, .rb-nav-btn, .rb-create-btn):hover:not(:disabled) {
+    background: var(--browse-control-hover-bg);
+    color: var(--browse-surround-text);
+}
+
+#routine-browser .rb-nav-btn:disabled:hover {
+    background: var(--browse-control-bg);
+}
+
+#routine-browser .rb-sort-btn.active,
+#routine-browser .rb-sort-btn.active:hover,
+#routine-browser .rb-all-btn[aria-expanded="true"],
+#routine-browser .rb-all-btn[aria-expanded="true"]:hover {
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+    border-color: var(--color-white);
+}
+
 /* The routine, as the app draws it. Read-only: a tap anywhere opens it. */
 .rb-card {
     flex: 1 1 auto;
     width: 100%;
-    max-width: 520px;
+    max-width: var(--browse-card-max-width);
     height: 100%;
-    max-height: 680px;
+    max-height: var(--browse-card-max-height);
     display: flex;
     flex-direction: column;
     gap: var(--space-2-5);
@@ -1480,13 +1477,13 @@ input.routine-search-input:focus {
     box-sizing: border-box;
     border-radius: var(--radius-lg);
     background: var(--theme-bg-gradient);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: var(--browse-card-shadow);
     color: var(--theme-text-on-surface);
     cursor: pointer;
     overflow: hidden;
 }
 
-body:not(.dark-mode) .rb-card {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-card {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
 }
 
@@ -1494,12 +1491,12 @@ body:not(.dark-mode) .rb-card {
 .rb-card--enter-prev { animation: rb-enter-prev var(--transition-normal) ease-out; }
 
 @keyframes rb-enter-next {
-    from { transform: translateX(32px); opacity: 0.4; }
+    from { transform: translateX(var(--space-8)); opacity: 0.4; }
     to { transform: none; opacity: 1; }
 }
 
 @keyframes rb-enter-prev {
-    from { transform: translateX(-32px); opacity: 0.4; }
+    from { transform: translateX(calc(-1 * var(--space-8))); opacity: 0.4; }
     to { transform: none; opacity: 1; }
 }
 
@@ -1520,7 +1517,7 @@ html.reduced-motion .rb-card--enter-prev {
     align-self: center;
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-md);
-    background: rgba(255, 255, 255, 0.85);
+    background: var(--browse-mode-pill-bg);
     color: var(--color-primary-dark);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-semibold);
@@ -1532,12 +1529,12 @@ html.reduced-motion .rb-card--enter-prev {
     display: flex;
     flex-direction: column;
     border-radius: var(--radius-lg);
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--task-list-panel-bg);
     overflow: hidden;
 }
 
-body:not(.dark-mode) .rb-panel {
-    background: var(--pref-task-list-bg, rgba(255, 255, 255, 0.15));
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-panel {
+    background: var(--pref-task-list-bg, var(--task-list-panel-bg));
 }
 
 .rb-panel-title {
@@ -1545,25 +1542,25 @@ body:not(.dark-mode) .rb-panel {
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    background: rgba(255, 255, 255, 0.4);
-    color: rgba(43, 43, 43, 0.85);
     flex-wrap: wrap;   /* a long name pushes the Current tag under it */
+    padding: var(--space-2) var(--space-3);
+    background: var(--task-list-title-bg);
+    color: var(--task-list-title-text);
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-semibold);
     text-align: center;
 }
 
-body:not(.dark-mode) .rb-panel-title {
-    background: var(--pref-title-bg, rgba(255, 255, 255, 0.4));
-    color: var(--pref-title-text, rgba(43, 43, 43, 0.85));
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-panel-title {
+    background: var(--pref-title-bg, var(--task-list-title-bg));
+    color: var(--pref-title-text, var(--task-list-title-text));
 }
 
 .rb-current-tag {
     padding: 0 var(--space-2);
     border-radius: var(--radius-full);
     background: var(--color-primary-dark);
-    color: #ffffff;
+    color: var(--color-white);
     font-size: var(--font-size-xs);
     letter-spacing: 0.4px;
     text-transform: uppercase;
@@ -1588,51 +1585,51 @@ body:not(.dark-mode) .rb-panel-title {
     border-radius: var(--radius-md);
     background: var(--theme-task-bg);
     color: var(--theme-text-on-surface);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-xs);
 }
 
-body:not(.dark-mode) .rb-task {
-    background: var(--pref-task-bg, var(--theme-task-bg, rgba(255, 255, 255, 0.95)));
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-task {
+    background: var(--pref-task-bg, var(--theme-task-bg, var(--task-list-task-bg)));
     color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
 .rb-check {
     flex: 0 0 auto;
-    width: 22px;
-    height: 22px;
-    border: 2px solid rgba(180, 180, 180, 0.6);
+    width: var(--browse-check-size);
+    height: var(--browse-check-size);
+    border: 2px solid var(--task-checkbox-incomplete-border);
     border-radius: 50%;
-    background: rgba(200, 200, 200, 0.25);
+    background: var(--task-checkbox-incomplete-bg);
     box-sizing: border-box;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 
-body:not(.dark-mode) .rb-check {
-    background: var(--pref-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
-    border-color: var(--pref-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-check {
+    background: var(--pref-checkbox-incomplete-bg, var(--task-checkbox-incomplete-bg));
+    border-color: var(--pref-checkbox-incomplete-bg, var(--task-checkbox-incomplete-border));
 }
 
 .rb-task--done .rb-check {
-    background: #5db567;
-    border-color: #40af4d;
+    background: var(--task-checkbox-checked-bg);
+    border-color: var(--task-checkbox-checked-border);
 }
 
-body:not(.dark-mode) .rb-task--done .rb-check {
-    background: var(--pref-checkbox-bg, #5db567);
-    border-color: var(--pref-checkbox-bg, #40af4d);
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-task--done .rb-check {
+    background: var(--pref-checkbox-bg, var(--task-checkbox-checked-bg));
+    border-color: var(--pref-checkbox-bg, var(--task-checkbox-checked-border));
 }
 
 .rb-task--done .rb-check::after {
     content: '✓';
-    font-size: 14px;
-    font-weight: 700;
-    color: rgb(18, 70, 9);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--task-checkmark);
 }
 
-body:not(.dark-mode) .rb-task--done .rb-check::after {
-    color: var(--pref-checkmark, rgb(18, 70, 9));
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-task--done .rb-check::after {
+    color: var(--pref-checkmark, var(--task-checkmark));
 }
 
 .rb-empty {
@@ -1644,7 +1641,7 @@ body:not(.dark-mode) .rb-task--done .rb-check::after {
 
 .rb-progress {
     flex: 0 0 auto;
-    height: 8px;
+    height: var(--browse-progress-height);
     border-radius: var(--radius-full);
     background: var(--theme-progress-track-bg);
     overflow: hidden;
@@ -1655,7 +1652,7 @@ body:not(.dark-mode) .rb-task--done .rb-check::after {
     background: var(--theme-progress-fill-bg);
 }
 
-body:not(.dark-mode) .rb-progress-fill {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-progress-fill {
     background: var(--pref-progress-bar, var(--theme-progress-fill-bg));
 }
 
@@ -1663,22 +1660,22 @@ body:not(.dark-mode) .rb-progress-fill {
    Home View (dark-mode.css: body, .task-list-container, the title bar). */
 body.dark-mode .rb-card {
     background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
-    color: #f0f0f0;
+    color: var(--theme-text-primary);
 }
 
 body.dark-mode .rb-mode-pill {
-    background: #2b2b2b;
-    color: #f0f0f0;
+    background: var(--theme-modal-header-bg);
+    color: var(--theme-text-primary);
 }
 
 body.dark-mode .rb-panel {
-    background: rgba(40, 40, 45, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: var(--dark-task-panel-bg);
+    border: 1px solid var(--dark-overlay-subtle);
 }
 
 body.dark-mode .rb-panel-title {
-    background: #5a5a5a;
-    color: #eaeaea;
+    background: var(--dark-surface-muted);
+    color: var(--dark-text-light);
 }
 
 /* Under the routine: its name, mode and place, and its size. */
@@ -1688,13 +1685,13 @@ body.dark-mode .rb-panel-title {
 
 .rb-title {
     font-size: var(--font-size-xl);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     overflow-wrap: anywhere;
 }
 
 .rb-meta {
     margin-top: var(--space-1);
-    color: var(--rb-surround-muted);
+    color: var(--browse-surround-muted);
     font-size: var(--font-size-sm);
 }
 
@@ -1706,43 +1703,48 @@ body.dark-mode .rb-panel-title {
 
 .rb-open-btn,
 .rb-create-btn {
-    min-width: 140px;
+    min-width: var(--browse-action-min-width);
     padding: var(--space-2-5) var(--space-5);
     border-radius: var(--radius-md);
     font-size: var(--font-size-base);
-    font-weight: 700;
+    font-weight: var(--font-weight-bold);
     cursor: pointer;
 }
 
 .rb-open-btn {
     border: none;
-    background: #ffffff;
+    background: var(--color-white);
+    color: var(--color-primary-dark);
+}
+
+#routine-browser .rb-open-btn:hover {
+    background: var(--color-blue-pale);
     color: var(--color-primary-dark);
 }
 
 .rb-create-btn {
-    border: 1px solid var(--rb-control-border);
-    background: var(--rb-control-bg);
+    border: 1px solid var(--browse-control-border);
+    background: var(--browse-control-bg);
 }
 
 /* All routines: a plain jump list — names (and dates in Recent), nothing else.
    Drops down under its button (top left) on a wide screen, rises from the
-   bottom on a phone. */
+   bottom on a phone. Opaque: it sits over the routine. */
 .rb-jump {
     position: absolute;
-    top: calc(var(--space-3) + var(--safe-area-top) + 52px);
+    top: calc(var(--space-3) + var(--safe-area-top) + var(--browse-top-bar-height));
     left: var(--space-4);
     bottom: calc(var(--space-3) + var(--safe-area-bottom));
-    width: min(340px, calc(100% - 2 * var(--space-4)));
+    width: min(var(--browse-jump-width), calc(100% - 2 * var(--space-4)));
     padding: var(--space-2);
     box-sizing: border-box;
     border-radius: var(--radius-lg);
-    background: var(--theme-modal-bg);   /* opaque: it sits over the routine */
+    background: var(--theme-modal-bg);
     color: var(--theme-modal-text);
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    box-shadow: var(--browse-card-shadow);
     overflow-y: auto;
     overscroll-behavior: contain;
-    z-index: 2;
+    z-index: var(--z-elevated);
 }
 
 .rb-jump[hidden] {
@@ -1770,9 +1772,10 @@ body.dark-mode .rb-panel-title {
     cursor: pointer;
 }
 
-.rb-jump-item:hover,
-.rb-jump-item:focus-visible {
-    background: rgba(76, 121, 255, 0.15);
+#routine-browser .rb-jump-item:hover,
+#routine-browser .rb-jump-item:focus-visible {
+    background: var(--browse-jump-hover-bg);
+    color: var(--theme-modal-text);
 }
 
 #routine-browser .rb-jump-item:focus-visible {
@@ -1780,8 +1783,8 @@ body.dark-mode .rb-panel-title {
 }
 
 .rb-jump-item--current {
-    font-weight: 700;
-    background: rgba(76, 121, 255, 0.12);
+    font-weight: var(--font-weight-bold);
+    background: var(--browse-jump-hover-bg);
 }
 
 .rb-jump-date {
@@ -1796,9 +1799,9 @@ body.dark-mode .rb-panel-title {
     }
 
     .rb-nav-btn {
-        width: 36px;
-        height: 36px;
-        font-size: 24px;
+        width: var(--browse-nav-size-phone);
+        height: var(--browse-nav-size-phone);
+        font-size: var(--font-size-2xl);
     }
 
     /* Two rows: close and the way back to the list, then order and jump. */

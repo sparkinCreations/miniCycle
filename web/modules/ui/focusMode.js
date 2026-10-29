@@ -15,10 +15,10 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
-import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
 
 // ============================================================================
@@ -723,7 +723,7 @@ export class FocusMode {
      */
     _refreshRoutinesItemLabel() {
         if (!this._routinesItem) return;
-        const browse = this.deps.AppState?.get?.()?.settings?.routineOpenView === 'browse';
+        const browse = getRoutineOpenView(this.deps.AppState?.get?.()) === ROUTINE_OPEN_VIEW.BROWSE;
         this._routinesItem.textContent = getLabel(browse ? 'focusMode.browseRoutines' : 'focusMode.switchRoutines');
     }
 

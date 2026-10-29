@@ -33,12 +33,13 @@
  * @module routine/routineBrowser
  */
 
-import { DOM_IDS, DOM_CLASSES, UI_TIMEOUTS, GESTURE } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, GESTURE, ROUTINE_BROWSER_SORT, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { announce } from '../utils/announce.js';
+import { getIcon } from '../utils/icons.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
-import { getActiveRoutineId, getRoutines } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getCycleMode, getRoutineBrowserSort, getRoutines } from '../utils/cycleMode.js';
 
 // The colorPreset keys a preview card paints with, and the --pref-* variable
 // each one feeds — the subset of themeManager's VOCAB_THEME_CSS_VARS the card's
@@ -56,23 +57,9 @@ const CARD_THEME_VARS = Object.freeze({
     progressBar:          '--pref-progress-bar'
 });
 
-// Two icons, so the two ways to open routines are never confused: the List keeps
-// the folder the routine button has always shown, Browse is a stack of cards.
-// Static, trusted markup (CLAUDE.md §7).
-export const ROUTINE_VIEW_ICONS = Object.freeze({
-    list: '<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>',
-    browse: '<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="3" width="14" height="17" rx="2.5" fill="currentColor" stroke="none"></rect><path d="M4 7v12a2 2 0 0 0 2 2h10"></path></svg>'
-});
-
+// Keyed by cycleMode.getCycleMode()'s values.
 const MODE_EMOJI = Object.freeze({ auto: '🔄', manual: '✋', todo: '📋' });
 const MODE_LABEL = Object.freeze({ auto: 'focusMode.modeAutoName', manual: 'focusMode.modeManualName', todo: 'focusMode.modeTodoName' });
-
-/** 'auto' | 'manual' | 'todo' — the same reading of a routine the switcher list uses. */
-function modeOf(routine) {
-    if (routine?.deleteCheckedTasks) return 'todo';
-    if (routine?.autoReset) return 'auto';
-    return 'manual';
-}
 
 /**
  * When the routine was last used: opened, else edited, else created. Routines
@@ -85,17 +72,17 @@ export function routineRecency(routine) {
 }
 
 /**
- * The order Browse flips through: 'alpha' by title, 'recent' newest first.
+ * The order Browse flips through: A-Z by title, or Recent, newest first.
  * Ties fall back to the title so the order is stable between opens.
  * @param {Object} routines - state.data.routine
- * @param {'alpha'|'recent'} sort
+ * @param {'alpha'|'recent'} sort - a ROUTINE_BROWSER_SORT value
  * @returns {string[]} routine keys
  */
 export function orderRoutines(routines, sort) {
     const byTitle = (a, b) => String(routines[a]?.title || a)
         .localeCompare(String(routines[b]?.title || b), undefined, { sensitivity: 'base' });
     const keys = Object.keys(routines || {});
-    if (sort === 'recent') {
+    if (sort === ROUTINE_BROWSER_SORT.RECENT) {
         return keys.sort((a, b) => (routineRecency(routines[b]) - routineRecency(routines[a])) || byTitle(a, b));
     }
     return keys.sort(byTitle);
@@ -111,7 +98,7 @@ export class RoutineBrowser {
         this._els = null;
         this._order = [];
         this._index = 0;
-        this._sort = 'recent';
+        this._sort = ROUTINE_BROWSER_SORT.RECENT;
         this._fromList = false;
         this._previousFocus = null;
         this._listeners = [];
@@ -138,9 +125,12 @@ export class RoutineBrowser {
      * Open Browse on the CURRENT routine — not the previous one: nothing has been
      * switched yet, it is a preview, and it does not assume which way the user
      * wants to go (the user's call, Oct 2026).
-     * @param {{fromList?: boolean}} [options] - fromList: Escape returns to the list
+     * @param {{fromList?: boolean, returnFocus?: Element|null}} [options]
+     *   fromList: Escape returns to the list;
+     *   returnFocus: where focus goes when Browse closes — from the list, the
+     *   element that opened the list, not the list's own corner button
      */
-    open({ fromList = false } = {}) {
+    open({ fromList = false, returnFocus = null } = {}) {
         const AppState = this.deps.AppState;
         if (!AppState?.isReady?.()) return;
         const state = AppState.get();
@@ -149,10 +139,8 @@ export class RoutineBrowser {
 
         this._build();
         this._fromList = fromList;
-        // From the list, the switcher's corner button has already handed over the
-        // element that opened the list; otherwise it is whatever has focus now.
-        if (!fromList) this._previousFocus = document.activeElement;
-        this._sort = state.settings?.routineBrowserSort === 'alpha' ? 'alpha' : 'recent';
+        this._previousFocus = returnFocus || document.activeElement;
+        this._sort = getRoutineBrowserSort(state);
         this._order = orderRoutines(routines, this._sort);
         const activeId = getActiveRoutineId(state);
         this._index = Math.max(0, this._order.indexOf(activeId));
@@ -179,7 +167,7 @@ export class RoutineBrowser {
         if (toList) {
             // The list returns focus to whatever opened Browse, not to this
             // corner button, which is gone with Browse.
-            this.m.switchMiniCycle({ view: 'list', returnFocus: back });
+            this.m.switchMiniCycle({ view: ROUTINE_OPEN_VIEW.LIST, returnFocus: back });
             return;
         }
         if (back?.isConnected) back.focus({ focusVisible: false });
@@ -222,7 +210,7 @@ export class RoutineBrowser {
 
         const sort = el('div', DOM_CLASSES.RB_SORT, { role: 'group', 'aria-label': getLabel('routineBrowser.sortAria') });
         const sortBtns = {};
-        for (const [mode, key] of [['recent', 'routineBrowser.sortRecent'], ['alpha', 'routineBrowser.sortAlpha']]) {
+        for (const [mode, key] of [[ROUTINE_BROWSER_SORT.RECENT, 'routineBrowser.sortRecent'], [ROUTINE_BROWSER_SORT.ALPHA, 'routineBrowser.sortAlpha']]) {
             const b = el('button', DOM_CLASSES.RB_SORT_BTN, { type: 'button', 'aria-pressed': 'false' });
             b.dataset.sort = mode;
             b.textContent = getLabel(key);
@@ -238,7 +226,7 @@ export class RoutineBrowser {
 
         // Top-right corner: back to the list, with the list's own folder icon.
         const toList = el('button', DOM_CLASSES.RB_CORNER_BTN, { type: 'button', 'aria-label': getLabel('routineBrowser.toListAria'), title: getLabel('routineBrowser.toListAria') });
-        toList.innerHTML = ROUTINE_VIEW_ICONS.list;
+        toList.innerHTML = getIcon('folder');
         toList.appendChild(document.createTextNode(` ${getLabel('routineBrowser.toList')}`));
 
         top.append(closeBtn, heading, sort, allBtn, toList);
@@ -303,7 +291,7 @@ export class RoutineBrowser {
         const state = this.deps.AppState.get();
         const isCurrent = key === getActiveRoutineId(state);
         const name = routine.title || key;
-        const mode = modeOf(routine);
+        const mode = getCycleMode(routine);
         const total = this._order.length;
         const { card, prevBtn, nextBtn, title, metaMode, metaSize, createBtn, openBtn } = this._els;
 
@@ -421,7 +409,7 @@ export class RoutineBrowser {
     _announce() {
         const routine = this._routines()[this._currentKey()];
         if (!routine) return;
-        const mode = modeOf(routine);
+        const mode = getCycleMode(routine);
         announce(getLabel('routineBrowser.announce', {
             vars: { name: routine.title || this._currentKey(), mode: getLabel(MODE_LABEL[mode]), position: this._index + 1, total: this._order.length }
         }));
@@ -460,7 +448,7 @@ export class RoutineBrowser {
     }
 
     setSort(sort) {
-        if (sort !== 'alpha' && sort !== 'recent') return;
+        if (!Object.values(ROUTINE_BROWSER_SORT).includes(sort)) return;
         const key = this._currentKey();
         this._sort = sort;
         this._order = orderRoutines(this._routines(), sort);
@@ -509,7 +497,7 @@ export class RoutineBrowser {
             const name = document.createElement('span');
             name.textContent = routines[key]?.title || key;
             btn.appendChild(name);
-            if (this._sort === 'recent') {
+            if (this._sort === ROUTINE_BROWSER_SORT.RECENT) {
                 const when = routineRecency(routines[key]);
                 const date = document.createElement('span');
                 date.className = DOM_CLASSES.RB_JUMP_DATE;
@@ -603,7 +591,7 @@ export class RoutineBrowser {
         this._on(dialog, 'keydown', (e) => {
             if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
             if (!this._els.jump.hidden && this._els.jump.contains(e.target)) return;
-            const onControl = e.target.closest?.('button, select, input, textarea, a');
+            const onControl = e.target.closest?.(DOM_SELECTORS.NATIVE_CONTROL);
             if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
                 e.preventDefault();
                 this.move(e.key === 'ArrowRight' ? 1 : -1);

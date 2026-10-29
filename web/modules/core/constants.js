@@ -524,6 +524,25 @@ export const BREAKPOINTS = Object.freeze({
  * accesskey modifier is Alt+Shift). Handled in uiBoot.handleAppShortcut;
  * documented in legal/user-manual.html#keyboard-shortcuts — keep the two in step.
  */
+/**
+ * Settings → "When you open routines, show". The stored values of
+ * `settings.routineOpenView`; read it through cycleMode.getRoutineOpenView(),
+ * which also decides what an absent value means (the list).
+ */
+export const ROUTINE_OPEN_VIEW = Object.freeze({
+    LIST:   'list',     // the Open Routine list (routineSwitcher)
+    BROWSE: 'browse'    // Browse Routines, one at a time (routineBrowser)
+});
+
+/**
+ * Browse Routines' two orders — the stored values of `settings.routineBrowserSort`;
+ * read through cycleMode.getRoutineBrowserSort().
+ */
+export const ROUTINE_BROWSER_SORT = Object.freeze({
+    RECENT: 'recent',   // last used first (the default)
+    ALPHA:  'alpha'     // A-Z by title
+});
+
 export const KEYBOARD_SHORTCUTS = Object.freeze({
     NEW_ROUTINE:      'KeyN',   // create a new routine
     OPEN_ROUTINE:     'KeyO',   // open the routine switcher
@@ -1982,6 +2001,7 @@ export const DOM_SELECTORS = Object.freeze({
     BIWEEKLY_WEEK2_SELECTED: '.biweekly-day-box.selected[data-week="2"]',
     SPECIFIC_DATE_INPUT: `#specific-date-list input[type="date"]`,
     FOCUSABLE_ELEMENTS: 'button, input, select, [tabindex="0"]',
+    NATIVE_CONTROL: 'button, select, input, textarea, a',   // elements that act on Enter themselves (Browse Routines leaves them alone)
 
     // ---- Task Search ----
     FILTER_CHIP_GROUP: '.filter-chip-group',

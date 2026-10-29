@@ -26,6 +26,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
     const { RoutineSwitcher, initRoutineSwitcher } = await import(`../modules/routine/routineSwitcher.js?v=${cacheBuster}`);
     const { orderRoutines, routineRecency } = await import(`../modules/routine/routineBrowser.js?v=${cacheBuster}`);
     const { getLabel } = await import(`../modules/labels/labelResolver.js?v=${cacheBuster}`);
+    const { getRoutineOpenView, getRoutineBrowserSort } = await import(`../modules/utils/cycleMode.js?v=${cacheBuster}`);
 
     // The size line reads formatBytes/getStorageInfo, bindings init fills in.
     await initRoutineSwitcher({
@@ -120,6 +121,28 @@ export async function runRoutineBrowserTests(resultsDiv) {
             routineRecency(null)
         ];
         if (got.join() !== '3,2,1,0,0') throw new Error(`got ${got}`);
+    });
+
+    // ── the setting readers (one each, shared by every entry point) ──────────
+    await test('getRoutineOpenView: only "browse" is Browse; absent or unknown is the list', () => {
+        const got = [
+            getRoutineOpenView({ settings: { routineOpenView: 'browse' } }),
+            getRoutineOpenView({ settings: { routineOpenView: 'list' } }),
+            getRoutineOpenView({ settings: {} }),
+            getRoutineOpenView({ settings: { routineOpenView: 'grid' } }),
+            getRoutineOpenView(null)
+        ];
+        if (got.join() !== 'browse,list,list,list,list') throw new Error(`got ${got}`);
+    });
+
+    await test('getRoutineBrowserSort: only "alpha" is A-Z; absent or unknown is Recent', () => {
+        const got = [
+            getRoutineBrowserSort({ settings: { routineBrowserSort: 'alpha' } }),
+            getRoutineBrowserSort({ settings: {} }),
+            getRoutineBrowserSort({ settings: { routineBrowserSort: 'size' } }),
+            getRoutineBrowserSort(undefined)
+        ];
+        if (got.join() !== 'alpha,recent,recent,recent') throw new Error(`got ${got}`);
     });
 
     // ── opening ──────────────────────────────────────────────────────────────
@@ -245,6 +268,18 @@ export async function runRoutineBrowserTests(resultsDiv) {
         browser.openCurrent();
         if (calls.opened.length) throw new Error('switched to the routine already open');
         if (dialog().open) throw new Error('Browse stayed open');
+        cleanup();
+    });
+
+    await test('focus goes back to the element handed in, not the corner button', () => {
+        const { browser } = setup();
+        const opener = document.createElement('button');
+        document.body.appendChild(opener);
+        browser.open({ returnFocus: opener });
+        browser.close();
+        const ok = document.activeElement === opener;
+        opener.remove();
+        if (!ok) throw new Error(`focus on ${document.activeElement?.className || document.activeElement?.tagName}`);
         cleanup();
     });
 

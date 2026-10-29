@@ -7,7 +7,7 @@
  */
 
 import { getLabel } from '../labels/labelResolver.js';
-import { DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 
 /** @type {string} HTML template for the recurring tasks panel modal */
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
@@ -921,8 +921,8 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <div class="settings-option settings-option-vertical settings-option-described">
                             <label for="${DOM_IDS.ROUTINE_OPEN_VIEW_SELECT}">${getLabel('settings.routineOpenView')}</label>
                             <select id="${DOM_IDS.ROUTINE_OPEN_VIEW_SELECT}" class="settings-select" aria-describedby="routine-open-view-desc">
-                                <option value="list" selected>${getLabel('settings.routineOpenViewList')}</option>
-                                <option value="browse">${getLabel('settings.routineOpenViewBrowse')}</option>
+                                <option value="${ROUTINE_OPEN_VIEW.LIST}" selected>${getLabel('settings.routineOpenViewList')}</option>
+                                <option value="${ROUTINE_OPEN_VIEW.BROWSE}">${getLabel('settings.routineOpenViewBrowse')}</option>
                             </select>
                             <span class="settings-desc" id="routine-open-view-desc">${getLabel('settings.routineOpenViewDesc')}</span>
                         </div>

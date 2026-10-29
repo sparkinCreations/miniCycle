@@ -20,7 +20,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { SCHEMA } from '../core/constants.js';
+import { SCHEMA, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -120,7 +120,7 @@ export function createInitialSchemaData() {
             // so it never changes under the user; Settings → "When you open
             // routines, show" changes it. Data from before Browse has no value
             // and keeps the list (routineSwitcher._routineOpenView).
-            routineOpenView: (window.matchMedia?.('(pointer: coarse)')?.matches ?? false) ? 'browse' : 'list',
+            routineOpenView: (window.matchMedia?.('(pointer: coarse)')?.matches ?? false) ? ROUTINE_OPEN_VIEW.BROWSE : ROUTINE_OPEN_VIEW.LIST,
             onboardingCompleted: false,
             guidedTourStep: null,
             statsTourStep: null,

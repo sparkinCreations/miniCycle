@@ -252,6 +252,44 @@
   --theme-task-border: transparent;
   --theme-task-checkmark: var(--color-success);
 
+  /* The default task list's own colours — what task-list.css §CUSTOM
+     PREFERENCE COLORS falls back to when a routine's theme sets no --pref-*.
+     Tokens so Browse Routines' preview card draws the same list from the
+     same values instead of a copy. */
+  --task-list-panel-bg: rgba(255, 255, 255, 0.15);
+  --task-list-title-bg: rgba(255, 255, 255, 0.4);
+  --task-list-title-text: rgba(43, 43, 43, 0.783);
+  --task-list-task-bg: rgba(255, 255, 255, 0.95);
+  --task-checkbox-incomplete-bg: rgba(200, 200, 200, 0.25);
+  --task-checkbox-incomplete-border: rgba(180, 180, 180, 0.6);
+  --task-checkbox-checked-bg: #5db567;
+  --task-checkbox-checked-border: #40af4d;
+  --task-checkmark: rgb(18, 70, 9);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BROWSE ROUTINES (routine/routineBrowser.js, routine-switcher.css)
+     A dark-blue surround so the routine card is the only bright thing.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --browse-surround-bg: rgba(10, 22, 48, 0.96);
+  --browse-surround-text: var(--color-white);
+  --browse-surround-muted: rgba(255, 255, 255, 0.78);
+  --browse-control-bg: rgba(255, 255, 255, 0.12);
+  --browse-control-hover-bg: rgba(255, 255, 255, 0.24);  /* white text on it: well over 4.5:1 */
+  --browse-control-border: rgba(255, 255, 255, 0.32);
+  --browse-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --browse-mode-pill-bg: rgba(255, 255, 255, 0.85);
+  --browse-jump-hover-bg: rgba(76, 121, 255, 0.15);     /* --color-primary at 15% */
+  --browse-card-max-width: 520px;
+  --browse-card-max-height: 680px;
+  --browse-jump-width: 340px;
+  --browse-top-bar-height: 52px;    /* the jump list drops from under it */
+  --browse-close-size: 40px;
+  --browse-nav-size: 48px;
+  --browse-nav-size-phone: 36px;
+  --browse-check-size: 22px;
+  --browse-progress-height: 8px;
+  --browse-action-min-width: 140px;   /* Open / Create another routine */
+
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Progress
      ═══════════════════════════════════════════════════════════════════════════ */

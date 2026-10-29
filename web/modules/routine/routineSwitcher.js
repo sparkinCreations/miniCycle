@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, EVENTS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, EVENTS, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
@@ -32,8 +32,9 @@ import * as preview from './routineSwitcherPreview.js';
 import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
-import { RoutineBrowser, ROUTINE_VIEW_ICONS } from './routineBrowser.js';
-import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { RoutineBrowser } from './routineBrowser.js';
+import { getIcon } from '../utils/icons.js';
+import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -175,8 +176,8 @@ export class RoutineSwitcher {
     watchOpenView() {
         if (this._openViewWatch) return;
         this._openViewWatch = (newData, oldData) => {
-            const now = this._routineOpenView(newData);
-            if (now === this._routineOpenView(oldData) && this._entryPointsView === now) return;
+            const now = getRoutineOpenView(newData);
+            if (now === getRoutineOpenView(oldData) && this._entryPointsView === now) return;
             this.syncEntryPoints(now);
             document.dispatchEvent(new CustomEvent(EVENTS.ROUTINE_OPEN_VIEW_CHANGED, { detail: { view: now } }));
         };
@@ -185,26 +186,17 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Which view opening routines shows. Anything but 'browse' is the list —
-     * including no value at all, which is every user from before Browse existed.
-     * @param {Object} [state]
-     * @returns {'list'|'browse'}
-     */
-    _routineOpenView(state = this.deps.AppState?.get?.()) {
-        return state?.settings?.routineOpenView === 'browse' ? 'browse' : 'list';
-    }
-
-    /**
      * Give the routine button the icon and name of the view it opens, so the two
      * are never confused: folder for the list, cards for Browse.
-     * @param {'list'|'browse'} [view]
+     * @param {'list'|'browse'} [view] - a ROUTINE_OPEN_VIEW value; defaults to the setting
      */
-    syncEntryPoints(view = this._routineOpenView()) {
+    syncEntryPoints(view = getRoutineOpenView(this.deps.AppState?.get?.())) {
         this._entryPointsView = view;
         const btn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
         if (!btn) return;
-        btn.innerHTML = ROUTINE_VIEW_ICONS[view];
-        const name = getLabel(view === 'browse' ? 'routine.browseAria' : 'routine.switchAria');
+        const browse = view === ROUTINE_OPEN_VIEW.BROWSE;
+        btn.innerHTML = getIcon(browse ? 'cards' : 'folder');
+        const name = getLabel(browse ? 'routine.browseAria' : 'routine.switchAria');
         btn.setAttribute('aria-label', name);
         btn.title = name;
         btn.dataset.routineView = view;
@@ -260,7 +252,7 @@ export class RoutineSwitcher {
 
         const cycles = getRoutines(currentState) || {};
 
-        if ((view || this._routineOpenView(currentState)) === 'browse' && Object.keys(cycles).length > 0) {
+        if ((view || getRoutineOpenView(currentState)) === ROUTINE_OPEN_VIEW.BROWSE && Object.keys(cycles).length > 0) {
             this._browser.open();
             return;
         }
@@ -489,7 +481,7 @@ export class RoutineSwitcher {
         const btn = this.deps.getElementById(DOM_IDS.SWITCH_BROWSE_BTN);
         if (!btn) return;
         if (!btn.dataset.iconSet) {
-            btn.innerHTML = ROUTINE_VIEW_ICONS.browse;
+            btn.innerHTML = getIcon('cards');
             const label = document.createElement('span');
             label.textContent = getLabel('routineBrowser.fromListBtn');
             btn.appendChild(label);
@@ -506,8 +498,7 @@ export class RoutineSwitcher {
             // _previousFocus too, a moment later, and would pull focus out of Browse.
             switchModal._previousFocus = null;
             this.hideSwitchMiniCycleModal({ restoreFocus: false });
-            this._browser._previousFocus = opener;
-            this._browser.open({ fromList: true });
+            this._browser.open({ fromList: true, returnFocus: opener });
         };
         btn.addEventListener('click', btn._clickHandler);
     }

@@ -20,14 +20,14 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { getDefaultPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from './modalUtils.js';
-import { getRoutine, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
+import { getRoutine, getActiveRoutineId, getActiveRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -1415,8 +1415,7 @@ export function setupFontSizeSelect() {
 export function setupRoutineOpenViewSelect() {
     const select = document.getElementById(DOM_IDS.ROUTINE_OPEN_VIEW_SELECT);
     if (!select) return;
-    const settings = currentSettings();
-    if (settings) select.value = settings.routineOpenView === 'browse' ? 'browse' : 'list';
+    if (currentSettings()) select.value = getRoutineOpenView(_deps.AppState().get());
 
     if (_initialized.routineOpenViewSelect) return;
     const safeAddEventListener = _deps.safeAddEventListener;
@@ -1427,11 +1426,11 @@ export function setupRoutineOpenViewSelect() {
     _initialized.routineOpenViewSelect = true;
 
     select._changeHandler = async () => {
-        const view = select.value === 'browse' ? 'browse' : 'list';
+        const view = select.value === ROUTINE_OPEN_VIEW.BROWSE ? ROUTINE_OPEN_VIEW.BROWSE : ROUTINE_OPEN_VIEW.LIST;
         const AppState = _deps.AppState();
         if (!AppState?.isReady?.()) {
             _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
-            select.value = 'list';
+            select.value = ROUTINE_OPEN_VIEW.LIST;
             return;
         }
         await AppState.update(state => {

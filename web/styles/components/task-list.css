@@ -1341,7 +1341,7 @@ body.tasks-sorted #taskList .move-down {
 
 /* Task list container - uses custom pref color when set, maintains transparency */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-container {
-    background: var(--pref-task-list-bg, rgba(255, 255, 255, 0.15));
+    background: var(--pref-task-list-bg, var(--task-list-panel-bg));
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
 }
@@ -1349,7 +1349,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-c
 /* Task items - uses custom pref colors when set */
 html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
-    background: var(--pref-task-bg, var(--theme-task-bg, rgba(255, 255, 255, 0.95)));
+    background: var(--pref-task-bg, var(--theme-task-bg, var(--task-list-task-bg)));
     color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
@@ -1368,27 +1368,27 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdu
 
 /* Title bar - uses custom pref colors when set */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-title {
-    background-color: var(--pref-title-bg, rgba(255, 255, 255, 0.4));
-    color: var(--pref-title-text, rgba(43, 43, 43, 0.783));
+    background-color: var(--pref-title-bg, var(--task-list-title-bg));
+    color: var(--pref-title-text, var(--task-list-title-text));
 }
 
 /* Title bar - keep glassy background on mobile (same as desktop) */
 
 /* Checkbox incomplete background - uses custom pref color when set */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
-    background-color: var(--pref-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
-    border-color: var(--pref-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
+    background-color: var(--pref-checkbox-incomplete-bg, var(--task-checkbox-incomplete-bg));
+    border-color: var(--pref-checkbox-incomplete-bg, var(--task-checkbox-incomplete-border));
 }
 
 /* Checkbox checked background - uses custom pref color when set */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked {
-    background-color: var(--pref-checkbox-bg, #5db567);
-    border-color: var(--pref-checkbox-bg, #40af4d);
+    background-color: var(--pref-checkbox-bg, var(--task-checkbox-checked-bg));
+    border-color: var(--pref-checkbox-bg, var(--task-checkbox-checked-border));
 }
 
 /* Checkmark color - uses custom pref color when set */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked::after {
-    color: var(--pref-checkmark, rgb(18, 70, 9));
+    color: var(--pref-checkmark, var(--task-checkmark));
 }
 
 /* =============================================================================
