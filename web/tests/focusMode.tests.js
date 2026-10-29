@@ -358,7 +358,7 @@ export async function runFocusModeTests(resultsDiv) {
             'welcome-screen',
             'switch-mode', 'switch-routines', 'create-routine',
             'toggle-input-bar', 'toggle-dark-mode', 'uncheck-all', 'delete-all',
-            'settings', 'exit'
+            'keyboard-shortcuts', 'settings', 'exit'
         ];
         instance.destroy();
         teardownDOMScaffold();
@@ -616,7 +616,7 @@ export async function runFocusModeTests(resultsDiv) {
         if (!clicked) throw new Error('Existing open-settings button should have been clicked');
     });
 
-    await test('settings sits in its own group, separated from bulk ops and exit', () => {
+    await test('settings sits in its own group (with Keyboard Shortcuts), separated from bulk ops and exit', () => {
         setupDOMScaffold();
         mod.setFocusModeDependencies({
             AppState: createMockAppState(),
@@ -631,7 +631,14 @@ export async function runFocusModeTests(resultsDiv) {
         const menu = document.getElementById('focus-mode-menu');
         const kids = Array.from(menu.children);
         const idx = kids.findIndex(el => el.dataset && el.dataset.action === 'settings');
-        const prevIsSeparator = idx > 0 && kids[idx - 1].getAttribute('role') === 'separator';
+        // The group settings belongs to: back to the nearest separator. Since
+        // Oct 2026 it is the two "open a window" items, Keyboard Shortcuts and
+        // Settings — still never the bulk ops or exit.
+        let start = idx;
+        while (start > 0 && kids[start - 1].getAttribute('role') !== 'separator') start--;
+        const group = kids.slice(start, idx + 1).map(el => el.dataset && el.dataset.action);
+        const prevIsSeparator = start > 0 && kids[start - 1].getAttribute('role') === 'separator'
+            && group.every(a => a === 'keyboard-shortcuts' || a === 'settings');
         const nextIsSeparator = idx >= 0 && idx + 1 < kids.length &&
             kids[idx + 1].getAttribute('role') === 'separator';
         instance.destroy();
