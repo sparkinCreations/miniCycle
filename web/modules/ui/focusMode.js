@@ -98,6 +98,7 @@ export class FocusMode {
         this._menuClickHandler = null;
         this._menuOutsideClickHandler = null;
         this._modeItem = null;
+        this._routinesItem = null;
         this._modeModal = null;
         this._modeBackdrop = null;
         this._modeModalOpen = false;
@@ -273,6 +274,7 @@ export class FocusMode {
                 item.id = DOM_IDS.FOCUS_MODE_MODE_ITEM;
                 this._modeItem = item;
             }
+            if (action === 'switch-routines') this._routinesItem = item;
             this._menu.appendChild(item);
         }
 
@@ -715,6 +717,17 @@ export class FocusMode {
     }
 
     /**
+     * "Switch routines" or "Browse routines" — whichever Settings → "When you
+     * open routines, show" makes the item open. Read on every menu open, like
+     * the mode item, so a change in Settings needs no event.
+     */
+    _refreshRoutinesItemLabel() {
+        if (!this._routinesItem) return;
+        const browse = this.deps.AppState?.get?.()?.settings?.routineOpenView === 'browse';
+        this._routinesItem.textContent = getLabel(browse ? 'focusMode.browseRoutines' : 'focusMode.switchRoutines');
+    }
+
+    /**
      * Toggle the three-dots menu open/closed.
      */
     _toggleMenu() {
@@ -732,6 +745,7 @@ export class FocusMode {
         if (!this._menu || !this._menuBtn || this._menuOpen) return;
         // Refresh the mode label so it reflects current state every time
         this._refreshModeItemLabel();
+        this._refreshRoutinesItemLabel();
         this._menu.hidden = false;
         this._menuBtn.setAttribute('aria-expanded', 'true');
         this._menuOpen = true;

@@ -918,6 +918,14 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-behavior">
+                        <div class="settings-option settings-option-vertical settings-option-described">
+                            <label for="${DOM_IDS.ROUTINE_OPEN_VIEW_SELECT}">${getLabel('settings.routineOpenView')}</label>
+                            <select id="${DOM_IDS.ROUTINE_OPEN_VIEW_SELECT}" class="settings-select" aria-describedby="routine-open-view-desc">
+                                <option value="list" selected>${getLabel('settings.routineOpenViewList')}</option>
+                                <option value="browse">${getLabel('settings.routineOpenViewBrowse')}</option>
+                            </select>
+                            <span class="settings-desc" id="routine-open-view-desc">${getLabel('settings.routineOpenViewDesc')}</span>
+                        </div>
                         <label class="settings-option">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked aria-describedby="toggle-scroll-to-new-task-desc">

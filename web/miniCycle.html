@@ -1755,6 +1755,8 @@
 
 <dialog id="routine-switcher-modal" class="mini-cycle-switch-modal" data-modal aria-labelledby="routine-switcher-title" aria-modal="true">
     <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
+        <!-- Top-right corner: Browse Routines (icon + label set by routineSwitcher._wireBrowseCorner) -->
+        <button type="button" id="switch-browse-btn" class="switch-browse-btn" aria-label="Browse routines one at a time" title="Browse routines one at a time">Browse</button>
         <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
 
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">

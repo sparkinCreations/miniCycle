@@ -568,6 +568,11 @@ export class ModalManager {
                 [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
                 [[[esc]], 'shortcuts.leaveFocus']
             ]],
+            ['shortcuts.groupBrowse', [
+                [[['←'], ['→']], 'shortcuts.browseFlip'],
+                [[['Home'], ['End']], 'shortcuts.browseEnds'],
+                [[['Enter']], 'shortcuts.browseOpen']
+            ]],
             ['shortcuts.groupGeneral', [
                 [[[cmd, 'Z']], 'shortcuts.undo'],
                 [[[cmd, 'Y'], [cmd, shift, 'Z']], 'shortcuts.redo'],

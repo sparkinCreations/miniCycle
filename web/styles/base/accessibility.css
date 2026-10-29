@@ -1163,6 +1163,12 @@ body.high-contrast *:focus-visible {
     gap: 8px;
 }
 
+/* Behavior → "When you open routines, show": the one vertical option with a
+   description, which otherwise sits on the toggle below it. */
+.settings-option.settings-option-vertical.settings-option-described {
+    margin-bottom: var(--space-3);
+}
+
 .settings-select {
     width: 100%;
     padding: 8px 12px;

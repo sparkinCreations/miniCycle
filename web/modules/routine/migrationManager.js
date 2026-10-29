@@ -113,6 +113,14 @@ export function createInitialSchemaData() {
             // available, primary or not, which is the question that matters here.
             showThreeDots: (window.matchMedia?.('(any-pointer: coarse)')?.matches ?? false)
                 || ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0,
+            // Opening routines shows Browse Routines (one at a time, swipe
+            // through) when touch is the PRIMARY input — `pointer`, not
+            // `any-pointer`: a touchscreen laptop is still driven by its
+            // trackpad, and the list suits that. Decided once, here, and saved,
+            // so it never changes under the user; Settings → "When you open
+            // routines, show" changes it. Data from before Browse has no value
+            // and keeps the list (routineSwitcher._routineOpenView).
+            routineOpenView: (window.matchMedia?.('(pointer: coarse)')?.matches ?? false) ? 'browse' : 'list',
             onboardingCompleted: false,
             guidedTourStep: null,
             statsTourStep: null,

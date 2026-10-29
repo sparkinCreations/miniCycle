@@ -59,7 +59,7 @@ const ALL_MODULES = [
     'appContext', 'dataAccess', 'appGlobalState', 'types',
     'modalRegistry', 'modalUtils', 'panelVisibilityHelpers', 'gesturePanelManager',
     'titleManager', 'headerLayoutManager', 'featureAvailability', 'dataRecovery', 'updateCheck', 'uiOrchestrator', 'preferencesBgImage', 'preferencesPresets',
-    'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'collapsibleSections', 'educationalTips', 'routineSwitcherThemePicker', 'routineSwitcherPreview', 'routineSwitcherListTransforms', 'routineSwitcherRepair', 'routineSwitcherActions', 'onboardingDemo', 'onboardingSplash', 'onboardingCarousel', 'longPressHint', 'mcycPayload', 'nameUtils', 'styleValidators', 'cycleMode', 'priorityLevel', 'schemaVersion', 'schemaMigration26', 'undoSnapshotUtils', 'undoTransactionDiff', 'bootSw',
+    'taskDOMPatch', 'debugMode', 'iconInit', 'icons', 'keyboardNav', 'collapsibleSections', 'educationalTips', 'routineSwitcherThemePicker', 'routineSwitcherPreview', 'routineSwitcherListTransforms', 'routineSwitcherRepair', 'routineSwitcherActions', 'routineBrowser', 'onboardingDemo', 'onboardingSplash', 'onboardingCarousel', 'longPressHint', 'mcycPayload', 'nameUtils', 'styleValidators', 'cycleMode', 'priorityLevel', 'schemaVersion', 'schemaMigration26', 'undoSnapshotUtils', 'undoTransactionDiff', 'bootSw',
     'statsPanelGestures', 'statsPanelRewards', 'taskViewLayoutManager',
     'recurringPanelEvents', 'recurringPanelForm', 'recurringPanelGrids',
     'recurringPanelSetup', 'recurringPanelSummary', 'recurringSettings',

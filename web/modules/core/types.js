@@ -221,6 +221,8 @@
  * @property {boolean} [autoSave=true] - Auto-save enabled
  * @property {boolean} [showThreeDots=false] - Show three dots menu globally
  * @property {boolean} [showTaskInput=true] - Show task input bar
+ * @property {'list'|'browse'} [routineOpenView] - What opening routines shows: the Open Routine list or Browse Routines; absent = list
+ * @property {'recent'|'alpha'} [routineBrowserSort='recent'] - Browse Routines' order
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding
  * @property {boolean} [onboardingResetRequested=false] - Set by Reset Onboarding; the boot gate shows the refresher modal once for it, then clears it
  * @property {number|'done'|null} [guidedTourStep=null] - Guided tour progress state

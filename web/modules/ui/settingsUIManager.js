@@ -114,6 +114,7 @@ export function _resetForTesting() {
     _initialized.reducedMotionToggle = false;
     _initialized.highContrastToggle = false;
     _initialized.fontSizeSelect = false;
+    _initialized.routineOpenViewSelect = false;
     _initialized.notificationsToggle = false;
 }
 
@@ -136,6 +137,7 @@ const _initialized = {
     reducedMotionToggle: false,
     highContrastToggle: false,
     fontSizeSelect: false,
+    routineOpenViewSelect: false,
     notificationsToggle: false,
 };
 
@@ -1402,6 +1404,46 @@ export function setupFontSizeSelect() {
  * Initialize all settings UI components
  */
 /**
+ * "When you open routines, show: List / Browse". Wired once; its value is
+ * re-read on EVERY call, and initAllToggles() runs on every Settings open, so
+ * the control never shows a stale choice — a brand-new user's value is only
+ * written when their first routine is created, after boot ran this, and a
+ * restore or import can change it too. The routine button, Quick Action and
+ * Focus View menu follow the stored value on their own (routineSwitcher
+ * watches it), so this only writes it.
+ */
+export function setupRoutineOpenViewSelect() {
+    const select = document.getElementById(DOM_IDS.ROUTINE_OPEN_VIEW_SELECT);
+    if (!select) return;
+    const settings = currentSettings();
+    if (settings) select.value = settings.routineOpenView === 'browse' ? 'browse' : 'list';
+
+    if (_initialized.routineOpenViewSelect) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.routineOpenViewSelect = true;
+
+    select._changeHandler = async () => {
+        const view = select.value === 'browse' ? 'browse' : 'list';
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            select.value = 'list';
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.routineOpenView = view;
+        }, true);
+    };
+
+    safeAddEventListener(select, 'change', select._changeHandler);
+}
+
+/**
  * Setup notifications toggle
  * When disabled, showNotification() silently skips all notifications.
  */
@@ -1489,6 +1531,7 @@ export function initAllToggles() {
     setupReducedMotionToggle();
     setupHighContrastToggle();
     setupFontSizeSelect();
+    setupRoutineOpenViewSelect();
     setupNotificationsToggle();
     applyPriorityColor();
 }

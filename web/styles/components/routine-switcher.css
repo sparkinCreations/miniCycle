@@ -1277,3 +1277,528 @@ input.routine-search-input:focus {
         padding: var(--space-1) var(--space-1-5);
     }
 }
+
+/* =============================================================================
+   OPEN ROUTINE → BROWSE CORNER BUTTON
+   Top-right of the switcher card; Browse's own corner button sits in the same
+   spot and leads back, so the way between the two is learned once.
+   ============================================================================= */
+
+.switch-browse-btn {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1) var(--space-2-5);
+    border: 1px solid var(--border-blue-subtle-hover);
+    border-radius: var(--radius-full);
+    background: var(--color-blue-pale);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-xs);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.switch-browse-btn:hover {
+    border-color: var(--color-primary-dark);
+}
+
+/* On a phone the word would run into the centred "Open Routine" title (measured
+   at 320 and 390px), so the cards icon stands alone — named by its aria-label
+   and, like the routine actions, by a press-and-hold hint. */
+@media (max-width: 480px) {
+    .switch-browse-btn {
+        padding: var(--space-1-5);
+    }
+
+    .switch-browse-btn span {
+        display: none;
+    }
+}
+
+/* =============================================================================
+   BROWSE ROUTINES (routine/routineBrowser.js)
+   Full screen, one routine at a time, read-only. The card reads the same
+   --pref-* variables the real task list does (task-list.css §CUSTOM PREFERENCE
+   COLORS), set on the card itself from the routine's own theme, so each routine
+   wears its colours. Like the task list, those only apply outside dark mode.
+   ============================================================================= */
+
+#routine-browser {
+    /* The surround: dark blue, so the routine is the only bright thing. */
+    --rb-surround: rgba(10, 22, 48, 0.96);
+    --rb-surround-text: #ffffff;
+    --rb-surround-muted: rgba(255, 255, 255, 0.78);
+    --rb-control-bg: rgba(255, 255, 255, 0.12);
+    --rb-control-border: rgba(255, 255, 255, 0.32);
+
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: none;
+    padding: calc(var(--space-3) + var(--safe-area-top)) var(--space-4) calc(var(--space-3) + var(--safe-area-bottom));
+    background: var(--rb-surround);
+    color: var(--rb-surround-text);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+#routine-browser[open] {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+#routine-browser::backdrop {
+    background: rgba(0, 0, 0, 0.6);
+}
+
+/* :where() keeps this at element specificity, so each button's own class
+   (sizes, weights, the active sort's colours) still wins over it. */
+:where(#routine-browser) button {
+    font-family: inherit;
+    color: inherit;
+}
+
+#routine-browser button:focus-visible {
+    outline: 3px solid #ffffff;
+    outline-offset: 2px;
+}
+
+.rb-top {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-wrap: wrap;
+}
+
+.rb-close-btn,
+.rb-sort-btn,
+.rb-all-btn,
+.rb-corner-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: var(--space-1-5) var(--space-3);
+    border: 1px solid var(--rb-control-border);
+    border-radius: var(--radius-full);
+    background: var(--rb-control-bg);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.rb-close-btn {
+    width: 40px;
+    height: 40px;
+    justify-content: center;
+    padding: 0;
+    font-size: var(--font-size-xl);
+    line-height: 1;
+}
+
+.rb-sort {
+    display: inline-flex;
+    gap: var(--space-1);
+}
+
+.rb-sort-btn.active {
+    background: #ffffff;
+    color: var(--color-primary-dark);
+    border-color: #ffffff;
+}
+
+/* Back to the list: top-right, the same spot as Open Routine's Browse button. */
+.rb-corner-btn {
+    margin-left: auto;
+}
+
+.rb-stage {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    touch-action: pan-y;   /* the browser keeps vertical scrolling; sideways is ours */
+}
+
+.rb-nav-btn {
+    flex: 0 0 auto;
+    width: 48px;
+    height: 48px;
+    border: 1px solid var(--rb-control-border);
+    border-radius: 50%;
+    background: var(--rb-control-bg);
+    font-size: 30px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.rb-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
+/* The routine, as the app draws it. Read-only: a tap anywhere opens it. */
+.rb-card {
+    flex: 1 1 auto;
+    width: 100%;
+    max-width: 520px;
+    height: 100%;
+    max-height: 680px;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2-5);
+    padding: var(--space-4);
+    box-sizing: border-box;
+    border-radius: var(--radius-lg);
+    background: var(--theme-bg-gradient);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    color: var(--theme-text-on-surface);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+body:not(.dark-mode) .rb-card {
+    background: var(--pref-app-bg, var(--theme-bg-gradient));
+}
+
+.rb-card--enter-next { animation: rb-enter-next var(--transition-normal) ease-out; }
+.rb-card--enter-prev { animation: rb-enter-prev var(--transition-normal) ease-out; }
+
+@keyframes rb-enter-next {
+    from { transform: translateX(32px); opacity: 0.4; }
+    to { transform: none; opacity: 1; }
+}
+
+@keyframes rb-enter-prev {
+    from { transform: translateX(-32px); opacity: 0.4; }
+    to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rb-card--enter-next,
+    .rb-card--enter-prev {
+        animation: none;
+    }
+}
+
+html.reduced-motion .rb-card--enter-next,
+html.reduced-motion .rb-card--enter-prev {
+    animation: none;
+}
+
+/* Home View shows the mode above the list; Focus View does not. */
+.rb-mode-pill {
+    align-self: center;
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.85);
+    color: var(--color-primary-dark);
+    font-size: var(--font-size-sm);
+    font-weight: var(--font-weight-semibold);
+}
+
+.rb-panel {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    border-radius: var(--radius-lg);
+    background: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+}
+
+body:not(.dark-mode) .rb-panel {
+    background: var(--pref-task-list-bg, rgba(255, 255, 255, 0.15));
+}
+
+.rb-panel-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+    background: rgba(255, 255, 255, 0.4);
+    color: rgba(43, 43, 43, 0.85);
+    flex-wrap: wrap;   /* a long name pushes the Current tag under it */
+    font-size: var(--font-size-lg);
+    font-weight: var(--font-weight-semibold);
+    text-align: center;
+}
+
+body:not(.dark-mode) .rb-panel-title {
+    background: var(--pref-title-bg, rgba(255, 255, 255, 0.4));
+    color: var(--pref-title-text, rgba(43, 43, 43, 0.85));
+}
+
+.rb-current-tag {
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-full);
+    background: var(--color-primary-dark);
+    color: #ffffff;
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+}
+
+.rb-tasks {
+    flex: 1;
+    min-height: 0;
+    margin: 0;
+    padding: var(--space-2-5);
+    list-style: none;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+}
+
+.rb-task {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-bottom: var(--space-2);
+    padding: var(--space-2-5) var(--space-3);
+    border-radius: var(--radius-md);
+    background: var(--theme-task-bg);
+    color: var(--theme-text-on-surface);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+body:not(.dark-mode) .rb-task {
+    background: var(--pref-task-bg, var(--theme-task-bg, rgba(255, 255, 255, 0.95)));
+    color: var(--pref-task-text, var(--theme-text-on-surface));
+}
+
+.rb-check {
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    border: 2px solid rgba(180, 180, 180, 0.6);
+    border-radius: 50%;
+    background: rgba(200, 200, 200, 0.25);
+    box-sizing: border-box;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+body:not(.dark-mode) .rb-check {
+    background: var(--pref-checkbox-incomplete-bg, rgba(200, 200, 200, 0.25));
+    border-color: var(--pref-checkbox-incomplete-bg, rgba(180, 180, 180, 0.6));
+}
+
+.rb-task--done .rb-check {
+    background: #5db567;
+    border-color: #40af4d;
+}
+
+body:not(.dark-mode) .rb-task--done .rb-check {
+    background: var(--pref-checkbox-bg, #5db567);
+    border-color: var(--pref-checkbox-bg, #40af4d);
+}
+
+.rb-task--done .rb-check::after {
+    content: '✓';
+    font-size: 14px;
+    font-weight: 700;
+    color: rgb(18, 70, 9);
+}
+
+body:not(.dark-mode) .rb-task--done .rb-check::after {
+    color: var(--pref-checkmark, rgb(18, 70, 9));
+}
+
+.rb-empty {
+    margin: auto;
+    padding: var(--space-5);
+    opacity: 0.8;
+    text-align: center;
+}
+
+.rb-progress {
+    flex: 0 0 auto;
+    height: 8px;
+    border-radius: var(--radius-full);
+    background: var(--theme-progress-track-bg);
+    overflow: hidden;
+}
+
+.rb-progress-fill {
+    height: 100%;
+    background: var(--theme-progress-fill-bg);
+}
+
+body:not(.dark-mode) .rb-progress-fill {
+    background: var(--pref-progress-bar, var(--theme-progress-fill-bg));
+}
+
+/* Dark mode drops theme colours app-wide; the card follows the real dark
+   Home View (dark-mode.css: body, .task-list-container, the title bar). */
+body.dark-mode .rb-card {
+    background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
+    color: #f0f0f0;
+}
+
+body.dark-mode .rb-mode-pill {
+    background: #2b2b2b;
+    color: #f0f0f0;
+}
+
+body.dark-mode .rb-panel {
+    background: rgba(40, 40, 45, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+body.dark-mode .rb-panel-title {
+    background: #5a5a5a;
+    color: #eaeaea;
+}
+
+/* Under the routine: its name, mode and place, and its size. */
+.rb-info {
+    text-align: center;
+}
+
+.rb-title {
+    font-size: var(--font-size-xl);
+    font-weight: 700;
+    overflow-wrap: anywhere;
+}
+
+.rb-meta {
+    margin-top: var(--space-1);
+    color: var(--rb-surround-muted);
+    font-size: var(--font-size-sm);
+}
+
+.rb-actions {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-3);
+}
+
+.rb-open-btn,
+.rb-create-btn {
+    min-width: 140px;
+    padding: var(--space-2-5) var(--space-5);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.rb-open-btn {
+    border: none;
+    background: #ffffff;
+    color: var(--color-primary-dark);
+}
+
+.rb-create-btn {
+    border: 1px solid var(--rb-control-border);
+    background: var(--rb-control-bg);
+}
+
+/* All routines: a plain jump list — names (and dates in Recent), nothing else.
+   Drops down under its button (top left) on a wide screen, rises from the
+   bottom on a phone. */
+.rb-jump {
+    position: absolute;
+    top: calc(var(--space-3) + var(--safe-area-top) + 52px);
+    left: var(--space-4);
+    bottom: calc(var(--space-3) + var(--safe-area-bottom));
+    width: min(340px, calc(100% - 2 * var(--space-4)));
+    padding: var(--space-2);
+    box-sizing: border-box;
+    border-radius: var(--radius-lg);
+    background: var(--theme-modal-bg);   /* opaque: it sits over the routine */
+    color: var(--theme-modal-text);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    z-index: 2;
+}
+
+.rb-jump[hidden] {
+    display: none;
+}
+
+.rb-jump ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.rb-jump-item {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: var(--space-3);
+    padding: var(--space-2-5) var(--space-3);
+    border: none;
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--theme-modal-text);
+    text-align: left;
+    cursor: pointer;
+}
+
+.rb-jump-item:hover,
+.rb-jump-item:focus-visible {
+    background: rgba(76, 121, 255, 0.15);
+}
+
+#routine-browser .rb-jump-item:focus-visible {
+    outline-color: var(--color-primary-dark);
+}
+
+.rb-jump-item--current {
+    font-weight: 700;
+    background: rgba(76, 121, 255, 0.12);
+}
+
+.rb-jump-date {
+    flex: 0 0 auto;
+    opacity: 0.7;
+    font-size: var(--font-size-xs);
+}
+
+@media (max-width: 600px) {
+    #routine-browser {
+        padding-left: var(--space-2-5);
+        padding-right: var(--space-2-5);
+    }
+
+    .rb-nav-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 24px;
+    }
+
+    /* Two rows: close and the way back to the list, then order and jump. */
+    .rb-top::after {
+        content: '';
+        order: 1;
+        flex-basis: 100%;
+    }
+
+    .rb-corner-btn { order: 1; }
+    .rb-sort { order: 2; }
+    .rb-all-btn { order: 3; margin-left: auto; }
+
+    .rb-jump {
+        top: auto;
+        left: var(--space-2-5);
+        right: var(--space-2-5);
+        width: auto;
+        max-height: 62vh;
+    }
+}

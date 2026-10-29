@@ -195,6 +195,8 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_EXTRA_LONG: 6000, // 6000ms - Extra-long notification (migration, milestones)
     NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
+    ROUTINE_BROWSER_WHEEL_QUIET: 250, // 250ms - Browse Routines: a wheel/trackpad gesture moves ONE routine; further wheel events are ignored until they pause this long (a trackpad flick fires dozens)
+    ROUTINE_BROWSER_SWIPE_CLICK_GUARD: 350, // ms - Browse Routines: the click a browser sends after a swipe's touchend is ignored for this long, so ending a swipe on the routine does not open it
     FOCUS_EXIT_DOUBLE_ESCAPE: 1500, // 1500ms - In Focus View, a second Escape within this leaves the view; also how long the "press again" hint stays up
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
@@ -803,6 +805,7 @@ export const EVENTS = Object.freeze({
         reveals, drag marks, body classes, long-press hints) runs before the
         event; this is for state only its owner can see. */
     UI_ESCAPE_RESET: 'ui:escapeReset',
+    ROUTINE_OPEN_VIEW_CHANGED: 'routines:openViewChanged', // routineSwitcher when settings.routineOpenView changes (detail.view 'list' | 'browse'): Quick Actions and the Focus View menu relabel their open-routines entry
     /** Dispatched on document by the undo wrapper just before it captures the
         pre-write snapshot for a user action. A module holding coalesced writes
         of its own (taskViewLayoutManager's drag positions) flushes them on this,
@@ -824,6 +827,42 @@ export const EVENTS = Object.freeze({
  * @constant {Object}
  */
 export const DOM_CLASSES = Object.freeze({
+    // Browse Routines (routine/routineBrowser.js). Own classes on purpose — NOT
+    // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
+    // drag, counts) and would sweep up the read-only preview's copies.
+    RB_TOP: 'rb-top',
+    RB_CORNER_BTN: 'rb-corner-btn',
+    RB_CLOSE_BTN: 'rb-close-btn',
+    RB_SORT: 'rb-sort',
+    RB_SORT_BTN: 'rb-sort-btn',
+    RB_ALL_BTN: 'rb-all-btn',
+    RB_STAGE: 'rb-stage',
+    RB_NAV_BTN: 'rb-nav-btn',
+    RB_CARD: 'rb-card',
+    RB_CARD_FOCUS_STYLE: 'rb-card--focus-style',
+    RB_CARD_ENTER_NEXT: 'rb-card--enter-next',
+    RB_CARD_ENTER_PREV: 'rb-card--enter-prev',
+    RB_MODE_PILL: 'rb-mode-pill',
+    RB_PANEL: 'rb-panel',
+    RB_PANEL_TITLE: 'rb-panel-title',
+    RB_CURRENT_TAG: 'rb-current-tag',
+    RB_TASKS: 'rb-tasks',
+    RB_TASK: 'rb-task',
+    RB_TASK_DONE: 'rb-task--done',
+    RB_CHECK: 'rb-check',
+    RB_EMPTY: 'rb-empty',
+    RB_PROGRESS: 'rb-progress',
+    RB_PROGRESS_FILL: 'rb-progress-fill',
+    RB_INFO: 'rb-info',
+    RB_TITLE: 'rb-title',
+    RB_META: 'rb-meta',
+    RB_ACTIONS: 'rb-actions',
+    RB_OPEN_BTN: 'rb-open-btn',
+    RB_CREATE_BTN: 'rb-create-btn',
+    RB_JUMP: 'rb-jump',
+    RB_JUMP_ITEM: 'rb-jump-item',
+    RB_JUMP_ITEM_CURRENT: 'rb-jump-item--current',
+    RB_JUMP_DATE: 'rb-jump-date',
     SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
     SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
     // ---- Visibility ----
@@ -1247,6 +1286,11 @@ export const DOM_IDS = Object.freeze({
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
     OPEN_SHORTCUTS_MODAL: 'open-shortcuts-modal',   // main menu → Keyboard Shortcuts
+    ROUTINE_BROWSER: 'routine-browser',              // Browse Routines — one routine at a time (routineBrowser.js)
+    ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
+    ROUTINE_BROWSER_JUMP_LIST: 'routine-browser-jump-list',
+    SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
+    ROUTINE_OPEN_VIEW_SELECT: 'routine-open-view-select', // Settings → When you open routines, show: List / Browse
     SHORTCUTS_MODAL: 'shortcuts-modal',
     SHORTCUTS_MODAL_TITLE: 'shortcuts-modal-title',
     SHORTCUTS_LIST: 'shortcuts-list',

@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
@@ -32,6 +32,7 @@ import * as preview from './routineSwitcherPreview.js';
 import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
+import { RoutineBrowser, ROUTINE_VIEW_ICONS } from './routineBrowser.js';
 import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -39,7 +40,7 @@ import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from 
 // ============================================================================
 
 // Storage utilities - dynamically loaded to avoid ES module cache issues
-let updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection;
+let updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection, getStorageInfo;
 let adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated;
 
 // Name utilities
@@ -134,6 +135,9 @@ export class RoutineSwitcher {
         // and immediately call deleteMiniCycle(), so a lazily-loaded sub-module
         // would be null on that path. Safe because the class holds no state.
         this._actions = new RoutineSwitcherActions(this);
+        // Browse Routines — the one-at-a-time view (routineBrowser.js). Same
+        // reasoning as _actions: constructed here, statically imported.
+        this._browser = new RoutineBrowser(this);
 
         this._previewCallbacks = {
             getSelectedItem: () => this._getSelectedItem()
@@ -159,12 +163,72 @@ export class RoutineSwitcher {
         // ✅ Automatically setup click-outside handler
         this.setupModalClickOutside();
 
+        // The routine button shows the icon and name of whichever view it will
+        // open (Settings → "When you open routines, show"). Watched in state, not
+        // wired from Settings: the value also arrives when a brand-new user's
+        // first data is created, and with a restore or an import.
+        this._openViewWatch = (newData, oldData) => {
+            const now = this._routineOpenView(newData);
+            if (now === this._routineOpenView(oldData) && this._entryPointsView === now) return;
+            this.syncEntryPoints(now);
+            document.dispatchEvent(new CustomEvent(EVENTS.ROUTINE_OPEN_VIEW_CHANGED, { detail: { view: now } }));
+        };
+        this.deps.AppState?.subscribe?.('routineOpenView', this._openViewWatch);
+        if (this.deps.AppState?.isReady?.()) this.syncEntryPoints();
+
     }
 
     /**
-     * Open switch miniCycle modal
+     * Which view opening routines shows. Anything but 'browse' is the list —
+     * including no value at all, which is every user from before Browse existed.
+     * @param {Object} [state]
+     * @returns {'list'|'browse'}
      */
-    switchMiniCycle() {
+    _routineOpenView(state = this.deps.AppState?.get?.()) {
+        return state?.settings?.routineOpenView === 'browse' ? 'browse' : 'list';
+    }
+
+    /**
+     * Give the routine button the icon and name of the view it opens, so the two
+     * are never confused: folder for the list, cards for Browse.
+     * @param {'list'|'browse'} [view]
+     */
+    syncEntryPoints(view = this._routineOpenView()) {
+        this._entryPointsView = view;
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
+        if (!btn) return;
+        btn.innerHTML = ROUTINE_VIEW_ICONS[view];
+        const name = getLabel(view === 'browse' ? 'routine.browseAria' : 'routine.switchAria');
+        btn.setAttribute('aria-label', name);
+        btn.title = name;
+        btn.dataset.routineView = view;
+    }
+
+    /** Browse Routines, for tests and the shortcuts. */
+    get browser() {
+        return this._browser;
+    }
+
+    /**
+     * Boot-retry teardown (moduleLoader.destroyAllModules): the state watch and
+     * Browse Routines' dialog, so a retried boot does not watch twice.
+     */
+    destroy() {
+        if (this._openViewWatch) {
+            this.deps.AppState?.unsubscribe?.('routineOpenView', this._openViewWatch);
+            this._openViewWatch = null;
+        }
+        this._browser.destroy();
+    }
+
+    /**
+     * Open routines — in the view Settings chose, unless one is asked for.
+     * @param {{view?: 'list'|'browse', returnFocus?: Element|null}} [options]
+     *   view: force a view (each view's corner button asks for the other);
+     *   returnFocus: where focus goes when the list closes, when it was not
+     *   opened from the element that has focus now (coming from Browse)
+     */
+    switchMiniCycle({ view, returnFocus } = {}) {
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
@@ -189,6 +253,12 @@ export class RoutineSwitcher {
         }
 
         const cycles = getRoutines(currentState) || {};
+
+        if ((view || this._routineOpenView(currentState)) === 'browse' && Object.keys(cycles).length > 0) {
+            this._browser.open();
+            return;
+        }
+
         const switchModal = this.deps.getModal('routineSwitcher');
         const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         const duplicateButton = this.deps.getElementById(DOM_IDS.SWITCH_DUPLICATE);
@@ -203,8 +273,9 @@ export class RoutineSwitcher {
             return;
         }
 
-        switchModal._previousFocus = document.activeElement;
+        switchModal._previousFocus = returnFocus || document.activeElement;
         if (!switchModal.open) switchModal.showModal();
+        this._wireBrowseCorner(switchModal);
 
         // Re-arm the blank-click deselect. _cleanup() removes it on every close
         // (Apr 2026) but until Sep 2026 it was only ever attached in the
@@ -361,6 +432,9 @@ export class RoutineSwitcher {
     // Kept as pass-throughs (not stored) so they stay live if init runs later.
     getObjectSizeBytes(cycle) { return getObjectSizeBytes(cycle); }
     getUniqueCycleName(name, cycles) { return getUniqueCycleName(name, cycles); }
+    // For Browse Routines' size line — the storage bar's own figures.
+    formatBytes(bytes) { return formatBytes ? formatBytes(bytes) : `${bytes} B`; }
+    getStorageInfo() { return getStorageInfo ? getStorageInfo() : null; }
     adjustStorageEstimate(bytes) { return adjustStorageEstimate(bytes); }
     updateStorageBarUIEstimated(...args) { return updateStorageBarUIEstimated(...args); }
 
@@ -399,7 +473,40 @@ export class RoutineSwitcher {
         themePicker.closeThemePicker(this.deps);
     }
 
-    hideSwitchMiniCycleModal() {
+    /**
+     * Open Routine's top-right corner: Browse Routines, with its own cards icon.
+     * Re-wired on every open and removed by _cleanup(), like the other buttons.
+     * @param {HTMLDialogElement} switchModal
+     * @private
+     */
+    _wireBrowseCorner(switchModal) {
+        const btn = this.deps.getElementById(DOM_IDS.SWITCH_BROWSE_BTN);
+        if (!btn) return;
+        if (!btn.dataset.iconSet) {
+            btn.innerHTML = ROUTINE_VIEW_ICONS.browse;
+            const label = document.createElement('span');
+            label.textContent = getLabel('routineBrowser.fromListBtn');
+            btn.appendChild(label);
+            btn.setAttribute('aria-label', getLabel('routineBrowser.fromListAria'));
+            btn.title = getLabel('routineBrowser.fromListAria');
+            btn.dataset.iconSet = '1';
+        }
+        if (btn._clickHandler) btn.removeEventListener('click', btn._clickHandler);
+        btn._clickHandler = () => {
+            // Hand Browse the element that opened the list, so closing Browse
+            // puts focus back there rather than on the page.
+            const opener = switchModal._previousFocus || null;
+            // Cleared, not just skipped: the dialog's own `close` event restores
+            // _previousFocus too, a moment later, and would pull focus out of Browse.
+            switchModal._previousFocus = null;
+            this.hideSwitchMiniCycleModal({ restoreFocus: false });
+            this._browser._previousFocus = opener;
+            this._browser.open({ fromList: true });
+        };
+        btn.addEventListener('click', btn._clickHandler);
+    }
+
+    hideSwitchMiniCycleModal({ restoreFocus = true } = {}) {
 
         const switchModal = this.deps.getModal('routineSwitcher');
 
@@ -411,7 +518,7 @@ export class RoutineSwitcher {
         if (switchModal.open) switchModal.close();
         this.closeThemePicker();
         this._cleanup();
-        switchModal._previousFocus?.focus({ focusVisible: false });
+        if (restoreFocus) switchModal._previousFocus?.focus({ focusVisible: false });
     }
 
     /**
@@ -440,7 +547,8 @@ export class RoutineSwitcher {
         const buttonIds = [
             DOM_IDS.SWITCH_DUPLICATE, DOM_IDS.SWITCH_RENAME, DOM_IDS.SWITCH_DELETE,
             DOM_IDS.SWITCH_DOWNLOAD, DOM_IDS.SWITCH_THEME_BTN,
-            DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE
+            DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE,
+            DOM_IDS.SWITCH_BROWSE_BTN
         ];
         buttonIds.forEach(id => {
             const btn = this.deps.getElementById(id);
@@ -479,6 +587,17 @@ export class RoutineSwitcher {
             this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
+
+        this._openRoutineByKey(cycleKey);
+    }
+
+    /**
+     * Switch to a routine by key: the one way both the list (confirmMiniCycle)
+     * and Browse Routines open a routine, so they cannot drift apart.
+     * @param {string} cycleKey
+     */
+    _openRoutineByKey(cycleKey) {
+        if (!this.deps.AppState?.isReady?.() || !cycleKey) return;
 
         // ✅ Validate and repair cycle data before switching (like import does)
         const repaired = this._validateAndRepairCycleData(cycleKey);
@@ -527,8 +646,10 @@ export class RoutineSwitcher {
             });
         }
 
-        // ✅ Close modal first to avoid UI conflicts
-        this.hideSwitchMiniCycleModal();
+        // ✅ Close modal first to avoid UI conflicts. Only when it is open: from
+        // Browse Routines the list is not on screen, and closing it again would
+        // send focus to whatever opened the list last time.
+        if (this.deps.getModal('routineSwitcher')?.open) this.hideSwitchMiniCycleModal();
 
         // Load straight away. A 100ms timer used to sit here "to ensure state is
         // fully propagated", but AppState.update is synchronous and the check
@@ -598,6 +719,10 @@ export class RoutineSwitcher {
 
             // ✅ Check if click is inside a confirmation/prompt modal dialog
             const modalOverlay = event.target.closest(DOM_SELECTORS.MINI_MODAL_OVERLAY);
+            // Browse Routines' "Open Routine" corner opens the list from inside a
+            // click; that same click then bubbles here and would close the list
+            // it just opened.
+            const browser = this.deps.getElementById(DOM_IDS.ROUTINE_BROWSER);
 
             // ✅ If clicked area is NOT inside the modal, main menu, routine switcher button, or confirmation modal, close it
             if (
@@ -605,7 +730,8 @@ export class RoutineSwitcher {
                 !mainMenu.contains(event.target) &&
                 event.target !== routineSwitcherBtn &&
                 !routineSwitcherBtn?.contains(event.target) &&
-                !modalOverlay
+                !modalOverlay &&
+                !browser?.contains(event.target)
             ) {
                 if (switchModal.open) switchModal.close();
                 switchModal._previousFocus?.focus({ focusVisible: false });
@@ -1288,6 +1414,8 @@ export class RoutineSwitcher {
             [DOM_IDS.SWITCH_DELETE, 'switcher.deleteRoutine'],
             [DOM_IDS.SWITCH_DOWNLOAD, 'switcher.downloadRoutine'],
             [DOM_IDS.SWITCH_THEME_BTN, 'switcher.changeRoutineTheme'],
+            // Icon-only on a phone too (its word would cover the title there).
+            [DOM_IDS.SWITCH_BROWSE_BTN, 'routineBrowser.fromListAria'],
         ];
 
         this._actionHintDetachers.forEach(detach => detach());
@@ -1654,6 +1782,7 @@ export async function initRoutineSwitcher(dependencies) {
     updateStorageBarUI = storageUtils.updateStorageBarUI;
     getObjectSizeBytes = storageUtils.getObjectSizeBytes;
     formatBytes = storageUtils.formatBytes;
+    getStorageInfo = storageUtils.getStorageInfo;
     forceQuotaRedetection = storageUtils.forceQuotaRedetection;
     adjustStorageEstimate = storageUtils.adjustStorageEstimate;
     resetStorageEstimate = storageUtils.resetStorageEstimate;

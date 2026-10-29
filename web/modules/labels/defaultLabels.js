@@ -220,6 +220,7 @@ export const DEFAULT_LABELS = deepFreeze({
         duplicate:       'Duplicate',
         duplicateTitle:  'Duplicate the current routine',
         switchAria:      'Switch routine',
+        browseAria:      'Browse routines',   // the same button when Settings → routines open in Browse
         untitled:        'Untitled Routine',
         untitledCycle:   'Untitled Cycle',
         noSelected:      'No Routine Selected'
@@ -1487,6 +1488,13 @@ export const DEFAULT_LABELS = deepFreeze({
         fontSizeDefault:      'Default',
         fontSizeLarge:        'Large',
         fontSizeExtraLarge:   'Extra Large',
+        // Which view the routine button (and every other way to open routines)
+        // shows. New users get Browse when touch is their main input, the List
+        // otherwise (createInitialSchemaData); everyone else keeps the List.
+        routineOpenView:      'When you open routines, show',
+        routineOpenViewDesc:  'The list for searching and managing routines, or Browse to flip through them one at a time. The other is always one tap away.',
+        routineOpenViewList:  'List',
+        routineOpenViewBrowse: 'Browse',
         showHelpWindow:       'Show Help Window',
         showQuickActions:     'Show Quick Actions',
         oneSectionAtATime:    'Open one menu section at a time',
@@ -1806,6 +1814,7 @@ export const DEFAULT_LABELS = deepFreeze({
         menuTitle:      'Focus View actions',
         menuAria:       'Open Focus View actions menu',
         switchRoutines: 'Switch routines',
+        browseRoutines: 'Browse routines',
         createRoutine:  'Create new routine',
         toggleInputBar: 'Show/hide input bar',
         toggleDarkMode: 'Toggle dark mode',
@@ -1855,6 +1864,36 @@ export const DEFAULT_LABELS = deepFreeze({
     // Keyboard Shortcuts dialog (main menu → Help & Support, and Focus View's ⋯
     // menu). Rows are built from KEYBOARD_SHORTCUTS in modalManager, so the keys
     // shown cannot drift from the keys handled. {mod} is "Alt" or "Option".
+    // Browse Routines (routine/routineBrowser.js): one routine at a time, read-only,
+    // in its own theme colours, flipped with arrows / keys / swipe / wheel.
+    routineBrowser: {
+        title:          'Browse Routines',
+        closeAria:      'Close Browse Routines',
+        toList:         'Open Routine',
+        toListAria:     'Show the Open Routine list',
+        fromListBtn:    'Browse',
+        fromListAria:   'Browse routines one at a time',
+        sortAria:       'Order',
+        sortAlpha:      'A-Z',
+        sortRecent:     'Recent',
+        allRoutines:    'All routines',
+        allRoutinesAria: 'Jump to a routine',
+        jumpListAria:   'All routines',
+        prev:           'Previous routine',
+        next:           'Next routine',
+        open:           'Open',
+        openAria:       'Open {name}',
+        cardAria:       'Preview of {name}',
+        current:        'Current',
+        noTasks:        'No tasks yet',
+        position:       '{position} of {total} routines',
+        onlyOne:        'Only one routine, nothing to switch to yet',
+        storageLine:    '{size} · {used} of {total} used',
+        createAnother:  'Create another routine',
+        dateUnknown:    'No date',
+        announce:       '{name}, {mode}, {position} of {total}',
+    },
+
     shortcuts: {
         menuItem:      'Keyboard Shortcuts',
         menuItemTitle: 'See every keyboard shortcut',
@@ -1864,9 +1903,13 @@ export const DEFAULT_LABELS = deepFreeze({
         groupApp:      'App',
         groupTasks:    'Tasks',
         groupViews:    'Views',
+        groupBrowse:   'Browse Routines',
         groupGeneral:  'General',
         newRoutine:    'Create a new routine',
-        openRoutine:   'Open the routine switcher',
+        openRoutine:   'Open routines (the list or Browse)',
+        browseFlip:    'Previous or next routine',
+        browseEnds:    'First or last routine',
+        browseOpen:    'Open the routine on screen',
         nextMode:      'Next mode (Auto Cycle → Manual Cycle → To-Do)',
         focusView:     'Focus View on or off',
         toggleInput:   'Show or hide the input bar',
@@ -2011,6 +2054,7 @@ export const DEFAULT_LABELS = deepFreeze({
     quickAction: {
         stats:          'Stats',
         openRoutine:    'Open Routine',
+        browseRoutines: 'Browse Routines',   // the same action when Settings → routines open in Browse
         recurring:      'Recurring',
         reminders:      'Reminders',
         settings:       'Settings',
@@ -2785,6 +2829,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'routine.importTitle',
     'routine.duplicateTitle',
     'routine.switchAria',
+    'routine.browseAria',
     'routine.untitled',
     'routine.duplicate',
 

@@ -6562,7 +6562,253 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
     return { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', failures };
 }
 
+// ── Browse Routines: the one-at-a-time view of the routine switcher ─────────
+// Designed with the user (Oct 2026). What a unit test cannot see: the real
+// app's default per device, the list ↔ Browse hand-over (the list's
+// click-outside handler once closed the list in the very click that opened it),
+// the real wheel and keyboard, the setting reaching every entry point, and the
+// phone layout (nothing overlaps, nothing scrolls sideways).
+async function journeyBrowseRoutines(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const NAMES = ['Morning Routine', 'Evening Wind-down', 'Gym Push Day', 'Gym Pull Day', 'Weekly Review', 'Grocery Run'];
+    const THEMES = [null, 'fitness', null, 'scholar', null, 'cleaning'];
+    const HOUR = 3600e3;
+    const seed = async (page, { count = NAMES.length, active = 'r2', view } = {}) => {
+        const doc = await page.evaluate(({ NAMES, THEMES, HOUR, count, active, view }) => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const base = d.data.routine[d.appState.activeRoutineId];
+            const out = {};
+            NAMES.slice(0, count).forEach((n, i) => {
+                const r = JSON.parse(JSON.stringify(base));
+                r.title = n;
+                r.autoReset = i % 3 === 0;
+                r.deleteCheckedTasks = i % 3 === 2;
+                if (THEMES[i]) r.theme = THEMES[i]; else delete r.theme;
+                r.tasks = Array.from({ length: i === 4 ? 40 : 3 }, (_, k) => ({ ...base.tasks[0], id: `r${i}t${k}`, text: `${n} step ${k + 1}`, completed: k === 0 }));
+                r.history = { events: [], maxEvents: 100 };
+                // Recent order = r0, r1, r2, … (r0 used most recently).
+                r.lastAccessedAt = Date.now() - i * HOUR;
+                out['r' + i] = r;
+            });
+            d.data.routine = out;
+            d.appState.activeRoutineId = active;
+            d.settings.focusModeActive = false;
+            if (view === undefined) delete d.settings.routineOpenView; else d.settings.routineOpenView = view;
+            delete d.settings.routineBrowserSort;
+            return JSON.stringify(d);
+        }, { NAMES, THEMES, HOUR, count, active, view });
+        await reloadWithSeed(page, doc);
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        await page.evaluate(() => document.querySelectorAll('.notification .close-btn').forEach(b => b.click()));
+    };
+    const shown = (page) => page.evaluate(() => {
+        const d = document.getElementById('routine-browser');
+        return d && d.open ? d.querySelector('.rb-title').textContent : null;
+    });
+    const listOpen = (page) => page.evaluate(() => document.getElementById('routine-switcher-modal').open);
+    const activeTitle = (page) => page.evaluate(() => {
+        const p = JSON.parse(localStorage.getItem('miniCycleData'));
+        return p.data.routine[p.appState.activeRoutineId].title;
+    });
+
+    // ---- desktop
+    {
+        const { context, page } = await openFresh(browser, baseURL);
+        try {
+            const fresh = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView);
+            record('a brand-new user on a mouse/keyboard device starts with the list', fresh === 'list', `routineOpenView=${fresh}`);
+
+            await seed(page); // no setting at all: every user from before Browse
+            const btnView = await page.evaluate(() => document.getElementById('routine-switcher-btn').dataset.routineView);
+            record('an existing user (no setting) keeps the list', btnView === 'list', `button shows ${btnView}`);
+
+            await page.click('#routine-switcher-btn');
+            await page.waitForFunction(() => document.getElementById('routine-switcher-modal').open, null, { timeout: 5000 });
+            const corner = await page.evaluate(() => {
+                const b = document.getElementById('switch-browse-btn');
+                const range = document.createRange();
+                range.selectNodeContents(document.getElementById('routine-switcher-title'));
+                const t = range.getBoundingClientRect();
+                const r = b.getBoundingClientRect();
+                return { name: b.getAttribute('aria-label'), icon: !!b.querySelector('svg'), overlap: r.left < t.right && r.right > t.left && r.top < t.bottom && r.bottom > t.top };
+            });
+            record('the list has a named Browse corner button with its own icon, clear of the title', !!corner.name && corner.icon && !corner.overlap, JSON.stringify(corner));
+            await page.click('#switch-browse-btn');
+            await page.waitForTimeout(500);
+            record('Browse corner: Browse opens on the CURRENT routine', (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
+            const listStill = await listOpen(page);
+            record('…and the list it came from is closed', !listStill, `list open: ${listStill}`);
+            const focus = await page.evaluate(() => document.activeElement.className);
+            record('…with focus on Open', /rb-open-btn/.test(focus), `focus on ${focus}`);
+
+            await page.keyboard.press('ArrowRight');
+            await page.waitForTimeout(350);
+            record('→ shows the next routine (Recent order)', (await shown(page)) === 'Gym Pull Day', `showing ${await shown(page)}`);
+            const named = await page.evaluate(() => document.querySelector('#routine-browser .rb-card').getAttribute('aria-label'));
+            record('the card is named for screen readers', /Gym Pull Day/.test(named || ''), `aria-label "${named}"`);
+
+            // The wheel: one routine per gesture, outside the task list.
+            await page.mouse.move(60, 400);
+            await page.mouse.wheel(0, 100);
+            await page.mouse.wheel(0, 100);
+            await page.waitForTimeout(500);
+            record('one wheel gesture moves one routine', (await shown(page)) === 'Weekly Review', `showing ${await shown(page)}`);
+
+            // Over a long task list the wheel scrolls the list first.
+            const box = await page.locator('#routine-browser .rb-tasks').boundingBox();
+            await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+            await page.mouse.wheel(0, 150);
+            await page.waitForTimeout(500);
+            const scrolled = await page.evaluate(() => document.querySelector('#routine-browser .rb-tasks').scrollTop);
+            record('over a long task list the wheel scrolls the list, not the routine', (await shown(page)) === 'Weekly Review' && scrolled > 0, `showing ${await shown(page)}, scrollTop ${scrolled}`);
+
+            // All routines: shows, does not open.
+            await page.click('#routine-browser .rb-all-btn');
+            await page.waitForTimeout(300);
+            const items = await page.evaluate(() => [...document.querySelectorAll('#routine-browser .rb-jump-item')].map(i => i.textContent));
+            record('All routines lists every routine, with dates in Recent order', items.length === NAMES.length && /\d{4}/.test(items[0]), JSON.stringify(items.slice(0, 2)));
+            await page.click('#routine-browser .rb-jump-item[data-key="r5"]');
+            await page.waitForTimeout(300);
+            record('picking one shows it without opening it', (await shown(page)) === 'Grocery Run' && (await activeTitle(page)) === 'Gym Push Day', `showing ${await shown(page)}, active ${await activeTitle(page)}`);
+
+            // Escape: back to the list it came from; then the list closes to the routine button.
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            record('Escape from Browse goes back to the list it came from', (await shown(page)) === null && (await listOpen(page)), `browse ${await shown(page)}, list ${await listOpen(page)}`);
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(500);
+            const back = await page.evaluate(() => document.activeElement.id);
+            record('…and closing the list returns focus to the routine button', back === 'routine-switcher-btn', `focus on ${back}`);
+
+            // The setting reaches the entry points.
+            await page.evaluate(() => document.getElementById('open-settings').click());
+            await page.waitForTimeout(400);
+            await page.click('[data-toggle="behavior"]');
+            await page.waitForTimeout(300);
+            await page.selectOption('#routine-open-view-select', 'browse');
+            await page.waitForTimeout(400);
+            const after = await page.evaluate(() => ({
+                btn: document.getElementById('routine-switcher-btn').dataset.routineView,
+                qa: [...document.querySelectorAll('[data-action-id="open-routine"]')].map(e => e.getAttribute('aria-label')),
+                saved: JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView
+            }));
+            record('Settings → Browse: the routine button switches to the Browse icon', after.btn === 'browse', JSON.stringify(after));
+            record('…and is saved', after.saved === 'browse', JSON.stringify(after));
+            record('…and the Quick Action is renamed when pinned', after.qa.every(l => l === 'Browse Routines'), JSON.stringify(after.qa));
+            await page.keyboard.press('Escape');
+            await page.waitForTimeout(400);
+
+            await page.keyboard.press('Alt+Shift+KeyO');
+            await page.waitForTimeout(500);
+            record('Alt+Shift+O opens Browse once it is chosen', (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
+            await page.keyboard.press('ArrowLeft');
+            await page.waitForTimeout(300);
+            await page.keyboard.press('Enter');
+            await page.waitForTimeout(1200);
+            record('Enter opens the routine shown', (await activeTitle(page)) === 'Evening Wind-down' && (await shown(page)) === null, `active ${await activeTitle(page)}, browse ${await shown(page)}`);
+
+            // Reduced motion: no slide.
+            await page.emulateMedia({ reducedMotion: 'reduce' });
+            await page.keyboard.press('Alt+Shift+KeyO');
+            await page.waitForTimeout(500);
+            await page.keyboard.press('ArrowRight');
+            const anim = await page.evaluate(() => getComputedStyle(document.querySelector('#routine-browser .rb-card')).animationName);
+            record('no slide animation with reduced motion', anim === 'none', `animation ${anim}`);
+            await page.keyboard.press('Escape');
+        } catch (e) {
+            console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+            failures.push(`harness error (desktop): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+
+    // ---- phones: the touch default, swipe, and a layout that fits
+    for (const width of [320, 390]) {
+        const context = await browser.newContext({ viewport: { width, height: 740 }, isMobile: true, hasTouch: true });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
+            await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+            await page.waitForFunction(() => { const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); return p && Object.keys(p.data?.routine || {}).length > 0; }, null, { timeout: 20000 });
+            await page.waitForTimeout(1500);
+            const fresh = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView);
+            record(`${width}px: a brand-new user on a touch device starts with Browse`, fresh === 'browse', `routineOpenView=${fresh}`);
+
+            await seed(page, { view: 'browse' });
+            await page.tap('#routine-switcher-btn');
+            await page.waitForTimeout(800);
+            record(`${width}px: the routine button opens Browse`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
+            const layout = await page.evaluate(() => {
+                const d = document.getElementById('routine-browser');
+                const rects = [...d.querySelectorAll('.rb-top > button, .rb-sort')].map(e => e.getBoundingClientRect());
+                let overlap = false;
+                for (let i = 0; i < rects.length; i++) for (let j = i + 1; j < rects.length; j++) {
+                    const a = rects[i], b = rects[j];
+                    if (a.left < b.right - 1 && a.right > b.left + 1 && a.top < b.bottom - 1 && a.bottom > b.top + 1) overlap = true;
+                }
+                const card = d.querySelector('.rb-card').getBoundingClientRect();
+                const open = d.querySelector('.rb-open-btn').getBoundingClientRect();
+                return { overlap, sideways: d.scrollWidth > d.clientWidth + 1, cardH: Math.round(card.height), openVisible: open.bottom <= innerHeight && open.top >= 0 };
+            });
+            record(`${width}px: top controls do not overlap, nothing scrolls sideways, Open is on screen`,
+                !layout.overlap && !layout.sideways && layout.openVisible && layout.cardH > 200, JSON.stringify(layout));
+
+            const swipe = (from, to) => page.evaluate(([from, to]) => {
+                const s = document.querySelector('#routine-browser .rb-stage');
+                const t = (x) => new Touch({ identifier: 1, target: s, clientX: x, clientY: 400 });
+                s.dispatchEvent(new TouchEvent('touchstart', { touches: [t(from)], changedTouches: [t(from)], bubbles: true }));
+                s.dispatchEvent(new TouchEvent('touchend', { touches: [], changedTouches: [t(to)], bubbles: true }));
+            }, [from, to]);
+            await swipe(width - 40, 40);
+            await page.waitForTimeout(350);
+            record(`${width}px: swiping left shows the next routine`, (await shown(page)) === 'Gym Pull Day', `showing ${await shown(page)}`);
+            await swipe(40, width - 40);
+            await page.waitForTimeout(350);
+            record(`${width}px: swiping right goes back`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
+
+            await page.tap('#routine-browser .rb-corner-btn');
+            await page.waitForTimeout(700);
+            await page.waitForTimeout(400); // the list's open animation
+            const list = await page.evaluate(() => {
+                const b = document.getElementById('switch-browse-btn').getBoundingClientRect();
+                // The title's TEXT, not its box: the box is the card's full width.
+                const range = document.createRange();
+                range.selectNodeContents(document.getElementById('routine-switcher-title'));
+                const t = range.getBoundingClientRect();
+                return { open: document.getElementById('routine-switcher-modal').open,
+                    overlap: b.left < t.right - 1 && b.right > t.left + 1 && b.top < t.bottom - 1 && b.bottom > t.top + 1 };
+            });
+            record(`${width}px: Open Routine in Browse's corner opens the list`, list.open, JSON.stringify(list));
+            record(`${width}px: the list's Browse corner button does not cover its title`, !list.overlap, JSON.stringify(list));
+
+            // One routine: nothing to switch to, a way to make another.
+            await seed(page, { view: 'browse', count: 1, active: 'r0' });
+            await page.tap('#routine-switcher-btn');
+            await page.waitForTimeout(800);
+            const single = await page.evaluate(() => {
+                const d = document.getElementById('routine-browser');
+                return { navs: [...d.querySelectorAll('.rb-nav-btn')].map(b => b.disabled),
+                    meta: d.querySelector('.rb-meta').textContent, create: !d.querySelector('.rb-create-btn').hidden };
+            });
+            record(`${width}px: one routine says so, disables the arrows, offers to create another`,
+                single.navs.every(Boolean) && /Only one routine/.test(single.meta) && single.create, JSON.stringify(single));
+        } catch (e) {
+            console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+            failures.push(`harness error (${width}px): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', failures };
+}
+
 const JOURNEYS = [
+    { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', fn: journeyBrowseRoutines },
     { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', fn: journeySwitcherManyRoutines },
     { name: 'Focus View takes two Escapes to leave; Keyboard Shortcuts lists every shortcut', fn: journeyFocusEscapeAndShortcutList },
     { name: 'Alt+Shift shortcuts reach their controls, and stay out of the way', fn: journeyAppShortcuts },
