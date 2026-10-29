@@ -92,6 +92,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
             },
             showNotification: () => {},
             showCycleCreationModal: () => { calls.created++; },
+            showRoutineBrowserTourNotification: () => { calls.tourPrompts = (calls.tourPrompts || 0) + 1; },
             loadMiniCycle: () => {}
         });
         instance._openRoutineByKey = (key) => calls.opened.push(key);
@@ -795,6 +796,13 @@ export async function runRoutineBrowserTests(resultsDiv) {
         if (dialog().querySelectorAll('.rb-tile').length) throw new Error('tiles kept after close');
         browser.open();
         if (dialog().querySelectorAll('.rb-tile').length !== 3) throw new Error('tiles not redrawn on open');
+        cleanup();
+    });
+
+    await test('opening Browse offers its tour (the tour manager decides whether to show it)', () => {
+        const { browser, calls } = setup({ active: 'b' });
+        browser.open();
+        if (calls.tourPrompts !== 1) throw new Error(`tour offered ${calls.tourPrompts || 0} times`);
         cleanup();
     });
 

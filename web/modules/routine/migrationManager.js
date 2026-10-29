@@ -130,6 +130,7 @@ export function createInitialSchemaData() {
             menuTourStep: null,
             settingsTourStep: null,
             routineSwitcherTourStep: null,
+            routineBrowserTourStep: null,
             recurringListTourStep: null,
             recurringSettingsTourStep: null,
             historyTourStep: null,

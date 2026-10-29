@@ -2001,6 +2001,11 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     justify-content: center;
     align-items: center;
     gap: var(--space-3);
+    /* As wide as its three columns, centred: the same place on screen, and
+       the tour's highlight of it hugs the ‹ name › instead of the full width. */
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
 }
 
 /* Just the chevron — no background, no border. */

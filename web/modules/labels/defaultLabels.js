@@ -1627,11 +1627,26 @@ export const DEFAULT_LABELS = deepFreeze({
     routineSwitcherTour: {
         welcomeMessage:  'First time here? Take a quick tour of the routine switcher!',
         startButton:     'Start Tour',
-        step1:           { touch: 'Browse all your saved routines here — tap one to select it.', pointer: 'Browse all your saved routines here — click one to select it.' },
+        // Not "Browse": that is now the name of the other view (stepBrowse).
+        step1:           { touch: 'All your saved routines are here — tap one to select it.', pointer: 'All your saved routines are here — click one to select it.' },
         step2:           'Search by name to quickly find a routine.',
         step3:           'Duplicate, rename, delete, or download the selected routine.',
         step4:           'Import a routine file or open the selected routine.',
+        stepExpand:      { touch: 'Expand the list for more room. Tap a routine to select it and shrink the list again.', pointer: 'Expand the list for more room. Click a routine to select it and shrink the list again.' },
+        stepBrowse:      'Prefer to see your routines? Browse shows them one at a time, full screen, each in its own colours.',
         complete:        { touch: 'You\'re all set! Select a routine and tap Open to switch.', pointer: 'You\'re all set! Select a routine and click Open to switch.' }
+    },
+
+    // Browse Routines (routineBrowser.js) — optional, like every tour: offered
+    // only once Enable Tour Prompts is on.
+    routineBrowserTour: {
+        welcomeMessage:  'First time in Browse? Take a quick tour!',
+        startButton:     'Start Tour',
+        step1:           { touch: 'Swipe, or tap ‹ ›, to see the next routine. Tap the one in front to open it.', pointer: 'Drag, scroll, or use ‹ › or the arrow keys to see the next routine. Click the one in front, or press Enter, to open it.' },
+        step2:           { touch: 'Cards or Grid. In the Grid, tap a routine to see it, then tap it again to open it.', pointer: 'Cards or Grid. In the Grid, click a routine to see it, then click it again to open it.' },
+        step3:           'Order by Recent or A-Z, or search by name with the magnifier.',
+        step4:           'Back to the list, which is where you rename, duplicate or delete routines.',
+        complete:        { touch: 'You\'re all set! Find a routine and tap Open.', pointer: 'You\'re all set! Find a routine and click Open.' }
     },
 
     recurringListTour: {

@@ -773,6 +773,14 @@ export class GuidedTourManager {
     }
 
     /**
+     * Show a notification prompting the user to take the Browse Routines tour.
+     * Called by routineBrowser after showModal(). No-op if already started or completed.
+     */
+    showRoutineBrowserTourNotification() {
+        this._showTourPrompt('routineBrowser', getLabel('routineBrowserTour.welcomeMessage'), getLabel('routineBrowserTour.startButton'));
+    }
+
+    /**
      * Show a notification prompting the user to take the recurring list tour.
      * Called by recurringPanel after openPanel(). No-op if already started or completed.
      */
@@ -1235,6 +1243,14 @@ export function showSettingsTourNotification() {
  */
 export function showRoutineSwitcherTourNotification() {
     return guidedTourManager?.showRoutineSwitcherTourNotification?.();
+}
+
+/**
+ * Delegates to the singleton to show the Browse Routines tour notification.
+ * @returns {void}
+ */
+export function showRoutineBrowserTourNotification() {
+    return guidedTourManager?.showRoutineBrowserTourNotification?.();
 }
 
 /**

@@ -427,7 +427,7 @@ export const MODULE_MANIFESTS = {
         // checkCompleteAllButton + updateStatsPanel removed Aug 2026: the module
         // declared them and never called them. The post-switch refresh runs in
         // routineLoader.updateDependentComponents(), reached via loadMiniCycle().
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'showRoutineBrowserTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
         provides: ['switchMiniCycle', 'stepRecentRoutine', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -509,7 +509,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
         optionalDeps: ['isModalOpen'],
-        provides: ['startGuidedTour', 'markTourWelcomeShown', 'enableTourPrompts', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'showHistoryTourNotification', 'showClearedTasksTourNotification', 'showAchievementsTourNotification'],
+        provides: ['startGuidedTour', 'markTourWelcomeShown', 'enableTourPrompts', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRoutineBrowserTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'showHistoryTourNotification', 'showClearedTasksTourNotification', 'showAchievementsTourNotification'],
         provideInstance: 'guidedTourManager',
         api: 'ui',
         after: ['onboardingManager']

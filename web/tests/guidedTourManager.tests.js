@@ -1608,6 +1608,71 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         dialog.remove();
     });
 
+    // ---- Browse Routines Tour Tests ----
+
+    function setupRoutineBrowserTargets() {
+        const dialog = document.createElement('dialog');
+        dialog.id = 'routine-browser';
+        assignRect(dialog, { left: 0, top: 0, width: 1000, height: 800 });
+        document.body.appendChild(dialog);
+        for (const [cls, rect] of [
+            ['rb-layout', { left: 60, top: 10, width: 160, height: 36 }],
+            ['rb-sort', { left: 230, top: 10, width: 130, height: 36 }],
+            ['rb-corner-btn', { left: 900, top: 10, width: 70, height: 36 }],
+            ['rb-info', { left: 300, top: 600, width: 400, height: 90 }]
+        ]) {
+            const el = document.createElement(cls === 'rb-corner-btn' ? 'button' : 'div');
+            el.className = cls;
+            assignRect(el, rect);
+            dialog.appendChild(el);
+        }
+        const row = document.createElement('div');
+        row.className = 'rb-title-row';
+        assignRect(row, { left: 300, top: 600, width: 400, height: 48 });
+        dialog.querySelector('.rb-info').appendChild(row);
+        return dialog;
+    }
+
+    resultsDiv.innerHTML += '<h4 class="test-section">Browse Routines Tour</h4>';
+
+    await test('showRoutineBrowserTourNotification offers the tour inside Browse, once', async () => {
+        const dialog = setupRoutineBrowserTargets();
+        try {
+            const manager = await createManager({
+                appReady: false,
+                settings: { onboardingCompleted: true, guidedTourStep: 'done', routineBrowserTourStep: null }
+            });
+            notifications.length = 0;
+            manager.showRoutineBrowserTourNotification();
+            if (notifications.length !== 1) throw new Error(`Expected 1 notification, got ${notifications.length}`);
+            // Drawn inside Browse — which holds every notification that is not.
+            if (!dialog.contains(notifications[0].options?.container)) throw new Error('prompt is not placed inside Browse');
+            notifications[0].options.onDismiss();
+            if (mockState.settings.routineBrowserTourStep !== 'done') throw new Error(`dismiss left ${mockState.settings.routineBrowserTourStep}`);
+            notifications.length = 0;
+            manager.showRoutineBrowserTourNotification();
+            if (notifications.length !== 0) throw new Error('offered again after it was dismissed');
+        } finally {
+            dialog.remove();
+        }
+    });
+
+    await test('the Browse tour runs inside Browse, through all four steps, to done', async () => {
+        const dialog = setupRoutineBrowserTargets();
+        try {
+            const manager = await createManager({
+                appReady: false,
+                settings: { onboardingCompleted: true, guidedTourStep: 'done', routineBrowserTourStep: null }
+            });
+            manager.startTour('routineBrowser');
+            if (!dialog.querySelector('.tour-overlay')) throw new Error('tour overlay is not inside Browse');
+            manager.completeTour();
+            if (mockState.settings.routineBrowserTourStep !== 'done') throw new Error(`completion left ${mockState.settings.routineBrowserTourStep}`);
+        } finally {
+            dialog.remove();
+        }
+    });
+
     // ---- Recurring List Tour Tests ----
 
     function setupRecurringPanelTargets() {

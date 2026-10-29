@@ -1963,6 +1963,76 @@ async function journeyFocusMenuSafeArea(browser, baseURL) {
     return { name: "Focus View's ⋯ button clears the status bar on a wide installed app", failures };
 }
 
+// Tours for the routine views, with Enable Tour Prompts on (they are opt-in):
+// Browse offers its own tour inside Browse — not held with the notifications —
+// and it runs all four steps to done; the routine switcher's tour now shows
+// the Expand button and the way to Browse.
+async function journeyRoutineViewTours(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const doc = await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            Object.assign(d.settings, { focusModeActive: false, routineOpenView: 'browse', tourPromptsEnabled: true,
+                onboardingCompleted: true, guidedTourStep: 'done', routineBrowserTourStep: null, routineSwitcherTourStep: null });
+            const base = d.data.routine[d.appState.activeRoutineId];
+            for (let i = 0; i < 3; i++) { const c = JSON.parse(JSON.stringify(base)); c.title = `Tour routine ${i}`; c.id = `tr${i}`; d.data.routine[`tr${i}`] = c; }
+            return JSON.stringify(d);
+        });
+        await reloadWithSeed(page, doc);
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        await page.evaluate(() => document.querySelectorAll('.notification .close-btn').forEach(b => b.click()));
+
+        const walk = async (dialogId) => {
+            const seen = [];
+            for (let i = 0; i < 8; i++) {
+                const step = await page.evaluate((id) => {
+                    const tip = document.querySelector(`#${id} .tour-tooltip`);
+                    return tip && tip.getClientRects().length ? tip.textContent.replace(/\s+/g, ' ').trim() : null;
+                }, dialogId);
+                if (!step) break;
+                seen.push(step);
+                const next = await page.$(`#${dialogId} .tour-next`);
+                if (!next) break;
+                await next.click();
+                await page.waitForTimeout(500);
+            }
+            return seen;
+        };
+
+        await page.click('#routine-switcher-btn');
+        await page.waitForTimeout(1000);
+        const prompt = await page.evaluate(() => {
+            const n = [...document.querySelectorAll('#routine-browser .notification')].find(x => x.getClientRects().length);
+            return n ? n.textContent : null;
+        });
+        record('opening Browse offers its tour, inside Browse', !!prompt && /Browse/.test(prompt), `prompt: ${prompt && prompt.trim().slice(0, 60)}`);
+        await page.click('#routine-browser .notification button:not(.close-btn)');
+        await page.waitForTimeout(600);
+        const browseSteps = await walk('routine-browser');
+        const browseDone = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineBrowserTourStep);
+        record('the Browse tour runs its four steps to done', browseSteps.length === 4 && browseDone === 'done' && /1 of 4/.test(browseSteps[0]),
+            `${browseSteps.length} steps, state ${browseDone}`);
+
+        // Corner → the routine list, whose tour now covers Expand and Browse.
+        await page.click('#routine-browser .rb-corner-btn');
+        await page.waitForTimeout(1000);
+        await page.click('#routine-switcher-modal .notification button:not(.close-btn)');
+        await page.waitForTimeout(600);
+        const listSteps = await walk('routine-switcher-modal');
+        record('the routine switcher tour shows the Expand button and the way to Browse',
+            listSteps.some(t => /Expand the list/.test(t)) && /Browse shows them/.test(listSteps[listSteps.length - 1] || '') && !listSteps.some(t => /^\d of \d Browse all/.test(t)),
+            listSteps.map(t => t.slice(0, 40)).join(' | '));
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', failures };
+}
+
 async function journeyFirstRunRestore(browser, baseURL) {
     const { failures, record } = makeRecorder();
 
@@ -7287,6 +7357,7 @@ const JOURNEYS = [
     { name: 'first-run screen links: company, product site, manual', fn: journeyFirstRunLinks },
     { name: 'keyboard-only items: hidden on a phone either way up, kept on tablets and computers', fn: journeyKeyboardOnlyItems },
     { name: "Focus View's ⋯ button clears the status bar on a wide installed app", fn: journeyFocusMenuSafeArea },
+    { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', fn: journeyRoutineViewTours },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },

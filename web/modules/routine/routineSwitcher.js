@@ -93,6 +93,7 @@ const di = createDIModule('RoutineSwitcher', {
     logHistoryEvent: optional(null),
     exportMiniCycleData: optional(null),
     showRoutineSwitcherTourNotification: optional(null),
+    showRoutineBrowserTourNotification: optional(null),   // routineBrowser.open (this.m.deps)
     hasActiveNotifications: optional(null),
     isTouchDevice: optional(null)
 });

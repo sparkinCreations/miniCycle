@@ -1595,6 +1595,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         showMenuTourNotification: (...args) => deps.ui?.showMenuTourNotification?.(...args),
         showSettingsTourNotification: (...args) => deps.ui?.showSettingsTourNotification?.(...args),
         showRoutineSwitcherTourNotification: (...args) => deps.ui?.showRoutineSwitcherTourNotification?.(...args),
+        showRoutineBrowserTourNotification: (...args) => deps.ui?.showRoutineBrowserTourNotification?.(...args),
         showRecurringListTourNotification: (...args) => deps.ui?.showRecurringListTourNotification?.(...args),
         showRecurringSettingsTourNotification: (...args) => deps.ui?.showRecurringSettingsTourNotification?.(...args),
         showHistoryTourNotification: (...args) => deps.ui?.showHistoryTourNotification?.(...args),

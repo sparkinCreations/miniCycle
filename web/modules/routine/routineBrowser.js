@@ -176,6 +176,9 @@ export class RoutineBrowser {
             if (this.isOpen() && !this._dialog.contains(document.activeElement)) this._focusSelection();
         });
         this._announce();
+        // Offered only once Enable Tour Prompts is on; drawn inside Browse,
+        // so the notification hold above does not apply to it.
+        this.deps.showRoutineBrowserTourNotification?.();
     }
 
     /**
