@@ -458,7 +458,9 @@ const SHORTCUT_TARGETS = Object.freeze({
   NEXT_MODE:        [DOM_IDS.MODE_SELECTOR],
   FOCUS_VIEW:       [DOM_IDS.FOCUS_MODE_BTN, DOM_IDS.FOCUS_MODE_EXIT_BTN],
   TOGGLE_INPUT_BAR: [DOM_IDS.TOGGLE_TASK_INPUT_BTN],
-  USER_MANUAL:      [DOM_IDS.OPEN_USER_MANUAL]
+  USER_MANUAL:      [DOM_IDS.OPEN_USER_MANUAL],
+  OPEN_SETTINGS:    [DOM_IDS.OPEN_SETTINGS],
+  OPEN_MENU:        [DOM_IDS.MENU_BUTTON, DOM_IDS.FOCUS_MODE_MENU_BTN]
 });
 
 /**
@@ -505,6 +507,17 @@ function handleAppShortcut(e) {
     case 'OPEN_ROUTINE':     click(DOM_IDS.ROUTINE_SWITCHER_BTN); break;
     case 'TOGGLE_INPUT_BAR': click(DOM_IDS.TOGGLE_TASK_INPUT_BTN); break;
     case 'USER_MANUAL':      click(DOM_IDS.OPEN_USER_MANUAL); break;
+    case 'OPEN_SETTINGS':    click(DOM_IDS.OPEN_SETTINGS); break;
+    case 'OPEN_MENU': {
+      // One key for the view you are in: Focus View's ⋯ menu, or the header's
+      // ☰. Opens only — both buttons toggle, so a second press while the ⋯ is
+      // open would close it (the ☰ already counts as an overlay above, which
+      // stops it). Escape closes either; each moves focus into itself.
+      const focusView = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+      if (focusView && document.body.classList.contains(DOM_CLASSES.FOCUS_MODE_MENU_OPEN)) break;
+      click(focusView ? DOM_IDS.FOCUS_MODE_MENU_BTN : DOM_IDS.MENU_BUTTON);
+      break;
+    }
     // No button to click: there is no control for "the routine before this
     // one". The switcher owns the step (and its frozen order); it opens the
     // routine the way the list does, notification included.

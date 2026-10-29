@@ -80,9 +80,9 @@ export const TOUR_DEFINITIONS = Object.freeze([
             // feature tours is one rotating loading tip. Points at the menu
             // because that is where "Enable Tour Prompts" lives.
             //
-            // 'selector', not 'id': the hamburger carries class="menu-button" and
-            // has no id, so DOM_IDS.MENU_BUTTON would resolve to nothing and the
-            // step would silently anchor to the page instead of the control.
+            // 'selector': the hamburger is found by its class, as everything
+            // else finds it. (It had no id until Oct 2026, when Alt+Shift+.
+            // needed one for aria-keyshortcuts; DOM_IDS.MENU_BUTTON now resolves.)
             {
                 targetType: 'selector',
                 target: DOM_SELECTORS.MENU_BUTTON,

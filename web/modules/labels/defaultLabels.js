@@ -1924,6 +1924,8 @@ export const DEFAULT_LABELS = deepFreeze({
         openRoutine:   'Open routines (the list or Browse)',
         previousRoutine: 'Go to the routine you used before this one (press again to keep going back)',
         nextRoutine:   'Go the other way, toward the newest (from the newest, round to the oldest)',
+        openSettings:  'Open Settings',
+        openMenu:      'Open the menu (☰ in Home View, ⋯ in Focus View)',
         browseFlip:    'Previous or next routine',
         browseGridRow: 'The routine above or below (Grid)',
         browseEnds:    'First or last routine',

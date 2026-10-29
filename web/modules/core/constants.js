@@ -565,7 +565,9 @@ export const KEYBOARD_SHORTCUTS = Object.freeze({
     TOGGLE_INPUT_BAR: 'KeyI',   // show / hide the add-task input bar
     USER_MANUAL:      'KeyU',   // open the user manual
     PREVIOUS_ROUTINE: 'BracketLeft',    // the routine used before this one (Recent order)
-    NEXT_ROUTINE:     'BracketRight'    // the other way, wrapping from the newest to the oldest
+    NEXT_ROUTINE:     'BracketRight',   // the other way, wrapping from the newest to the oldest
+    OPEN_SETTINGS:    'KeyS',   // open Settings
+    OPEN_MENU:        'Period'  // open the view's menu: ☰ in Home View, ⋯ in Focus View — one key for both
 });
 
 /**
@@ -574,7 +576,7 @@ export const KEYBOARD_SHORTCUTS = Object.freeze({
  * @param {string} code - a KeyboardEvent.code
  * @returns {string}
  */
-const SHORTCUT_KEY_SYMBOLS = Object.freeze({ BracketLeft: '[', BracketRight: ']' });
+const SHORTCUT_KEY_SYMBOLS = Object.freeze({ BracketLeft: '[', BracketRight: ']', Period: '.' });
 
 export function shortcutKeyName(code) {
     return Object.prototype.hasOwnProperty.call(SHORTCUT_KEY_SYMBOLS, code)
@@ -1340,7 +1342,7 @@ export const DOM_IDS = Object.freeze({
     TASK_FILTER_SORT_ROW: 'task-filter-sort-row',
 
     // ---- Menu ----
-    MENU_BUTTON: 'menu-button',
+    MENU_BUTTON: 'menu-button',   // the ☰ in the header (also class .menu-button — DOM_SELECTORS.MENU_BUTTON)
     APP_CONTAINER: 'app-container',       // <main tabindex=-1>: the last-resort focus target after a dialog closes
     CLOSE_MAIN_MENU: 'close-main-menu',
     MAIN_MENU_TITLE: 'main-menu-mini-cycle-title',

@@ -6173,10 +6173,11 @@ async function journeyAppShortcuts(browser, baseURL) {
         await reset();
 
         const keys = await page.evaluate(() => Object.fromEntries(
-            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual']
+            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button']
                 .map(id => [id, document.getElementById(id)?.getAttribute('aria-keyshortcuts') || null])));
         const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-selector': 'Alt+Shift+M',
-            'focus-mode-btn': 'Alt+Shift+F', 'focus-mode-exit-btn': 'Alt+Shift+F', 'toggle-task-input-btn': 'Alt+Shift+I', 'open-user-manual': 'Alt+Shift+U' };
+            'focus-mode-btn': 'Alt+Shift+F', 'focus-mode-exit-btn': 'Alt+Shift+F', 'toggle-task-input-btn': 'Alt+Shift+I', 'open-user-manual': 'Alt+Shift+U',
+            'open-settings': 'Alt+Shift+S', 'menu-button': 'Alt+Shift+.' };
         const wrongKeys = Object.keys(wantKeys).filter(id => keys[id] !== wantKeys[id]);
         record('every shortcut is advertised on its control (aria-keyshortcuts)', wrongKeys.length === 0,
             wrongKeys.map(id => `${id}=${keys[id]}`).join(', '));
@@ -6186,6 +6187,22 @@ async function journeyAppShortcuts(browser, baseURL) {
         const modeBefore = (await state()).mode;
         await press('M');
         record('…and shortcuts do nothing behind an open dialog', (await state()).mode === modeBefore, `mode changed to ${(await state()).mode}`);
+        await reset();
+
+        // Settings, and the view's menu — the same key in Home View and Focus View.
+        await press('S');
+        record('Alt+Shift+S opens Settings', (await state()).dialog.includes('settings-modal'), `open: ${(await state()).dialog || 'none'}`);
+        await reset();
+        const menuState = () => page.evaluate(() => ({
+            home: document.querySelector('.menu-container').classList.contains('visible'),
+            homeFocus: !!document.activeElement?.closest?.('.menu-container'),
+            focusMenu: document.body.classList.contains('focus-mode-menu-open'),
+            focusMenuFocus: !!document.activeElement?.closest?.('#focus-mode-menu')
+        }));
+        await page.keyboard.press('Alt+Shift+Period');
+        await page.waitForTimeout(900);
+        const homeMenu = await menuState();
+        record('Alt+Shift+. opens the main menu in Home View, with focus in it', homeMenu.home && homeMenu.homeFocus, JSON.stringify(homeMenu));
         await reset();
 
         await press('N');
@@ -6219,6 +6236,27 @@ async function journeyAppShortcuts(browser, baseURL) {
         await press('F');
         const offF = (await state()).focus;
         record('Alt+Shift+F turns Focus View on, then off', onF === true && offF === false, `after 1st: ${onF}, after 2nd: ${offF}`);
+        await reset();
+
+        // Focus View: the same key opens its ⋯ menu; Settings opens there too.
+        await press('F');
+        await page.waitForTimeout(600);
+        await page.keyboard.press('Alt+Shift+Period');
+        await page.waitForTimeout(700);
+        const fvMenu = await menuState();
+        await page.keyboard.press('Alt+Shift+Period');
+        await page.waitForTimeout(700);
+        const fvMenuAgain = await menuState();
+        record('Alt+Shift+. opens Focus View\'s ⋯ menu, with focus in it, and a second press leaves it open',
+            fvMenu.focusMenu && fvMenu.focusMenuFocus && !fvMenu.home && fvMenuAgain.focusMenu, JSON.stringify({ fvMenu, fvMenuAgain }));
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(500);
+        await press('S');
+        const fvSettings = await state();
+        record('Alt+Shift+S opens Settings in Focus View too', fvSettings.focus && fvSettings.dialog.includes('settings-modal'), JSON.stringify(fvSettings));
+        await page.evaluate(() => document.querySelectorAll('dialog[open]').forEach(d => d.close()));
+        await page.waitForTimeout(400);
+        await press('F');
         await reset();
 
         const shownBefore = (await state()).inputShown;

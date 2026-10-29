@@ -556,6 +556,8 @@ export class ModalManager {
                 [[app('OPEN_ROUTINE')], 'shortcuts.openRoutine'],
                 [[app('PREVIOUS_ROUTINE')], 'shortcuts.previousRoutine'],
                 [[app('NEXT_ROUTINE')], 'shortcuts.nextRoutine'],
+                [[app('OPEN_SETTINGS')], 'shortcuts.openSettings'],
+                [[app('OPEN_MENU')], 'shortcuts.openMenu'],
                 [[app('NEXT_MODE')], 'shortcuts.nextMode'],
                 [[app('FOCUS_VIEW')], 'shortcuts.focusView'],
                 [[app('TOGGLE_INPUT_BAR')], 'shortcuts.toggleInput'],
