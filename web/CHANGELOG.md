@@ -1,3 +1,11 @@
+## [2.655] - 2026-10-29
+- chore(tests): test-count manifest from the full run (4107 tests)
+- feat(tours): an optional Browse Routines tour; the switcher tour shows Expand and Browse
+- chore(tests): test-count manifest from the full run (4104 tests)
+- fix: post-2.654 feedback — iPad status bar, Recent order, Browse keys, menu and manual shortcuts
+- docs(changelog): 2.654 in two parts — Browse Routines, and Shortcuts & polish
+
+
 ## [2.654] - 2026-10-29
 
 ### Browse Routines
