@@ -738,6 +738,33 @@ export async function runRoutineBrowserTests(resultsDiv) {
         cleanup();
     });
 
+    await test('Shift+arrows move through the routines too, in Cards and in the Grid', () => {
+        const { browser } = setup({ active: 'b' });
+        browser.open();
+        const shiftKey = (k) => dialog().dispatchEvent(new KeyboardEvent('keydown', { key: k, shiftKey: true, bubbles: true }));
+        shiftKey('ArrowRight');
+        if (titleShown() !== 'charlie') throw new Error(`Shift+→ in Cards showed ${titleShown()}`);
+        browser.setLayout('grid');
+        shiftKey('ArrowLeft');
+        if (titleShown() !== 'Bravo') throw new Error(`Shift+← in the Grid showed ${titleShown()}`);
+        shiftKey('Home');
+        if (titleShown() !== 'alpha' && titleShown() !== 'Bravo') throw new Error(`Shift+Home showed ${titleShown()}`);
+        cleanup();
+    });
+
+    await test('Shift with any other key, or in the search field, is left alone', () => {
+        const { browser, calls } = setup({ active: 'b' });
+        browser.open();
+        dialog().dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', shiftKey: true, bubbles: true }));
+        if (calls.opened.length) throw new Error('Shift+Enter opened a routine');
+        dialog().querySelector('.rb-search-btn').click();
+        const input = dialog().querySelector('.rb-search-input');
+        const e = new KeyboardEvent('keydown', { key: 'ArrowDown', shiftKey: true, bubbles: true, cancelable: true });
+        input.dispatchEvent(e);
+        if (e.defaultPrevented) throw new Error('Shift+↓ in the search field was taken from it (it selects text)');
+        cleanup();
+    });
+
     await test('close removes the listeners (a closed Browse ignores keys)', () => {
         const { browser } = setup({ active: 'b' });
         browser.open();

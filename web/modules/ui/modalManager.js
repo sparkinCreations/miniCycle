@@ -45,7 +45,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -548,6 +548,15 @@ export class ModalManager {
         const cmd = getLabel(apple ? 'shortcuts.keyCmd' : 'shortcuts.keyCtrl');
         const esc = getLabel('shortcuts.keyEscape');
         const app = (name) => [mod, shift, shortcutKeyName(KEYBOARD_SHORTCUTS[name])];
+        // The opt-in single keys, from SINGLE_KEY_SHORTCUTS so the list cannot
+        // drift from the keys handled; each says what its action already says.
+        const SINGLE_KEY_LABELS = {
+            OPEN_MENU: 'shortcuts.openMenu', OPEN_SETTINGS: 'shortcuts.openSettings',
+            PREVIOUS_ROUTINE: 'shortcuts.previousRoutine', NEXT_ROUTINE: 'shortcuts.nextRoutine',
+            SHOW_SHORTCUTS: 'shortcuts.showList'
+        };
+        const singleKeyRows = Object.entries(SINGLE_KEY_SHORTCUTS)
+            .map(([key, action]) => [[[key.toUpperCase()]], SINGLE_KEY_LABELS[action]]);
 
         // Each row: [alternatives (each a list of keys pressed together), label key]
         const groups = [
@@ -558,11 +567,13 @@ export class ModalManager {
                 [[app('NEXT_ROUTINE')], 'shortcuts.nextRoutine'],
                 [[app('OPEN_SETTINGS')], 'shortcuts.openSettings'],
                 [[app('OPEN_MENU')], 'shortcuts.openMenu'],
+                [[app('SHOW_SHORTCUTS')], 'shortcuts.showList'],
                 [[app('NEXT_MODE')], 'shortcuts.nextMode'],
                 [[app('FOCUS_VIEW')], 'shortcuts.focusView'],
                 [[app('TOGGLE_INPUT_BAR')], 'shortcuts.toggleInput'],
                 [[app('USER_MANUAL')], 'shortcuts.userManual']
             ]],
+            ['shortcuts.groupSingle', singleKeyRows],
             ['shortcuts.groupTasks', [
                 [[[mod, '↑'], [mod, '↓']], 'shortcuts.moveTask'],
                 [[['↑'], ['↓']], 'shortcuts.moveBetween'],

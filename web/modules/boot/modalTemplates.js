@@ -942,6 +942,13 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">
+                                <input type="checkbox" id="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" name="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" aria-describedby="toggle-single-key-shortcuts-desc">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span class="settings-option-text"><span>${getLabel('settings.singleKeyShortcuts')}</span><span class="settings-desc" id="toggle-single-key-shortcuts-desc">${getLabel('settings.singleKeyShortcutsDesc')}</span></span>
+                        </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
                                 <input type="checkbox" id="toggle-notifications" name="toggle-notifications" checked aria-describedby="toggle-notifications-desc">
                                 <span class="toggle-slider"></span>
                             </span>

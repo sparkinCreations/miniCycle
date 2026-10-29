@@ -1937,6 +1937,10 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     flex: 0 0 auto;   /* its few rows, not "fill": a phone tile is content-high */
     padding: var(--space-1-5);
     overflow: hidden;
+    /* A tile's list never scrolls, so the wheel must pass through to the grid.
+       The card's `contain` (above) kept it here: over a tile the grid would not
+       scroll at all (found by the user, Oct 2026). */
+    overscroll-behavior: auto;
 }
 
 .rb-tile .rb-task {

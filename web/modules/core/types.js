@@ -222,6 +222,7 @@
  * @property {boolean} [showThreeDots=false] - Show three dots menu globally
  * @property {boolean} [showTaskInput=true] - Show task input bar
  * @property {'list'|'browse'} [routineOpenView] - What opening routines shows: the Open Routine list or Browse Routines; absent = list
+ * @property {boolean} [singleKeyShortcuts] - Opt-in single-key shortcuts (M, S, [, ], ?) besides the Alt+Shift ones; absent = off
  * @property {'recent'|'alpha'} [routineBrowserSort='recent'] - Browse Routines' order
  * @property {'cards'|'grid'} [routineBrowserLayout='cards'] - Browse Routines' layout
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding

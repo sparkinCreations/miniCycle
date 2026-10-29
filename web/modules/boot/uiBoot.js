@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
@@ -460,7 +460,8 @@ const SHORTCUT_TARGETS = Object.freeze({
   TOGGLE_INPUT_BAR: [DOM_IDS.TOGGLE_TASK_INPUT_BTN],
   USER_MANUAL:      [DOM_IDS.OPEN_USER_MANUAL],
   OPEN_SETTINGS:    [DOM_IDS.OPEN_SETTINGS],
-  OPEN_MENU:        [DOM_IDS.MENU_BUTTON, DOM_IDS.FOCUS_MODE_MENU_BTN]
+  OPEN_MENU:        [DOM_IDS.MENU_BUTTON, DOM_IDS.FOCUS_MODE_MENU_BTN],
+  SHOW_SHORTCUTS:   [DOM_IDS.OPEN_SHORTCUTS_MODAL]
 });
 
 /**
@@ -476,7 +477,30 @@ function labelShortcutTargets() {
 }
 
 /**
- * Alt+Shift+<key> app shortcuts (KEYBOARD_SHORTCUTS in constants.js).
+ * Which app shortcut a keydown is, if any: Alt+Shift+<key> (KEYBOARD_SHORTCUTS),
+ * or — only when the user turned them on — a single key (SINGLE_KEY_SHORTCUTS).
+ * @param {KeyboardEvent} e
+ * @returns {string|null} the action name
+ */
+function shortcutActionFor(e) {
+  if (e.repeat || e.isComposing || e.ctrlKey || e.metaKey) return null;
+  if (e.altKey) {
+    if (!e.shiftKey) return null;
+    return Object.keys(KEYBOARD_SHORTCUTS).find((name) => KEYBOARD_SHORTCUTS[name] === e.code) || null;
+  }
+  if (getAppState()?.get?.()?.settings?.singleKeyShortcuts !== true) return null;
+  const key = typeof e.key === 'string' && e.key.length === 1 ? e.key.toLowerCase() : '';
+  if (!Object.prototype.hasOwnProperty.call(SINGLE_KEY_SHORTCUTS, key)) return null;
+  // Shift+M is not M (Caps Lock is: it sends "M" with no Shift held). "?"
+  // needs Shift on most layouts, so Shift is fine there.
+  if (e.shiftKey && key !== '?') return null;
+  if (e.target?.closest?.(DOM_SELECTORS.SINGLE_KEY_SKIP)) return null;
+  return SINGLE_KEY_SHORTCUTS[key];
+}
+
+/**
+ * Alt+Shift+<key> app shortcuts (KEYBOARD_SHORTCUTS in constants.js), and the
+ * opt-in single keys that stand for some of them (SINGLE_KEY_SHORTCUTS).
  *
  * Each one clicks the control a user would — the same pattern as Quick
  * Actions, the main menu and the Focus View menu — so a shortcut cannot drift
@@ -491,8 +515,7 @@ function labelShortcutTargets() {
  * @returns {boolean} true when the key was an app shortcut and was handled
  */
 function handleAppShortcut(e) {
-  if (!e.altKey || !e.shiftKey || e.ctrlKey || e.metaKey || e.repeat) return false;
-  const action = Object.keys(KEYBOARD_SHORTCUTS).find((name) => KEYBOARD_SHORTCUTS[name] === e.code);
+  const action = shortcutActionFor(e);
   if (!action) return false;
 
   // A text field only — a task's checkbox is an <input> too, and a shortcut
@@ -508,6 +531,7 @@ function handleAppShortcut(e) {
     case 'TOGGLE_INPUT_BAR': click(DOM_IDS.TOGGLE_TASK_INPUT_BTN); break;
     case 'USER_MANUAL':      click(DOM_IDS.OPEN_USER_MANUAL); break;
     case 'OPEN_SETTINGS':    click(DOM_IDS.OPEN_SETTINGS); break;
+    case 'SHOW_SHORTCUTS':   click(DOM_IDS.OPEN_SHORTCUTS_MODAL); break;
     case 'OPEN_MENU': {
       // One key for the view you are in: Focus View's ⋯ menu, or the header's
       // ☰. Opens only — both buttons toggle, so a second press while the ⋯ is

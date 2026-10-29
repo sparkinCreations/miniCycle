@@ -1507,6 +1507,7 @@ export const DEFAULT_LABELS = deepFreeze({
         oneSectionAtATime:    'Open one menu section at a time',
         addRemoveTaskButtons: 'Add or Remove Task Buttons',
         enableNotifications:  'Enable Notifications',
+        singleKeyShortcuts:   'Single-key shortcuts',
         clearUndoHistory:     'Clear Undo History',
         // One line under each control in Settings, saying what it does (and, for
         // the resets, whether it can be undone). Oct 2026: there were none.
@@ -1520,6 +1521,7 @@ export const DEFAULT_LABELS = deepFreeze({
         scrollToNewDesc:        'After you add a task, the list scrolls to show it.',
         scrollToLastDesc:       'Opening a routine scrolls its list to the last task.',
         enableNotificationsDesc: 'The short messages that confirm what you did. Error messages always show.',
+        singleKeyShortcutsDesc: 'When you are not typing: M menu, S Settings, [ ] previous or next routine, ? shortcut list. Off by default because screen readers and voice control use single keys.',
         resetOnboardingDesc:    'Shows the welcome screens again the next time you open the app.',
         tourPromptsDesc:        'Offers a short tour the first time you open each feature.',
         resetNotifPositionDesc: 'Moves notifications back to their usual place if you dragged them.',
@@ -1919,6 +1921,8 @@ export const DEFAULT_LABELS = deepFreeze({
         groupTasks:    'Tasks',
         groupViews:    'Views',
         groupBrowse:   'Browse Routines',
+        groupSingle:   'Single keys (turn them on in Settings → Behavior)',
+        showList:      'Show this list',
         groupGeneral:  'General',
         newRoutine:    'Create a new routine',
         openRoutine:   'Open routines (the list or Browse)',

@@ -57,6 +57,9 @@ import { routineNameMatches } from './routineSwitcherListTransforms.js';
 /** How many routines either side of the one in front get a card. */
 const CAROUSEL_SPAN = 2;
 
+/** The keys that move through the routines — with or without Shift. */
+const BROWSE_NAV_KEYS = Object.freeze(['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End']);
+
 /**
  * When the routine was last used: opened, else edited, else created. Routines
  * opened before lastAccessedAt was recorded have none, and must still sort.
@@ -823,10 +826,17 @@ export class RoutineBrowser {
         });
 
         this._on(dialog, 'keydown', (e) => {
-            if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+            if (e.altKey || e.ctrlKey || e.metaKey) return;
+            // Shift+arrows (and Shift+Home/End) move through the routines like
+            // the plain keys: elsewhere in the app Shift+←/→ is how you move
+            // between views, and a keyboard user reaches for it here (the
+            // user's report, Oct 2026). Any other Shift+key is left alone.
+            if (e.shiftKey && !BROWSE_NAV_KEYS.includes(e.key)) return;
             // In the search field the keys type; only Enter (open the selected
             // match) and ↓ (into the results) reach through, as in the List.
+            // Shift+arrows there select text, so they stay the field's.
             if (isTextEntryTarget(e.target)) {
+                if (e.shiftKey) return;
                 if (e.key === 'Enter') { e.preventDefault(); this.openCurrent(); }
                 else if (e.key === 'ArrowDown' && this._isGrid()) { e.preventDefault(); this._selectedTile()?.focus(); }
                 return;

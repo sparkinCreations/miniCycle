@@ -6173,11 +6173,11 @@ async function journeyAppShortcuts(browser, baseURL) {
         await reset();
 
         const keys = await page.evaluate(() => Object.fromEntries(
-            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button']
+            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button', 'open-shortcuts-modal']
                 .map(id => [id, document.getElementById(id)?.getAttribute('aria-keyshortcuts') || null])));
         const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-selector': 'Alt+Shift+M',
             'focus-mode-btn': 'Alt+Shift+F', 'focus-mode-exit-btn': 'Alt+Shift+F', 'toggle-task-input-btn': 'Alt+Shift+I', 'open-user-manual': 'Alt+Shift+U',
-            'open-settings': 'Alt+Shift+S', 'menu-button': 'Alt+Shift+.' };
+            'open-settings': 'Alt+Shift+S', 'menu-button': 'Alt+Shift+.', 'open-shortcuts-modal': 'Alt+Shift+?' };
         const wrongKeys = Object.keys(wantKeys).filter(id => keys[id] !== wantKeys[id]);
         record('every shortcut is advertised on its control (aria-keyshortcuts)', wrongKeys.length === 0,
             wrongKeys.map(id => `${id}=${keys[id]}`).join(', '));
@@ -6265,8 +6265,57 @@ async function journeyAppShortcuts(browser, baseURL) {
         record('Alt+Shift+I toggles the input bar', shownAfter !== shownBefore, `before ${shownBefore}, after ${shownAfter}`);
         await reset();
 
+        // Alt+? — Alt+Shift+/ — for the list, on or off.
+        await page.keyboard.press('Alt+Shift+Slash');
+        await page.waitForTimeout(800);
+        record('Alt+? (Alt+Shift+/) opens the Keyboard Shortcuts list', (await state()).dialog.includes('shortcuts'), `open: ${(await state()).dialog || 'none'}`);
+        await reset();
+
+        // Single keys: off until the user turns them on in Settings → Behavior.
+        const plain = async (key) => { await page.keyboard.press(key); await page.waitForTimeout(800); };
+        await plain('m');
+        record('single keys do nothing until they are turned on', !(await menuState()).home && !(await state()).dialog, JSON.stringify(await menuState()));
+        await reset();
+        await press('S');
+        // Settings remembers which sections are open: expand Behavior only if it is closed.
+        if (await page.getAttribute('[data-toggle="behavior"]', 'aria-expanded') !== 'true') await page.click('[data-toggle="behavior"]');
+        await page.waitForTimeout(300);
+        // Centre it first: on a short window Settings' Close button sits over the
+        // bottom of the list, as it does for a person, who scrolls.
+        await page.evaluate(() => document.getElementById('toggle-single-key-shortcuts').scrollIntoView({ block: 'center' }));
+        await page.click('label.settings-option:has(#toggle-single-key-shortcuts) .settings-option-text > span:first-child');
+        await page.waitForTimeout(400);
+        const singleSaved = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.singleKeyShortcuts);
+        record('Settings → Behavior → Single-key shortcuts turns them on (and is saved)', singleSaved === true, `saved ${singleSaved}`);
+        await reset();
+        await plain('m');
+        const mMenu = await menuState();
+        record('…then M opens the menu', mMenu.home && mMenu.homeFocus, JSON.stringify(mMenu));
+        await reset();
+        await plain('s');
+        record('…S opens Settings', (await state()).dialog.includes('settings-modal'), `open: ${(await state()).dialog || 'none'}`);
+        await reset();
+        await plain('Shift+Slash');
+        record('…? opens the Keyboard Shortcuts list, which lists the single keys', (await state()).dialog.includes('shortcuts')
+            && await page.evaluate(() => /Single keys/.test(document.getElementById('shortcuts-list').textContent)), `open: ${(await state()).dialog || 'none'}`);
+        await reset();
+        await plain('Shift+KeyM');
+        record('…Shift+M is not M', !(await menuState()).home, JSON.stringify(await menuState()));
+        await reset();
+        await page.focus('#mode-selector');
+        await plain('m');
+        record('…and a focused <select> keeps its own type-to-pick (M does not open the menu)', !(await menuState()).home, JSON.stringify(await menuState()));
+        await reset();
+
         // Typing: the shortcut must not act from a text field.
         if (!(await state()).inputShown) { await press('I'); await reset(); }
+        await page.focus('#taskInput');
+        await page.keyboard.type('ms[');
+        await page.waitForTimeout(500);
+        const typed = await page.evaluate(() => ({ value: document.getElementById('taskInput').value, menu: document.querySelector('.menu-container').classList.contains('visible'), dialog: !!document.querySelector('dialog[open]') }));
+        record('single keys type normally in a text field', typed.value.endsWith('ms[') && !typed.menu && !typed.dialog, JSON.stringify(typed));
+        await page.fill('#taskInput', '');
+        await reset();
         await page.focus('#taskInput');
         const modeTyping = (await state()).mode;
         await page.keyboard.press('Alt+Shift+KeyM');

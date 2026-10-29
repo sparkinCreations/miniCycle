@@ -115,6 +115,7 @@ export function _resetForTesting() {
     _initialized.highContrastToggle = false;
     _initialized.fontSizeSelect = false;
     _initialized.routineOpenViewRadios = false;
+    _initialized.singleKeyShortcutsToggle = false;
     _initialized.notificationsToggle = false;
 }
 
@@ -138,6 +139,7 @@ const _initialized = {
     highContrastToggle: false,
     fontSizeSelect: false,
     routineOpenViewRadios: false,
+    singleKeyShortcutsToggle: false,
     notificationsToggle: false,
 };
 
@@ -898,6 +900,46 @@ export function setupScrollOnLoadToggle() {
 }
 
 /**
+ * Settings → Behavior → "Single-key shortcuts" (`settings.singleKeyShortcuts`,
+ * off unless turned on). uiBoot.handleAppShortcut reads the stored value on
+ * every key, so nothing else needs telling. The value is re-synced on EVERY
+ * call (initAllToggles runs on each Settings open); the handler is wired once
+ * — a fresh handler per call would not be removed by safeAddEventListener,
+ * which can only drop the same function.
+ */
+export function setupSingleKeyShortcutsToggle() {
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS);
+    if (!toggle) return;
+
+    const AppState = _deps.AppState();
+    toggle.checked = AppState?.isReady?.() ? AppState.get()?.settings?.singleKeyShortcuts === true : false;
+
+    if (_initialized.singleKeyShortcutsToggle) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.singleKeyShortcutsToggle = true;
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.singleKeyShortcuts = enabled;
+        }, true);
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+}
+
+/**
  * Setup debug mode toggle
  */
 export function setupDebugModeToggle() {
@@ -1536,6 +1578,7 @@ export function initAllToggles() {
     setupHighContrastToggle();
     setupFontSizeSelect();
     setupRoutineOpenViewRadios();
+    setupSingleKeyShortcutsToggle();
     setupNotificationsToggle();
     applyPriorityColor();
 }

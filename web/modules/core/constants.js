@@ -567,7 +567,8 @@ export const KEYBOARD_SHORTCUTS = Object.freeze({
     PREVIOUS_ROUTINE: 'BracketLeft',    // the routine used before this one (Recent order)
     NEXT_ROUTINE:     'BracketRight',   // the other way, wrapping from the newest to the oldest
     OPEN_SETTINGS:    'KeyS',   // open Settings
-    OPEN_MENU:        'Period'  // open the view's menu: ☰ in Home View, ⋯ in Focus View — one key for both
+    OPEN_MENU:        'Period', // open the view's menu: ☰ in Home View, ⋯ in Focus View — one key for both
+    SHOW_SHORTCUTS:   'Slash'   // the Keyboard Shortcuts list: Alt+? (? is Shift+/ on most keyboards)
 });
 
 /**
@@ -576,7 +577,30 @@ export const KEYBOARD_SHORTCUTS = Object.freeze({
  * @param {string} code - a KeyboardEvent.code
  * @returns {string}
  */
-const SHORTCUT_KEY_SYMBOLS = Object.freeze({ BracketLeft: '[', BracketRight: ']', Period: '.' });
+/**
+ * Opt-in single-key shortcuts: Settings → Behavior → "Single-key shortcuts"
+ * (`settings.singleKeyShortcuts`, OFF unless the user turns it on — the
+ * user's call, Oct 2026). Opt-in because of the reasons above: screen readers
+ * use single letters to move around a page, speech input types letters, and
+ * WCAG 2.1.4 requires a one-character shortcut to be possible to turn off.
+ * The Alt+Shift versions always work, on or off.
+ *
+ * Keyed by KeyboardEvent.key, lower-cased: with no modifier held the key is
+ * the character typed (Alt+Shift needs .code because a Mac's Option changes
+ * it). Each value is a KEYBOARD_SHORTCUTS action. Handled in
+ * uiBoot.handleAppShortcut.
+ */
+export const SINGLE_KEY_SHORTCUTS = Object.freeze({
+    'm': 'OPEN_MENU',          // the view's menu (☰ / ⋯)
+    's': 'OPEN_SETTINGS',
+    '[': 'PREVIOUS_ROUTINE',
+    ']': 'NEXT_ROUTINE',
+    '?': 'SHOW_SHORTCUTS'      // the Keyboard Shortcuts list
+});
+
+// Slash shows as "?": with Shift held the key types ?, so Alt+Shift+/ is the
+// Alt+? the shortcut is known by.
+const SHORTCUT_KEY_SYMBOLS = Object.freeze({ BracketLeft: '[', BracketRight: ']', Period: '.', Slash: '?' });
 
 export function shortcutKeyName(code) {
     return Object.prototype.hasOwnProperty.call(SHORTCUT_KEY_SYMBOLS, code)
@@ -1409,6 +1433,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_COMPLETED_DROPDOWN: 'toggle-completed-dropdown',
     TOGGLE_SCROLL_TO_NEW_TASK: 'toggle-scroll-to-new-task',
     TOGGLE_SCROLL_ON_LOAD: 'toggle-scroll-on-load',
+    TOGGLE_SINGLE_KEY_SHORTCUTS: 'toggle-single-key-shortcuts',   // Settings → Behavior → Single-key shortcuts
     TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
@@ -1940,6 +1965,9 @@ export const DOM_SELECTORS = Object.freeze({
     FOCUS_MODE_MENU_ITEM: '.focus-mode-menu-item',
     FOCUS_MODE_MODE_RADIO: '.focus-mode-mode-option input[type="radio"]',
     MODE_RADIO: '#mode-radio-group input[type="radio"]',
+    // Single-key shortcuts stay out of controls that read typed letters
+    // themselves (a <select>'s type-to-pick, listboxes, menus, sliders).
+    SINGLE_KEY_SKIP: 'select, [role="listbox"], [role="menu"], [role="menubar"], [role="combobox"], [role="slider"], [role="spinbutton"]',
     ROUTINE_OPEN_VIEW_RADIO: '#routine-open-view-group input[type="radio"]',   // Settings → When you open routines, show
     MODE_RADIO_OPTION: '.mode-radio-option',
     MODE_RADIO_LABEL: '.mode-radio-label',
