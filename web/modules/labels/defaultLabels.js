@@ -463,6 +463,7 @@ export const DEFAULT_LABELS = deepFreeze({
         routineDuplicated:      'Duplicated as "{name}"',
         routineRenamed:         'Renamed to "{name}"',
         routineSwitched:        'Switched to "{name}"',
+        onlyOneRoutineToStep:   'Only one routine so far: create another to switch between them',
 
         // Recurring notifications
         recurringDisabled:      'Recurring disabled for this task',
@@ -1552,7 +1553,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'Minimize distractions — Focus View hides everything except your tasks.',
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
         step4:           'Customize colors, backgrounds, and themes here. The 🌙 moon button on the opposite side switches light and dark mode.',
-        step5:           'Switch between your routines — each has its own tasks and cycle count.',
+        step5:           'Switch between your routines — each has its own tasks and cycle count. Settings → Behavior chooses whether this opens the list or Browse, to flip through them one at a time.',
         step6:           'Everything else lives in this menu. Want prompts like this for other features? Turn on Enable Tour Prompts under Help & Support.',
         complete:        'You\'re all set! Enjoy building your routines.',
         retakeTour:      'Enable Tour Prompts',
@@ -1867,9 +1868,6 @@ export const DEFAULT_LABELS = deepFreeze({
     // strings whenever copy needs to point at the non-focus state by name.
     // ========================================================================
 
-    // Keyboard Shortcuts dialog (main menu → Help & Support, and Focus View's ⋯
-    // menu). Rows are built from KEYBOARD_SHORTCUTS in modalManager, so the keys
-    // shown cannot drift from the keys handled. {mod} is "Alt" or "Option".
     // Browse Routines (routine/routineBrowser.js): one routine at a time, read-only,
     // in its own theme colours, flipped with arrows / keys / swipe / wheel.
     routineBrowser: {
@@ -1908,6 +1906,9 @@ export const DEFAULT_LABELS = deepFreeze({
         announce:       '{name}, {mode}, {position} of {total}',
     },
 
+    // Keyboard Shortcuts dialog (main menu → Help & Support, and Focus View's ⋯
+    // menu). Rows are built from KEYBOARD_SHORTCUTS in modalManager, so the keys
+    // shown cannot drift from the keys handled. {mod} is "Alt" or "Option".
     shortcuts: {
         menuItem:      'Keyboard Shortcuts',
         menuItemTitle: 'See every keyboard shortcut',
@@ -1921,6 +1922,8 @@ export const DEFAULT_LABELS = deepFreeze({
         groupGeneral:  'General',
         newRoutine:    'Create a new routine',
         openRoutine:   'Open routines (the list or Browse)',
+        previousRoutine: 'Go to the routine you used before this one (press again to keep going back)',
+        nextRoutine:   'Go the other way, toward the newest (from the newest, round to the oldest)',
         browseFlip:    'Previous or next routine',
         browseGridRow: 'The routine above or below (Grid)',
         browseEnds:    'First or last routine',

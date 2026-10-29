@@ -1524,6 +1524,7 @@ input.routine-search-input:focus {
 .rb-layout-btn,
 .rb-sort-btn,
 .rb-search-btn,
+.rb-import-btn,
 .rb-corner-btn {
     display: inline-flex;
     align-items: center;
@@ -1567,14 +1568,16 @@ input.routine-search-input:focus {
     display: none;
 }
 
-.rb-search-btn {
+.rb-search-btn,
+.rb-import-btn {
     width: var(--browse-close-size);
     height: var(--browse-close-size);
     justify-content: center;
     padding: 0;
 }
 
-.rb-search-btn svg {
+.rb-search-btn svg,
+.rb-import-btn svg {
     width: 1em;
     height: 1em;
 }
@@ -1629,7 +1632,7 @@ input.routine-search-input:focus {
 
 /* Own hovers: the app-wide button:hover is a light grey, and white text on it
    measured 1.54:1. */
-#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-search-btn, .rb-search-close, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
+#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-search-btn, .rb-import-btn, .rb-search-close, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
     background: var(--browse-control-hover-bg);
     color: var(--browse-surround-text);
 }
@@ -1648,6 +1651,10 @@ input.routine-search-input:focus {
     min-height: 0;
     display: flex;
     touch-action: pan-y;   /* the browser keeps vertical scrolling; sideways is ours */
+    /* A mouse drag flips the cards (routineBrowser); without this it would
+       select their text on the way. They are a read-only preview. */
+    -webkit-user-select: none;
+    user-select: none;
 }
 
 .rb-stage[hidden] {
@@ -1981,10 +1988,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     text-align: center;
 }
 
+/* ‹ name › — three columns, the name's a fixed width, so the arrows stay put
+   whatever the routine is called (they moved with the name's length until the
+   user asked, Oct 2026). A long name wraps inside its column. */
 .rb-title-row {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: var(--browse-nav-size) minmax(0, var(--browse-title-width)) var(--browse-nav-size);
     justify-content: center;
+    align-items: center;
     gap: var(--space-3);
 }
 
@@ -2149,6 +2160,10 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     .rb-layout { order: 2; }
     .rb-sort { order: 3; margin-left: auto; }
     .rb-search-btn { order: 4; }
+    /* Import shares the first row with the way back to the list: the second
+       had no room for it at 320px. */
+    .rb-import-btn { order: 1; margin-left: auto; }
+    .rb-import-btn + .rb-corner-btn { margin-left: 0; }
     .rb-search { order: 2; max-width: none; }
 
     /* Icons only for the layout switch on a phone; each is named by its text

@@ -492,6 +492,36 @@ html[data-app-loaded="true"] .first-run-lite {
   opacity: 0.95;
 }
 
+/* Company · product site · User Manual, under the restore link. Same quiet
+   tier as it: small, underlined, full-strength white (fading it failed AA). */
+.first-run-links {
+  margin-top: 12px;
+  /* Wider than the button column it sits in, so the three fit on one line
+     wherever the screen has room (the column is the buttons' width). */
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--font-size-xs, 12px);
+  color: white;
+  text-shadow: var(--text-shadow-lg);
+}
+.first-run-links a {
+  color: white;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* 320px: one line, not two — two ran past the bottom of a 568px-tall screen. */
+@media (max-width: 359px) {
+  .first-run-links {
+    gap: 4px 5px;
+  }
+}
+
 /* Keyboard focus on the choice screen. The global ring is 2px of brand blue,
    which all but vanished on this blue-tinted photo (review, Oct 2026) — and
    the photo varies, so no single colour is safe on it. A white ring between
@@ -500,13 +530,15 @@ html[data-app-loaded="true"] .first-run-lite {
    it in white. Hardcoded colours for the same reason as .first-run-btn. */
 .first-run-btn:focus-visible,
 .first-run-lite:focus-visible,
-.first-run-restore:focus-visible {
+.first-run-restore:focus-visible,
+.first-run-links a:focus-visible {
   outline: 3px solid #ffffff;
   outline-offset: 3px;
   box-shadow: 0 0 0 9px rgba(0, 0, 0, 0.6);
 }
 .first-run-lite:focus-visible,
-.first-run-restore:focus-visible {
+.first-run-restore:focus-visible,
+.first-run-links a:focus-visible {
   border-radius: 4px;
 }
 

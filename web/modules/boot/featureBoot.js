@@ -411,6 +411,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     load: deps.cycle?.loadMiniCycle,
     create: deps.cycle?.showCycleCreationModal,
     switch: deps.cycle?.switchMiniCycle,
+    stepRecent: deps.cycle?.stepRecentRoutine,   // Alt+Shift+[ / ] (uiBoot.handleAppShortcut)
     rename: deps.cycle?.renameMiniCycle,
     delete: deps.cycle?.deleteMiniCycle,
     check: deps.progress?.checkMiniCycle,

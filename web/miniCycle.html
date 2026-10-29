@@ -763,6 +763,17 @@
              boot error screen's "Back Up My Data" button — INCIDENT doc §6a). -->
         <button type="button" id="first-run-restore" class="first-run-restore">Restore from a backup file</button>
         <input type="file" id="first-run-restore-file" accept=".json,application/json" hidden>
+        <!-- Who makes it and where to read more — reference links, the tier of
+             the title screen's credit line, so they sit quietly under the
+             choices. The sites open in a new tab (this screen stays put); the
+             manual opens here, as the menu's User Manual does. -->
+        <nav class="first-run-links" aria-label="About miniCycle">
+          <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer" title="Visit the sparkinCreations website">sparkinCreations</a>
+          <span class="first-run-links-sep" aria-hidden="true">·</span>
+          <a href="https://minicycleapp.com" target="_blank" rel="noopener noreferrer" title="miniCycle's product page (minicycleapp.com)">miniCycle</a>
+          <span class="first-run-links-sep" aria-hidden="true">·</span>
+          <a href="legal/user-manual.html" title="Open the user manual">User Manual</a>
+        </nav>
       </div>
     </div>
     <!-- Low-key live boot status (bottom-right); mirrored from updateLoaderProgress(). -->

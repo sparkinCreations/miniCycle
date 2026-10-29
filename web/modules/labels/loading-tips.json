@@ -10,7 +10,11 @@
   ],
   "inApp": [
     "Tap the ＋/－ button to add or remove task buttons",
-    "Use the 📁 folder button to switch between different routines",
+    "Use the routine button beside the mode menu to switch routines: the 📁 list, or Browse to flip through them",
+    "Rather flip through your routines one at a time? Settings → Behavior → When you open routines, show: Browse",
+    "In Browse, swipe or drag the cards to see the next routine, and tap the one in front to open it",
+    "On a keyboard, Alt+Shift+[ goes back to the routine you used before, and Alt+Shift+] goes the other way (Option on a Mac)",
+    "Got a .mcyc file from someone? Import it from the menu, the routine list or Browse",
     "Tap the 🖌️ paintbrush icon to personalize colors and themes",
     "Tap the 🌙 moon icon to switch to dark mode",
     "Click your progress badge to see detailed completion stats",

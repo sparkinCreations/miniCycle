@@ -56,7 +56,7 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
@@ -74,6 +74,7 @@ const getShowNotification = () => _appContextMod?.ui?.()?.showNotification || nu
 const getStateApi = () => _appContextMod?.state?.() || null;
 const getUndoApi = () => _appContextMod?.undo?.() || null;
 const getUiApi = () => _appContextMod?.ui?.() || null;
+const getCycleApi = () => _appContextMod?.cycle?.() || null;
 const getDeviceDetectionManager = () => _appContextMod?.ui?.()?.deviceDetectionManager || null;
 const getGetModal = () => _appContextMod?.ui?.()?.getModal || null;
 
@@ -467,7 +468,7 @@ const SHORTCUT_TARGETS = Object.freeze({
  */
 function labelShortcutTargets() {
   Object.keys(SHORTCUT_TARGETS).forEach((action) => {
-    const keys = `Alt+Shift+${KEYBOARD_SHORTCUTS[action].replace(/^Key/, '')}`;
+    const keys = `Alt+Shift+${shortcutKeyName(KEYBOARD_SHORTCUTS[action])}`;
     SHORTCUT_TARGETS[action].forEach((id) => document.getElementById(id)?.setAttribute('aria-keyshortcuts', keys));
   });
 }
@@ -504,6 +505,11 @@ function handleAppShortcut(e) {
     case 'OPEN_ROUTINE':     click(DOM_IDS.ROUTINE_SWITCHER_BTN); break;
     case 'TOGGLE_INPUT_BAR': click(DOM_IDS.TOGGLE_TASK_INPUT_BTN); break;
     case 'USER_MANUAL':      click(DOM_IDS.OPEN_USER_MANUAL); break;
+    // No button to click: there is no control for "the routine before this
+    // one". The switcher owns the step (and its frozen order); it opens the
+    // routine the way the list does, notification included.
+    case 'PREVIOUS_ROUTINE': getCycleApi()?.stepRecent?.(-1); break;
+    case 'NEXT_ROUTINE':     getCycleApi()?.stepRecent?.(1); break;
     case 'FOCUS_VIEW':
       click(document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)
         ? DOM_IDS.FOCUS_MODE_EXIT_BTN

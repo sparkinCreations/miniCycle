@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, EVENTS, ROUTINE_OPEN_VIEW } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, EVENTS, ROUTINE_OPEN_VIEW, ROUTINE_BROWSER_SORT } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
@@ -32,7 +32,7 @@ import * as preview from './routineSwitcherPreview.js';
 import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
-import { RoutineBrowser } from './routineBrowser.js';
+import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
@@ -139,6 +139,8 @@ export class RoutineSwitcher {
         // Browse Routines — the one-at-a-time view (routineBrowser.js). Same
         // reasoning as _actions: constructed here, statically imported.
         this._browser = new RoutineBrowser(this);
+        // Alt+Shift+[ / ]: the Recent order frozen at the first press (stepRecentRoutine).
+        this._recentWalk = null;
 
         this._previewCallbacks = {
             getSelectedItem: () => this._getSelectedItem()
@@ -224,6 +226,52 @@ export class RoutineSwitcher {
             menuBtn.title = getLabel(browse ? 'routine.browseAria' : 'routine.switchTitle');
             menuBtn.dataset.routineView = view;
         }
+    }
+
+    /**
+     * Alt+Shift+[ and Alt+Shift+] — step to the previous or next routine in
+     * Recent order, without opening a list (designed with the user, Oct 2026).
+     *
+     * The routine you are on is always the most recent, so "previous" is the
+     * one you used before it, then the one before that; "next" goes the other
+     * way, and from the newest wraps round to the least recent.
+     *
+     * The order is FROZEN at the first press. Opening a routine makes it the
+     * most recent, so a live order would reshuffle on every step and two
+     * presses would only bounce between the same two routines. While presses
+     * keep coming (UI_TIMEOUTS.ROUTINE_STEP_WALK_IDLE apart at most) and the
+     * user is still on the routine the last step landed on, the walk goes on
+     * through the order as it was; otherwise it starts again from the order as
+     * it is now. Opens through _openRoutineByKey(), as the list and Browse do.
+     * @param {1|-1} direction - -1 previous (older), 1 next (newer, wrapping)
+     * @returns {boolean} whether it switched
+     */
+    stepRecentRoutine(direction) {
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.() || (direction !== 1 && direction !== -1)) return false;
+        const state = AppState.get();
+        const routines = getRoutines(state) || {};
+        const keys = Object.keys(routines);
+        if (keys.length < 2) {
+            this.deps.showNotification(getLabel('notify.onlyOneRoutineToStep'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+            return false;
+        }
+
+        const activeId = getActiveRoutineId(state);
+        const walk = this._recentWalk;
+        const continuing = !!walk
+            && walk.landedOn === activeId
+            && Date.now() - walk.at < UI_TIMEOUTS.ROUTINE_STEP_WALK_IDLE
+            && walk.order.length === keys.length
+            && keys.every(key => walk.order.includes(key));
+        const order = continuing ? walk.order : orderRoutines(routines, ROUTINE_BROWSER_SORT.RECENT);
+
+        // Newest first: previous is further down the list, next is up it.
+        const here = Math.max(0, order.indexOf(activeId));
+        const target = order[(here - direction + order.length) % order.length];
+        this._recentWalk = { order, landedOn: target, at: Date.now() };
+        this._openRoutineByKey(target);
+        return true;
     }
 
     /** Browse Routines, for tests and the shortcuts. */
@@ -1924,6 +1972,15 @@ function switchMiniCycle() {
     routineSwitcher.switchMiniCycle();
 }
 
+/**
+ * @param {1|-1} direction
+ * @returns {boolean} whether it switched
+ */
+function stepRecentRoutine(direction) {
+    if (!routineSwitcher) return false;
+    return routineSwitcher.stepRecentRoutine(direction);
+}
+
 function renameMiniCycle() {
     if (!routineSwitcher) return;
     routineSwitcher.renameMiniCycle();
@@ -1967,6 +2024,7 @@ function setupModalClickOutside() {
 
 export {
     switchMiniCycle,
+    stepRecentRoutine,
     renameMiniCycle,
     deleteMiniCycle,
     hideSwitchMiniCycleModal,

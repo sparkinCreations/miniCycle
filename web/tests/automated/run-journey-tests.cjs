@@ -1855,6 +1855,43 @@ async function journeyReminderSettings(browser, baseURL) {
 // the pre-boot rescue one — so the backup a user actually made in Settings was
 // rejected here with "not a valid miniCycle backup" while restoring fine from
 // Settings. Reported from a phone; no test covered this screen's file handling.
+// The first-run screen's reference links: who makes it, the product site, the
+// manual — present, pointing where they say, one quiet line that fits.
+async function journeyFirstRunLinks(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    for (const [width, height] of [[320, 568], [390, 844], [1280, 800]]) {
+        const { context, page } = await openFresh(browser, baseURL, { noNavigate: true });
+        try {
+            await page.setViewportSize({ width, height });
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'load' });
+            await page.waitForSelector('.first-run-links', { state: 'visible', timeout: 20000 });
+            const links = await page.evaluate(() => {
+                const nav = document.querySelector('.first-run-links');
+                const r = nav.getBoundingClientRect();
+                const anchors = [...nav.querySelectorAll('a')];
+                return {
+                    items: anchors.map(a => ({ text: a.textContent.trim(), href: a.getAttribute('href'), blank: a.target === '_blank', rel: a.rel })),
+                    oneLine: new Set(anchors.map(a => Math.round(a.getBoundingClientRect().top))).size === 1,
+                    onScreen: r.left >= 0 && r.right <= innerWidth && r.bottom <= innerHeight,
+                    label: nav.getAttribute('aria-label')
+                };
+            });
+            const [company, product, manual] = links.items;
+            record(`${width}px: the first-run screen links to sparkinCreations, miniCycle and the User Manual`,
+                links.items.length === 3 && company.href === 'https://sparkincreations.com' && product.text === 'miniCycle' && product.href === 'https://minicycleapp.com'
+                && manual.href === 'legal/user-manual.html' && !!links.label, JSON.stringify(links.items));
+            record(`${width}px: …the two sites open in a new tab, safely; the manual opens in place, like the menu's`,
+                company.blank && product.blank && /noopener/.test(company.rel) && /noopener/.test(product.rel) && !manual.blank, JSON.stringify(links.items));
+            record(`${width}px: …on one line, on screen`, links.oneLine && links.onScreen, JSON.stringify({ oneLine: links.oneLine, onScreen: links.onScreen }));
+        } catch (e) {
+            failures.push(`harness error (${width}px): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'first-run screen links: company, product site, manual', failures };
+}
+
 async function journeyFirstRunRestore(browser, baseURL) {
     const { failures, record } = makeRecorder();
 
@@ -6723,6 +6760,32 @@ async function journeyBrowseRoutines(browser, baseURL) {
             record('…and the card itself carries no mode label', !/Manual Cycle|Auto Cycle|To-Do/.test(under.onCard), under.onCard.slice(0, 80));
             record('no "All routines" jump list (Grid replaced it)', !under.jump, `jump list present: ${under.jump}`);
 
+            // The ‹ › stay put whatever the routine is called.
+            const arrowsAt = () => page.evaluate(() => [...document.querySelectorAll('#routine-browser .rb-nav-btn')].map(b => Math.round(b.getBoundingClientRect().left)).join());
+            const arrowsWeekly = await arrowsAt();
+            await page.keyboard.press('ArrowLeft');
+            await page.waitForTimeout(400);
+            const arrowsPull = await arrowsAt();
+            record('the arrows do not move with the length of the name', arrowsWeekly === arrowsPull, `Weekly Review ${arrowsWeekly}, ${await shown(page)} ${arrowsPull}`);
+            await page.keyboard.press('ArrowRight');
+            await page.waitForTimeout(400);
+
+            // A mouse drag is the desktop's swipe — and does not select the cards' text.
+            const front = await page.locator('#routine-browser .rb-card[data-pos="0"] .rb-panel-title').boundingBox();
+            const dragFrom = async (x, toX) => {
+                await page.mouse.move(x, front.y + front.height / 2);
+                await page.mouse.down();
+                await page.mouse.move(toX, front.y + front.height / 2 + 10, { steps: 8 });
+                await page.mouse.up();
+                await page.waitForTimeout(500);
+            };
+            await dragFrom(front.x + front.width - 20, front.x + 20);
+            const dragged = { shown: await shown(page), selected: await page.evaluate(() => String(getSelection())), active: await activeTitle(page) };
+            record('dragging the card left with the mouse shows the next routine, without selecting text or opening it',
+                dragged.shown === 'Grocery Run' && dragged.selected === '' && dragged.active === 'Gym Push Day', JSON.stringify(dragged));
+            await dragFrom(front.x + 20, front.x + front.width - 20);
+            record('…and dragging right goes back', (await shown(page)) === 'Weekly Review', `showing ${await shown(page)}`);
+
             // Escape: back to the list it came from; then the list closes to the routine button.
             await page.keyboard.press('Escape');
             await page.waitForTimeout(500);
@@ -6824,6 +6887,34 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 return getComputedStyle(c).transitionDuration.split(',').map(d => parseFloat(d));
             });
             record('no slide with reduced motion', motion.every(d => d === 0), `transition ${motion}`);
+
+            // Import: the menu's own file picker, with Browse out of the way.
+            const [chooser] = await Promise.all([
+                page.waitForEvent('filechooser', { timeout: 3000 }).catch(() => null),
+                page.click('#routine-browser .rb-import-btn')
+            ]);
+            record('Import in Browse opens the file picker and closes Browse', !!chooser && (await shown(page)) === null, `picker ${!!chooser}, browse ${await shown(page)}`);
+
+            // Alt+Shift+[ / ]: the routine used before this one, and back — in the
+            // Recent order as it was at the first press (frozen for the walk).
+            await page.mouse.click(5, 5);   // focus off any field
+            const recent = await page.evaluate(() => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                const r = d.data.routine;
+                return Object.keys(r).sort((a, b) => (r[b].lastAccessedAt || 0) - (r[a].lastAccessedAt || 0)).map(k => r[k].title);
+            });
+            const walked = [];
+            for (const key of ['Alt+Shift+BracketLeft', 'Alt+Shift+BracketLeft', 'Alt+Shift+BracketRight']) {
+                await page.keyboard.press(key);
+                await page.waitForTimeout(500);
+                walked.push(await activeTitle(page));
+            }
+            record('Alt+Shift+[ goes back through the routines used before; Alt+Shift+] comes back the same way',
+                walked.join() === [recent[1], recent[2], recent[1]].join(), `recent ${recent.join(' > ')}; walked ${walked.join(' > ')}`);
+            await page.evaluate(() => document.getElementById('open-shortcuts-modal').click());
+            await page.waitForTimeout(400);
+            const listed = await page.evaluate(() => document.getElementById('shortcuts-list').textContent);
+            record('…and both are in the Keyboard Shortcuts list', /\[/.test(listed) && /\]/.test(listed) && /used before this one/.test(listed), listed.slice(0, 120));
             await page.keyboard.press('Escape');
         } catch (e) {
             console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
@@ -7025,6 +7116,7 @@ const JOURNEYS = [
     { name: 'factory reset admits what it cannot verify', fn: journeyResetHonesty },
     { name: 'reminder settings survive the quick-actions path', fn: journeyReminderSettings },
     { name: 'first-run restore accepts both backup formats', fn: journeyFirstRunRestore },
+    { name: 'first-run screen links: company, product site, manual', fn: journeyFirstRunLinks },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },

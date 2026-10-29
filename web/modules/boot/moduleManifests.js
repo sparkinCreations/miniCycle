@@ -428,7 +428,7 @@ export const MODULE_MANIFESTS = {
         // declared them and never called them. The post-switch refresh runs in
         // routineLoader.updateDependentComponents(), reached via loadMiniCycle().
         optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
-        provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
+        provides: ['switchMiniCycle', 'stepRecentRoutine', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
     },

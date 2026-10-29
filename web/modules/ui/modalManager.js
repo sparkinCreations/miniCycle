@@ -45,7 +45,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
 
@@ -547,13 +547,15 @@ export class ModalManager {
         const shift = getLabel('shortcuts.keyShift');
         const cmd = getLabel(apple ? 'shortcuts.keyCmd' : 'shortcuts.keyCtrl');
         const esc = getLabel('shortcuts.keyEscape');
-        const app = (name) => [mod, shift, KEYBOARD_SHORTCUTS[name].replace(/^Key/, '')];
+        const app = (name) => [mod, shift, shortcutKeyName(KEYBOARD_SHORTCUTS[name])];
 
         // Each row: [alternatives (each a list of keys pressed together), label key]
         const groups = [
             ['shortcuts.groupApp', [
                 [[app('NEW_ROUTINE')], 'shortcuts.newRoutine'],
                 [[app('OPEN_ROUTINE')], 'shortcuts.openRoutine'],
+                [[app('PREVIOUS_ROUTINE')], 'shortcuts.previousRoutine'],
+                [[app('NEXT_ROUTINE')], 'shortcuts.nextRoutine'],
                 [[app('NEXT_MODE')], 'shortcuts.nextMode'],
                 [[app('FOCUS_VIEW')], 'shortcuts.focusView'],
                 [[app('TOGGLE_INPUT_BAR')], 'shortcuts.toggleInput'],

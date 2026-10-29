@@ -66,17 +66,23 @@ export async function runRoutineBrowserTests(resultsDiv) {
             settings: structuredClone(settings),
             metadata: {}
         };
-        const calls = { opened: [], lists: 0, created: 0, updates: 0 };
+        const calls = { opened: [], lists: 0, created: 0, updates: 0, imports: 0, browseOpenOnImport: null };
         const btn = document.createElement('button');
         btn.id = 'routine-switcher-btn-test';
         document.body.appendChild(btn);
         const menuBtn = document.createElement('button');
         menuBtn.id = 'open-mini-cycle-test';
         document.body.appendChild(menuBtn);
+        // The menu's Import, which owns the file picker (Browse presses it).
+        const importTarget = document.createElement('button');
+        importTarget.addEventListener('click', () => {
+            calls.imports++;
+            calls.browseOpenOnImport = !!document.getElementById('routine-browser')?.open;
+        });
         const instance = new RoutineSwitcher({
             safeAddEventListener: (el, ev, fn) => el.addEventListener(ev, fn),
             getModal: () => null,
-            getElementById: (id) => (id === 'routine-switcher-btn' ? btn : id === 'open-mini-cycle' ? menuBtn : document.getElementById(id)),
+            getElementById: (id) => ({ 'routine-switcher-btn': btn, 'open-mini-cycle': menuBtn, 'import-mini-cycle': importTarget })[id] || document.getElementById(id),
             querySelector: (sel) => document.querySelector(sel),
             querySelectorAll: (sel) => document.querySelectorAll(sel),
             AppState: {
@@ -275,6 +281,62 @@ export async function runRoutineBrowserTests(resultsDiv) {
         if (titleShown() !== 'charlie') throw new Error(`swipe left showed ${titleShown()}`);
         front().click();
         if (calls.opened.length) throw new Error('the click after a swipe opened the routine');
+        cleanup();
+    });
+
+    // A mouse drag is the desktop's swipe (the user's call, Oct 2026).
+    const mouse = (target, type, x, y = 300, button = 0) =>
+        target.dispatchEvent(new MouseEvent(type, { bubbles: true, clientX: x, clientY: y, button }));
+
+    await test('a sideways mouse drag moves either way; the click that ends it does not open', () => {
+        const { browser, calls } = setup({ active: 'b' });
+        browser.open();
+        mouse(front(), 'mousedown', 300);
+        mouse(front(), 'mouseup', 150);
+        if (titleShown() !== 'charlie') throw new Error(`drag left showed ${titleShown()}`);
+        front().click();
+        if (calls.opened.length) throw new Error('the click after a drag opened the routine');
+        mouse(front(), 'mousedown', 150);
+        mouse(dialog(), 'mouseup', 330);   // let go off the card: still a drag
+        if (titleShown() !== 'Bravo') throw new Error(`drag right showed ${titleShown()}`);
+        cleanup();
+    });
+
+    await test('a short or mostly-vertical mouse move is not a drag, and a click still opens', () => {
+        const { browser, calls } = setup({ active: 'b' });
+        browser.open();
+        mouse(front(), 'mousedown', 300, 300);
+        mouse(front(), 'mouseup', 290, 300);
+        mouse(front(), 'mousedown', 300, 100);
+        mouse(front(), 'mouseup', 220, 400);
+        if (titleShown() !== 'Bravo') throw new Error(`moved to ${titleShown()}`);
+        mouse(front(), 'mousedown', 300, 300, 2);   // right button
+        mouse(front(), 'mouseup', 100, 300, 2);
+        if (titleShown() !== 'Bravo') throw new Error(`a right-button drag moved to ${titleShown()}`);
+        browser.move(1);   // off the open routine, so opening means switching
+        front().click();
+        if (calls.opened[0] !== 'c') throw new Error(`a plain click opened ${calls.opened[0]}`);
+        cleanup();
+    });
+
+    await test('a drag that starts on a button is that button\'s, not a flip', () => {
+        const { browser } = setup({ active: 'b' });
+        browser.open();
+        const prev = dialog().querySelector('.rb-nav-btn[data-dir="-1"]');
+        mouse(prev, 'mousedown', 300);
+        mouse(dialog(), 'mouseup', 100);
+        if (titleShown() !== 'Bravo') throw new Error(`moved to ${titleShown()}`);
+        cleanup();
+    });
+
+    await test('Import closes Browse and presses the menu\'s Import (which owns the file picker)', () => {
+        const { browser, calls } = setup({ active: 'b' });
+        browser.open();
+        const btn = dialog().querySelector('.rb-import-btn');
+        if (btn.getAttribute('aria-label') !== getLabel('routine.importTitle')) throw new Error(`named "${btn.getAttribute('aria-label')}"`);
+        btn.click();
+        if (calls.imports !== 1) throw new Error(`menu Import pressed ${calls.imports} times`);
+        if (calls.browseOpenOnImport !== false) throw new Error('Browse was still open when the import began');
         cleanup();
     });
 
@@ -565,6 +627,75 @@ export async function runRoutineBrowserTests(resultsDiv) {
         // this page does not have — reaching it (and throwing there) is the pass.
         try { instance.switchMiniCycle(); } catch { /* list path, no dialog here */ }
         if (browseOpened) throw new Error('Browse opened for a user who never chose it');
+        cleanup();
+    });
+
+    // ── Alt+Shift+[ / ]: previous / next routine in Recent order ─────────────
+    // Four routines, most recent first: d (current), b, c, a. The stub opens a
+    // routine the way the real switch does for this purpose: it becomes active
+    // and the most recent — which is why the order must be frozen.
+    const FOUR = {
+        a: { title: 'alpha', tasks: [], lastAccessedAt: NOW - 4 * HOUR },
+        b: { title: 'Bravo', tasks: [], lastAccessedAt: NOW - 2 * HOUR },
+        c: { title: 'charlie', tasks: [], lastAccessedAt: NOW - 3 * HOUR },
+        d: { title: 'delta', tasks: [], lastAccessedAt: NOW - 1 * HOUR }
+    };
+    const stepSetup = (routines = FOUR) => {
+        const ctx = setup({ routines, active: 'd' });
+        ctx.instance._openRoutineByKey = (key) => {
+            ctx.calls.opened.push(key);
+            ctx.state.appState.activeRoutineId = key;
+            ctx.state.data.routine[key].lastAccessedAt = Date.now();
+        };
+        return ctx;
+    };
+
+    await test('previous walks back through the routines used before, and wraps', () => {
+        const { instance, calls } = stepSetup();
+        for (let i = 0; i < 4; i++) instance.stepRecentRoutine(-1);
+        if (calls.opened.join() !== 'b,c,a,d') throw new Error(`walked ${calls.opened.join()}`);
+        cleanup();
+    });
+
+    await test('next from the newest goes to the least recent, then forward', () => {
+        const { instance, calls } = stepSetup();
+        for (let i = 0; i < 4; i++) instance.stepRecentRoutine(1);
+        if (calls.opened.join() !== 'a,c,b,d') throw new Error(`walked ${calls.opened.join()}`);
+        cleanup();
+    });
+
+    await test('the walk is frozen: previous then next comes straight back', () => {
+        const { instance, calls } = stepSetup();
+        instance.stepRecentRoutine(-1);
+        instance.stepRecentRoutine(-1);
+        instance.stepRecentRoutine(1);
+        // A live order would put c (just opened) first and send "next" round to a.
+        if (calls.opened.join() !== 'b,c,b') throw new Error(`walked ${calls.opened.join()}`);
+        cleanup();
+    });
+
+    await test('switching another way, or a pause, starts the walk again from the order as it is', () => {
+        const { instance, calls, state } = stepSetup();
+        instance.stepRecentRoutine(-1);   // → b
+        // Opened from the list: a becomes current and most recent.
+        state.appState.activeRoutineId = 'a';
+        state.data.routine.a.lastAccessedAt = Date.now() + 1;
+        instance.stepRecentRoutine(-1);   // fresh order a, b, d, c → b
+        if (calls.opened.join() !== 'b,b') throw new Error(`after another switch walked ${calls.opened.join()}`);
+        instance._recentWalk.at -= 60000;   // a long pause
+        state.data.routine.b.lastAccessedAt = Date.now() + 2;
+        instance.stepRecentRoutine(-1);   // fresh again: b, a, d, c → a
+        if (calls.opened[2] !== 'a') throw new Error(`after a pause went to ${calls.opened[2]}`);
+        cleanup();
+    });
+
+    await test('with one routine the step says so and switches nothing', () => {
+        const { instance, calls } = stepSetup({ d: FOUR.d });
+        let said = null;
+        instance.deps.showNotification = (msg) => { said = msg; };
+        if (instance.stepRecentRoutine(-1) !== false) throw new Error('reported a switch');
+        if (calls.opened.length) throw new Error('switched');
+        if (said !== getLabel('notify.onlyOneRoutineToStep')) throw new Error(`said "${said}"`);
         cleanup();
     });
 

@@ -196,8 +196,9 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     ROUTINE_BROWSER_WHEEL_QUIET: 250, // 250ms - Browse Routines: a wheel/trackpad gesture moves ONE routine; further wheel events are ignored until they pause this long (a trackpad flick fires dozens)
+    ROUTINE_STEP_WALK_IDLE: 10000, // ms - Alt+Shift+[ / ]: presses this close together keep walking the recent order as it was at the first press; after a pause the walk starts again from the order as it is then
     ROUTINE_BROWSER_CARD_EXIT: 400,   // ms - Browse Routines: a card sliding out of the carousel is removed after this (its --transition-normal slide, plus margin) if no transitionend arrives
-    ROUTINE_BROWSER_SWIPE_CLICK_GUARD: 350, // ms - Browse Routines: the click a browser sends after a swipe's touchend is ignored for this long, so ending a swipe on the routine does not open it
+    ROUTINE_BROWSER_SWIPE_CLICK_GUARD: 350, // ms - Browse Routines: the click a browser sends after a swipe's touchend (or a mouse drag's mouseup) is ignored for this long, so ending a swipe on the routine does not open it
     FOCUS_EXIT_DOUBLE_ESCAPE: 1500, // 1500ms - In Focus View, a second Escape within this leaves the view; also how long the "press again" hint stays up
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
@@ -508,26 +509,9 @@ export const BREAKPOINTS = Object.freeze({
 });
 
 // ============================================================================
-// GESTURE THRESHOLDS (pixels)
+// ROUTINE VIEWS — the stored values of the routine-view settings
 // ============================================================================
 
-/**
- * Touch and mouse gesture thresholds
- * @constant {Object}
- */
-/**
- * App-wide keyboard shortcuts: Alt+Shift+<key> (Option+Shift on a Mac).
- * Values are KeyboardEvent.code — the PHYSICAL key — because on a Mac
- * Option+Shift+N reports event.key as "˜", not "N".
- *
- * Why Alt+Shift and not Ctrl/Cmd or single letters: Ctrl/Cmd+N and +O belong
- * to the browser (Chrome never hands Ctrl+N to a page); single letters collide
- * with screen-reader quick navigation (H = next heading, B = next button) and
- * WCAG 2.1.4 would require a way to turn them off. NVDA, JAWS and VoiceOver do
- * not use Alt+Shift+letter, and the app declares no accesskey (Firefox's
- * accesskey modifier is Alt+Shift). Handled in uiBoot.handleAppShortcut;
- * documented in legal/user-manual.html#keyboard-shortcuts — keep the two in step.
- */
 /**
  * Settings → "When you open routines, show". The stored values of
  * `settings.routineOpenView`; read it through cycleMode.getRoutineOpenView(),
@@ -542,6 +526,11 @@ export const ROUTINE_OPEN_VIEW = Object.freeze({
  * Browse Routines' two orders — the stored values of `settings.routineBrowserSort`;
  * read through cycleMode.getRoutineBrowserSort().
  */
+export const ROUTINE_BROWSER_SORT = Object.freeze({
+    RECENT: 'recent',   // last used first (the default)
+    ALPHA:  'alpha'     // A-Z by title
+});
+
 /**
  * Browse Routines' two layouts — the stored values of `settings.routineBrowserLayout`;
  * read through cycleMode.getRoutineBrowserLayout().
@@ -551,20 +540,56 @@ export const ROUTINE_BROWSER_LAYOUT = Object.freeze({
     GRID:  'grid'     // every routine as a tile
 });
 
-export const ROUTINE_BROWSER_SORT = Object.freeze({
-    RECENT: 'recent',   // last used first (the default)
-    ALPHA:  'alpha'     // A-Z by title
-});
+// ============================================================================
+// KEYBOARD SHORTCUTS
+// ============================================================================
 
+/**
+ * App-wide keyboard shortcuts: Alt+Shift+<key> (Option+Shift on a Mac).
+ * Values are KeyboardEvent.code — the PHYSICAL key — because on a Mac
+ * Option+Shift+N reports event.key as "˜", not "N".
+ *
+ * Why Alt+Shift and not Ctrl/Cmd or single letters: Ctrl/Cmd+N and +O belong
+ * to the browser (Chrome never hands Ctrl+N to a page); single letters collide
+ * with screen-reader quick navigation (H = next heading, B = next button) and
+ * WCAG 2.1.4 would require a way to turn them off. NVDA, JAWS and VoiceOver do
+ * not use Alt+Shift+letter, and the app declares no accesskey (Firefox's
+ * accesskey modifier is Alt+Shift). Handled in uiBoot.handleAppShortcut;
+ * documented in legal/user-manual.html#keyboard-shortcuts — keep the two in step.
+ */
 export const KEYBOARD_SHORTCUTS = Object.freeze({
     NEW_ROUTINE:      'KeyN',   // create a new routine
     OPEN_ROUTINE:     'KeyO',   // open the routine switcher
     NEXT_MODE:        'KeyM',   // Auto Cycle → Manual Cycle → To-Do → Auto Cycle
     FOCUS_VIEW:       'KeyF',   // Focus View on / off
     TOGGLE_INPUT_BAR: 'KeyI',   // show / hide the add-task input bar
-    USER_MANUAL:      'KeyU'    // open the user manual
+    USER_MANUAL:      'KeyU',   // open the user manual
+    PREVIOUS_ROUTINE: 'BracketLeft',    // the routine used before this one (Recent order)
+    NEXT_ROUTINE:     'BracketRight'    // the other way, wrapping from the newest to the oldest
 });
 
+/**
+ * How a KEYBOARD_SHORTCUTS code is shown and announced: KeyN → "N",
+ * BracketLeft → "[". The shortcuts list and aria-keyshortcuts both use it.
+ * @param {string} code - a KeyboardEvent.code
+ * @returns {string}
+ */
+const SHORTCUT_KEY_SYMBOLS = Object.freeze({ BracketLeft: '[', BracketRight: ']' });
+
+export function shortcutKeyName(code) {
+    return Object.prototype.hasOwnProperty.call(SHORTCUT_KEY_SYMBOLS, code)
+        ? SHORTCUT_KEY_SYMBOLS[code]
+        : code.replace(/^Key/, '');
+}
+
+// ============================================================================
+// GESTURE THRESHOLDS (pixels)
+// ============================================================================
+
+/**
+ * Touch and mouse gesture thresholds
+ * @constant {Object}
+ */
 export const GESTURE = Object.freeze({
     SWIPE_THRESHOLD: 400,          // Minimum distance for swipe recognition
     MOUSE_DRAG_THRESHOLD: 400,     // Minimum distance for mouse drag
@@ -871,6 +896,7 @@ export const DOM_CLASSES = Object.freeze({
     RB_SORT: 'rb-sort',
     RB_SORT_BTN: 'rb-sort-btn',
     RB_SEARCH_BTN: 'rb-search-btn',
+    RB_IMPORT_BTN: 'rb-import-btn',     // Browse's top bar: import a routine from a file (the menu's Import)
     RB_SEARCH: 'rb-search',
     RB_SEARCH_INPUT: 'rb-search-input',
     RB_SEARCH_CLOSE: 'rb-search-close',

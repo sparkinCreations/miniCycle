@@ -7,9 +7,9 @@
  *
  *   Cards — one routine in front, its neighbours peeking at the sides, turned a
  *           little toward it, on a screen wide enough to show them. Flip with
- *           the ‹ › beside the name, the arrow keys, a sideways swipe, the mouse
- *           wheel, or a click on a neighbour; open with the Open button, a tap
- *           on the routine in front, or Enter.
+ *           the ‹ › beside the name, the arrow keys, a sideways swipe or mouse
+ *           drag, the mouse wheel, or a click on a neighbour; open with the
+ *           Open button, a tap on the routine in front, or Enter.
  *   Grid  — every routine as a tile. A tap selects (shows its details below);
  *           a tap on the selected tile, the Open button or Enter opens it.
  *
@@ -118,7 +118,9 @@ export class RoutineBrowser {
         this._wheelQuietTimer = null;
         this._wheelLocked = false;
         this._touch = null;
+        this._mouse = null;           // where a mouse drag on the cards started
         this._suppressClick = false;
+        this._clickGuardTimer = null;
     }
 
     get deps() {
@@ -276,12 +278,17 @@ export class RoutineBrowser {
         searchClose.textContent = '×';
         search.append(searchInput, searchClose);
 
+        // Import a .mcyc file — the same import as the menu's and the list's.
+        const importName = getLabel('routine.importTitle');
+        const importBtn = el('button', DOM_CLASSES.RB_IMPORT_BTN, { type: 'button', 'aria-label': importName, title: importName });
+        importBtn.innerHTML = getIcon('file-upload');
+
         // Top-right corner: back to the list, with the list's own folder icon.
         const toList = iconButton(DOM_CLASSES.RB_CORNER_BTN, 'folder', 'routineBrowser.toList', {
             'aria-label': getLabel('routineBrowser.toListAria'), title: getLabel('routineBrowser.toListAria')
         });
 
-        top.append(closeBtn, heading, layout, sort, searchBtn, search, toList);
+        top.append(closeBtn, heading, layout, sort, searchBtn, search, importBtn, toList);
 
         // ── the two layouts
         const stage = el('div', DOM_CLASSES.RB_STAGE);
@@ -318,7 +325,7 @@ export class RoutineBrowser {
         document.body.appendChild(dialog);
 
         this._dialog = dialog;
-        this._els = { closeBtn, layoutBtns, sortBtns, layout, sort, searchBtn, search, searchInput, searchClose, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn };
+        this._els = { closeBtn, layoutBtns, sortBtns, layout, sort, searchBtn, search, searchInput, searchClose, importBtn, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn };
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -697,6 +704,20 @@ export class RoutineBrowser {
         this.deps.showCycleCreationModal?.();
     }
 
+    /**
+     * Import a routine from a file: close Browse (the import's own choices are
+     * dialogs of their own) and press the menu's Import, which owns the file
+     * picker — the way the welcome screen's buttons reach the menu's. In the
+     * same click, not after a timer: a file picker needs the user's gesture,
+     * and Safari drops it across a task.
+     */
+    importRoutine() {
+        this.close();
+        const btn = this.deps.getElementById(DOM_IDS.IMPORT_MINI_CYCLE);
+        if (btn) btn.click();
+        else this.deps.showNotification(getLabel('notify.importError'), 'error');
+    }
+
     // ────────────────────────────────────────────────────────────────────────
     // Input — attached on open, removed on close
     // ────────────────────────────────────────────────────────────────────────
@@ -710,8 +731,25 @@ export class RoutineBrowser {
         this._listeners.forEach(off => off());
         this._listeners = [];
         clearTimeout(this._wheelQuietTimer);
+        clearTimeout(this._clickGuardTimer);
         this._wheelLocked = false;
         this._touch = null;
+        this._mouse = null;
+    }
+
+    /**
+     * A sideways swipe or drag of the cards, from (dx, dy): flip one routine,
+     * and ignore the click the browser sends when it ends.
+     * @returns {boolean} whether it was a swipe
+     */
+    _swipe(dx, dy) {
+        if (Math.abs(dx) < GESTURE.TOUCH_SWIPE || Math.abs(dx) <= Math.abs(dy) * GESTURE.AXIS_DOMINANCE_RATIO) return false;
+        this._suppressClick = true;
+        clearTimeout(this._clickGuardTimer);
+        this._clickGuardTimer = setTimeout(() => { this._suppressClick = false; }, UI_TIMEOUTS.ROUTINE_BROWSER_SWIPE_CLICK_GUARD);
+        // Moved left → the next routine comes in from the right.
+        this.move(dx < 0 ? 1 : -1);
+        return true;
     }
 
     /** Columns in the grid as laid out now: the tiles sharing the first one's row. */
@@ -724,7 +762,7 @@ export class RoutineBrowser {
 
     _attachListeners() {
         this._detachListeners();
-        const { closeBtn, layoutBtns, sortBtns, searchBtn, searchInput, searchClose, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn } = this._els;
+        const { closeBtn, layoutBtns, sortBtns, searchBtn, searchInput, searchClose, importBtn, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn } = this._els;
         const dialog = this._dialog;
 
         this._on(closeBtn, 'click', () => this.close());
@@ -741,6 +779,7 @@ export class RoutineBrowser {
         this._on(nextBtn, 'click', () => this.move(1));
         this._on(openBtn, 'click', () => this.openCurrent());
         this._on(createBtn, 'click', () => this.createAnother());
+        this._on(importBtn, 'click', () => this.importRoutine());
 
         // Cards: a tap on the routine in front opens it (it is read-only, so a
         // tap cannot mean "tick this task"); a tap on a neighbour brings it to
@@ -845,15 +884,27 @@ export class RoutineBrowser {
             this._touch = null;
             const t = e.changedTouches[0];
             if (!start || !t) return;
-            const dx = t.clientX - start.x;
-            const dy = t.clientY - start.y;
-            if (Math.abs(dx) >= GESTURE.TOUCH_SWIPE && Math.abs(dx) > Math.abs(dy) * GESTURE.AXIS_DOMINANCE_RATIO) {
-                this._suppressClick = true;
-                setTimeout(() => { this._suppressClick = false; }, UI_TIMEOUTS.ROUTINE_BROWSER_SWIPE_CLICK_GUARD);
-                // Finger moves left → the next routine comes in from the right.
-                this.move(dx < 0 ? 1 : -1);
-            }
+            this._swipe(t.clientX - start.x, t.clientY - start.y);
         }, { passive: true });
+
+        // The same with a mouse: press on the cards, drag sideways, let go (the
+        // user's call, Oct 2026 — the swipe, for a desktop). The release is
+        // heard on the dialog, so a drag that ends off the cards still counts.
+        // Not on the front card's scrollbar or a button: those keep their own
+        // drag. A tap on a touch screen sends mouse events too, but a tap does
+        // not travel far enough to be a drag.
+        this._on(stage, 'mousedown', (e) => {
+            if (e.button !== 0 || e.target.closest?.(DOM_SELECTORS.NATIVE_CONTROL)) { this._mouse = null; return; }
+            const tasks = e.target.closest?.(`.${DOM_CLASSES.RB_TASKS}`);
+            if (tasks && e.clientX > tasks.getBoundingClientRect().left + tasks.clientLeft + tasks.clientWidth) { this._mouse = null; return; }   // on its scrollbar
+            this._mouse = { x: e.clientX, y: e.clientY };
+        });
+        this._on(dialog, 'mouseup', (e) => {
+            const start = this._mouse;
+            this._mouse = null;
+            if (!start || e.button !== 0) return;
+            this._swipe(e.clientX - start.x, e.clientY - start.y);
+        });
 
         // The card itself is a click target only (a <section> with a list in it
         // cannot be a <button>); keyboard users open with Enter or the Open button.

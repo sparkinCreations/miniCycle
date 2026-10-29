@@ -281,6 +281,7 @@
   --browse-card-max-height: 680px;
   --browse-close-size: 40px;
   --browse-nav-size: 48px;          /* the ‹ › beside the name: no background, just the chevron */
+  --browse-title-width: 360px;      /* the name between them: fixed, so the arrows never move (it shrinks on a narrow screen) */
   --browse-check-size: 22px;
   /* The carousel: neighbours peek either side, a little smaller, dimmer and
      turned toward the routine in front. Wide screens only (routine-switcher.css
