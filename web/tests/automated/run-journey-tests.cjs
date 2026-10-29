@@ -2033,6 +2033,72 @@ async function journeyRoutineViewTours(browser, baseURL) {
     return { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', failures };
 }
 
+// Renaming a routine that is NOT the open one, on a phone, by every way into
+// the list — the routine button (List setting), Browse's List corner, and
+// the expanded list. A phone renames in a small dialog (not inline); the
+// report (Oct 2026, iPhone) was that for a routine that is not active it
+// never came up. Run on WebKit too: JOURNEY_FILTER="rename on a phone"
+// npm run test:journey:webkit.
+async function journeyPhoneRenameInactive(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    for (const way of ['routine button', 'from Browse', 'expanded list']) {
+        const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
+            await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
+            await page.waitForFunction(() => { const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null'); return p && Object.keys(p.data?.routine || {}).length > 0; }, null, { timeout: 20000 });
+            const doc = await page.evaluate((way) => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                d.settings.focusModeActive = false;
+                d.settings.routineOpenView = way === 'from Browse' ? 'browse' : 'list';
+                const base = d.data.routine[d.appState.activeRoutineId];
+                for (let i = 0; i < 3; i++) { const c = JSON.parse(JSON.stringify(base)); c.title = `Other ${i}`; c.id = `pr${i}`; d.data.routine[`pr${i}`] = c; }
+                return JSON.stringify(d);
+            }, way);
+            await reloadWithSeed(page, doc);
+            await bootApp(page);
+            await page.waitForTimeout(800);
+            await page.evaluate(() => document.querySelectorAll('.notification .close-btn').forEach(b => b.click()));
+            await page.tap('#routine-switcher-btn');
+            await page.waitForTimeout(900);
+            if (way === 'from Browse') { await page.tap('#routine-browser .rb-corner-btn'); await page.waitForTimeout(900); }
+            if (way === 'expanded list') { await page.tap('#routine-list-expand-btn'); await page.waitForTimeout(500); }
+            await page.tap('#miniCycleList [data-cycle-key="pr1"]');
+            await page.waitForTimeout(700);
+            await page.tap('#switch-rename');
+            await page.waitForTimeout(900);
+            const seen = await page.evaluate(() => {
+                const dlg = [...document.querySelectorAll('dialog.miniCycle-prompt-dialog')].find(d => d.open);
+                const input = dlg?.querySelector('input');
+                return { open: !!dlg, value: input?.value, focused: document.activeElement === input,
+                    onTop: !!dlg && document.elementFromPoint(innerWidth / 2, input.getBoundingClientRect().top + 5)?.closest('dialog') === dlg };
+            });
+            record(`${way}: Rename on a routine that is not open brings up the rename box, on top, with its name`,
+                seen.open && seen.value === 'Other 1' && seen.onTop, JSON.stringify(seen));
+            if (seen.open) {
+                await page.fill('dialog.miniCycle-prompt-dialog[open] input', 'Renamed on phone');
+                await page.tap('dialog.miniCycle-prompt-dialog[open] .miniCycle-btn-confirm');
+                await page.waitForTimeout(700);
+                // Rename stores the routine under its new name, so find it by title.
+                const saved = await page.evaluate(() => {
+                    const r = JSON.parse(localStorage.getItem('miniCycleData')).data.routine;
+                    return { renamed: Object.values(r).some(x => x.title === 'Renamed on phone'), oldGone: !Object.values(r).some(x => x.title === 'Other 1') };
+                });
+                record(`${way}: …and saving renames it`, saved.renamed && saved.oldGone, JSON.stringify(saved));
+            }
+        } catch (e) {
+            failures.push(`harness error (${way}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'rename on a phone: a routine that is not open, by every way into the list', failures };
+}
+
 async function journeyFirstRunRestore(browser, baseURL) {
     const { failures, record } = makeRecorder();
 
@@ -7360,6 +7426,7 @@ const JOURNEYS = [
     { name: 'keyboard-only items: hidden on a phone either way up, kept on tablets and computers', fn: journeyKeyboardOnlyItems },
     { name: "Focus View's ⋯ button clears the status bar on a wide installed app", fn: journeyFocusMenuSafeArea },
     { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', fn: journeyRoutineViewTours },
+    { name: 'rename on a phone: a routine that is not open, by every way into the list', fn: journeyPhoneRenameInactive },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
