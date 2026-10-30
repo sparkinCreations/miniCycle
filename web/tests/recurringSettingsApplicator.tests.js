@@ -18,6 +18,7 @@ import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 export async function runRecurringSettingsApplicatorTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
     const mod = await import(`../modules/recurring/recurringSettingsApplicator.js?v=${cacheBuster}`);
+    const { normalizeRecurringSettings } = await import(`../modules/recurring/recurringSettings.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>RecurringSettingsApplicator Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -265,6 +266,76 @@ export async function runRecurringSettingsApplicatorTests(resultsDiv) {
 
     // ── Error path ────────────────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">💥 Error Handling</h4>';
+
+    // ── Biweekly Week 1 start date ───────────────────────────────────────────
+    // The panel never sends back the date Week 1 counts from, and the normaliser
+    // fills a missing one with "now" — so every re-save restarted Week 1 and an
+    // edit made during Week 2 swapped the weeks for good. Uses the REAL
+    // normaliser: the bug is in how the two meet.
+    const STARTED = '2026-10-19T12:00:00.000Z';
+    const biweeklyPanel = () => ({ frequency: 'biweekly', indefinitely: true, biweekly: { useSpecificDays: true, week1: ['Mon'], week2: ['Thu'] } });
+    function biweeklyRoutine(previousSettings) {
+        return makeAppState({
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: {
+                tasks: [{ id: 't1', text: 'Water plants', recurring: true, recurringSettings: structuredClone(previousSettings) }],
+                recurringTemplates: { t1: { id: 't1', text: 'Water plants', recurring: true, recurringSettings: structuredClone(previousSettings), nextScheduledOccurrence: 1 } }
+            } } },
+            settings: {}
+        });
+    }
+
+    await test('REGRESSION: re-saving a biweekly task keeps the day its Week 1 started', async () => {
+        const appState = biweeklyRoutine({ ...biweeklyPanel(), biweekly: { ...biweeklyPanel().biweekly, referenceDate: STARTED } });
+        const scheduledFrom = [];
+        const deps = makeDeps({
+            AppState: appState,
+            querySelectorAll: () => [makeCheckbox('t1')],
+            normalizeRecurringSettings,
+            calculateNextOccurrence: (settings) => { scheduledFrom.push(settings.biweekly.referenceDate); return 1; }
+        });
+        mod.setRecurringSettingsApplicatorDependencies(deps);
+        await mod.applyRecurringSettings(makePanel(), biweeklyPanel);
+
+        const routine = appState.get().data.routine.c1;
+        eq(routine.recurringTemplates.t1.recurringSettings.biweekly.referenceDate, STARTED, 'template Week 1 start');
+        eq(routine.tasks[0].recurringSettings.biweekly.referenceDate, STARTED, 'task Week 1 start');
+        eq(scheduledFrom[0], STARTED, 'next occurrence counted from the kept start');
+    });
+
+    await test('a task that becomes biweekly starts counting its weeks now', async () => {
+        // A weekly task's settings carry a backfilled referenceDate too; it was
+        // never a Week 1 for this task, so it must not be inherited.
+        const appState = biweeklyRoutine({ frequency: 'weekly', indefinitely: true, biweekly: { referenceDate: STARTED } });
+        const deps = makeDeps({ AppState: appState, querySelectorAll: () => [makeCheckbox('t1')], normalizeRecurringSettings });
+        mod.setRecurringSettingsApplicatorDependencies(deps);
+        const before = Date.now();
+        await mod.applyRecurringSettings(makePanel(), biweeklyPanel);
+
+        const start = Date.parse(appState.get().data.routine.c1.recurringTemplates.t1.recurringSettings.biweekly.referenceDate);
+        if (!(start >= before - 1000)) throw new Error(`expected Week 1 to start now, got ${new Date(start).toISOString()}`);
+    });
+
+    await test('REGRESSION: saved recurring defaults carry no Week 1 start date', async () => {
+        // A start date in the defaults was handed to every task made from them,
+        // so their weeks counted from the day the defaults were saved.
+        const appState = biweeklyRoutine({ frequency: 'daily', indefinitely: true });
+        const deps = makeDeps({
+            AppState: appState,
+            querySelectorAll: () => [makeCheckbox('t1')],
+            normalizeRecurringSettings,
+            getElementById: () => ({ checked: true }) // SET_DEFAULT_RECURRING checked
+        });
+        mod.setRecurringSettingsApplicatorDependencies(deps);
+        await mod.applyRecurringSettings(makePanel(), biweeklyPanel);
+
+        const defaults = appState.get().settings.defaultRecurringSettings;
+        if (!defaults) throw new Error('defaults not saved');
+        eq(defaults.biweekly.referenceDate, null, 'defaults referenceDate');
+        if (!appState.get().data.routine.c1.recurringTemplates.t1.recurringSettings.biweekly.referenceDate) {
+            throw new Error('the task itself must still get a Week 1 start date');
+        }
+    });
 
     await test('rethrows after notifying when updateAppState throws', async () => {
         const cb = makeCheckbox('t1');

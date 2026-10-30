@@ -781,6 +781,8 @@ export const TIME_UNITS = Object.freeze({
     MINUTES_PER_HOUR: 60,
     HOURS_PER_DAY: 24,
     DAYS_PER_WEEK: 7,
+    MS_PER_MINUTE: 60 * 1000,
+    MS_PER_HOUR: 60 * 60 * 1000,
     MS_PER_DAY: 24 * 60 * 60 * 1000
 });
 

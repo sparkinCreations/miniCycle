@@ -579,6 +579,45 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    test('REGRESSION: duplicating points undo at the copy, so its first change can be undone (DI)', () => {
+        // Duplicate switches to the copy. Undo kept tracking the original, saw the
+        // mismatch on the next change, repaired itself — and dropped the step it
+        // was recording, so the first edit in a fresh copy could not be undone.
+        // Creating and importing a routine tell undo; Duplicate has to as well.
+        const created = [];
+        let activeAfter = null;
+        const mockFullSchema = {
+            metadata: { totalRoutinesCreated: 1, lastModified: Date.now() },
+            data: { routine: { 'cycle-1': { id: 'cycle-1', title: 'Test Cycle', tasks: [] } } },
+            appState: { activeRoutineId: 'cycle-1' }
+        };
+
+        setMenuManagerDependencies(createMockDeps({
+            AppState: () => ({
+                isReady: () => true,
+                get: () => mockFullSchema,
+                update: (updateFn) => {
+                    const stateCopy = JSON.parse(JSON.stringify(mockFullSchema));
+                    updateFn(stateCopy);
+                    activeAfter = stateCopy.appState.activeRoutineId;
+                }
+            }),
+            showPromptModal: (opts) => opts.callback('Copy of Test'),
+            sanitizeInput: (input) => input.trim(),
+            showNotification: () => {},
+            loadMiniCycle: () => {},
+            onCycleCreated: (id) => { created.push(id); return Promise.resolve(); }
+        }));
+        const instance = new MenuManager();
+        instance.hideMainMenu = () => {};
+        instance.saveMiniCycleAsNew();
+
+        if (!activeAfter || activeAfter === 'cycle-1') throw new Error(`expected the copy to become active, got ${activeAfter}`);
+        if (created.length !== 1 || created[0] !== activeAfter) {
+            throw new Error(`expected onCycleCreated(${JSON.stringify(activeAfter)}) once, got ${JSON.stringify(created)}`);
+        }
+    });
+
     test('REGRESSION: duplicating with an over-long name warns that it was truncated (DI)', () => {
         // The real sanitizeInput clamps to LIMITS.CYCLE_NAME_CHARACTER, so the
         // copy's name used to be cut silently. Faithful clamping mock here.

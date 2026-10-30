@@ -7,6 +7,8 @@
  * @module recurringCalculators
  */
 
+import { TIME_UNITS } from '../core/constants.js';
+
 // ============================================
 // INJECTED DEPENDENCIES (via setDateUtils / setNormalizer / setLabelResolver)
 // ============================================
@@ -75,24 +77,26 @@ const getDateUtils = () => {
  * @returns {number} Unix timestamp of next occurrence
  */
 export function calculateNextHourly(hourlySettings, from) {
-    const next = getDateUtils().cloneDate(from);
+    // Step in REAL hours from the start of the current hour. Adding 1 to the
+    // clock hour (setHours) skipped the repeated hour when the clocks fall back
+    // (1:32 EDT → 2:32 EST, two hours later), and setting minutes on a repeated
+    // hour lands on its first occurrence, which can be in the past.
+    const fromMs = from.getTime();
+    const startOfHour = fromMs
+        - from.getMinutes() * TIME_UNITS.MS_PER_MINUTE
+        - from.getSeconds() * TIME_UNITS.MS_PER_SECOND
+        - from.getMilliseconds();
 
     if (hourlySettings?.useSpecificMinute) {
         const targetMinute = hourlySettings.minute || 0;
-
-        // Set to target minute
-        next.setMinutes(targetMinute, 0, 0);
+        const thisHour = startOfHour + targetMinute * TIME_UNITS.MS_PER_MINUTE;
 
         // If this minute already passed this hour, move to next hour
-        if (next <= from) {
-            next.setHours(next.getHours() + 1);
-        }
-    } else {
-        // Default: top of next hour
-        next.setHours(next.getHours() + 1, 0, 0, 0);
+        return thisHour > fromMs ? thisHour : thisHour + TIME_UNITS.MS_PER_HOUR;
     }
 
-    return next.getTime();
+    // Default: top of next hour
+    return startOfHour + TIME_UNITS.MS_PER_HOUR;
 }
 
 /**
@@ -107,9 +111,13 @@ export function calculateNextDaily(timeSettings, from) {
     if (timeSettings) {
         getDateUtils().applyTimeToDate(next, timeSettings);
 
-        // If time already passed today, move to tomorrow
+        // If time already passed today, move to tomorrow — and place the time
+        // on tomorrow afresh. A time in the hour the clocks skip comes back an
+        // hour late (2:30 → 3:30); stepping the day without re-placing it
+        // carried that 3:30 into every day after.
         if (next <= from) {
             next.setDate(next.getDate() + 1);
+            getDateUtils().applyTimeToDate(next, timeSettings);
         }
     } else {
         // No specific time - next occurrence is start of tomorrow

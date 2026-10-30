@@ -10,8 +10,10 @@ export async function runRecurringActivationTests(resultsDiv) {
     const mod = await import(`../modules/recurring/recurringActivation.js?v=${cacheBuster}`);
     const {
         setRecurringActivationDependencies, activateTaskRecurringState,
-        deactivateTaskRecurringState, removeRecurringTasksFromCycle
+        deactivateTaskRecurringState, removeRecurringTasksFromCycle,
+        handleRecurringTaskActivation
     } = mod;
+    const { normalizeRecurringSettings } = await import(`../modules/recurring/recurringSettings.js?v=${cacheBuster}`);
 
     resultsDiv.innerHTML = '<h2>RecurringActivation Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
@@ -173,6 +175,38 @@ export async function runRecurringActivationTests(resultsDiv) {
         const cycle = { tasks: [{ id: 'task-1' }], recurringTemplates: {} };
         removeRecurringTasksFromCycle([el], cycle);
         if (cycle.tasks.length !== 1) throw new Error('non-recurring task should be untouched');
+    });
+
+    await test('REGRESSION: a biweekly task made from saved defaults starts its weeks now', async () => {
+        // Defaults saved by older versions still carry the date they were saved on as
+        // the biweekly Week 1 start; a task made from them must not inherit it.
+        const SAVED = '2026-01-05T12:00:00.000Z';
+        const state = {
+            appState: { activeRoutineId: 'c1' },
+            data: { routine: { c1: { tasks: [{ id: 't1', text: 'Water plants' }], recurringTemplates: {} } } },
+            settings: {}
+        };
+        setRecurringActivationDependencies({
+            querySelector: () => null,
+            normalizeRecurringSettings,
+            calculateNextOccurrence: () => 1,
+            updateAppState: async (producer) => { producer(state); },
+            showNotification: () => {},
+            notifications: null,
+            showNotificationWithTip: null,
+            restartRecurringWatcher: null,
+            updatePanelButtonVisibility: null
+        });
+        const before = Date.now();
+        await handleRecurringTaskActivation(state.data.routine.c1.tasks[0], {
+            assignedTaskId: 't1',
+            currentCycle: state.data.routine.c1,
+            settings: { defaultRecurringSettings: { frequency: 'biweekly', indefinitely: true, biweekly: { useSpecificDays: true, week1: ['Mon'], week2: ['Thu'], referenceDate: SAVED } } }
+        });
+
+        const start = state.data.routine.c1.recurringTemplates.t1?.recurringSettings?.biweekly?.referenceDate;
+        if (!start) throw new Error('template was not created with a Week 1 start');
+        if (!(Date.parse(start) >= before - 1000)) throw new Error(`expected Week 1 to start now, got ${start} (the defaults' date)`);
     });
 
     // ============================================

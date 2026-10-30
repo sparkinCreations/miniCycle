@@ -7380,6 +7380,121 @@ async function journeyBrowseRoutines(browser, baseURL) {
     return { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', failures };
 }
 
+// Recurring tasks and History across a clock change. CI and the unit runner are
+// both UTC, where the clocks never change, so these run the REAL scheduler
+// modules (the same calculate-next + pattern-match pair the 15s watch uses) in
+// browser contexts set to zones that have one. Times are read back as local
+// "Day HH:MM UTC±N" so a failure names the hour it got wrong.
+async function journeyRecurringAcrossClockChanges(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const zones = [
+        {
+            timezoneId: 'America/New_York',
+            cases: [
+                { what: 'daily 2:30 AM through spring forward fires late once, then on time',
+                  settings: { frequency: 'daily', time: { hour: 2, minute: 30, meridiem: 'AM', military: false } },
+                  from: [2027, 2, 13, 0], to: [2027, 2, 17, 12],
+                  want: ['Sat 02:30 UTC-5', 'Sun 03:30 UTC-4', 'Mon 02:30 UTC-4', 'Tue 02:30 UTC-4', 'Wed 02:30 UTC-4'] },
+                { what: 'weekly Sunday 2:30 AM fires on the spring-forward Sunday',
+                  settings: { frequency: 'weekly', weekly: { useSpecificDays: true, days: ['Sun'] }, time: { hour: 2, minute: 30, meridiem: 'AM', military: false } },
+                  from: [2027, 2, 13, 0], to: [2027, 2, 15, 0],
+                  want: ['Sun 03:30 UTC-4'] },
+                { what: 'daily 1:30 AM fires once on the fall-back day',
+                  settings: { frequency: 'daily', time: { hour: 1, minute: 30, meridiem: 'AM', military: false } },
+                  from: [2026, 9, 31, 12], to: [2026, 10, 2, 12],
+                  want: ['Sun 01:30 UTC-4', 'Mon 01:30 UTC-5'] },
+                { what: 'hourly at :32 fires in the repeated hour when the clocks fall back',
+                  settings: { frequency: 'hourly', hourly: { useSpecificMinute: true, minute: 32 } },
+                  from: [2026, 10, 1, 0], to: [2026, 10, 1, 4],
+                  want: ['Sun 00:32 UTC-4', 'Sun 01:32 UTC-4', 'Sun 01:32 UTC-5', 'Sun 02:32 UTC-5', 'Sun 03:32 UTC-5'] },
+                { what: 'hourly at :32 is an hour apart across spring forward',
+                  settings: { frequency: 'hourly', hourly: { useSpecificMinute: true, minute: 32 } },
+                  from: [2027, 2, 14, 0], to: [2027, 2, 14, 5],
+                  want: ['Sun 00:32 UTC-5', 'Sun 01:32 UTC-5', 'Sun 03:32 UTC-4', 'Sun 04:32 UTC-4'] }
+            ],
+            // Monday after the clocks fall back: Sunday was 25 hours long.
+            history: { now: '2026-11-02T15:00:00Z', yesterday: '2026-11-01T17:00:00Z', earlier: '2026-10-31T16:00:00Z' }
+        },
+        {
+            timezoneId: 'Australia/Sydney',
+            cases: [
+                { what: 'daily 2:30 AM through spring forward (October) fires late once, then on time',
+                  settings: { frequency: 'daily', time: { hour: 2, minute: 30, meridiem: 'AM', military: false } },
+                  from: [2027, 9, 2, 0], to: [2027, 9, 5, 12],
+                  want: ['Sat 02:30 UTC+10', 'Sun 03:30 UTC+11', 'Mon 02:30 UTC+11', 'Tue 02:30 UTC+11'] },
+                { what: 'hourly at :32 fires in the repeated hour when the clocks fall back (April)',
+                  settings: { frequency: 'hourly', hourly: { useSpecificMinute: true, minute: 32 } },
+                  from: [2027, 3, 4, 0], to: [2027, 3, 4, 4],
+                  want: ['Sun 00:32 UTC+11', 'Sun 01:32 UTC+11', 'Sun 02:32 UTC+11', 'Sun 02:32 UTC+10', 'Sun 03:32 UTC+10'] }
+            ],
+            history: { now: '2027-04-05T00:00:00Z', yesterday: '2027-04-04T02:00:00Z', earlier: '2027-04-03T02:00:00Z' }
+        }
+    ];
+
+    for (const zone of zones) {
+        const context = await browser.newContext({ timezoneId: zone.timezoneId });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            // A light page on the app's origin — only the modules are needed, not a booted app.
+            await page.goto(`${baseURL}/legal/user-manual.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            const results = await page.evaluate(async (cases) => {
+                const du = await import('/modules/recurring/recurringDateUtils.js');
+                const calc = await import('/modules/recurring/recurringCalculators.js');
+                const match = await import('/modules/recurring/recurringMatcher.js');
+                const { normalizeRecurringSettings } = await import('/modules/recurring/recurringSettings.js');
+                for (const m of [calc, match]) { m.setDateUtils(du); m.setNormalizer(normalizeRecurringSettings); }
+                const label = (ms) => {
+                    const d = new Date(ms);
+                    const off = -d.getTimezoneOffset() / 60;
+                    const pad = (n) => String(n).padStart(2, '0');
+                    return `${['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][d.getDay()]} ${pad(d.getHours())}:${pad(d.getMinutes())} UTC${off >= 0 ? '+' : ''}${off}`;
+                };
+                // The 15s watch, tick by tick: due by the stored next occurrence AND
+                // matching the pattern now; on a spawn, the next one is computed from now.
+                return cases.map(({ settings: raw, from, to }) => {
+                    const settings = normalizeRecurringSettings(raw);
+                    const start = new Date(...from).getTime();
+                    const end = new Date(...to).getTime();
+                    let template = { id: 'r', text: 'r', recurring: true, recurringSettings: settings,
+                        lastTriggeredTimestamp: null, nextScheduledOccurrence: calc.calculateNextOccurrence(settings, start) };
+                    const fired = [];
+                    for (let t = start; t < end; t += 15000) {
+                        if (t < template.nextScheduledOccurrence) continue;
+                        if (!match.shouldRecreateRecurringTask(template, [], new Date(t))) continue;
+                        fired.push(label(t));
+                        template = { ...template, lastTriggeredTimestamp: t, nextScheduledOccurrence: calc.calculateNextOccurrence(settings, new Date(t)) };
+                    }
+                    return fired;
+                });
+            }, zone.cases);
+            zone.cases.forEach((c, i) => {
+                record(`${zone.timezoneId}: ${c.what}`, JSON.stringify(results[i]) === JSON.stringify(c.want),
+                    `got ${JSON.stringify(results[i])}, want ${JSON.stringify(c.want)}`);
+            });
+
+            // History's Today / Yesterday / Earlier on the morning after the clocks fall back.
+            await page.clock.setFixedTime(new Date(zone.history.now));
+            const groups = await page.evaluate(async (h) => {
+                const { HistoryManager } = await import('/modules/features/historyManager.js');
+                const groups = HistoryManager.prototype._groupEventsByDate.call({}, [
+                    { id: 'y', timestamp: Date.parse(h.yesterday) },
+                    { id: 'e', timestamp: Date.parse(h.earlier) }
+                ]);
+                return Object.fromEntries(Object.entries(groups).map(([k, evs]) => [k, evs.map((e) => e.id)]));
+            }, zone.history);
+            record(`${zone.timezoneId}: History puts yesterday's events under Yesterday after the clocks fall back`,
+                JSON.stringify(groups.Yesterday) === '["y"]' && JSON.stringify(groups.Earlier) === '["e"]', JSON.stringify(groups));
+        } catch (e) {
+            failures.push(`harness error (${zone.timezoneId}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: 'recurring tasks and History across a clock change', failures };
+}
+
 const JOURNEYS = [
     { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', fn: journeyBrowseRoutines },
     { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', fn: journeySwitcherManyRoutines },
@@ -7427,6 +7542,7 @@ const JOURNEYS = [
     { name: "Focus View's ⋯ button clears the status bar on a wide installed app", fn: journeyFocusMenuSafeArea },
     { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', fn: journeyRoutineViewTours },
     { name: 'rename on a phone: a routine that is not open, by every way into the list', fn: journeyPhoneRenameInactive },
+    { name: 'recurring tasks and History across a clock change', fn: journeyRecurringAcrossClockChanges },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },

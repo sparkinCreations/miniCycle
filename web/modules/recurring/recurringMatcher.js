@@ -7,6 +7,8 @@
  * @module recurringMatcher
  */
 
+import { TIME_UNITS } from '../core/constants.js';
+
 // ============================================
 // INJECTED DEPENDENCIES (via setDateUtils / setNormalizer)
 // ============================================
@@ -46,6 +48,27 @@ const getDateUtils = () => {
     }
     return _dateUtils;
 };
+
+// ============================================
+// TIME OF DAY
+// ============================================
+
+/**
+ * Is `now` the minute this time of day falls on today?
+ *
+ * Asks the same function the scheduler uses to place the time on a day, so
+ * the two agree when the clocks change. On a spring-forward morning a 2:30 AM
+ * time does not exist; the scheduler puts it at 3:30, and a bare
+ * "hour === 2" check then never matched, so the task was missed that day.
+ *
+ * @param {Object} time - Recurring time settings { hour, minute, meridiem, military }
+ * @param {Date} now
+ * @returns {boolean}
+ */
+function isAtScheduledTime(time, now) {
+    const scheduled = getDateUtils().applyTimeToDate(getDateUtils().cloneDate(now), time);
+    return now.getHours() === scheduled.getHours() && now.getMinutes() === scheduled.getMinutes();
+}
 
 // ============================================
 // MAIN PATTERN MATCHING
@@ -91,11 +114,7 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
 
         // Only trigger at the exact time if the user checked "specific time"
         if (settings.time) {
-            const hour   = settings.time.military
-                ? settings.time.hour
-                : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-            const minute = settings.time.minute;
-            return now.getHours() === hour && now.getMinutes() === minute;
+            return isAtScheduledTime(settings.time, now);
         }
 
         return true;
@@ -138,11 +157,7 @@ export function shouldTaskRecurNow(settings, now = new Date()) {
  */
 function matchDaily(settings, now) {
     if (settings.time) {
-        const hour = settings.time.military
-            ? settings.time.hour
-            : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-        const minute = settings.time.minute;
-        return now.getHours() === hour && now.getMinutes() === minute;
+        return isAtScheduledTime(settings.time, now);
     }
     // Without specific time, recur once per day (tracked by lastTriggeredTimestamp)
     return true;
@@ -158,11 +173,7 @@ function matchWeekly(settings, now, weekday) {
     }
 
     if (settings.time) {
-        const hour = settings.time.military
-            ? settings.time.hour
-            : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-        const minute = settings.time.minute;
-        return now.getHours() === hour && now.getMinutes() === minute;
+        return isAtScheduledTime(settings.time, now);
     }
 
     return true; // if no time set, recur any time today
@@ -194,11 +205,7 @@ function matchBiweekly(settings, now, weekday) {
     }
 
     if (settings.time) {
-        const hour = settings.time.military
-            ? settings.time.hour
-            : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-        const minute = settings.time.minute;
-        return now.getHours() === hour && now.getMinutes() === minute;
+        return isAtScheduledTime(settings.time, now);
     }
 
     return true; // if no time set, recur any time today
@@ -227,11 +234,7 @@ function matchMonthly(settings, now, day) {
 
         // Date matches, now check time if specified
         if (settings.time) {
-            const hour = settings.time.military
-                ? settings.time.hour
-                : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-            const minute = settings.time.minute;
-            return now.getHours() === hour && now.getMinutes() === minute;
+            return isAtScheduledTime(settings.time, now);
         }
 
         return true;
@@ -260,11 +263,7 @@ function matchMonthly(settings, now, day) {
 
         // Day matches, now check time if specified
         if (settings.time) {
-            const hour = settings.time.military
-                ? settings.time.hour
-                : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-            const minute = settings.time.minute;
-            return now.getHours() === hour && now.getMinutes() === minute;
+            return isAtScheduledTime(settings.time, now);
         }
 
         return true;
@@ -272,11 +271,7 @@ function matchMonthly(settings, now, day) {
 
     // PATTERN 3: Safety fallback — normalizer should have set useSpecificDays + days
     if (settings.time) {
-        const hour = settings.time.military
-            ? settings.time.hour
-            : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-        const minute = settings.time.minute;
-        return now.getHours() === hour && now.getMinutes() === minute;
+        return isAtScheduledTime(settings.time, now);
     }
 
     return true; // If no pattern and no time, trigger any time any day
@@ -305,11 +300,7 @@ function matchYearly(settings, now, day, month) {
     }
 
     if (settings.time) {
-        const hour = settings.time.military
-            ? settings.time.hour
-            : getDateUtils().convert12To24(settings.time.hour, settings.time.meridiem);
-        const minute = settings.time.minute;
-        return now.getHours() === hour && now.getMinutes() === minute;
+        return isAtScheduledTime(settings.time, now);
     }
 
     return true; // If no time is set, recur any time that day
@@ -351,15 +342,12 @@ export function shouldRecreateRecurringTask(template, taskList, now) {
     }
 
     // Triggered recently?
+    // Compared as real minutes, not clock readings: when the clocks fall back,
+    // 1:32 comes round twice an hour apart and reads the same both times, so a
+    // clock comparison took the second as a repeat of the first.
     if (lastTriggeredTimestamp) {
-        const last = new Date(lastTriggeredTimestamp);
-        const sameMinute =
-            last.getFullYear() === now.getFullYear() &&
-            last.getMonth()    === now.getMonth()    &&
-            last.getDate()     === now.getDate()     &&
-            last.getHours()    === now.getHours()    &&
-            last.getMinutes()  === now.getMinutes();
-        if (sameMinute) return false;
+        const minuteOf = (ms) => Math.floor(ms / TIME_UNITS.MS_PER_MINUTE);
+        if (minuteOf(new Date(lastTriggeredTimestamp).getTime()) === minuteOf(now.getTime())) return false;
     }
 
     // Recurrence match?

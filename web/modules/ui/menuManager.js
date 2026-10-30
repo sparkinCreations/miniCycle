@@ -54,6 +54,7 @@ const di = createDIModule('MenuManager', {
     switchMiniCycle: optional(null),
     createNewMiniCycle: optional(null),
     loadMiniCycle: optional(null),
+    onCycleCreated: optional(null),
     updateCycleModeDescription: optional(null),
     checkGamesUnlock: optional(null),
     sanitizeInput: optional(null),
@@ -141,6 +142,7 @@ export class MenuManager {
             switchMiniCycle: resolvedDeps.switchMiniCycle,
             createNewMiniCycle: resolvedDeps.createNewMiniCycle,
             loadMiniCycle: resolvedDeps.loadMiniCycle,
+            onCycleCreated: resolvedDeps.onCycleCreated,
             updateCycleModeDescription: resolvedDeps.updateCycleModeDescription,
             checkGamesUnlock: resolvedDeps.checkGamesUnlock,
             sanitizeInput: resolvedDeps.sanitizeInput,
@@ -717,6 +719,16 @@ export class MenuManager {
                     state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
 
                 }, true); // immediate save
+
+                // Point undo at the copy, as creating and importing a routine do.
+                // Without it the next change saw "tracking the old routine",
+                // repaired that, and dropped the change it was recording — so the
+                // first edit in a fresh copy could not be undone.
+                if (typeof this.deps.onCycleCreated === 'function') {
+                    Promise.resolve(this.deps.onCycleCreated(finalCycleName)).catch(err => {
+                        console.warn('⚠️ Undo system cycle creation notification failed:', err);
+                    });
+                }
 
                 if (!wasModified) {
                     this.deps.showNotification("✅ " + getLabel('notify.routineCopied', { vars: { original: currentCycle.title, copy: finalCycleName } }));
