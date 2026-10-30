@@ -1159,6 +1159,59 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         if (!/firstrun:choice/.test(src)) throw new Error('hideAppLoader must defer dismissal to the firstrun:choice event');
     });
 
+    // ── Unreadable saved data: the start-up recovery screen ─────────────────
+    const corruptKeys = () => Object.keys(localStorage).filter(k => k.startsWith('miniCycleData_corrupted_'));
+    const clearCorruptKeys = () => corruptKeys().forEach(k => localStorage.removeItem(k));
+
+    await test('recovery screen: keeps a copy of the damaged data, then offers Start Fresh — labels and classes, no inline styles', async () => {
+        clearCorruptKeys();
+        const raw = '{"schemaVersion":"2.6","data":{"routine":{"r1":{"title":"Morning","tasks":[{"text":"Wat';
+        appInit.showDataCorruptionRecovery(raw);
+        const modal = document.getElementById('data-corruption-modal');
+        try {
+            if (!modal) throw new Error('the screen did not open');
+            const kept = corruptKeys().map(k => localStorage.getItem(k));
+            if (!kept.includes(raw)) throw new Error('no copy of the damaged data was kept before offering to replace it');
+            const fresh = document.getElementById('recovery-fresh-start');
+            const sample = document.getElementById('recovery-load-sample');
+            if (fresh.disabled || sample.disabled) throw new Error('with a copy kept, Start Fresh and Load Sample should be available');
+            if (!modal.textContent.includes('Your saved data could not be read')) throw new Error('title is not the label text');
+            if (!modal.classList.contains('critical-notice')) throw new Error('the screen is not styled by class');
+            if ([modal, ...modal.querySelectorAll('*')].some(el => el.getAttribute('style'))) throw new Error('inline styles are back');
+            if (modal.getAttribute('role') !== 'alertdialog') throw new Error('not announced as an alert dialog');
+        } finally {
+            modal?.remove();
+            clearCorruptKeys();
+        }
+    });
+
+    await test('REGRESSION: recovery screen with storage too full for a copy — nothing that replaces the data until it is downloaded', async () => {
+        // Start Fresh and Load Sample deleted the damaged data with no copy
+        // kept anywhere. When the copy cannot be made, they now wait.
+        clearCorruptKeys();
+        const realSetItem = Storage.prototype.setItem;
+        Storage.prototype.setItem = function (key, value) {
+            if (String(key).startsWith('miniCycleData_corrupted_')) { const e = new Error('full'); e.name = 'QuotaExceededError'; throw e; }
+            return realSetItem.call(this, key, value);
+        };
+        let modal = null;
+        try {
+            appInit.showDataCorruptionRecovery('{"broken');
+            modal = document.getElementById('data-corruption-modal');
+            const fresh = document.getElementById('recovery-fresh-start');
+            const sample = document.getElementById('recovery-load-sample');
+            if (!fresh.disabled || !sample.disabled) throw new Error('Start Fresh / Load Sample were offered with no copy of the damaged data');
+            if (!/no room/i.test(modal.textContent)) throw new Error('the screen does not say why');
+            document.getElementById('recovery-download-backup').click();
+            for (let i = 0; i < 20 && fresh.disabled; i++) await new Promise(r => setTimeout(r, 25));
+            if (fresh.disabled || sample.disabled) throw new Error('downloading the damaged data did not make starting over available');
+        } finally {
+            Storage.prototype.setItem = realSetItem;
+            modal?.remove();
+            clearCorruptKeys();
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

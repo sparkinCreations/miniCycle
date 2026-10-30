@@ -1202,3 +1202,80 @@ body.dark-mode .btn-choice:hover {
     opacity: 0.75;
     font-variant-numeric: tabular-nums;  /* stops the counter jittering as it counts up */
 }
+
+/* ============================================================================
+   Full-screen start-up notices (appInit): saved data that cannot be read, and
+   data saved by a newer version. They cover a half-started app, so they carry
+   their own dark panel instead of following the theme.
+   ============================================================================ */
+.critical-notice {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-critical);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-5);
+    box-sizing: border-box;
+    background: var(--overlay-heavy);
+}
+
+.critical-notice-panel {
+    width: 100%;
+    max-width: 500px;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-navy);
+    color: var(--color-white);
+    font-family: var(--font-family);
+    box-shadow: var(--shadow-modal);
+}
+
+.critical-notice-title {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+}
+
+.critical-notice-text {
+    margin: 0 0 var(--space-4);
+    line-height: var(--line-height-normal);
+    white-space: pre-line;
+}
+
+.critical-notice-preview {
+    margin: 0 0 var(--space-6);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--overlay-backdrop);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    word-break: break-all;
+}
+
+.critical-notice-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.critical-notice-btn {
+    width: 100%;
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid var(--overlay-white-medium);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-white);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.critical-notice-btn-primary {
+    border-color: transparent;
+    background: var(--color-primary-dark);
+}
+
+.critical-notice-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}

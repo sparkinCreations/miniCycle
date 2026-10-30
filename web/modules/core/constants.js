@@ -913,6 +913,16 @@ export const EVENTS = Object.freeze({
  * @constant {Object}
  */
 export const DOM_CLASSES = Object.freeze({
+    // Full-screen start-up notices (appInit) — styles in components/modals.css
+    CRITICAL_NOTICE: 'critical-notice',
+    CRITICAL_NOTICE_PANEL: 'critical-notice-panel',
+    CRITICAL_NOTICE_TITLE: 'critical-notice-title',
+    CRITICAL_NOTICE_TEXT: 'critical-notice-text',
+    CRITICAL_NOTICE_PREVIEW: 'critical-notice-preview',
+    CRITICAL_NOTICE_ACTIONS: 'critical-notice-actions',
+    CRITICAL_NOTICE_BTN: 'critical-notice-btn',
+    CRITICAL_NOTICE_BTN_PRIMARY: 'critical-notice-btn-primary',
+
     // Browse Routines (routine/routineBrowser.js). Own classes on purpose — NOT
     // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
     // drag, counts) and would sweep up the read-only preview's copies.
@@ -1490,6 +1500,7 @@ export const DOM_IDS = Object.freeze({
     AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
     AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
     FACTORY_RESET: 'factory-reset',
+    DATA_CORRUPTION_MODAL: 'data-corruption-modal',   // appInit.showDataCorruptionRecovery
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',
     RECOVERY_DOWNLOAD_BACKUP: 'recovery-download-backup',

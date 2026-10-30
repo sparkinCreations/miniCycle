@@ -15,6 +15,7 @@
 
 import { STORAGE_KEYS, LIMITS } from '../core/constants.js';
 import { isSupportedStoredVersion } from './schemaVersion.js';
+import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
 
 const CORRUPT_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_corrupted_`;
 
@@ -135,6 +136,34 @@ export function attemptJsonSalvage(jsonString) {
     }
 
     return null;
+}
+
+/**
+ * Hand a piece of text to the user as a file: a download in a browser, the
+ * share sheet ("Save to Files") in the phone apps, where a download link does
+ * nothing. Used for damaged saved data the app cannot keep a copy of itself.
+ * @param {{text: string, fileName: string, title?: string}} file
+ * @returns {Promise<boolean>} true when the file was handed over (false: the
+ *   share sheet was closed or the save failed)
+ */
+export async function saveTextAsFile({ text, fileName, title = fileName }) {
+    try {
+        if (isNativeApp()) {
+            const result = await shareRoutineFileNative({ data: text, fileName, title });
+            return !!(result?.handled && !result.cancelled);
+        }
+        const url = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        link.click();
+        // Revoked on the next task, after the click has started the download.
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+        return true;
+    } catch (error) {
+        console.warn('⚠️ Could not save the file:', error);
+        return false;
+    }
 }
 
 /**

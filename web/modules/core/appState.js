@@ -31,7 +31,7 @@ import {
     SCHEMA
 } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { recoverCorruptedData } from '../utils/dataRecovery.js';
+import { recoverCorruptedData, saveTextAsFile } from '../utils/dataRecovery.js';
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import { getRoutines, getActiveRoutine, getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
 import { migrateSchema_2_5_to_2_6 } from '../routine/schemaMigration26.js';
@@ -44,7 +44,6 @@ import { collectSwatchSets } from '../utils/priorityLevel.js';
 // reset sweeps it like every other miniCycle-prefixed key, and Settings → Data
 // Management offers it back to the user (backupRestoreManager).
 import { PRE_MIGRATION_BACKUP_PREFIX } from './constants.js';
-import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
 
 // NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
 // so its storage is physically isolated from real user data. The former test-mode
@@ -826,24 +825,11 @@ class MiniCycleState {
     async saveHeldDamagedOriginal() {
         const raw = this.heldDamagedOriginal;
         if (raw === null) return true;
-        const fileName = `miniCycle-damaged-data-${Date.now()}.txt`;
-        let saved = false;
-        try {
-            if (isNativeApp()) {
-                const result = await shareRoutineFileNative({ data: raw, fileName, title: getLabel('noun.backupFileType') });
-                saved = !!(result?.handled && !result.cancelled);
-            } else {
-                const url = URL.createObjectURL(new Blob([raw], { type: 'text/plain' }));
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                link.click();
-                setTimeout(() => URL.revokeObjectURL(url), UI_TIMEOUTS.NOTIFICATION_FADE);
-                saved = true;
-            }
-        } catch (error) {
-            console.warn('⚠️ Could not save the damaged data file:', error);
-        }
+        const saved = await saveTextAsFile({
+            text: raw,
+            fileName: `miniCycle-damaged-data-${Date.now()}.txt`,
+            title: getLabel('noun.backupFileType')
+        });
         if (!saved) {
             this._warnDamagedOriginalHeld();
             return false;
