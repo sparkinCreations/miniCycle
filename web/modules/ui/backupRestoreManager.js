@@ -1285,7 +1285,11 @@ export async function refreshAutoBackupsList() {
     const folderNote = document.getElementById(DOM_IDS.AUTO_BACKUPS_FOLDER_NOTE);
     if (folderNote) {
         folderNote.hidden = !folder;
-        if (folder) folderNote.textContent = getLabel('settings.autoBackupsFolderNote', { vars: { folder } });
+        // iPhone keeps the folder inside the app's own Documents, which iOS
+        // deletes with the app — the general note's "stay even if the app is
+        // removed" is only true on a computer and on Android.
+        const noteKey = getNativePlatform() === 'ios' ? 'settings.autoBackupsFolderNoteIos' : 'settings.autoBackupsFolderNote';
+        if (folder) folderNote.textContent = getLabel(noteKey, { vars: { folder } });
     }
     renderAutoBackupsList(items, { folder });
     return items;

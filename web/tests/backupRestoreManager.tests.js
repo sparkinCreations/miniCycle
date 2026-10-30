@@ -922,6 +922,30 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
             if (bm.manualCreated.length !== 1) throw new Error('no safety copy before the file restore');
         });
 
+        await test('REGRESSION: on iPhone the folder note does not promise the files outlive the app', async () => {
+            // iOS keeps the folder inside the app's own Documents and deletes it
+            // with the app; "stay even if the app is removed" was only true on a
+            // computer and on Android.
+            const bm = fakeBackupManager({ session: [{ timestamp: 1000, data: abDoc('Snapshot', 10), metadata: { cycleCount: 1, size: 100 } }] });
+            const folder = { isAvailable: () => true, describeFolder: async () => 'miniCycle/Backups', listBackupFiles: async () => [] };
+            const ios = { isNativePlatform: () => true, getPlatform: () => 'ios', isPluginAvailable: () => false };
+            wireAb(bm, { BackupFolder: () => folder });
+            const note = document.getElementById('auto-backups-folder-note');
+            await withCapacitor(ios, async () => {
+                abToggle.click();
+                await abSettle(() => note && !note.hidden && /Files app/.test(note.textContent));
+            });
+            abToggle.click();
+            if (!note || note.hidden) throw new Error('the folder note is not shown');
+            const text = note.textContent;
+            // Leave the block as found: the next test waits for its own row count.
+            note.hidden = true;
+            document.getElementById('auto-backups-list').replaceChildren();
+            if (/even if the app is removed/i.test(text) || !/removed with the app/i.test(text)) {
+                throw new Error('the iPhone note is wrong: ' + text);
+            }
+        });
+
         await test('automatic backups: without a device folder the folder note stays hidden and no file rows appear', async () => {
             const bm = fakeBackupManager({ session: [{ timestamp: 1000, data: abDoc('Snapshot', 10), metadata: { cycleCount: 1, size: 100 } }] });
             wireAb(bm, { BackupFolder: () => ({ isAvailable: () => false, listBackupFiles: async () => [{ name: 'miniCycle-auto-backup-2026-10-14.json', size: 1, timestamp: 1 }] }) });

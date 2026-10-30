@@ -155,15 +155,37 @@ export async function runRecurringPanelSummaryTests(resultsDiv) {
 
     await test('biweekly shows both week parts separated by pipe', () => {
         const s = build({ frequency: 'biweekly', biweekly: { week1: ['Mon'], week2: ['Thu'] } });
-        includes(s, 'Week 1: Mon', 'week1');
-        includes(s, 'Thu', 'week2');
+        includes(s, 'Week 1 (this week): Mon', 'week1 — unsaved settings start today, so this is Week 1');
+        includes(s, 'Week 2: Thu', 'week2');
         includes(s, '|', 'pipe separator');
     });
 
     await test('biweekly with only week1 has no pipe', () => {
         const s = build({ frequency: 'biweekly', biweekly: { week1: ['Tue'], week2: [] } });
-        includes(s, 'Week 1: Tue', 'only week1');
+        includes(s, 'Week 1 (this week): Tue', 'only week1');
         notIncludes(s, '|', 'no pipe');
+    });
+
+    await test('biweekly marks Week 2 as this week when the start was seven days ago', () => {
+        // Nothing else tells the user which of the two weeks they are in.
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const s = build({ frequency: 'biweekly', biweekly: { week1: ['Mon'], week2: ['Thu'], referenceDate: sevenDaysAgo } });
+        includes(s, 'Week 1: Mon', 'week1 is not this week');
+        includes(s, 'Week 2 (this week): Thu', 'week2 is this week');
+    });
+
+    await test('biweekly says when this week has no days', () => {
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+        const s = build({ frequency: 'biweekly', biweekly: { week1: ['Mon'], week2: [], referenceDate: sevenDaysAgo } });
+        includes(s, 'Week 2 (this week): no days', 'an empty current week is still named');
+    });
+
+    await test('currentBiweeklyWeek alternates in seven-day blocks from the start date', () => {
+        const start = new Date(2026, 9, 19, 9); // Mon Oct 19
+        const at = (y, m, d) => mod.currentBiweeklyWeek(start.toISOString(), new Date(y, m, d, 12));
+        const got = [at(2026, 9, 19), at(2026, 9, 25), at(2026, 9, 26), at(2026, 10, 1), at(2026, 10, 2)].join();
+        if (got !== '1,1,2,2,1') throw new Error(`weeks: ${got}`);
+        if (mod.currentBiweeklyWeek(null) !== 1) throw new Error('no start date yet is Week 1');
     });
 
     // ── Monthly ──────────────────────────────────────────────────────────────
