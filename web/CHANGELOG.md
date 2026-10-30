@@ -1,3 +1,22 @@
+## [2.656] - 2026-10-30
+- chore(tests): test-count manifest from the full run
+- fix(recovery): the unreadable-data screen keeps a copy before it can delete, and follows the house rules
+- fix: one Duplicate for both menus; undo's self-repair keeps its step; tests for booby-trapped imports
+- docs: one user guide, brought up to date; biweekly says which week it is
+- fix: the rest of the review list — damaged data is never overwritten, names fit, and six smaller fixes
+- fix(undo): an open dialog does not block Ctrl+Z — only typing does
+- chore(tests): test-count manifest from the full run
+- fix(undo): Ctrl+Z while typing is the field's; deleting the open routine keeps the next one's history
+- chore(tests): test-count manifest from the full run
+- fix: phone reminders after a reset; A–Z reads numbers; times follow the device clock
+- fix(recurring): biweekly weeks survive an edit; clock changes; Duplicate undo; History Yesterday
+- test(journey): renaming a routine that is not open, on a phone, by every way into the list
+- chore(tests): test-count manifest from the full run
+- feat(shortcuts): five keys, and the user manual for the rest
+- feat(shortcuts): the Keyboard Shortcuts list starts small
+- docs(changelog): 2.655 in plain words — Tours, and Fixes & polish
+
+
 ## [2.655] - 2026-10-29
 
 ### Tours

@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: October 29, 2026
+**Last Updated**: October 30, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.655 |
+| **App Version** | 2.656 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
-| **Total Modules** | 170 |
-| **Total Tests** | 4107 |
+| **Total Modules** | 172 |
+| **Total Tests** | 4151 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1656 |
+| **JSDoc Blocks** | 1674 |
 | **Documentation Files** | 253 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -41,18 +41,18 @@
 | `boot/` | 7 | Boot sequence, orchestration, module loading |
 | `core/` | 8 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
-| `routine/` | 13 | Routine management, switching, migration |
+| `routine/` | 14 | Routine management, switching, migration |
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
 | `ui/` | 45 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 12 | Themes, stats, achievements, history, reminders |
-| `utils/` | 33 | Notifications, device detection, utilities |
+| `utils/` | 34 | Notifications, device detection, utilities |
 | `labels/` | 3 | Default labels + label resolver |
 | `storage/` | 3 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **170** | |
+| **Total** | **172** | |
 
 ---
 
@@ -61,11 +61,11 @@
 | File | Lines | Purpose |
 |------|-------|---------|
 | `miniCycle-main.js` | ~50 | Entrypoint |
-| `modules/boot/orchestrator.js` | ~1301 | Sequence control + boot UI + early coordination |
+| `modules/boot/orchestrator.js` | ~1320 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~770 | Core state & init |
 | `modules/boot/featureBoot.js` | ~623 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1558 | UI handlers |
-| **Total** | **~4302** | |
+| `modules/boot/uiBoot.js` | ~1535 | UI handlers |
+| **Total** | **~4298** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4107 |
+| Total Tests | 4151 |
 | Test Files | 153 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
