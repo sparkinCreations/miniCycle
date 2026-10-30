@@ -12,6 +12,7 @@ import {
     createMockNotification,
     waitForAsyncOperations
 } from './testHelpers.js';
+import { LIMITS } from '../modules/core/constants.js';
 
 // Module-level variable for dynamic import
 let MiniCycleReminders;
@@ -329,6 +330,40 @@ export async function runRemindersTests(resultsDiv, isPartOfSuite = false) {
             const { instance, AppGlobalState } = wireReminders({ state: null });
             await instance.startReminders();   // must not throw
             if (AppGlobalState.reminderTimeoutId) throw new Error('no schema data → no timer scheduled');
+        });
+
+        await test('REGRESSION: on the phone apps, every way out with reminders off clears the scheduled series', async () => {
+            // The app hands the phone up to 24 upcoming reminders ahead of time,
+            // and the phone keeps them through a factory reset, a restore or an
+            // import. startReminders() is what runs after each of those, and it
+            // used to return before anything cancelled them — so the phone went
+            // on showing reminders the app no longer had.
+            const cancelled = [];
+            const stub = {
+                isNativePlatform: () => true,
+                isPluginAvailable: () => true,
+                registerPlugin: () => ({ cancel: async ({ notifications }) => { cancelled.push(notifications.map(n => n.id)); } })
+            };
+            const had = Object.prototype.hasOwnProperty.call(globalThis, 'Capacitor');
+            const orig = globalThis.Capacitor;
+            globalThis.Capacitor = stub;
+            try {
+                for (const [why, state] of [
+                    ['no data (just after a factory reset)', null],
+                    ['reminders off', { customReminders: { enabled: false } }],
+                    ['repeat limit reached', { customReminders: { enabled: true, indefinite: false, repeatCount: 3, timesReminded: 3 } }]
+                ]) {
+                    cancelled.length = 0;
+                    const { instance } = wireReminders({ state });
+                    await instance.startReminders();
+                    const ids = cancelled[0] || [];
+                    if (ids.length !== LIMITS.NATIVE_REMINDER_SCHEDULE_MAX) {
+                        throw new Error(`${why}: expected the ${LIMITS.NATIVE_REMINDER_SCHEDULE_MAX}-slot series cancelled, got ${JSON.stringify(cancelled)}`);
+                    }
+                }
+            } finally {
+                if (had) globalThis.Capacitor = orig; else delete globalThis.Capacitor;
+            }
         });
 
         await test('scheduleNextReminder recomputes the interval from frequency when overdue', async () => {

@@ -42,16 +42,7 @@
  * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
-/**
- * Strip leading emoji (including ZWJ sequences and variation selectors) so an
- * alphabetical sort keys off the words a reader sees. Without this, "🔥 Apple"
- * sorts by the fire emoji's code point and lands nowhere near A.
- * @param {string} text
- * @returns {string}
- */
-function stripLeadingEmoji(text) {
-    return text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
-}
+import { compareNames } from '../utils/taskSort.js';
 
 /**
  * When the routine was last used: opened, else edited, else created. Routines
@@ -100,12 +91,11 @@ export function sortCycles(cycleEntries, { mode, direction, sizeOf } = {}) {
             return isAsc ? bSize - aSize : aSize - bSize;
         });
     } else {
-        // Default: alphabetical by title
-        // asc = A-Z, desc = Z-A
+        // Default: alphabetical by title — the same A–Z as Browse and the task
+        // sort (compareNames). asc = A-Z, desc = Z-A
         return cycleEntries.sort((a, b) => {
-            const aTitle = stripLeadingEmoji((a[1].title || a[0]).toLowerCase());
-            const bTitle = stripLeadingEmoji((b[1].title || b[0]).toLowerCase());
-            return isAsc ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
+            const order = compareNames(a[1].title || a[0], b[1].title || b[0]);
+            return isAsc ? order : -order;
         });
     }
 }

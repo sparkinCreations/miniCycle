@@ -17,7 +17,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
 // is the destination picker on those platforms — same path the routine export
 // and share already take.
-import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative, saveFileAsNative } from '../platform/capacitorBridge.js';
+import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative, saveFileAsNative, cancelNativeReminderSeries, cancelNativeDueDateNotifications } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
@@ -1662,6 +1662,22 @@ export async function deletePreMigrationCopy() {
 // ============================================================================
 
 /**
+ * Cancel every notification the phone apps scheduled ahead — the reminder
+ * series and the due-day notifications. The phone keeps them through anything
+ * the app deletes, so a factory reset that skipped this left the phone
+ * delivering reminders after "everything" was gone. No-op on the web; the
+ * bridge calls swallow their own errors.
+ * @returns {Promise<void>}
+ */
+export async function cancelPhoneNotifications() {
+    if (!isNativeApp()) return;
+    await Promise.all([
+        cancelNativeReminderSeries(LIMITS.NATIVE_REMINDER_SCHEDULE_MAX),
+        cancelNativeDueDateNotifications(LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX)
+    ]);
+}
+
+/**
  * Setup factory reset button functionality
  */
 export function setupFactoryResetButton() {
@@ -1683,7 +1699,10 @@ export function setupFactoryResetButton() {
 
     const runFactoryReset = async () => {
 
-        // Neutralize AppState first
+        // First, before anything is deleted (see cancelPhoneNotifications).
+        await cancelPhoneNotifications();
+
+        // Neutralize AppState
         neutralizeAppState();
 
         // The device-gate override is a DEVICE decision, not user data. It matches

@@ -689,11 +689,11 @@ export function formatNextOccurrence(nextOccurrence) {
         return _getLabel('recurring.nextHours', { vars: { count, unit } });
     }
 
-    // Beyond 24 hours - show specific date/time
+    // Beyond 24 hours - show specific date/time, in the device's own 12/24-hour
+    // clock like every other time in the app (it was forced to 12-hour).
     const timeStr = next.toLocaleTimeString(undefined, {
         hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
+        minute: '2-digit'
     });
 
     // Check if it's tomorrow

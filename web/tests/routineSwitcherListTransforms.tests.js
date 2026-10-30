@@ -74,6 +74,12 @@ export async function runRoutineSwitcherListTransformsTests(resultsDiv) {
         if (out.join('|') !== '🔥 Apple|Banana|Cherry') throw new Error(`wrong order: ${out}`);
     });
 
+    await test('REGRESSION: alphabetical sort reads numbers as numbers, like Browse', async () => {
+        const entries = [['w10', { title: 'Week 10' }], ['w2', { title: 'Week 2' }], ['fire', { title: '🔥 Morning' }], ['eve', { title: 'evening' }]];
+        const out = titles(make({ sortMode: 'alpha' })._sortCycles(entries));
+        if (out.join('|') !== 'evening|🔥 Morning|Week 2|Week 10') throw new Error(`wrong order: ${out}`);
+    });
+
     await test('alphabetical sort is case-insensitive', async () => {
         const entries = [['b', { title: 'banana' }], ['a', { title: 'Apple' }]];
         const out = titles(make({ sortMode: 'alpha' })._sortCycles(entries));

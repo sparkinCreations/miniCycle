@@ -50,6 +50,7 @@ import { announce } from '../utils/announce.js';
 import { getIcon } from '../utils/icons.js';
 import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
+import { compareNames } from '../utils/taskSort.js';
 import { getActiveRoutineId, getRoutineBrowserLayout, getRoutineBrowserSort, getRoutines } from '../utils/cycleMode.js';
 import { applyRoutineTheme, buildTile, describeMode, fillCard } from './routineBrowserRender.js';
 import { routineNameMatches, routineRecency } from './routineSwitcherListTransforms.js';
@@ -83,8 +84,7 @@ function formatDay(ms) {
  * @returns {string[]} routine keys
  */
 export function orderRoutines(routines, sort) {
-    const byTitle = (a, b) => String(routines[a]?.title || a)
-        .localeCompare(String(routines[b]?.title || b), undefined, { sensitivity: 'base' });
+    const byTitle = (a, b) => compareNames(routines[a]?.title || a, routines[b]?.title || b);
     const keys = Object.keys(routines || {});
     if (sort === ROUTINE_BROWSER_SORT.RECENT) {
         return keys.sort((a, b) => (routineRecency(routines[b]) - routineRecency(routines[a])) || byTitle(a, b));

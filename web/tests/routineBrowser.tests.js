@@ -119,6 +119,15 @@ export async function runRoutineBrowserTests(resultsDiv) {
         if (order.join() !== 'a,b,c') throw new Error(`got ${order}`);
     });
 
+    await test('REGRESSION: A-Z matches the Open Routine list — numbers as numbers, leading emoji ignored', () => {
+        // Browse and the list used two different comparisons, so the same
+        // routines came out in a different order in each.
+        const order = orderRoutines({
+            w10: { title: 'Week 10' }, w2: { title: 'Week 2' }, fire: { title: '🔥 Morning' }, eve: { title: 'evening' }
+        }, 'alpha');
+        if (order.join() !== 'eve,fire,w2,w10') throw new Error(`got ${order}`);
+    });
+
     await test('Recent: opened, else edited, else created — newest first', () => {
         const order = orderRoutines(THREE, 'recent');
         if (order.join() !== 'b,c,a') throw new Error(`got ${order}`);

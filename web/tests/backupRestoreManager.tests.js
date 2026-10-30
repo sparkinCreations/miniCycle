@@ -4,6 +4,7 @@
  */
 
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+import { LIMITS } from '../modules/core/constants.js';
 
 export async function runBackupRestoreManagerTests(resultsDiv) {
     const cacheBuster = window.testCacheBuster || Date.now();
@@ -422,6 +423,37 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         if (result !== 'cancelled') throw new Error(`expected 'cancelled', got ${JSON.stringify(result)} — the reset would wipe without a backup`);
         if (stamped || notes.includes('success')) throw new Error('a dismissed sheet must not record a timestamp or claim success');
         if (clicked !== 0) throw new Error('a dismissed sheet must not fall back to a download');
+    });
+
+    await test('REGRESSION: factory reset cancels the reminders and due-day notifications the phone holds, before deleting anything', async () => {
+        // The phone apps schedule notifications ahead; the phone keeps them
+        // through anything the app deletes. The reset wiped everything else and
+        // left those, so the phone kept delivering reminders after a reset.
+        const cancelled = [];
+        const stub = {
+            isNativePlatform: () => true,
+            isPluginAvailable: () => true,
+            registerPlugin: () => ({ cancel: async ({ notifications }) => { cancelled.push(notifications.map(n => n.id)); } })
+        };
+        await withCapacitor(stub, () => mod.cancelPhoneNotifications());
+        const reminderIds = cancelled.find(ids => ids[0] === 100001) || [];
+        const dueDateIds = cancelled.find(ids => ids[0] !== 100001) || [];
+        if (reminderIds.length !== LIMITS.NATIVE_REMINDER_SCHEDULE_MAX) {
+            throw new Error(`reminder series not cancelled: ${JSON.stringify(cancelled)}`);
+        }
+        if (dueDateIds.length !== LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX) {
+            throw new Error(`due-day notifications not cancelled: ${JSON.stringify(cancelled)}`);
+        }
+
+        // ...and the reset runs it first. Running the real reset here would wipe
+        // and reload the test page, so this reads the order from the source.
+        const src = await (await fetch('/modules/ui/backupRestoreManager.js', { cache: 'no-store' })).text();
+        const body = src.slice(src.indexOf('const runFactoryReset = async'));
+        const cancelAt = body.indexOf('await cancelPhoneNotifications()');
+        const wipeAt = Math.min(body.indexOf('neutralizeAppState()'), body.indexOf('localStorage.removeItem'));
+        if (cancelAt < 0 || cancelAt > wipeAt) {
+            throw new Error('runFactoryReset must await cancelPhoneNotifications() before it deletes anything');
+        }
     });
 
     await test('factory reset: cancelling the Save dialog deletes nothing and says so without an error tone', async () => {

@@ -159,6 +159,13 @@ export async function runTaskSearchTests(resultsDiv) {
         if (sortTasksBySort(tasks, 'default').map(t => t.id).join(',') !== 'z,b,a,b2') throw new Error('default keeps routine order');
     });
 
+    await test('REGRESSION: taskSort A–Z reads numbers as numbers — "Task 2" before "Task 10"', async () => {
+        const { sortTasksBySort } = await import(`../modules/utils/taskSort.js?v=${cacheBuster}`);
+        const tasks = [{ id: '10', text: 'Task 10' }, { id: '2', text: 'Task 2' }, { id: '1', text: 'Task 1' }];
+        const order = sortTasksBySort(tasks, 'az').map(t => t.id).join(',');
+        if (order !== '1,2,10') throw new Error(`az order: ${order} (character order puts 10 before 2)`);
+    });
+
     await test('taskSort: due date puts undated last; priority puts high first, none last', async () => {
         const { sortTasksBySort } = await import(`../modules/utils/taskSort.js?v=${cacheBuster}`);
         const dated = [{ id: 'n', text: 'n', dueDate: null }, { id: 'late', text: 'l', dueDate: '2026-12-01' }, { id: 'soon', text: 's', dueDate: '2026-11-01' }];

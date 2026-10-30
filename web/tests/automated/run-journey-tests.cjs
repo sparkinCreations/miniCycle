@@ -7495,6 +7495,47 @@ async function journeyRecurringAcrossClockChanges(browser, baseURL) {
     return { name: 'recurring tasks and History across a clock change', failures };
 }
 
+// The next-reminder line and a recurring task's next-occurrence line were
+// formatted with hour12: true, so a device on the 24-hour clock still read
+// "5:45 PM" there while every other time in the app read "17:45". They now
+// follow the device, like the rest — checked in a 24-hour and a 12-hour locale.
+async function journeyTimesFollowDeviceClock(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    for (const { locale, want, notWant } of [
+        { locale: 'en-GB', want: /17:45/, notWant: /am|pm/i },
+        { locale: 'en-US', want: /5:45\s?PM/, notWant: /17:45/ }
+    ]) {
+        const context = await browser.newContext({ locale, timezoneId: 'UTC' });
+        const page = await context.newPage();
+        _pagesThisJourney.push(page);
+        page.__diWarnings = [];
+        try {
+            await page.goto(`${baseURL}/legal/user-manual.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+            await page.clock.setFixedTime(new Date('2027-01-04T10:00:00Z')); // a Monday
+            const lines = await page.evaluate(async () => {
+                const { getLabel } = await import('/modules/labels/labelResolver.js');
+                const calc = await import('/modules/recurring/recurringCalculators.js');
+                calc.setLabelResolver(getLabel);
+                const { MiniCycleReminders } = await import('/modules/features/reminders.js');
+                const now = Date.now();
+                const inTwoDays = Date.parse('2027-01-06T17:45:00Z'); // Wednesday 17:45
+                return {
+                    reminder: MiniCycleReminders.prototype._describeNextReminder.call({}, inTwoDays, now),
+                    recurring: calc.formatNextOccurrence(inTwoDays)
+                };
+            });
+            for (const [what, text] of Object.entries(lines)) {
+                record(`${locale}: the ${what} line uses the device's clock`, want.test(text) && !notWant.test(text), JSON.stringify(text));
+            }
+        } catch (e) {
+            failures.push(`harness error (${locale}): ${e.message}`);
+        } finally {
+            await context.close();
+        }
+    }
+    return { name: "next-reminder and next-occurrence times follow the device's 12/24-hour clock", failures };
+}
+
 const JOURNEYS = [
     { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', fn: journeyBrowseRoutines },
     { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', fn: journeySwitcherManyRoutines },
@@ -7543,6 +7584,7 @@ const JOURNEYS = [
     { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', fn: journeyRoutineViewTours },
     { name: 'rename on a phone: a routine that is not open, by every way into the list', fn: journeyPhoneRenameInactive },
     { name: 'recurring tasks and History across a clock change', fn: journeyRecurringAcrossClockChanges },
+    { name: "next-reminder and next-occurrence times follow the device's 12/24-hour clock", fn: journeyTimesFollowDeviceClock },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },
     { name: 'an established user is never trapped on the choice screen', fn: journeyEstablishedUserNotTrapped },
