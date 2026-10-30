@@ -2627,6 +2627,25 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('REGRESSION: when undo repairs a routine mismatch it still records the step that revealed it', async () => {
+        // Undo tracking the wrong routine re-points itself — and used to drop
+        // the change being recorded, so that change could not be undone.
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+        const g = mockDeps.AppGlobalState;
+        g.activeCycleIdForUndo = 'Some Other Routine';
+        g.activeUndoStack = [];
+        g.activeRedoStack = [];
+        g.lastSnapshotSignature = null;
+        const state = mockDeps.AppState.get(); // active routine: 'Test Cycle'
+        captureStateSnapshot(state);
+        for (let i = 0; i < 60 && !g.activeUndoStack.length; i++) await new Promise(r => setTimeout(r, 50));
+        if (g.activeCycleIdForUndo !== 'Test Cycle') throw new Error(`undo did not re-point: ${g.activeCycleIdForUndo}`);
+        if (g.activeUndoStack.length !== 1 || g.activeUndoStack[0].activeCycleId !== 'Test Cycle') {
+            throw new Error(`the step was dropped: stack ${JSON.stringify(g.activeUndoStack.map(x => x.activeCycleId))}`);
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>All Tests Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

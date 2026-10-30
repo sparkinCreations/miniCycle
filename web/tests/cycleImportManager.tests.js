@@ -169,6 +169,75 @@ export async function runCycleImportManagerTests(resultsDiv) {
         document.querySelector(`.task[data-task-id="${CSS.escape(regen.id)}"]`);
     });
 
+    // ── Booby-trapped files: prototype pollution ────────────────────────────
+    // Each payload is built from a JSON STRING, as a real file is read: there
+    // "__proto__" is an ordinary own key. (An object literal `{ __proto__: x }`
+    // would set the prototype instead and test nothing.) Assigning such a key
+    // into a plain object (`map[key] = v`) sets that object's prototype — the
+    // write reads back fine, serialises to {}, and vanishes on reload — and a
+    // recursive merge of it can reach Object.prototype itself.
+    const hostile = (json) => JSON.parse(json);
+    const notPolluted = () => {
+        const probe = {};
+        if (probe.polluted !== undefined || probe.isAdmin !== undefined) {
+            delete Object.prototype.polluted; delete Object.prototype.isAdmin;
+            throw new Error('Object.prototype was polluted by the import');
+        }
+    };
+    const survivesReload = (routine) => JSON.parse(JSON.stringify(routine));
+
+    await test('SECURITY: recurring tasks with ids "__proto__" / "constructor" keep real templates that survive a reload', async () => {
+        const { state } = await runImport(hostile(`{
+            "name": "Proto Ids",
+            "tasks": [
+                {"id": "__proto__", "text": "A", "recurring": true, "recurringSettings": {"frequency": "daily"}},
+                {"id": "constructor", "text": "B", "recurring": true, "recurringSettings": {"frequency": "daily"}}
+            ]
+        }`));
+        notPolluted();
+        const routine = importedCycle(state);
+        const ids = routine.tasks.map(t => t.id);
+        if (ids.includes('__proto__') || ids.includes('constructor')) throw new Error(`unsafe ids kept: ${ids}`);
+        const reloaded = survivesReload(routine);
+        for (const id of ids) {
+            if (!Object.prototype.hasOwnProperty.call(reloaded.recurringTemplates, id)) {
+                throw new Error(`template for ${id} did not survive a save and reload: ${JSON.stringify(Object.keys(reloaded.recurringTemplates))}`);
+            }
+        }
+    });
+
+    await test('SECURITY: "__proto__" keys anywhere in a file cannot pollute Object.prototype or reach the routine', async () => {
+        const { state } = await runImport(hostile(`{
+            "name": "Proto Everywhere",
+            "__proto__": {"polluted": true},
+            "tasks": [{"id": "t1", "text": "A", "__proto__": {"isAdmin": true}}],
+            "recurringTemplates": {
+                "__proto__": {"id": "__proto__", "text": "X", "recurringSettings": {"frequency": "daily"}, "polluted": true},
+                "constructor": {"prototype": {"polluted": true}, "recurringSettings": {"frequency": "daily"}}
+            },
+            "taskOptionButtons": {"__proto__": {"polluted": true}, "rename": true},
+            "reminders": {"__proto__": {"polluted": true}, "enabled": true},
+            "history": {"events": [{"type": "cycle_completed", "timestamp": 1, "details": {"__proto__": {"polluted": true}, "taskName": "x"}}]}
+        }`));
+        notPolluted();
+        const reloaded = survivesReload(importedCycle(state));
+        const text = JSON.stringify(reloaded);
+        if (/polluted|isAdmin/.test(text)) throw new Error(`hostile fields reached the stored routine: ${text.slice(0, 300)}`);
+        for (const key of Object.keys(reloaded.recurringTemplates || {})) {
+            if (key === '__proto__' || key === 'constructor' || key === 'prototype') throw new Error(`template stored under unsafe key "${key}"`);
+        }
+        if (reloaded.tasks[0].text !== 'A') throw new Error('the ordinary task was lost');
+    });
+
+    await test('SECURITY: a routine named "__proto__" is stored under a real key that survives a reload', async () => {
+        const { state } = await runImport(hostile(`{"name": "__proto__", "tasks": [{"id": "t1", "text": "A"}]}`));
+        notPolluted();
+        const key = state.appState.activeRoutineId;
+        if (!key || key === '__proto__') throw new Error(`stored under ${JSON.stringify(key)}`);
+        const reloaded = JSON.parse(JSON.stringify(state.data.routine));
+        if (!Object.prototype.hasOwnProperty.call(reloaded, key)) throw new Error('the routine vanished on a save and reload');
+    });
+
     await test('invalid dueDate values are nulled (bad format AND fake calendar date)', async () => {
         const { state } = await runImport({
             name: 'Bad Dates',

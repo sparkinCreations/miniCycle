@@ -211,6 +211,7 @@ var BOOT_CRITICAL = [
   './modules/routine/routineSwitcherListTransforms.js',
   './modules/routine/routineSwitcherRepair.js',
   './modules/routine/routineSwitcherActions.js',
+  './modules/routine/routineCopy.js',
   './modules/routine/routineBrowser.js',
   './modules/routine/routineBrowserRender.js',
   './modules/routine/modeManager.js',

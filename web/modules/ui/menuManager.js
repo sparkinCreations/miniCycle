@@ -29,6 +29,7 @@ import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseA
 import { getRoutines, getRoutine, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
 import { scrollBehavior } from '../utils/motionPreference.js';
+import { buildRoutineCopy } from '../routine/routineCopy.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -703,16 +704,9 @@ export class MenuManager {
                 // ✅ Update through state system
                 AppState.update(state => {
 
-                    // ✅ Create the copy as a new routine record (Schema 2.6: keyed by id, named by title)
-                    const newCycleId = `copy_${Date.now()}`;
-
-                    // ✅ Deep copy the current cycle with new title as storage key
-                    getRoutines(state)[finalCycleName] = {
-                        ...JSON.parse(JSON.stringify(currentCycle)),
-                        id: newCycleId,
-                        title: finalCycleName,
-                        createdAt: Date.now()
-                    };
+                    // ✅ The same fresh copy the routine switcher's Duplicate makes —
+                    // new task ids, no inherited cycle count or History (routineCopy.js).
+                    getRoutines(state)[finalCycleName] = buildRoutineCopy(currentCycle, finalCycleName);
 
                     // ✅ Set as active cycle using the title as key
                     setActiveRoutineId(state, finalCycleName);

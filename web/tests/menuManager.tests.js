@@ -579,6 +579,60 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    test('REGRESSION: the menu\'s Duplicate makes a fresh copy, like the routine switcher\'s (DI)', () => {
+        // The menu deep-cloned the record as it stood: the copy shared every task
+        // id with the original and started with its cycle count, History and
+        // Cleared Tasks. Both Duplicates now build the copy in routineCopy.js.
+        let copy = null;
+        const original = {
+            id: 'cycle-1', title: 'Test Cycle', cycleCount: 7, lastAccessedAt: 5, lastModified: 6,
+            tasks: [{ id: 'task-a', text: 'A' }, { id: 'task-b', text: 'B', recurring: true }],
+            recurringTemplates: { 'task-b': { id: 'task-b', text: 'B' } },
+            history: { events: [{ type: 'cycle_completed' }], maxEvents: 100 },
+            clearedTasks: { entries: [{ text: 'old' }], totalCleared: 3, autoPruneEnabled: true }
+        };
+        const mockFullSchema = {
+            metadata: { totalRoutinesCreated: 1, lastModified: Date.now() },
+            data: { routine: { 'cycle-1': original } },
+            appState: { activeRoutineId: 'cycle-1' }
+        };
+        setMenuManagerDependencies(createMockDeps({
+            AppState: () => ({
+                isReady: () => true,
+                get: () => mockFullSchema,
+                update: (updateFn) => {
+                    const stateCopy = JSON.parse(JSON.stringify(mockFullSchema));
+                    updateFn(stateCopy);
+                    copy = stateCopy.data.routine[stateCopy.appState.activeRoutineId];
+                }
+            }),
+            showPromptModal: (opts) => opts.callback('Fresh Copy'),
+            sanitizeInput: (input) => input.trim(),
+            showNotification: () => {},
+            loadMiniCycle: () => {},
+            onCycleCreated: () => Promise.resolve()
+        }));
+        const instance = new MenuManager();
+        instance.hideMainMenu = () => {};
+        instance.saveMiniCycleAsNew();
+
+        if (!copy || copy.title !== 'Fresh Copy') throw new Error('no copy was made');
+        if (copy.id === 'cycle-1') throw new Error('the copy kept the original routine id');
+        const ids = copy.tasks.map(t => t.id);
+        if (ids.includes('task-a') || ids.includes('task-b')) throw new Error(`the copy shares task ids with the original: ${ids}`);
+        const recurringId = copy.tasks[1].id;
+        if (!copy.recurringTemplates[recurringId] || copy.recurringTemplates[recurringId].id !== recurringId) {
+            throw new Error('the recurring template was not re-keyed with its task');
+        }
+        if (copy.cycleCount !== 0) throw new Error(`the copy inherited ${copy.cycleCount} cycles`);
+        if (copy.history) throw new Error('the copy inherited the original\'s History');
+        if (copy.clearedTasks.entries.length || copy.clearedTasks.totalCleared || copy.clearedTasks.autoPruneEnabled !== true) {
+            throw new Error(`Cleared Tasks not reset (or its preference lost): ${JSON.stringify(copy.clearedTasks)}`);
+        }
+        if ('lastAccessedAt' in copy || 'lastModified' in copy) throw new Error('the copy carries the original\'s use dates');
+        if (original.tasks[0].id !== 'task-a' || original.cycleCount !== 7) throw new Error('the original was changed');
+    });
+
     test('REGRESSION: duplicating points undo at the copy, so its first change can be undone (DI)', () => {
         // Duplicate switches to the copy. Undo kept tracking the original, saw the
         // mismatch on the next change, repaired itself — and dropped the step it

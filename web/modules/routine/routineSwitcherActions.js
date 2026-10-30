@@ -44,6 +44,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, LIMIT
 import { getLabel } from '../labels/labelResolver.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
 import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { buildRoutineCopy } from './routineCopy.js';
 
 export class RoutineSwitcherActions {
     /**
@@ -359,55 +360,8 @@ export class RoutineSwitcherActions {
         const baseName = `${originalCycle.title} Copy`;
         const { name: uniqueName } = this.m.getUniqueCycleName(baseName, cycles);
 
-        // ✅ Deep copy the cycle data
-        const copiedCycle = structuredClone(originalCycle);
-        copiedCycle.title = uniqueName;
-        copiedCycle.createdAt = Date.now();
-        delete copiedCycle.lastModified; // Show "Created" until actual changes are made
-        copiedCycle.cycleCount = 0; // Reset cycle count for the copy
-
-        // Fresh history for a fresh routine — the clone otherwise inherits the
-        // original's full event log (cycle completions that never happened here).
-        // clearedTasks entries reset too, but autoPrune is a preference and travels.
-        delete copiedCycle.history;
-        if (copiedCycle.clearedTasks && typeof copiedCycle.clearedTasks === 'object') {
-            copiedCycle.clearedTasks = {
-                ...copiedCycle.clearedTasks,
-                entries: [],
-                totalCleared: 0
-            };
-        }
-
-        // ✅ Generate new IDs for all tasks to avoid conflicts — and remap
-        // recurringTemplates in lockstep. The map is keyed by task id and each
-        // template carries its task's id; leaving it un-remapped severed every
-        // taskId↔template link in the copy (watcher spawned duplicates, deleting
-        // a copied recurring task couldn't remove its template, template edits
-        // never synced).
-        if (Array.isArray(copiedCycle.tasks)) {
-            const now = Date.now();
-            const idRemap = new Map();
-            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
-                const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`; // Fix #74: add index to prevent collision
-                if (task.id) idRemap.set(task.id, newId);
-                return { ...task, id: newId };
-            });
-
-            if (copiedCycle.recurringTemplates && typeof copiedCycle.recurringTemplates === 'object') {
-                copiedCycle.recurringTemplates = Object.fromEntries(
-                    Object.entries(copiedCycle.recurringTemplates)
-                        .filter(([, template]) => template && typeof template === 'object')
-                        .map(([oldId, template], templateIndex) => {
-                            // A template without a live task instance is normal
-                            // (deleted instance pending recreation) — keep it,
-                            // under a fresh id so the copy never shares ids with
-                            // the original routine.
-                            const newId = idRemap.get(oldId) || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
-                            return [newId, { ...template, id: newId }];
-                        })
-                );
-            }
-        }
+        // ✅ A fresh copy: new ids, no inherited cycles or history (routineCopy.js)
+        const copiedCycle = buildRoutineCopy(originalCycle, uniqueName);
 
         // ✅ Update through state system
         this.m.deps.AppState.update(state => {

@@ -698,15 +698,8 @@ export function captureStateSnapshot(state) {
   const currentCycle = getRoutine(state, activeCycle);
   if (!currentCycle) return;
 
-  // Safety check: Ensure we're tracking the right cycle
-  // Self-heal via onCycleSwitched — stale activeCycleIdForUndo permanently disables undo
-  if (_deps.AppGlobalState.activeCycleIdForUndo &&
-      _deps.AppGlobalState.activeCycleIdForUndo !== activeCycle) {
-    console.warn(`⚠️ Cycle mismatch: was tracking "${_deps.AppGlobalState.activeCycleIdForUndo}", correcting to "${activeCycle}"`);
-    onCycleSwitched(activeCycle).catch(() => {});
-    return;
-  }
-
+  // Built now, whatever happens next: `state` is the LIVE state, and the
+  // update this step belongs to changes it as soon as we return.
   const snapshot = {
     activeCycleId: activeCycle,
     tasks: structuredClone(currentCycle.tasks || []),
@@ -726,6 +719,33 @@ export function captureStateSnapshot(state) {
     timestamp: Date.now()
   };
 
+  // Safety check: Ensure we're tracking the right cycle.
+  // Self-heal via onCycleSwitched — a stale activeCycleIdForUndo permanently
+  // disables undo — and THEN record this step on the stack it belongs to.
+  // The heal used to return without recording, so the change that revealed
+  // the mismatch could not be undone.
+  if (_deps.AppGlobalState.activeCycleIdForUndo &&
+      _deps.AppGlobalState.activeCycleIdForUndo !== activeCycle) {
+    console.warn(`⚠️ Cycle mismatch: was tracking "${_deps.AppGlobalState.activeCycleIdForUndo}", correcting to "${activeCycle}"`);
+    onCycleSwitched(activeCycle)
+      .then(() => {
+        if (_deps.AppGlobalState.activeCycleIdForUndo === activeCycle) recordSnapshot(snapshot, activeCycle);
+      })
+      .catch(() => {});
+    return;
+  }
+
+  recordSnapshot(snapshot, activeCycle);
+}
+
+/**
+ * Put a built snapshot on the active undo stack (deduplicated), clear redo for
+ * a genuine user action, refresh the buttons and persist.
+ * @param {Object} snapshot - from captureStateSnapshot
+ * @param {string} activeCycle - the routine it belongs to
+ * @returns {void}
+ */
+function recordSnapshot(snapshot, activeCycle) {
   // ✅ Build and cache signature once for reuse
   const sig = buildSnapshotSignature(snapshot);
   snapshot._sig = sig;  // Cache on object
