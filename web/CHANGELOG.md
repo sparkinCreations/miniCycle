@@ -1,21 +1,35 @@
 ## [2.656] - 2026-10-30
-- chore(tests): test-count manifest from the full run
-- fix(recovery): the unreadable-data screen keeps a copy before it can delete, and follows the house rules
-- fix: one Duplicate for both menus; undo's self-repair keeps its step; tests for booby-trapped imports
-- docs: one user guide, brought up to date; biweekly says which week it is
-- fix: the rest of the review list — damaged data is never overwritten, names fit, and six smaller fixes
-- fix(undo): an open dialog does not block Ctrl+Z — only typing does
-- chore(tests): test-count manifest from the full run
-- fix(undo): Ctrl+Z while typing is the field's; deleting the open routine keeps the next one's history
-- chore(tests): test-count manifest from the full run
-- fix: phone reminders after a reset; A–Z reads numbers; times follow the device clock
-- fix(recurring): biweekly weeks survive an edit; clock changes; Duplicate undo; History Yesterday
-- test(journey): renaming a routine that is not open, on a phone, by every way into the list
-- chore(tests): test-count manifest from the full run
-- feat(shortcuts): five keys, and the user manual for the rest
-- feat(shortcuts): the Keyboard Shortcuts list starts small
-- docs(changelog): 2.655 in plain words — Tours, and Fixes & polish
 
+### Keyboard shortcuts
+- The Keyboard Shortcuts list starts small — five keys for the view you're in — and links to the User Manual for the full list
+- Ctrl+Z while typing undoes your typing again, instead of undoing a change to your routine; it also works with Caps Lock on and on non-Latin keyboards
+
+### Recurring tasks
+- Editing a biweekly task no longer swaps its two weeks, and the summary now says which week is this week
+- Clock changes: a task set for the skipped hour appears an hour late that day and then goes back to its usual time; hourly tasks also run in the repeated hour
+- Next-reminder and next-occurrence times follow your device's 12/24-hour clock
+
+### Undo
+- The first change in a duplicated routine can be undone
+- Deleting the routine you're on no longer wipes the next routine's undo history
+- Undo no longer brings back an older view after another tab saves
+
+### Your data
+- If saved data is damaged and storage is too full to keep a copy, miniCycle stops saving and asks you to save a copy first, so the original is never overwritten
+- The "saved data could not be read" screen keeps a copy before offering to start over
+- In the iPhone and Android apps, a factory reset also cancels reminders and due-date notifications already scheduled on your phone
+- Duplicate from the menu now makes a fresh copy (new tasks, cycle count 0, empty History), the same as the routine switcher
+
+### Fixes & polish
+- A–Z sorting puts numbers in order (Task 2 before Task 10), and the routine list and Browse now sort the same way
+- Names that are cut to fit no longer split an emoji, invisible text-direction characters are removed, and "(2)" no longer pushes a name past the limit
+- The guided tour's Back button skips steps that are hidden instead of getting stuck
+- A failed start that retries no longer turns Focus View off
+- History's "Yesterday" is right after the clocks change
+- The crash-report email leaves out any quoted text from the error
+
+### Help
+- The User Manual is the one user guide, updated for automatic backups, Lite keeping its own data, priority levels, pausing recurring tasks, reminders, due-day notifications and more
 
 ## [2.655] - 2026-10-29
 
