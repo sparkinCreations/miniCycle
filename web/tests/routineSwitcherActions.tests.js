@@ -63,7 +63,7 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
             // the pre-split code.
             metadata: { totalRoutinesCreated: 0 }
         };
-        const calls = { notifications: [], confirms: [], deleted: [], renamed: [] };
+        const calls = { notifications: [], confirms: [], deleted: [], renamed: [], undoEvents: [] };
 
         if (selectedKey) {
             const item = document.createElement('div');
@@ -91,7 +91,8 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
                 opts.callback?.(confirmAnswer);
             },
             showPromptModal: (opts) => opts.callback?.(opts.defaultValue),
-            onCycleDeleted: (k) => { calls.deleted.push(k); return Promise.resolve(); },
+            onCycleDeleted: (k) => { calls.deleted.push(k); calls.undoEvents.push(`deleted:${k}`); return Promise.resolve(); },
+            onCycleSwitched: (k) => { calls.undoEvents.push(`switched:${k}`); return Promise.resolve(); },
             onCycleRenamed: (a, b) => { calls.renamed.push([a, b]); return Promise.resolve(); },
             loadMiniCycle: () => {}
         });
@@ -119,6 +120,26 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         if (cycleKeys().includes('b')) throw new Error('the selected routine survived');
         if (!cycleKeys().includes('a')) throw new Error('the ACTIVE routine was deleted instead');
         if (state.appState.activeRoutineId !== 'a') throw new Error('active routine should be untouched');
+        cleanupDom();
+    });
+
+    await test('REGRESSION: deleting the open routine points undo at the routine it switches to', async () => {
+        // Undo was told about the delete but not the switch, so it tracked no
+        // routine and the first edit in the next one saved over that routine's
+        // stored undo history. The switch notice must come AFTER the delete.
+        const { instance, state, calls } = setup({ cycles: TWO, selectedKey: 'a', activeRoutineId: 'a' });
+        instance.deleteMiniCycle();
+        await settle();
+        if (state.appState.activeRoutineId !== 'b') throw new Error(`expected b to become active, got ${state.appState.activeRoutineId}`);
+        if (calls.undoEvents.join() !== 'deleted:a,switched:b') throw new Error(`undo heard: ${calls.undoEvents.join() || 'nothing'}`);
+        cleanupDom();
+    });
+
+    await test('deleting a routine that is not open sends no switch notice', async () => {
+        const { instance, calls } = setup({ cycles: TWO, selectedKey: 'b', activeRoutineId: 'a' });
+        instance.deleteMiniCycle();
+        await settle();
+        if (calls.undoEvents.join() !== 'deleted:b') throw new Error(`undo heard: ${calls.undoEvents.join()}`);
         cleanupDom();
     });
 

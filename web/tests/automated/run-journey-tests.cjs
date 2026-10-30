@@ -7536,6 +7536,47 @@ async function journeyTimesFollowDeviceClock(browser, baseURL) {
     return { name: "next-reminder and next-occurrence times follow the device's 12/24-hour clock", failures };
 }
 
+// Ctrl+Z while typing belongs to the text field. The global handler used to
+// call preventDefault and undo APP data instead — type in the add-task box,
+// press Ctrl+Z to fix a typo, and the task you had just added vanished.
+async function journeyUndoKeyWhileTyping(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await addTask(page, 'UNDO PROBE');
+        await page.waitForFunction(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const r = d && d.data.routine[d.appState.activeRoutineId];
+            return !!(r && r.tasks.some(t => t.text === 'UNDO PROBE'));
+        }, null, { timeout: 10000 });
+        await page.waitForTimeout(1200); // past the undo grace period, so the add is an undo step
+
+        const hasProbe = () => page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
+            const r = d && d.data.routine[d.appState.activeRoutineId];
+            return !!(r && r.tasks.some(t => t.text === 'UNDO PROBE'));
+        });
+
+        await page.focus('#taskInput');
+        await page.keyboard.type('half-typed');
+        await page.keyboard.press('Control+z');
+        await page.waitForTimeout(1200);
+        record('Ctrl+Z in the add-task box leaves the task list alone', await hasProbe(), 'the task just added was undone from inside a text field');
+
+        await page.evaluate(() => { document.getElementById('taskInput').value = ''; document.activeElement?.blur?.(); });
+        await page.keyboard.press('Control+z');
+        await page.waitForTimeout(1200);
+        record('…and outside a text field Ctrl+Z still undoes the add', !(await hasProbe()), 'app undo no longer reachable from the keyboard');
+
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'Ctrl+Z while typing undoes the typing, not the routine', failures };
+}
+
 const JOURNEYS = [
     { name: 'Browse Routines: device default, list hand-over, wheel, keys, swipe, setting', fn: journeyBrowseRoutines },
     { name: 'Open Routine with many routines: fast first open, keyboard, phone layout', fn: journeySwitcherManyRoutines },
@@ -7584,6 +7625,7 @@ const JOURNEYS = [
     { name: 'routine view tours: Browse has its own, the switcher tour shows Expand and Browse', fn: journeyRoutineViewTours },
     { name: 'rename on a phone: a routine that is not open, by every way into the list', fn: journeyPhoneRenameInactive },
     { name: 'recurring tasks and History across a clock change', fn: journeyRecurringAcrossClockChanges },
+    { name: 'Ctrl+Z while typing undoes the typing, not the routine', fn: journeyUndoKeyWhileTyping },
     { name: "next-reminder and next-occurrence times follow the device's 12/24-hour clock", fn: journeyTimesFollowDeviceClock },
     { name: 'automatic backups are listed and restorable from Settings', fn: journeyAutoBackupsInSettings },
     { name: 'a snapshot is taken when the app is hidden', fn: journeySnapshotOnHide },

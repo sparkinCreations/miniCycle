@@ -180,3 +180,33 @@ export function isTextEntryTarget(el) {
     if (tag !== 'INPUT') return false;
     return !NON_TEXT_INPUT_TYPES.has(String(el.type || 'text').toLowerCase());
 }
+
+/** Physical keys to fall back on when the typed character is not a Latin letter. */
+const UNDO_REDO_CODES = Object.freeze({ KeyZ: 'z', KeyY: 'y' });
+
+/**
+ * Which app undo/redo a keydown asks for: 'undo', 'redo' or null.
+ *
+ * Null while the user is typing — Ctrl+Z in a text field belongs to the
+ * field's own text undo, and calling preventDefault there threw the typing
+ * undo away AND undid app data instead — and while a dialog is open, where
+ * the app's undo buttons are out of reach behind it.
+ *
+ * The letter is read from the typed character in either case (Caps Lock sends
+ * "Z" without Shift), so it follows the keyboard LAYOUT: on French and German
+ * keyboards the key labelled Z is not the one a US keyboard calls KeyZ.
+ * Only when the character is not a Latin letter (Cyrillic, Greek…) does the
+ * physical key decide.
+ *
+ * @param {KeyboardEvent} e
+ * @returns {'undo'|'redo'|null}
+ */
+export function undoRedoShortcut(e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return null;
+    if (isTextEntryTarget(e.target)) return null;
+    if (document.querySelector('dialog[open]')) return null;
+    const letter = /^[a-z]$/i.test(e.key || '') ? e.key.toLowerCase() : (UNDO_REDO_CODES[e.code] || null);
+    if (letter === 'z') return e.shiftKey ? 'redo' : 'undo';
+    if (letter === 'y' && !e.shiftKey) return 'redo';
+    return null;
+}

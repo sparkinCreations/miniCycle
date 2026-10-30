@@ -64,7 +64,7 @@ import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
-import { isTextEntryTarget } from '../utils/keyboardNav.js';
+import { isTextEntryTarget, undoRedoShortcut } from '../utils/keyboardNav.js';
 import { USER_MANUAL_PATH, runsAsInstalledApp } from '../utils/userManualLink.js';
 
 let _appContextMod = null;
@@ -591,26 +591,16 @@ function handleAppShortcut(e) {
 function handleGlobalKeydown(e) {
   if (handleAppShortcut(e)) return;
 
-  // Undo: Ctrl/Cmd + Z
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-    e.preventDefault();
-    try {
-      getUndoApi()?.undo?.();
-    } catch (err) {
-      console.warn('⚠️ Undo not available:', err);
-    }
-  }
-
-  // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
-  // NOTE: with Shift held the browser reports the key as uppercase 'Z', so the
-  // Shift+Z branch must compare against 'Z' (comparing to 'z' never matches).
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-    e.preventDefault();
-    try {
-      getUndoApi()?.redo?.();
-    } catch (err) {
-      console.warn('⚠️ Redo not available:', err);
-    }
+  // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y. Not while typing or
+  // with a dialog open — undoRedoShortcut() says why.
+  const action = undoRedoShortcut(e);
+  if (!action) return;
+  e.preventDefault();
+  try {
+    if (action === 'undo') getUndoApi()?.undo?.();
+    else getUndoApi()?.redo?.();
+  } catch (err) {
+    console.warn(`⚠️ ${action} not available:`, err);
   }
 }
 

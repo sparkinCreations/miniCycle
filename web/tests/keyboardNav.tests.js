@@ -337,6 +337,66 @@ export async function runKeyboardNavTests(resultsDiv) {
         // only one cell — nowhere to move, no throw
     });
 
+    // ── undoRedoShortcut: the key reading both undo handlers share ──────────
+    resultsDiv.innerHTML += '<h4 class="test-section">↶ Undo / redo keys</h4>';
+    const keyEvent = (init, target = document.body) => {
+        const e = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init });
+        Object.defineProperty(e, 'target', { value: target });
+        return e;
+    };
+
+    await test('Ctrl+Z undoes, Ctrl+Shift+Z and Ctrl+Y redo, Cmd works like Ctrl', () => {
+        const { undoRedoShortcut } = mod;
+        const got = [
+            undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true })),
+            undoRedoShortcut(keyEvent({ key: 'Z', code: 'KeyZ', ctrlKey: true, shiftKey: true })),
+            undoRedoShortcut(keyEvent({ key: 'y', code: 'KeyY', ctrlKey: true })),
+            undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', metaKey: true })),
+            undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ' }))
+        ].join();
+        if (got !== 'undo,redo,redo,undo,') throw new Error(`got ${got}`);
+    });
+
+    await test('REGRESSION: Ctrl+Z with Caps Lock on still undoes', () => {
+        // Caps Lock sends "Z" without Shift; the old check wanted "z" exactly.
+        const got = mod.undoRedoShortcut(keyEvent({ key: 'Z', code: 'KeyZ', ctrlKey: true, shiftKey: false }));
+        if (got !== 'undo') throw new Error(`got ${got}`);
+    });
+
+    await test('REGRESSION: a non-Latin keyboard reads the physical key; a French one reads the letter', () => {
+        // Russian layout: the Z key types "я". French AZERTY: the key labelled Z
+        // is the one a US keyboard calls KeyW — that is the one the user means.
+        const russian = mod.undoRedoShortcut(keyEvent({ key: 'я', code: 'KeyZ', ctrlKey: true }));
+        const french = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyW', ctrlKey: true }));
+        const frenchW = mod.undoRedoShortcut(keyEvent({ key: 'w', code: 'KeyZ', ctrlKey: true }));
+        if (russian !== 'undo' || french !== 'undo' || frenchW !== null) throw new Error(`russian ${russian}, french Z ${french}, french W ${frenchW}`);
+    });
+
+    await test('REGRESSION: Ctrl+Z in a text field or with a dialog open is left to the browser', () => {
+        // In a field it is the field's own text undo; the old handler cancelled
+        // that and undid app data instead.
+        const input = document.createElement('input');
+        const area = document.createElement('textarea');
+        const box = document.createElement('input'); box.type = 'checkbox';
+        const inField = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }, input));
+        const inArea = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }, area));
+        const onCheckbox = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }, box));
+        const dialog = document.createElement('dialog');
+        document.body.appendChild(dialog);
+        dialog.show();
+        let withDialog;
+        try { withDialog = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true })); }
+        finally { dialog.close(); dialog.remove(); }
+        if (inField !== null || inArea !== null) throw new Error(`text fields: ${inField}, ${inArea}`);
+        if (onCheckbox !== 'undo') throw new Error(`a task checkbox is not a text field: ${onCheckbox}`);
+        if (withDialog !== null) throw new Error(`open dialog: ${withDialog}`);
+    });
+
+    await test('AltGr (Ctrl+Alt) combinations are not undo', () => {
+        const got = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true, altKey: true }));
+        if (got !== null) throw new Error(`got ${got}`);
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

@@ -149,6 +149,7 @@ export class RoutineSwitcherActions {
                 // Track if we're deleting the active cycle
                 const wasActiveCycle = cycleKey === activeCycle;
                 let newActiveCycleName = null;
+                let newActiveCycleKey = null;
 
                 // ✅ Update through state system
                 this.m.deps.AppState.update(state => {
@@ -161,7 +162,7 @@ export class RoutineSwitcherActions {
 
                         if (remainingCycleKeys.length > 0) {
                             // Switch to the first available miniCycle
-                            const newActiveCycleKey = remainingCycleKeys[0];
+                            newActiveCycleKey = remainingCycleKeys[0];
                             setActiveRoutineId(state, newActiveCycleKey);
 
                             const newActiveCycle = getRoutine(state, newActiveCycleKey);
@@ -181,14 +182,25 @@ export class RoutineSwitcherActions {
                     this.m.updateStorageBarUIEstimated(barElement, textElement);
                 }
 
-                // ✅ Notify undo system of cycle deletion (DI-pure)
+                // ✅ Notify undo system of cycle deletion (DI-pure) — and, when the
+                // open routine was deleted, of the switch to the next one, AFTER the
+                // delete has cleared it. Without the switch notice undo tracked no
+                // routine at all, so the first edit in the next one saved its
+                // one-step stack over that routine's stored undo history.
                 if (typeof this.m.deps.onCycleDeleted === 'function') {
                     // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
                     // call, so it yields undefined when the hook is unwired and `.catch` on
                     // undefined throws here — inside a UI flow, after state already changed.
-                    Promise.resolve(this.m.deps.onCycleDeleted(cycleKey)).catch(err => {
-                        console.warn('⚠️ Undo system cycle deletion notification failed:', err);
-                    });
+                    Promise.resolve(this.m.deps.onCycleDeleted(cycleKey))
+                        .then(() => {
+                            if (wasActiveCycle && newActiveCycleKey && typeof this.m.deps.onCycleSwitched === 'function') {
+                                return this.m.deps.onCycleSwitched(newActiveCycleKey);
+                            }
+                            return undefined;
+                        })
+                        .catch(err => {
+                            console.warn('⚠️ Undo system cycle deletion notification failed:', err);
+                        });
                 }
 
                 // ✅ Check if any cycles remain

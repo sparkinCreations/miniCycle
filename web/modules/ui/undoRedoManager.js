@@ -36,6 +36,7 @@ import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../
 // undo also calls `describeChange` directly, to name the step it takes back.
 import { computeTransactionDiff, describeChange } from './undoTransactionDiff.js';
 import { clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { undoRedoShortcut } from '../utils/keyboardNav.js';
 
 // Re-exported because it was part of this module's public surface before the
 // split and the test suite imports it from here. Not a `provides` name.
@@ -400,14 +401,13 @@ export function wireUndoRedoKeyboardShortcuts() {
 
   assertInjected('safeAddEventListener', _deps.safeAddEventListener);
 
+  // Same key reading as uiBoot's handler (undoRedoShortcut) — the two must not drift.
   _handleUndoRedoKeydown = function handleUndoRedoKeydown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      performStateBasedUndo();
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-      e.preventDefault();
-      performStateBasedRedo();
-    }
+    const action = undoRedoShortcut(e);
+    if (!action) return;
+    e.preventDefault();
+    if (action === 'undo') performStateBasedUndo();
+    else performStateBasedRedo();
   };
 
   _deps.safeAddEventListener(document, 'keydown', _handleUndoRedoKeydown);
