@@ -568,6 +568,33 @@ function relabelOnRekey(producer, globalState) {
   };
 }
 
+// AppState instances already told to report other tabs' saves (one per
+// instance, so a boot retry's fresh AppState subscribes again).
+const _otherTabSubscriptions = new WeakSet();
+
+/**
+ * Drop this tab's undo/redo steps when state is replaced by another tab's save.
+ *
+ * Adopting another tab's save goes around AppState.update(), so no step is
+ * recorded for it — and the steps already on the stack describe this tab's
+ * OLDER view. Undo then put that view back and saved it, erasing the other
+ * tab's change in both tabs. Those steps no longer describe anything that can
+ * be cleanly reversed, so they go.
+ * @returns {void}
+ */
+function subscribeToOtherTabChanges() {
+  const appState = _deps.AppState;
+  if (typeof appState?.subscribe !== 'function' || _otherTabSubscriptions.has(appState)) return;
+  _otherTabSubscriptions.add(appState);
+  appState.subscribe('undo-other-tab', (_newState, _oldState, meta) => {
+    if (!meta?.external) return;
+    if (!_deps.AppGlobalState.activeUndoStack.length && !_deps.AppGlobalState.activeRedoStack.length) return;
+    _deps.AppGlobalState.activeUndoStack = [];
+    _deps.AppGlobalState.activeRedoStack = [];
+    updateUndoRedoButtons();
+  });
+}
+
 /**
  * Set up AppState subscription for automatic snapshots
  */
@@ -1527,6 +1554,10 @@ export async function initUndoSystemForApp() {
       await clearAllUndoHistory();
       console.warn('🧹 Undo history cleared after the stored-data migration');
     }
+
+    // Before the first-run return below: a first-run tab can still adopt
+    // another tab's save once it has data.
+    subscribeToOtherTabChanges();
 
     if (!activeCycleId) {
       // Normal for first-time users — onboarding hasn't completed yet

@@ -1600,10 +1600,10 @@ export class FocusMode {
         this._active = false;
         this.initialized = false;
         this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
-
-        this.deps.AppState?.update?.(state => {
-            state.settings.focusModeActive = false;
-        });
+        // No state write: destroy() is teardown (boot retry, tests), not the user
+        // leaving Focus View — that is the exit path, which saves it. Saving
+        // "off" here turned the user's Focus View off on every boot retry, and
+        // the rebuilt view reads that saved setting to decide whether to open.
     }
 }
 

@@ -485,6 +485,46 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    await test('REGRESSION: Back skips an earlier step that is present but hidden, and hides when none is left', async () => {
+        // Back checked only that the earlier target existed. A hidden one was
+        // "shown", showStep() skipped it FORWARD, and the user landed on the
+        // step they were already on — Back looked stuck.
+        setupTargets();
+        const manager = await createManager({
+            appReady: false,
+            settings: { onboardingCompleted: true, guidedTourStep: null }
+        });
+        manager.startTour();
+        const make = (id, css) => {
+            const el = document.createElement('div');
+            el.id = id;
+            el.style.cssText = `width:40px;height:20px;${css}`;
+            document.body.appendChild(el);
+            return el;
+        };
+        // position:fixed has client rects (so it "exists") but no offsetParent —
+        // what the 'offsetParent' predicate calls hidden.
+        const els = [make('tour-back-a', ''), make('tour-back-hidden', 'position:fixed;top:0;left:0'), make('tour-back-c', '')];
+        try {
+            manager._filteredSteps = [
+                { targetType: 'id', target: 'tour-back-a', messageKey: 'tour.step1' },
+                { targetType: 'id', target: 'tour-back-hidden', messageKey: 'tour.step1', skipWhenHidden: 'offsetParent' },
+                { targetType: 'id', target: 'tour-back-c', messageKey: 'tour.step1' }
+            ];
+            manager.showStep(2);
+            manager.prevStep();
+            if (manager._currentStepIndex !== 0) throw new Error(`Back should land on step 0, got ${manager._currentStepIndex}`);
+
+            // Only a hidden step before this one: no Back button at all.
+            manager._filteredSteps = [manager._filteredSteps[1], manager._filteredSteps[2]];
+            manager.showStep(1);
+            const back = document.querySelector('.tour-back');
+            if (!back || !back.hidden) throw new Error('Back should be hidden when every earlier step is hidden');
+        } finally {
+            els.forEach(el => el.remove());
+        }
+    });
+
     await test('completeTour marks the tour done and removes tour UI', async () => {
         setupTargets();
         const manager = await createManager({

@@ -651,6 +651,26 @@ export async function runFocusModeTests(resultsDiv) {
         if (!nextIsSeparator) throw new Error('settings should be separated from exit below it');
     });
 
+    await test('REGRESSION: teardown (boot retry) leaves the saved Focus View setting alone', () => {
+        // destroy() runs on every boot retry. It used to save focusModeActive =
+        // false, so the rebuilt app — which reads that setting to decide whether
+        // to open Focus View — came back in Home View after any retry.
+        setupDOMScaffold();
+        const appState = createMockAppState({ settings: { focusModeActive: true } });
+        mod.setFocusModeDependencies({
+            AppState: appState,
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        const instance = new mod.FocusMode();
+        instance.init();
+        instance.destroy();
+        teardownDOMScaffold();
+        if (appState.get().settings.focusModeActive !== true) throw new Error('destroy() switched the saved Focus View setting off');
+    });
+
     await test('exit action calls deactivate', () => {
         let deactivated = false;
         setupDOMScaffold();

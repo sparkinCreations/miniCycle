@@ -2603,6 +2603,30 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         await pending;
     });
 
+    await test('REGRESSION: adopting another tab\'s save drops this tab\'s stale undo and redo steps', async () => {
+        // Adoption goes around AppState.update(), so the steps on the stack still
+        // describe this tab's OLDER view; undo put that view back and saved it,
+        // erasing the other tab's change in both tabs.
+        const mockDeps = createMockDependencies();
+        mockDeps.AppGlobalState.activeUndoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 1 }];
+        mockDeps.AppGlobalState.activeRedoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 2 }];
+        setUndoRedoManagerDependencies(mockDeps);
+        await initUndoSystemForApp();
+        const onChange = mockDeps.AppState._subscribers?.['undo-other-tab'];
+        if (typeof onChange !== 'function') throw new Error('undo did not subscribe to other-tab adoptions');
+
+        // Restore the stacks init may have replaced from its cache, then test both kinds of change.
+        mockDeps.AppGlobalState.activeUndoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 1 }];
+        mockDeps.AppGlobalState.activeRedoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 2 }];
+        const state = mockDeps.AppState.get();
+        onChange(state, state, {});
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) throw new Error('a change made in this tab must keep the steps');
+        onChange(state, state, { external: true });
+        if (mockDeps.AppGlobalState.activeUndoStack.length !== 0 || mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
+            throw new Error('another tab\'s save must clear the stale steps');
+        }
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>All Tests Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

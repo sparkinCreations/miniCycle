@@ -224,6 +224,40 @@ export async function runNameUtilsTests(resultsDiv) {
         }
     });
 
+    // ── Fitting text to a limit (#16, #17 of the external review) ──────────
+    await test('REGRESSION: a numbered duplicate name stays within the name limit', () => {
+        const limit = 100;
+        const full = 'n'.repeat(limit);
+        const { name, wasModified } = mod.getUniqueCycleName(full, { [full]: { title: full } });
+        if (name.length > limit) throw new Error(`"(2)" pushed the name to ${name.length} characters`);
+        if (!name.endsWith(' (2)') || !wasModified) throw new Error(`expected a numbered name, got "${name}"`);
+    });
+
+    await test('a name that fits and is free comes back exactly as typed, not flagged as renamed', () => {
+        const r = mod.getUniqueCycleName('Morning  ', {});
+        if (r.name !== 'Morning  ' || r.wasModified) throw new Error(`got ${JSON.stringify(r)}`);
+        const long = mod.getUniqueCycleName('x'.repeat(150), {});
+        if (long.name.length !== 100 || long.wasModified) throw new Error(`over-long free name: ${long.name.length}, wasModified ${long.wasModified}`);
+    });
+
+    await test('REGRESSION: fitText never splits an emoji', () => {
+        // 99 letters + an emoji (2 UTF-16 units) is 101 — a plain slice(0, 100)
+        // ends on the emoji's first half, which renders as a box.
+        const cut = mod.fitText('a'.repeat(99) + '😀', 100);
+        if (/[\uD800-\uDBFF]$/.test(cut)) throw new Error('ends on half an emoji');
+        if (cut !== 'a'.repeat(99)) throw new Error(`got length ${cut.length}`);
+        const joined = mod.fitText('a'.repeat(98) + '👩\u200D💻', 101); // cut after the joiner
+        if (/\u200D$/.test(joined)) throw new Error('left a dangling joiner');
+        if (mod.fitText('short', 100) !== 'short') throw new Error('short text must pass through');
+    });
+
+    await test('REGRESSION: text-direction overrides are removed; plain RTL marks stay', () => {
+        // U+202E reverses what follows on screen, so "evil\u202Etxt.exe" displays
+        // as something else. U+200F (RLM) is ordinary right-to-left punctuation.
+        const out = mod.stripDirectionControls('a\u202Eb\u2066c\u2069d\u200Fe');
+        if (out !== 'abcd\u200Fe') throw new Error(`got ${JSON.stringify(out)}`);
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

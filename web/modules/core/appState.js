@@ -44,6 +44,7 @@ import { collectSwatchSets } from '../utils/priorityLevel.js';
 // reset sweeps it like every other miniCycle-prefixed key, and Settings → Data
 // Management offers it back to the user (backupRestoreManager).
 import { PRE_MIGRATION_BACKUP_PREFIX } from './constants.js';
+import { isNativeApp, shareRoutineFileNative } from '../platform/capacitorBridge.js';
 
 // NOTE: The in-app test runner now executes on a SEPARATE ORIGIN (test.minicycle.app),
 // so its storage is physically isolated from real user data. The former test-mode
@@ -134,6 +135,12 @@ class MiniCycleState {
         // this build neither adopts that data nor writes over it — see
         // _blockOnNewerData(). Cleared only by a reload into a build that reads it.
         this.blockedByNewerData = null;
+        // The raw text of damaged saved data that could NOT be copied aside
+        // before repair (storage full). While set, nothing is saved — saving
+        // would overwrite the only copy — until the user saves it as a file.
+        // See _holdDamagedOriginal().
+        this.heldDamagedOriginal = null;
+        this._heldWarningUntil = 0;
         this._savingIndicatorTimeout = null; // For hiding indicator after save
         this._persistenceListenersRegistered = false; // Guard against duplicate global listeners on re-init
         // Per-tab identity for concurrent-modification detection: timestamps alone
@@ -227,14 +234,14 @@ class MiniCycleState {
                     const recovery = recoverCorruptedData(stored, { storage: this.deps.storage });
                     if (recovery.recovered && this.validateStateStructure(recovery.data)) {
                         this.data = this._ensureMetadata(recovery.data);
-                        this._persistRepairedData(this.data);
+                        this._persistRecovered(this.data, recovery, stored);
                         this.isInitialized = true;
                         this._registerPersistenceListeners();
                         this._notifyDataRepaired(recovery);
                         return this.data;
                     }
                     this.data = this.createMinimalFallbackState();
-                    this._persistRepairedData(this.data);
+                    this._persistRecovered(this.data, recovery, stored);
                     this.isInitialized = true;
                     this._registerPersistenceListeners();
                     this.deps.showNotification(
@@ -343,11 +350,11 @@ class MiniCycleState {
                 const recovery = stored ? recoverCorruptedData(stored, { storage: this.deps.storage }) : { recovered: false };
                 if (recovery.recovered && this.validateStateStructure(recovery.data)) {
                     existingData = recovery.data;
-                    this._persistRepairedData(existingData);
+                    this._persistRecovered(existingData, recovery, stored);
                     this._notifyDataRepaired(recovery);
                 } else {
                     existingData = this.createMinimalFallbackState();
-                    this._persistRepairedData(existingData);
+                    this._persistRecovered(existingData, recovery, stored);
                     this.deps.showNotification(
                         getLabel('notify.dataCorruptedReset'),
                         'error',
@@ -391,20 +398,14 @@ class MiniCycleState {
 
                 if (tasksInitialized > 0 || templatesInitialized > 0) {
 
-                    // Defer the save operation to avoid blocking the main thread during init
+                    // Defer the save operation to avoid blocking the main thread during init.
+                    // Through save(), never a bare setItem: by the time an idle moment comes
+                    // another tab may have saved, or a newer build's document may be in
+                    // storage, and save() is the path that checks both (and handles a full
+                    // store). The bare write it replaced skipped all three.
                     const saveData = () => {
-                        try {
-                            this.deps.storage.setItem(STORAGE_KEYS.DATA, JSON.stringify(this.data));
-                        } catch (error) {
-                            if (error?.name === 'QuotaExceededError' ||
-                                error?.code === 22 ||
-                                error?.code === 1014) {
-                                console.warn('⚠️ localStorage quota exceeded during deferred init save — continuing with in-memory state', error);
-                                return;
-                            }
-                            console.error('❌ Deferred save failed:', error);
-                            // Don't show notification during init - could interrupt boot
-                        }
+                        this.isDirty = true;
+                        this.save();
                     };
 
                     if (typeof requestIdleCallback !== 'undefined') {
@@ -565,8 +566,8 @@ class MiniCycleState {
                     this.isDirty = false;
                     this.lastSavedTimestamp = externalTimestamp;
 
-                    // Notify subscribers of the change
-                    this.notifyListeners(previousData, this.data);
+                    // Notify subscribers of the change — marked as another tab's.
+                    this.notifyListeners(previousData, this.data, { external: true });
 
                 }
             } catch (error) {
@@ -651,7 +652,7 @@ class MiniCycleState {
         if (recovery.recovered) {
             recovery.data = this._migrateIfOlder(recovery.data, null);
             if (this.validateStateStructure(recovery.data)) {
-                this._persistRepairedData(recovery.data);
+                this._persistRecovered(recovery.data, recovery, stored);
                 this._notifyDataRepaired(recovery);
                 return recovery.data;
             }
@@ -753,6 +754,105 @@ class MiniCycleState {
         } catch (persistError) {
             console.warn('⚠️ Could not persist repaired data (continuing in-memory):', persistError?.message || persistError);
         }
+    }
+
+    /**
+     * Persist repaired (or fallback) data — but only once the damaged original
+     * is safe. recoverCorruptedData() copies the raw text aside first; when that
+     * copy failed (backupKey null — storage full, the very thing that often
+     * damages a save), writing the repair would overwrite the ONLY copy. Then
+     * nothing is written and saving is held instead (_holdDamagedOriginal).
+     * @param {Object} data - Repaired state
+     * @param {{backupKey?: string|null}} recovery - recoverCorruptedData() result
+     * @param {string} raw - The damaged original as read from storage
+     * @private
+     */
+    _persistRecovered(data, recovery, raw) {
+        if (!recovery?.backupKey && raw) {
+            this._holdDamagedOriginal(raw);
+            return;
+        }
+        this._persistRepairedData(data);
+    }
+
+    /**
+     * Hold all saving and ask the user to save the damaged original as a file.
+     * Nothing is lost while held: storage keeps the original, the app runs on
+     * the repaired copy in memory, and edits wait (dirty) for the hold to lift.
+     * @param {string} raw - The damaged original
+     * @private
+     */
+    _holdDamagedOriginal(raw) {
+        this.heldDamagedOriginal = raw;
+        console.warn('⚠️ Damaged data could not be copied aside (storage full?) — holding saves until it is saved as a file');
+        this._warnDamagedOriginalHeld();
+    }
+
+    /**
+     * True while saving is held for the damaged original (see save()). Says so
+     * again once the last warning has gone: an edit that is not being saved
+     * should never pass silently.
+     * @returns {boolean}
+     * @private
+     */
+    _isHoldingForDamagedOriginal() {
+        if (this.heldDamagedOriginal === null) return false;
+        if (Date.now() >= this._heldWarningUntil) this._warnDamagedOriginalHeld();
+        return true;
+    }
+
+    /** @private */
+    _warnDamagedOriginalHeld() {
+        this._heldWarningUntil = Date.now() + UI_TIMEOUTS.NOTIFICATION_PERSISTENT;
+        this.deps.showNotification?.(
+            getLabel('notify.damagedDataHeld'),
+            'warning',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            {
+                actionButton: {
+                    label: getLabel('button.saveCopy'),
+                    onClick: () => { this.saveHeldDamagedOriginal(); }
+                }
+            }
+        );
+    }
+
+    /**
+     * Save the held damaged original as a file, then lift the hold and save the
+     * repaired state. If the file was not saved (share sheet closed), the hold
+     * stays and the warning comes back.
+     * @returns {Promise<boolean>} true when the hold was lifted
+     */
+    async saveHeldDamagedOriginal() {
+        const raw = this.heldDamagedOriginal;
+        if (raw === null) return true;
+        const fileName = `miniCycle-damaged-data-${Date.now()}.txt`;
+        let saved = false;
+        try {
+            if (isNativeApp()) {
+                const result = await shareRoutineFileNative({ data: raw, fileName, title: getLabel('noun.backupFileType') });
+                saved = !!(result?.handled && !result.cancelled);
+            } else {
+                const url = URL.createObjectURL(new Blob([raw], { type: 'text/plain' }));
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = fileName;
+                link.click();
+                setTimeout(() => URL.revokeObjectURL(url), UI_TIMEOUTS.NOTIFICATION_FADE);
+                saved = true;
+            }
+        } catch (error) {
+            console.warn('⚠️ Could not save the damaged data file:', error);
+        }
+        if (!saved) {
+            this._warnDamagedOriginalHeld();
+            return false;
+        }
+        this.heldDamagedOriginal = null;
+        this.isDirty = true;
+        this.save();
+        this.deps.showNotification?.(getLabel('notify.damagedDataSaved'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+        return true;
     }
 
     /**
@@ -930,6 +1030,13 @@ class MiniCycleState {
             return;
         }
 
+        // Damaged data that could not be copied aside is still the only copy in
+        // storage: hold every save until the user has saved it as a file. The
+        // edits stay dirty in memory and go out when the hold lifts.
+        if (this._isHoldingForDamagedOriginal()) {
+            return;
+        }
+
         // Show saving indicator
         this._showSavingIndicator();
 
@@ -989,7 +1096,7 @@ class MiniCycleState {
                             this.isDirty = false;
                             this.lastSavedTimestamp = storedTimestamp;
                             this._hideSavingIndicator();
-                            this.notifyListeners(previousData, this.data);
+                            this.notifyListeners(previousData, this.data, { external: true });
                             return;
                         } else {
                             // Small diff - just our own rapid saves, proceed with save
@@ -1121,13 +1228,15 @@ class MiniCycleState {
      * Notify all subscribers of state change
      * @param {Schema25Data} oldData - State before change
      * @param {Schema25Data} newData - State after change
+     * @param {{external?: boolean}} [meta] - `external: true` when the new state
+     *   was ADOPTED from another tab's save rather than made here
      * @private
      */
-    notifyListeners(oldData, newData) {
+    notifyListeners(oldData, newData, meta = {}) {
         this.listeners.forEach((callbacks, key) => {
             callbacks.forEach(callback => {
                 try {
-                    callback(newData, oldData);
+                    callback(newData, oldData, meta);
                 } catch (error) {
                     console.error(`❌ Listener error for ${key}:`, error);
                 }

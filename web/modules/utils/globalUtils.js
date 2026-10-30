@@ -26,6 +26,7 @@ import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 import { prefersReducedMotion } from './motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getAutoClearForMode, getAutoClearSettings } from './cycleMode.js';
+import { fitText, stripDirectionControls } from './nameUtils.js';
 
 // NOTE: Uses plain _deps instead of createDIModule() because GlobalUtils is a Phase 1
 // static class loaded in coreBoot before the manifest system. The static class pattern
@@ -372,7 +373,10 @@ export class GlobalUtils {
      */
     static normalizeText(input, maxLength = 100) {
         if (typeof input !== "string") return "";
-        return input.trim().substring(0, maxLength);
+        // fitText, not substring: a plain cut can split an emoji in half.
+        // Direction controls go too — an invisible override makes a name
+        // display as something other than what it says.
+        return fitText(stripDirectionControls(input).trim(), maxLength);
     }
 
     /**

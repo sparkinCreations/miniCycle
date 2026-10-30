@@ -93,6 +93,18 @@ export async function runOrchestratorTests(resultsDiv) {
         }
     });
 
+    await test('REGRESSION: the crash-report email quotes no user text from the error', () => {
+        // Chrome's JSON.parse error opens with the start of the unreadable
+        // string — for damaged saved data, a routine or task name — under a body
+        // that promises "No routine/task data is included".
+        const chrome = mod.errorTextForReport('Unexpected token \'B\', "Buy milk and eggs" is not valid JSON');
+        if (/Buy milk|'B'/.test(chrome)) throw new Error(`user text leaked: ${chrome}`);
+        const plain = mod.errorTextForReport("Can't read properties of undefined (reading 'tasks')");
+        if (!plain.startsWith("Can't read properties of undefined")) throw new Error(`ordinary apostrophe mangled: ${plain}`);
+        if (mod.errorTextForReport('x'.repeat(400)).length !== 300) throw new Error('length cap lost');
+        if (mod.errorTextForReport(undefined) !== 'Unknown') throw new Error('missing message');
+    });
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

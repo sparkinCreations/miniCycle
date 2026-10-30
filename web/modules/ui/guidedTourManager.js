@@ -360,19 +360,27 @@ export class GuidedTourManager {
      * @returns {void}
      */
     prevStep() {
-        if (!this._active || this._currentStepIndex <= 0) {
-            return;
-        }
+        if (!this._active) return;
+        const targetIndex = this._previousShownIndex(this._currentStepIndex);
+        if (targetIndex >= 0) this.showStep(targetIndex);
+    }
 
-        let targetIndex = this._currentStepIndex - 1;
-        while (targetIndex >= 0) {
-            const step = this._steps[targetIndex];
-            if (this._resolveTarget(step)) {
-                this.showStep(targetIndex);
-                return;
-            }
-            targetIndex--;
+    /**
+     * The nearest step before `index` that showStep() would actually show —
+     * its target is present AND not hidden. Checking presence alone sent Back
+     * to a hidden step, which showStep() skips FORWARD past, landing the user
+     * on the step they were already on: Back looked stuck.
+     * @param {number} index
+     * @returns {number} the step index, or -1 when none
+     * @private
+     */
+    _previousShownIndex(index) {
+        for (let i = index - 1; i >= 0; i--) {
+            const step = this._steps[i];
+            const target = this._resolveTarget(step);
+            if (target && !this._isStepHidden(step, target)) return i;
         }
+        return -1;
     }
 
     /**
@@ -925,7 +933,7 @@ export class GuidedTourManager {
             <div class="tour-progress-dots" aria-hidden="true">${dots}</div>
             <p class="tour-message" id="tour-message">${getLabel(step.messageKey)}</p>
             <div class="tour-actions">
-                <button type="button" class="tour-btn tour-btn-secondary tour-back"${index === 0 ? ' hidden' : ''}>
+                <button type="button" class="tour-btn tour-btn-secondary tour-back"${this._previousShownIndex(index) < 0 ? ' hidden' : ''}>
                     ${getLabel('tour.back')}
                 </button>
                 <button type="button" class="tour-btn tour-btn-ghost tour-skip">

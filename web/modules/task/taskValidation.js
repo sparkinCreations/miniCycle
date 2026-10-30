@@ -19,6 +19,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { LIMITS } from '../core/constants.js';
+import { fitText, stripDirectionControls } from '../utils/nameUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -166,9 +167,9 @@ function validateAndSanitizeTaskInput(taskText) {
         // state. This is the only route by which unvalidated task text reaches
         // storage, so clamp rather than pass through. Text is preserved (not
         // rejected) because dropping user input silently is the worse failure.
-        const stripped = taskText.replace(/[\u0000-\u001F\u007F]/g, '').trim();
+        const stripped = stripDirectionControls(taskText.replace(/[\u0000-\u001F\u007F]/g, '')).trim();
         if (!stripped) return null;
-        return stripped.slice(0, LIMITS.TASK_CHARACTER_INPUT);
+        return fitText(stripped, LIMITS.TASK_CHARACTER_INPUT);
     }
     return taskValidator.validateAndSanitizeTaskInput(taskText);
 }

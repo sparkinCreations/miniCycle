@@ -584,6 +584,13 @@ export async function runGlobalUtilsTests(resultsDiv) {
     });
 
     // Summary
+    await test('REGRESSION: normalizeText (sanitizeInput) keeps whole emoji and drops direction overrides', async () => {
+        const { GlobalUtils } = await import(`../modules/utils/globalUtils.js?v=${window.testCacheBuster || Date.now()}`);
+        const cut = GlobalUtils.normalizeText('a'.repeat(99) + '😀', 100);
+        if (/[\uD800-\uDBFF]$/.test(cut)) throw new Error('ends on half an emoji');
+        if (GlobalUtils.normalizeText('  Pay \u202Erent  ', 100) !== 'Pay rent') throw new Error('override not removed / not trimmed');
+    });
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
 

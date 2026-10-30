@@ -223,6 +223,61 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (warnings.length !== 1 || !/newer version/i.test(warnings[0])) throw new Error(`expected one newer-version warning, got ${JSON.stringify(warnings)}`);
     });
 
+    await test('REGRESSION: the deferred start-up save cannot write over a newer build\'s data', async () => {
+        // init() fills missing task fields and saves them at the next idle moment.
+        // That save was a bare setItem — none of save()'s checks — so a newer
+        // build's document written in between was replaced with this older one.
+        const doc = createMockData();
+        const rid = doc.appState.activeRoutineId;
+        if (!rid || !doc.data.routine[rid]) throw new Error('fixture: mock data has no active routine');
+        doc.data.routine[rid].tasks = [{ id: 't1', text: 'needs its fields filled', completed: false }];
+        localStorage.setItem('miniCycleData', JSON.stringify(doc));
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('fixture: data should load');
+
+        // A newer build (another tab) saves before the idle moment arrives.
+        const raw = JSON.stringify(newerDoc());
+        localStorage.setItem('miniCycleData', raw);
+        await new Promise(r => setTimeout(r, 2500)); // past DEBOUNCE.STATE_SAVE_IDLE_TIMEOUT
+        if (localStorage.getItem('miniCycleData') !== raw) throw new Error('the start-up save wrote over the newer build\'s data');
+    });
+
+    await test('REGRESSION: damaged data + full storage: the original is never written over until it is saved as a file', async () => {
+        // Recovery copies the damaged text aside before repairing. When that copy
+        // failed (storage full — a common cause of a damaged save), the repair
+        // was written over the ONLY copy. Now saving is held until the user saves
+        // the original as a file. Fake storage: the copy-aside key is refused.
+        const damaged = '{"schemaVersion":"2.6","data":{"routine":{"r1":{"title":"My routine","tasks":[{"text":"Buy mi';
+        localStorage.setItem('miniCycleData', damaged);
+        const fullStorage = {
+            getItem: (k) => localStorage.getItem(k),
+            removeItem: (k) => localStorage.removeItem(k),
+            key: (i) => localStorage.key(i),
+            get length() { return localStorage.length; },
+            setItem: (k, v) => {
+                if (k.includes('_corrupted_')) { const e = new Error('full'); e.name = 'QuotaExceededError'; throw e; }
+                localStorage.setItem(k, v);
+            }
+        };
+        const notes = [];
+        const sm = createStateManager({ storage: fullStorage, showNotification: (msg, type, _d, opts) => notes.push({ msg, type, action: opts?.actionButton }) });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('the app should still run on a repaired copy in memory');
+        if (localStorage.getItem('miniCycleData') !== damaged) throw new Error('start-up wrote over the only copy of the damaged data');
+
+        await sm.update(state => { state.settings.theme = 'edited-while-held'; }, true);
+        if (localStorage.getItem('miniCycleData') !== damaged) throw new Error('a save wrote over the only copy of the damaged data');
+        const warning = notes.find(n => n.type === 'warning' && n.action);
+        if (!warning) throw new Error(`no warning with a save-a-copy button: ${JSON.stringify(notes.map(n => n.msg))}`);
+
+        // The user saves the copy: the hold lifts and the held edit is saved.
+        const lifted = await sm.saveHeldDamagedOriginal();
+        if (!lifted) throw new Error('saving the copy did not lift the hold');
+        const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (stored?.settings?.theme !== 'edited-while-held') throw new Error('the edit made while held was not saved once the hold lifted');
+    });
+
     await test('save() refuses to write over newer-version data written by another tab', async () => {
         localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.6' }));
         const warnings = [];
@@ -770,6 +825,36 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         }
 
         stateManager.unsubscribe('cross-tab-args-test', listener);
+    });
+
+    await test('another tab\'s save reaches subscribers marked external; a change made here does not', async () => {
+        // Undo drops its stale steps on the external mark — see undoRedoManager.
+        const stateManager = createStateManager();
+        await stateManager.init();
+        if (!stateManager.data.metadata) stateManager.data.metadata = {};
+        stateManager.data.metadata.lastModified = 1000000;
+        const metas = [];
+        const listener = (_n, _o, meta) => metas.push(meta);
+        stateManager.subscribe('external-mark-test', listener);
+        metas.length = 0;
+        try {
+            await stateManager.update(state => { state.settings.theme = 'made-here'; });
+            stateManager._storageHandler({
+                key: 'miniCycleData',
+                newValue: JSON.stringify({
+                    schemaVersion: "2.6",
+                    metadata: { lastModified: Date.now() + 60000 },
+                    settings: { theme: 'from-other-tab' },
+                    data: { routine: {} },
+                    appState: { activeRoutineId: null }
+                })
+            });
+        } finally {
+            stateManager.unsubscribe('external-mark-test', listener);
+        }
+        if (metas.length < 2) throw new Error(`expected two notifications, got ${metas.length}`);
+        if (metas[0]?.external) throw new Error('a change made in this tab was marked external');
+        if (metas[metas.length - 1]?.external !== true) throw new Error(`the adoption was not marked external: ${JSON.stringify(metas)}`);
     });
 
     await test('flushes a pending save on pagehide and visibilitychange→hidden (iOS unload safety)', async () => {

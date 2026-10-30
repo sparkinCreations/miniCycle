@@ -743,6 +743,8 @@ export const DEFAULT_LABELS = deepFreeze({
         // Storage holds a document from a NEWER app version; this build refuses to
         // adopt or overwrite it. {version} is the stored schemaVersion.
         dataFromNewerVersion:    'Your data was saved by a newer version of miniCycle (data version {version}). Changes are not being saved. Reload to update the app.',
+        damagedDataHeld:         'Your saved data was damaged, and storage was too full to keep a copy before repairing it. Changes are not being saved until you save a copy of the damaged data.',
+        damagedDataSaved:        'Copy saved. Your changes are being saved again.',
         multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
         dataClearedElsewhere:    'All data was cleared in another tab. Refresh this tab to continue.',
         stateUpdateFailed:       'State update failed',
@@ -1742,6 +1744,7 @@ export const DEFAULT_LABELS = deepFreeze({
         import:     'Import',
         create:     'Create',
         reload:     'Reload',
+        saveCopy:   'Save a copy',
         enable:     'Enable',
         loadSample: 'Load Sample',
         back:       'Back'
