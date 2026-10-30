@@ -189,8 +189,10 @@ const UNDO_REDO_CODES = Object.freeze({ KeyZ: 'z', KeyY: 'y' });
  *
  * Null while the user is typing — Ctrl+Z in a text field belongs to the
  * field's own text undo, and calling preventDefault there threw the typing
- * undo away AND undid app data instead — and while a dialog is open, where
- * the app's undo buttons are out of reach behind it.
+ * undo away AND undid app data instead. An open dialog does NOT block it:
+ * a prompt that appears after an action (the backup reminder after a first
+ * cycle) must not leave Ctrl+Z silently doing nothing — a text field inside
+ * the dialog is still covered by the rule above.
  *
  * The letter is read from the typed character in either case (Caps Lock sends
  * "Z" without Shift), so it follows the keyboard LAYOUT: on French and German
@@ -204,7 +206,6 @@ const UNDO_REDO_CODES = Object.freeze({ KeyZ: 'z', KeyY: 'y' });
 export function undoRedoShortcut(e) {
     if (!(e.ctrlKey || e.metaKey) || e.altKey) return null;
     if (isTextEntryTarget(e.target)) return null;
-    if (document.querySelector('dialog[open]')) return null;
     const letter = /^[a-z]$/i.test(e.key || '') ? e.key.toLowerCase() : (UNDO_REDO_CODES[e.code] || null);
     if (letter === 'z') return e.shiftKey ? 'redo' : 'undo';
     if (letter === 'y' && !e.shiftKey) return 'redo';

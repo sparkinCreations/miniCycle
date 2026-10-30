@@ -591,8 +591,8 @@ function handleAppShortcut(e) {
 function handleGlobalKeydown(e) {
   if (handleAppShortcut(e)) return;
 
-  // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y. Not while typing or
-  // with a dialog open — undoRedoShortcut() says why.
+  // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y. Not while typing —
+  // undoRedoShortcut() says why.
   const action = undoRedoShortcut(e);
   if (!action) return;
   e.preventDefault();

@@ -372,9 +372,10 @@ export async function runKeyboardNavTests(resultsDiv) {
         if (russian !== 'undo' || french !== 'undo' || frenchW !== null) throw new Error(`russian ${russian}, french Z ${french}, french W ${frenchW}`);
     });
 
-    await test('REGRESSION: Ctrl+Z in a text field or with a dialog open is left to the browser', () => {
+    await test('REGRESSION: Ctrl+Z in a text field is left to the browser, even inside a dialog', () => {
         // In a field it is the field's own text undo; the old handler cancelled
-        // that and undid app data instead.
+        // that and undid app data instead. A dialog alone does not block it:
+        // the backup prompt after a first cycle must not swallow Ctrl+Z.
         const input = document.createElement('input');
         const area = document.createElement('textarea');
         const box = document.createElement('input'); box.type = 'checkbox';
@@ -382,14 +383,18 @@ export async function runKeyboardNavTests(resultsDiv) {
         const inArea = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }, area));
         const onCheckbox = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }, box));
         const dialog = document.createElement('dialog');
+        const dialogField = document.createElement('input');
+        dialog.appendChild(dialogField);
         document.body.appendChild(dialog);
         dialog.show();
-        let withDialog;
-        try { withDialog = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true })); }
-        finally { dialog.close(); dialog.remove(); }
-        if (inField !== null || inArea !== null) throw new Error(`text fields: ${inField}, ${inArea}`);
+        let withDialog, inDialogField;
+        try {
+            withDialog = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }));
+            inDialogField = mod.undoRedoShortcut(keyEvent({ key: 'z', code: 'KeyZ', ctrlKey: true }, dialogField));
+        } finally { dialog.close(); dialog.remove(); }
+        if (inField !== null || inArea !== null || inDialogField !== null) throw new Error(`text fields: ${inField}, ${inArea}, in dialog ${inDialogField}`);
         if (onCheckbox !== 'undo') throw new Error(`a task checkbox is not a text field: ${onCheckbox}`);
-        if (withDialog !== null) throw new Error(`open dialog: ${withDialog}`);
+        if (withDialog !== 'undo') throw new Error(`an open dialog alone must not block undo: ${withDialog}`);
     });
 
     await test('AltGr (Ctrl+Alt) combinations are not undo', () => {
