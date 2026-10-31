@@ -40,7 +40,8 @@
  * @property {Object} utils.GlobalUtils - Global utility methods
  */
 
-import { Z_INDEX } from '../core/constants.js';
+import { DOM_IDS, Z_INDEX } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -626,45 +627,73 @@ async function handleStaleCacheRecovery() {
 }
 
 /**
- * Show a user-friendly banner for manual refresh
+ * Which refresh instruction fits this device, as a `boot.*` label key.
+ *
+ * An iPad in its default desktop mode reports itself as a Mac ("Macintosh",
+ * platform "MacIntel"); only its touch points give it away. Without that test
+ * an iPad was told to press Cmd+Shift+R.
+ * @param {{userAgent?: string, maxTouchPoints?: number, platform?: string, userAgentData?: {platform?: string}}} [nav]
+ * @returns {'boot.refreshIOS'|'boot.refreshAndroid'|'boot.refreshMac'|'boot.refreshOther'}
  */
-function showStaleCacheBanner() {
+export function refreshInstructionsKey(nav = navigator) {
+  const ua = nav.userAgent || '';
+  const isIPadAsMac = /Macintosh/.test(ua) && (nav.maxTouchPoints || 0) > 1;
+  if (/iPad|iPhone|iPod/.test(ua) || isIPadAsMac) return 'boot.refreshIOS';
+  if (/Android/.test(ua)) return 'boot.refreshAndroid';
   // Fix #62: Use modern API with fallback for deprecated navigator.platform
-  const isMac = navigator.userAgentData?.platform === 'macOS' ||
-                /Mac/.test(navigator.userAgent) ||
-                (navigator.platform?.toUpperCase().indexOf('MAC') >= 0);
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = /Android/.test(navigator.userAgent);
+  const isMac = nav.userAgentData?.platform === 'macOS' ||
+                /Mac/.test(ua) ||
+                (nav.platform?.toUpperCase().indexOf('MAC') >= 0);
+  return isMac ? 'boot.refreshMac' : 'boot.refreshOther';
+}
 
-  let refreshInstructions;
-  if (isIOS) {
-    refreshInstructions = 'Scroll down and release to refresh, or close and reopen the app.';
-  } else if (isAndroid) {
-    refreshInstructions = 'Pull down to refresh, or clear browser data in Settings.';
-  } else if (isMac) {
-    refreshInstructions = 'Press Cmd+Shift+R to hard refresh.';
-  } else {
-    refreshInstructions = 'Press Ctrl+Shift+R to hard refresh.';
-  }
+/**
+ * Show a user-friendly banner for manual refresh.
+ *
+ * Styled inline ON PURPOSE: it appears precisely when cached files are stale,
+ * stylesheets included, so a class added to a stylesheet could be missing.
+ * Styles go through the CSSOM (element.style) with token fallbacks. The
+ * Dismiss handler is attached in JS: the old inline onclick="" was blocked by
+ * the app's hash-based script-src, so Dismiss did nothing.
+ * @returns {void}
+ */
+export function showStaleCacheBanner() {
+  if (document.getElementById(DOM_IDS.STALE_CACHE_BANNER)) return;
 
   const banner = document.createElement('div');
-  banner.id = 'stale-cache-banner';
+  banner.id = DOM_IDS.STALE_CACHE_BANNER;
+  banner.setAttribute('role', 'alert');
   banner.style.cssText = `
     position: fixed; top: 0; left: 0; right: 0; z-index: ${Z_INDEX.CRITICAL};
-    background: linear-gradient(135deg, #ff6b6b, #ee5a5a); color: white;
-    padding: 12px 16px; font-family: -apple-system, system-ui, sans-serif;
-    font-size: 14px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+    background: var(--color-error, #dc3545); color: var(--color-white, #fff);
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    font-family: var(--font-family, system-ui, sans-serif); font-size: var(--font-size-sm, 14px);
+    text-align: center; box-shadow: var(--shadow-toast, 0 2px 10px rgba(0,0,0,0.3));
   `;
-  banner.innerHTML = `
-    <div style="max-width: 600px; margin: 0 auto;">
-      <strong>Update Available!</strong> Your browser has an old cached version.
-      <br>${refreshInstructions}
-      <button onclick="this.parentElement.parentElement.remove()" style="
-        margin-left: 12px; padding: 4px 12px; border: none; border-radius: 4px;
-        background: rgba(255,255,255,0.2); color: white; cursor: pointer; font-size: 12px;
-      ">Dismiss</button>
-    </div>
+
+  const inner = document.createElement('div');
+  inner.style.cssText = 'max-width: 600px; margin: 0 auto;';
+
+  const title = document.createElement('strong');
+  title.textContent = getLabel('boot.updateAvailable');
+  const message = document.createElement('span');
+  message.textContent = ` ${getLabel('boot.oldCachedVersion')}`;
+  const instructions = document.createElement('div');
+  instructions.textContent = getLabel(refreshInstructionsKey());
+
+  const dismiss = document.createElement('button');
+  dismiss.type = 'button';
+  dismiss.textContent = getLabel('boot.dismiss');
+  dismiss.style.cssText = `
+    margin-top: var(--space-2, 8px); padding: var(--space-1, 4px) var(--space-3, 12px);
+    border: none; border-radius: var(--radius-sm, 4px); cursor: pointer;
+    background: var(--overlay-white-light, rgba(255,255,255,0.2)); color: inherit;
+    font-size: var(--font-size-xs, 12px);
   `;
+  dismiss.addEventListener('click', () => banner.remove(), { once: true });
+
+  inner.append(title, message, instructions, dismiss);
+  banner.appendChild(inner);
   document.body.insertBefore(banner, document.body.firstChild);
 }
 

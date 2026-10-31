@@ -209,6 +209,16 @@ function transformHtml() {
     `href="${LIVE_SITE}/$1"`
   );
 
+  // The first-run screen's "Taking a while? Try the Lite version" link (shown
+  // when start-up passes 10 s) points at lite/, which is not bundled here — on
+  // a slow start it opened a blank error page. The redirects to lite/ are
+  // neutralized below; this link has to go too. The packaged apps' fallback
+  // is the boot-error screen.
+  html = html.replace(
+    /<a id="first-run-lite"[^>]*>[\s\S]*?<\/a>/,
+    '<!-- [chrome-ext build] removed the first-run Lite link (lite/ is not bundled) -->'
+  );
+
   // Match ONLY inline blocks: `<script>` with no attributes. `<script src=...>`
   // and `<script type="module" ...>` are left untouched (version.js + the main
   // module entry stay as external refs).

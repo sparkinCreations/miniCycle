@@ -86,6 +86,9 @@ When the full version can't boot, it redirects to lite with URL parameters expla
 | `fallback` | Feature gate flagged the device but its redirect didn't happen (only reachable if the gate block was altered) | 16 seconds |
 | `no-boot` | No boot activity detected at all | 16 seconds |
 | `choice-slow` | User tapped "Taking a while? Try the Lite version" on the first-run/loading screen | User-initiated |
+| `device-check` | After the full app has loaded, once per new version: `deviceDetection.shouldRedirectToLite()` finds an old browser or ≤ 2 CPU cores. Lite shows its default "redirected to Lite mode" notice | After boot |
+
+**No connection test (Oct 2026).** `shouldRedirectToLite()` used to treat a 2G/3G `navigator.connection.effectiveType` as a reason too. It runs after the full app has already loaded, so a slow connection had been paid for and Lite saved nothing — and a moment of weak signal after an update sent capable phones to Lite, whose data is separate, without a notice (that redirect carried no `mode=lite` until the same change). Slow or failing *starts* are covered by the rows above. The first-run link (`choice-slow`) is removed from the packaged builds (phone, desktop, extension), which do not bundle `lite/`.
 
 **Forced full.** `?mode=full` in the URL *or* `localStorage.miniCycleForceFullVersion === 'true'` (set by Lite's Menu → Try Full Version, whose return URL carries `force=1`, not `mode=full`) skips both the feature gate and the 16 s fallback. The 60 s load-timeout net ignores forcing on purpose — a boot that never finishes still lands in Lite. Until Sep 2026 the 16 s fallback read only the URL, so every Try-Full user on a gated browser was bounced back to Lite as `fallback` on every load.
 

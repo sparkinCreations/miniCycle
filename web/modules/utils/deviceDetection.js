@@ -111,14 +111,17 @@ export class DeviceDetectionManager {
       /safari\/[1-7]\./i.test(userAgent) ||
       /msie|trident/i.test(userAgent);
 
-    // ✅ Ensure boolean return values (Safari doesn't support these APIs)
+    // ✅ Ensure boolean return values (Safari doesn't support this API)
     const hasLowMemory = Boolean(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
-    const hasSlowConnection = Boolean(navigator.connection &&
-      (navigator.connection.effectiveType === 'slow-2g' ||
-       navigator.connection.effectiveType === '2g' ||
-       navigator.connection.effectiveType === '3g'));
 
-    return isOldDevice || hasLowMemory || hasSlowConnection;
+    // Deliberately NO connection test. This runs after the full app has
+    // already loaded (once per new version), so a slow connection has been
+    // paid for and Lite saves nothing — and a signal is a moment, not the
+    // device: one weak bar after an update sent capable phones to Lite, whose
+    // data is separate, so their routines looked gone. A slow or failing START
+    // is the inline fallbacks' job (miniCycle.html: feature gate, the 10 s
+    // "Taking a while?" link, the 16 s and 60 s nets, the boot-error screen).
+    return isOldDevice || hasLowMemory;
   }
 
   async performDetectionAndRouting(userAgent) {
@@ -172,6 +175,16 @@ export class DeviceDetectionManager {
     }
   }
 
+  /**
+   * Query parameters for the automatic move to Lite. `mode=lite` is what makes
+   * Lite say why you are there and that its data is separate — without it the
+   * move was silent, and people took their routines for lost.
+   * @returns {Object<string, string|number>}
+   */
+  liteRedirectParams() {
+    return { mode: 'lite', src: 'device-check', redirect: 'auto', v: this.currentVersion, t: Date.now() };
+  }
+
   redirectToLite() {
     // Suppress the whole flow on native and desktop — no "redirecting"
     // notification, no nav. Those shells always run the full app;
@@ -183,10 +196,7 @@ export class DeviceDetectionManager {
 
     this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
     setTimeout(() => {
-      goToLiteVersion({
-        params: { redirect: 'auto', v: this.currentVersion, t: Date.now() },
-        reason: 'device auto-redirect'
-      });
+      goToLiteVersion({ params: this.liteRedirectParams(), reason: 'device auto-redirect' });
     }, 1000);
   }
 

@@ -165,6 +165,29 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('REGRESSION: a slow connection alone never sends a device to Lite', () => {
+        // The check runs after the full app has loaded, once per new version: a
+        // weak signal then (3G, 2G) swapped a working app for Lite, whose data
+        // is separate. Slow STARTS are the inline fallbacks' job, not this one.
+        const original = Object.getOwnPropertyDescriptor(navigator, 'connection');
+        const manager = new DeviceDetectionManager();
+        try {
+            for (const effectiveType of ['3g', '2g', 'slow-2g']) {
+                Object.defineProperty(navigator, 'connection', { value: { effectiveType }, configurable: true });
+                if (manager.shouldRedirectToLite() !== false) throw new Error(`a ${effectiveType} connection sent this device to Lite`);
+            }
+        } finally {
+            if (original) Object.defineProperty(navigator, 'connection', original);
+            else delete navigator.connection;
+        }
+    });
+
+    await test('REGRESSION: the automatic move to Lite tells Lite why (mode=lite)', () => {
+        // Lite explains a redirect only when the URL carries mode=lite.
+        const params = new DeviceDetectionManager().liteRedirectParams();
+        if (params.mode !== 'lite' || params.src !== 'device-check') throw new Error(`params: ${JSON.stringify(params)}`);
+    });
+
     await test('checkManualOverride is async and returns boolean', async () => {
         module.setDeviceDetectionDependencies({ AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } }, appInit: { waitForCore: async () => {} } });
         const manager = new DeviceDetectionManager();

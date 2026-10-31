@@ -90,6 +90,42 @@ export async function runCoreBootTests(resultsDiv) {
     // ===== MODULE STRUCTURE TESTS =====
     resultsDiv.innerHTML += '<h4 class="test-section">📁 Module Structure</h4>';
 
+    // ===== STALE-CACHE BANNER =====
+    resultsDiv.innerHTML += '<h4 class="test-section">🧯 Stale-cache banner</h4>';
+
+    await test('REGRESSION: the stale-cache banner\'s Dismiss works under the app\'s script policy', async () => {
+        // The app allows inline scripts only by hash, which blocks inline
+        // onclick="" handlers — Dismiss did nothing. (This test page allows
+        // inline script, so it checks there is no inline handler at all.)
+        const { showStaleCacheBanner } = await loadCoreBoot();
+        document.getElementById('stale-cache-banner')?.remove();
+        showStaleCacheBanner();
+        const banner = document.getElementById('stale-cache-banner');
+        try {
+            if (!banner) throw new Error('banner not shown');
+            if ([banner, ...banner.querySelectorAll('*')].some(el => el.hasAttribute('onclick'))) throw new Error('inline onclick is back');
+            if (!/Update Available/.test(banner.textContent)) throw new Error('banner text is not the label text');
+            banner.querySelector('button').click();
+            if (document.getElementById('stale-cache-banner')) throw new Error('Dismiss did not remove the banner');
+        } finally {
+            document.getElementById('stale-cache-banner')?.remove();
+        }
+    });
+
+    await test('REGRESSION: an iPad in desktop mode gets iPad refresh instructions, not Cmd+Shift+R', async () => {
+        const { refreshInstructionsKey } = await loadCoreBoot();
+        const macUA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15';
+        const got = {
+            iPadDesktop: refreshInstructionsKey({ userAgent: macUA, maxTouchPoints: 5, platform: 'MacIntel' }),
+            mac: refreshInstructionsKey({ userAgent: macUA, maxTouchPoints: 0, platform: 'MacIntel' }),
+            iPhone: refreshInstructionsKey({ userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)', maxTouchPoints: 5 }),
+            android: refreshInstructionsKey({ userAgent: 'Mozilla/5.0 (Linux; Android 14; Pixel 8)', maxTouchPoints: 5 }),
+            windows: refreshInstructionsKey({ userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)', maxTouchPoints: 0, platform: 'Win32' })
+        };
+        const want = { iPadDesktop: 'boot.refreshIOS', mac: 'boot.refreshMac', iPhone: 'boot.refreshIOS', android: 'boot.refreshAndroid', windows: 'boot.refreshOther' };
+        if (JSON.stringify(got) !== JSON.stringify(want)) throw new Error(`got ${JSON.stringify(got)}`);
+    });
+
     await test('coreBoot.js file is accessible', async () => {
         const response = await fetch((globalThis.__MC_MODULE_MAP || {})['/modules/boot/coreBoot.js'] || '../modules/boot/coreBoot.js');
         if (!response.ok) {

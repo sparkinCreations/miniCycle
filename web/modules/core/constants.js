@@ -1501,6 +1501,7 @@ export const DOM_IDS = Object.freeze({
     AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
     FACTORY_RESET: 'factory-reset',
     DATA_CORRUPTION_MODAL: 'data-corruption-modal',   // appInit.showDataCorruptionRecovery
+    STALE_CACHE_BANNER: 'stale-cache-banner',         // coreBoot.showStaleCacheBanner
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',
     RECOVERY_DOWNLOAD_BACKUP: 'recovery-download-backup',
