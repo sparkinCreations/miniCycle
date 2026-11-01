@@ -139,12 +139,25 @@ function measurePhotoText() {
         ['footer copyright link', '#copyright a'],
         ['help-window line', '#help-window .help-window-body']
     ];
+    // In High Contrast the help window is an opaque light panel with dark text
+    // (accessibility.css, Nov 2026): that text is not on the photo at all, so it
+    // is judged as ordinary text on its panel instead of by the photo treatment.
+    const parse = (str) => { const m = String(str).match(/rgba?\(([^)]+)\)/); if (!m) return null; const [r, g, b, a = 1] = m[1].split(',').map(Number); return { r, g, b, a: isNaN(a) ? 1 : a }; };
+    const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+    const ratio = (a, b) => { const la = lum(a), lb = lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
     const out = [];
     for (const [name, sel] of targets) {
         const el = document.querySelector(sel);
         if (!el || !el.getClientRects().length) continue;
         const cs = getComputedStyle(el);
-        out.push({ name, color: cs.color, opacity: cs.opacity, shadow: cs.textShadow, ring: ring.length > 0 });
+        let panel = null;
+        for (let w = el; w && w !== body; w = w.parentElement) {
+            const c = parse(getComputedStyle(w).backgroundColor);
+            if (c && c.a >= 0.9) { panel = c; break; }
+        }
+        const fg = parse(cs.color);
+        out.push({ name, color: cs.color, opacity: cs.opacity, shadow: cs.textShadow, ring: ring.length > 0,
+            panelRatio: panel && fg ? ratio(fg, panel) : null });
     }
     if (!hadPhoto) {
         body.classList.remove('has-bg-image', 'bg-mode-cover');
@@ -225,6 +238,103 @@ function measureHandChecks(opts) {
     return out;
 }
 
+// Runs in the page. Text and controls on the translucent ("glass") surfaces,
+// composited the way the screen paints them: each ancestor's background layer
+// over every stop of the page's painted gradient, worst stop wins. axe reports
+// all of these as "incomplete" (it cannot resolve a translucent background),
+// which is how light High Contrast shipped them at 1.4-2.9:1 until Nov 2026.
+// targets: [{ name, sel, pseudo?, min }]
+function measureGlass(targets) {
+    const parse = (str) => {
+        const m = String(str).match(/rgba?\(([^)]+)\)/);
+        if (m) { const [r, g, b, a = 1] = m[1].split(',').map(Number); return { r, g, b, a: isNaN(a) ? 1 : a }; }
+        const h = String(str).trim().replace('#', '');
+        if (/^[0-9a-f]{6}$/i.test(h)) return { r: parseInt(h.slice(0, 2), 16), g: parseInt(h.slice(2, 4), 16), b: parseInt(h.slice(4, 6), 16), a: 1 };
+        return null;
+    };
+    const over = (fg, bg) => ({ r: fg.r * fg.a + bg.r * (1 - fg.a), g: fg.g * fg.a + bg.g * (1 - fg.a), b: fg.b * fg.a + bg.b * (1 - fg.a), a: 1 });
+    const lum = (c) => { const f = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }; return 0.2126 * f(c.r) + 0.7152 * f(c.g) + 0.0722 * f(c.b); };
+    const ratio = (a, b) => { const la = lum(a), lb = lum(b); return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05); };
+    const WHITE = { r: 255, g: 255, b: 255, a: 1 };
+    const bodyStyle = getComputedStyle(document.body);
+    const painted = bodyStyle.backgroundImage;
+    const stops = /gradient/.test(painted)
+        ? [...painted.matchAll(/#[0-9a-f]{6}|rgba?\([^)]+\)/gi)].map(m => parse(m[0])).filter(Boolean)
+        : [parse(bodyStyle.backgroundColor) || WHITE];
+    const out = [];
+    for (const t of targets) {
+        const el = document.querySelector(t.sel);
+        if (!el || !el.getClientRects().length || !el.checkVisibility()) continue;
+        const cs = getComputedStyle(el, t.pseudo || null);
+        if (t.pseudo && (!cs.content || cs.content === 'none')) continue;
+        // Background layers, innermost first; an opaque one ends the walk.
+        const layers = [];
+        const own = parse(cs.backgroundColor);
+        if (t.pseudo && own && own.a > 0) layers.push(own);
+        // A pseudo-element caption is drawn outside its element's box (the
+        // Focus View action caption sits under the circle), so its element's
+        // own fill is not behind it: start at the parent.
+        for (let w = t.pseudo ? el.parentElement : el; w && w !== document.body && w !== document.documentElement; w = w.parentElement) {
+            const c = parse(getComputedStyle(w).backgroundColor);
+            if (c && c.a > 0) { layers.push(c); if (c.a >= 0.95) break; }
+        }
+        let opacity = 1;
+        for (let w = el; w && w !== document.body; w = w.parentElement) opacity *= parseFloat(getComputedStyle(w).opacity) || 1;
+        const fg = parse(cs.color) || WHITE;
+        fg.a *= opacity;
+        let worst = Infinity;
+        for (const stop of stops) {
+            let base = over(stop, WHITE);
+            for (let i = layers.length - 1; i >= 0; i--) base = over(layers[i], base);
+            worst = Math.min(worst, ratio(over(fg, base), base));
+        }
+        out.push({ name: t.name, ratio: worst, min: t.min });
+    }
+    return out;
+}
+
+// Runs in the page. The priority edge of a flagged task: until Nov 2026 High
+// Contrast's 2px task outline out-ranked .high-priority's coloured left edge, so
+// a flagged task looked like every other one (measured `2px solid #333`). Flags
+// the first rendered task for the measurement and restores it.
+function measurePriorityEdge() {
+    const row = document.querySelector('#taskList .task');
+    if (!row) return null;
+    const had = row.classList.contains('high-priority');
+    const prev = row.style.getPropertyValue('--task-priority-color');
+    row.classList.add('high-priority');
+    row.style.setProperty('--task-priority-color', '#dc3545');
+    const plain = document.querySelector('#taskList .task:not(.high-priority)');
+    const cs = getComputedStyle(row);
+    const result = {
+        width: parseFloat(cs.borderLeftWidth),
+        color: cs.borderLeftColor,
+        plainWidth: plain ? parseFloat(getComputedStyle(plain).borderLeftWidth) : 0,
+        plainColor: plain ? getComputedStyle(plain).borderLeftColor : null
+    };
+    if (!had) row.classList.remove('high-priority');
+    if (prev) row.style.setProperty('--task-priority-color', prev); else row.style.removeProperty('--task-priority-color');
+    return result;
+}
+
+// The glass surfaces checked per view. Gated in High Contrast only: outside it
+// the glass look is a design choice (the default theme's status bubble sits
+// near 2:1 by design), and that is not what this asserts.
+const GLASS_TARGETS = [
+    { name: 'status bubble text', sel: '#help-window p', min: 4.5 },
+    { name: 'Recently Used title', sel: '#quick-actions-window .quick-actions-title', min: 4.5 },
+    { name: 'Complete / Clear button text', sel: '#completeAll', min: 4.5 },
+    { name: 'Focus View button (icon)', sel: '#focus-mode-btn', min: 3 },
+    { name: 'Focus View ⋯ button (icon)', sel: '#focus-mode-menu-btn', min: 3 },
+    { name: 'Focus View action caption', sel: '#focus-action-btn', pseudo: '::after', min: 4.5 },
+    { name: 'routine title', sel: '#mini-cycle-title', min: 4.5 }
+];
+const BANNER_TARGETS = [
+    { name: 'onboarding banner title', sel: '#first-run-welcome .first-run-welcome__title', min: 4.5 },
+    { name: 'onboarding banner text', sel: '#first-run-welcome .first-run-welcome__message', min: 4.5 },
+    { name: 'onboarding banner Skip', sel: '#first-run-welcome-dismiss', min: 4.5 }
+];
+
 async function run() {
     console.log(`${colors.blue}${'='.repeat(64)}${colors.reset}`);
     console.log(`${colors.blue}🎨 miniCycle Colour-Contrast Check (axe color-contrast)${colors.reset}`);
@@ -272,6 +382,26 @@ async function run() {
                         else { console.log(`   ${colors.red}❌ ${label.trim()} ${line}${colors.reset}`); serious.push(`${label.trim()}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
                     }
                 }
+                // High Contrast: the glass surfaces must be readable, and a flagged
+                // task must keep its priority edge (every theme).
+                {
+                    const hc = theme.classes.includes('high-contrast');
+                    const checks = hc ? (await page.evaluate(measureGlass, GLASS_TARGETS)).filter(m => !handReported.has(m.name)) : [];
+                    const edge = handReported.has('priority edge') ? null : await page.evaluate(measurePriorityEdge);
+                    if (edge) {
+                        handReported.add('priority edge');
+                        const visible = edge.width >= 4 && edge.color !== edge.plainColor && edge.width > edge.plainWidth;
+                        const line = `priority edge on a flagged task: ${edge.width}px ${edge.color} (plain task: ${edge.plainWidth}px ${edge.plainColor})`;
+                        if (visible) console.log(`   ${colors.green}✅${colors.reset} ${label.trim()} ${colors.gray}${line}${colors.reset}`);
+                        else { console.log(`   ${colors.red}❌ ${label.trim()} ${line} — the flag is invisible${colors.reset}`); serious.push(`${label.trim()}: ${line}`); }
+                    }
+                    for (const m of checks) {
+                        handReported.add(m.name);
+                        const line = `${m.name}: ${m.ratio.toFixed(2)}:1 over every gradient stop (min ${m.min}:1)`;
+                        if (m.ratio >= m.min) console.log(`   ${colors.green}✅${colors.reset} ${label.trim()} ${colors.gray}${line}${colors.reset}`);
+                        else { console.log(`   ${colors.red}❌ ${label.trim()} ${line}${colors.reset}`); serious.push(`${label.trim()}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
+                    }
+                }
                 const results = await new AxeBuilder({ page }).withRules(['color-contrast']).analyze();
                 const violations = results.violations.flatMap(v => v.nodes.map(n => ({ impact: n.impact || v.impact, target: n.target.join(' '), summary: (n.failureSummary || '').split('\n').find(l => /contrast/.test(l)) || '' })));
                 const incomplete = results.incomplete.reduce((n, r) => n + r.nodes.length, 0);
@@ -286,6 +416,41 @@ async function run() {
                 }
             }
         }
+        // High Contrast onboarding banner: the boot above strips it, so bring it
+        // back the way a user does (Welcome Screen → "How cycles work", from a
+        // real Focus View) and measure it composited over the gradient.
+        for (const theme of THEMES.filter(t => t.classes.includes('high-contrast'))) {
+            await page.evaluate((viewOff) => document.body.classList.remove(...viewOff), allViewClasses);
+            await applyThemeState(page, theme);
+            const label = `${theme.name} / onboarding banner`;
+            try {
+                await page.evaluate(() => document.getElementById('focus-mode-btn')?.click());
+                await page.waitForFunction(() => document.body.classList.contains('focus-mode'), null, { timeout: 5000 });
+                await page.evaluate(() => document.getElementById('menu-open-title-screen')?.click());
+                await page.waitForSelector('#title-screen-how-cycles-work', { timeout: 5000 });
+                await page.evaluate(() => document.getElementById('title-screen-how-cycles-work').click());
+                await page.waitForSelector('#first-run-welcome.first-run-welcome--visible', { timeout: 8000 });
+                await page.waitForFunction(() => !document.getElementById('first-run-splash'), null, { timeout: 12000 });
+                await page.waitForTimeout(400);
+                const checks = await page.evaluate(measureGlass, BANNER_TARGETS);
+                if (checks.length !== BANNER_TARGETS.length) throw new Error(`measured ${checks.length} of ${BANNER_TARGETS.length} banner parts`);
+                for (const m of checks) {
+                    const line = `${m.name}: ${m.ratio.toFixed(2)}:1 over every gradient stop (min ${m.min}:1)`;
+                    if (m.ratio >= m.min) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
+                    else { console.log(`   ${colors.red}❌ ${label} ${line}${colors.reset}`); serious.push(`${label}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
+                }
+            } catch (e) {
+                console.log(`   ${colors.red}❌ ${label} could not be measured: ${e.message}${colors.reset}`);
+                serious.push(`${label}: not measured (${e.message})`);
+            } finally {
+                await page.evaluate(() => {
+                    document.getElementById('first-run-welcome-dismiss')?.click();
+                    if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click();
+                });
+                await page.waitForTimeout(900);
+            }
+        }
+
         // Phone pass: the footer layout changes below 768px (only the copyright
         // line shows), so measure the same text at a phone width.
         await page.setViewportSize({ width: 390, height: 844 });
@@ -320,7 +485,9 @@ async function run() {
                     const ringed = m.ring && m.shadow !== 'none' && m.shadow.includes('rgba(0, 0, 0');
                     const solid = m.opacity === '1';
                     const line = `${m.name}: colour ${m.color}, opacity ${m.opacity}, text-shadow ${m.shadow === 'none' ? 'none' : 'set'}`;
-                    if (white && ringed && solid) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
+                    if (m.panelRatio !== null && m.panelRatio >= 4.5) {
+                        console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${m.name}: on its own opaque panel, ${m.panelRatio.toFixed(2)}:1${colors.reset}`);
+                    } else if (white && ringed && solid) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
                     else {
                         console.log(`   ${colors.red}❌ ${label} ${line} — text on a photo must be white with the --text-shadow-photo ring${colors.reset}`);
                         serious.push(`${label}: ${m.name} lost the photo treatment (${line})`);
