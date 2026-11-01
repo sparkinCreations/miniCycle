@@ -263,8 +263,8 @@ body.hide-help-window .help-window {
     margin: 0;
     line-height: 1.4;
     /* Constrain the paragraph to the help-window's content width so the
-       nowrap preamble + CTA spans actually break between each other
-       instead of overflowing the box. Without this, the flex parent
+       preamble and the CTA unit (.help-window-cta) actually break between
+       each other instead of overflowing the box. Without this, the flex parent
        (align-items: center) lets the p grow to its content width. */
     max-width: 100%;
 }
@@ -279,9 +279,16 @@ body.hide-help-window .help-window {
    at a larger Font Size) has no break opportunity at all and runs past
    the box (reported Oct 2026). Left free to wrap, it still breaks at the
    bullet whenever it fits on its own, because the unbreakable CTA forces
-   the same split. */
+   the same split.
+   The CTA is an inline-BLOCK, not nowrap text: an inline-block is one unit
+   for line breaking, so it still drops to line 2 whole at the bullet, but
+   capped at the box's width it can wrap INSIDE itself when the phrase alone
+   is wider than the column. Plain nowrap had no break at all there, and
+   "• Clear your first completed task!" (To-Do mode, ~245px) ran out of the
+   230px Focus View side box (reported Nov 2026). */
 .help-window-cta {
-    white-space: nowrap;
+    display: inline-block;
+    max-width: 100%;
 }
 
 /* =============================================================================
