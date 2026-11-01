@@ -28,6 +28,17 @@ export function prefersReducedMotion() {
 }
 
 /**
+ * The `behavior` for scrollIntoView / scrollTo: 'smooth' unless either source
+ * asks for less motion. CSS cannot stop a scroll a script asked to be smooth,
+ * so three scrolls (menu sections, a new task, a "Recently used" chip) kept
+ * gliding under Reduce Motion until Oct 2026.
+ * @returns {'auto'|'smooth'}
+ */
+export function scrollBehavior() {
+    return prefersReducedMotion() ? 'auto' : 'smooth';
+}
+
+/**
  * How long the CSS animation currently applied to an element runs, in ms,
  * including its delay. Reads the COMPUTED value, so it is 0 whenever the motion
  * tokens are zeroed (OS preference or the app's Reduced Motion setting) and it

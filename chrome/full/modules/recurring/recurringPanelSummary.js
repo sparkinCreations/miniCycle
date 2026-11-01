@@ -12,11 +12,27 @@
  */
 
 import { getLabel } from '../labels/labelResolver.js';
-import { parseDateAsLocal } from './recurringDateUtils.js';
+import { getDaysBetween, parseDateAsLocal } from './recurringDateUtils.js';
 
 // ============================================================================
 // SUMMARY TEXT GENERATION
 // ============================================================================
+
+/**
+ * Which week of a biweekly pattern today falls in: 1 or 2. Week 1 starts on
+ * the task's start date (`biweekly.referenceDate`) and the two alternate in
+ * seven-day blocks, the same count the scheduler uses. Settings not yet saved
+ * have no start date; saving gives them today, so today is Week 1.
+ * @param {string|null|undefined} referenceDate
+ * @param {Date} [now]
+ * @returns {1|2}
+ */
+export function currentBiweeklyWeek(referenceDate, now = new Date()) {
+    const start = referenceDate ? new Date(referenceDate) : null;
+    if (!start || Number.isNaN(start.getTime())) return 1;
+    const weeks = Math.floor(getDaysBetween(start, now) / 7);
+    return ((weeks % 2) + 2) % 2 === 0 ? 1 : 2;
+}
 
 /**
  * Build recurring summary text from settings
@@ -106,9 +122,15 @@ export function buildRecurringSummaryFromSettings(settings = {}) {
         const week2Days = settings.biweekly?.week2 || [];
 
         if (week1Days.length || week2Days.length) {
-            const parts = [];
-            if (week1Days.length) parts.push(getLabel('recurring.summaryWeek1', { vars: { days: week1Days.join(", ") } }));
-            if (week2Days.length) parts.push(getLabel('recurring.summaryWeek2', { vars: { days: week2Days.join(", ") } }));
+            // Say which of the two weeks this is — nothing else tells the user,
+            // and "Week 1" is counted from the day the task was set up.
+            const thisWeek = currentBiweeklyWeek(settings.biweekly?.referenceDate);
+            const weekPart = (week, days) => {
+                if (!days.length && week !== thisWeek) return null;
+                const list = days.length ? days.join(", ") : getLabel('recurring.summaryNoDays');
+                return getLabel(week === thisWeek ? 'recurring.summaryWeekThis' : 'recurring.summaryWeekN', { vars: { week, days: list } });
+            };
+            const parts = [weekPart(1, week1Days), weekPart(2, week2Days)].filter(Boolean);
             summaryText += ` ${getLabel('recurring.summaryOnDays', { vars: { days: parts.join(" | ") } })}`;
         }
     }

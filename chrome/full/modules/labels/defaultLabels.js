@@ -213,13 +213,20 @@ export const DEFAULT_LABELS = deepFreeze({
         createMenu:      'New',
         download:        'Download',
         downloadTitle:   'Download the current routine as a file',
-        open:            'Open',
-        openTitle:       'Open an existing routine',
+        // The menu's routine button names the view Settings chose (Behavior →
+        // "When you open routines, show"); one word each, to fit a menu cell.
+        menuSwitch:      'Switch',
+        menuBrowse:      'Browse',
+        switchTitle:     'Switch routines',
         import:          'Import',
         importTitle:     'Import a routine from a file',
         duplicate:       'Duplicate',
         duplicateTitle:  'Duplicate the current routine',
         switchAria:      'Switch routine',
+        browseAria:      'Browse routines',   // the same button when Settings → routines open in Browse
+        browseShort:     'Routines',          // its visible text in Browse, beside the icon (the name above contains it)
+        expandList:      'Expand the routine list',
+        collapseList:    'Collapse the routine list',
         untitled:        'Untitled Routine',
         untitledCycle:   'Untitled Cycle',
         noSelected:      'No Routine Selected'
@@ -254,7 +261,7 @@ export const DEFAULT_LABELS = deepFreeze({
         sortAlphaTitle:     'Sort alphabetically',
         sortZA:             'Z-A',
         sortRecent:         'Recent',
-        sortRecentTitle:    'Sort by recently modified',
+        sortRecentTitle:    'Sort by recently used',
         sortOldest:         'Oldest',
         sortSize:           'Size',
         sortSizeTitle:      'Sort by file size',
@@ -456,6 +463,7 @@ export const DEFAULT_LABELS = deepFreeze({
         routineDuplicated:      'Duplicated as "{name}"',
         routineRenamed:         'Renamed to "{name}"',
         routineSwitched:        'Switched to "{name}"',
+        onlyOneRoutineToStep:   'Only one routine so far: create another to switch between them',
 
         // Recurring notifications
         recurringDisabled:      'Recurring disabled for this task',
@@ -735,6 +743,8 @@ export const DEFAULT_LABELS = deepFreeze({
         // Storage holds a document from a NEWER app version; this build refuses to
         // adopt or overwrite it. {version} is the stored schemaVersion.
         dataFromNewerVersion:    'Your data was saved by a newer version of miniCycle (data version {version}). Changes are not being saved. Reload to update the app.',
+        damagedDataHeld:         'Your saved data was damaged, and storage was too full to keep a copy before repairing it. Changes are not being saved until you save a copy of the damaged data.',
+        damagedDataSaved:        'Copy saved. Your changes are being saved again.',
         multiTabConflict:        'Data updated from another tab. Your unsaved changes were overwritten.',
         dataClearedElsewhere:    'All data was cleared in another tab. Refresh this tab to continue.',
         stateUpdateFailed:       'State update failed',
@@ -1014,6 +1024,15 @@ export const DEFAULT_LABELS = deepFreeze({
         removeRecurringConfirm: 'Remove',
         liteVersionTitle:   'Switch to Lite Version',
         liteVersionConfirm: 'Try Lite Version',
+        // Start-up screen for saved data that could not be read at all (appInit).
+        corruptionTitle:        'Your saved data could not be read',
+        corruptionMessage:      'miniCycle found your saved data damaged and could not repair it. You can start fresh or load the sample routine.',
+        corruptionCopyKept:     'A copy of the damaged data has been kept on this device, so starting over does not lose it. You can also download it.',
+        corruptionDownloadFirst: 'There was no room on this device to keep a copy of the damaged data. Download it first — starting over replaces it.',
+        corruptionPreview:      'Starts with: {preview}',
+        corruptionStartFresh:   'Start Fresh',
+        corruptionLoadSample:   'Load Sample Routine',
+        corruptionDownload:     'Download the Damaged Data',
         newerDataTitle:     'Saved by a Newer Version',
         newerDataMessage:   'Your routines were saved by a newer version of miniCycle (data version {version}), which this version of the app cannot read yet.\n\nNothing has been changed. Reload to update the app and pick up where you left off.',
         liteVersionCancel:  'Stay Here',
@@ -1284,8 +1303,9 @@ export const DEFAULT_LABELS = deepFreeze({
         summaryAtTime:        'at {time}',
         summaryAtMinute:      'at the :{minute} minute',
         summaryOnDays:        'on {days}',
-        summaryWeek1:         'Week 1: {days}',
-        summaryWeek2:         'Week 2: {days}',
+        summaryWeekN:         'Week {week}: {days}',
+        summaryWeekThis:      'Week {week} (this week): {days}',
+        summaryNoDays:        'no days',
         summaryOnOrdinalDay:  'on {ordinal} {day}',
         summaryDayCount:      { one: 'day', other: 'days' },
         summaryTimeCount:     { one: 'time', other: 'times' },
@@ -1460,6 +1480,7 @@ export const DEFAULT_LABELS = deepFreeze({
         autoBackupKindFile:     'Backup file in {folder}',
         autoBackupFileMeta:     '{date} · {size} KB',
         autoBackupsFolderNote:  'A backup file is also written once a day to {folder} on this device. Those files stay even if the app is removed or its storage is cleared, and nothing leaves the device.',
+        autoBackupsFolderNoteIos: 'A backup file is also written once a day to {folder}, which you can open in the Files app. Those files stay if the app\'s storage is cleared but are removed with the app, and nothing leaves the device.',
         autoBackupMeta:         '{date} · {count} {routines} · {size} KB',
         autoBackupRestore:      'Restore',
         autoBackupRestoreAria:  'Restore the automatic backup from {date}',
@@ -1487,11 +1508,19 @@ export const DEFAULT_LABELS = deepFreeze({
         fontSizeDefault:      'Default',
         fontSizeLarge:        'Large',
         fontSizeExtraLarge:   'Extra Large',
+        // Which view the routine button (and every other way to open routines)
+        // shows. New users get Browse when touch is their main input, the List
+        // otherwise (createInitialSchemaData); everyone else keeps the List.
+        routineOpenView:      'When you open routines, show',
+        routineOpenViewDesc:  'The list for searching and managing routines, or Browse to flip through them one at a time. The other is always one tap away.',
+        routineOpenViewList:  'List',
+        routineOpenViewBrowse: 'Browse',
         showHelpWindow:       'Show Help Window',
         showQuickActions:     'Show Quick Actions',
         oneSectionAtATime:    'Open one menu section at a time',
         addRemoveTaskButtons: 'Add or Remove Task Buttons',
         enableNotifications:  'Enable Notifications',
+        singleKeyShortcuts:   'Single-key shortcuts',
         clearUndoHistory:     'Clear Undo History',
         // One line under each control in Settings, saying what it does (and, for
         // the resets, whether it can be undone). Oct 2026: there were none.
@@ -1505,6 +1534,7 @@ export const DEFAULT_LABELS = deepFreeze({
         scrollToNewDesc:        'After you add a task, the list scrolls to show it.',
         scrollToLastDesc:       'Opening a routine scrolls its list to the last task.',
         enableNotificationsDesc: 'The short messages that confirm what you did. Error messages always show.',
+        singleKeyShortcutsDesc: 'When you are not typing: M menu, S Settings, [ ] previous or next routine, ? shortcut list. Off by default because screen readers and voice control use single keys.',
         resetOnboardingDesc:    'Shows the welcome screens again the next time you open the app.',
         tourPromptsDesc:        'Offers a short tour the first time you open each feature.',
         resetNotifPositionDesc: 'Moves notifications back to their usual place if you dragged them.',
@@ -1538,7 +1568,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'Minimize distractions — Focus View hides everything except your tasks.',
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
         step4:           'Customize colors, backgrounds, and themes here. The 🌙 moon button on the opposite side switches light and dark mode.',
-        step5:           'Switch between your routines — each has its own tasks and cycle count.',
+        step5:           'Switch between your routines — each has its own tasks and cycle count. Settings → Behavior chooses whether this opens the list or Browse, to flip through them one at a time.',
         step6:           'Everything else lives in this menu. Want prompts like this for other features? Turn on Enable Tour Prompts under Help & Support.',
         complete:        'You\'re all set! Enjoy building your routines.',
         retakeTour:      'Enable Tour Prompts',
@@ -1562,7 +1592,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step2:           'View a timeline of completed cycles and cleared tasks.',
         step3:           'Track your achievement badges and milestones as you build consistency.',
         step4:           'Your total cycles across all routines and progress toward the next milestone.',
-        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Click and drag right to return to your tasks.' }
+        complete:        { touch: 'That\'s your Stats Panel! Swipe right or tap the arrow to return to your tasks.', pointer: 'That\'s your Stats Panel! Drag right or press Shift+← to return to your tasks.' }
     },
 
     prefsTour: {
@@ -1610,11 +1640,26 @@ export const DEFAULT_LABELS = deepFreeze({
     routineSwitcherTour: {
         welcomeMessage:  'First time here? Take a quick tour of the routine switcher!',
         startButton:     'Start Tour',
-        step1:           { touch: 'Browse all your saved routines here — tap one to select it.', pointer: 'Browse all your saved routines here — click one to select it.' },
+        // Not "Browse": that is now the name of the other view (stepBrowse).
+        step1:           { touch: 'All your saved routines are here — tap one to select it.', pointer: 'All your saved routines are here — click one to select it.' },
         step2:           'Search by name to quickly find a routine.',
         step3:           'Duplicate, rename, delete, or download the selected routine.',
         step4:           'Import a routine file or open the selected routine.',
+        stepExpand:      { touch: 'Expand the list for more room. Tap a routine to select it and shrink the list again.', pointer: 'Expand the list for more room. Click a routine to select it and shrink the list again.' },
+        stepBrowse:      'Prefer to see your routines? Browse shows them one at a time, full screen, each in its own colours.',
         complete:        { touch: 'You\'re all set! Select a routine and tap Open to switch.', pointer: 'You\'re all set! Select a routine and click Open to switch.' }
+    },
+
+    // Browse Routines (routineBrowser.js) — optional, like every tour: offered
+    // only once Enable Tour Prompts is on.
+    routineBrowserTour: {
+        welcomeMessage:  'First time in Browse? Take a quick tour!',
+        startButton:     'Start Tour',
+        step1:           { touch: 'Swipe, or tap ‹ ›, to see the next routine. Tap the one in front to open it.', pointer: 'Drag, scroll, or use ‹ › or the arrow keys to see the next routine. Click the one in front, or press Enter, to open it.' },
+        step2:           { touch: 'Cards or Grid. In the Grid, tap a routine to see it, then tap it again to open it.', pointer: 'Cards or Grid. In the Grid, click a routine to see it, then click it again to open it.' },
+        step3:           'Order by Recent or A-Z, or search by name with the magnifier.',
+        step4:           'Back to the list, which is where you rename, duplicate or delete routines.',
+        complete:        { touch: 'You\'re all set! Find a routine and tap Open.', pointer: 'You\'re all set! Find a routine and click Open.' }
     },
 
     recurringListTour: {
@@ -1710,6 +1755,7 @@ export const DEFAULT_LABELS = deepFreeze({
         import:     'Import',
         create:     'Create',
         reload:     'Reload',
+        saveCopy:   'Save a copy',
         enable:     'Enable',
         loadSample: 'Load Sample',
         back:       'Back'
@@ -1806,6 +1852,7 @@ export const DEFAULT_LABELS = deepFreeze({
         menuTitle:      'Focus View actions',
         menuAria:       'Open Focus View actions menu',
         switchRoutines: 'Switch routines',
+        browseRoutines: 'Browse routines',
         createRoutine:  'Create new routine',
         toggleInputBar: 'Show/hide input bar',
         toggleDarkMode: 'Toggle dark mode',
@@ -1814,6 +1861,10 @@ export const DEFAULT_LABELS = deepFreeze({
         welcomeScreen:  'Welcome Screen',
         settings:       'Settings',
         exitItem:       'Exit Focus View',
+        keyboardShortcuts: 'Keyboard Shortcuts',
+        // A single Escape in Focus View no longer leaves it (a stray press changed
+        // the remembered view); the first press says how, the second leaves.
+        escapeAgainToExit: 'Press Escape again to leave Focus View',
         modeItemPrefix: 'Mode',
         modeAutoName:   'Auto Cycle',
         modeManualName: 'Manual Cycle',
@@ -1847,6 +1898,72 @@ export const DEFAULT_LABELS = deepFreeze({
     // The default home of the app — paired with Focus View. Use these
     // strings whenever copy needs to point at the non-focus state by name.
     // ========================================================================
+
+    // Browse Routines (routine/routineBrowser.js): one routine at a time, read-only,
+    // in its own theme colours, flipped with arrows / keys / swipe / wheel.
+    routineBrowser: {
+        title:          'Browse Routines',
+        closeAria:      'Close Browse Routines',
+        toList:         'List',      // the setting's word for the other view; "Open Routine" read as a second Open button
+        toListAria:     'Show the routine list',
+        fromListBtn:    'Browse',
+        fromListAria:   'Browse routines one at a time',
+        sortAria:       'Order',
+        sortAlpha:      'A-Z',
+        sortRecent:     'Recent',
+        searchAria:     'Search routines',
+        searchClose:    'Close search',
+        matchPosition:  '{position} of {total} matches',
+        onlyMatch:      'The only match',
+        noMatches:      'No routines match',
+        layoutAria:     'Layout',
+        layoutCards:    'Cards',
+        layoutGrid:     'Grid',
+        gridAria:       'Routines',
+        tileAria:       '{name}, {mode}',
+        moreTasks:      '+{count} more',
+        prev:           'Previous routine',
+        next:           'Next routine',
+        open:           'Open',
+        openAria:       'Open {name}',
+        cardAria:       'Preview of {name}',
+        current:        'Current',
+        noTasks:        'No tasks yet',
+        position:       '{position} of {total} routines',
+        onlyOne:        'Only one routine, nothing to switch to yet',
+        storageLine:    '{size} · {used} of {total} used',
+        createAnother:  'Create another routine',
+        lastUsed:       'Last used {date}',
+        announce:       '{name}, {mode}, {position} of {total}',
+    },
+
+    // Keyboard Shortcuts dialog (main menu → Help & Support, Focus View's ⋯
+    // menu, Alt+?): five keys for the view you are in, built from
+    // KEYBOARD_SHORTCUTS in modalManager, and a link to the user manual's
+    // complete list (kept in step with KEYBOARD_SHORTCUTS by a journey).
+    shortcuts: {
+        menuItem:      'Keyboard Shortcuts',
+        menuItemTitle: 'The keyboard shortcuts to start with, and where to find the rest',
+        title:         'Keyboard Shortcuts',
+        closeAria:     'Close keyboard shortcuts',
+        intro:         'You don\'t need any of these: everything works by tapping or clicking too. They just make it faster.',
+        groupStart:    'Start with these',
+        allInManual:   'Every shortcut is in the User Manual',
+        singleKeysOff: 'Prefer single keys, like M for the menu? Turn them on in Settings → Behavior.',
+        showList:      'Show this list',
+        newRoutine:    'Create a new routine',
+        openRoutine:   'Open routines (the list or Browse)',
+        focusView:     'Focus View on or off',
+        moveBetween:   'Move between tasks',
+        toggleTask:    'Check or uncheck the selected task',
+        switchViews:   'Switch views (Task, Routine, Stats)',
+        leaveFocus:    'Leave Focus View (press twice)',
+        keyEscape:     'Esc',
+        keySpace:      'Space',
+        keyAlt:        'Alt',
+        keyOption:     'Option',
+        keyShift:      'Shift',
+    },
 
     homeView: {
         name:                     'Home View',
@@ -1933,7 +2050,10 @@ export const DEFAULT_LABELS = deepFreeze({
         titleCelebration:    'First Cycle Complete!',
         // To-Do mode never counts a cycle; its first success is a clear.
         titleCelebrationTodo: 'First Clear Complete!',
-        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Click and drag tasks to rearrange.|Click and drag left for stats and achievements 📊' },
+        // The pointer variant is what keyboard users see too, so it names their
+        // way in: Alt+arrow reordering (dragDropManager.handleReorderKeydown) and
+        // Shift+→, which gesturePanelManager maps to the next panel (review, Oct 2026).
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange, or press Alt+↑ / Alt+↓ on a task.|Drag left or press Shift+→ for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
@@ -1946,9 +2066,13 @@ export const DEFAULT_LABELS = deepFreeze({
         cycleDemoAria:        'Demonstration: three tasks get completed and the cycle counter advances each time.',
         dismiss:           'Skip',
         dismissAria:       'Skip welcome',
-        // The same corner button on the LAST slide: nothing is left to skip.
+        // The same corner button from "Try it yourself" on: nothing is left to skip.
         dismissDone:       'Done',
         dismissDoneAria:   'Done with welcome',
+        // Shown once, after Skip, to a user who skipped before the slide that
+        // explains Focus View. The button described is the exit control under
+        // the routine list (same description as focusMode.exitMovedNotice).
+        skippedInFocusView: 'You\'re in {focusName}, which shows just your tasks. To open {homeName}, use the button with inward-pointing brackets just under your list.',
         pauseAria:         'Pause welcome slides',
         playAria:          'Resume welcome slides',
         replayAria:        'Replay welcome slides',
@@ -1964,6 +2088,7 @@ export const DEFAULT_LABELS = deepFreeze({
     quickAction: {
         stats:          'Stats',
         openRoutine:    'Open Routine',
+        browseRoutines: 'Browse Routines',   // the same action when Settings → routines open in Browse
         recurring:      'Recurring',
         reminders:      'Reminders',
         settings:       'Settings',
@@ -2511,8 +2636,12 @@ export const DEFAULT_LABELS = deepFreeze({
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
         tasksCleared: 'Tasks cleared',
-        taskMovedUp: 'Task moved up',
-        taskMovedDown: 'Task moved down',
+        // Spoken after a ▲▼ or Alt+arrow move: the name and the new place among
+        // the rows on screen ("moved up" alone left the user to guess where).
+        taskMovedTo: 'Moved {name} to position {position} of {total}',
+        taskMoveAtTop: '{name} is already at the top',
+        taskMoveAtBottom: '{name} is already at the bottom',
+        taskMoveCompletedLocked: 'Completed tasks in the dropdown keep their order and cannot be moved',
         editRoutineName: 'Edit routine name',
         editPresetName: 'Edit preset name',
         taskAdded: 'Task added: {name}',
@@ -2730,10 +2859,12 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'routine.create',
     'routine.createTitle',
     'routine.downloadTitle',
-    'routine.openTitle',
+    'routine.switchTitle',
     'routine.importTitle',
     'routine.duplicateTitle',
     'routine.switchAria',
+    'routine.browseAria',
+    'routine.browseShort',
     'routine.untitled',
     'routine.duplicate',
 
@@ -3023,8 +3154,10 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'accessibility.taskUncompleted',
     'accessibility.cycleCompleted',
     'accessibility.tasksCleared',
-    'accessibility.taskMovedUp',
-    'accessibility.taskMovedDown',
+    'accessibility.taskMovedTo',
+    'accessibility.taskMoveAtTop',
+    'accessibility.taskMoveAtBottom',
+    'accessibility.taskMoveCompletedLocked',
     'accessibility.editRoutineName',
     'accessibility.editPresetName',
     'accessibility.taskAdded',

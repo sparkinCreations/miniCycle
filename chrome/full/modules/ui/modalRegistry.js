@@ -62,6 +62,7 @@ export const MODAL_DEFS = {
     // ---- Static modals (pre-existing in HTML, safe to cache) ----
     feedback:           { method: 'id', key: DOM_IDS.FEEDBACK_MODAL, closeMethod: 'close' },
     about:              { method: 'id', key: DOM_IDS.ABOUT_MODAL, closeMethod: 'close' },
+    shortcuts:          { method: 'id', key: DOM_IDS.SHORTCUTS_MODAL, closeMethod: 'close' },
     reminders:          { method: 'id', key: DOM_IDS.REMINDERS_MODAL, closeMethod: 'close' },
     themes:             { method: 'id', key: DOM_IDS.THEMES_MODAL, closeMethod: 'close' },
     games:              { method: 'id', key: DOM_IDS.GAMES_PANEL, closeMethod: 'close' },

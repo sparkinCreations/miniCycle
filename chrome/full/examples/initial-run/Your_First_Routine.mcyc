@@ -4,7 +4,7 @@
   "tasks": [
     {
       "id": "task-getting-started-1",
-      "text": "👆 Tap or click here to complete this task",
+      "text": "👆 Tap, click or press Space to complete this task",
       "completed": false,
       "dueDate": null,
       "highPriority": false,

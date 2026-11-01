@@ -480,7 +480,12 @@ body.focus-mode #focus-mode-menu-btn {
     align-items: center;
     justify-content: center;
     position: fixed;
-    top: 16px;
+    /* Below the status bar where there is one: an iPad in landscape is wider
+       than the ≤1023px rules (which clear it for phones), and as an installed
+       app it reports a 24px inset — the button sat under the clock (Oct
+       2026). 0 in a desktop browser, so nothing moves there. The chrome is
+       measured (FOCUS_VIEW_LAYOUT.md), so the card follows. */
+    top: calc(env(safe-area-inset-top, 0px) + 16px);
     width: 52px;
     height: 30px;
     border-radius: var(--radius-md);

@@ -7,7 +7,7 @@
  */
 
 import { getLabel } from '../labels/labelResolver.js';
-import { DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 
 /** @type {string} HTML template for the recurring tasks panel modal */
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
@@ -918,6 +918,14 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-behavior">
+                        <fieldset id="${DOM_IDS.ROUTINE_OPEN_VIEW_GROUP}" class="settings-option settings-option-vertical settings-option-described settings-radio-group" aria-describedby="routine-open-view-desc">
+                            <legend>${getLabel('settings.routineOpenView')}</legend>
+                            <div class="settings-radio-row">
+                                <label class="theme-radio-option"><input type="radio" name="routine-open-view" value="${ROUTINE_OPEN_VIEW.LIST}" checked><span class="theme-radio-label">${getLabel('settings.routineOpenViewList')}</span></label>
+                                <label class="theme-radio-option"><input type="radio" name="routine-open-view" value="${ROUTINE_OPEN_VIEW.BROWSE}"><span class="theme-radio-label">${getLabel('settings.routineOpenViewBrowse')}</span></label>
+                            </div>
+                            <span class="settings-desc" id="routine-open-view-desc">${getLabel('settings.routineOpenViewDesc')}</span>
+                        </fieldset>
                         <label class="settings-option">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="toggle-scroll-to-new-task" name="toggle-scroll-to-new-task" checked aria-describedby="toggle-scroll-to-new-task-desc">
@@ -931,6 +939,13 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                                 <span class="toggle-slider"></span>
                             </span>
                             <span class="settings-option-text"><span data-label-key="settings.scrollToLast">${getLabel('settings.scrollToLast')}</span><span class="settings-desc" id="toggle-scroll-on-load-desc">${getLabel('settings.scrollToLastDesc')}</span></span>
+                        </label>
+                        <label class="settings-option ${DOM_CLASSES.KEYBOARD_ONLY}">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" name="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" aria-describedby="toggle-single-key-shortcuts-desc">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span class="settings-option-text"><span>${getLabel('settings.singleKeyShortcuts')}</span><span class="settings-desc" id="toggle-single-key-shortcuts-desc">${getLabel('settings.singleKeyShortcutsDesc')}</span></span>
                         </label>
                         <label class="settings-option">
                             <span class="toggle-switch">

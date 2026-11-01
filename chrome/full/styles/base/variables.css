@@ -252,6 +252,60 @@
   --theme-task-border: transparent;
   --theme-task-checkmark: var(--color-success);
 
+  /* The default task list's own colours — what task-list.css §CUSTOM
+     PREFERENCE COLORS falls back to when a routine's theme sets no --pref-*.
+     Tokens so Browse Routines' preview card draws the same list from the
+     same values instead of a copy. */
+  --task-list-panel-bg: rgba(255, 255, 255, 0.15);
+  --task-list-title-bg: rgba(255, 255, 255, 0.4);
+  --task-list-title-text: rgba(43, 43, 43, 0.783);
+  --task-list-task-bg: rgba(255, 255, 255, 0.95);
+  --task-checkbox-incomplete-bg: rgba(200, 200, 200, 0.25);
+  --task-checkbox-incomplete-border: rgba(180, 180, 180, 0.6);
+  --task-checkbox-checked-bg: #5db567;
+  --task-checkbox-checked-border: #40af4d;
+  --task-checkmark: rgb(18, 70, 9);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     BROWSE ROUTINES (routine/routineBrowser.js, routine-switcher.css)
+     A dark-blue surround so the routine card is the only bright thing.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --browse-surround-bg: rgba(10, 22, 48, 0.96);
+  --browse-surround-text: var(--color-white);
+  --browse-surround-muted: rgba(255, 255, 255, 0.78);
+  --browse-control-bg: rgba(255, 255, 255, 0.12);
+  --browse-control-hover-bg: rgba(255, 255, 255, 0.24);  /* white text on it: well over 4.5:1 */
+  --browse-control-border: rgba(255, 255, 255, 0.32);
+  --browse-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --browse-card-max-width: 520px;
+  --browse-card-max-height: 680px;
+  --browse-close-size: 40px;
+  --browse-nav-size: 48px;          /* the ‹ › beside the name: no background, just the chevron */
+  --browse-title-width: 360px;      /* the name between them: fixed, so the arrows never move (it shrinks on a narrow screen) */
+  --browse-check-size: 22px;
+  /* The carousel: neighbours peek either side, a little smaller, dimmer and
+     turned toward the routine in front. Wide screens only (routine-switcher.css
+     sets the offsets per width; on a phone they wait off-screen so a swipe
+     still slides). */
+  --browse-perspective: 1400px;
+  --browse-peek-offset: 430px;      /* centre of the next routine, from the front one's */
+  --browse-peek-offset-far: 760px;  /* the one after that */
+  --browse-peek-angle: 28deg;
+  --browse-peek-scale: 0.8;
+  --browse-peek-scale-far: 0.66;
+  --browse-card-narrow-width: 80%;       /* a phone: room for a strip of each neighbour */
+  --browse-peek-offset-narrow: 92%;      /* of the card's own width — tucked partly behind it */
+  --browse-peek-scale-narrow: 0.9;
+  --browse-peek-dim: 0.55;          /* brightness — dimmed, still opaque */
+  --browse-peek-dim-far: 0.35;
+  --browse-z-front: 3;              /* stacking inside the carousel only */
+  --browse-z-peek: 2;
+  --browse-z-far: 1;
+  --browse-tile-min: 220px;         /* grid: narrowest a tile gets before the row reflows */
+  --browse-tile-height: 230px;
+  --browse-action-min-width: 140px;   /* Open / Create another routine */
+  --browse-search-max-width: 420px;   /* the search field on a wide screen */
+
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Progress
      ═══════════════════════════════════════════════════════════════════════════ */

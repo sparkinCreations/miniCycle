@@ -30,7 +30,7 @@
  * otherwise silently stop a step from ever being skipped.
  */
 
-import { DOM_IDS, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS } from '../core/constants.js';
 
 /**
  * Every built-in tour, as [tourId, definition] pairs.
@@ -80,9 +80,9 @@ export const TOUR_DEFINITIONS = Object.freeze([
             // feature tours is one rotating loading tip. Points at the menu
             // because that is where "Enable Tour Prompts" lives.
             //
-            // 'selector', not 'id': the hamburger carries class="menu-button" and
-            // has no id, so DOM_IDS.MENU_BUTTON would resolve to nothing and the
-            // step would silently anchor to the page instead of the control.
+            // 'selector': the hamburger is found by its class, as everything
+            // else finds it. (It had no id until Oct 2026, when Alt+Shift+.
+            // needed one for aria-keyshortcuts; DOM_IDS.MENU_BUTTON now resolves.)
             {
                 targetType: 'selector',
                 target: DOM_SELECTORS.MENU_BUTTON,
@@ -327,6 +327,12 @@ export const TOUR_DEFINITIONS = Object.freeze([
             },
             {
                 targetType: 'id',
+                target: DOM_IDS.ROUTINE_LIST_EXPAND_BTN,
+                messageKey: 'routineSwitcherTour.stepExpand',
+                position: 'auto'
+            },
+            {
+                targetType: 'id',
                 target: DOM_IDS.ROUTINE_SEARCH_INPUT,
                 messageKey: 'routineSwitcherTour.step2',
                 position: 'auto'
@@ -343,6 +349,50 @@ export const TOUR_DEFINITIONS = Object.freeze([
                 targetType: 'id',
                 target: DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM,
                 messageKey: 'routineSwitcherTour.step4',
+                position: 'auto'
+            },
+            // The way to the other view, last: Browse is the alternative to
+            // everything above.
+            {
+                targetType: 'id',
+                target: DOM_IDS.SWITCH_BROWSE_BTN,
+                messageKey: 'routineSwitcherTour.stepBrowse',
+                position: 'auto'
+            }
+        ]
+    }],
+
+    // Browse Routines runs inside its own full-screen <dialog>, like the
+    // switcher's tour. Every target is on screen in both layouts (the cards'
+    // stage is not — it hides in the Grid — so step 1 points at the ‹ › row).
+    ['routineBrowser', {
+        stateKey: 'routineBrowserTourStep',
+        completeKey: 'routineBrowserTour.complete',
+        containerSelector: `#${DOM_IDS.ROUTINE_BROWSER}`,
+        promptContainerSelectors: [`.${DOM_CLASSES.RB_INFO}`],
+        steps: [
+            {
+                targetType: 'selector',
+                target: `#${DOM_IDS.ROUTINE_BROWSER} .${DOM_CLASSES.RB_TITLE_ROW}`,
+                messageKey: 'routineBrowserTour.step1',
+                position: 'auto'
+            },
+            {
+                targetType: 'selector',
+                target: `#${DOM_IDS.ROUTINE_BROWSER} .${DOM_CLASSES.RB_LAYOUT}`,
+                messageKey: 'routineBrowserTour.step2',
+                position: 'auto'
+            },
+            {
+                targetType: 'selector',
+                target: `#${DOM_IDS.ROUTINE_BROWSER} .${DOM_CLASSES.RB_SORT}`,
+                messageKey: 'routineBrowserTour.step3',
+                position: 'auto'
+            },
+            {
+                targetType: 'selector',
+                target: `#${DOM_IDS.ROUTINE_BROWSER} .${DOM_CLASSES.RB_CORNER_BTN}`,
+                messageKey: 'routineBrowserTour.step4',
                 position: 'auto'
             }
         ]

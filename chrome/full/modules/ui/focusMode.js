@@ -15,10 +15,11 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES } from '../core/constants.js';
+import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
-import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
+import { isTextEntryTarget } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -71,6 +72,8 @@ export class FocusMode {
         this._progressRow = null;
         this._clickHandler = null;
         this._keyHandler = null;
+        this._escapeArmedAt = 0;
+        this._escapeHint = null;
         this._undoRedoOriginalParent = null;
         this._undoRedoNextSibling = null;
         /** @type {HTMLElement|null} Control that opened focus view; focus returns here on exit. */
@@ -95,6 +98,7 @@ export class FocusMode {
         this._menuClickHandler = null;
         this._menuOutsideClickHandler = null;
         this._modeItem = null;
+        this._routinesItem = null;
         this._modeModal = null;
         this._modeBackdrop = null;
         this._modeModalOpen = false;
@@ -242,6 +246,7 @@ export class FocusMode {
             { action: 'toggle-dark-mode', group: 'view',    label: getLabel('focusMode.toggleDarkMode') },
             { action: 'uncheck-all',     group: 'bulk',    label: getLabel('focusMode.uncheckAll') },
             { action: 'delete-all',      group: 'bulk',    label: getLabel('focusMode.deleteAll'), destructive: true },
+            { action: 'keyboard-shortcuts', group: 'leave', label: getLabel('focusMode.keyboardShortcuts') },
             { action: 'settings',        group: 'leave',   label: getLabel('focusMode.settings') },
             { action: 'exit',            group: 'exit',    label: getLabel('focusMode.exitItem') },
         ];
@@ -269,6 +274,7 @@ export class FocusMode {
                 item.id = DOM_IDS.FOCUS_MODE_MODE_ITEM;
                 this._modeItem = item;
             }
+            if (action === 'switch-routines') this._routinesItem = item;
             this._menu.appendChild(item);
         }
 
@@ -596,28 +602,78 @@ export class FocusMode {
             this._modeBackdrop.addEventListener('click', this._modeBackdropHandler);
         }
 
-        // Escape priority: mode modal → menu → open task actions → exit focus mode.
+        // Escape priority: mode modal → menu → open task actions → a text field
+        // → leave focus mode, which takes TWO presses.
         // Registered in the CAPTURE phase so the task-action check runs before
         // the handlers that close that layer (taskButtons' keydown, uiBoot's
         // Escape sweep) have removed its class — otherwise this would see a
         // clean DOM and exit the view on the same key that closed the actions
         // (Oct 2026 audit: Escape with actions open left the view).
+        //
+        // Why two presses (Oct 2026): Focus View is where new users start and
+        // it is remembered across launches, so one stray Escape — often the
+        // second press of "close that thing" — changed the view the user would
+        // find next time. The first press arms and says how; a second within
+        // UI_TIMEOUTS.FOCUS_EXIT_DOUBLE_ESCAPE leaves (VS Code's Zen Mode works
+        // the same way). Any Escape another layer consumes disarms.
         this._keyHandler = (e) => {
             if (e.key !== 'Escape') return;
             if (this._modeModalOpen) {
+                this._escapeArmedAt = 0;
                 this._closeModeModal();
                 return;
             }
             if (this._menuOpen) {
+                this._escapeArmedAt = 0;
                 this._closeMenu(true); // restore focus to the trigger button
                 return;
             }
             // A task's action row is open: that layer owns this Escape. Its own
             // handlers collapse it and return focus to the task; the view stays.
-            if (this.deps.querySelector(`.${DOM_CLASSES.TASK_OPTIONS_VISIBLE}`)) return;
-            if (this._active && !this.deps.querySelector('dialog[open]')) {
-                this.deactivate();
+            if (this.deps.querySelector(`.${DOM_CLASSES.TASK_OPTIONS_VISIBLE}`)) {
+                this._escapeArmedAt = 0;
+                return;
             }
+            if (!this._active || this.deps.querySelector('dialog[open]')) {
+                this._escapeArmedAt = 0;
+                return;
+            }
+            // A visible toast: modalManager's Escape dismisses toasts, so this
+            // press is about them. Counting it would make "Escape to close that
+            // popup" plus one more press leave the view. Our own hint is not a
+            // reason to wait — it is the thing telling the user to press again.
+            const toasts = Array.from(document.querySelectorAll(DOM_SELECTORS.NOTIFICATION));
+            if (toasts.some(toast => toast !== this._escapeHint)) {
+                this._escapeArmedAt = 0;
+                return;
+            }
+            // Typing in a field: this Escape is about the field. It used to
+            // leave the view mid-edit (add-task bar, routine title, search).
+            // The field's own Escape runs first — the title rename cancels,
+            // search closes — and then, if focus is still in the field, this
+            // steps out of it, so the next two presses can leave the view.
+            const field = e.target;
+            if (isTextEntryTarget(field)) {
+                this._escapeArmedAt = 0;
+                setTimeout(() => {
+                    if (document.activeElement === field) field.blur();
+                }, 0);
+                return;
+            }
+            const now = Date.now();
+            if (this._escapeArmedAt && now - this._escapeArmedAt <= UI_TIMEOUTS.FOCUS_EXIT_DOUBLE_ESCAPE) {
+                this._escapeArmedAt = 0;
+                this.deactivate();
+                return;
+            }
+            this._escapeArmedAt = now;
+            // After this keypress finishes: modalManager dismisses every toast on
+            // Escape, and it runs later in this same dispatch, so a hint shown
+            // now was wiped as it appeared.
+            setTimeout(() => {
+                if (!this._active || !this._escapeArmedAt) return;
+                this._escapeHint = this.deps.showNotification?.(getLabel('focusMode.escapeAgainToExit'), 'info', UI_TIMEOUTS.FOCUS_EXIT_DOUBLE_ESCAPE) || null;
+            }, 0);
         };
         document.addEventListener('keydown', this._keyHandler, { capture: true });
     }
@@ -661,6 +717,17 @@ export class FocusMode {
     }
 
     /**
+     * "Switch routines" or "Browse routines" — whichever Settings → "When you
+     * open routines, show" makes the item open. Read on every menu open, like
+     * the mode item, so a change in Settings needs no event.
+     */
+    _refreshRoutinesItemLabel() {
+        if (!this._routinesItem) return;
+        const browse = getRoutineOpenView(this.deps.AppState?.get?.()) === ROUTINE_OPEN_VIEW.BROWSE;
+        this._routinesItem.textContent = getLabel(browse ? 'focusMode.browseRoutines' : 'focusMode.switchRoutines');
+    }
+
+    /**
      * Toggle the three-dots menu open/closed.
      */
     _toggleMenu() {
@@ -678,6 +745,7 @@ export class FocusMode {
         if (!this._menu || !this._menuBtn || this._menuOpen) return;
         // Refresh the mode label so it reflects current state every time
         this._refreshModeItemLabel();
+        this._refreshRoutinesItemLabel();
         this._menu.hidden = false;
         this._menuBtn.setAttribute('aria-expanded', 'true');
         this._menuOpen = true;
@@ -875,7 +943,7 @@ export class FocusMode {
 
     /**
      * Run the action associated with a menu item, then close the menu.
-     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'settings'|'exit'} action
+     * @param {'switch-mode'|'switch-routines'|'create-routine'|'toggle-input-bar'|'toggle-dark-mode'|'uncheck-all'|'delete-all'|'keyboard-shortcuts'|'settings'|'exit'} action
      */
     _handleMenuAction(action) {
         this._closeMenu();
@@ -921,6 +989,13 @@ export class FocusMode {
                 // focus chrome — the same property 'settings' and
                 // 'switch-routines' already depend on.
                 const btn = this.deps.getElementById(DOM_IDS.MENU_OPEN_TITLE_SCREEN);
+                btn?.click();
+                break;
+            }
+            case 'keyboard-shortcuts': {
+                // The main menu's Keyboard Shortcuts button, same pattern as
+                // 'settings' below; the dialog opens in the top layer.
+                const btn = this.deps.getElementById(DOM_IDS.OPEN_SHORTCUTS_MODAL);
                 btn?.click();
                 break;
             }
@@ -1525,10 +1600,10 @@ export class FocusMode {
         this._active = false;
         this.initialized = false;
         this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
-
-        this.deps.AppState?.update?.(state => {
-            state.settings.focusModeActive = false;
-        });
+        // No state write: destroy() is teardown (boot retry, tests), not the user
+        // leaving Focus View — that is the exit path, which saves it. Saving
+        // "off" here turned the user's Focus View off on every boot retry, and
+        // the rebuilt view reads that saved setting to decide whether to open.
     }
 }
 

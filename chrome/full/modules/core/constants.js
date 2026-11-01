@@ -156,6 +156,7 @@ export const UI_TIMEOUTS = Object.freeze({
     FOCUS_NEXT_TICK: 20,           // 20ms - Focus a control just after a dialog/modal renders
     MODAL_ENTER_ARM_DELAY: 100,    // 100ms - Arm the Enter-anywhere confirm handler after a modal opens (avoids catching the opening keypress)
     IDLE_CALLBACK_FALLBACK: 100,   // 100ms - setTimeout fallback where requestIdleCallback is unavailable
+    STORAGE_QUOTA_DETECT_DELAY: 500, // 500ms - storage-bar quota probe waits this long before asking for idle time, so the routine switcher's list paints first
     TRANSITION_FALLBACK: 300,      // 300ms - Safety fallback when a CSS transitionend never fires (fast transitions)
     EDIT_OVERLAY_REMOVE: 500,      // 500ms - Edit-focus overlay removal fallback (matches its CSS transition)
     EXPORT_FALLBACK_SUCCESS: 3000, // 3000ms - Assume export saved if no focus/save-dialog signal arrives by then
@@ -194,6 +195,11 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_EXTRA_LONG: 6000, // 6000ms - Extra-long notification (migration, milestones)
     NOTIFICATION_PERSISTENT: 8000, // 8000ms - Near-persistent notification (data loss warnings)
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
+    ROUTINE_BROWSER_WHEEL_QUIET: 250, // 250ms - Browse Routines: a wheel/trackpad gesture moves ONE routine; further wheel events are ignored until they pause this long (a trackpad flick fires dozens)
+    ROUTINE_STEP_WALK_IDLE: 10000, // ms - Alt+Shift+[ / ]: presses this close together keep walking the recent order as it was at the first press; after a pause the walk starts again from the order as it is then
+    ROUTINE_BROWSER_CARD_EXIT: 400,   // ms - Browse Routines: a card sliding out of the carousel is removed after this (its --transition-normal slide, plus margin) if no transitionend arrives
+    ROUTINE_BROWSER_SWIPE_CLICK_GUARD: 350, // ms - Browse Routines: the click a browser sends after a swipe's touchend (or a mouse drag's mouseup) is ignored for this long, so ending a swipe on the routine does not open it
+    FOCUS_EXIT_DOUBLE_ESCAPE: 1500, // 1500ms - In Focus View, a second Escape within this leaves the view; also how long the "press again" hint stays up
     NOTIFICATION_RESUME_MIN: 1000, // 1000ms - Minimum time after hover/interaction before auto-dismiss
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
@@ -397,6 +403,8 @@ export const LIMITS = Object.freeze({
     UNDO_STACK: 20,                // Max items in undo/redo stack
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
+    ROUTINE_BROWSER_TILE_TASKS: 4, // Browse Routines grid: tasks a tile shows before "+N more"
+    ROUTINE_BROWSER_TILE_TASKS_PHONE: 3, // …on a phone (BREAKPOINTS.BROWSE_PHONE_MAX), where the tiles are narrow and a longer list made the grid too long (the user, Oct 2026)
     MAX_SPECIFIC_DATES: 366,       // Max specificDates entries per recurring task (a year of dailies). Shared by BOTH producers — the .mcyc importer (which truncates) and the panel's Add button (which refuses and notifies). Was import-only, so the panel had no cap at all and the two disagreed
     RECURRING_SEARCH_THRESHOLD: 5,  // Show the recurring panel's search only once the list is long enough to scroll past. Below this a search box is chrome, not help — the whole list is already on screen
     DYNAMIC_CACHE_ENTRIES: 100,    // Max entries in service worker dynamic cache
@@ -496,8 +504,109 @@ export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
 // desktop check = `innerWidth >= BREAKPOINTS.DESKTOP_MIN` (negate for not-desktop).
 export const BREAKPOINTS = Object.freeze({
     MOBILE_MAX: 768,    // ≤ 768px → mobile layout
-    DESKTOP_MIN: 1024   // ≥ 1024px → desktop layout
+    DESKTOP_MIN: 1024,  // ≥ 1024px → desktop layout
+    BROWSE_PHONE_MAX: 600 // ≤ 600px → Browse Routines' phone layout; same width as routine-switcher.css §BROWSE ROUTINES' `max-width: 600px`
 });
+
+// ============================================================================
+// ROUTINE VIEWS — the stored values of the routine-view settings
+// ============================================================================
+
+/**
+ * Settings → "When you open routines, show". The stored values of
+ * `settings.routineOpenView`; read it through cycleMode.getRoutineOpenView(),
+ * which also decides what an absent value means (the list).
+ */
+export const ROUTINE_OPEN_VIEW = Object.freeze({
+    LIST:   'list',     // the Open Routine list (routineSwitcher)
+    BROWSE: 'browse'    // Browse Routines, one at a time (routineBrowser)
+});
+
+/**
+ * Browse Routines' two orders — the stored values of `settings.routineBrowserSort`;
+ * read through cycleMode.getRoutineBrowserSort().
+ */
+export const ROUTINE_BROWSER_SORT = Object.freeze({
+    RECENT: 'recent',   // last used first (the default)
+    ALPHA:  'alpha'     // A-Z by title
+});
+
+/**
+ * Browse Routines' two layouts — the stored values of `settings.routineBrowserLayout`;
+ * read through cycleMode.getRoutineBrowserLayout().
+ */
+export const ROUTINE_BROWSER_LAYOUT = Object.freeze({
+    CARDS: 'cards',   // one routine, its neighbours peeking at the sides (the default)
+    GRID:  'grid'     // every routine as a tile
+});
+
+// ============================================================================
+// KEYBOARD SHORTCUTS
+// ============================================================================
+
+/**
+ * App-wide keyboard shortcuts: Alt+Shift+<key> (Option+Shift on a Mac).
+ * Values are KeyboardEvent.code — the PHYSICAL key — because on a Mac
+ * Option+Shift+N reports event.key as "˜", not "N".
+ *
+ * Why Alt+Shift and not Ctrl/Cmd or single letters: Ctrl/Cmd+N and +O belong
+ * to the browser (Chrome never hands Ctrl+N to a page); single letters collide
+ * with screen-reader quick navigation (H = next heading, B = next button) and
+ * WCAG 2.1.4 would require a way to turn them off. NVDA, JAWS and VoiceOver do
+ * not use Alt+Shift+letter, and the app declares no accesskey (Firefox's
+ * accesskey modifier is Alt+Shift). Handled in uiBoot.handleAppShortcut;
+ * documented in legal/user-manual.html#keyboard-shortcuts — keep the two in step.
+ */
+export const KEYBOARD_SHORTCUTS = Object.freeze({
+    NEW_ROUTINE:      'KeyN',   // create a new routine
+    OPEN_ROUTINE:     'KeyO',   // open the routine switcher
+    NEXT_MODE:        'KeyM',   // Auto Cycle → Manual Cycle → To-Do → Auto Cycle
+    FOCUS_VIEW:       'KeyF',   // Focus View on / off
+    TOGGLE_INPUT_BAR: 'KeyI',   // show / hide the add-task input bar
+    USER_MANUAL:      'KeyU',   // open the user manual
+    PREVIOUS_ROUTINE: 'BracketLeft',    // the routine used before this one (Recent order)
+    NEXT_ROUTINE:     'BracketRight',   // the other way, wrapping from the newest to the oldest
+    OPEN_SETTINGS:    'KeyS',   // open Settings
+    OPEN_MENU:        'Period', // open the view's menu: ☰ in Home View, ⋯ in Focus View — one key for both
+    SHOW_SHORTCUTS:   'Slash'   // the Keyboard Shortcuts list: Alt+? (? is Shift+/ on most keyboards)
+});
+
+/**
+ * How a KEYBOARD_SHORTCUTS code is shown and announced: KeyN → "N",
+ * BracketLeft → "[". The shortcuts list and aria-keyshortcuts both use it.
+ * @param {string} code - a KeyboardEvent.code
+ * @returns {string}
+ */
+/**
+ * Opt-in single-key shortcuts: Settings → Behavior → "Single-key shortcuts"
+ * (`settings.singleKeyShortcuts`, OFF unless the user turns it on — the
+ * user's call, Oct 2026). Opt-in because of the reasons above: screen readers
+ * use single letters to move around a page, speech input types letters, and
+ * WCAG 2.1.4 requires a one-character shortcut to be possible to turn off.
+ * The Alt+Shift versions always work, on or off.
+ *
+ * Keyed by KeyboardEvent.key, lower-cased: with no modifier held the key is
+ * the character typed (Alt+Shift needs .code because a Mac's Option changes
+ * it). Each value is a KEYBOARD_SHORTCUTS action. Handled in
+ * uiBoot.handleAppShortcut.
+ */
+export const SINGLE_KEY_SHORTCUTS = Object.freeze({
+    'm': 'OPEN_MENU',          // the view's menu (☰ / ⋯)
+    's': 'OPEN_SETTINGS',
+    '[': 'PREVIOUS_ROUTINE',
+    ']': 'NEXT_ROUTINE',
+    '?': 'SHOW_SHORTCUTS'      // the Keyboard Shortcuts list
+});
+
+// Slash shows as "?": with Shift held the key types ?, so Alt+Shift+/ is the
+// Alt+? the shortcut is known by.
+const SHORTCUT_KEY_SYMBOLS = Object.freeze({ BracketLeft: '[', BracketRight: ']', Period: '.', Slash: '?' });
+
+export function shortcutKeyName(code) {
+    return Object.prototype.hasOwnProperty.call(SHORTCUT_KEY_SYMBOLS, code)
+        ? SHORTCUT_KEY_SYMBOLS[code]
+        : code.replace(/^Key/, '');
+}
 
 // ============================================================================
 // GESTURE THRESHOLDS (pixels)
@@ -672,6 +781,8 @@ export const TIME_UNITS = Object.freeze({
     MINUTES_PER_HOUR: 60,
     HOURS_PER_DAY: 24,
     DAYS_PER_WEEK: 7,
+    MS_PER_MINUTE: 60 * 1000,
+    MS_PER_HOUR: 60 * 60 * 1000,
     MS_PER_DAY: 24 * 60 * 60 * 1000
 });
 
@@ -779,6 +890,8 @@ export const EVENTS = Object.freeze({
         reveals, drag marks, body classes, long-press hints) runs before the
         event; this is for state only its owner can see. */
     UI_ESCAPE_RESET: 'ui:escapeReset',
+    ROUTINE_BROWSER_CLOSED: 'routines:browserClosed', // routineBrowser's dialog closed: notifications held while Browse was on screen show now
+    ROUTINE_OPEN_VIEW_CHANGED: 'routines:openViewChanged', // routineSwitcher when settings.routineOpenView changes (detail.view 'list' | 'browse'): Quick Actions and the Focus View menu relabel their open-routines entry
     /** Dispatched on document by the undo wrapper just before it captures the
         pre-write snapshot for a user action. A module holding coalesced writes
         of its own (taskViewLayoutManager's drag positions) flushes them on this,
@@ -800,6 +913,63 @@ export const EVENTS = Object.freeze({
  * @constant {Object}
  */
 export const DOM_CLASSES = Object.freeze({
+    // Full-screen start-up notices (appInit) — styles in components/modals.css
+    CRITICAL_NOTICE: 'critical-notice',
+    CRITICAL_NOTICE_PANEL: 'critical-notice-panel',
+    CRITICAL_NOTICE_TITLE: 'critical-notice-title',
+    CRITICAL_NOTICE_TEXT: 'critical-notice-text',
+    CRITICAL_NOTICE_PREVIEW: 'critical-notice-preview',
+    CRITICAL_NOTICE_ACTIONS: 'critical-notice-actions',
+    CRITICAL_NOTICE_BTN: 'critical-notice-btn',
+    CRITICAL_NOTICE_BTN_PRIMARY: 'critical-notice-btn-primary',
+
+    // Browse Routines (routine/routineBrowser.js). Own classes on purpose — NOT
+    // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
+    // drag, counts) and would sweep up the read-only preview's copies.
+    KEYBOARD_ONLY: 'keyboard-only',   // hidden on phones, which have no keyboard (modals.css, with the Keyboard Shortcuts items)
+    ROUTINE_SWITCHER_BTN_LABEL: 'routine-switcher-btn-label',   // "Routines" beside the Home View routine button's icon when it opens Browse
+    ROUTINE_LIST_EXPANDED: 'routine-list-expanded',   // on .mini-cycle-switch-modal-content: the routine list has the window
+    RB_TOP: 'rb-top',
+    RB_CORNER_BTN: 'rb-corner-btn',
+    RB_CLOSE_BTN: 'rb-close-btn',
+    RB_SORT: 'rb-sort',
+    RB_SORT_BTN: 'rb-sort-btn',
+    RB_SEARCH_BTN: 'rb-search-btn',
+    RB_IMPORT_BTN: 'rb-import-btn',     // Browse's top bar: import a routine from a file (the menu's Import)
+    RB_SEARCH: 'rb-search',
+    RB_SEARCH_INPUT: 'rb-search-input',
+    RB_SEARCH_CLOSE: 'rb-search-close',
+    RB_LAYOUT: 'rb-layout',
+    RB_LAYOUT_BTN: 'rb-layout-btn',
+    RB_STAGE: 'rb-stage',
+    RB_TRACK: 'rb-track',
+    RB_NAV_BTN: 'rb-nav-btn',
+    RB_CARD: 'rb-card',
+    RB_GRID: 'rb-grid',
+    RB_TILE: 'rb-tile',
+    RB_TILE_HEAD: 'rb-tile-head',
+    RB_TILE_NAME: 'rb-tile-name',
+    RB_TILE_MORE: 'rb-tile-more',
+    RB_PANEL: 'rb-panel',
+    RB_PANEL_TITLE: 'rb-panel-title',
+    RB_CURRENT_TAG: 'rb-current-tag',
+    RB_TASKS: 'rb-tasks',
+    RB_TASK: 'rb-task',
+    RB_TASK_DONE: 'rb-task--done',
+    RB_CHECK: 'rb-check',
+    RB_EMPTY: 'rb-empty',
+    RB_INFO: 'rb-info',
+    RB_TITLE_ROW: 'rb-title-row',
+    RB_TITLE: 'rb-title',
+    RB_META: 'rb-meta',
+    RB_ACTIONS: 'rb-actions',
+    RB_OPEN_BTN: 'rb-open-btn',
+    RB_CREATE_BTN: 'rb-create-btn',
+    SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
+    SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
+    SHORTCUTS_START: 'shortcuts-start',     // Keyboard Shortcuts dialog: "Start with these", the view's five keys
+    SHORTCUTS_MORE: 'shortcuts-more',       // Keyboard Shortcuts dialog: the link to the user manual's complete list
+    SHORTCUTS_NOTE: 'shortcuts-note',       // Keyboard Shortcuts dialog: the line on turning single keys on
     // ---- Visibility ----
     HIDDEN: 'hidden',
     VISIBLE: 'visible',
@@ -1212,7 +1382,7 @@ export const DOM_IDS = Object.freeze({
     TASK_FILTER_SORT_ROW: 'task-filter-sort-row',
 
     // ---- Menu ----
-    MENU_BUTTON: 'menu-button',
+    MENU_BUTTON: 'menu-button',   // the ☰ in the header (also class .menu-button — DOM_SELECTORS.MENU_BUTTON)
     APP_CONTAINER: 'app-container',       // <main tabindex=-1>: the last-resort focus target after a dialog closes
     CLOSE_MAIN_MENU: 'close-main-menu',
     MAIN_MENU_TITLE: 'main-menu-mini-cycle-title',
@@ -1220,6 +1390,17 @@ export const DOM_IDS = Object.freeze({
     MENU_TASK_OPTIONS: 'menu-task-options',
     MENU_ENTER_FOCUS_VIEW: 'menu-enter-focus-view',
     OPEN_USER_MANUAL: 'open-user-manual',
+    OPEN_SHORTCUTS_MODAL: 'open-shortcuts-modal',   // main menu → Keyboard Shortcuts
+    ROUTINE_BROWSER: 'routine-browser',              // Browse Routines — one routine at a time (routineBrowser.js)
+    ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
+    ROUTINE_BROWSER_GRID: 'routine-browser-grid',
+    ROUTINE_BROWSER_SEARCH: 'routine-browser-search',
+    ROUTINE_LIST_EXPAND_BTN: 'routine-list-expand-btn', // Open Routine: the list heading's Expand / Collapse
+    SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
+    ROUTINE_OPEN_VIEW_GROUP: 'routine-open-view-group', // Settings → When you open routines, show: List / Browse (radios)
+    SHORTCUTS_MODAL: 'shortcuts-modal',
+    SHORTCUTS_MODAL_TITLE: 'shortcuts-modal-title',
+    SHORTCUTS_LIST: 'shortcuts-list',
     OPEN_TIP_ARCHIVE: 'open-tip-archive',
     MENU_OPEN_TITLE_SCREEN: 'menu-open-title-screen',
     TITLE_SCREEN: 'title-screen',
@@ -1268,6 +1449,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_COMPLETED_DROPDOWN: 'toggle-completed-dropdown',
     TOGGLE_SCROLL_TO_NEW_TASK: 'toggle-scroll-to-new-task',
     TOGGLE_SCROLL_ON_LOAD: 'toggle-scroll-on-load',
+    TOGGLE_SINGLE_KEY_SHORTCUTS: 'toggle-single-key-shortcuts',   // Settings → Behavior → Single-key shortcuts
     TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
@@ -1318,6 +1500,7 @@ export const DOM_IDS = Object.freeze({
     AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
     AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
     FACTORY_RESET: 'factory-reset',
+    DATA_CORRUPTION_MODAL: 'data-corruption-modal',   // appInit.showDataCorruptionRecovery
     RECOVERY_FRESH_START: 'recovery-fresh-start',
     RECOVERY_LOAD_SAMPLE: 'recovery-load-sample',
     RECOVERY_DOWNLOAD_BACKUP: 'recovery-download-backup',
@@ -1799,6 +1982,10 @@ export const DOM_SELECTORS = Object.freeze({
     FOCUS_MODE_MENU_ITEM: '.focus-mode-menu-item',
     FOCUS_MODE_MODE_RADIO: '.focus-mode-mode-option input[type="radio"]',
     MODE_RADIO: '#mode-radio-group input[type="radio"]',
+    // Single-key shortcuts stay out of controls that read typed letters
+    // themselves (a <select>'s type-to-pick, listboxes, menus, sliders).
+    SINGLE_KEY_SKIP: 'select, [role="listbox"], [role="menu"], [role="menubar"], [role="combobox"], [role="slider"], [role="spinbutton"]',
+    ROUTINE_OPEN_VIEW_RADIO: '#routine-open-view-group input[type="radio"]',   // Settings → When you open routines, show
     MODE_RADIO_OPTION: '.mode-radio-option',
     MODE_RADIO_LABEL: '.mode-radio-label',
     MODE_RADIO_INPUT: 'input[type="radio"]',
@@ -1908,6 +2095,7 @@ export const DOM_SELECTORS = Object.freeze({
     BIWEEKLY_WEEK2_SELECTED: '.biweekly-day-box.selected[data-week="2"]',
     SPECIFIC_DATE_INPUT: `#specific-date-list input[type="date"]`,
     FOCUSABLE_ELEMENTS: 'button, input, select, [tabindex="0"]',
+    NATIVE_CONTROL: 'button, select, input, textarea, a',   // elements that act on Enter themselves (Browse Routines leaves them alone)
 
     // ---- Task Search ----
     FILTER_CHIP_GROUP: '.filter-chip-group',

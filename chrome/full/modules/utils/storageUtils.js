@@ -52,6 +52,13 @@ const DEFAULT_QUOTA_BYTES = 5 * 1024 * 1024;
 // Quota cache validity period (14 days in milliseconds)
 const QUOTA_CACHE_VALIDITY_MS = 14 * 24 * 60 * 60 * 1000;
 
+// Which detection algorithm wrote a cached quota. The cache used to be thrown
+// away on every APP version change — but the quota is the browser's, not the
+// app's, and releases ship several times a day, so nearly every user re-ran the
+// fill test on their first Open Routine after each update (Oct 2026: a ~2s
+// frozen, empty list on desktop). Bump this only when detection itself changes.
+const QUOTA_DETECTION_METHOD = 2;
+
 // Session flag for one-time 75% warning
 let _storageWarningShown = false;
 
@@ -106,7 +113,8 @@ function saveCachedQuotaToState(bytes) {
             data.metadata.storageQuota = {
                 detectedBytes: bytes,
                 detectedAt: Date.now(),
-                detectedVersion: APP_VERSION
+                detectedVersion: APP_VERSION,   // diagnostics only — see QUOTA_DETECTION_METHOD
+                method: QUOTA_DETECTION_METHOD
             };
         });
     } catch (error) {
@@ -126,15 +134,14 @@ function isCachedQuotaValid(cached) {
 
     const now = Date.now();
     const age = now - cached.detectedAt;
-    const currentVersion = APP_VERSION;
 
     // Invalid if older than 14 days
     if (age > QUOTA_CACHE_VALIDITY_MS) {
         return false;
     }
 
-    // Invalid if app version changed
-    if (cached.detectedVersion !== currentVersion) {
+    // Invalid if an older detection method wrote it (not merely an older app)
+    if (cached.method !== QUOTA_DETECTION_METHOD) {
         return false;
     }
 
@@ -229,22 +236,34 @@ export function detectStorageQuota(forceRedetect = false) {
     try {
         const testKey = '__storage_quota_test__';
         const testChunk = 'x'.repeat(1024); // 1KB chunk (2KB in UTF-16)
-        let testSize = 0;
+        const step = 100;          // KB precision — the old linear walk's increment
         const maxTest = 10 * 1024; // Test up to 10MB
 
         // Save original value if exists
         const originalValue = localStorage.getItem(testKey);
 
-        try {
-            // Write increasingly larger values until quota error
-            while (testSize < maxTest) {
-                testSize += 100; // 100KB increments
-                const testValue = testChunk.repeat(testSize);
-                localStorage.setItem(testKey, testValue);
+        // Binary search for the first size that does NOT fit. The old walk
+        // wrote 100KB, 200KB, 300KB… until the browser refused — ~50 writes and
+        // >100MB of throwaway strings on a 5MB quota, about 2s of main thread
+        // with the routine list waiting behind it. This finds the same answer
+        // (to the same 100KB) in ~7 writes. Each write replaces the last under
+        // one key, so the probe never holds more than one test value.
+        const fits = (kb) => {
+            try {
+                localStorage.setItem(testKey, testChunk.repeat(kb));
+                return true;
+            } catch {
+                return false; // QuotaExceededError — too big
             }
-        } catch (e) {
-            // QuotaExceededError - found the limit
+        };
+        let lo = 0;                                          // known to fit
+        let hi = Math.ceil(maxTest / step) * step + step;    // assumed not to fit
+        while (hi - lo > step) {
+            const mid = Math.round((lo + hi) / 2 / step) * step;
+            if (fits(mid)) lo = mid;
+            else hi = mid;
         }
+        const testSize = Math.min(hi, maxTest);
 
         // Always clean up test key
         if (originalValue !== null) {
@@ -390,12 +409,17 @@ export function updateStorageBarUI(barElement, textElement, showNotification) {
             checkStorageWarning(updatedInfo, showNotification);
         };
 
-        // Use requestIdleCallback for non-blocking detection, with fallback
-        if ('requestIdleCallback' in window) {
-            requestIdleCallback(detectAndRepaint, { timeout: 2000 });
-        } else {
-            setTimeout(detectAndRepaint, UI_TIMEOUTS.IDLE_CALLBACK_FALLBACK);
-        }
+        // Idle time AFTER the caller's own rendering: the routine switcher
+        // fills its list on a 50ms timer, and an idle callback asked for now
+        // ran inside that gap — so the probe went first and the list waited
+        // behind it. Wait a beat, then take the next idle slot.
+        setTimeout(() => {
+            if ('requestIdleCallback' in window) {
+                requestIdleCallback(detectAndRepaint, { timeout: 2000 });
+            } else {
+                setTimeout(detectAndRepaint, UI_TIMEOUTS.IDLE_CALLBACK_FALLBACK);
+            }
+        }, UI_TIMEOUTS.STORAGE_QUOTA_DETECT_DELAY);
     }
 
     return info;

@@ -35,7 +35,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
+import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getLevelForColor } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
@@ -165,9 +165,48 @@ export class MiniCycleNotifications {
     this.educationalTips = new EducationalTipManager(() => this.deps);
     this.isDraggingNotification = false;
     this._activeListeners = new WeakMap(); // Track cleanup functions per notification
+    this._heldForBrowse = [];              // shown once Browse Routines closes (see show())
+    this._browseClosedHandler = null;
 
     // Store instance reference for late dep updates
     _notificationsInstance = this;
+  }
+
+  /** Boot-retry teardown: the one document-level listener this class owns. */
+  destroy() {
+    if (this._browseClosedHandler) {
+      document.removeEventListener(EVENTS.ROUTINE_BROWSER_CLOSED, this._browseClosedHandler);
+      this._browseClosedHandler = null;
+    }
+    this._heldForBrowse = [];
+  }
+
+  /**
+   * Browse Routines is a full-screen look at the user's routines; a toast over
+   * it covers the routine they are reading (the user's call, Oct 2026). While
+   * its dialog is open, every notification but an error is HELD — not dropped:
+   * a reminder that falls due then still shows, the moment Browse closes. Read
+   * from the dialog itself, so no module has to remember to say it is open.
+   * @returns {boolean}
+   * @private
+   */
+  _browseIsOpen() {
+    return document.getElementById(DOM_IDS.ROUTINE_BROWSER)?.open === true;
+  }
+
+  /** @private */
+  _holdForBrowse(args) {
+    if (this._heldForBrowse.some(held => held[0] === args[0])) return;   // same text once
+    this._heldForBrowse.push(args);
+    if (this._browseClosedHandler) return;
+    this._browseClosedHandler = () => {
+      document.removeEventListener(EVENTS.ROUTINE_BROWSER_CLOSED, this._browseClosedHandler);
+      this._browseClosedHandler = null;
+      const held = this._heldForBrowse;
+      this._heldForBrowse = [];
+      held.forEach(heldArgs => this.show(...heldArgs));
+    };
+    document.addEventListener(EVENTS.ROUTINE_BROWSER_CLOSED, this._browseClosedHandler);
   }
 
   // Getter that always returns merged deps (live reference to DI-resolved deps)
@@ -232,6 +271,14 @@ export class MiniCycleNotifications {
           const notificationsEnabled = AppState.get()?.settings?.notificationsEnabled ?? true;
           if (!notificationsEnabled) return;
         }
+      }
+
+      // Browse Routines on screen: hold it until Browse closes (errors still
+      // show). A caller that names its own container is drawing inside a
+      // dialog on purpose and is left alone.
+      if (type !== 'error' && !options?.container && this._browseIsOpen()) {
+        this._holdForBrowse([message, type, duration, options]);
+        return;
       }
 
       // Optional container override — allows rendering inside a <dialog> where

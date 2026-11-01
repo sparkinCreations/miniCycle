@@ -36,8 +36,9 @@
  */
 
 import { createDIModule, optional } from './diBase.js';
-import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, Z_INDEX, UI_TIMEOUTS, DEFAULT_REMINDERS } from './constants.js';
+import { DOM_IDS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, DEFAULT_REMINDERS } from './constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { backupCorruptedData, saveTextAsFile } from '../utils/dataRecovery.js';
 import { getRoutine, getRoutines, getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -821,10 +822,6 @@ class AppInit {
 	}
 
 	/**
-	 * Show data corruption recovery modal
-	 * Offers options to recover from corrupted localStorage data
-	 */
-	/**
 	 * Full-screen notice for storage written by a newer app version. Deliberately
 	 * has ONE action, reload: every other recovery option (fresh start, restore)
 	 * would destroy data this build simply cannot read yet. Built with DOM APIs
@@ -837,26 +834,26 @@ class AppInit {
 
 		const overlay = document.createElement('div');
 		overlay.id = DOM_IDS.NEWER_DATA_NOTICE;
+		overlay.className = DOM_CLASSES.CRITICAL_NOTICE;
 		overlay.setAttribute('role', 'alertdialog');
 		overlay.setAttribute('aria-modal', 'true');
 		overlay.setAttribute('aria-labelledby', DOM_IDS.NEWER_DATA_NOTICE + '-title');
-		overlay.style.cssText = `position:fixed;inset:0;z-index:${Z_INDEX.CRITICAL};display:flex;align-items:center;justify-content:center;padding:var(--space-4, 16px);box-sizing:border-box;background:rgba(0,0,0,0.9);`;
 
 		const content = document.createElement('div');
-		content.style.cssText = 'max-width:500px;width:100%;padding:32px;border-radius:16px;color:#fff;background:linear-gradient(135deg,#1a1a2e,#16213e);box-shadow:0 10px 40px rgba(0,0,0,0.5);';
+		content.className = DOM_CLASSES.CRITICAL_NOTICE_PANEL;
 
 		const title = document.createElement('h2');
 		title.id = DOM_IDS.NEWER_DATA_NOTICE + '-title';
-		title.style.cssText = 'margin:0 0 16px;font-size:1.5rem;';
+		title.className = DOM_CLASSES.CRITICAL_NOTICE_TITLE;
 		title.textContent = getLabel('modal.newerDataTitle');
 
 		const body = document.createElement('p');
-		body.style.cssText = 'margin:0 0 24px;line-height:1.5;opacity:0.9;white-space:pre-line;';
+		body.className = DOM_CLASSES.CRITICAL_NOTICE_TEXT;
 		body.textContent = getLabel('modal.newerDataMessage', { vars: { version } });
 
 		const reload = document.createElement('button');
 		reload.type = 'button';
-		reload.style.cssText = 'width:100%;padding:14px;border:0;border-radius:8px;font-size:1rem;font-weight:600;cursor:pointer;color:#fff;background:#4a90e2;';
+		reload.className = `${DOM_CLASSES.CRITICAL_NOTICE_BTN} ${DOM_CLASSES.CRITICAL_NOTICE_BTN_PRIMARY}`;
 		reload.textContent = getLabel('button.reload');
 		reload.addEventListener('click', () => globalThis.location?.reload?.(), { once: true });
 
@@ -866,99 +863,82 @@ class AppInit {
 		reload.focus();
 	}
 
+	/**
+	 * Full-screen screen for saved data AppState could not adopt at all.
+	 *
+	 * Start Fresh and Load Sample replace the damaged data, so a copy is kept
+	 * aside first (the same snapshot recovery takes). When storage is too full
+	 * for the copy, those two stay disabled until the user has downloaded it —
+	 * they used to delete the only copy with nothing kept. Built with DOM APIs
+	 * and textContent: the preview is raw stored text.
+	 * @param {string|null} corruptedData - The raw stored string
+	 * @returns {void}
+	 */
 	showDataCorruptionRecovery(corruptedData) {
+		if (document.getElementById(DOM_IDS.DATA_CORRUPTION_MODAL)) return;
+		const raw = corruptedData || '';
+		const copyKept = !!(raw && backupCorruptedData(raw));
 
-		// Create modal overlay
 		const modal = document.createElement('div');
-		modal.id = 'data-corruption-modal';
-		modal.style.cssText = `
-			position: fixed;
-			top: 0;
-			left: 0;
-			width: 100%;
-			height: 100%;
-			background: rgba(0, 0, 0, 0.9);
-			z-index: ${Z_INDEX.CRITICAL};
-			display: flex;
-			align-items: center;
-			justify-content: center;
-			padding: 20px;
-			box-sizing: border-box;
-		`;
+		modal.id = DOM_IDS.DATA_CORRUPTION_MODAL;
+		modal.className = DOM_CLASSES.CRITICAL_NOTICE;
+		modal.setAttribute('role', 'alertdialog');
+		modal.setAttribute('aria-modal', 'true');
+		modal.setAttribute('aria-labelledby', DOM_IDS.DATA_CORRUPTION_MODAL + '-title');
 
 		const content = document.createElement('div');
-		content.style.cssText = `
-			background: linear-gradient(135deg, #1a1a2e, #16213e);
-			border-radius: 16px;
-			padding: 32px;
-			max-width: 500px;
-			width: 100%;
-			color: white;
-			font-family: 'Inter', -apple-system, sans-serif;
-			box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-		`;
+		content.className = DOM_CLASSES.CRITICAL_NOTICE_PANEL;
 
-		const preview = corruptedData ? corruptedData.substring(0, 50) + '...' : 'No data';
+		const paragraph = (text, className = DOM_CLASSES.CRITICAL_NOTICE_TEXT) => {
+			const p = document.createElement('p');
+			p.className = className;
+			p.textContent = text;
+			return p;
+		};
+		const button = (id, icon, labelKey, primary = false) => {
+			const b = document.createElement('button');
+			b.type = 'button';
+			b.id = id;
+			b.className = primary ? `${DOM_CLASSES.CRITICAL_NOTICE_BTN} ${DOM_CLASSES.CRITICAL_NOTICE_BTN_PRIMARY}` : DOM_CLASSES.CRITICAL_NOTICE_BTN;
+			b.textContent = `${icon} ${getLabel(labelKey)}`;
+			return b;
+		};
 
-		content.innerHTML = `
-			<h2 style="margin: 0 0 16px; color: #ff6b6b; font-size: 1.5rem;">
-				⚠️ Data Corruption Detected
-			</h2>
-			<p style="margin: 0 0 16px; opacity: 0.9; line-height: 1.5;">
-				Your saved data appears to be corrupted and cannot be loaded. This may have happened during a test run or browser issue.
-			</p>
-			<p style="margin: 0 0 24px; font-size: 0.85rem; opacity: 0.7; font-family: monospace; background: rgba(0,0,0,0.3); padding: 8px; border-radius: 4px; word-break: break-all;">
-				Preview: ${preview.replace(/</g, '&lt;').replace(/>/g, '&gt;')}
-			</p>
-			<div style="display: flex; flex-direction: column; gap: 12px;">
-				<button id="recovery-fresh-start" style="
-					background: linear-gradient(135deg, #4c79ff, #74c0fc);
-					border: none;
-					color: white;
-					padding: 14px 20px;
-					border-radius: 8px;
-					cursor: pointer;
-					font-size: 1rem;
-					font-weight: 600;
-				">
-					🆕 Start Fresh (Clear Data)
-				</button>
-				<button id="recovery-load-sample" style="
-					background: rgba(255,255,255,0.1);
-					border: 1px solid rgba(255,255,255,0.3);
-					color: white;
-					padding: 14px 20px;
-					border-radius: 8px;
-					cursor: pointer;
-					font-size: 1rem;
-				">
-					📥 Load Sample Routine
-				</button>
-				<button id="recovery-download-backup" style="
-					background: transparent;
-					border: 1px solid rgba(255,255,255,0.2);
-					color: rgba(255,255,255,0.7);
-					padding: 10px 20px;
-					border-radius: 8px;
-					cursor: pointer;
-					font-size: 0.9rem;
-				">
-					💾 Download Corrupted Data (for recovery)
-				</button>
-			</div>
-		`;
+		const title = document.createElement('h2');
+		title.id = DOM_IDS.DATA_CORRUPTION_MODAL + '-title';
+		title.className = DOM_CLASSES.CRITICAL_NOTICE_TITLE;
+		title.textContent = `⚠️ ${getLabel('modal.corruptionTitle')}`;
 
+		const note = paragraph(getLabel(copyKept ? 'modal.corruptionCopyKept' : 'modal.corruptionDownloadFirst'));
+		const preview = raw
+			? paragraph(getLabel('modal.corruptionPreview', { vars: { preview: raw.substring(0, 50) + '…' } }), DOM_CLASSES.CRITICAL_NOTICE_PREVIEW)
+			: null;
+
+		const actions = document.createElement('div');
+		actions.className = DOM_CLASSES.CRITICAL_NOTICE_ACTIONS;
+		const freshBtn = button(DOM_IDS.RECOVERY_FRESH_START, '🆕', 'modal.corruptionStartFresh', true);
+		const sampleBtn = button(DOM_IDS.RECOVERY_LOAD_SAMPLE, '📥', 'modal.corruptionLoadSample');
+		const downloadBtn = button(DOM_IDS.RECOVERY_DOWNLOAD_BACKUP, '💾', 'modal.corruptionDownload');
+		// No copy kept: nothing that replaces the damaged data until it is saved.
+		freshBtn.disabled = !copyKept && !!raw;
+		sampleBtn.disabled = freshBtn.disabled;
+		actions.append(freshBtn, sampleBtn, downloadBtn);
+
+		content.append(title, paragraph(getLabel('modal.corruptionMessage')), note);
+		if (preview) content.append(preview);
+		content.append(actions);
 		modal.appendChild(content);
 		document.body.appendChild(modal);
 
-		// Button handlers
-		document.getElementById(DOM_IDS.RECOVERY_FRESH_START).addEventListener('click', () => {
+		// The two choices that end the screen run once; the screen (and with it
+		// every listener) is removed or the page reloads.
+		freshBtn.addEventListener('click', () => {
 			localStorage.removeItem(STORAGE_KEYS.DATA);
 			modal.remove();
 			window.location.reload();
-		});
+		}, { once: true });
 
-		document.getElementById(DOM_IDS.RECOVERY_LOAD_SAMPLE).addEventListener('click', async () => {
+		sampleBtn.addEventListener('click', () => {
 			localStorage.removeItem(STORAGE_KEYS.DATA);
 			modal.remove();
 			// Create initial data then show cycle creation modal with sample option
@@ -969,18 +949,22 @@ class AppInit {
 			}
 			// Trigger sample load
 			_deps.showCycleCreationModal?.();
+		}, { once: true });
+
+		// Download can be pressed again (a closed share sheet, a second copy).
+		downloadBtn.addEventListener('click', async () => {
+			const saved = await saveTextAsFile({
+				text: raw,
+				fileName: `miniCycle-damaged-data-${Date.now()}.txt`,
+				title: getLabel('noun.backupFileType')
+			});
+			if (saved) {
+				freshBtn.disabled = false;
+				sampleBtn.disabled = false;
+			}
 		});
 
-		document.getElementById(DOM_IDS.RECOVERY_DOWNLOAD_BACKUP).addEventListener('click', () => {
-			// Download the corrupted data for potential manual recovery
-			const blob = new Blob([corruptedData || ''], { type: 'text/plain' });
-			const url = URL.createObjectURL(blob);
-			const a = document.createElement('a');
-			a.href = url;
-			a.download = `miniCycle-corrupted-backup-${Date.now()}.txt`;
-			a.click();
-			URL.revokeObjectURL(url);
-		});
+		(freshBtn.disabled ? downloadBtn : freshBtn).focus();
 	}
 }
 

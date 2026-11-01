@@ -1,3 +1,9 @@
+## [2.657] - 2026-11-01
+- fix(high-contrast): priority stays visible, and the glass surfaces become solid panels
+- fix(help-window): the call-to-action wraps inside the box instead of running out of it
+- docs(changelog): 2.656 in plain words
+
+
 ## [2.656] - 2026-10-30
 
 ### Keyboard shortcuts

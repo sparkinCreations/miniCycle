@@ -22,7 +22,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, EVENTS, ROUTINE_OPEN_VIEW, ROUTINE_BROWSER_SORT } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
@@ -32,14 +32,17 @@ import * as preview from './routineSwitcherPreview.js';
 import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
-import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
+import { createIconElement, getIcon } from '../utils/icons.js';
+import { scrollBehavior } from '../utils/motionPreference.js';
+import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
 // ============================================================================
 
 // Storage utilities - dynamically loaded to avoid ES module cache issues
-let updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection;
+let updateStorageBarUI, getObjectSizeBytes, formatBytes, forceQuotaRedetection, getStorageInfo;
 let adjustStorageEstimate, resetStorageEstimate, updateStorageBarUIEstimated;
 
 // Name utilities
@@ -90,6 +93,7 @@ const di = createDIModule('RoutineSwitcher', {
     logHistoryEvent: optional(null),
     exportMiniCycleData: optional(null),
     showRoutineSwitcherTourNotification: optional(null),
+    showRoutineBrowserTourNotification: optional(null),   // routineBrowser.open (this.m.deps)
     hasActiveNotifications: optional(null),
     isTouchDevice: optional(null)
 });
@@ -134,6 +138,11 @@ export class RoutineSwitcher {
         // and immediately call deleteMiniCycle(), so a lazily-loaded sub-module
         // would be null on that path. Safe because the class holds no state.
         this._actions = new RoutineSwitcherActions(this);
+        // Browse Routines — the one-at-a-time view (routineBrowser.js). Same
+        // reasoning as _actions: constructed here, statically imported.
+        this._browser = new RoutineBrowser(this);
+        // Alt+Shift+[ / ]: the Recent order frozen at the first press (stepRecentRoutine).
+        this._recentWalk = null;
 
         this._previewCallbacks = {
             getSelectedItem: () => this._getSelectedItem()
@@ -162,9 +171,136 @@ export class RoutineSwitcher {
     }
 
     /**
-     * Open switch miniCycle modal
+     * The routine button shows the icon and name of whichever view it will open
+     * (Settings → "When you open routines, show"). Watched in state, not wired
+     * from Settings: the value also arrives when a brand-new user's first data
+     * is created, and with a restore or an import. Called by initRoutineSwitcher,
+     * not the constructor, so a bare instance (tests) touches no page element.
      */
-    switchMiniCycle() {
+    watchOpenView() {
+        if (this._openViewWatch) return;
+        this._openViewWatch = (newData, oldData) => {
+            const now = getRoutineOpenView(newData);
+            if (now === getRoutineOpenView(oldData) && this._entryPointsView === now) return;
+            this.syncEntryPoints(now);
+            document.dispatchEvent(new CustomEvent(EVENTS.ROUTINE_OPEN_VIEW_CHANGED, { detail: { view: now } }));
+        };
+        this.deps.AppState?.subscribe?.('routineOpenView', this._openViewWatch);
+        if (this.deps.AppState?.isReady?.()) this.syncEntryPoints();
+    }
+
+    /**
+     * Give the routine buttons the icon and name of the view they open, so the
+     * two are never confused: folder for the list, cards for Browse.
+     *   Home View button — List: the folder alone. Browse: the cards and
+     *     "Routines" (CSS drops the word where the header has no room).
+     *   Menu → Routine Actions — List: folder, "Switch". Browse: cards, "Browse".
+     * @param {'list'|'browse'} [view] - a ROUTINE_OPEN_VIEW value; defaults to the setting
+     */
+    syncEntryPoints(view = getRoutineOpenView(this.deps.AppState?.get?.())) {
+        this._entryPointsView = view;
+        const browse = view === ROUTINE_OPEN_VIEW.BROWSE;
+
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
+        if (btn) {
+            btn.innerHTML = getIcon(browse ? 'cards' : 'folder');
+            if (browse) {
+                const text = document.createElement('span');
+                text.className = DOM_CLASSES.ROUTINE_SWITCHER_BTN_LABEL;
+                text.textContent = getLabel('routine.browseShort');
+                btn.appendChild(text);
+            }
+            const name = getLabel(browse ? 'routine.browseAria' : 'routine.switchAria');
+            btn.setAttribute('aria-label', name);
+            btn.title = name;
+            btn.dataset.routineView = view;
+            // The + across the header matches this button's width (CSS reads it here).
+            const wrapper = btn.closest(DOM_SELECTORS.MODE_SELECTOR_WRAPPER);
+            if (wrapper) wrapper.dataset.routineView = view;
+        }
+
+        const menuBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
+        if (menuBtn) {
+            menuBtn.replaceChildren(
+                createIconElement(browse ? 'cards' : 'folder-open'),
+                document.createTextNode(getLabel(browse ? 'routine.menuBrowse' : 'routine.menuSwitch'))
+            );
+            menuBtn.title = getLabel(browse ? 'routine.browseAria' : 'routine.switchTitle');
+            menuBtn.dataset.routineView = view;
+        }
+    }
+
+    /**
+     * Alt+Shift+[ and Alt+Shift+] — step to the previous or next routine in
+     * Recent order, without opening a list (designed with the user, Oct 2026).
+     *
+     * The routine you are on is always the most recent, so "previous" is the
+     * one you used before it, then the one before that; "next" goes the other
+     * way, and from the newest wraps round to the least recent.
+     *
+     * The order is FROZEN at the first press. Opening a routine makes it the
+     * most recent, so a live order would reshuffle on every step and two
+     * presses would only bounce between the same two routines. While presses
+     * keep coming (UI_TIMEOUTS.ROUTINE_STEP_WALK_IDLE apart at most) and the
+     * user is still on the routine the last step landed on, the walk goes on
+     * through the order as it was; otherwise it starts again from the order as
+     * it is now. Opens through _openRoutineByKey(), as the list and Browse do.
+     * @param {1|-1} direction - -1 previous (older), 1 next (newer, wrapping)
+     * @returns {boolean} whether it switched
+     */
+    stepRecentRoutine(direction) {
+        const AppState = this.deps.AppState;
+        if (!AppState?.isReady?.() || (direction !== 1 && direction !== -1)) return false;
+        const state = AppState.get();
+        const routines = getRoutines(state) || {};
+        const keys = Object.keys(routines);
+        if (keys.length < 2) {
+            this.deps.showNotification(getLabel('notify.onlyOneRoutineToStep'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+            return false;
+        }
+
+        const activeId = getActiveRoutineId(state);
+        const walk = this._recentWalk;
+        const continuing = !!walk
+            && walk.landedOn === activeId
+            && Date.now() - walk.at < UI_TIMEOUTS.ROUTINE_STEP_WALK_IDLE
+            && walk.order.length === keys.length
+            && keys.every(key => walk.order.includes(key));
+        const order = continuing ? walk.order : orderRoutines(routines, ROUTINE_BROWSER_SORT.RECENT);
+
+        // Newest first: previous is further down the list, next is up it.
+        const here = Math.max(0, order.indexOf(activeId));
+        const target = order[(here - direction + order.length) % order.length];
+        this._recentWalk = { order, landedOn: target, at: Date.now() };
+        this._openRoutineByKey(target);
+        return true;
+    }
+
+    /** Browse Routines, for tests and the shortcuts. */
+    get browser() {
+        return this._browser;
+    }
+
+    /**
+     * Boot-retry teardown (moduleLoader.destroyAllModules): the state watch and
+     * Browse Routines' dialog, so a retried boot does not watch twice.
+     */
+    destroy() {
+        if (this._openViewWatch) {
+            this.deps.AppState?.unsubscribe?.('routineOpenView', this._openViewWatch);
+            this._openViewWatch = null;
+        }
+        this._browser.destroy();
+    }
+
+    /**
+     * Open routines — in the view Settings chose, unless one is asked for.
+     * @param {{view?: 'list'|'browse', returnFocus?: Element|null}} [options]
+     *   view: force a view (each view's corner button asks for the other);
+     *   returnFocus: where focus goes when the list closes, when it was not
+     *   opened from the element that has focus now (coming from Browse)
+     */
+    switchMiniCycle({ view, returnFocus } = {}) {
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
@@ -189,6 +325,12 @@ export class RoutineSwitcher {
         }
 
         const cycles = getRoutines(currentState) || {};
+
+        if ((view || getRoutineOpenView(currentState)) === ROUTINE_OPEN_VIEW.BROWSE && Object.keys(cycles).length > 0) {
+            this._browser.open();
+            return;
+        }
+
         const switchModal = this.deps.getModal('routineSwitcher');
         const switchRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         const duplicateButton = this.deps.getElementById(DOM_IDS.SWITCH_DUPLICATE);
@@ -203,8 +345,10 @@ export class RoutineSwitcher {
             return;
         }
 
-        switchModal._previousFocus = document.activeElement;
+        switchModal._previousFocus = returnFocus || document.activeElement;
         if (!switchModal.open) switchModal.showModal();
+        this._wireBrowseCorner(switchModal);
+        this._wireListExpand(switchModal);
 
         // Re-arm the blank-click deselect. _cleanup() removes it on every close
         // (Apr 2026) but until Sep 2026 it was only ever attached in the
@@ -361,6 +505,9 @@ export class RoutineSwitcher {
     // Kept as pass-throughs (not stored) so they stay live if init runs later.
     getObjectSizeBytes(cycle) { return getObjectSizeBytes(cycle); }
     getUniqueCycleName(name, cycles) { return getUniqueCycleName(name, cycles); }
+    // For Browse Routines' size line — the storage bar's own figures.
+    formatBytes(bytes) { return formatBytes ? formatBytes(bytes) : `${bytes} B`; }
+    getStorageInfo() { return getStorageInfo ? getStorageInfo() : null; }
     adjustStorageEstimate(bytes) { return adjustStorageEstimate(bytes); }
     updateStorageBarUIEstimated(...args) { return updateStorageBarUIEstimated(...args); }
 
@@ -399,7 +546,113 @@ export class RoutineSwitcher {
         themePicker.closeThemePicker(this.deps);
     }
 
-    hideSwitchMiniCycleModal() {
+    /**
+     * Open Routine's top-right corner: Browse Routines, with its own cards icon.
+     * Re-wired on every open and removed by _cleanup(), like the other buttons.
+     * @param {HTMLDialogElement} switchModal
+     * @private
+     */
+    _wireBrowseCorner(switchModal) {
+        const btn = this.deps.getElementById(DOM_IDS.SWITCH_BROWSE_BTN);
+        if (!btn) return;
+        if (!btn.dataset.iconSet) {
+            btn.innerHTML = getIcon('cards');
+            const label = document.createElement('span');
+            label.textContent = getLabel('routineBrowser.fromListBtn');
+            btn.appendChild(label);
+            btn.setAttribute('aria-label', getLabel('routineBrowser.fromListAria'));
+            btn.title = getLabel('routineBrowser.fromListAria');
+            btn.dataset.iconSet = '1';
+        }
+        if (btn._clickHandler) btn.removeEventListener('click', btn._clickHandler);
+        btn._clickHandler = () => {
+            // Hand Browse the element that opened the list, so closing Browse
+            // puts focus back there rather than on the page.
+            const opener = switchModal._previousFocus || null;
+            // Cleared, not just skipped: the dialog's own `close` event restores
+            // _previousFocus too, a moment later, and would pull focus out of Browse.
+            switchModal._previousFocus = null;
+            this.hideSwitchMiniCycleModal({ restoreFocus: false });
+            this._browser.open({ fromList: true, returnFocus: opener });
+        };
+        btn.addEventListener('click', btn._clickHandler);
+    }
+
+    /** @returns {boolean} whether the routine list has the window (Expand) */
+    isListExpanded() {
+        return !!this._listExpanded;
+    }
+
+    /**
+     * Expand the routine list to fill the window, or put it back. Expanded, the
+     * search stays and everything else steps aside (sort row, recents, preview,
+     * actions, storage); a tap selects AND collapses, so the routine's preview
+     * and actions are right there (the user's design, Oct 2026). On every screen
+     * size, for consistency.
+     * @param {boolean} on
+     */
+    setListExpanded(on) {
+        this._listExpanded = !!on;
+        const content = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+        content?.classList.toggle(DOM_CLASSES.ROUTINE_LIST_EXPANDED, this._listExpanded);
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_EXPAND_BTN);
+        if (btn) {
+            // Both icons are built once and swapped by `hidden`, never by
+            // innerHTML: replacing the button's contents mid-click detached the
+            // clicked <svg>, and the window's click-outside check, seeing a
+            // target no longer inside it, closed the whole window.
+            if (!btn.dataset.iconsBuilt) {
+                btn.replaceChildren(...['expand', 'compress'].map(icon => {
+                    const span = document.createElement('span');
+                    span.dataset.icon = icon;
+                    span.innerHTML = getIcon(icon);   // ICONS registry: trusted static markup
+                    return span;
+                }));
+                btn.dataset.iconsBuilt = '1';
+            }
+            btn.querySelector('[data-icon="expand"]').hidden = this._listExpanded;
+            btn.querySelector('[data-icon="compress"]').hidden = !this._listExpanded;
+            const name = getLabel(this._listExpanded ? 'routine.collapseList' : 'routine.expandList');
+            btn.setAttribute('aria-expanded', String(this._listExpanded));
+            btn.setAttribute('aria-label', name);
+            btn.title = name;
+        }
+        const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
+        if (this._listExpanded && switchItemsRow) {
+            // The one part shown by an inline style (_revealRoutineSelection), so
+            // the expanded CSS cannot hide it without !important; hide it here.
+            switchItemsRow.style.display = 'none';
+        } else if (this._selectedCycleKey) {
+            // Back to the normal layout: the selection, its actions and preview.
+            this._revealRoutineSelection(this._selectedCycleKey);
+        }
+    }
+
+    /**
+     * The list heading's Expand / Collapse. Re-wired on every open (it always
+     * opens collapsed) and removed by _cleanup(), like the other buttons. Escape
+     * collapses an expanded list before it closes the window.
+     * @param {HTMLDialogElement} switchModal
+     * @private
+     */
+    _wireListExpand(switchModal) {
+        this.setListExpanded(false);
+        const btn = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_EXPAND_BTN);
+        if (btn) {
+            if (btn._clickHandler) btn.removeEventListener('click', btn._clickHandler);
+            btn._clickHandler = () => this.setListExpanded(!this._listExpanded);
+            btn.addEventListener('click', btn._clickHandler);
+        }
+        if (switchModal._expandCancelHandler) switchModal.removeEventListener('cancel', switchModal._expandCancelHandler);
+        switchModal._expandCancelHandler = (e) => {
+            if (!this._listExpanded) return;
+            e.preventDefault();
+            this.setListExpanded(false);
+        };
+        switchModal.addEventListener('cancel', switchModal._expandCancelHandler);
+    }
+
+    hideSwitchMiniCycleModal({ restoreFocus = true } = {}) {
 
         const switchModal = this.deps.getModal('routineSwitcher');
 
@@ -411,7 +664,7 @@ export class RoutineSwitcher {
         if (switchModal.open) switchModal.close();
         this.closeThemePicker();
         this._cleanup();
-        switchModal._previousFocus?.focus({ focusVisible: false });
+        if (restoreFocus) switchModal._previousFocus?.focus({ focusVisible: false });
     }
 
     /**
@@ -422,6 +675,13 @@ export class RoutineSwitcher {
      */
     _cleanup() {
         const switchModal = this.deps.getModal('routineSwitcher');
+
+        // Expand / Collapse: closed collapsed, and its Escape handler goes.
+        if (switchModal?._expandCancelHandler) {
+            switchModal.removeEventListener('cancel', switchModal._expandCancelHandler);
+            switchModal._expandCancelHandler = null;
+        }
+        if (this._listExpanded) this.setListExpanded(false);
 
         // Remove touchmove guard (prevents iOS rubber-band drag)
         if (switchModal?._touchmoveHandler) {
@@ -440,7 +700,8 @@ export class RoutineSwitcher {
         const buttonIds = [
             DOM_IDS.SWITCH_DUPLICATE, DOM_IDS.SWITCH_RENAME, DOM_IDS.SWITCH_DELETE,
             DOM_IDS.SWITCH_DOWNLOAD, DOM_IDS.SWITCH_THEME_BTN,
-            DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE
+            DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE,
+            DOM_IDS.SWITCH_BROWSE_BTN, DOM_IDS.ROUTINE_LIST_EXPAND_BTN
         ];
         buttonIds.forEach(id => {
             const btn = this.deps.getElementById(id);
@@ -479,6 +740,17 @@ export class RoutineSwitcher {
             this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
+
+        this._openRoutineByKey(cycleKey);
+    }
+
+    /**
+     * Switch to a routine by key: the one way both the list (confirmMiniCycle)
+     * and Browse Routines open a routine, so they cannot drift apart.
+     * @param {string} cycleKey
+     */
+    _openRoutineByKey(cycleKey) {
+        if (!this.deps.AppState?.isReady?.() || !cycleKey) return;
 
         // ✅ Validate and repair cycle data before switching (like import does)
         const repaired = this._validateAndRepairCycleData(cycleKey);
@@ -527,8 +799,10 @@ export class RoutineSwitcher {
             });
         }
 
-        // ✅ Close modal first to avoid UI conflicts
-        this.hideSwitchMiniCycleModal();
+        // ✅ Close modal first to avoid UI conflicts. From Browse Routines the
+        // list is not on screen: its cleanup still runs, but focus is not sent to
+        // whatever opened the list last time.
+        this.hideSwitchMiniCycleModal({ restoreFocus: !!this.deps.getModal('routineSwitcher')?.open });
 
         // Load straight away. A 100ms timer used to sit here "to ensure state is
         // fully propagated", but AppState.update is synchronous and the check
@@ -598,6 +872,14 @@ export class RoutineSwitcher {
 
             // ✅ Check if click is inside a confirmation/prompt modal dialog
             const modalOverlay = event.target.closest(DOM_SELECTORS.MINI_MODAL_OVERLAY);
+            // Browse Routines' "Open Routine" corner opens the list from inside a
+            // click; that same click then bubbles here and would close the list
+            // it just opened.
+            const browser = this.deps.getElementById(DOM_IDS.ROUTINE_BROWSER);
+
+            // A target the click itself removed from the page (a button that
+            // redraws its own contents) cannot be "outside" — it was inside.
+            if (!event.target.isConnected) return;
 
             // ✅ If clicked area is NOT inside the modal, main menu, routine switcher button, or confirmation modal, close it
             if (
@@ -605,7 +887,8 @@ export class RoutineSwitcher {
                 !mainMenu.contains(event.target) &&
                 event.target !== routineSwitcherBtn &&
                 !routineSwitcherBtn?.contains(event.target) &&
-                !modalOverlay
+                !modalOverlay &&
+                !browser?.contains(event.target)
             ) {
                 if (switchModal.open) switchModal.close();
                 switchModal._previousFocus?.focus({ focusVisible: false });
@@ -755,6 +1038,33 @@ export class RoutineSwitcher {
                 miniCycleList.setAttribute('aria-activedescendant', listItem.id);
             }
         }
+        this._syncListTabStop();
+    }
+
+    /**
+     * The list is ONE Tab stop (roving tabindex): the selected row if it is
+     * showing, else the first row showing. Every row used to be its own stop,
+     * so getting past 25 routines took 25 Tabs (Oct 2026); inside the list
+     * the arrow keys move.
+     * @private
+     */
+    _syncListTabStop() {
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+        if (!miniCycleList) return;
+        const rows = Array.from(miniCycleList.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM));
+        const showing = rows.filter(row => row.style.display !== 'none');
+        const stop = showing.find(row => row.classList.contains(DOM_CLASSES.SELECTED)) || showing[0] || null;
+        rows.forEach(row => { row.tabIndex = row === stop ? 0 : -1; });
+    }
+
+    /**
+     * The first row the search and filter leave showing, or null.
+     * @private
+     */
+    _firstShowingRow() {
+        const miniCycleList = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
+        return Array.from(miniCycleList?.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM) || [])
+            .find(row => row.style.display !== 'none') || null;
     }
 
     /**
@@ -765,12 +1075,21 @@ export class RoutineSwitcher {
     _revealRoutineSelection(cycleKey) {
         // Show action buttons
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
-        if (switchItemsRow) {
+        // Not while the list is expanded: it has the window. setListExpanded(false)
+        // calls back in here, which shows the row then.
+        if (switchItemsRow && !this._listExpanded) {
             switchItemsRow.style.display = "flex";
         }
 
         // Update preview
         this.updatePreview(cycleKey);
+
+        // Revealing the actions and preview grows the card, and on a phone the
+        // list shrinks to a row or two — the row just chosen ended up scrolled
+        // out of sight, with its preview showing under someone else's name
+        // (Oct 2026). Bring it back once the new layout is in.
+        const chosenRow = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST)?.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
+        if (chosenRow) requestAnimationFrame(() => chosenRow.scrollIntoView({ block: 'nearest' }));
 
         // Refresh theme picker if open
         const picker = this.deps.getElementById(DOM_IDS.THEME_PICKER_ROW);
@@ -795,6 +1114,7 @@ export class RoutineSwitcher {
         // Clear the listbox activedescendant
         const listbox = this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST);
         if (listbox) listbox.removeAttribute('aria-activedescendant');
+        this._syncListTabStop();
         // Hide actions row
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         if (switchItemsRow) switchItemsRow.style.display = 'none';
@@ -874,13 +1194,18 @@ export class RoutineSwitcher {
         const prevRecent = modalContent?.querySelector(DOM_SELECTORS.RECENT_ROUTINES_SECTION);
         if (prevRecent) prevRecent.remove();
 
-        // Delegated arrow key navigation
+        // Delegated arrow key navigation. Selection follows focus: arrowing to a
+        // routine used to move focus only, so the preview and the actions never
+        // changed and Enter on the new row only selected it (Oct 2026).
         this.deps.safeAddEventListener(miniCycleList, "keydown", (event) => {
             const item = event.target.closest(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-            if (!item) return;
-            handleVerticalArrowNav(event, miniCycleList, DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM, {
+            // Arrow keys inside the inline rename box move the caret, never the selection.
+            if (!item || event.target.closest(DOM_SELECTORS.CYCLE_ITEM_EDIT_INPUT)) return;
+            const moved = handleVerticalArrowNav(event, miniCycleList, DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM, {
                 wrap: false, skipHidden: true
             });
+            const now = moved ? document.activeElement?.closest?.(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM) : null;
+            if (now && now !== item && now.dataset.cycleKey) this._selectRoutine(now.dataset.cycleKey);
         });
 
         // Empty state
@@ -913,6 +1238,7 @@ export class RoutineSwitcher {
         // search was retyped (Oct 2026).
         const searchInput = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_INPUT);
         if (searchInput?.value.trim()) this.filterRoutineList(searchInput.value);
+        this._syncListTabStop();
 
         this.deps.updateReminderButtons();
     }
@@ -961,7 +1287,7 @@ export class RoutineSwitcher {
                 this._selectRoutine(cycleKey);
                 const listItem = miniCycleList.querySelector(DATA_SELECTORS.cycleByKey(cycleKey));
                 if (listItem) {
-                    listItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    listItem.scrollIntoView({ block: 'nearest', behavior: scrollBehavior() });
                 }
             });
 
@@ -999,7 +1325,7 @@ export class RoutineSwitcher {
         const listItem = document.createElement("div");
         listItem.classList.add(DOM_CLASSES.MINI_CYCLE_SWITCH_ITEM);
         listItem.id = `routine-option-${index}`;
-        listItem.setAttribute("tabindex", "0");
+        listItem.setAttribute("tabindex", "-1"); // _syncListTabStop picks the one stop
         listItem.setAttribute("role", "option");
         listItem.dataset.cycleName = cycleData.title || cycleKey;
         listItem.dataset.cycleKey = cycleKey;
@@ -1080,9 +1406,11 @@ export class RoutineSwitcher {
                 return;
             }
 
-            // If a routine is already selected, select immediately
+            // If a routine is already selected, select immediately — unless the
+            // list is expanded: that tap also collapses it, which moves every
+            // row, so it waits out the double-tap window like a first tap does.
             const hasSelection = this.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);
-            if (hasSelection) {
+            if (hasSelection && !this._listExpanded) {
                 this._selectRoutine(cycleKey);
                 return;
             }
@@ -1097,6 +1425,8 @@ export class RoutineSwitcher {
             listItem._selectTimeout = setTimeout(() => {
                 listItem._selectTimeout = null;
                 this._selectRoutine(cycleKey);
+                // Expanded: the tap that chooses a routine hands the window back.
+                if (this._listExpanded) this.setListExpanded(false);
             }, UI_TIMEOUTS.SWITCHER_DOUBLE_TAP);
         };
         safeAdd(listItem, "click", listItem._clickHandler);
@@ -1104,12 +1434,22 @@ export class RoutineSwitcher {
         // Keyboard activation
         listItem._keyHandler = (e) => {
             if (fromRenameBox(e)) return;
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === 'Enter') {
+                // Opens the focused routine. It used to take two presses on a
+                // row that was not already selected — the first only selected.
+                e.preventDefault();
+                this._selectRoutine(cycleKey);
+                this.confirmMiniCycle();
+            } else if (e.key === ' ') {
                 e.preventDefault();
                 if (listItem.classList.contains(DOM_CLASSES.SELECTED)) {
                     this.confirmMiniCycle();
                 } else {
                     this._selectRoutine(cycleKey);
+                    if (this._listExpanded) {
+                        this.setListExpanded(false);
+                        listItem.focus();
+                    }
                 }
             } else if (e.key === 'd' && (e.metaKey || e.ctrlKey)) {
                 e.preventDefault();
@@ -1241,6 +1581,8 @@ export class RoutineSwitcher {
             [DOM_IDS.SWITCH_DELETE, 'switcher.deleteRoutine'],
             [DOM_IDS.SWITCH_DOWNLOAD, 'switcher.downloadRoutine'],
             [DOM_IDS.SWITCH_THEME_BTN, 'switcher.changeRoutineTheme'],
+            // Icon-only on a phone too (its word would cover the title there).
+            [DOM_IDS.SWITCH_BROWSE_BTN, 'routineBrowser.fromListAria'],
         ];
 
         this._actionHintDetachers.forEach(detach => detach());
@@ -1285,7 +1627,43 @@ export class RoutineSwitcher {
             searchInput.addEventListener('input', searchInput._inputHandler);
         }
 
-        // Don't auto-focus search — let the user tap it if they want to search
+        // From the search box into the results (once). Down Arrow moves to the
+        // first match; Enter opens it when it is the only one, otherwise moves
+        // to it. Before, neither key did anything here: a keyboard user who had
+        // just typed a search had to Tab past the filter and three sort buttons
+        // to reach the routine they had found (Oct 2026).
+        if (!searchInput._keyHandler) {
+            searchInput._keyHandler = (e) => {
+                if (e.key !== 'ArrowDown' && e.key !== 'Enter') return;
+                const first = this._firstShowingRow();
+                if (!first?.dataset.cycleKey) return;
+                e.preventDefault();
+                const showing = Array.from(this.deps.getElementById(DOM_IDS.MINI_CYCLE_LIST)
+                    .querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)).filter(row => row.style.display !== 'none');
+                this._selectRoutine(first.dataset.cycleKey);
+                if (e.key === 'Enter' && showing.length === 1) {
+                    this.confirmMiniCycle();
+                } else {
+                    first.focus();
+                }
+            };
+            searchInput.addEventListener('keydown', searchInput._keyHandler);
+        }
+
+        // Keyboard and mouse: start in the search box, the way most pickers do.
+        // Not on touch — focusing would throw the on-screen keyboard over the
+        // list before the user has asked to type.
+        if (globalThis.matchMedia?.('(hover: hover) and (pointer: fine)').matches) {
+            requestAnimationFrame(() => {
+                const modal = this.deps.getModal('routineSwitcher');
+                const active = document.activeElement;
+                // Only from where showModal() left focus (the card itself) —
+                // never pull it away from somewhere the user already went.
+                const untouched = !active || active === document.body || active === modal
+                    || active.matches?.(DOM_SELECTORS.MINI_CYCLE_SWITCH_MODAL_CONTENT);
+                if (modal?.open && untouched) searchInput.focus();
+            });
+        }
     }
 
     /**
@@ -1301,7 +1679,7 @@ export class RoutineSwitcher {
 
         items.forEach(item => {
             const cycleName = (item.dataset.cycleName || '');
-            const matches = lowerQuery === '' || cycleName.toLowerCase().includes(lowerQuery);
+            const matches = listTransforms.routineNameMatches(cycleName, query);
             item.style.display = matches ? '' : 'none';
 
             // Highlight matching text in title
@@ -1329,6 +1707,8 @@ export class RoutineSwitcher {
         if (selectedItem && selectedItem.style.display === 'none') {
             this._deselectRoutine();
         }
+        // The Tab stop must sit on a row that is still showing.
+        this._syncListTabStop();
     }
 
     /**
@@ -1401,6 +1781,13 @@ export class RoutineSwitcher {
         const sortAlpha = this.deps.getElementById(DOM_IDS.SORT_ALPHA);
         const sortRecent = this.deps.getElementById(DOM_IDS.SORT_RECENT);
         const sortSize = this.deps.getElementById(DOM_IDS.SORT_SIZE);
+
+        // Which sort is on, for screen readers too — the colour alone said it.
+        // Each label already names the CURRENT order (A-Z, then Z-A once
+        // pressed again), not the one a press would give.
+        [[sortAlpha, 'alpha'], [sortRecent, 'recent'], [sortSize, 'size']].forEach(([btn, mode]) => {
+            btn?.setAttribute('aria-pressed', String(this._sortMode === mode));
+        });
 
         if (sortAlpha) {
             sortAlpha.classList.toggle(DOM_CLASSES.ACTIVE, this._sortMode === 'alpha');
@@ -1569,6 +1956,7 @@ export async function initRoutineSwitcher(dependencies) {
     updateStorageBarUI = storageUtils.updateStorageBarUI;
     getObjectSizeBytes = storageUtils.getObjectSizeBytes;
     formatBytes = storageUtils.formatBytes;
+    getStorageInfo = storageUtils.getStorageInfo;
     forceQuotaRedetection = storageUtils.forceQuotaRedetection;
     adjustStorageEstimate = storageUtils.adjustStorageEstimate;
     resetStorageEstimate = storageUtils.resetStorageEstimate;
@@ -1580,6 +1968,7 @@ export async function initRoutineSwitcher(dependencies) {
 
     // Now create the instance
     routineSwitcher = new RoutineSwitcher(dependencies);
+    routineSwitcher.watchOpenView();
     return routineSwitcher;
 }
 
@@ -1590,6 +1979,15 @@ export async function initRoutineSwitcher(dependencies) {
 function switchMiniCycle() {
     if (!routineSwitcher) return;
     routineSwitcher.switchMiniCycle();
+}
+
+/**
+ * @param {1|-1} direction
+ * @returns {boolean} whether it switched
+ */
+function stepRecentRoutine(direction) {
+    if (!routineSwitcher) return false;
+    return routineSwitcher.stepRecentRoutine(direction);
 }
 
 function renameMiniCycle() {
@@ -1635,6 +2033,7 @@ function setupModalClickOutside() {
 
 export {
     switchMiniCycle,
+    stepRecentRoutine,
     renameMiniCycle,
     deleteMiniCycle,
     hideSwitchMiniCycleModal,

@@ -785,7 +785,9 @@ export class HistoryManager {
     _groupEventsByDate(events) {
         const now = new Date();
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-        const yesterday = today - 86400000;
+        // Midnight a calendar day back, not 24 hours back — the day the clocks
+        // change is 23 or 25 hours long.
+        const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1).getTime();
 
         const groups = {
             [getLabel('history.dateToday')]: [],

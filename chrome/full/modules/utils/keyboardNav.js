@@ -160,3 +160,54 @@ export function handleGridArrowNav(event, container, selector) {
 
     return moveFocus(boxes, current, next, event);
 }
+
+/** Input types that take typed text. Everything else (checkbox, radio, button…) is a control, not a field. */
+const NON_TEXT_INPUT_TYPES = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file', 'image']);
+
+/**
+ * Is the user typing here? True for text inputs, textareas, selects and
+ * contenteditable — false for a task's checkbox, which is an <input> too.
+ * A `closest('input, …')` test treated a focused checkbox as a text field, so
+ * a shortcut pressed on a task silently did nothing.
+ * @param {EventTarget|null} el
+ * @returns {boolean}
+ */
+export function isTextEntryTarget(el) {
+    if (!el || el.nodeType !== 1) return false;
+    if (el.isContentEditable) return true;
+    const tag = el.tagName;
+    if (tag === 'TEXTAREA' || tag === 'SELECT') return true;
+    if (tag !== 'INPUT') return false;
+    return !NON_TEXT_INPUT_TYPES.has(String(el.type || 'text').toLowerCase());
+}
+
+/** Physical keys to fall back on when the typed character is not a Latin letter. */
+const UNDO_REDO_CODES = Object.freeze({ KeyZ: 'z', KeyY: 'y' });
+
+/**
+ * Which app undo/redo a keydown asks for: 'undo', 'redo' or null.
+ *
+ * Null while the user is typing — Ctrl+Z in a text field belongs to the
+ * field's own text undo, and calling preventDefault there threw the typing
+ * undo away AND undid app data instead. An open dialog does NOT block it:
+ * a prompt that appears after an action (the backup reminder after a first
+ * cycle) must not leave Ctrl+Z silently doing nothing — a text field inside
+ * the dialog is still covered by the rule above.
+ *
+ * The letter is read from the typed character in either case (Caps Lock sends
+ * "Z" without Shift), so it follows the keyboard LAYOUT: on French and German
+ * keyboards the key labelled Z is not the one a US keyboard calls KeyZ.
+ * Only when the character is not a Latin letter (Cyrillic, Greek…) does the
+ * physical key decide.
+ *
+ * @param {KeyboardEvent} e
+ * @returns {'undo'|'redo'|null}
+ */
+export function undoRedoShortcut(e) {
+    if (!(e.ctrlKey || e.metaKey) || e.altKey) return null;
+    if (isTextEntryTarget(e.target)) return null;
+    const letter = /^[a-z]$/i.test(e.key || '') ? e.key.toLowerCase() : (UNDO_REDO_CODES[e.code] || null);
+    if (letter === 'z') return e.shiftKey ? 'redo' : 'undo';
+    if (letter === 'y' && !e.shiftKey) return 'redo';
+    return null;
+}

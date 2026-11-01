@@ -68,6 +68,8 @@ body.dark-mode:not([data-theme]) {
     --dark-overlay-strong: rgba(255, 255, 255, 0.2);
     --dark-overlay-heavy: rgba(30, 30, 30, 0.8);
     --dark-overlay-faint: rgba(255, 255, 255, 0.03);
+    /* The task list panel (and Browse Routines' preview of it) */
+    --dark-task-panel-bg: rgba(40, 40, 45, 0.6);
     /* Blue highlight overrides (stronger for dark bg visibility) */
     --highlight-blue-bg: rgba(74, 144, 226, 0.15);
     --highlight-blue-border: rgba(74, 144, 226, 0.4);
@@ -1716,7 +1718,7 @@ body.dark-mode #mini-cycle-title:focus {
    ============================================================================= */
 
 body.dark-mode .task-list-container {
-    background: rgba(40, 40, 45, 0.6);
+    background: var(--dark-task-panel-bg);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     border-color: rgba(255, 255, 255, 0.08);

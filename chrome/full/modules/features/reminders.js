@@ -288,7 +288,8 @@ export class MiniCycleReminders {
             return getLabel('reminders.nextIn', { vars: { count, unit: getLabel('reminders.nextHourUnit', { count }) } });
         }
         const next = new Date(nextTime);
-        const time = next.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+        // The device's own 12/24-hour clock, like every other time in the app.
+        const time = next.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         if (next.toDateString() === tomorrow.toDateString()) {
@@ -899,16 +900,30 @@ export class MiniCycleReminders {
             this.state.reminderTimeoutId = null;
         }
 
+        // Every way out below that leaves reminders off also clears the series
+        // the phone may still hold (native only) — as dueDates.syncDueDateNotifications
+        // does. The OS keeps scheduled notifications through a factory reset, a
+        // restore or an import that turns reminders off, and nothing else on
+        // those paths cancels them, so the phone kept delivering reminders the
+        // app no longer has.
+        // Awaited: startReminders() is serialised, so a series scheduled by the
+        // next call can never be cancelled by this one landing late.
+        const clearNativeSeries = async () => {
+            if (isNativeApp()) await cancelNativeReminderSeries(LIMITS.NATIVE_REMINDER_SCHEDULE_MAX);
+        };
+
         // State only
         const state = this._state();
         if (!state) {
             console.warn('⚠️ No state data yet - reminders will start after cycle creation');
+            await clearNativeSeries();
             return; // Gracefully exit - reminders will start when data exists
         }
 
         const remindersSettings = state.customReminders || {};
 
         if (!remindersSettings.enabled) {
+            await clearNativeSeries();
             return;
         }
 
@@ -918,6 +933,7 @@ export class MiniCycleReminders {
 
         // Check if max reminders already sent
         if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
+            await clearNativeSeries();
             return;
         }
 
