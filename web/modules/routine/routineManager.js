@@ -448,6 +448,13 @@ export class RoutineManager {
                 const storageKey = finalTitle;
                 let finalResult = null;
 
+                // Created in Focus View: open its input bar. Focus View hides the
+                // header, so there is no + there, and an empty routine's first
+                // task was a trip through the ⋯ menu. Home View keeps the bar
+                // hidden by default (v2.529: + teaches it). It is the routine's
+                // own showTaskInput, so the user can still hide it.
+                const inFocusView = this.deps.AppState.get()?.settings?.focusModeActive === true;
+
                 this.deps.AppState.update(state => {
                     getRoutines(state)[storageKey] = {
                         title: finalTitle,
@@ -459,7 +466,8 @@ export class RoutineManager {
                         createdAt: Date.now(),
                         theme: 'classic',
                         recurringTemplates: {},
-                        taskOptionButtons: { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS }
+                        taskOptionButtons: { ...this.deps.DEFAULT_TASK_OPTION_BUTTONS },
+                        ...(inFocusView ? { showTaskInput: true } : {})
                     };
 
                     setActiveRoutineId(state, storageKey);
