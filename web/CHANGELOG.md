@@ -1,3 +1,8 @@
+## [2.664] - 2026-11-02
+- Returning users: one redirect to /app with a 'we moved' notice
+- minicycle.app always shows the product page
+
+
 ## [2.663] - 2026-11-02
 - minicycle.app is the product page; the app moves to /app
 - Personalization: corner-button options live in Buttons & Progress

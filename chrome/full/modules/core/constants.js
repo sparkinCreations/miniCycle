@@ -823,6 +823,9 @@ export const STORAGE_KEYS = Object.freeze({
     // and re-written when a factory reset raises that screen again in place.
     FIRST_RUN_CHOICE_SESSION: 'miniCycle_firstRunChoice',
     FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
+    // The one-time "miniCycle moved to /app" redirect (Nov 2026). Written by the
+    // product page's pages/product-returning.js, which spells the literal itself.
+    MOVED_TO_APP_NOTICE: 'miniCycle_movedToAppNotice',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
     // Whack-a-Order bests, per difficulty. Written by the self-contained game
