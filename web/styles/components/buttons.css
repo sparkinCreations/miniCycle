@@ -255,8 +255,8 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
 /* =============================================================================
    GLASS COMPLETE / CLEAR (default, Nov 2026)
    The same glass as Focus View's round action button (focus-mode.css): 25%
-   white, a light 2px blur, its thin white rim (1px, 40%), and like it a white
-   cycle icon. The mode's colour moves from the fill
+   white, a light 2px blur, its thin 1px white rim (brighter here, 65%, on
+   the larger button), and like it a white cycle icon. The mode's colour moves from the fill
    to the words — --action-color is the user's Complete Cycle / Clear colour
    (Personalization) or the default — darkened, because on near-clear glass
    the words sit on the page's blue: the colour kept at 40% (color-mix; the
@@ -274,7 +274,7 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
     background: rgba(255, 255, 255, 0.25);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
-    border: 1px solid rgba(255, 255, 255, 0.4);   /* Focus View's rim, exactly */
+    border: 1px solid rgba(255, 255, 255, 0.65);   /* Focus View's thin rim, a little brighter on this larger button */
     color: var(--action-color);
     color: color-mix(in srgb, var(--action-color) 40%, #000);
     text-shadow: none;
@@ -298,7 +298,7 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn {
     --action-color: var(--color-complete-btn);
     background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.45);
     color: color-mix(in srgb, var(--action-color) 60%, #fff);
 }
 
@@ -314,7 +314,7 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-complete-btn,
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
     background: rgba(255, 255, 255, 0.25);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.65);
     color: var(--preview-action-color);
     color: color-mix(in srgb, var(--preview-action-color) 40%, #000);
 }
