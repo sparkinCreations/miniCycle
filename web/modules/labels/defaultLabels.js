@@ -850,7 +850,6 @@ export const DEFAULT_LABELS = deepFreeze({
         noResultsToCopy:         'No test results to copy',
         resultsCopied:           'Test results copied to clipboard',
         copyFailed:              'Failed to copy test results',
-        testingPanelOpened:      'Testing panel opened',
         testingPanelClosed:      'Testing panel closed',
         consoleCaptureDisplayed: 'Displayed {count} console messages with enhanced migration logging',
         logsCleared:             'Console logs cleared - ready for new capture',
@@ -984,6 +983,10 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Reminder notifications
         reminderEnabled:         'Task reminders enabled!',
+        testsAllPassed:          'All {count} tests passed!',
+        testsModulesFailed:      '{count} module(s) have failures',
+        testsModulesTimedOut:    '{count} module(s) timed out (incomplete) — re-run',
+        testsBackgrounded:       'Run was backgrounded — re-run with the tab focused',
         testsRequireNetwork:     'Tests require a network connection — test files are always fetched fresh. Reconnect and try again.',
         reminderDisabled:        'Task reminders disabled.',
         taskReminderDisabled:    'Reminder disabled for task.',
@@ -2795,7 +2798,19 @@ export const DEFAULT_LABELS = deepFreeze({
         cancel:               'Cancel',
         restore:              'Restore',
         find:                 'Find',
-        print:                'Print'
+        print:                'Print',
+        // App Diagnostics → Run All Tests: the runner overlay
+        runnerTitle:          'Running Tests…',
+        runnerInitializing:   'Initializing tests…',
+        runnerEstimating:     'Estimating time…',
+        runnerKeepOpen:       'Please do not close this window while tests are running',
+        runnerTesting:        'Testing:',
+        runnerRemaining:      '~{time} remaining',
+        runnerAllPassed:      'All tests passed!',
+        runnerSomeFailed:     '{count} test(s) failed',
+        runnerComplete:       'Tests Complete',
+        runnerCompleteFailures: 'Tests Complete (with failures)',
+        runnerCompletedIn:    'Completed in {seconds}s'
     }
 });
 

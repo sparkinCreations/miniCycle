@@ -1638,14 +1638,14 @@
 
         <div class="testing-modal-body">
             <div class="testing-tabs" role="tablist" aria-label="Testing categories">
-                <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab">📊 Diagnostics</button>
-                <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab">🐛 Debug Info</button>
-                <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab">🧪 Automated Tests</button>
+                <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab"><i class="fas fa-chart-bar"></i> Diagnostics</button>
+                <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab"><i class="fas fa-bug"></i> Debug Info</button>
+                <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab"><i class="fas fa-check-circle"></i> Automated Tests</button>
             </div>
 
             <div id="diagnostics-tab" class="testing-tab-content active" role="tabpanel">
                 <div class="testing-section">
-                    <h3>📋 Quick Health Check</h3>
+                    <h3><i class="fas fa-shield-alt"></i> Quick Health Check</h3>
                     <button id="run-health-check" class="test-btn test-primary">Run Full Diagnostic</button>
                     <button id="check-data-integrity" class="test-btn test-info">Check Data Integrity</button>
                     <button id="validate-schema" class="test-btn test-info">Validate Schema</button>
@@ -1653,7 +1653,7 @@
                 </div>
 
                 <div class="testing-section">
-                    <h3>📱 App Information</h3>
+                    <h3><i class="fas fa-info-circle"></i> App Information</h3>
                     <button id="show-app-info" class="test-btn test-secondary">Show App Details</button>
                     <button id="show-storage-info" class="test-btn test-secondary">Storage Analysis</button>
                     <button id="show-performance-info" class="test-btn test-secondary">Performance Info</button>
@@ -1661,14 +1661,14 @@
                 </div>
 
                 <div class="testing-section">
-                    <h3>🛠️ Data Tools</h3>
+                    <h3><i class="fas fa-cog"></i> Data Tools</h3>
                     <button id="run-full-analysis" class="test-btn test-primary">Run Full Analysis</button>
                     <button id="export-debug-data" class="test-btn test-success">Export Debug Package</button>
                     <button id="repair-data" class="test-btn test-danger">Repair Corrupted Data</button>
                 </div>
 
                 <div class="testing-section">
-                    <h3>💾 Backup Management</h3>
+                    <h3><i class="fas fa-history"></i> Backup Management</h3>
                     <button id="list-available-backups" class="test-btn test-info">List Available Backups</button>
                     <button id="create-manual-backup" class="test-btn test-success">Create Manual Backup</button>
                     <button id="restore-from-backup" class="test-btn test-warning">Restore from Backup</button>
@@ -1678,42 +1678,40 @@
 
             <div id="debug-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
-                    <h3>🐛 Debug Information</h3>
+                    <h3><i class="fas fa-bug"></i> Debug Information</h3>
                     <button id="generate-debug-report" class="test-btn test-primary">Generate Debug Report</button>
                     <button id="view-local-storage-btn" class="test-btn test-secondary">View Local Storage</button>
-                    <button id="show-service-worker-info" class="test-btn test-secondary">📡 Service Worker Info</button>
-                    <button id="test-service-worker-update" class="test-btn test-secondary">🔄 Test SW Update</button>
+                    <button id="show-service-worker-info" class="test-btn test-secondary">Service Worker Info</button>
+                    <button id="test-service-worker-update" class="test-btn test-secondary">Test SW Update</button>
                 </div>
 
                 <div class="testing-section">
-                    <h3>📋 System Info</h3>
+                    <h3><i class="fas fa-desktop"></i> System Info</h3>
                     <button id="show-browser-info" class="test-btn test-secondary">Browser Capabilities</button>
                 </div>
 
                 <div class="button-group">
-                    <h4>🎯 Auto Console Capture</h4>
-                    <button id="enable-auto-capture" class="test-btn test-info">🔄 Enable Auto-Capture Mode</button>
-                    <button id="show-all-console-logs" class="test-btn test-secondary">📊 Show All Captured Logs</button>
-                    <button id="show-migration-errors" class="test-btn test-warning">🚨 Show Migration Issues</button>
-                    <button id="clear-all-console-logs" class="test-btn test-secondary">🧹 Clear All Captured Logs</button>
-                    <button id="stop-console-capture" class="test-btn test-danger">⏹️ Stop Auto Capture</button>
+                    <h4><i class="fas fa-scroll"></i> Auto Console Capture</h4>
+                    <button id="enable-auto-capture" class="test-btn test-info">Enable Auto-Capture Mode</button>
+                    <button id="show-all-console-logs" class="test-btn test-secondary">Show All Captured Logs</button>
+                    <button id="show-migration-errors" class="test-btn test-warning">Show Migration Issues</button>
+                    <button id="clear-all-console-logs" class="test-btn test-secondary">Clear All Captured Logs</button>
+                    <button id="stop-console-capture" class="test-btn test-danger">Stop Auto Capture</button>
                 </div>
 
             </div>
 
             <div id="automated-tests-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
-                    <h3>🧪 Quick Test</h3>
-                    <button id="run-all-automated-tests" class="test-btn test-primary">
-                        🏁 Run All Tests
-                    </button>
+                    <h3><i class="fas fa-bolt"></i> Quick Test</h3>
+                    <button id="run-all-automated-tests" class="test-btn test-primary">Run All Tests</button>
                     <p id="quick-test-hint" class="testing-hint-text">
                         Runs the full suite and shows a pass/fail summary.
                     </p>
                 </div>
 
                 <div class="testing-section">
-                    <h3>🔬 Full Test Suite</h3>
+                    <h3><i class="fas fa-flask"></i> Full Test Suite</h3>
                     <p class="testing-hint-text">
                         For detailed testing with individual module controls:
                     </p>
@@ -1730,7 +1728,7 @@
 
         <div class="testing-results-area">
             <div class="testing-results-header">
-                <h3>📝 Test Results</h3>
+                <h3><i class="fas fa-file-alt"></i> Test Results</h3>
                 <div class="testing-results-controls">
                     <button id="clear-test-results" class="test-btn test-clear">Clear</button>
                     <button id="export-test-results" class="test-btn test-export">Export Results</button>
@@ -1740,7 +1738,7 @@
             <div id="testing-results" class="testing-results">
                 <div id="testing-output" class="testing-output">
                     <div class="welcome-message">
-                        <p>👋 Welcome to App Diagnostics!</p>
+                        <p>Welcome to App Diagnostics!</p>
                         <p>Use the tabs above to run tests and diagnostics.</p>
                         <p>Results will appear here.</p>
                     </div>
@@ -1756,7 +1754,7 @@
 
 <dialog id="storage-viewer-overlay" class="storage-modal-overlay" aria-labelledby="storage-viewer-title" aria-modal="true">
   <div class="storage-modal-box">
-    <div class="storage-modal-header" id="storage-viewer-title">📦 Local Storage Viewer</div>
+    <div class="storage-modal-header" id="storage-viewer-title"><i class="fas fa-save"></i> Local Storage Viewer</div>
     <div class="storage-modal-body scrollable" id="storage-content">
       <!-- Content injected here -->
     </div>

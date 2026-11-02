@@ -242,7 +242,9 @@ const ICONS = {
     'moon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M28.73 11.03A23 23 0 1 0 52.79 37.11A18 18 0 0 1 28.73 11.03Z"/></svg>',
     'sun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M32 21a11 11 0 1 1 0 22a11 11 0 1 1 0-22z"/><path fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></svg>',
     // Clearing (Nov 2026): the help window's cleared count and flash
-    'broom': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(35 32 32)"><path d="M32 4v29" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="23" y="31" width="18" height="7" rx="2"/><path d="M23 40h18l8 19-4 3-4-3-4 3-4-3-4 3-4-3-4 3-4-3-4 3-3-3z"/></g></svg>'
+    'broom': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(35 32 32)"><path d="M32 4v29" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="23" y="31" width="18" height="7" rx="2"/><path d="M23 40h18l8 19-4 3-4-3-4 3-4-3-4 3-4-3-4 3-4-3-4 3-3-3z"/></g></svg>',
+    // Debugging (Nov 2026): App Diagnostics' Debug tab — head, body, six legs
+    'bug': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="16" r="8"/><path d="M21 26h22a5 5 0 0 1 5 5v9a16 16 0 0 1-32 0v-9a5 5 0 0 1 5-5z"/><path d="M7 33h9M48 33h9M9 50l8-5M55 50l-8-5M10 18l8 6M54 18l-8 6" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>'
 };
 
 /**
@@ -414,7 +416,12 @@ export const FA_MAP = {
     'fa-arrows-alt': 'arrows-alt',
     'fa-sync': 'sync',
     'fa-history': 'history',
-    'fa-flask': 'flask'
+    'fa-flask': 'flask',
+    'fa-chart-bar': 'chart-bar',
+    'fa-bug': 'bug',
+    'fa-desktop': 'desktop',
+    'fa-save': 'save',
+    'fa-bolt': 'bolt'
 };
 
 export { ICONS };

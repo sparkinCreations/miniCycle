@@ -294,8 +294,9 @@
     text-align: center;
 }
 
-.test-runner-emoji {
+.test-runner-icon {
     font-size: 4rem;
+    color: var(--color-primary-light);   /* the SVG flask has no colour of its own, unlike the emoji it replaced */
     margin-bottom: var(--space-6);
 }
 
