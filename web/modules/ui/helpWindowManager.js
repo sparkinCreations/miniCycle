@@ -524,7 +524,7 @@ export class HelpWindowManager {
     }
 
     /**
-     * Replace the status line with a one-line tip for 10 s, then restore it.
+     * Replace the status line with a one-line tip (UI_TIMEOUTS.HELP_TIP), then restore it.
      * Shared by showCustomizerTip() and showFocusExitTip(); never interrupts
      * the cycle-complete message. Holds the isShowingModeDescription lock the
      * same way showModeDescription() does (see clearTemporaryMessage()).
@@ -534,7 +534,7 @@ export class HelpWindowManager {
      * @returns {void}
      * @private
      */
-    _showTransientTip(labelKey, { icon = null, durationMs = 10000 } = {}) {
+    _showTransientTip(labelKey, { icon = null, durationMs = UI_TIMEOUTS.HELP_TIP } = {}) {
         // Don't interrupt cycle complete message
         if (this.isShowingCycleComplete) return;
 
@@ -556,7 +556,7 @@ export class HelpWindowManager {
             </div>
         `;
 
-        // Auto-hide after durationMs (10 s for tips)
+        // Auto-hide after durationMs
         this.modeDescriptionTimeout = setTimeout(() => {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
@@ -592,14 +592,14 @@ export class HelpWindowManager {
             </div>
         `;
 
-        // Auto-hide after 10 seconds
+        // Auto-hide after UI_TIMEOUTS.HELP_TIP
         this.modeDescriptionTimeout = setTimeout(() => {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             this._restoreConstantMessage();
-        }, 10000);
+        }, UI_TIMEOUTS.HELP_TIP);
     }
 
     /**

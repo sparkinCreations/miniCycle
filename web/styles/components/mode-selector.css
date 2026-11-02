@@ -105,7 +105,7 @@
 .mode-selector:focus-visible {
     background: rgba(255, 255, 255, 0.5);
     border-color: var(--color-primary-dark);
-    box-shadow: 0 0 0 2px rgba(12, 32, 145, 0.2);
+    box-shadow: 0 0 0 2px var(--menu-light-blue-focus);
 }
 
 /* =============================================================================
@@ -421,8 +421,8 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     margin-top: var(--space-1-25);
     /* Light blue, from the header bar's own blue family (both header menus —
        the + and the mode picker — share this). Dark mode overrides it. */
-    background: linear-gradient(135deg, #f3f8ff 0%, #dce9ff 100%);
-    border: 1px solid rgba(12, 32, 145, 0.3);
+    background: linear-gradient(135deg, var(--menu-light-blue-start) 0%, var(--menu-light-blue-end) 100%);
+    border: 1px solid var(--menu-light-blue-rim);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-dropdown);
     min-width: 180px;
@@ -451,12 +451,12 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     cursor: pointer;
     text-align: left;
     font-size: var(--font-size-sm);
-    color: rgb(44, 50, 112);
+    color: var(--color-navy);
     transition: background var(--transition-fast) ease;
 }
 
 .quick-action-item:hover {
-    background: rgba(12, 32, 145, 0.12);
+    background: var(--menu-light-blue-hover);
 }
 
 .quick-action-item svg {

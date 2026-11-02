@@ -617,7 +617,7 @@ button.settings-btn.close-btn:hover {
     box-shadow: var(--shadow-button);
     /* The soft white rim Focus View's round button and the glass Complete /
        Clear buttons wear (1px, 40%). */
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    border: 1px solid var(--overlay-white-medium);
     /* --pref-corner-btn: Personalization → Corner Buttons → Button Color */
     color: var(--pref-corner-btn, var(--color-navy));
     border-radius: 50%;
@@ -677,7 +677,7 @@ button.settings-btn.close-btn:hover {
         background: var(--overlay-white-light);
         -webkit-backdrop-filter: blur(12px) saturate(140%);
         backdrop-filter: blur(12px) saturate(140%);
-        border: 1px solid rgba(255, 255, 255, 0.4);
+        border: 1px solid var(--overlay-white-medium);
         pointer-events: none;
     }
 
@@ -706,7 +706,7 @@ body.corner-btns-solid:not(.high-contrast) #personalization-btn {
     background: var(--pref-corner-btn, var(--color-navy));
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    border-color: rgba(255, 255, 255, 0.4);
+    border-color: var(--overlay-white-medium);
     color: var(--color-white);
 }
 

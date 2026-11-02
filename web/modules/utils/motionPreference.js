@@ -84,7 +84,9 @@ export function replayAnimationClass(el, className, durationVar) {
     el.classList.remove(className);
     void el.offsetWidth; // reflow, so re-adding the class restarts the animation
     el.classList.add(className);
-    const ms = parseFloat(getComputedStyle(el).getPropertyValue(durationVar)) || 0;
+    const raw = getComputedStyle(el).getPropertyValue(durationVar).trim();
+    const value = parseFloat(raw) || 0;
+    const ms = raw.endsWith('ms') ? value : value * 1000;   // a token may be written in s
     clearTimeout(el._replayAnimationTimer);
     el._replayAnimationTimer = setTimeout(() => el.classList.remove(className), ms);
 }

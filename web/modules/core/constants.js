@@ -204,6 +204,7 @@ export const UI_TIMEOUTS = Object.freeze({
     CELEBRATION_DELAY: 1800,       // 1800ms - Delay before showing celebration overlay (lets reset animation play first)
     FOCUS_TASK_CELEBRATION: 2000,  // 2000ms - Focus task panel cycle-complete card celebration before showing task 1 (FOCUS_TASK_VIEW_PLAN D5)
     TOOLTIP_HIDE: 3000,            // 3000ms - Tooltip auto-hide delay
+    HELP_TIP: 10000,               // 10s - A one-line Help-window tip (customizer, Focus View exit) replaces the status line this long
     HELP_NOTICE: 6000,             // 6s - A first-use notice in the Help window ("works offline", "install") stays this long before the status line returns
     HELP_NOTICE_DELAY: 1200,       // 1.2s - A notice held while the Help window was hidden waits this long after it appears, so it does not land mid-entrance
     HOVER_TIP_DWELL: 600,          // 600ms - A pointer must rest on a control this long before the Help window shows its tip (focusMode exit button); a pass-through sweep never fires it
@@ -1268,6 +1269,15 @@ export const DOM_CLASSES = Object.freeze({
     MANUAL_CYCLE_MODE: 'manual-cycle-mode',
     TODO_MODE_MODE: 'todo-mode-mode',
     ACTION_PLAYING: 'is-acting',   /* Complete Cycle / Clear button: its glyph's press animation is running */
+    ACTION_GLYPH: 'action-glyph',   /* the Complete Cycle / Clear button's glyph (ui/completeAllButton.js); the press animation targets it */
+    ACTION_GLYPH_BROOM: 'action-glyph-broom',   /* …the To-Do 🧹 */
+    ACTION_GLYPH_CYCLE: 'action-glyph-cycle',   /* …the cycle-mode arrows (SVG) */
+    MODE_PICKER_LABEL: 'mode-picker-label',   /* routine/modePicker.js: the button's text */
+    MODE_PICKER_ITEM: 'mode-picker-item',   /* …one menu item (also QUICK_ACTION_ITEM, for the shared menu look) */
+    MODE_PICKER_ICON: 'mode-picker-icon',
+    MODE_PICKER_CHECK: 'mode-picker-check',   /* …the ✓ on the checked item */
+    QUICK_ACTION_ITEM: 'quick-action-item',   /* a row in the light-blue header menus */
+    QUICK_ACTION_TEXT: 'quick-action-text',
     SOLID_ACTION_BUTTONS: 'solid-action-buttons',   /* body: the user chose filled Complete Cycle / Clear buttons (Personalization) */
     CORNER_BTNS_SOLID: 'corner-btns-solid',   /* body: Personalization → Corner Buttons style "Solid" (filled circles) */
     CORNER_BTNS_EMOJI: 'corner-btns-emoji',   /* body: Corner Buttons style "Emoji" (🎨 / 🌙 ☀️ in place of the SVGs) */
@@ -1945,6 +1955,8 @@ export const DOM_IDS = Object.freeze({
  * @constant {Object<string, string>}
  */
 export const DOM_SELECTORS = Object.freeze({
+    // ---- Menus ----
+    MENU_ITEM_RADIO: '[role="menuitemradio"]',   // routine/modePicker.js items
     // ---- Task ----
     TASK: '.task',
     TASK_TEXT: '.task-text',

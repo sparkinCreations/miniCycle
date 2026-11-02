@@ -7,12 +7,10 @@
  * changed: a rebuild mid-press would restart the press animation
  * (uiBoot / focusMode play it via replayAnimationClass).
  *
- * Pure leaf module (DOM + icons) so it can be imported statically.
+ * Pure leaf module (DOM + icons + constants) so it can be imported statically.
  */
 import { createIconElement } from '../utils/icons.js';
-
-/** The class the glyph carries; the press animation targets it. */
-export const ACTION_GLYPH_CLASS = 'action-glyph';
+import { DOM_CLASSES } from '../core/constants.js';
 
 /**
  * @param {HTMLElement|null} btn - #completeAll
@@ -28,11 +26,11 @@ export function renderCompleteAllButton(btn, isToDoMode, label) {
     let glyph;
     if (isToDoMode) {
         glyph = document.createElement('span');
-        glyph.className = `${ACTION_GLYPH_CLASS} ${ACTION_GLYPH_CLASS}-broom`;
+        glyph.className = `${DOM_CLASSES.ACTION_GLYPH} ${DOM_CLASSES.ACTION_GLYPH_BROOM}`;
         glyph.setAttribute('aria-hidden', 'true');
         glyph.textContent = '🧹';
     } else {
-        glyph = createIconElement('mode-auto', `${ACTION_GLYPH_CLASS} ${ACTION_GLYPH_CLASS}-cycle`);
+        glyph = createIconElement('mode-auto', `${DOM_CLASSES.ACTION_GLYPH} ${DOM_CLASSES.ACTION_GLYPH_CYCLE}`);
     }
     btn.replaceChildren(glyph, text);
     btn.dataset.glyph = kind;

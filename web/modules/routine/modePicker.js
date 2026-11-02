@@ -21,6 +21,7 @@
  */
 
 import { createIconElement } from '../utils/icons.js';
+import { DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 
 /** Mode value → its icon in the ICONS registry. */
 export const MODE_PICKER_ICONS = Object.freeze({
@@ -65,7 +66,7 @@ export class ModePicker {
         const mode = this.select.value;
         const label = this.getModeLabel(mode);
         const labelEl = document.createElement('span');
-        labelEl.className = 'mode-picker-label';
+        labelEl.className = DOM_CLASSES.MODE_PICKER_LABEL;
         labelEl.textContent = label;
         this.button.replaceChildren(this._icon(mode), labelEl);
         this.button.setAttribute('aria-label', this.getButtonAria(label));
@@ -99,11 +100,11 @@ export class ModePicker {
     // ---- internals --------------------------------------------------------
 
     _icon(mode) {
-        return createIconElement(this.getModeIcon(mode) || '', 'mode-picker-icon');
+        return createIconElement(this.getModeIcon(mode) || '', DOM_CLASSES.MODE_PICKER_ICON);
     }
 
     _items() {
-        return [...this.menu.querySelectorAll('[role="menuitemradio"]')];
+        return [...this.menu.querySelectorAll(DOM_SELECTORS.MENU_ITEM_RADIO)];
     }
 
     /** One item per <option>, so the select's option list stays authoritative. */
@@ -111,7 +112,7 @@ export class ModePicker {
         const items = [...this.select.options].map(option => {
             const item = document.createElement('button');
             item.type = 'button';
-            item.className = 'quick-action-item mode-picker-item';
+            item.className = `${DOM_CLASSES.QUICK_ACTION_ITEM} ${DOM_CLASSES.MODE_PICKER_ITEM}`;
             item.setAttribute('role', 'menuitemradio');
             item.setAttribute('aria-checked', 'false');
             item.tabIndex = -1;
@@ -119,9 +120,9 @@ export class ModePicker {
             const title = this.getItemTitle?.(option.value);
             if (title) item.title = title;
             const text = document.createElement('span');
-            text.className = 'quick-action-text';
+            text.className = DOM_CLASSES.QUICK_ACTION_TEXT;
             text.textContent = this.getModeLabel(option.value);
-            const check = createIconElement('check', 'mode-picker-check');
+            const check = createIconElement('check', DOM_CLASSES.MODE_PICKER_CHECK);
             item.append(this._icon(option.value), text, check);
             return item;
         });
@@ -167,7 +168,7 @@ export class ModePicker {
         });
 
         this._on(this.menu, 'click', (e) => {
-            const item = e.target.closest('[role="menuitemradio"]');
+            const item = e.target.closest(DOM_SELECTORS.MENU_ITEM_RADIO);
             if (item) this._choose(item.dataset.mode);
         });
         this._on(this.menu, 'keydown', (e) => {

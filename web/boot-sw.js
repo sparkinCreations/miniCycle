@@ -41,6 +41,7 @@ function showNotification(message, type, duration) {
   }));
 }
 // A first-use notice for the Help window ('offline-ready' | 'install').
+const INSTALL_NOTICE_DELAY_MS = 45000;   // the install one waits this long (beforeinstallprompt handler)
 function showHelpNotice(kind) {
   document.dispatchEvent(new CustomEvent('app:helpNotice', { detail: { kind } }));
 }
@@ -746,9 +747,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
 
-  // Install suggestion, 45 s in: a Help-window notice (helpWindowManager.
-  // showNotice), which also checks it is a plain browser tab.
-  setTimeout(() => showHelpNotice('install'), 45000);
+  // Install suggestion, a while into the visit: a Help-window notice
+  // (helpWindowManager.showNotice), which also checks it is a plain browser
+  // tab. The wait also lets boot wire the app:helpNotice listener — this
+  // event can fire before it. (A classic script: no constants.js import.)
+  setTimeout(() => showHelpNotice('install'), INSTALL_NOTICE_DELAY_MS);
 });
 
 // Global install function
