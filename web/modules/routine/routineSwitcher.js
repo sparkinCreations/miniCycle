@@ -233,7 +233,7 @@ export class RoutineSwitcher {
         const menuBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
         if (menuBtn) {
             menuBtn.replaceChildren(
-                createIconElement(browse ? 'cards' : 'folder-open'),
+                createIconElement(browse ? 'cards' : 'folder'),
                 document.createTextNode(getLabel(browse ? 'routine.menuBrowse' : 'routine.menuSwitch'))
             );
             menuBtn.title = getLabel(browse ? 'routine.browseAria' : 'routine.switchTitle');

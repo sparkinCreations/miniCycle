@@ -369,6 +369,7 @@ export const FA_MAP = {
     'fa-star': 'star',
     'fa-sparkles': 'sparkles',
     'fa-folder-open': 'folder-open',
+    'fa-folder': 'folder',
     'fa-copy': 'copy',
     'fa-file-download': 'file-download',
     'fa-file-upload': 'file-upload',
