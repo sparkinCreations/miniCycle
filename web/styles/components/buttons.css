@@ -210,6 +210,14 @@ button.icon-only i {
     transform-origin: 80% 10%;
 }
 
+/* The cycle arrows a size up from the text (Nov 2026: they read small beside
+   the bold label); the 🧹 emoji is already full-size. */
+.complete-all-btn .action-glyph-cycle {
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: -0.28em;
+}
+
 .complete-all-btn.is-acting .action-glyph-cycle {
     animation: action-spin var(--anim-action-spin) ease-in-out;
 }

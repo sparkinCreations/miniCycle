@@ -15,7 +15,20 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOI
 const VIEWPORT_CHROME_PX = 385;
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon as getSvgIcon } from '../utils/icons.js';
+import { runsAsInstalledApp } from '../utils/userManualLink.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+
+// First-use notices (showNotice): label + ICONS name.
+const HELP_NOTICES = Object.freeze({
+    'offline-ready': { labelKey: 'help.noticeOfflineReady', icon: 'check-circle' },
+    'install': { labelKey: 'help.noticeInstall', icon: 'download' }
+});
+
+/** Only a plain browser tab needs telling it works offline / can be installed. */
+function noticeApplies() {
+    if (runsAsInstalledApp()) return false;   // PWA, iOS / Android, desktop
+    return !/-extension:$/.test(location.protocol);   // chrome- / moz-extension
+}
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -76,6 +89,7 @@ export class HelpWindowManager {
         this.sideLayoutEnabled = false;
         this._pendingTimeouts = [];
         this._customizerTipShownOnHover = false;
+        this._pendingNotices = new Set();
         this._focusExitTipShownOnHover = false;
 
         this.init();
@@ -490,15 +504,37 @@ export class HelpWindowManager {
     }
 
     /**
+     * A first-use notice — "miniCycle now works offline", "Install miniCycle"
+     * — in the Help window for a few seconds (Nov 2026; they were toasts).
+     * Raised by boot-sw.js through the app:helpNotice event. Only in a plain
+     * browser tab: an installed PWA, the iOS / Android / desktop apps and the
+     * browser extension work offline already and cannot be installed again.
+     * Held until the window is on screen if it is not yet.
+     * @param {'offline-ready'|'install'} kind
+     * @returns {void}
+     */
+    showNotice(kind) {
+        const notice = HELP_NOTICES[kind];
+        if (!notice || !noticeApplies()) return;
+        if (!this.helpWindow || !this.isVisible) {
+            this._pendingNotices.add(kind);
+            return;
+        }
+        this._showTransientTip(notice.labelKey, { icon: notice.icon, durationMs: UI_TIMEOUTS.HELP_NOTICE });
+    }
+
+    /**
      * Replace the status line with a one-line tip for 10 s, then restore it.
      * Shared by showCustomizerTip() and showFocusExitTip(); never interrupts
      * the cycle-complete message. Holds the isShowingModeDescription lock the
      * same way showModeDescription() does (see clearTemporaryMessage()).
      * @param {string} labelKey - getLabel() key of the tip text
+     * @param {{icon?: string, durationMs?: number}} [opts] - an ICONS name
+     *   in front of the text; how long before the status line returns
      * @returns {void}
      * @private
      */
-    _showTransientTip(labelKey) {
+    _showTransientTip(labelKey, { icon = null, durationMs = 10000 } = {}) {
         // Don't interrupt cycle complete message
         if (this.isShowingCycleComplete) return;
 
@@ -512,20 +548,22 @@ export class HelpWindowManager {
         this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
 
         const tipText = getLabel(labelKey);
+        const iconSvg = icon ? getSvgIcon(icon) : '';
+        const iconHtml = iconSvg ? `<span class="icon help-window-icon" aria-hidden="true">${iconSvg}</span> ` : '';
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
-                <p style="margin: 0; line-height: 1.4;">${tipText}</p>
+                <p style="margin: 0; line-height: 1.4;">${iconHtml}${tipText}</p>
             </div>
         `;
 
-        // Auto-hide after 10 seconds
+        // Auto-hide after durationMs (10 s for tips)
         this.modeDescriptionTimeout = setTimeout(() => {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             this._restoreConstantMessage();
-        }, 10000);
+        }, durationMs);
     }
 
     /**
@@ -752,6 +790,14 @@ export class HelpWindowManager {
         this.helpWindow.classList.add(DOM_CLASSES.SHOW);
         // Don't toggle display - use opacity only to prevent CLS
         this.isVisible = true;
+
+        // A notice that arrived while the window was hidden (the first visit's
+        // "works offline" usually fires on the first-run screen) shows now.
+        const [held] = this._pendingNotices;
+        if (held) {
+            this._pendingNotices.delete(held);
+            this._pendingTimeouts.push(setTimeout(() => this.showNotice(held), UI_TIMEOUTS.HELP_NOTICE_DELAY));
+        }
     }
 
     hide() {

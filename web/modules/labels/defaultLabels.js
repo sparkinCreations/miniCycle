@@ -2717,6 +2717,9 @@ export const DEFAULT_LABELS = deepFreeze({
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared',
         customizerTip:     'Press the +/- button to add or remove task option buttons',
+        // First-use notices (boot-sw.js → helpWindowManager.showNotice), browser tab only
+        noticeOfflineReady: 'miniCycle now works offline',
+        noticeInstall:      'Install miniCycle for offline access and faster loading',
         // Help-window tip when the pointer rests on the Focus View exit button
         // (inward brackets): names what the icon does, once per page load.
         focusExitTip:      'This button leaves Focus View and returns to Home View.',
