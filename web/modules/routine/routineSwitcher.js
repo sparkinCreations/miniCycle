@@ -33,6 +33,7 @@ import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
+import { describeMode, getModeIcon } from './routineBrowserRender.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { scrollBehavior } from '../utils/motionPreference.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -58,6 +59,11 @@ let getUniqueCycleName;
 // mistaken for (see setupModalClickOutside). Local by design: it describes this
 // modal's markup, not an app-wide selector.
 const INTERACTIVE_CONTROL_SELECTOR = 'button, input, select, textarea, a, label, [role="button"], [contenteditable]';
+
+// The mode filter's option values → their labels (setupFilterControls).
+const FILTER_OPTION_LABELS = Object.freeze({
+    all: 'switcher.filterAll', auto: 'switcher.filterAuto', manual: 'switcher.filterManual', todo: 'switcher.filterTodo'
+});
 
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
@@ -1330,13 +1336,9 @@ export class RoutineSwitcher {
         listItem.dataset.cycleName = cycleData.title || cycleKey;
         listItem.dataset.cycleKey = cycleKey;
 
-        // Mode emoji
-        let emoji = " ✋"; // Manual Cycle
-        if (cycleData.deleteCheckedTasks) {
-            emoji = " 📋"; // To-Do Mode
-        } else if (cycleData.autoReset) {
-            emoji = " 🔄"; // Auto Cycle Mode
-        }
+        // Mode icon — the same glyph Browse and the help window draw.
+        // Decorative: the row is named by its title.
+        const emoji = describeMode(cycleData).emoji;
 
         // Left side: emoji + title
         const leftSide = document.createElement("span");
@@ -1344,6 +1346,7 @@ export class RoutineSwitcher {
 
         const emojiSpan = document.createElement("span");
         emojiSpan.className = "cycle-item-emoji";
+        emojiSpan.setAttribute("aria-hidden", "true");
         emojiSpan.textContent = emoji;
 
         const titleSpan = document.createElement("span");
@@ -1844,6 +1847,18 @@ export class RoutineSwitcher {
         if (!filterSelect) {
             console.warn('⚠️ Filter dropdown not found');
             return;
+        }
+
+        // Option text from the labels and the shared mode icons (the HTML
+        // carries the same text as a fallback). The leading &nbsp; indent of
+        // each mode option is kept.
+        for (const option of filterSelect.options) {
+            const key = FILTER_OPTION_LABELS[option.value];
+            if (!key) continue;
+            const indent = option.textContent.match(/^\s*/)[0];
+            option.textContent = option.value === 'all'
+                ? getLabel(key)
+                : `${indent}${getModeIcon(option.value)} ${getLabel(key)}`;
         }
 
         // Set dropdown to current filter mode

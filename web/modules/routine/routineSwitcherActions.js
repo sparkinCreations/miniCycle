@@ -102,7 +102,7 @@ export class RoutineSwitcherActions {
         const selectedCycle = this.m._getSelectedItem();
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for deletion');
-            this.m.deps.showNotification("⚠ " + getLabel('switcher.noSelectedForDelete'));
+            this.m.deps.showNotification("⚠️ " + getLabel('switcher.noSelectedForDelete'));
             return;
         }
 

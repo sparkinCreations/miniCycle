@@ -386,7 +386,7 @@ export class TaskOptionsCustomizer {
                         </div>
                         <div class="task-option-preview">
                             <div class="preview-header">
-                                <span class="preview-icon">ℹ️</span>
+                                <span class="preview-icon" aria-hidden="true">ℹ️</span>
                                 <h3>${getLabel('taskOptions.optionDetails')}</h3>
                             </div>
                             <div id="${DOM_IDS.OPTION_PREVIEW_CONTENT}" class="preview-content">
@@ -399,7 +399,7 @@ export class TaskOptionsCustomizer {
                 <div class="modal-footer">
                     <div class="modal-footer-row">
                         <button id="${DOM_IDS.RESET_TASK_OPTIONS_BTN}">
-                            🔄 ${getLabel('taskOptions.resetDefault')}
+                            <span aria-hidden="true">🔄</span> ${getLabel('taskOptions.resetDefault')}
                         </button>
                     </div>
                     <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-button-fullwidth">
@@ -502,7 +502,7 @@ export class TaskOptionsCustomizer {
         return `
             <div class="options-section">
                 <div class="section-header">
-                    <h3>🎯 ${getLabel('taskOptions.coreActions')}</h3>
+                    <h3><span aria-hidden="true">🎯</span> ${getLabel('taskOptions.coreActions')}</h3>
                 </div>
                 <div class="section-options">
                     ${coreOptions.map(buildOption).join('')}
@@ -510,7 +510,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3>📅 ${getLabel('taskOptions.scheduling')}</h3>
+                    <h3><span aria-hidden="true">📅</span> ${getLabel('taskOptions.scheduling')}</h3>
                 </div>
                 <div class="section-options">
                     ${schedulingOptions.map(buildOption).join('')}
@@ -518,7 +518,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3>🧹 ${getLabel('taskOptions.cleanup')}</h3>
+                    <h3><span aria-hidden="true">🧹</span> ${getLabel('taskOptions.cleanup')}</h3>
                 </div>
                 <div class="section-options">
                     ${cleanupOptions.map(buildOption).join('')}
@@ -526,7 +526,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3>🌐 ${getLabel('taskOptions.global')}</h3>
+                    <h3><span aria-hidden="true">🌐</span> ${getLabel('taskOptions.global')}</h3>
                 </div>
                 <div class="section-options">
                     ${globalOptions.map(buildOption).join('')}

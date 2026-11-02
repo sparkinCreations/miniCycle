@@ -66,13 +66,10 @@ export const DEFAULT_LABELS = deepFreeze({
 
     mode: {
         auto:               'Auto Cycle',
-        autoEmoji:          '↻',
         autoDescription:    'Automatically cycle tasks',
         manual:             'Manual Cycle',
-        manualEmoji:        '✋↻',
         manualDescription:  'Manually cycle through tasks',
         todo:               'To-Do Mode',
-        todoEmoji:          '📋',
         todoDescription:    'Simple To-Do list mode',
         autoTitle:          'Auto Cycle Mode',
         autoDetail:         'Tasks will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.',
@@ -2715,6 +2712,16 @@ export const DEFAULT_LABELS = deepFreeze({
         celebrate:      '🎉',
         milestoneTrail: '🚀',
 
+        // Routine modes — the ONE glyph per mode, wherever a mode is drawn
+        // (header picker, Mode Info, help window, switcher rows and filter,
+        // Browse). Read through getIcon('modeAuto') etc., never retyped.
+        modeAuto:       '🔄',
+        modeManual:     '✋',
+        modeTodo:       '📋',
+        // Recurring tasks. 🔄 is a cycle and ✋ a manual one, so recurring
+        // keeps its own arrows and never borrows theirs.
+        recurring:      '🔁',
+
         // UI state toggles
         darkMode:       '🌙',
         lightMode:      '☀️',
@@ -2734,17 +2741,9 @@ export const DEFAULT_LABELS = deepFreeze({
         keyboard:       '⌨️',
 
         // Notification prefix
-        warning:        '⚠️',
-
-        // Vocabulary theme icons (Classic falls through to above defaults)
-        habitComplete:   '⚡',
-        habitCelebrate:  '🔥',
-        fitnessComplete: '🏆',
-        fitnessCelebrate:'💪',
-        scholarComplete: '🎓',
-        scholarCelebrate:'📚',
-        cleanComplete:   '✨',
-        cleanCelebrate:  '🧹'
+        warning:        '⚠️'
+        // Vocabulary themes override cycleComplete / celebrate / badge in
+        // their own `icons` block (labels/themes.js); nothing for them here.
     },
 
     // ========================================================================

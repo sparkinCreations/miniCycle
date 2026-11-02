@@ -394,7 +394,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                      aria-expanded="true" aria-controls="preferences-preview"
                      aria-label="${getLabel('prefs.ariaToggleLivePreview')}">
                     <span>${getLabel('prefs.livePreview')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-preview-container" id="preferences-preview">
                     <div class="preview-app-bg">
@@ -441,9 +441,9 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Quick Presets Section -->
             <div class="preferences-section collapsed" data-section="quick-themes">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="quick-themes" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleQuickColors')}" aria-controls="pref-section-quick-themes">
-                    <span class="preferences-section-icon">&#x1F3A8;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F3A8;</span>
                     <span>${getLabel('prefs.quickThemes')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content preferences-quick-presets-grid" id="pref-section-quick-themes">
                     <!-- Populated dynamically by preferencesPresets.renderQuickPresets() -->
@@ -453,9 +453,9 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Saved Presets Section -->
             <div class="preferences-section preferences-presets-section collapsed" data-section="saved-presets">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="saved-presets" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleSavedPresets')}" aria-controls="pref-section-saved-presets">
-                    <span class="preferences-section-icon">&#x1F4BE;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F4BE;</span>
                     <span>${getLabel('prefs.savedPresets')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-saved-presets">
                     <div class="preferences-presets-actions">
@@ -471,13 +471,13 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Layout Section -->
             <div class="preferences-section collapsed" data-section="desktop-layout">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="desktop-layout" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleLayout')}" aria-controls="pref-section-desktop-layout">
-                    <span class="preferences-section-icon">&#x1F5A5;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F5A5;&#xFE0F;</span>
                     <span>${getLabel('prefs.layout')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-desktop-layout">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x2753;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x2753;</span>
                         <label for="toggle-help-window">${getLabel('prefs.showHelpWindow')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-help-window" name="toggle-help-window" checked>
@@ -485,7 +485,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </span>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x26A1;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x26A1;</span>
                         <label for="toggle-quick-actions">${getLabel('prefs.showQuickActions')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-quick-actions" name="toggle-quick-actions" checked>
@@ -493,7 +493,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </span>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F524;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F524;</span>
                         <label for="pref-panel-text">${getLabel('prefs.panelText')}</label>
                         <input type="color" id="pref-panel-text" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-panel-text" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
@@ -506,19 +506,19 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- App Background Section -->
             <div class="preferences-section collapsed" data-section="app-bg">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="app-bg" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleAppBg')}" aria-controls="pref-section-app-bg">
-                    <span class="preferences-section-icon">&#x1F4F1;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F4F1;</span>
                     <span>${getLabel('prefs.appBackground')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-app-bg">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F3A8;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F3A8;</span>
                         <label for="pref-app-bg">${getLabel('prefs.appBackground')}</label>
                         <input type="color" id="pref-app-bg" value="#4c79ff" />
                         <button class="preferences-reset-btn" data-target="pref-app-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4D0;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4D0;</span>
                         <label for="toggle-bg-pattern">${getLabel('prefs.backgroundPattern')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-bg-pattern" name="toggle-bg-pattern" checked>
@@ -526,13 +526,13 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </span>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F3A8;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F3A8;</span>
                         <label for="pref-pattern-color">${getLabel('prefs.patternColor')}</label>
                         <input type="color" id="pref-pattern-color" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-pattern-color" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4A7;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4A7;</span>
                         <label for="pref-pattern-opacity">${getLabel('prefs.patternOpacity')}</label>
                         <input type="range" id="pref-pattern-opacity" min="1" max="25" value="4" step="1" aria-valuetext="Opacity: 4%" />
                         <span class="pref-range-value" id="pref-pattern-opacity-value">4%</span>
@@ -541,7 +541,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                     <!-- Background Image Upload -->
                     <div class="preferences-bg-image-section">
                         <div class="preferences-color-row">
-                            <span class="pref-color-icon">&#x1F5BC;</span>
+                            <span class="pref-color-icon" aria-hidden="true">&#x1F5BC;&#xFE0F;</span>
                             <label for="bg-image-upload">${getLabel('prefs.backgroundImage')}</label>
                             <input type="file" id="bg-image-upload" accept="image/*" style="display: none;" aria-label="${getLabel('prefs.backgroundImage')}">
                             <button class="preferences-upload-btn" id="bg-image-upload-btn">${getLabel('prefs.upload')}</button>
@@ -549,7 +549,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </div>
                         <div class="preferences-bg-image-options" id="bg-image-options" style="display: none;">
                             <div class="preferences-color-row">
-                                <span class="pref-color-icon">&#x1F441;</span>
+                                <span class="pref-color-icon" aria-hidden="true">&#x1F441;&#xFE0F;</span>
                                 <label for="toggle-bg-image-visible">${getLabel('prefs.showImage')}</label>
                                 <span class="toggle-switch pref-toggle">
                                     <input type="checkbox" id="toggle-bg-image-visible" name="toggle-bg-image-visible" checked>
@@ -557,7 +557,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                                 </span>
                             </div>
                             <div class="preferences-color-row">
-                                <span class="pref-color-icon">&#x2B55;</span>
+                                <span class="pref-color-icon" aria-hidden="true">&#x2B55;</span>
                                 <label for="bg-image-mode">${getLabel('prefs.displayMode')}</label>
                                 <select id="bg-image-mode" class="preferences-select">
                                     <option value="cover">${getLabel('prefs.stretchToFill')}</option>
@@ -577,19 +577,19 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Routine List Section -->
             <div class="preferences-section collapsed" data-section="routine-list">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="routine-list" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleRoutineList')}" aria-controls="pref-section-routine-list">
-                    <span class="preferences-section-icon">&#x1F4CB;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F4CB;</span>
                     <span>${getLabel('prefs.routineList')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-routine-list">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4CB;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4CB;</span>
                         <label for="pref-task-list-bg">${getLabel('prefs.listBackground')}</label>
                         <input type="color" id="pref-task-list-bg" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-task-list-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F532;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F532;</span>
                         <label for="toggle-solid-list-bg">${getLabel('prefs.solidColor')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-solid-list-bg" name="toggle-solid-list-bg">
@@ -597,13 +597,13 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </span>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F516;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F516;</span>
                         <label for="pref-title-bg">${getLabel('prefs.titleBackground')}</label>
                         <input type="color" id="pref-title-bg" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-title-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F524;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F524;</span>
                         <label for="pref-title-text">${getLabel('prefs.titleText')}</label>
                         <input type="color" id="pref-title-text" value="#2b2b2b" />
                         <button class="preferences-reset-btn" data-target="pref-title-text" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
@@ -614,25 +614,25 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Tasks Section -->
             <div class="preferences-section collapsed" data-section="tasks">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="tasks" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleTasks')}" aria-controls="pref-section-tasks">
-                    <span class="preferences-section-icon">&#x2705;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x2705;</span>
                     <span data-label-key="prefs.tasksCheckboxes">${getLabel('prefs.tasksCheckboxes')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-tasks">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4DD;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4DD;</span>
                         <label for="pref-task-bg" data-label-key="prefs.taskBackground">${getLabel('prefs.taskBackground')}</label>
                         <input type="color" id="pref-task-bg" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-task-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4AC;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4AC;</span>
                         <label for="pref-task-text" data-label-key="prefs.taskText">${getLabel('prefs.taskText')}</label>
                         <input type="color" id="pref-task-text" value="#333333" />
                         <button class="preferences-reset-btn" data-target="pref-task-text" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x2611;&#xFE0F;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x2611;&#xFE0F;</span>
                         <label for="pref-checkbox-bg">${getLabel('prefs.checkboxFill')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-checkbox-fill" name="toggle-checkbox-fill" aria-label="${getLabel('accessibility.toggleCheckboxFill')}" checked>
@@ -642,7 +642,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <button class="preferences-reset-btn" data-target="pref-checkbox-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">⬜</span>
+                        <span class="pref-color-icon" aria-hidden="true">⬜</span>
                         <label for="pref-checkbox-incomplete-bg">${getLabel('prefs.checkboxEmpty')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-checkbox-incomplete" name="toggle-checkbox-incomplete" aria-label="${getLabel('accessibility.toggleCheckboxEmpty')}" checked>
@@ -652,13 +652,13 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <button class="preferences-reset-btn" data-target="pref-checkbox-incomplete-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x2714;&#xFE0F;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x2714;&#xFE0F;</span>
                         <label for="pref-checkmark">${getLabel('prefs.checkmark')}</label>
                         <input type="color" id="pref-checkmark" value="#124609" />
                         <button class="preferences-reset-btn" data-target="pref-checkmark" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x2714;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x2714;</span>
                         <label for="checkmark-style-options">${getLabel('prefs.checkmarkStyleTitle')}</label>
                         <select id="checkmark-style-options" class="preferences-select">
                             <option value="fitted">${getLabel('prefs.checkmarkFitted')}</option>
@@ -673,25 +673,25 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Buttons & Progress Section -->
             <div class="preferences-section collapsed" data-section="buttons">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="buttons" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleButtons')}" aria-controls="pref-section-buttons">
-                    <span class="preferences-section-icon">&#x1F532;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F532;</span>
                     <span>${getLabel('prefs.buttonsProgress')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-buttons">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F504;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F504;</span>
                         <label for="pref-complete-btn" data-label-key="prefs.completeCycle">${getLabel('prefs.completeCycle')}</label>
                         <input type="color" id="pref-complete-btn" value="#08c352" />
                         <button class="preferences-reset-btn" data-target="pref-complete-btn" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F5D1;&#xFE0F;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F5D1;&#xFE0F;</span>
                         <label for="pref-clear-btn">${getLabel('prefs.clearCompleted')}</label>
                         <input type="color" id="pref-clear-btn" value="#3b82f6" />
                         <button class="preferences-reset-btn" data-target="pref-clear-btn" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4CA;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4CA;</span>
                         <label for="pref-progress-bar">${getLabel('prefs.progressBar')}</label>
                         <input type="color" id="pref-progress-bar" value="#82db8c" />
                         <button class="preferences-reset-btn" data-target="pref-progress-bar" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
@@ -702,25 +702,25 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Cycle Completion Section -->
             <div class="preferences-section collapsed" data-section="cycle-animation">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="cycle-animation" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleCycleAnimation')}" aria-controls="pref-section-cycle-animation">
-                    <span class="preferences-section-icon">&#x1F389;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F389;</span>
                     <span>${getLabel('prefs.cycleAnimation')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-cycle-animation">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4A5;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4A5;</span>
                         <label for="pref-reset-flash-color">${getLabel('prefs.resetFlashColor')}</label>
                         <input type="color" id="pref-reset-flash-color" value="#4caf50" />
                         <button class="preferences-reset-btn" data-target="pref-reset-flash-color" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F3A8;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F3A8;</span>
                         <label for="pref-celebration-color">${getLabel('prefs.animationColor')}</label>
                         <input type="color" id="pref-celebration-color" value="#4caf4f" />
                         <button class="preferences-reset-btn" data-target="pref-celebration-color" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4AC;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4AC;</span>
                         <label for="pref-toast-select">${getLabel('prefs.toastMessage')}</label>
                         <select id="pref-toast-select" class="preferences-select">
                             <option value="default">${getLabel('prefs.toastDefault')}</option>
@@ -730,7 +730,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </select>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F6AB;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F6AB;</span>
                         <label for="toggle-completion-animation">${getLabel('prefs.disableAnimation')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-completion-animation">
@@ -738,7 +738,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </span>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F6AB;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F6AB;</span>
                         <label for="toggle-completion-toast">${getLabel('prefs.disableToast')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-completion-toast">
@@ -751,19 +751,19 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
             <!-- Stats Panel Section -->
             <div class="preferences-section collapsed" data-section="stats">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="stats" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleStats')}" aria-controls="pref-section-stats">
-                    <span class="preferences-section-icon">&#x1F4CA;</span>
+                    <span class="preferences-section-icon" aria-hidden="true">&#x1F4CA;</span>
                     <span>${getLabel('prefs.statsPanel')}</span>
-                    <span class="preferences-section-toggle">&#x25BC;</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
                 </div>
                 <div class="preferences-section-content" id="pref-section-stats">
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F5BC;&#xFE0F;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F5BC;&#xFE0F;</span>
                         <label for="pref-stats-bg">${getLabel('prefs.background')}</label>
                         <input type="color" id="pref-stats-bg" value="#ffffff" />
                         <button class="preferences-reset-btn" data-target="pref-stats-bg" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F532;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F532;</span>
                         <label for="toggle-solid-stats-bg">${getLabel('prefs.solidColor')}</label>
                         <span class="toggle-switch pref-toggle">
                             <input type="checkbox" id="toggle-solid-stats-bg" name="toggle-solid-stats-bg">
@@ -771,19 +771,19 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         </span>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4DD;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4DD;</span>
                         <label for="pref-stats-text">${getLabel('prefs.textColor')}</label>
                         <input type="color" id="pref-stats-text" value="#333333" />
                         <button class="preferences-reset-btn" data-target="pref-stats-text" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F4CA;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F4CA;</span>
                         <label for="pref-stats-progress">${getLabel('prefs.statsProgress')}</label>
                         <input type="color" id="pref-stats-progress" value="#4c79ff" />
                         <button class="preferences-reset-btn" data-target="pref-stats-progress" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
-                        <span class="pref-color-icon">&#x1F369;</span>
+                        <span class="pref-color-icon" aria-hidden="true">&#x1F369;</span>
                         <label for="pref-stats-doughnut">${getLabel('prefs.statsDoughnut')}</label>
                         <input type="color" id="pref-stats-doughnut" value="#4caf50" />
                         <button class="preferences-reset-btn" data-target="pref-stats-doughnut" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
@@ -798,7 +798,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
         <!-- Footer Actions -->
         <div class="preferences-footer">
             <button id="preferences-undo" class="preferences-undo-btn" title="${getLabel('prefs.undoTitle')}" disabled>
-                <span>&#x21A9;</span> ${getLabel('prefs.undoButton')}
+                <span aria-hidden="true">&#x21A9;</span> ${getLabel('prefs.undoButton')}
             </button>
             <button id="preferences-reset-all" class="preferences-reset-all-btn">${getLabel('prefs.resetAll')}</button>
         </div>
@@ -812,15 +812,15 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
 export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
         <dialog id="settings-modal" class="settings-modal" data-modal aria-labelledby="settings-modal-title" aria-modal="true">
             <div class="settings-modal-content has-corner-logo">
-                <h2 id="settings-modal-title">&#x2699;&#xFE0F; ${getLabel('settings.title')}</h2>
+                <h2 id="settings-modal-title"><span aria-hidden="true">&#x2699;&#xFE0F;</span> ${getLabel('settings.title')}</h2>
                 <div class="settings-scroll-area">
 
                 <!-- Display Section -->
                 <div class="settings-section collapsible collapsed" data-section="display">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="display" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleDisplay')}" aria-controls="settings-section-display">
-                        <span class="settings-section-icon">&#x1F5A5;</span>
+                        <span class="settings-section-icon" aria-hidden="true">&#x1F5A5;&#xFE0F;</span>
                         <span>${getLabel('settings.display')}</span>
-                        <span class="settings-section-toggle">▼</span>
+                        <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-display">
                         <label class="settings-option">
@@ -865,9 +865,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Accessibility Section -->
                 <div class="settings-section collapsible collapsed" data-section="accessibility">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="accessibility" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleAccessibility')}" aria-controls="settings-section-accessibility">
-                        <span class="settings-section-icon">&#x267F;</span>
+                        <span class="settings-section-icon" aria-hidden="true">&#x267F;</span>
                         <span data-label-key="settings.accessibility">${getLabel('settings.accessibility')}</span>
-                        <span class="settings-section-toggle">&#9660;</span>
+                        <span class="settings-section-toggle" aria-hidden="true">&#9660;</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-accessibility">
                         <label class="settings-option">
@@ -913,9 +913,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Behavior Section -->
                 <div class="settings-section collapsible collapsed" data-section="behavior">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="behavior" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleBehavior')}" aria-controls="settings-section-behavior">
-                        <span class="settings-section-icon">&#x1F39B;</span>
+                        <span class="settings-section-icon" aria-hidden="true">&#x1F39B;&#xFE0F;</span>
                         <span>${getLabel('settings.behavior')}</span>
-                        <span class="settings-section-toggle">▼</span>
+                        <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-behavior">
                         <fieldset id="${DOM_IDS.ROUTINE_OPEN_VIEW_GROUP}" class="settings-option settings-option-vertical settings-option-described settings-radio-group" aria-describedby="routine-open-view-desc">
@@ -960,9 +960,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Data Management Section -->
                 <div class="settings-section collapsible collapsed" data-section="data">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="data" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleData')}" aria-controls="settings-section-data">
-                        <span class="settings-section-icon">&#x1F4BE;</span>
+                        <span class="settings-section-icon" aria-hidden="true">&#x1F4BE;</span>
                         <span>${getLabel('settings.dataManagement')}</span>
-                        <span class="settings-section-toggle">▼</span>
+                        <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-data">
                         <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
@@ -986,9 +986,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Reset Options Section -->
                 <div class="settings-section collapsible collapsed" data-section="reset">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="reset" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleReset')}" aria-controls="settings-section-reset">
-                        <span class="settings-section-icon">&#x1F504;</span>
+                        <span class="settings-section-icon" aria-hidden="true">&#x1F504;</span>
                         <span>${getLabel('settings.resetOptions')}</span>
-                        <span class="settings-section-toggle">▼</span>
+                        <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-reset">
                         <button id="${DOM_IDS.RESET_ONBOARDING}" class="settings-btn settings-btn-ghost" aria-describedby="reset-onboarding-desc"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
@@ -1011,9 +1011,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                 <!-- Advanced Section -->
                 <div class="settings-section collapsible collapsed" data-section="advanced">
                     <div class="settings-section-header" role="button" tabindex="0" data-toggle="advanced" aria-expanded="false" aria-label="${getLabel('settings.ariaToggleAdvanced')}" aria-controls="settings-section-advanced">
-                        <span class="settings-section-icon">&#x1F527;</span>
+                        <span class="settings-section-icon" aria-hidden="true">&#x1F527;</span>
                         <span>${getLabel('settings.advanced')}</span>
-                        <span class="settings-section-toggle">▼</span>
+                        <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-advanced">
                         <label class="settings-option">

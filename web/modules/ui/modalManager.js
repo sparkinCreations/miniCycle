@@ -268,7 +268,12 @@ export class ModalManager {
         if (emailLabel) emailLabel.textContent = getLabel('feedback.emailLabel');
         if (emailInput) emailInput.placeholder = getLabel('feedback.email');
         if (submitButton) submitButton.textContent = getLabel('feedback.submit');
-        if (thankYouMessage) thankYouMessage.textContent = '\u2705 ' + getLabel('feedback.thanks');
+        if (thankYouMessage) {
+            const icon = document.createElement('span');
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = '\u2705';
+            thankYouMessage.replaceChildren(icon, ' ' + getLabel('feedback.thanks'));
+        }
 
         // Use safeAddEventListener to prevent duplicate listeners
         const safeAdd = _deps.safeAddEventListener;

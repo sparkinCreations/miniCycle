@@ -11,7 +11,7 @@
  */
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getIcon, getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // Stable handler references for safeAddEventListener dedup. Module-level so the boot
@@ -40,7 +40,7 @@ export function updateRecurringButtonVisibility(deps) {
 }
 
 /**
- * Render the "↻ N recurring scheduled" info link below the task list + enhance the
+ * Render the "🔁 N recurring scheduled" info link below the task list + enhance the
  * empty-state hint when templates exist. Runs at boot and on recurring-state change,
  * without loading the panel.
  * @param {{AppState: Object, getElementById: Function, querySelector: Function, safeAddEventListener: Function}} deps
@@ -87,7 +87,10 @@ export function updateRecurringInfoLink(deps, { openPanel } = {}) {
 
         // Show the link
         linkEl.classList.add(DOM_CLASSES.SHOW);
-        linkEl.textContent = '↻ ' + countText;
+        const icon = document.createElement('span');
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = getIcon('recurring');
+        linkEl.replaceChildren(icon, ' ' + countText);
 
         // Bind handlers once (stable references for safeAddEventListener dedup)
         if (!_onInfoLinkClick) {
@@ -107,7 +110,7 @@ export function updateRecurringInfoLink(deps, { openPanel } = {}) {
 
         // If task list is empty, enhance the empty state hint
         if (taskCount === 0) {
-            const recurringSummary = '↻ ' + countText + ' · ' + getLabel('empty.viewRecurring');
+            const recurringSummary = `<span aria-hidden="true">${getIcon('recurring')}</span> ` + countText + ' · ' + getLabel('empty.viewRecurring');
             if (hint) hint.innerHTML = recurringSummary;
             if (hintVisible) hintVisible.innerHTML = recurringSummary;
         } else {

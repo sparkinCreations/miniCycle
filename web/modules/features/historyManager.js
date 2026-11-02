@@ -688,7 +688,7 @@ export class HistoryManager {
         const hasRecurring = Object.keys(activeCycle?.recurringTemplates || {}).length > 0;
         const recurringNote = `
             <div class="history-recurring-note">
-                <span class="history-recurring-note-icon">↻</span>
+                <span class="history-recurring-note-icon" aria-hidden="true">${getIcon('recurring')}</span>
                 ${getLabel('history.recurringNote')}
                 ${hasRecurring ? `<br><a href="#" class="cleared-view-recurring">${getLabel('history.viewRecurring')}</a>` : ''}
             </div>

@@ -1712,7 +1712,7 @@ async setDefaultPosition(notificationContainer) {
    */
   showApplyConfirmation(targetElement) {
     const tempConfirm = document.createElement("span");
-    tempConfirm.textContent = "✨  " + getLabel('notify.applied');
+    tempConfirm.textContent = "✨ " + getLabel('notify.applied');
     tempConfirm.style.color = "var(--color-white)";
     tempConfirm.style.fontWeight = "bold";
     tempConfirm.style.marginLeft = "8px";

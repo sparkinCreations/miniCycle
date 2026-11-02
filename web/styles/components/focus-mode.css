@@ -1185,8 +1185,10 @@ body.focus-mode #focus-action-btn::after {
 }
 
 /* Mode-specific emoji icon — visual affordance, not vocab; stays in CSS.
-   Leverages the existing body mode classes set by modeManager. */
-body.focus-mode.manual-cycle-mode #focus-action-btn::before { content: "↻"; }
+   Leverages the existing body mode classes set by modeManager. Same glyphs as
+   Home View's button ("🔄 Complete Cycle" / "🧹 Clear Completed Tasks"); the
+   button's name comes from its aria-label, so these are never read out. */
+body.focus-mode.manual-cycle-mode #focus-action-btn::before { content: "🔄"; }
 body.focus-mode.todo-mode-mode #focus-action-btn::before    { content: "🧹"; }
 
 /* Auto cycle has no manual action — hide the button entirely. */

@@ -63,20 +63,20 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringNoActiveFound'));
+            _deps.showNotification("⚠️ " + getLabel('notify.recurringNoActiveFound'));
             return;
         }
 
         const cycleData = getRoutine(state, activeCycleId);
         if (!cycleData) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringDataNotFound'));
+            _deps.showNotification("⚠️ " + getLabel('notify.recurringDataNotFound'));
             return;
         }
 
         const checkedEls = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK_CHECKED);
 
         if (!checkedEls.length) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringNoChecked'));
+            _deps.showNotification("⚠️ " + getLabel('notify.recurringNoChecked'));
             return;
         }
 

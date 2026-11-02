@@ -645,7 +645,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
-            this.deps.showNotification("⚠ " + getLabel('notify.noRoutineToSave'));
+            this.deps.showNotification("⚠️ " + getLabel('notify.noRoutineToSave'));
             return;
         }
 
@@ -684,7 +684,7 @@ export class MenuManager {
 
                 if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
-                    this.deps.showNotification("⚠ " + getLabel('notify.invalidName'));
+                    this.deps.showNotification("⚠️ " + getLabel('notify.invalidName'));
                     return;
                 }
 
@@ -760,7 +760,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to clear tasks');
-            this.deps.showNotification("⚠ " + getLabel('notify.noActiveCycleClear'));
+            this.deps.showNotification("⚠️ " + getLabel('notify.noActiveCycleClear'));
             return;
         }
 
@@ -848,14 +848,14 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to delete tasks from');
-            this.deps.showNotification("⚠ " + getLabel('notify.noActiveCycleDelete'));
+            this.deps.showNotification("⚠️ " + getLabel('notify.noActiveCycleDelete'));
             return;
         }
 
         // ✅ Use callback pattern with showConfirmationModal
         this.deps.showConfirmationModal({
             title: getLabel('modal.deleteAllTasks'),
-            message: "⚠ " + getLabel('modal.deleteAllMessage', { vars: { name: currentCycle.title } }),
+            message: "⚠️ " + getLabel('modal.deleteAllMessage', { vars: { name: currentCycle.title } }),
             confirmText: getLabel('action.deleteAllMenu'),
             cancelText: getLabel('button.cancel'),
             destructive: true,

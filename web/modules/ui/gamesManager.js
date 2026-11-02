@@ -15,7 +15,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getIcon, getLabel } from '../labels/labelResolver.js';
 
 /** The unlock flag a played-for game is stored under (settings.unlockedFeatures). */
 const TASK_ORDER_GAME_FEATURE = 'task-order-game';
@@ -105,7 +105,10 @@ class GamesManager {
     populateGamesPanelContent() {
         const titleEl = document.getElementById('games-panel-title');
         if (titleEl) {
-            titleEl.textContent = `🎮 ${getLabel('games.title')}`;
+            const icon = document.createElement('span');
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = getIcon('game');
+            titleEl.replaceChildren(icon, ` ${getLabel('games.title')}`);
         }
 
         const contentEl = document.querySelector(DOM_SELECTORS.GAMES_MODAL_CONTENT);

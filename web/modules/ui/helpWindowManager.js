@@ -13,7 +13,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOI
 // `max-height: calc(100vh - 385px)` (header + 200px bottom padding). The
 // side-layout hysteresis compares content height against the same budget.
 const VIEWPORT_CHROME_PX = 385;
-import { getLabel } from '../labels/labelResolver.js';
+import { getIcon, getLabel } from '../labels/labelResolver.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -341,15 +341,18 @@ export class HelpWindowManager {
 
         const modeDescriptions = {
             'auto-cycle': {
-                title: "🔄 " + getLabel('mode.autoTitle'),
+                icon: getIcon('modeAuto'),
+                title: getLabel('mode.autoTitle'),
                 description: getLabel('help.modeAutoShort')
             },
             'manual-cycle': {
-                title: "✋ " + getLabel('mode.manualTitle'),
+                icon: getIcon('modeManual'),
+                title: getLabel('mode.manualTitle'),
                 description: getLabel('help.modeManualShort')
             },
             'todo-mode': {
-                title: "📋 " + getLabel('mode.todoTitle'),
+                icon: getIcon('modeTodo'),
+                title: getLabel('mode.todoTitle'),
                 description: getLabel('help.modeTodoShort')
             }
         };
@@ -358,7 +361,7 @@ export class HelpWindowManager {
 
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
-                <h4 style="margin: 0 0 8px 0;">${modeInfo.title}</h4>
+                <h4 style="margin: 0 0 8px 0;"><span aria-hidden="true">${modeInfo.icon}</span> ${modeInfo.title}</h4>
                 <p style="margin: 0; line-height: 1.4;">${modeInfo.description}</p>
             </div>
         `;
@@ -406,7 +409,7 @@ export class HelpWindowManager {
 
         this.isShowingCycleComplete = true;
         this.helpWindow.innerHTML = `
-            <p>✅ ${toastMessage}</p>
+            <p><span aria-hidden="true">✅</span> ${toastMessage}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -436,7 +439,7 @@ export class HelpWindowManager {
         this.isShowingCycleComplete = true; // Reuse flag to prevent updates
         const taskWord = getLabel('noun.task', { count });
         this.helpWindow.innerHTML = `
-            <p>🧹 ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
+            <p><span aria-hidden="true">🧹</span> ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -647,10 +650,10 @@ export class HelpWindowManager {
         };
 
         const iconHtml = parts.icon
-            ? `<span class="help-window-icon">${escapeHtml(parts.icon)} </span>`
+            ? `<span class="help-window-icon" aria-hidden="true">${escapeHtml(parts.icon)} </span>`
             : '';
         const sizeHtml = parts.size
-            ? `<span class="help-window-size"> • 💾 ${escapeHtml(parts.size)}</span>`
+            ? `<span class="help-window-size"> • <span aria-hidden="true">💾</span> ${escapeHtml(parts.size)}</span>`
             : '';
         // Preamble and CTA get their own inline spans. Only the CTA is
         // white-space: nowrap (buttons.css), so when the line wraps the

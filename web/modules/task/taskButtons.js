@@ -209,7 +209,7 @@ export class TaskButtons {
                     'flag': '🚩',
                     'edit': '✎',
                     'trash': '🗑',
-                    'repeat': '↻',
+                    'repeat': '🔁',
                     'calendar-alt': '📅',
                     'bell': '🔔'
                 };

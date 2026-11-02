@@ -325,7 +325,7 @@ export class StatsPanelManager {
             routineButtonsContainer.className = 'routine-buttons-container';
             routineButtonsContainer.innerHTML = `
                 <button class="stats-feature-btn history-btn" id="${DOM_IDS.HISTORY_BTN}">
-                    <span>${getIcon('history')}</span> ${getLabel('stats.history')}
+                    <span aria-hidden="true">${getIcon('history')}</span> ${getLabel('stats.history')}
                 </button>
             `;
             // Insert after cleared count (if exists) so order is: Cycles > Cleared Tasks > History

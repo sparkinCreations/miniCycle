@@ -20,7 +20,7 @@
  */
 
 import { DOM_CLASSES } from '../core/constants.js';
-import { getLabel } from '../labels/labelResolver.js';
+import { getIcon, getLabel } from '../labels/labelResolver.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { getCycleMode } from '../utils/cycleMode.js';
 
@@ -39,9 +39,18 @@ const CARD_THEME_VARS = Object.freeze({
     checkmark:            '--pref-checkmark'
 });
 
-// Keyed by cycleMode.getCycleMode()'s values.
-const MODE_EMOJI = Object.freeze({ auto: '🔄', manual: '✋', todo: '📋' });
+// Keyed by cycleMode.getCycleMode()'s values. The glyphs live in
+// icons.modeAuto/modeManual/modeTodo, shared with every other mode display.
+const MODE_ICON = Object.freeze({ auto: 'modeAuto', manual: 'modeManual', todo: 'modeTodo' });
 const MODE_LABEL = Object.freeze({ auto: 'focusMode.modeAutoName', manual: 'focusMode.modeManualName', todo: 'focusMode.modeTodoName' });
+
+/**
+ * @param {'auto'|'manual'|'todo'} mode - a cycleMode.getCycleMode() value
+ * @returns {string} the mode's icon (unknown modes read as manual, as getCycleMode does)
+ */
+export function getModeIcon(mode) {
+    return getIcon(MODE_ICON[mode] || MODE_ICON.manual);
+}
 
 /**
  * @param {Object} routine
@@ -49,7 +58,7 @@ const MODE_LABEL = Object.freeze({ auto: 'focusMode.modeAutoName', manual: 'focu
  */
 export function describeMode(routine) {
     const mode = getCycleMode(routine);
-    return { emoji: MODE_EMOJI[mode], name: getLabel(MODE_LABEL[mode]) };
+    return { emoji: getModeIcon(mode), name: getLabel(MODE_LABEL[mode]) };
 }
 
 /**

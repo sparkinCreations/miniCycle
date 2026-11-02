@@ -1245,9 +1245,9 @@
     </div>
   </div>
   <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
-    <option value="auto-cycle" title="Tasks reset automatically when all are completed — great for daily routines">Auto Cycle ↻</option>
-    <option value="manual-cycle" title="Tasks stay checked until you manually reset them — complete at your own pace">Manual Cycle ✋↻</option>
-    <option value="todo-mode" title="Completed tasks are removed — use as a traditional checklist">To-Do Mode 📋</option>
+    <option value="auto-cycle" title="Tasks reset automatically when all are completed — great for daily routines">🔄 Auto Cycle</option>
+    <option value="manual-cycle" title="Tasks stay checked until you manually reset them — complete at your own pace">✋ Manual Cycle</option>
+    <option value="todo-mode" title="Completed tasks are removed — use as a traditional checklist">📋 To-Do Mode</option>
   </select>
   <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routine" title="Switch routine">
     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -1524,7 +1524,7 @@
 
     <dialog id="games-panel" class="games-modal" data-modal aria-labelledby="games-panel-title" aria-modal="true">
         <div class="games-modal-content has-corner-logo">
-          <h2 id="games-panel-title">🎮 Games</h2>
+          <h2 id="games-panel-title"><span aria-hidden="true">🎮</span> Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
           <button id="open-task-order-game">Play Whack-a-Order</button>
           <button id="close-games-panel" class="close-btn">Close</button>
@@ -1741,7 +1741,7 @@
 
 <dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title" aria-modal="true">
     <div class="themes-modal-content has-corner-logo">
-      <h2 id="themes-modal-title">🎨 Theme Settings</h2>
+      <h2 id="themes-modal-title"><span aria-hidden="true">🎨</span> Theme Settings</h2>
   
       <div id="vocab-theme-section">
         <!-- Vocabulary theme options injected by JS -->
@@ -1753,7 +1753,7 @@
         <label class="custom-checkbox">
           <input type="checkbox" id="darkModeToggleThemes" name="darkModeToggleThemes">
           <span class="checkmark"></span>
-          Dark Mode 🌙
+          Dark Mode <span aria-hidden="true">🌙</span>
         </label>
       </div>
   
@@ -1898,7 +1898,7 @@
         </form>
 
         <p id="thank-you-message" style="display: none; color: green; font-weight: bold;">
-            ✅ Thank you for your feedback!
+            <span aria-hidden="true">✅</span> Thank you for your feedback!
         </p>
     </div>
 </dialog>
@@ -2023,7 +2023,7 @@
         <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
 
         <div id="empty-state" class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon" aria-hidden="true">📋</div>
             <div class="empty-state-text">Your routine is empty</div>
             <!-- What the app IS, in one line, shown in every view/input-bar state.
                  Vocabulary-neutral on purpose (no "task"/"habit" noun), so vocab
@@ -2051,14 +2051,14 @@
 
         <!-- Onboarding Placeholder - shown before user creates/loads a routine -->
         <div id="onboarding-placeholder" class="onboarding-placeholder">
-            <div class="onboarding-placeholder-icon">🚀</div>
+            <div class="onboarding-placeholder-icon" aria-hidden="true">🚀</div>
             <div class="onboarding-placeholder-title">Create your first routine</div>
             <div class="onboarding-placeholder-text">or try a sample</div>
         </div>
 
         <div class="completed-tasks-section" id="completed-tasks-section">
             <button type="button" class="completed-tasks-header clickable" id="completed-tasks-header" aria-expanded="false" aria-label="Toggle completed tasks">
-                ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
+                <span aria-hidden="true">✓</span> Completed (<span id="completed-count">0</span>) <span class="toggle-icon" aria-hidden="true">▼</span>
             </button>
             <ul id="completedTaskList" class="completed-task-list"></ul>
         </div>
@@ -2085,7 +2085,7 @@
 </div>
 
     <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
-        <h2 id="stats-header">📊 Stats</h2>
+        <h2 id="stats-header"><span aria-hidden="true">📊</span> Stats</h2>
         <!-- Scroll surface lives HERE, not on the panel: the title above stays
              pinned because it is outside the scroller (no sticky, no background
              needed), and this wrapper's top mask fades content out before it
@@ -2093,7 +2093,7 @@
         <div class="stats-panel-content" id="stats-panel-content">
         <div class="current-routine-status" id="current-routine-status">
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
-                📋 Current Routine <span class="toggle-icon">▼</span>
+                <span aria-hidden="true">📋</span> Current Routine <span class="toggle-icon" aria-hidden="true">▼</span>
             </h3>
             <p id="current-routine-name" class="current-routine-name"></p>
             <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
@@ -2119,7 +2119,7 @@
         </div>
                   <div class="theme-unlock-status" id="theme-unlock-status">
             <h3 class="clickable" tabindex="0" aria-expanded="false" aria-label="Toggle milestone rewards">
-                🎯 Milestone Rewards <span class="toggle-icon">▼</span>
+                <span aria-hidden="true">🎯</span> Milestone Rewards <span class="toggle-icon" aria-hidden="true">▼</span>
               </h3>
             <p id="theme-unlock-message">Loading...</p>
             <p id="golden-unlock-message">Loading...</p>
@@ -2127,7 +2127,7 @@
           </div>
         <div class="badge-container">
             <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn">
-                🏅 Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
+                <span aria-hidden="true">🏅</span> Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
             </button>
             <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">
