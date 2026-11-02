@@ -66,6 +66,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     mode: {
         auto:               'Auto Cycle',
+        pickerTitle:        'Switch mode',   // tooltip on the Home View mode menu button
         autoDescription:    'Automatically cycle tasks',
         manual:             'Manual Cycle',
         manualDescription:  'Manually cycle through tasks',
@@ -254,6 +255,12 @@ export const DEFAULT_LABELS = deepFreeze({
         filterManual:       'Manual Cycle',
         filterTodo:         'To-Do',
         filterAria:         'Filter routines by mode: {mode}',
+        // Tooltips on the filter menu button and its options
+        filterTitle:        'Filter routines by mode',
+        filterAllTitle:     'Show routines in every mode',
+        filterAutoTitle:    'Show only Auto Cycle routines',
+        filterManualTitle:  'Show only Manual Cycle routines',
+        filterTodoTitle:    'Show only To-Do routines',
         sort:               'Sort:',
         sortAlpha:          'A-Z',
         sortAlphaTitle:     'Sort alphabetically',

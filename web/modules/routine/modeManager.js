@@ -22,6 +22,8 @@ import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
 const MODE_LABEL_KEYS = Object.freeze({ 'auto-cycle': 'mode.auto', 'manual-cycle': 'mode.manual', 'todo-mode': 'mode.todo' });
+// The mode menu's item tooltips: each mode's one-line explanation (the help window's).
+const MODE_HELP_KEYS = Object.freeze({ 'auto-cycle': 'help.modeAutoShort', 'manual-cycle': 'help.modeManualShort', 'todo-mode': 'help.modeTodoShort' });
 
 /** AppState subscription key for the + button's first-time shimmer. */
 const MODE_MANAGER_SHIMMER_SUBSCRIBER = 'modeManager:firstTimeShimmer';
@@ -650,8 +652,10 @@ export class ModeManager {
                 select: modeSelector,
                 button: pickerBtn,
                 menu: pickerMenu,
-                getModeLabel: (mode) => this.getModeLabel(mode)
+                getModeLabel: (mode) => this.getModeLabel(mode),
+                getItemTitle: (mode) => getLabel(MODE_HELP_KEYS[mode] || MODE_HELP_KEYS['auto-cycle'])
             });
+            pickerBtn.title = getLabel('mode.pickerTitle');
         }
 
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)

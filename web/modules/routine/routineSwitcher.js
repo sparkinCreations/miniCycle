@@ -66,6 +66,9 @@ const FILTER_OPTION_LABELS = Object.freeze({
     all: 'switcher.filterAll', auto: 'switcher.filterAuto', manual: 'switcher.filterManual', todo: 'switcher.filterTodo'
 });
 const FILTER_OPTION_ICONS = Object.freeze({ all: 'list', auto: 'mode-auto', manual: 'mode-manual', todo: 'mode-todo' });
+const FILTER_OPTION_TITLES = Object.freeze({
+    all: 'switcher.filterAllTitle', auto: 'switcher.filterAutoTitle', manual: 'switcher.filterManualTitle', todo: 'switcher.filterTodoTitle'
+});
 
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
@@ -1871,8 +1874,10 @@ export class RoutineSwitcher {
                 menu: filterMenu,
                 getModeLabel: (value) => getLabel(FILTER_OPTION_LABELS[value] || FILTER_OPTION_LABELS.all),
                 getModeIcon: (value) => FILTER_OPTION_ICONS[value] || FILTER_OPTION_ICONS.all,
-                getButtonAria: (label) => getLabel('switcher.filterAria', { vars: { mode: label } })
+                getButtonAria: (label) => getLabel('switcher.filterAria', { vars: { mode: label } }),
+                getItemTitle: (value) => getLabel(FILTER_OPTION_TITLES[value] || FILTER_OPTION_TITLES.all)
             });
+            filterBtn.title = getLabel('switcher.filterTitle');
         }
 
         // Set dropdown to current filter mode (the picker redraws from it)

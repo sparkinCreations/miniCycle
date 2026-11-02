@@ -40,14 +40,17 @@ export class ModePicker {
      *   ICONS name (default: the mode icons by mode value)
      * @param {(label: string) => string} [opts.getButtonAria] - the button's
      *   accessible name for the current label (default: the label itself)
+     * @param {(mode: string) => string} [opts.getItemTitle] - an option's
+     *   tooltip (what picking it does); none when omitted
      */
-    constructor({ select, button, menu, getModeLabel, getModeIcon, getButtonAria }) {
+    constructor({ select, button, menu, getModeLabel, getModeIcon, getButtonAria, getItemTitle }) {
         this.select = select;
         this.button = button;
         this.menu = menu;
         this.getModeLabel = getModeLabel;
         this.getModeIcon = getModeIcon || ((mode) => MODE_PICKER_ICONS[mode] || MODE_PICKER_ICONS['auto-cycle']);
         this.getButtonAria = getButtonAria || ((label) => label);
+        this.getItemTitle = getItemTitle || null;
         this._listeners = [];
         this._restoreValue = null;
 
@@ -113,6 +116,8 @@ export class ModePicker {
             item.setAttribute('aria-checked', 'false');
             item.tabIndex = -1;
             item.dataset.mode = option.value;
+            const title = this.getItemTitle?.(option.value);
+            if (title) item.title = title;
             const text = document.createElement('span');
             text.className = 'quick-action-text';
             text.textContent = this.getModeLabel(option.value);
