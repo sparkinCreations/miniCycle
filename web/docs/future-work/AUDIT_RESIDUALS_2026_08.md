@@ -155,10 +155,10 @@ the entry asked for. It reports UNREACHABLE separately from LONG-CACHED: an earl
 version reported every unreachable URL as long-cached, and a probe that turns "I
 could not ask" into "it is broken" is worse than no probe.
 
-One exemption, documented in the script: `modules/testing/testing-modal-tab-html.html`
-is not a page — it is a copy-paste snippet whose own content reads "Add this new
-tab to your existing testing modal HTML", referenced by nothing. **It probably
-should not be deployed at all**; a cache rule is not the fix for that.
+There was one exemption, a copy-paste snippet (`testing-modal-tab-html.html` under
+`modules/testing/`) whose own content read "Add this new tab to your existing
+testing modal HTML", referenced by nothing. **Deleted Nov 2026**, and its
+exemption with it.
 
 ## 5. Games pages + robots.txt stragglers — ✅ CLOSED Aug 2026
 
