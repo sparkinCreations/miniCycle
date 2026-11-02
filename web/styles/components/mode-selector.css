@@ -357,32 +357,11 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     stroke-width: 1px;
 }
 
-/* Shimmer effect on "+" button when task list is empty — draws attention to add action */
-/* Uses JS-managed .tasks-empty class instead of :has(.task-list:empty) for PWA reliability */
-body.tasks-empty .quick-actions-btn {
-    background: linear-gradient(
-        110deg,
-        rgba(255, 255, 255, 0.2) 0%,
-        rgba(255, 255, 255, 0.2) 40%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(255, 255, 255, 0.2) 60%,
-        rgba(255, 255, 255, 0.2) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s ease-in-out infinite;
-}
-
-/* Disable shimmer under reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    body.tasks-empty .quick-actions-btn {
-        animation: none;
-    }
-}
-body.reduced-motion.tasks-empty .quick-actions-btn {
-    animation: none;
-}
-
-/* Shimmer for first-time users — persists until they press the + button */
+/* Shimmer for first-time users — persists until they press the + button
+   (modeManager: settings.addTaskDiscovered). The ONLY + shimmer: an older
+   rule also shimmered it on every empty routine (body.tasks-empty), whatever
+   the user had already discovered — it read as this one coming back (removed
+   Nov 2026). An empty routine has its own hint in the empty state. */
 .quick-actions-btn.first-time-shimmer {
     background: linear-gradient(
         110deg,
