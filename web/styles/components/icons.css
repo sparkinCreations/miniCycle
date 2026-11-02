@@ -33,6 +33,25 @@
     fill: none;
 }
 
+/* The coloured icons (paint-brush-color, moon, sun — the bottom-corner
+   buttons). Class selectors outrank .icon svg path above. High Contrast
+   draws them in the text colour like every other control. */
+.icon svg .ic-brush-handle { fill: #8B5A2B; }
+.icon svg .ic-brush-tip { fill: #D4537E; }
+.icon svg .ic-gold { fill: #EF9F27; }
+.icon svg .ic-gold-stroke { fill: none; stroke: #EF9F27; }
+/* Light mode: a navy rim (the header text colour, 5.7:1 on the blue). */
+.icon svg .ic-brush-handle,
+.icon svg .ic-brush-tip { stroke: #2C3270; stroke-width: 30px; stroke-linejoin: round; paint-order: stroke; }
+.icon svg .ic-gold { stroke: #2C3270; stroke-width: 3.4px; stroke-linejoin: round; paint-order: stroke; }
+body.dark-mode .icon svg .ic-brush-handle,
+body.dark-mode .icon svg .ic-brush-tip,
+body.dark-mode .icon svg .ic-gold { stroke: none; }
+body.high-contrast .icon svg .ic-brush-handle,
+body.high-contrast .icon svg .ic-brush-tip,
+body.high-contrast .icon svg .ic-gold { fill: currentColor; stroke: none; }
+body.high-contrast .icon svg .ic-gold-stroke { stroke: currentColor; }
+
 /* Stroke-based icons (thin/light style) - don't override fill="none" */
 .icon svg[fill="none"] path {
     fill: none;

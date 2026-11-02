@@ -412,7 +412,9 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     top: 100%;
     left: 0;
     margin-top: var(--space-1-25);
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
+    /* Light blue, from the header bar's own blue family (both header menus —
+       the + and the mode picker — share this). Dark mode overrides it. */
+    background: linear-gradient(135deg, #f3f8ff 0%, #dce9ff 100%);
     border: 1px solid rgba(12, 32, 145, 0.3);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-dropdown);
@@ -447,7 +449,7 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
 }
 
 .quick-action-item:hover {
-    background: rgba(12, 32, 145, 0.1);
+    background: rgba(12, 32, 145, 0.12);
 }
 
 .quick-action-item svg {

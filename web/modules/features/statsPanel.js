@@ -28,7 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { ICONS } from '../utils/icons.js';
+import { ICONS, createIconElement } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine, getActiveRoutine } from '../utils/cycleMode.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
@@ -1118,7 +1118,7 @@ export class StatsPanelManager {
 
         // Update icon
         if (this.elements.quickDarkToggle) {
-            this.elements.quickDarkToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            this.elements.quickDarkToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
         }
         
     }

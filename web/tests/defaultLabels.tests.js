@@ -207,7 +207,7 @@ export async function runDefaultLabelsTests(resultsDiv) {
         'button.save', 'button.cancel', 'button.close',
         'notify.cycleComplete', 'notify.taskRenamed',
         'help.addFirstTask', 'empty.noTasks',
-        'icons.cycleComplete', 'icons.darkMode', 'icons.celebrate'
+        'icons.cycleComplete', 'icons.celebrate'
     ];
 
     await test('all critical keys exist', () => {

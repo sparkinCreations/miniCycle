@@ -642,7 +642,7 @@ export class ThemeManager {
             quickToggle.parentNode?.replaceChild(newQuickToggle, quickToggle);
             
             // Set correct initial icon state
-            newQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            newQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
             
             const safeAdd = _deps.safeAddEventListener;
             newQuickToggle._clickHandler = (e) => {
@@ -712,7 +712,7 @@ export class ThemeManager {
             const currentQuickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (!currentQuickToggle) return;
 
-            currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            currentQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
 
             // The emoji was the ONLY state cue, and it is invisible to assistive
             // tech twice over: it is decorative content, and the button's

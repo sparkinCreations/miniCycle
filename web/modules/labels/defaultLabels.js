@@ -1564,7 +1564,7 @@ export const DEFAULT_LABELS = deepFreeze({
         step1:           'Switch between Auto Cycle, Manual, and To-Do modes to match your workflow.',
         step2:           'Minimize distractions — Focus View hides everything except your tasks.',
         step3:           'Your at-a-glance status — shows the current mode, tasks remaining, and tips.',
-        step4:           'Customize colors, backgrounds, and themes here. The 🌙 moon button on the opposite side switches light and dark mode.',
+        step4:           'Customize colors, backgrounds, and themes here. The moon button on the opposite side switches light and dark mode.',
         step5:           'Switch between your routines — each has its own tasks and cycle count. Settings → Behavior chooses whether this opens the list or Browse, to flip through them one at a time.',
         step6:           'Everything else lives in this menu. Want prompts like this for other features? Turn on Enable Tour Prompts under Help & Support.',
         complete:        'You\'re all set! Enjoy building your routines.',
@@ -2717,10 +2717,6 @@ export const DEFAULT_LABELS = deepFreeze({
         // Recurring tasks keep their own arrows, distinct from the modes'.
         recurring:      '🔁',
 
-        // UI state toggles
-        darkMode:       '🌙',
-        lightMode:      '☀️',
-
         // Theme identifiers
         themeOcean:     '🌊',
         themeStar:      '🌟',
@@ -3371,8 +3367,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'icons.clearComplete',
     'icons.celebrate',
     'icons.milestoneTrail',
-    'icons.darkMode',
-    'icons.lightMode',
     'icons.themeOcean',
     'icons.themeStar',
     'icons.themeDefault',
