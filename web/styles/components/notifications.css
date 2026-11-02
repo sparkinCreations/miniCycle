@@ -444,6 +444,18 @@ dialog .notification .notification-action-btn {
 }
 
 /* Task name line */
+/* The ⓘ's note under the schedule line (shared .info-btn pattern) */
+.notification.recurring .recurring-info-note {
+    margin: var(--space-1) 0 var(--space-2);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+    opacity: 0.92;
+}
+
+.notification.recurring .recurring-info-note[hidden] {
+    display: none;
+}
+
 .notification.recurring .recurring-task-name {
     margin-bottom: var(--space-2);
     font-size: var(--font-size-sm);

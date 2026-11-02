@@ -351,7 +351,7 @@ export class StatsPanelManager {
             const infoBtn = document.createElement('button');
             infoBtn.type = 'button';
             infoBtn.id = DOM_IDS.ALL_ROUTINES_INFO_BTN;
-            infoBtn.className = DOM_CLASSES.STATS_INFO_BTN;
+            infoBtn.className = `${DOM_CLASSES.STATS_INFO_BTN} ${DOM_CLASSES.INFO_BTN}`;
             infoBtn.setAttribute('aria-label', infoLabel);
             infoBtn.title = infoLabel;
             infoBtn.setAttribute('aria-expanded', 'false');

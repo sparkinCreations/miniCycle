@@ -161,6 +161,40 @@ button.icon-only i {
     text-shadow: var(--text-shadow-sm);
 }
 
+/* ⓘ — the ONE way miniCycle offers "more about this": an inline button
+   after a line that toggles a short note under it (aria-expanded +
+   aria-controls). Used by the Stats panel and the recurring-task popup. */
+.info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin-left: var(--space-1);
+    padding: var(--space-1);
+    border: none;
+    background: none;
+    color: inherit;
+    opacity: 0.75;
+    cursor: pointer;
+}
+
+.info-btn .icon {
+    display: inline-flex;
+    width: 1em;
+    height: 1em;
+}
+
+.info-btn:hover,
+.info-btn[aria-expanded="true"] {
+    opacity: 1;
+}
+
+.info-btn:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+    border-radius: var(--radius-full);
+}
+
 /* The mode glyph (ui/completeAllButton.js) answers a press: the arrows turn
    once, the 🧹 broom sweeps — .is-acting is put on and taken off by
    replayAnimationClass. Both durations are motion tokens, 0 under reduced

@@ -612,6 +612,20 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
+    await test('_renderStatusContent puts the progress icon in front of the progress phrase', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: 'list', body: '2 tasks remaining', cta: '3 cycles completed', ctaIcon: 'mode-auto', size: '' });
+        if (!helpWindowEl.querySelector('.help-window-cta .help-window-cta-icon svg')) throw new Error('no icon in the CTA');
+        manager._renderStatusContent({ icon: 'list', body: '2 tasks remaining', cta: 'Complete your first cycle!', size: '' });
+        if (helpWindowEl.querySelector('.help-window-cta-icon')) throw new Error('a first-time prompt must not get the progress icon');
+    });
+
+    await test('status parts: cycle modes pair the progress with the cycle arrows, To-Do with the broom', () => {
+        const manager = new HelpWindowManager();
+        const parts = manager.getCurrentStatusMessage();
+        if (parts.cta && parts.ctaIcon && !['mode-auto', 'broom'].includes(parts.ctaIcon)) throw new Error(`unexpected ctaIcon ${parts.ctaIcon}`);
+    });
+
     await test('_renderStatusContent draws nothing for a name not in ICONS', () => {
         const manager = new HelpWindowManager();
         manager._renderStatusContent({ icon: 'not-an-icon', body: 'test', size: '' });

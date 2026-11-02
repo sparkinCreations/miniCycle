@@ -240,7 +240,9 @@ const ICONS = {
     // The two bottom-corner buttons' moon / sun (Nov 2026): monochrome in
     // currentColor like the rest of the set; the brush is 'paint-brush'.
     'moon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M28.73 11.03A23 23 0 1 0 52.79 37.11A18 18 0 0 1 28.73 11.03Z"/></svg>',
-    'sun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M32 21a11 11 0 1 1 0 22a11 11 0 1 1 0-22z"/><path fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></svg>'
+    'sun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M32 21a11 11 0 1 1 0 22a11 11 0 1 1 0-22z"/><path fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></svg>',
+    // Clearing (Nov 2026): the help window's cleared count and flash
+    'broom': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(35 32 32)"><path d="M32 4v29" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="23" y="31" width="18" height="7" rx="2"/><path d="M23 40h18l8 19-4 3-4-3-4 3-4-3-4 3-4-3-4 3-4-3-4 3-3-3z"/></g></svg>'
 };
 
 /**

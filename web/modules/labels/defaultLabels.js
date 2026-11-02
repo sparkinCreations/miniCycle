@@ -554,6 +554,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Recurring notification
         recurringTipExplanation: 'Recurring tasks are removed on cycle reset and will reappear on their schedule',
+        recurringInfoAria:      'How recurring tasks work',   // the recurring popup's ⓘ
         recurringStatus:         'Recurring set to {frequency} ({pattern})',
         changeSettings:          'Change Settings',
         moreOptions:             'More Options',

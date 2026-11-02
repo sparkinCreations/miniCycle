@@ -1312,6 +1312,9 @@ export const DOM_CLASSES = Object.freeze({
     GOLDEN_THEME: 'golden-theme',
     GAME_UNLOCKED: 'game-unlocked',
     HAS_CONTENT: 'has-content',
+    INFO_BTN: 'info-btn',                 // the shared ⓘ toggle (buttons.css): Stats panel, recurring popup
+    RECURRING_INFO_BTN: 'recurring-info-btn',   // the recurring popup's ⓘ
+    RECURRING_INFO_NOTE: 'recurring-info-note', // the explanation it shows
     STATS_INFO_BTN: 'stats-info-btn',     // small ⓘ toggle in the stats panel
     STATS_INFO_NOTE: 'stats-info-note',   // the explanation it shows
 

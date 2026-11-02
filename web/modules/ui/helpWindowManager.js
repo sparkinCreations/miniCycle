@@ -284,7 +284,7 @@ export class HelpWindowManager {
         if (this.isShowingCycleComplete || this.isShowingModeDescription) return;
 
         const parts = this.getCurrentStatusMessage();
-        const partsKey = `${parts.icon}|${parts.body}|${parts.size}`;
+        const partsKey = `${parts.icon}|${parts.body}|${parts.ctaIcon}|${parts.size}`;
 
         if (partsKey !== this._currentPartsKey) {
             this._currentPartsKey = partsKey;
@@ -440,7 +440,7 @@ export class HelpWindowManager {
         this.isShowingCycleComplete = true; // Reuse flag to prevent updates
         const taskWord = getLabel('noun.task', { count });
         this.helpWindow.innerHTML = `
-            <p><span aria-hidden="true">🧹</span> ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
+            <p><span class="icon help-window-icon" aria-hidden="true">${getSvgIcon('broom')}</span> ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -606,6 +606,11 @@ export class HelpWindowManager {
             ? getLabel('help.progressCleared', { vars: { count: clearedTasksCount, taskWord: getLabel('noun.task', { count: clearedTasksCount }) } })
             : getLabel('help.progressCycles', { vars: { count: cycleCount, cycleWord: getLabel('noun.cycle', { count: cycleCount }) } });
 
+        // The progress phrase's icon: the cycle arrows for "N cycles completed",
+        // the broom for To-Do's "N tasks cleared". Only when the CTA IS that
+        // phrase — the first-time prompts ("Complete your first cycle!") have none.
+        const progressIcon = isToDoMode ? 'broom' : 'mode-auto';
+
         // Return parts for different constant messages based on state.
         // `icon` is a NAME in the ICONS registry (utils/icons.js); the
         // renderer looks it up, so only the trusted SVG set reaches innerHTML.
@@ -615,11 +620,11 @@ export class HelpWindowManager {
         // so when the line wraps it breaks at the bullet rather than
         // splitting the call-to-action mid-phrase.
         if (totalTasks === 0) {
-            return { icon: 'edit', body: getLabel('help.addFirstTask'), cta: progressText, size: routineSize };
+            return { icon: 'edit', body: getLabel('help.addFirstTask'), cta: progressText, ctaIcon: progressIcon, size: routineSize };
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return { icon: 'trophy', body: getLabel('help.allComplete'), cta: progressText, size: routineSize };
+            return { icon: 'trophy', body: getLabel('help.allComplete'), cta: progressText, ctaIcon: progressIcon, size: routineSize };
         }
 
         const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
@@ -633,7 +638,7 @@ export class HelpWindowManager {
         }
 
         // Show progress and cycle count or cleared tasks
-        return { icon: 'list', body: remainingText, cta: progressText, size: routineSize };
+        return { icon: 'list', body: remainingText, cta: progressText, ctaIcon: progressIcon, size: routineSize };
     }
 
     /**
@@ -671,8 +676,10 @@ export class HelpWindowManager {
         const bodyHtml = `<span class="help-window-body">${escapeHtml(parts.body)}</span>`;
         // Leading space lives OUTSIDE the CTA span — that is the break
         // opportunity before the unbreakable CTA.
+        const ctaSvg = parts.ctaIcon ? getSvgIcon(parts.ctaIcon) : '';
+        const ctaIconHtml = ctaSvg ? `<span class="icon help-window-cta-icon" aria-hidden="true">${ctaSvg}</span> ` : '';
         const ctaHtml = parts.cta
-            ? ` <span class="help-window-cta">• ${escapeHtml(parts.cta)}</span>`
+            ? ` <span class="help-window-cta">• ${ctaIconHtml}${escapeHtml(parts.cta)}</span>`
             : '';
 
         this.helpWindow.innerHTML = `<p>${iconHtml}${bodyHtml}${ctaHtml}${sizeHtml}</p>`;

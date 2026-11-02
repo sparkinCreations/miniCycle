@@ -42,7 +42,7 @@ import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import { prefersReducedMotion } from './motionPreference.js';
-import { getIcon } from './icons.js';
+import { createIconElement, getIcon } from './icons.js';
 
 // The SVG drawn in front of a notification of each type. Messages carry no
 // emoji prefix of their own: the type says success / warning / error, and a
@@ -1317,21 +1317,23 @@ async setDefaultPosition(notificationContainer) {
   }
 
   /**
-   * 🔁 Create recurring notification with educational tip (two-state: collapsed/expanded)
+   * Recurring-task popup: the task, its schedule with an ⓘ that explains how
+   * recurring tasks behave, and the quick frequency picker (collapsed/expanded).
+   *
+   * The explanation is the shared ⓘ pattern (.info-btn, as in the Stats panel)
+   * — it replaced a tip banner with its own ✕ plus a 💡 to bring it back (Nov
+   * 2026). It starts OPEN the first time anyone makes a task recurring — "it
+   * vanishes on reset" looks like a bug unless you have been told — and
+   * collapsed after that. The "seen" mark is the old tip's dismissal entry
+   * (settings.dismissedEducationalTips), so whoever closed that tip starts
+   * collapsed.
    */
   createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, taskText = '') {
     const tipId = 'recurring-cycle-explanation';
     const tipText = getLabel('notify.recurringTipExplanation');
-
-    const educationalTipHTML = `
-      <div class="educational-tip recurring-tip" id="tip-${tipId}" data-tip-id="${tipId}" style="display: none;">
-        <div class="tip-content">
-          <span class="tip-icon">📍</span>
-          <span class="tip-text">${tipText}</span>
-          <button class="tip-close" aria-label="${getLabel('notify.dismissTip')}">✕</button>
-        </div>
-      </div>
-    `;
+    const firstTime = !this.educationalTips.isTipDismissed(tipId);
+    if (firstTime) this.educationalTips.dismissTip(tipId);
+    const infoLabel = getLabel('notify.recurringInfoAria');
 
     // ✅ XSS PROTECTION: single escape resolver (DI-pure). getEscapeHtml()'s
     // fallback escapes the full set (& < > " ' /), unlike the previous inline
@@ -1343,18 +1345,19 @@ async setDefaultPosition(notificationContainer) {
     // hardening retired. Escaping is round-trip safe: HTML parsing decodes the
     // entities, so the DOM attribute equals the raw id and dataset lookups match.
     const safeTaskId = escape(assignedTaskId);
+    const infoNoteId = escape(`${DOM_CLASSES.RECURRING_INFO_NOTE}-${assignedTaskId}`);
 
     return `
       <div class="main-notification-content"
            data-task-id="${safeTaskId}">
 
-        ${educationalTipHTML}
-
         ${taskText ? `<div class="recurring-task-name">"${escapedTaskText}"</div>` : ''}
 
-        <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}">
-          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + escape(frequency) + '</strong>', pattern: escape(pattern) } })}
-        </span><br>
+        <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}"><span class="icon" aria-hidden="true">${getIcon('repeat')}</span> ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + escape(frequency) + '</strong>', pattern: escape(pattern) } })}</span><button type="button"
+                class="${DOM_CLASSES.INFO_BTN} ${DOM_CLASSES.RECURRING_INFO_BTN}"
+                aria-label="${infoLabel}" title="${infoLabel}"
+                aria-expanded="${firstTime}" aria-controls="${infoNoteId}"><span class="icon" aria-hidden="true">${getIcon('info-circle')}</span></button>
+        <p id="${infoNoteId}" class="${DOM_CLASSES.RECURRING_INFO_NOTE}"${firstTime ? '' : ' hidden'}>${tipText}</p>
 
         <button class="show-quick-actions"
                 data-task-id="${safeTaskId}">
@@ -1385,13 +1388,9 @@ async setDefaultPosition(notificationContainer) {
 
           <div class="quick-actions">
             <button class="apply-quick-recurring" data-task-id="${safeTaskId}">${getLabel('button.apply')}</button>
-            <button class="open-recurring-settings" data-task-id="${safeTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
+            <button class="open-recurring-settings" data-task-id="${safeTaskId}"><span class="icon" aria-hidden="true">${getIcon('cog')}</span> ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
-
-        <button class="tip-toggle-btn"
-                data-tip-id="${tipId}"
-                aria-label="${getLabel('notify.showTip')}">💡</button>
 
         <button class="close-btn"
                 data-task-id="${safeTaskId}"
@@ -1419,6 +1418,17 @@ async setDefaultPosition(notificationContainer) {
     // Delegate clicks inside notification
     notification._clickHandler = async (e) => {
       e.stopPropagation();
+
+      // ⓘ: show / hide how recurring tasks work, under the schedule line.
+      const infoBtn = e.target.closest(`.${DOM_CLASSES.RECURRING_INFO_BTN}`);
+      if (infoBtn) {
+        const note = document.getElementById(infoBtn.getAttribute('aria-controls'));
+        if (note) {
+          note.hidden = !note.hidden;
+          infoBtn.setAttribute('aria-expanded', String(!note.hidden));
+        }
+        return;
+      }
 
       const taskId = e.target.dataset.taskId ||
                      e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT)?.dataset.taskId;
@@ -1472,7 +1482,7 @@ async setDefaultPosition(notificationContainer) {
         const currentSettingsText = notification.querySelector(`#${DOM_IDS.notificationCurrentSettings(taskId)}`);
 
         if (currentSettingsText) {
-          currentSettingsText.textContent = `🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: newFrequency, pattern } })}`;
+          currentSettingsText.replaceChildren(createIconElement('repeat'), ` ${getLabel('notify.recurringStatus', { vars: { frequency: newFrequency, pattern } })}`);
           currentSettingsText.style.background = "rgba(255, 255, 255, 0.2)";
           setTimeout(() => currentSettingsText.style.background = "transparent", UI_TIMEOUTS.BG_HIGHLIGHT_RESET);
         }
