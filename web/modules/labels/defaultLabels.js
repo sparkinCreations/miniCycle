@@ -253,6 +253,7 @@ export const DEFAULT_LABELS = deepFreeze({
         filterAuto:         'Auto Cycle',
         filterManual:       'Manual Cycle',
         filterTodo:         'To-Do',
+        filterAria:         'Filter routines by mode: {mode}',
         sort:               'Sort:',
         sortAlpha:          'A-Z',
         sortAlphaTitle:     'Sort alphabetically',

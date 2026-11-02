@@ -34,6 +34,7 @@ import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
 import { createModeIcon, describeMode } from './routineBrowserRender.js';
+import { ModePicker } from './modePicker.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { scrollBehavior } from '../utils/motionPreference.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -60,10 +61,11 @@ let getUniqueCycleName;
 // modal's markup, not an app-wide selector.
 const INTERACTIVE_CONTROL_SELECTOR = 'button, input, select, textarea, a, label, [role="button"], [contenteditable]';
 
-// The mode filter's option values → their labels (setupFilterControls).
+// The mode filter's option values → their labels and icons (setupFilterControls).
 const FILTER_OPTION_LABELS = Object.freeze({
     all: 'switcher.filterAll', auto: 'switcher.filterAuto', manual: 'switcher.filterManual', todo: 'switcher.filterTodo'
 });
+const FILTER_OPTION_ICONS = Object.freeze({ all: 'list', auto: 'mode-auto', manual: 'mode-manual', todo: 'mode-todo' });
 
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
@@ -297,6 +299,8 @@ export class RoutineSwitcher {
             this._openViewWatch = null;
         }
         this._browser.destroy();
+        this._filterPicker?.destroy();
+        this._filterPicker = null;
     }
 
     /**
@@ -1850,16 +1854,28 @@ export class RoutineSwitcher {
         }
 
         // Option text from the labels (the HTML carries the same text as a
-        // fallback). Text only: a native <select> cannot draw the mode SVGs.
-        // The leading &nbsp; indent of each mode option is kept.
+        // fallback).
         for (const option of filterSelect.options) {
             const key = FILTER_OPTION_LABELS[option.value];
-            if (!key) continue;
-            const indent = option.textContent.match(/^\s*/)[0];
-            option.textContent = option.value === 'all' ? getLabel(key) : `${indent}${getLabel(key)}`;
+            if (key) option.textContent = getLabel(key);
         }
 
-        // Set dropdown to current filter mode
+        // The visible control: a menu button over the hidden select, the same
+        // one the header uses for the mode, so it can draw the mode icons.
+        const filterBtn = this.deps.getElementById(DOM_IDS.ROUTINE_FILTER_BTN);
+        const filterMenu = this.deps.getElementById(DOM_IDS.ROUTINE_FILTER_MENU);
+        if (!this._filterPicker && filterBtn && filterMenu) {
+            this._filterPicker = new ModePicker({
+                select: filterSelect,
+                button: filterBtn,
+                menu: filterMenu,
+                getModeLabel: (value) => getLabel(FILTER_OPTION_LABELS[value] || FILTER_OPTION_LABELS.all),
+                getModeIcon: (value) => FILTER_OPTION_ICONS[value] || FILTER_OPTION_ICONS.all,
+                getButtonAria: (label) => getLabel('switcher.filterAria', { vars: { mode: label } })
+            });
+        }
+
+        // Set dropdown to current filter mode (the picker redraws from it)
         filterSelect.value = this._filterMode;
 
         // Setup handler (only once)

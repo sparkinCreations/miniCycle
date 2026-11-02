@@ -14,7 +14,10 @@
  *     button, because the instance's `value` setter is wrapped (several of
  *     those writers set the value without dispatching any event).
  *
- * Statically imported by modeManager (boot-critical: listed in BOOT_CRITICAL).
+ * Used twice: the header mode control (modeManager) and the routine
+ * switcher's mode filter (routineSwitcher), whose extra "All Modes" option
+ * passes its own getModeIcon. Statically imported by both (boot-critical:
+ * listed in BOOT_CRITICAL).
  */
 
 import { createIconElement } from '../utils/icons.js';
@@ -33,12 +36,18 @@ export class ModePicker {
      * @param {HTMLButtonElement} opts.button - the visible menu button
      * @param {HTMLElement} opts.menu - role="menu" container of the items
      * @param {(mode: string) => string} opts.getModeLabel - a mode's name
+     * @param {(mode: string) => (string|null)} [opts.getModeIcon] - an option's
+     *   ICONS name (default: the mode icons by mode value)
+     * @param {(label: string) => string} [opts.getButtonAria] - the button's
+     *   accessible name for the current label (default: the label itself)
      */
-    constructor({ select, button, menu, getModeLabel }) {
+    constructor({ select, button, menu, getModeLabel, getModeIcon, getButtonAria }) {
         this.select = select;
         this.button = button;
         this.menu = menu;
         this.getModeLabel = getModeLabel;
+        this.getModeIcon = getModeIcon || ((mode) => MODE_PICKER_ICONS[mode] || MODE_PICKER_ICONS['auto-cycle']);
+        this.getButtonAria = getButtonAria || ((label) => label);
         this._listeners = [];
         this._restoreValue = null;
 
@@ -56,7 +65,7 @@ export class ModePicker {
         labelEl.className = 'mode-picker-label';
         labelEl.textContent = label;
         this.button.replaceChildren(this._icon(mode), labelEl);
-        this.button.setAttribute('aria-label', label);
+        this.button.setAttribute('aria-label', this.getButtonAria(label));
         for (const item of this._items()) {
             item.setAttribute('aria-checked', String(item.dataset.mode === mode));
         }
@@ -87,7 +96,7 @@ export class ModePicker {
     // ---- internals --------------------------------------------------------
 
     _icon(mode) {
-        return createIconElement(MODE_PICKER_ICONS[mode] || MODE_PICKER_ICONS['auto-cycle'], 'mode-picker-icon');
+        return createIconElement(this.getModeIcon(mode) || '', 'mode-picker-icon');
     }
 
     _items() {

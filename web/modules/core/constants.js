@@ -1614,7 +1614,9 @@ export const DOM_IDS = Object.freeze({
     SORT_ALPHA: 'sort-alpha',
     SORT_RECENT: 'sort-recent',
     SORT_SIZE: 'sort-size',
-    ROUTINE_FILTER_SELECT: 'routine-filter-select',
+    ROUTINE_FILTER_SELECT: 'routine-filter-select',   /* hidden native <select>: the filter's source of truth */
+    ROUTINE_FILTER_BTN: 'routine-filter-btn',   /* the visible filter control (routine/modePicker.js) */
+    ROUTINE_FILTER_MENU: 'routine-filter-menu',
     SWITCH_DUPLICATE: 'switch-duplicate',
     SWITCH_RENAME: 'switch-rename',
     SWITCH_DELETE: 'switch-delete',

@@ -220,6 +220,13 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     display: block;
 }
 
+/* Left-aligned under its button (the routine switcher's filter sits at the
+   dialog's left edge, where a centred menu would run off it). */
+.mode-picker.mode-picker--start .mode-picker-menu {
+    left: 0;
+    transform: none;
+}
+
 .mode-picker-item .icon {
     width: 1.25em;
     height: 1.25em;

@@ -1781,12 +1781,19 @@
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         <div class="routine-sort-filter-row">
             <div class="routine-filter-controls">
-                <select id="routine-filter-select" class="routine-filter-select" aria-label="Filter routines by mode">
+                <!-- Source of truth, hidden; the visible control is the menu
+                     button below (modules/routine/modePicker.js), which can
+                     draw the mode icons a <select> cannot. -->
+                <select id="routine-filter-select" class="mode-selector-native" aria-hidden="true" tabindex="-1">
                     <option value="all">All Modes</option>
-                    <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Auto Cycle</option>
-                    <option value="manual">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Manual Cycle</option>
-                    <option value="todo">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;To-Do</option>
+                    <option value="auto">Auto Cycle</option>
+                    <option value="manual">Manual Cycle</option>
+                    <option value="todo">To-Do</option>
                 </select>
+                <div class="mode-picker mode-picker--start">
+                    <button type="button" id="routine-filter-btn" class="routine-filter-select mode-picker-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="routine-filter-menu" aria-label="Filter routines by mode">All Modes</button>
+                    <div id="routine-filter-menu" class="quick-actions-menu mode-picker-menu" role="menu" aria-label="Filter routines by mode" hidden></div>
+                </div>
             </div>
             <div class="routine-sort-controls">
                 <span class="routine-sort-label">Sort:</span>

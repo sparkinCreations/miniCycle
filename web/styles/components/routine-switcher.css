@@ -320,6 +320,40 @@ input.routine-search-input:focus {
     box-shadow: var(--shadow-focus-ring-subtle);
 }
 
+/* The filter is a menu button (routine/modePicker.js) carrying the pill
+   class above, so dark mode and High Contrast style it unchanged. The caret
+   is drawn in currentColor, not a background image — those rules reset the
+   background shorthand. */
+.routine-filter-select.mode-picker-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    max-width: 140px;
+    font-family: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.routine-filter-select.mode-picker-btn .mode-picker-icon {
+    width: 1.15em;
+    height: 1.15em;
+    flex-shrink: 0;
+}
+
+.routine-filter-select.mode-picker-btn .mode-picker-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.routine-filter-select.mode-picker-btn::after {
+    content: "";
+    flex-shrink: 0;
+    margin-left: var(--space-0-5);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+}
+
 /* =============================================================================
    ROUTINE LIST
    ============================================================================= */
@@ -1288,6 +1322,13 @@ input.routine-search-input:focus {
 
     .routine-filter-select {
         max-width: 90px;
+    }
+
+    /* Icon + caret only: the mode icon names the filter, the full name stays
+       in the menu and the button's aria-label, and the Sort group keeps its
+       line beside it (a 118px name pushed it onto its own at 375px). */
+    .routine-filter-select.mode-picker-btn .mode-picker-label {
+        display: none;
     }
 
     /* The filter + "Sort:" + three buttons need ~312px and a phone card
