@@ -988,6 +988,7 @@ export const DEFAULT_LABELS = deepFreeze({
         testsModulesFailed:      '{count} module(s) have failures',
         testsModulesTimedOut:    '{count} module(s) timed out (incomplete) — re-run',
         testsBackgrounded:       'Run was backgrounded — re-run with the tab focused',
+        appMoved:                'miniCycle has moved to {app} — bookmark this page. {home} is now our home page.',   // once, for returning users sent from the old address
         testsRequireNetwork:     'Tests require a network connection — test files are always fetched fresh. Reconnect and try again.',
         reminderDisabled:        'Task reminders disabled.',
         taskReminderDisabled:    'Reminder disabled for task.',
