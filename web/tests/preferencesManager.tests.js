@@ -135,7 +135,9 @@ export async function runPreferencesManagerTests(resultsDiv) {
             btn.dispatchEvent(new Event('touchend', { bubbles: true, cancelable: true }));
             btn.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
             const hint = document.getElementById('long-press-hint');
-            if (!hint || !hint.classList.contains(DOM_CLASSES.VISIBLE) || hint.textContent !== 'Personalization') throw new Error('a long press must show "Personalization", got ' + JSON.stringify(hint && hint.textContent));
+            const { getLabel } = await import('../modules/labels/labelResolver.js');
+            const want = getLabel('nav.personalizationHint');
+            if (!hint || !hint.classList.contains(DOM_CLASSES.VISIBLE) || hint.textContent !== want) throw new Error(`a long press must show "${want}", got ` + JSON.stringify(hint && hint.textContent));
             if (opened !== 0) throw new Error('asking what the button does must not open the modal');
         } finally {
             host.remove();

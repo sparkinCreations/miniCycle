@@ -250,7 +250,10 @@ export async function runThemeManagerTests(resultsDiv) {
             live.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));   // the click a browser fires after touchend
             const hint = document.getElementById('long-press-hint');
             if (!hint || !hint.classList.contains(DOM_CLASSES.VISIBLE)) throw new Error('a long press must show the label bubble');
-            if (hint.textContent !== 'Toggle dark mode') throw new Error('bubble should carry the button\'s label, got ' + JSON.stringify(hint.textContent));
+            // The bubble says what a press would do: light mode now → dark next.
+            const { getLabel } = await import('../modules/labels/labelResolver.js');
+            const want = getLabel('nav.darkModeHintOn');
+            if (hint.textContent !== want) throw new Error(`bubble should read "${want}", got ` + JSON.stringify(hint.textContent));
             if (primary.checked) throw new Error('asking what the button does must not toggle dark mode');
         } finally {
             document.getElementById('quick-dark-toggle')?.remove();
