@@ -167,7 +167,7 @@ export async function checkForUpdates(options = {}) {
     if (channel !== 'web') {
         const latest = await fetchLiveVersion(options.fetchImpl);
         if (!latest) {
-            notify('⚠️ ' + getLabel('notify.updateCheckFailed', { vars: { version: current } }), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+            notify(getLabel('notify.updateCheckFailed', { vars: { version: current } }), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
             return { channel, current, latest: null, status: 'unknown' };
         }
         if (isNewerVersion(latest, current)) {
@@ -175,7 +175,7 @@ export async function checkForUpdates(options = {}) {
             notify(getLabel('notify.updateAvailableStore', { vars: { from: current, to: latest, store } }), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
             return { channel, current, latest, status: 'update-available' };
         }
-        notify('✅ ' + getLabel('notify.updateUpToDate', { vars: { version: current } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+        notify(getLabel('notify.updateUpToDate', { vars: { version: current } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
         return { channel, current, latest, status: 'up-to-date' };
     }
 
@@ -210,14 +210,14 @@ export async function checkForUpdates(options = {}) {
 
     const latest = await fetchLiveVersion(options.fetchImpl);
     if (!latest) {
-        notify('⚠️ ' + getLabel('notify.updateCheckFailed', { vars: { version: current } }), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+        notify(getLabel('notify.updateCheckFailed', { vars: { version: current } }), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
         return { channel, current, latest: null, status: 'unknown' };
     }
     if (isNewerVersion(latest, current)) {
         notify(getLabel('notify.updateAvailableFromTo', { vars: { from: current, to: latest } }), 'info', UI_TIMEOUTS.NOTIFICATION_SLOW);
         return { channel, current, latest, status: 'update-available' };
     }
-    notify('✅ ' + getLabel('notify.updateUpToDate', { vars: { version: current } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    notify(getLabel('notify.updateUpToDate', { vars: { version: current } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     return { channel, current, latest, status: 'up-to-date' };
 }
 

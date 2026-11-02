@@ -154,9 +154,10 @@ export class DragDropManager {
     /** Tell the user why nothing moved, once per attempt. */
     _notifyReorderPaused() {
         this.deps.showNotification?.(
-            '⏸️ ' + getLabel('notify.reorderPausedWhileSorted'),
+            getLabel('notify.reorderPausedWhileSorted'),
             'info',
-            UI_TIMEOUTS.NOTIFICATION_SHORT
+            UI_TIMEOUTS.NOTIFICATION_SHORT,
+            { icon: 'pause' }
         );
     }
 

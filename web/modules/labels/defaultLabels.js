@@ -2734,14 +2734,10 @@ export const DEFAULT_LABELS = deepFreeze({
         // Unlock states
         unlocked:       '🔓',
         locked:         '🔒',
-        game:           '🎮',
+        game:           '🎮'
 
-        // Feature icons
-        history:        '📜',
-        keyboard:       '⌨️',
-
-        // Notification prefix
-        warning:        '⚠️'
+        // Notifications, section headers and modal titles draw SVGs from the
+        // ICONS registry (utils/icons.js), not these emoji.
         // Vocabulary themes override cycleComplete / celebrate / badge in
         // their own `icons` block (labels/themes.js); nothing for them here.
     },
@@ -3387,10 +3383,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'icons.themeDefault',
     'icons.unlocked',
     'icons.locked',
-    'icons.game',
-    'icons.history',
-    'icons.keyboard',
-    'icons.warning'
+    'icons.game'
 ]));
 
 // ============================================================================

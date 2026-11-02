@@ -92,6 +92,20 @@
     flex-shrink: 0;
 }
 
+/* Section and title icons are SVGs from the ICONS registry (utils/icons.js),
+   sized to the text they sit beside — the same set the main menu draws. */
+.settings-section-icon,
+.settings-title-icon {
+    display: inline-flex;
+    vertical-align: -0.125em;
+}
+
+.settings-section-icon svg,
+.settings-title-icon svg {
+    width: 1em;
+    height: 1em;
+}
+
 .settings-section-header {
     display: flex;
     align-items: center;

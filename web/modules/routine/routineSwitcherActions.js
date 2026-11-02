@@ -70,14 +70,14 @@ export class RoutineSwitcherActions {
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for renameMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.m.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for renameMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -86,7 +86,7 @@ export class RoutineSwitcherActions {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.m.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -102,21 +102,21 @@ export class RoutineSwitcherActions {
         const selectedCycle = this.m._getSelectedItem();
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for deletion');
-            this.m.deps.showNotification("⚠️ " + getLabel('switcher.noSelectedForDelete'));
+            this.m.deps.showNotification(getLabel('switcher.noSelectedForDelete'), 'warning');
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for deleteMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.m.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for deleteMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -127,7 +127,7 @@ export class RoutineSwitcherActions {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.m.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -260,9 +260,9 @@ export class RoutineSwitcherActions {
                 }
 
                 if (wasActiveCycle && newActiveCycleName) {
-                    this.m.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                    this.m.deps.showNotification(getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED, { icon: 'trash' });
                 } else {
-                    this.m.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }));
+                    this.m.deps.showNotification(getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }), 'default', undefined, { icon: 'trash' });
                 }
             }
         });
@@ -335,14 +335,14 @@ export class RoutineSwitcherActions {
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for duplicateMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.m.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for duplicateMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -352,7 +352,7 @@ export class RoutineSwitcherActions {
 
         if (!cycleKey || !originalCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.m.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -407,7 +407,7 @@ export class RoutineSwitcherActions {
             }
         }, 100);
 
-        this.m.deps.showNotification('📋 ' + getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.m.deps.showNotification(getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'copy' });
     }
 
     /**
@@ -640,7 +640,7 @@ export class RoutineSwitcherActions {
         // sanitizeInput clamps to the name limit; say so, as the title-bar
         // rename (titleManager) does, instead of silently shortening.
         if (rawTrimmed.length > LIMITS.CYCLE_NAME_CHARACTER) {
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            this.m.deps.showNotification(getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         // Get unique name if there's a collision (but not with self)
@@ -651,7 +651,7 @@ export class RoutineSwitcherActions {
         const { name: uniqueName, wasModified } = this.m.getUniqueCycleName(newName, cycles);
 
         if (wasModified) {
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
 
         // Update through state system
@@ -693,6 +693,6 @@ export class RoutineSwitcherActions {
         // Re-apply theme labels/colors in case the active routine was renamed
         this.m.deps.refreshThemeLabels?.();
 
-        this.m.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.m.deps.showNotification(getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 }

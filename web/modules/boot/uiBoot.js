@@ -736,13 +736,13 @@ function handleResetTaskViewLayoutClick() {
     try {
       const ok = resetTaskViewLayout();
       if (ok) {
-        showNotification?.('🔄 ' + getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        showNotification?.(getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
       } else {
-        showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        showNotification?.(getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
       }
     } catch (err) {
       console.error('❌ Failed to reset task view layout:', err);
-      showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      showNotification?.(getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
   };
 
@@ -772,7 +772,7 @@ async function handleResetNotificationPosition() {
 
   if (!AppState?.isReady?.()) {
     console.error('❌ AppState not ready for reset notification position');
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     return;
   }
 
@@ -792,10 +792,10 @@ async function handleResetNotificationPosition() {
       console.warn('⚠️ Could not reset notification position UI:', e);
     }
 
-    showNotification?.('🔄 ' + getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
   }
 }
 

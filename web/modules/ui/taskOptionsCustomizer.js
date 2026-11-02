@@ -17,6 +17,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getIcon } from '../utils/icons.js';
 import { isClickOnNotification } from './modalUtils.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
@@ -386,7 +387,7 @@ export class TaskOptionsCustomizer {
                         </div>
                         <div class="task-option-preview">
                             <div class="preview-header">
-                                <span class="preview-icon" aria-hidden="true">ℹ️</span>
+                                <span class="preview-icon icon" aria-hidden="true">${getIcon('info-circle')}</span>
                                 <h3>${getLabel('taskOptions.optionDetails')}</h3>
                             </div>
                             <div id="${DOM_IDS.OPTION_PREVIEW_CONTENT}" class="preview-content">
@@ -399,7 +400,7 @@ export class TaskOptionsCustomizer {
                 <div class="modal-footer">
                     <div class="modal-footer-row">
                         <button id="${DOM_IDS.RESET_TASK_OPTIONS_BTN}">
-                            <span aria-hidden="true">🔄</span> ${getLabel('taskOptions.resetDefault')}
+                            <span class="icon" aria-hidden="true">${getIcon('redo')}</span> ${getLabel('taskOptions.resetDefault')}
                         </button>
                     </div>
                     <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-button-fullwidth">
@@ -502,7 +503,7 @@ export class TaskOptionsCustomizer {
         return `
             <div class="options-section">
                 <div class="section-header">
-                    <h3><span aria-hidden="true">🎯</span> ${getLabel('taskOptions.coreActions')}</h3>
+                    <h3><span class="icon" aria-hidden="true">${getIcon('list')}</span> ${getLabel('taskOptions.coreActions')}</h3>
                 </div>
                 <div class="section-options">
                     ${coreOptions.map(buildOption).join('')}
@@ -510,7 +511,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3><span aria-hidden="true">📅</span> ${getLabel('taskOptions.scheduling')}</h3>
+                    <h3><span class="icon" aria-hidden="true">${getIcon('calendar-alt')}</span> ${getLabel('taskOptions.scheduling')}</h3>
                 </div>
                 <div class="section-options">
                     ${schedulingOptions.map(buildOption).join('')}
@@ -518,7 +519,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3><span aria-hidden="true">🧹</span> ${getLabel('taskOptions.cleanup')}</h3>
+                    <h3><span class="icon" aria-hidden="true">${getIcon('eraser')}</span> ${getLabel('taskOptions.cleanup')}</h3>
                 </div>
                 <div class="section-options">
                     ${cleanupOptions.map(buildOption).join('')}
@@ -526,7 +527,7 @@ export class TaskOptionsCustomizer {
             </div>
             <div class="options-section">
                 <div class="section-header">
-                    <h3><span aria-hidden="true">🌐</span> ${getLabel('taskOptions.global')}</h3>
+                    <h3><span class="icon" aria-hidden="true">${getIcon('sliders-h')}</span> ${getLabel('taskOptions.global')}</h3>
                 </div>
                 <div class="section-options">
                     ${globalOptions.map(buildOption).join('')}
@@ -827,7 +828,7 @@ export class TaskOptionsCustomizer {
             // Show tip when disabling on touch devices
             if (!newThreeDots && ('ontouchstart' in window)) {
                 setTimeout(() => {
-                    this.deps.showNotification?.('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                    this.deps.showNotification?.(getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED, { icon: 'lightbulb' });
                 }, 300);
             }
         }
@@ -883,7 +884,7 @@ export class TaskOptionsCustomizer {
             cb.checked = defaultValue ?? false;
         });
 
-        this.deps.showNotification?.('🔄 ' + getLabel('notify.taskOptionsReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.deps.showNotification?.(getLabel('notify.taskOptionsReset'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
     }
 
     /**

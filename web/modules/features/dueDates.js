@@ -349,7 +349,7 @@ export class MiniCycleDueDates {
 
         // ✅ Show notification ONLY if there are newly overdue tasks
         if (newlyOverdueTasks.length > 0) {
-            this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
+            this.deps.showNotification(getLabel('notify.dueDateOverdue') + `\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
         }
     }
 
@@ -615,11 +615,11 @@ export class MiniCycleDueDates {
 
         const taskText = before.text || getLabel('notify.dueDateUnnamed');
         if (newDate) {
-            this.deps.showNotification("📅 " + getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.deps.showNotification(getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'calendar-alt' });
             // Auto-enable due date notifications when a due date is set
             this._autoEnableDueDateReminders();
         } else {
-            this.deps.showNotification("📅 " + getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.deps.showNotification(getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'calendar-alt' });
         }
 
         const row = this.deps.querySelectorAll(DATA_SELECTORS.taskById(taskId))[0];
@@ -653,7 +653,7 @@ export class MiniCycleDueDates {
         const daysUntilDue = selectedDate - today;
 
         if (daysUntilDue > 0 && daysUntilDue <= threeDaysMs) {
-            this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
+            this.deps.showNotification(getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default", undefined, { icon: 'calendar-alt' });
         }
     }
 
@@ -796,7 +796,7 @@ export class MiniCycleDueDates {
             .filter(Boolean);
 
         if (overdueTasks.length > 0) {
-            this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
+            this.deps.showNotification(getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
         }
     }
 

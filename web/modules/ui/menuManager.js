@@ -629,14 +629,14 @@ export class MenuManager {
         const AppState = this.deps.AppState();
         if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ " + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -645,7 +645,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
-            this.deps.showNotification("⚠️ " + getLabel('notify.noRoutineToSave'));
+            this.deps.showNotification(getLabel('notify.noRoutineToSave'), 'warning');
             return;
         }
 
@@ -675,7 +675,7 @@ export class MenuManager {
             required: true,
             callback: (input) => {
                 if (!input) {
-                    this.deps.showNotification("❌ " + getLabel('notify.saveCancelled'));
+                    this.deps.showNotification(getLabel('notify.saveCancelled'));
                     return;
                 }
 
@@ -684,14 +684,14 @@ export class MenuManager {
 
                 if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
-                    this.deps.showNotification("⚠️ " + getLabel('notify.invalidName'));
+                    this.deps.showNotification(getLabel('notify.invalidName'), 'warning');
                     return;
                 }
 
                 // sanitizeInput clamps to the name limit; warn as the rename
                 // path does instead of silently shortening the copy's name.
                 if (rawName.length > LIMITS.CYCLE_NAME_CHARACTER) {
-                    this.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                    this.deps.showNotification(getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
                 }
 
                 // ✅ Get unique name (auto-increment if duplicate)
@@ -725,7 +725,7 @@ export class MenuManager {
                 }
 
                 if (!wasModified) {
-                    this.deps.showNotification("✅ " + getLabel('notify.routineCopied', { vars: { original: currentCycle.title, copy: finalCycleName } }));
+                    this.deps.showNotification(getLabel('notify.routineCopied', { vars: { original: currentCycle.title, copy: finalCycleName } }));
                 }
                 this.hideMainMenu();
 
@@ -751,7 +751,7 @@ export class MenuManager {
         const state = this._liveState();
         if (!state) {
             console.error('❌ State data required for clearAllTasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -760,7 +760,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to clear tasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.noActiveCycleClear'));
+            this.deps.showNotification(getLabel('notify.noActiveCycleClear'), 'warning');
             return;
         }
 
@@ -779,7 +779,7 @@ export class MenuManager {
 
         if (!updateSuccess) {
             console.error('❌ Failed to update cycle data');
-            this.deps.showNotification("❌ " + getLabel('notify.clearTasksFailed'), "error");
+            this.deps.showNotification(getLabel('notify.clearTasksFailed'), "error");
             return;
         }
 
@@ -825,7 +825,7 @@ export class MenuManager {
         // ✅ Update undo/redo button states
         this.deps.updateUndoRedoButtons();
 
-        this.deps.showNotification("✅ " + getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.deps.showNotification(getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -839,7 +839,7 @@ export class MenuManager {
         const state = this._liveState();
         if (!state) {
             console.error('❌ State data required for deleteAllTasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -848,7 +848,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to delete tasks from');
-            this.deps.showNotification("⚠️ " + getLabel('notify.noActiveCycleDelete'));
+            this.deps.showNotification(getLabel('notify.noActiveCycleDelete'), 'warning');
             return;
         }
 
@@ -861,7 +861,7 @@ export class MenuManager {
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
-                    this.deps.showNotification("❌ " + getLabel('notify.deletionCancelled'));
+                    this.deps.showNotification(getLabel('notify.deletionCancelled'));
                     return;
                 }
 
@@ -886,7 +886,7 @@ export class MenuManager {
 
                 if (!updateSuccess) {
                     console.error('❌ Failed to delete tasks');
-                    this.deps.showNotification("❌ " + getLabel('notify.deleteTasksFailed'), "error");
+                    this.deps.showNotification(getLabel('notify.deleteTasksFailed'), "error");
                     return;
                 }
 
@@ -920,7 +920,7 @@ export class MenuManager {
                 // ✅ Update undo/redo button states
                 this.deps.updateUndoRedoButtons();
 
-                this.deps.showNotification("✅ " + getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                this.deps.showNotification(getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
             }
         });
     }

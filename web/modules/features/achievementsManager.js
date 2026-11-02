@@ -180,10 +180,11 @@ export class AchievementsManager {
                 }
                 if (!wasUnlocked) {
                     this.deps.showNotification(
-                        `🎮 ${getLabel('notify.gameUnlocked')}`,
+                        getLabel('notify.gameUnlocked'),
                         'success',
                         UI_TIMEOUTS.NOTIFICATION_EXTRA_LONG,
                         {
+                            icon: 'gamepad',
                             actionButton: {
                                 label: getLabel('action.openGamesModal'),
                                 onClick: () => this.deps.getElementById(DOM_IDS.OPEN_GAMES_PANEL)?.click()

@@ -157,13 +157,13 @@ export class ModeManager {
     }
 
     /**
-     * "✋ Switched to Manual Cycle" — the icon leads, as on every other
-     * notification, instead of trailing the name onto a line of its own.
+     * "Switched to Manual Cycle" — the name alone. The notification draws its
+     * own SVG type icon; the mode emoji stays in the picker and help window.
      * @param {string} mode - Mode identifier
      * @returns {string}
      */
     _modeSwitchedMessage(mode) {
-        return `${this.getModeIcon(mode)} ${getLabel('notify.modeSwitched', { vars: { mode: this.getModeLabel(mode) } })}`;
+        return getLabel('notify.modeSwitched', { vars: { mode: this.getModeLabel(mode) } });
     }
 
     /**

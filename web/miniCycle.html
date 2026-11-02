@@ -1524,7 +1524,7 @@
 
     <dialog id="games-panel" class="games-modal" data-modal aria-labelledby="games-panel-title" aria-modal="true">
         <div class="games-modal-content has-corner-logo">
-          <h2 id="games-panel-title"><span aria-hidden="true">🎮</span> Games</h2>
+          <h2 id="games-panel-title"><i class="fas fa-gamepad"></i> Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
           <button id="open-task-order-game">Play Whack-a-Order</button>
           <button id="close-games-panel" class="close-btn">Close</button>
@@ -1741,7 +1741,7 @@
 
 <dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title" aria-modal="true">
     <div class="themes-modal-content has-corner-logo">
-      <h2 id="themes-modal-title"><span aria-hidden="true">🎨</span> Theme Settings</h2>
+      <h2 id="themes-modal-title"><i class="fas fa-palette"></i> Theme Settings</h2>
   
       <div id="vocab-theme-section">
         <!-- Vocabulary theme options injected by JS -->
@@ -2058,7 +2058,7 @@
 
         <div class="completed-tasks-section" id="completed-tasks-section">
             <button type="button" class="completed-tasks-header clickable" id="completed-tasks-header" aria-expanded="false" aria-label="Toggle completed tasks">
-                <span aria-hidden="true">✓</span> Completed (<span id="completed-count">0</span>) <span class="toggle-icon" aria-hidden="true">▼</span>
+                <i class="fas fa-check"></i> Completed (<span id="completed-count">0</span>) <span class="toggle-icon" aria-hidden="true">▼</span>
             </button>
             <ul id="completedTaskList" class="completed-task-list"></ul>
         </div>
@@ -2085,7 +2085,7 @@
 </div>
 
     <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
-        <h2 id="stats-header"><span aria-hidden="true">📊</span> Stats</h2>
+        <h2 id="stats-header"><i class="fas fa-chart-bar"></i> Stats</h2>
         <!-- Scroll surface lives HERE, not on the panel: the title above stays
              pinned because it is outside the scroller (no sticky, no background
              needed), and this wrapper's top mask fades content out before it
@@ -2093,7 +2093,7 @@
         <div class="stats-panel-content" id="stats-panel-content">
         <div class="current-routine-status" id="current-routine-status">
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
-                <span aria-hidden="true">📋</span> Current Routine <span class="toggle-icon" aria-hidden="true">▼</span>
+                <i class="fas fa-list"></i> Current Routine <span class="toggle-icon" aria-hidden="true">▼</span>
             </h3>
             <p id="current-routine-name" class="current-routine-name"></p>
             <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
@@ -2119,7 +2119,7 @@
         </div>
                   <div class="theme-unlock-status" id="theme-unlock-status">
             <h3 class="clickable" tabindex="0" aria-expanded="false" aria-label="Toggle milestone rewards">
-                <span aria-hidden="true">🎯</span> Milestone Rewards <span class="toggle-icon" aria-hidden="true">▼</span>
+                <i class="fas fa-route"></i> Milestone Rewards <span class="toggle-icon" aria-hidden="true">▼</span>
               </h3>
             <p id="theme-unlock-message">Loading...</p>
             <p id="golden-unlock-message">Loading...</p>
@@ -2127,7 +2127,7 @@
           </div>
         <div class="badge-container">
             <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn">
-                <span aria-hidden="true">🏅</span> Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
+                <i class="fas fa-trophy"></i> Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
             </button>
             <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">

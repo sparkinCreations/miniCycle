@@ -207,7 +207,7 @@ export class RoutineManager {
                     const appState = this.deps.AppState;
 
                     if (!this._ensureAppStateReady('cycle creation')) {
-                        this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                        this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                         return;
                     }
 
@@ -215,7 +215,7 @@ export class RoutineManager {
                     const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                     if (wasModified) {
-                        this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                        this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     }
 
                     await appState.update(state => {
@@ -328,7 +328,7 @@ export class RoutineManager {
         const appState = this.deps.AppState;
 
         if (!this._ensureAppStateReady('fallback cycle creation')) {
-            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToCreateCycle'), "error", UI_TIMEOUTS.NOTIFICATION_SLOW);
+            this.deps.showNotification(getLabel('notify.failedToCreateCycle'), "error", UI_TIMEOUTS.NOTIFICATION_SLOW);
             return;
         }
 
@@ -413,7 +413,7 @@ export class RoutineManager {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for createNewMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -442,7 +442,7 @@ export class RoutineManager {
                 const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                 if (wasModified) {
-                    this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
                 const storageKey = finalTitle;
@@ -550,7 +550,7 @@ export class RoutineManager {
                 }
 
                 if (finalResult) {
-                    this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
                     // Creating a routine replaces the title AND the entire task
                     // list. None of that was announced: routineManager had zero
                     // live-region writes, so a screen-reader user's whole context
@@ -662,9 +662,10 @@ export class RoutineManager {
             // Silent path: caller (e.g., first-run focus-view flow) handles all messaging.
             if (!isOnboarding && !silent) {
                 this.deps.showNotification(
-                    '✨ ' + getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
+                    getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
                     'success',
-                    UI_TIMEOUTS.NOTIFICATION_SLOW
+                    UI_TIMEOUTS.NOTIFICATION_SLOW,
+                    { icon: 'sparkles' }
                 );
             }
 
@@ -702,7 +703,7 @@ export class RoutineManager {
 
             if (!options.silent) {
                 this.deps.showNotification(
-                    '❌ ' + getLabel('notify.sampleLoadFailed'),
+                    getLabel('notify.sampleLoadFailed'),
                     'error',
                     UI_TIMEOUTS.NOTIFICATION_LONG
                 );
@@ -925,7 +926,7 @@ export class RoutineManager {
                 // role="alert", so this is announced). Cleared on next input.
                 input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
                 input.setAttribute('aria-invalid', 'true');
-                this.deps.showNotification('⚠️ ' + getLabel('notify.routineNameEmpty'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                this.deps.showNotification(getLabel('notify.routineNameEmpty'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
                 input.focus();
                 return;
             }
@@ -935,7 +936,7 @@ export class RoutineManager {
             // otherwise a long name is silently cut to the limit.
             const nameLimit = LIMITS.CYCLE_NAME_CHARACTER;
             if (value.length > nameLimit) {
-                this.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: nameLimit } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                this.deps.showNotification(getLabel('notify.titleTruncated', { vars: { limit: nameLimit } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
             }
 
             cleanup();

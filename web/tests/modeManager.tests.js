@@ -228,12 +228,12 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('mode switch notification leads with the icon, name without it (DI)', async () => {
+    await test('mode switch notification names the mode without its emoji (DI)', async () => {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const message = manager._modeSwitchedMessage('manual-cycle');
-        if (message !== '✋ Switched to Manual Cycle') {
-            throw new Error(`Expected '✋ Switched to Manual Cycle', got '${message}'`);
+        if (message !== 'Switched to Manual Cycle') {
+            throw new Error(`Expected 'Switched to Manual Cycle', got '${message}'`);
         }
     });
 

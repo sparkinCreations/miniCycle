@@ -44,6 +44,16 @@ import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import { prefersReducedMotion } from './motionPreference.js';
 import { getIcon } from './icons.js';
 
+// The SVG drawn in front of a notification of each type. Messages carry no
+// emoji prefix of their own: the type says success / warning / error, and a
+// feature notice names its own icon instead ({ icon: 'bell' }). Info and
+// default notices draw none unless they name one.
+const TYPE_ICONS = Object.freeze({
+  success: 'check-circle',
+  warning: 'exclamation-triangle',
+  error: 'exclamation-triangle'
+});
+
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
 // ============================================================================
@@ -301,7 +311,7 @@ export class MiniCycleNotifications {
 
       if (typeof message !== "string" || message.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to show().");
-        message = "⚠️ " + getLabel('notify.unknownNotification');
+        message = getLabel('notify.unknownNotification');
       }
 
       // Generate unique ID (DI-pure) - use simple hash fallback for duplicate detection
@@ -366,18 +376,29 @@ export class MiniCycleNotifications {
         ? `<div class="notification-hint">${hintIcon ? `<span class="notification-hint-icon">${hintIcon}</span>` : ''}<span class="notification-hint-text">${getEscapeHtml(this.deps)(hintText)}</span></div>`
         : '';
 
+      // Leading icon: options.icon names one from ICONS (false: none), else
+      // the type's. Looked up by NAME, so only the trusted SVG set reaches
+      // innerHTML. Decorative — the role and the text carry the meaning.
+      const iconName = options?.icon === false ? null
+        : (typeof options?.icon === 'string' ? options.icon : TYPE_ICONS[type]);
+      const iconSvg = iconName ? getIcon(iconName) : '';
+      const iconMarkup = iconSvg ? `<span class="notification-icon" aria-hidden="true">${iconSvg}</span>` : '';
+
       // Always escape user content, regardless of structure
       // When an action button or a hint is present, wrap message in a span so
       // they stack in a flex-column under it
       const hasAction = !!(options?.actionButton);
       const contentClass = ['notification-content', hasAction && 'notification-has-action', hintMarkup && 'notification-has-hint']
         .filter(Boolean).join(' ');
+      // With an icon, the plain layout's body gets its own span: the content
+      // is a flex row, and the icon must not share a flex item with the text.
+      const plainBody = iconMarkup ? `${iconMarkup}<span class="notification-text">${bodyMarkup}</span>` : bodyMarkup;
       notification.innerHTML = (hasAction || hintMarkup)
         ? `<div class="${contentClass}">
-             <span class="notification-message">${bodyMarkup}</span>${hintMarkup}
+             <span class="notification-message">${iconMarkup}${bodyMarkup}</span>${hintMarkup}
            </div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`
-        : `<div class="notification-content">${bodyMarkup}</div>
+        : `<div class="notification-content">${plainBody}</div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`;
 
       // Track cleanup function for timeouts
@@ -551,7 +572,7 @@ export class MiniCycleNotifications {
 
       if (typeof content !== "string" || content.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to showWithTip().");
-        content = "⚠️ " + getLabel('notify.unknownNotification');
+        content = getLabel('notify.unknownNotification');
       }
 
       // ✅ XSS PROTECTION: Escape content by default unless explicitly trusted

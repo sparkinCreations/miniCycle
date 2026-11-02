@@ -322,7 +322,7 @@ export class ModalManager {
                 // message optional — star-only submissions are allowed.
                 const hasRating = !!document.getElementById(DOM_IDS.FEEDBACK_RATING_VALUE)?.value;
                 if (feedbackText && feedbackText.value.trim().length < 10 && !hasRating) {
-                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLengthOrRate'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(getLabel('feedback.minLengthOrRate'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     feedbackText.focus();
                     return;
                 }
@@ -363,11 +363,11 @@ export class ModalManager {
                             restoreFocusAfterClose(feedbackModal);
                         }, 2000);
                     } else {
-                        this.deps.showNotification("❌ " + getLabel('feedback.errorSend'), "error");
+                        this.deps.showNotification(getLabel('feedback.errorSend'), "error");
                     }
                 })
                 .catch(error => {
-                    this.deps.showNotification("❌ " + getLabel('feedback.errorNetwork'), "error");
+                    this.deps.showNotification(getLabel('feedback.errorNetwork'), "error");
                 })
                 .finally(() => {
                     if (submitButton) {
