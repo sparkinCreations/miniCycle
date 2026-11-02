@@ -27,7 +27,7 @@ const PRESET_VERSION = 2;
 const PRESET_COLOR_KEYS = [
     'appBg', 'taskListBg', 'taskBg', 'taskText', 'titleBg', 'titleText',
     'checkboxBg', 'checkboxIncompleteBg', 'checkmark', 'completeBtn',
-    'clearBtn', 'progressBar', 'statsBg', 'statsText', 'statsProgress',
+    'clearBtn', 'progressBar', 'cornerBtn', 'statsBg', 'statsText', 'statsProgress',
     'statsDoughnut', 'panelText', 'patternColor'
 ];
 

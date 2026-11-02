@@ -1267,8 +1267,12 @@ export const DOM_CLASSES = Object.freeze({
     AUTO_CYCLE_MODE: 'auto-cycle-mode',
     MANUAL_CYCLE_MODE: 'manual-cycle-mode',
     TODO_MODE_MODE: 'todo-mode-mode',
-    ACTION_PLAYING: 'is-acting',
-    SOLID_ACTION_BUTTONS: 'solid-action-buttons',   /* body: the user chose filled Complete Cycle / Clear buttons (Personalization) */   /* Complete Cycle / Clear button: its glyph's press animation is running */
+    ACTION_PLAYING: 'is-acting',   /* Complete Cycle / Clear button: its glyph's press animation is running */
+    SOLID_ACTION_BUTTONS: 'solid-action-buttons',   /* body: the user chose filled Complete Cycle / Clear buttons (Personalization) */
+    CORNER_BTNS_SOLID: 'corner-btns-solid',   /* body: Personalization → Corner Buttons style "Solid" (filled circles) */
+    CORNER_BTNS_EMOJI: 'corner-btns-emoji',   /* body: Corner Buttons style "Emoji" (🎨 / 🌙 ☀️ in place of the SVGs) */
+    CORNER_BTNS_NO_LABELS: 'corner-btns-no-labels',   /* body: desktop captions under the corner buttons turned off */
+    HIDE_DARK_MODE_BTN: 'hide-dark-mode-btn',   /* body: the dark-mode corner button is hidden (Settings and Themes still toggle it) */
     TODO_MODE_BTN: 'todo-mode-btn',
     CYCLE_MODE_BTN: 'cycle-mode-btn',
     COMPLETE_BTN_VISIBLE: 'complete-btn-visible',
@@ -1581,6 +1585,10 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_SOLID_LIST_BG: 'toggle-solid-list-bg',
     TOGGLE_SOLID_STATS_BG: 'toggle-solid-stats-bg',
     TOGGLE_SOLID_ACTION_BUTTONS: 'toggle-solid-action-buttons',   // Personalization: filled Complete Cycle / Clear buttons instead of glass
+    PREF_CORNER_BTN: 'pref-corner-btn',   // Personalization → Corner Buttons: colour of the paintbrush / dark-mode buttons
+    PREF_CORNER_BTN_STYLE: 'pref-corner-btn-style',   // Corner Buttons: Frosted / Solid / Emoji
+    TOGGLE_CORNER_BTN_LABELS: 'toggle-corner-btn-labels',   // Corner Buttons: desktop captions on/off
+    TOGGLE_DARK_MODE_BTN: 'toggle-dark-mode-btn',   // Corner Buttons: show the dark-mode button
     CHECKMARK_STYLE_OPTIONS: 'checkmark-style-options',
 
     // ---- Cycle Completion ----

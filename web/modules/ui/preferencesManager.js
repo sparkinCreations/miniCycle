@@ -51,6 +51,7 @@ const DEFAULT_COLORS = {
     completeBtn: '#08c352',
     clearBtn: '#3b82f6',
     progressBar: '#82db8c',
+    cornerBtn: '#2c3270',   // --color-navy: the corner buttons' frosted icon
     statsBg: '#ffffff',
     statsText: '#333333',
     statsProgress: '#4c79ff',
@@ -64,6 +65,14 @@ const DEFAULT_COLORS = {
 // Default pattern color (white with 5% opacity)
 const DEFAULT_PATTERN_COLOR = '#ffffff';
 const DEFAULT_PATTERN_OPACITY = 0.04;
+
+// Corner buttons (paintbrush + dark mode): look, and the body class each
+// non-default look sets. 'frosted' is the default and has no class.
+const CORNER_BTN_STYLE_DEFAULT = 'frosted';
+const CORNER_BTN_STYLE_CLASS = {
+    solid: DOM_CLASSES.CORNER_BTNS_SOLID,
+    emoji: DOM_CLASSES.CORNER_BTNS_EMOJI,
+};
 
 // Checkmark style options ('fitted' is the default — ✔ sized to fit inside the circle)
 const CHECKMARK_DEFAULT = 'fitted';
@@ -195,6 +204,11 @@ const COLOR_MAP = {
         key: 'progressBar',
         cssVar: '--pref-progress-bar',
         previewVar: '--preview-progress-bar'
+    },
+    'pref-corner-btn': {
+        key: 'cornerBtn',
+        cssVar: '--pref-corner-btn',
+        previewVar: null
     },
     'pref-stats-bg': {
         key: 'statsBg',
@@ -630,6 +644,35 @@ export class PreferencesManager {
                 };
                 safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
             }
+        }
+
+        // Corner buttons: captions and the dark-mode button (both default on)
+        [
+            [DOM_IDS.TOGGLE_CORNER_BTN_LABELS, 'cornerBtnLabels'],
+            [DOM_IDS.TOGGLE_DARK_MODE_BTN, 'showDarkModeBtn'],
+        ].forEach(([id, key]) => {
+            const toggle = _deps.getElementById(id);
+            if (!toggle) return;
+            toggle._changeHandler = (e) => this.setCornerButtonOption(key, e.target.checked);
+            safeAdd(toggle, 'change', toggle._changeHandler);
+
+            const toggleSwitch = toggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== toggle) {
+                        toggle.checked = !toggle.checked;
+                        this.setCornerButtonOption(key, toggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        });
+
+        // Corner buttons: Frosted / Solid / Emoji
+        const cornerStyleSelect = _deps.getElementById(DOM_IDS.PREF_CORNER_BTN_STYLE);
+        if (cornerStyleSelect) {
+            cornerStyleSelect._changeHandler = (e) => this.setCornerButtonOption('cornerBtnStyle', e.target.value);
+            safeAdd(cornerStyleSelect, 'change', cornerStyleSelect._changeHandler);
         }
 
         // Background image visibility toggle
@@ -1117,6 +1160,17 @@ export class PreferencesManager {
             solidActionToggle.checked = customColors.solidActionButtons === true; // Default false: glass
         }
 
+        // Corner buttons
+        const cornerStyleSelect = _deps.getElementById(DOM_IDS.PREF_CORNER_BTN_STYLE);
+        if (cornerStyleSelect) {
+            cornerStyleSelect.value = CORNER_BTN_STYLE_CLASS[customColors.cornerBtnStyle]
+                ? customColors.cornerBtnStyle : CORNER_BTN_STYLE_DEFAULT;
+        }
+        const cornerLabelsToggle = _deps.getElementById(DOM_IDS.TOGGLE_CORNER_BTN_LABELS);
+        if (cornerLabelsToggle) cornerLabelsToggle.checked = customColors.cornerBtnLabels !== false; // Default true
+        const darkModeBtnToggle = _deps.getElementById(DOM_IDS.TOGGLE_DARK_MODE_BTN);
+        if (darkModeBtnToggle) darkModeBtnToggle.checked = customColors.showDarkModeBtn !== false; // Default true
+
         // Load cycle completion settings
         const settings = state?.settings || {};
         const toastSelect = _deps.getElementById(DOM_IDS.PREF_TOAST_SELECT);
@@ -1292,6 +1346,21 @@ export class PreferencesManager {
         // Re-apply colors to update translucency
         this.applyCustomColors();
         this.updatePreview();
+    }
+
+    /**
+     * Save one corner-button option (Personalization → Corner Buttons) and
+     * re-apply: cornerBtnStyle ('frosted' | 'solid' | 'emoji'), cornerBtnLabels
+     * or showDarkModeBtn (booleans).
+     * @param {string} key - customColors key
+     * @param {string|boolean} value
+     * @returns {void}
+     */
+    setCornerButtonOption(key, value) {
+        this.pushToUndoStack();
+        this.saveColor(key, value);
+        this.applyCustomColors();
+        this.updateUndoButton();
     }
 
     /**
@@ -1582,6 +1651,10 @@ export class PreferencesManager {
                     solidListBg: false,
                     solidStatsBg: false,
                     solidActionButtons: false,
+                    cornerBtn: null,
+                    cornerBtnStyle: CORNER_BTN_STYLE_DEFAULT,
+                    cornerBtnLabels: true,
+                    showDarkModeBtn: true,
                     showHelpWindow: true,
                     showQuickActions: true
                 };
@@ -1595,6 +1668,12 @@ export class PreferencesManager {
         if (solidStatsBgToggle) solidStatsBgToggle.checked = false;
         const solidActionToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_ACTION_BUTTONS);
         if (solidActionToggle) solidActionToggle.checked = false;
+        const cornerStyleSelect = _deps.getElementById(DOM_IDS.PREF_CORNER_BTN_STYLE);
+        if (cornerStyleSelect) cornerStyleSelect.value = CORNER_BTN_STYLE_DEFAULT;
+        const cornerLabelsToggle = _deps.getElementById(DOM_IDS.TOGGLE_CORNER_BTN_LABELS);
+        if (cornerLabelsToggle) cornerLabelsToggle.checked = true;
+        const darkModeBtnToggle = _deps.getElementById(DOM_IDS.TOGGLE_DARK_MODE_BTN);
+        if (darkModeBtnToggle) darkModeBtnToggle.checked = true;
 
         // Reset panel visibility (both visible, sync all checkboxes)
         resetPanelVisibility();
@@ -1687,6 +1766,14 @@ export class PreferencesManager {
         if (body && body.classList.contains(DOM_CLASSES.SOLID_ACTION_BUTTONS) !== solidActions) {
             body.classList.toggle(DOM_CLASSES.SOLID_ACTION_BUTTONS, solidActions);
         }
+
+        // Corner buttons' look, captions and the dark-mode button hold in every
+        // theme too (only their colour is a default-theme custom colour).
+        Object.entries(CORNER_BTN_STYLE_CLASS).forEach(([style, cls]) => {
+            setBodyClass(cls, customColors.cornerBtnStyle === style);
+        });
+        setBodyClass(DOM_CLASSES.CORNER_BTNS_NO_LABELS, customColors.cornerBtnLabels === false);
+        setBodyClass(DOM_CLASSES.HIDE_DARK_MODE_BTN, customColors.showDarkModeBtn === false);
 
         if (!this.isDefaultTheme()) {
             // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).

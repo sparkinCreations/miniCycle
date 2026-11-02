@@ -708,6 +708,48 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                 </div>
             </div>
 
+            <!-- Corner Buttons Section: the paintbrush + dark-mode buttons -->
+            <div class="preferences-section collapsed" data-section="corner-buttons">
+                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="corner-buttons" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleCornerButtons')}" aria-controls="pref-section-corner-buttons">
+                    <span class="preferences-section-icon" aria-hidden="true">${getIcon('paint-brush')}</span>
+                    <span>${getLabel('prefs.cornerButtons')}</span>
+                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
+                </div>
+                <div class="preferences-section-content" id="pref-section-corner-buttons">
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon" aria-hidden="true">${getIcon('palette')}</span>
+                        <label for="pref-corner-btn">${getLabel('prefs.cornerBtnColor')}</label>
+                        <input type="color" id="pref-corner-btn" value="#2c3270" />
+                        <button class="preferences-reset-btn" data-target="pref-corner-btn" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon" aria-hidden="true">${getIcon('square')}</span>
+                        <label for="pref-corner-btn-style">${getLabel('prefs.cornerBtnStyle')}</label>
+                        <select id="pref-corner-btn-style" class="preferences-select">
+                            <option value="frosted">${getLabel('prefs.cornerStyleFrosted')}</option>
+                            <option value="solid">${getLabel('prefs.cornerStyleSolid')}</option>
+                            <option value="emoji">${getLabel('prefs.cornerStyleEmoji')}</option>
+                        </select>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon" aria-hidden="true">${getIcon('font')}</span>
+                        <label for="toggle-corner-btn-labels">${getLabel('prefs.cornerBtnLabels')}</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-corner-btn-labels" name="toggle-corner-btn-labels" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                    <div class="preferences-color-row">
+                        <span class="pref-color-icon" aria-hidden="true">${getIcon('moon')}</span>
+                        <label for="toggle-dark-mode-btn">${getLabel('prefs.showDarkModeBtn')}</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-dark-mode-btn" name="toggle-dark-mode-btn" checked>
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+
             <!-- Cycle Completion Section -->
             <div class="preferences-section collapsed" data-section="cycle-animation">
                 <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="cycle-animation" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleCycleAnimation')}" aria-controls="pref-section-cycle-animation">
