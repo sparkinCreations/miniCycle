@@ -107,6 +107,11 @@
   --glass-btn-bg-dark: rgba(255, 255, 255, 0.08);
   --glass-btn-bg-dark-hover: rgba(255, 255, 255, 0.14);
   --glass-btn-rim-dark: rgba(255, 255, 255, 0.45);
+  /* Vocabulary themes: their backgrounds are mid-tone gradients, where 25%
+     glass left both light and dark words at ~2:1 — a heavier frost keeps the
+     look and lets the theme's own dark text read (≥ 3.4:1, ~7:1 typical) */
+  --glass-btn-bg-theme: rgba(255, 255, 255, 0.55);
+  --glass-btn-bg-theme-hover: rgba(255, 255, 255, 0.65);
   /* Light-blue header menus (+ quick actions, mode picker), from the header
      bar's navy: gradient, rim, item hover, focus ring */
   --menu-light-blue-start: #f3f8ff;

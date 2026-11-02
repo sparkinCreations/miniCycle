@@ -73,7 +73,7 @@ export const DEFAULT_LABELS = deepFreeze({
         todo:               'To-Do Mode',
         todoDescription:    'Simple To-Do list mode',
         autoTitle:          'Auto Cycle Mode',
-        // *Detail: the theme's words via labels/modeWording.js ({tasks}, {taskWord}, {cycleWord}, {completeButton}, {clearButton})
+        // *Detail: the theme's words via labels/themeWords.js ({tasks}, {taskWord}, {cycleWord}, {completeButton}, {clearButton})
         autoDetail:         '{tasks} will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.',
         manualTitle:        'Manual Cycle Mode',
         manualDetail:       '{tasks} will only reset when you manually press the {completeButton} button. The {completeButton} button will complete any remaining {taskWord} and then reset all {taskWord} to incomplete.',
@@ -1916,7 +1916,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // name the round action button by its live label ({button} — the
         // themed cycleActionLabel / clearActionLabel, one line). Auto Cycle
         // has no button and keeps help.modeAutoShort.
-        // {tasks} / {taskWord}: the theme's words (labels/modeWording.js).
+        // {tasks} / {taskWord}: the theme's words (labels/themeWords.js).
         modeManualDesc: { touch: '{tasks} only reset when you tap the {button} button.', pointer: '{tasks} only reset when you click the {button} button.' },
         modeTodoDesc:   { touch: 'Completed {taskWord} are removed when you tap the {button} button.', pointer: 'Completed {taskWord} are removed when you click the {button} button.' }
     },
@@ -2720,28 +2720,29 @@ export const DEFAULT_LABELS = deepFreeze({
 
     help: {
         welcome:           'Welcome to miniCycle!',
-        // The mode descriptions name the theme's words (labels/modeWording.js):
-        // {tasks} "Habits", {taskWord} "habits", {completeButton} / {clearButton}.
+        // {tasks} "Habits", {taskWord} "habits", {taskOne} "habit", {cycleOne}
+        // "check-in", {completeButton} / {clearButton}: the active theme's words,
+        // filled by labels/themeWords.js (helpWindowManager passes them).
         modeAutoShort:     '{tasks} automatically reset when all are completed.',
         modeManualShort:   { touch: '{tasks} only reset when you tap the {completeButton} button.', pointer: '{tasks} only reset when you click the {completeButton} button.' },
         modeTodoShort:     { touch: 'Completed {taskWord} are removed when you tap {clearButton}.', pointer: 'Completed {taskWord} are removed when you click {clearButton}.' },
         cycleComplete:     'Cycle Complete! Tasks reset.',
         tasksCleared:      '{count} {taskWord} cleared!',
         addFirstTask:      'Add your first task to get started!',
-        allComplete:       'All tasks complete!',
+        allComplete:       'All {taskWord} complete!',
         tasksRemaining:    '{remaining} {taskWord} remaining',
-        clearFirst:        'Clear your first completed task!',
-        completeFirst:     'Complete your first cycle!',
+        clearFirst:        'Clear your first completed {taskOne}!',
+        completeFirst:     'Complete your first {cycleOne}!',
         progressCycles:    '{count} {cycleWord} completed',
         progressCleared:   '{count} completed {taskWord} cleared',
-        customizerTip:     'Press the +/- button to add or remove task option buttons',
+        customizerTip:     'Press the +/- button to add or remove {taskOne} option buttons',
         // First-use notices (boot-sw.js → helpWindowManager.showNotice), browser tab only
         noticeOfflineReady: 'miniCycle now works offline',
         noticeInstall:      'Install miniCycle for offline access and faster loading',
         // Help-window tip when the pointer rests on the Focus View exit button
         // (inward brackets): names what the icon does, once per page load.
         focusExitTip:      'This button leaves Focus View and returns to Home View.',
-        recurringRemoved:  'Recurring tasks removed — they\'ll return on schedule'
+        recurringRemoved:  'Recurring {taskWord} removed — they\'ll return on schedule'
     },
 
     // ========================================================================

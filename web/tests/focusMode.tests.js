@@ -133,7 +133,7 @@ export async function runFocusModeTests(resultsDiv) {
         if (/Clear Completed/.test(text)) throw new Error(`names Home View's button: ${text}`);
     });
 
-    // The descriptions carry the active theme's words (labels/modeWording.js):
+    // The descriptions carry the active theme's words (labels/themeWords.js):
     // every placeholder filled, the task noun capitalised to open a sentence.
     await test('Switch Mode descriptions fill every theme placeholder', () => {
         const fm = new mod.FocusMode();

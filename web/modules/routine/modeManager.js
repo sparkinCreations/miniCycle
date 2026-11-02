@@ -19,7 +19,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../cor
 import { getLabel } from '../labels/labelResolver.js';
 import { createIconElement } from '../utils/icons.js';
 import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
-import { modeWordVars } from '../labels/modeWording.js';
+import { themeWordVars } from '../labels/themeWords.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
 const MODE_LABEL_KEYS = Object.freeze({ 'auto-cycle': 'mode.auto', 'manual-cycle': 'mode.manual', 'todo-mode': 'mode.todo' });
@@ -574,15 +574,15 @@ export class ModeManager {
         if (deleteChecked) {
             currentMode = "todo-mode";
             modeTitle = getLabel('mode.todoTitle');
-            modeDetail = getLabel('mode.todoDetail', { vars: modeWordVars() });
+            modeDetail = getLabel('mode.todoDetail', { vars: themeWordVars() });
         } else if (autoReset) {
             currentMode = "auto-cycle";
             modeTitle = getLabel('mode.autoTitle');
-            modeDetail = getLabel('mode.autoDetail', { vars: modeWordVars() });
+            modeDetail = getLabel('mode.autoDetail', { vars: themeWordVars() });
         } else {
             currentMode = "manual-cycle";
             modeTitle = getLabel('mode.manualTitle');
-            modeDetail = getLabel('mode.manualDetail', { vars: modeWordVars() });
+            modeDetail = getLabel('mode.manualDetail', { vars: themeWordVars() });
         }
 
         // Built with createElement/textContent, not innerHTML: every mode.*Title/
@@ -654,7 +654,7 @@ export class ModeManager {
                 button: pickerBtn,
                 menu: pickerMenu,
                 getModeLabel: (mode) => this.getModeLabel(mode),
-                getItemTitle: (mode) => getLabel(MODE_HELP_KEYS[mode] || MODE_HELP_KEYS['auto-cycle'], { vars: modeWordVars() })
+                getItemTitle: (mode) => getLabel(MODE_HELP_KEYS[mode] || MODE_HELP_KEYS['auto-cycle'], { vars: themeWordVars() })
             });
             pickerBtn.title = getLabel('mode.pickerTitle');
         }

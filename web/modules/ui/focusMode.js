@@ -21,7 +21,7 @@ import { getIcon, setIconText } from '../utils/icons.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
 import { replayAnimationClass } from '../utils/motionPreference.js';
-import { modeWordVars } from '../labels/modeWording.js';
+import { themeWordVars } from '../labels/themeWords.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -436,7 +436,7 @@ export class FocusMode {
      * Switching is immediate on radio change; "Done" closes the modal.
      */
     /**
-     * A Switch Mode description in the active theme's words (modeWordVars),
+     * A Switch Mode description in the active theme's words (themeWordVars),
      * naming the action button by its current one-line label when the mode
      * has one.
      * @param {string} descKey
@@ -444,9 +444,9 @@ export class FocusMode {
      * @returns {string}
      */
     _modeDescription(descKey, buttonKey) {
-        if (!buttonKey) return getLabel(descKey, { vars: modeWordVars() });
+        if (!buttonKey) return getLabel(descKey, { vars: themeWordVars() });
         const button = getLabel(buttonKey).replace(/\s*\n\s*/g, ' ');
-        return getLabel(descKey, { vars: modeWordVars({ button }) });
+        return getLabel(descKey, { vars: themeWordVars({ button }) });
     }
 
     _createModeModal() {

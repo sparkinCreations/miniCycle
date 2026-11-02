@@ -271,13 +271,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
    plain colour is the fallback where color-mix is unsupported) measured
    ≥ 3.6:1 across the default blue gradient for green and blue, above the 3:1
    large bold text needs. Dark mode: the colour lightened, ≥ 4:1.
-   Where it applies: the Classic theme, light or dark. Vocab themes, the legacy
-   colour themes and High Contrast keep the filled button — their backgrounds
-   are not the blue this was measured on — and so does anyone who turns on
+   Where it applies: Classic and the vocabulary themes, light or dark. The
+   themes' backgrounds are dark gradients, so there the words go light (see
+   the vocab-theme rule below). The legacy colour themes and High Contrast
+   keep the filled button, and so does anyone who turns on
    Personalization → Buttons & Progress → Solid buttons
    (body.solid-action-buttons).
    ============================================================================= */
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn {
     --action-color: var(--pref-complete-btn, var(--color-complete-btn));
     background: var(--glass-btn-bg);
     -webkit-backdrop-filter: blur(2px);
@@ -289,33 +290,53 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
     box-shadow: var(--shadow-button);
 }
 
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
     --action-color: var(--pref-clear-btn, var(--color-todo-btn));
 }
 
 /* The cycle arrows are white, as on Focus View's round button; the words keep
    the green. (The To-Do broom is an emoji and keeps its own colours.) */
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn .action-glyph-cycle {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn .action-glyph-cycle {
     color: var(--color-white);
 }
 
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:hover {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:hover {
     background: var(--glass-btn-bg-hover);
 }
 
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn {
     --action-color: var(--color-complete-btn);
     background: var(--glass-btn-bg-dark);
     border-color: var(--glass-btn-rim-dark);
     color: color-mix(in srgb, var(--action-color) 60%, var(--color-white));
 }
 
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn.todo-mode-btn {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn.todo-mode-btn {
     --action-color: var(--color-todo-btn);
 }
 
-html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn:hover {
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn:hover {
     background: var(--glass-btn-bg-dark-hover);
+}
+
+/* Vocabulary themes (light mode): the same glass, frosted heavier, with the
+   words and the cycle arrows in the theme's own text colour (--pref-task-text:
+   brown, forest, indigo, teal). Measured Nov 2026 on all four themes, both
+   buttons: no text colour alone could read on the 25% glass over their
+   mid-tone backgrounds (≈2:1); at 55% the theme text is ≥ 3.4:1 at the
+   worst 10% of the background and ~7:1 typically. White arrows would vanish
+   on the lighter frost, so they take the words' colour. */
+html[data-vocab-theme] body:not(.solid-action-buttons):not(.high-contrast):not(.dark-mode) .complete-all-btn {
+    background: var(--glass-btn-bg-theme);
+    color: var(--pref-task-text, var(--color-black));
+}
+
+html[data-vocab-theme] body:not(.solid-action-buttons):not(.high-contrast):not(.dark-mode) .complete-all-btn:hover {
+    background: var(--glass-btn-bg-theme-hover);
+}
+
+html[data-vocab-theme] body:not(.solid-action-buttons):not(.high-contrast):not(.dark-mode) .complete-all-btn .action-glyph-cycle {
+    color: currentColor;
 }
 
 /* Personalization's live preview shows the same choice. */
