@@ -1265,6 +1265,7 @@ export const DOM_CLASSES = Object.freeze({
     AUTO_CYCLE_MODE: 'auto-cycle-mode',
     MANUAL_CYCLE_MODE: 'manual-cycle-mode',
     TODO_MODE_MODE: 'todo-mode-mode',
+    ACTION_PLAYING: 'is-acting',   /* Complete Cycle / Clear button: its glyph's press animation is running */
     TODO_MODE_BTN: 'todo-mode-btn',
     CYCLE_MODE_BTN: 'cycle-mode-btn',
     COMPLETE_BTN_VISIBLE: 'complete-btn-visible',

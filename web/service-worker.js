@@ -225,6 +225,7 @@ var BOOT_CRITICAL = [
   './modules/ui/settingsUIManager.js',
   './modules/ui/titleManager.js',
   './modules/ui/taskUI.js',
+  './modules/ui/completeAllButton.js',
   './modules/ui/gesturePanelManager.js',
   './modules/ui/completedTasksManager.js',
   './modules/ui/uiEffects.js',

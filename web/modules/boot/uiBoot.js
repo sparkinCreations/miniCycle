@@ -58,6 +58,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
+import { replayAnimationClass } from '../utils/motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
@@ -1309,7 +1310,14 @@ export async function finalizeUI(options) {
       completeAllButton,
       'click',
       '__miniCycleUiBootCompleteAllClickHandler',
-      () => getHandleCompleteAllTasks?.()?.()
+      () => {
+        // The glyph answers the press: the arrows turn once (reset), the
+        // broom sweeps (clear). Motion tokens zero it under reduced motion.
+        const clearing = document.body.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
+        replayAnimationClass(completeAllButton, DOM_CLASSES.ACTION_PLAYING,
+          clearing ? '--anim-action-sweep' : '--anim-action-spin');
+        getHandleCompleteAllTasks?.()?.();
+      }
     );
   }
 

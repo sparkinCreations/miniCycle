@@ -161,6 +161,29 @@ button.icon-only i {
     text-shadow: var(--text-shadow-sm);
 }
 
+/* The mode glyph (ui/completeAllButton.js) answers a press: the arrows turn
+   once, the 🧹 broom sweeps — .is-acting is put on and taken off by
+   replayAnimationClass. Both durations are motion tokens, 0 under reduced
+   motion. */
+.complete-all-btn .action-glyph {
+    display: inline-block;
+    vertical-align: -0.125em;
+}
+
+/* Pivot at the top of the handle (the 🧹 handle runs up to the top right),
+   so the bristles at the bottom do the moving. */
+.complete-all-btn .action-glyph-broom {
+    transform-origin: 80% 10%;
+}
+
+.complete-all-btn.is-acting .action-glyph-cycle {
+    animation: action-spin var(--anim-action-spin) ease-in-out;
+}
+
+.complete-all-btn.is-acting .action-glyph-broom {
+    animation: action-sweep var(--anim-action-sweep) ease-in-out;
+}
+
 .complete-all-btn:hover {
     background: var(--color-complete-btn-hover);
     transform: translateY(-1px);

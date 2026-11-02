@@ -20,6 +20,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
+import { replayAnimationClass } from '../utils/motionPreference.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -509,7 +510,11 @@ export class FocusMode {
         // The mode action (Cycle in manual, Clear in to-do) is the action
         // button's job. Auto Cycle hides it via CSS, so that branch is a guard.
         this._actionClickHandler = () => {
-            if (this._getCurrentMode() === 'auto-cycle') return;
+            const mode = this._getCurrentMode();
+            if (mode === 'auto-cycle') return;
+            // Same press animation as Home View's button, on the ::before glyph.
+            replayAnimationClass(this._actionBtn, DOM_CLASSES.ACTION_PLAYING,
+                mode === 'todo-mode' ? '--anim-action-sweep' : '--anim-action-spin');
             const completeAllBtn = this.deps.getElementById(DOM_IDS.COMPLETE_ALL);
             completeAllBtn?.click();
         };

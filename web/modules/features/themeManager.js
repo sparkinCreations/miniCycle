@@ -33,6 +33,7 @@ import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { createIconElement } from '../utils/icons.js';
+import { renderCompleteAllButton } from '../ui/completeAllButton.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -250,10 +251,8 @@ function _refreshLiveLensLabels() {
     const completeBtn = _deps.getElementById(DOM_IDS.COMPLETE_ALL);
     if (completeBtn) {
         const isToDoMode = _deps.getBody().classList.contains(DOM_CLASSES.TODO_MODE_MODE);
-        // The cycle arrows are the Auto Cycle mode SVG; Clear keeps the 🧹
-        // broom, the app's clear-on-reset identity.
-        if (isToDoMode) completeBtn.textContent = '🧹 ' + getLabel('action.clearCompletedTasks');
-        else completeBtn.replaceChildren(createIconElement('mode-auto'), ' ' + getLabel('action.completeCycle'));
+        renderCompleteAllButton(completeBtn, isToDoMode,
+            getLabel(isToDoMode ? 'action.clearCompletedTasks' : 'action.completeCycle'));
     }
 
     // Empty state headline ("Your routine is empty" — no longer vocab-swapped,
