@@ -1119,6 +1119,7 @@ export class StatsPanelManager {
         // Update icon
         if (this.elements.quickDarkToggle) {
             this.elements.quickDarkToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
+            this.elements.quickDarkToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
         }
         
     }

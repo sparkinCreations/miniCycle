@@ -661,11 +661,14 @@ export class ThemeManager {
                 }
             };
             safeAdd(newQuickToggle, "click", newQuickToggle._clickHandler);
-            // Icon-only (🌙 / ☀️): `title` covers hover; on touch a long press
-            // shows the same label and swallows the click, so asking what the
-            // button does no longer toggles dark mode (Oct 2026).
+            // Icon-only (moon / sun): `title` covers hover; on touch a long press
+            // shows the same words and swallows the click, so asking what the
+            // button does no longer toggles dark mode (Oct 2026). The words name
+            // the mode a press switches TO, read from the live state each time.
+            newQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
             attachLongPressHint(newQuickToggle, {
-                getText: () => newQuickToggle.getAttribute('aria-label') || newQuickToggle.title
+                getText: () => getLabel(newQuickToggle.getAttribute('aria-pressed') === 'true'
+                    ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn')
             });
 
         } catch (error) {
@@ -712,6 +715,7 @@ export class ThemeManager {
             if (!currentQuickToggle) return;
 
             currentQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
+            currentQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
 
             // The emoji was the ONLY state cue, and it is invisible to assistive
             // tech twice over: it is decorative content, and the button's

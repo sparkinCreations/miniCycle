@@ -1794,6 +1794,11 @@ export const DEFAULT_LABELS = deepFreeze({
         addTaskToggle:  'Add Task',
         darkModeAria:   'Toggle dark mode',
         personalizationAria: 'Personalization',
+        // The two icon-only corner buttons' hover tooltip AND long-press hint:
+        // what pressing does, so the toggle names the mode it will switch TO.
+        personalizationHint: 'Personalize colors and layout',
+        darkModeHintOn:  'Switch to dark mode',
+        darkModeHintOff: 'Switch to light mode',
         appSubtitle:    'ROUTINE MANAGER',
         currentBadge:   'Current'
     },

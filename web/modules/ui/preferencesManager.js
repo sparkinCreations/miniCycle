@@ -420,10 +420,12 @@ export class PreferencesManager {
         if (personalizationBtn) {
             personalizationBtn._clickHandler = () => this.openModal();
             safeAdd(personalizationBtn, 'click', personalizationBtn._clickHandler);
-            // Icon-only (🖌️): `title` covers hover; on touch a long press shows
-            // the same label without opening the modal (Oct 2026).
+            // Icon-only (the brush): `title` covers hover; on touch a long press
+            // shows the same words without opening the modal (Oct 2026). They
+            // say what is inside, not just the screen's name.
+            personalizationBtn.title = getLabel('nav.personalizationHint');
             attachLongPressHint(personalizationBtn, {
-                getText: () => personalizationBtn.getAttribute('aria-label') || personalizationBtn.title
+                getText: () => getLabel('nav.personalizationHint')
             });
         }
 
