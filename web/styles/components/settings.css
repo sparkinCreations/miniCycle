@@ -534,6 +534,10 @@ button.settings-btn.close-btn:hover {
     margin-right: var(--space-2-5);
 }
 
+.settings-btn[hidden] {
+    display: none;   /* .settings-btn's display: flex would otherwise win over [hidden] */
+}
+
 .settings-btn {
     background: var(--color-primary);
     color: var(--color-white);

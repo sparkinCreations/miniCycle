@@ -1551,7 +1551,7 @@ export const DEFAULT_LABELS = deepFreeze({
         resetRecurringDefaultDesc: 'New recurring tasks start as Daily, repeating indefinitely, again.',
         resetAchievementsDesc:  'Locks every badge and sets progress toward them back to zero. Your routines and their own stats stay. This cannot be undone.',
         clearUndoHistoryDesc:   'Deletes the undo steps saved for every routine. This cannot be undone.',
-        debugModeDesc:          'Writes the app\'s detailed log to the browser console, for troubleshooting.',
+        debugModeDesc:          'Writes the app\'s detailed log to the browser console and shows App Diagnostics, for troubleshooting.',
         ariaToggleDisplay:    'Toggle Display settings',
         ariaToggleAccessibility: 'Toggle Accessibility settings',
         ariaToggleBehavior:   'Toggle Behavior settings',
