@@ -640,6 +640,14 @@ button.settings-btn.close-btn:hover {
     transform: scale(1.15);
 }
 
+/* The two corner icons are white SVGs (utils/icons.js 'paint-brush', 'moon' /
+   'sun'). White on the light blue measured 2.06:1, so light mode gives them a
+   soft shadow to hold their edge; on dark backgrounds they need none. */
+body:not(.dark-mode) #personalization-btn .icon,
+body:not(.dark-mode) #quick-dark-toggle .icon {
+    filter: drop-shadow(0 1px 2px rgba(12, 32, 145, 0.45));
+}
+
 /* Mobile: Smaller buttons for better space usage */
 @media (max-width: 768px) {
     #quick-dark-toggle,

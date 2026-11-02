@@ -237,14 +237,10 @@ const ICONS = {
     'mode-auto': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(100 32 32)"><path d="M38.8 13.2A20 20 0 1 1 19.1 16.7" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M14.6 11.6L23.4 22L26.3 10.9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g></svg>',
     'mode-manual': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path transform="translate(-9 -1) scale(1.21875)" d="M20.4 36.4V23.3a2.3 2.3 0 0 1 4.6 0v7.2q.45.7.9 0V19.8a2.3 2.3 0 0 1 4.6 0v10.7q.45.7.9 0v-9.2a2.3 2.3 0 0 1 4.6 0v9.2q.45.7.9 0v-5.2a2.3 2.3 0 0 1 4.6 0v14.2c0 6-4.5 10.5-10 10.5h-1.5c-5 0-9.4-3-10.4-5.7l-7.5-10.6a2.3 2.3 0 0 1 3.8-2.6l3.9 5.6q.6.8.6-.1z"/><path d="M44.7 9.3A10 10 0 1 1 41.6 19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M37.6 20.4L44.4 21.8L42.3 15Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
     'mode-todo': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><rect x="14" y="11" width="36" height="47" rx="5" fill="none" stroke="currentColor" stroke-width="4.5"/><rect x="23" y="6" width="18" height="11" rx="3"/><path d="M20.5 28l3 3 5-5.5M20.5 39l3 3 5-5.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 28.5h11M33 39.5h11M21.5 49.5h22.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>',
-    // The two bottom-corner buttons (Nov 2026): COLOURED on purpose — fills
-    // come from classes in icons.css (beating .icon's currentColor), with a
-    // navy outline in light mode (amber on the light blue measured 1.06:1);
-    // the viewBoxes are padded so that outline is not clipped. High Contrast
-    // puts them back to currentColor.
-    'paint-brush-color': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-30 -30 636 572"><path class="ic-brush-handle" fill="#8B5A2B" d="M339.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L568.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S517.7-4.4 499.1 9.6L262.4 187.2c-24 18-37.3 44.8-37.9 73.9L339.3 367.1z"/><path class="ic-brush-tip" fill="#D4537E" d="M319.7 392.5l-116-104.4C143.9 290.3 96 339.6 96 400c0 3.9 .2 7.8 .6 11.6C98.4 429.1 86.4 448 68.8 448H64c-17.7 0-32 14.3-32 32s14.3 32 32 32H208c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg>',
-    'moon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="-3 -3 70 70"><path class="ic-gold" fill="#EF9F27" d="M28.73 11.03A23 23 0 1 0 52.79 37.11A18 18 0 0 1 28.73 11.03Z"/></svg>',
-    'sun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path class="ic-gold" fill="#EF9F27" d="M32 21a11 11 0 1 1 0 22a11 11 0 1 1 0-22z"/><path class="ic-gold-stroke" fill="none" stroke="#EF9F27" stroke-width="5" stroke-linecap="round" d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></svg>'
+    // The two bottom-corner buttons' moon / sun (Nov 2026): monochrome in
+    // currentColor like the rest of the set; the brush is 'paint-brush'.
+    'moon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M28.73 11.03A23 23 0 1 0 52.79 37.11A18 18 0 0 1 28.73 11.03Z"/></svg>',
+    'sun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M32 21a11 11 0 1 1 0 22a11 11 0 1 1 0-22z"/><path fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></svg>'
 };
 
 /**
