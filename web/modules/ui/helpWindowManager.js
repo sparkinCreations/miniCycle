@@ -14,6 +14,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOI
 // side-layout hysteresis compares content height against the same budget.
 const VIEWPORT_CHROME_PX = 385;
 import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { getIcon as getSvgIcon } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -409,7 +410,7 @@ export class HelpWindowManager {
 
         this.isShowingCycleComplete = true;
         this.helpWindow.innerHTML = `
-            <p><span aria-hidden="true">✅</span> ${toastMessage}</p>
+            <p><span class="icon help-window-icon" aria-hidden="true">${getSvgIcon('check-circle')}</span> ${toastMessage}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -606,38 +607,42 @@ export class HelpWindowManager {
             : getLabel('help.progressCycles', { vars: { count: cycleCount, cycleWord: getLabel('noun.cycle', { count: cycleCount }) } });
 
         // Return parts for different constant messages based on state.
+        // `icon` is a NAME in the ICONS registry (utils/icons.js); the
+        // renderer looks it up, so only the trusted SVG set reaches innerHTML.
         // `body` is the preamble (e.g. "3 tasks remaining"); `cta` is the
         // post-bullet phrase (e.g. "Complete your first cycle!"). The
         // renderer joins them with " • " and wraps `cta` in a nowrap span
         // so when the line wraps it breaks at the bullet rather than
         // splitting the call-to-action mid-phrase.
         if (totalTasks === 0) {
-            return { icon: '📝', body: getLabel('help.addFirstTask'), cta: progressText, size: routineSize };
+            return { icon: 'edit', body: getLabel('help.addFirstTask'), cta: progressText, size: routineSize };
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return { icon: '🎉', body: getLabel('help.allComplete'), cta: progressText, size: routineSize };
+            return { icon: 'trophy', body: getLabel('help.allComplete'), cta: progressText, size: routineSize };
         }
 
         const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
 
         // First-time message for either mode
         if (isToDoMode && clearedTasksCount === 0) {
-            return { icon: '📋', body: remainingText, cta: getLabel('help.clearFirst'), size: routineSize };
+            return { icon: 'list', body: remainingText, cta: getLabel('help.clearFirst'), size: routineSize };
         }
         if (!isToDoMode && cycleCount === 0) {
-            return { icon: '📋', body: remainingText, cta: getLabel('help.completeFirst'), size: routineSize };
+            return { icon: 'list', body: remainingText, cta: getLabel('help.completeFirst'), size: routineSize };
         }
 
         // Show progress and cycle count or cleared tasks
-        return { icon: '📋', body: remainingText, cta: progressText, size: routineSize };
+        return { icon: 'list', body: remainingText, cta: progressText, size: routineSize };
     }
 
     /**
      * Render structured status parts inside the help window.
      * Wraps the leading icon and storage-size in dedicated spans so
      * focus mode can strip them via CSS (.help-window-icon / .help-window-size).
-     * Each dynamic part is escaped individually for XSS safety (Fix #40).
+     * Each dynamic part is escaped individually for XSS safety (Fix #40);
+     * the icon is an ICONS name, looked up rather than escaped — a name not
+     * in the registry draws nothing.
      * @param {{icon: string, body: string, size: string}} parts
      * @returns {void}
      */
@@ -649,11 +654,12 @@ export class HelpWindowManager {
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
         };
 
-        const iconHtml = parts.icon
-            ? `<span class="help-window-icon" aria-hidden="true">${escapeHtml(parts.icon)} </span>`
+        const iconSvg = parts.icon ? getSvgIcon(parts.icon) : '';
+        const iconHtml = iconSvg
+            ? `<span class="icon help-window-icon" aria-hidden="true">${iconSvg}</span> `
             : '';
         const sizeHtml = parts.size
-            ? `<span class="help-window-size"> • <span aria-hidden="true">💾</span> ${escapeHtml(parts.size)}</span>`
+            ? `<span class="help-window-size"> • <span class="icon" aria-hidden="true">${getSvgIcon('save')}</span> ${escapeHtml(parts.size)}</span>`
             : '';
         // Preamble and CTA get their own inline spans. Only the CTA is
         // white-space: nowrap (buttons.css), so when the line wraps the
