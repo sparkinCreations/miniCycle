@@ -189,6 +189,32 @@ export class FocusMode {
         this._actionBtn.className = DOM_CLASSES.FOCUS_ACTION_BTN;
         body.appendChild(this._actionBtn);
         this._updateActionButtonAria();
+        this._watchModeClass(body);
+    }
+
+    /**
+     * Keep the action button's caption and accessible name on the mode the
+     * page is showing. Its icon follows the body's mode class in CSS, at once;
+     * the caption and aria-label are written here — and were only re-written
+     * from activate(), Focus View's own Switch Mode dialog and a theme change.
+     * Every other path (the Alt+Shift+M shortcut, undo / redo of a mode
+     * change) flipped the icon and left "Cycle" under a broom until a reload
+     * (Nov 2026). Watching that same class closes all of them, including any
+     * added later.
+     * @param {HTMLElement} body
+     */
+    _watchModeClass(body) {
+        this._modeClassObserver?.disconnect();
+        const MODE_CLASSES = [DOM_CLASSES.AUTO_CYCLE_MODE, DOM_CLASSES.MANUAL_CYCLE_MODE, DOM_CLASSES.TODO_MODE_MODE];
+        const currentModeClass = () => MODE_CLASSES.find(c => body.classList.contains(c)) || '';
+        let last = currentModeClass();
+        this._modeClassObserver = new MutationObserver(() => {
+            const now = currentModeClass();
+            if (now === last) return;
+            last = now;
+            this._updateActionButtonAria();
+        });
+        this._modeClassObserver.observe(body, { attributes: true, attributeFilter: ['class'] });
     }
 
     /**
@@ -1519,6 +1545,8 @@ export class FocusMode {
     }
 
     destroy() {
+        this._modeClassObserver?.disconnect();
+        this._modeClassObserver = null;
         if (this._panelChangeHandler) {
             document.removeEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
             this._panelChangeHandler = null;

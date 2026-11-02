@@ -94,6 +94,27 @@ export async function runFocusModeTests(resultsDiv) {
         if (typeof instance.deactivate !== 'function') throw new Error('Missing deactivate method');
     });
 
+    resultsDiv.innerHTML += '<h4 class="test-section">🔄 Action button follows the mode</h4>';
+
+    // The shortcut and undo change the mode without telling Focus View; the
+    // button's caption must follow the body's mode class like its icon does.
+    await test('a mode-class change from anywhere refreshes the action button (and nothing else does)', async () => {
+        const instance = new mod.FocusMode();
+        let refreshes = 0;
+        instance._updateActionButtonAria = () => { refreshes++; };
+        const host = document.createElement('div');
+        host.className = 'manual-cycle-mode';
+        instance._watchModeClass(host);
+        const tick = () => new Promise(r => setTimeout(r, 0));
+        host.classList.add('some-other-class'); await tick();
+        if (refreshes !== 0) throw new Error('an unrelated class change must not refresh');
+        host.classList.replace('manual-cycle-mode', 'todo-mode-mode'); await tick();
+        if (refreshes !== 1) throw new Error(`manual → to-do should refresh once, got ${refreshes}`);
+        instance.destroy?.();
+        host.classList.replace('todo-mode-mode', 'auto-cycle-mode'); await tick();
+        if (refreshes !== 1) throw new Error('destroy() must stop the watch');
+    });
+
     resultsDiv.innerHTML += '<h4 class="test-section">🔀 Switch Mode wording</h4>';
 
     // Focus View has no "Complete Cycle" / "Clear Completed" button — the
