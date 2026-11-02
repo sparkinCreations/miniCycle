@@ -103,6 +103,21 @@
 <title>miniCycle&trade; - ROUTINE MANAGER</title>
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
 <link rel="canonical" href="https://minicycle.app/minicycle">
+<!-- Social previews (Reddit, iMessage, Slack, X): the product page's image
+     and wording, with og:url naming the same address as the canonical above. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="miniCycle">
+<meta property="og:url" content="https://minicycle.app/minicycle">
+<meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
+<meta property="og:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline. No account needed.">
+<meta property="og:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="1200">
+<meta property="og:image:alt" content="miniCycle checklist app shown in light and dark mode across four phone mockups, including the cycle completion moment">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="miniCycle - Routine Checklists That Reset Automatically">
+<meta name="twitter:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline.">
+<meta name="twitter:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
 
 <!-- Preload the dominant weights so Poppins is available AT first paint. The
      bundled build inlines fonts.css, which makes first paint early enough that
@@ -1849,7 +1864,7 @@
                     <div class="storage-bar-label" title="Space used by your saved routines on this device">Routine Storage</div>
                     <div class="storage-bar-hint">Saved locally on this device</div>
                 </div>
-                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage quota">
+                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage usage" aria-label="Refresh storage usage">
                     <i class="fas fa-sync-alt"></i>
                 </button>
             </div>
@@ -1972,7 +1987,7 @@
             <span id="focus-task-due-indicator" class="focus-task-indicator hidden"></span>
             <span id="focus-task-reset-indicator" class="focus-task-indicator hidden" role="img"></span>
         </div>
-        <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn"></button>
+        <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn">Complete task</button>
         <div class="focus-task-nav">
             <button type="button" id="focus-task-prev-btn" class="focus-task-nav-btn"><span aria-hidden="true">‹</span></button>
             <button type="button" id="focus-task-next-btn" class="focus-task-nav-btn"><span aria-hidden="true">›</span></button>

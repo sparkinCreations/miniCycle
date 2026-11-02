@@ -257,6 +257,7 @@ export const DEFAULT_LABELS = deepFreeze({
         filterAria:         'Filter routines by mode: {mode}',
         // Tooltips on the filter menu button and its options
         filterTitle:        'Filter routines by mode',
+        refreshStorage:     'Refresh storage usage',   // the ↻ beside Routine Storage in Open Routine
         filterAllTitle:     'Show routines in every mode',
         filterAutoTitle:    'Show only Auto Cycle routines',
         filterManualTitle:  'Show only Manual Cycle routines',

@@ -1519,6 +1519,9 @@ export class RoutineSwitcher {
     setupStorageRefreshButton() {
         const refreshBtn = this.deps.getElementById(DOM_IDS.STORAGE_REFRESH_BTN);
         if (!refreshBtn) return;
+        // Icon-only: named for assistive tech, not just by its hover title.
+        refreshBtn.setAttribute('aria-label', getLabel('switcher.refreshStorage'));
+        refreshBtn.title = getLabel('switcher.refreshStorage');
 
         const safeAdd = this.deps.safeAddEventListener;
         if (!safeAdd) {

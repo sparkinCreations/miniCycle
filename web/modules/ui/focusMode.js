@@ -306,6 +306,9 @@ export class FocusMode {
         }
 
         body.appendChild(this._menu);
+        // Named from the start, not only when the menu first opens: until then
+        // the item was an empty button (accessibility audits flag it).
+        this._refreshModeItemLabel();
 
         // Build the mode-switch modal (hidden until opened)
         this._createModeModal();
