@@ -204,6 +204,11 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     flex-shrink: 0;
 }
 
+/* An Auto Cycle reset turns the arrows once (taskCycleReset, .is-acting) */
+.mode-picker-btn.is-acting .mode-picker-icon {
+    animation: action-spin var(--anim-action-spin) ease-in-out;
+}
+
 /* Centered under the button; .quick-actions-menu supplies the panel look and
    is display:none until shown, so the hidden attribute is mapped back here.
    Scoped under .mode-picker: .quick-actions-menu comes later in this file at

@@ -53,7 +53,8 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { autoClearFields, clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { autoClearFields, clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getCycleMode, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { replayAnimationClass } from '../utils/motionPreference.js';
 import { priorityFields } from '../utils/priorityLevel.js';
 import { renderDueDateChip } from '../utils/dueDateUtils.js';
 
@@ -702,6 +703,14 @@ export async function resetTasksImpl(deps = {}) {
             headerLogo.classList.add(DOM_CLASSES.LOGO_SPIN);
             // Remove class after animation completes
             setTimeout(() => headerLogo.classList.remove(DOM_CLASSES.LOGO_SPIN), UI_TIMEOUTS.CLEAR_ANIMATION);
+        }
+
+        // Step 3.6: Auto Cycle resets by itself, with no button press to
+        // answer — so the mode control's arrows turn once (Home View; the
+        // same one-turn spin as the Complete Cycle button, zeroed under
+        // reduced motion).
+        if (getCycleMode(cycles[activeCycle]) === 'auto') {
+            replayAnimationClass(document.getElementById(DOM_IDS.MODE_PICKER_BTN), DOM_CLASSES.ACTION_PLAYING, '--anim-action-spin');
         }
 
         // Step 4: Perform core data reset
