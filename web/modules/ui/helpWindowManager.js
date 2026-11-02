@@ -17,6 +17,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { getIcon as getSvgIcon } from '../utils/icons.js';
 import { runsAsInstalledApp } from '../utils/userManualLink.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+import { modeWordVars } from '../labels/modeWording.js';
 
 // First-use notices (showNotice): label + ICONS name.
 const HELP_NOTICES = Object.freeze({
@@ -354,21 +355,24 @@ export class HelpWindowManager {
         const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
         taskView?.classList.add(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
 
+        // The active theme's words ("Habits", "Complete Check-in"). Vars are
+        // label / theme text only, never user text, so innerHTML-safe below.
+        const vars = modeWordVars();
         const modeDescriptions = {
             'auto-cycle': {
                 icon: 'mode-auto',
                 title: getLabel('mode.autoTitle'),
-                description: getLabel('help.modeAutoShort')
+                description: getLabel('help.modeAutoShort', { vars })
             },
             'manual-cycle': {
                 icon: 'mode-manual',
                 title: getLabel('mode.manualTitle'),
-                description: getLabel('help.modeManualShort')
+                description: getLabel('help.modeManualShort', { vars })
             },
             'todo-mode': {
                 icon: 'mode-todo',
                 title: getLabel('mode.todoTitle'),
-                description: getLabel('help.modeTodoShort')
+                description: getLabel('help.modeTodoShort', { vars })
             }
         };
 

@@ -133,6 +133,21 @@ export async function runFocusModeTests(resultsDiv) {
         if (/Clear Completed/.test(text)) throw new Error(`names Home View's button: ${text}`);
     });
 
+    // The descriptions carry the active theme's words (labels/modeWording.js):
+    // every placeholder filled, the task noun capitalised to open a sentence.
+    await test('Switch Mode descriptions fill every theme placeholder', () => {
+        const fm = new mod.FocusMode();
+        const texts = [
+            fm._modeDescription('help.modeAutoShort'),
+            fm._modeDescription('focusMode.modeManualDesc', 'focusMode.cycleActionLabel'),
+            fm._modeDescription('focusMode.modeTodoDesc', 'focusMode.clearActionLabel')
+        ];
+        for (const text of texts) {
+            if (/\{[a-zA-Z]+\}/.test(text)) throw new Error(`unfilled placeholder: ${text}`);
+        }
+        if (!/^[A-Z]/.test(texts[0])) throw new Error(`should open with the capitalised task noun: ${texts[0]}`);
+    });
+
     await test('Instance has toggle method', () => {
         const instance = new mod.FocusMode();
         if (typeof instance.toggle !== 'function') throw new Error('Missing toggle method');

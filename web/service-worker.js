@@ -297,6 +297,7 @@ var BOOT_CRITICAL = [
   './modules/labels/labelResolver.js',
   './modules/labels/defaultLabels.js',
   './modules/labels/themes.js',
+  './modules/labels/modeWording.js',
   // Boot-graph modules that were drifting out of precache — they are statically
   // imported during boot, so without precache they only live in the DYNAMIC
   // cache, which iOS evicts; once evicted, offline boot dies with "Importing

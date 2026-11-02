@@ -77,6 +77,7 @@ export class ModePicker {
 
     open() {
         if (!this.menu.hidden) return;
+        this._relabelItems();
         this.menu.hidden = false;
         this.button.setAttribute('aria-expanded', 'true');
         const items = this._items();
@@ -103,6 +104,16 @@ export class ModePicker {
     _icon(mode) {
         const name = this.getModeIcon(mode);
         return name ? createIconElement(name, DOM_CLASSES.MODE_PICKER_ICON) : null;
+    }
+
+    /** Re-read each item's text and tooltip: a vocabulary theme may have renamed them since. */
+    _relabelItems() {
+        for (const item of this._items()) {
+            const text = item.querySelector(`.${DOM_CLASSES.QUICK_ACTION_TEXT}`);
+            if (text) text.textContent = this.getModeLabel(item.dataset.mode);
+            const title = this.getItemTitle?.(item.dataset.mode);
+            if (title) item.title = title;
+        }
     }
 
     _items() {
