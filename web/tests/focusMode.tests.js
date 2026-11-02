@@ -94,6 +94,24 @@ export async function runFocusModeTests(resultsDiv) {
         if (typeof instance.deactivate !== 'function') throw new Error('Missing deactivate method');
     });
 
+    resultsDiv.innerHTML += '<h4 class="test-section">🔀 Switch Mode wording</h4>';
+
+    // Focus View has no "Complete Cycle" / "Clear Completed" button — the
+    // dialog must name the round action button by the label it shows.
+    await test('Manual Cycle description names Focus View\'s own button', () => {
+        const text = new mod.FocusMode()._modeDescription('focusMode.modeManualDesc', 'focusMode.cycleActionLabel');
+        const button = cycleLabel().replace(/\s*\n\s*/g, ' ');
+        if (!text.includes(`the ${button} button`)) throw new Error(`expected "the ${button} button", got: ${text}`);
+        if (/Complete Cycle|\{button\}/.test(text)) throw new Error(`names a button Focus View does not have: ${text}`);
+    });
+
+    await test('To-Do description joins the two-line Clear label into one line', () => {
+        const text = new mod.FocusMode()._modeDescription('focusMode.modeTodoDesc', 'focusMode.clearActionLabel');
+        const button = clearLabel().replace(/\s*\n\s*/g, ' ');
+        if (!text.includes(`the ${button} button`) || text.includes('\n')) throw new Error(`got: ${JSON.stringify(text)}`);
+        if (/Clear Completed/.test(text)) throw new Error(`names Home View's button: ${text}`);
+    });
+
     await test('Instance has toggle method', () => {
         const instance = new mod.FocusMode();
         if (typeof instance.toggle !== 'function') throw new Error('Missing toggle method');

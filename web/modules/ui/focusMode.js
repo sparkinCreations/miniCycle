@@ -404,6 +404,19 @@ export class FocusMode {
      * The dialog is keyboard accessible (Escape, Tab, Enter on radio).
      * Switching is immediate on radio change; "Done" closes the modal.
      */
+    /**
+     * A Switch Mode description, naming the action button by its current
+     * one-line label when the mode has one.
+     * @param {string} descKey
+     * @param {string} [buttonKey] - the button's label key (may hold a \n)
+     * @returns {string}
+     */
+    _modeDescription(descKey, buttonKey) {
+        if (!buttonKey) return getLabel(descKey);
+        const button = getLabel(buttonKey).replace(/\s*\n\s*/g, ' ');
+        return getLabel(descKey, { vars: { button } });
+    }
+
     _createModeModal() {
         const body = this.deps.getBody();
         if (!body) return;
@@ -431,14 +444,17 @@ export class FocusMode {
         heading.textContent = getLabel('focusMode.modeModalTitle');
         this._modeModal.appendChild(heading);
 
+        // Descriptions name Focus View's own round button by its label, not
+        // Home View's "Complete Cycle" / "Clear Completed" (buttonKey).
         const modeOptions = [
             { value: 'auto-cycle',   nameKey: 'focusMode.modeAutoName',   descKey: 'help.modeAutoShort' },
-            { value: 'manual-cycle', nameKey: 'focusMode.modeManualName', descKey: 'help.modeManualShort' },
-            { value: 'todo-mode',    nameKey: 'focusMode.modeTodoName',   descKey: 'help.modeTodoShort' },
+            { value: 'manual-cycle', nameKey: 'focusMode.modeManualName', descKey: 'focusMode.modeManualDesc', buttonKey: 'focusMode.cycleActionLabel' },
+            { value: 'todo-mode',    nameKey: 'focusMode.modeTodoName',   descKey: 'focusMode.modeTodoDesc',   buttonKey: 'focusMode.clearActionLabel' },
         ];
+        this._modeDescs = [];
 
         const radioName = 'focus-mode-mode-radio';
-        for (const { value, nameKey, descKey } of modeOptions) {
+        for (const { value, nameKey, descKey, buttonKey } of modeOptions) {
             const optionLabel = document.createElement('label');
             optionLabel.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION;
 
@@ -456,7 +472,8 @@ export class FocusMode {
 
             const desc = document.createElement('div');
             desc.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION_DESC;
-            desc.textContent = getLabel(descKey);
+            desc.textContent = this._modeDescription(descKey, buttonKey);
+            this._modeDescs.push({ el: desc, descKey, buttonKey });
 
             text.appendChild(name);
             text.appendChild(desc);
@@ -761,6 +778,12 @@ export class FocusMode {
      */
     _openModeModal() {
         if (!this._modeModal || !this._modeBackdrop || this._modeModalOpen) return;
+
+        // Re-word on every open: a vocab theme renames the button
+        // ("Cycle" → "Complete Workout") after the dialog was built.
+        for (const { el, descKey, buttonKey } of this._modeDescs || []) {
+            el.textContent = this._modeDescription(descKey, buttonKey);
+        }
 
         const currentMode = this._getCurrentMode();
         const radios = this._modeModal.querySelectorAll(DOM_SELECTORS.FOCUS_MODE_MODE_RADIO);

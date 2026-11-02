@@ -1887,7 +1887,14 @@ export const DEFAULT_LABELS = deepFreeze({
         cycleActionAria:  'Complete cycle and reset tasks',
         clearActionLabel: 'Clear\nTasks',
         clearActionTitle: 'Clear completed tasks',
-        clearActionAria:  'Clear all completed tasks'
+        clearActionAria:  'Clear all completed tasks',
+        // The Switch Mode dialog's descriptions, Focus View's own: there is no
+        // "Complete Cycle" / "Clear Completed" button in Focus View, so these
+        // name the round action button by its live label ({button} — the
+        // themed cycleActionLabel / clearActionLabel, one line). Auto Cycle
+        // has no button and keeps help.modeAutoShort.
+        modeManualDesc: { touch: 'Tasks only reset when you tap the {button} button.', pointer: 'Tasks only reset when you click the {button} button.' },
+        modeTodoDesc:   { touch: 'Completed tasks are removed when you tap the {button} button.', pointer: 'Completed tasks are removed when you click the {button} button.' }
     },
 
     // ========================================================================
