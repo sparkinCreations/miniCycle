@@ -1119,6 +1119,7 @@ export const DOM_CLASSES = Object.freeze({
     CYCLE_DEMO_ARROW: 'cycle-demo__arrow',
     FIRST_RUN_MODE: 'first-run-mode',       // on #app-loader while the choice screen is up
     MC_FIRST_RUN: 'mc-first-run',           // on <html>; critical.css lays the screen out from it
+    FIRST_RUN_PICKING: 'first-run-picking', // on <body> from a first-run Create / Sample pick until its routine exists (appInit): hides the empty state, which would otherwise flash "Your routine is empty" before the dialog / the sample
     FIRST_RUN_BTN: 'first-run-btn',
     FIRST_RUN_BTN_CHOSEN: 'is-chosen',
     FIRST_RUN_SPLASH: 'first-run-splash',

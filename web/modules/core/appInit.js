@@ -408,6 +408,10 @@ class AppInit {
 		// loadSampleRoutine completes without it.)
 		const landInFocusViewWhenRoutineReady = ({ showInputBar, choice }) => {
 			this._pendingFirstRunFocusView = { showInputBar, choice };
+			// No "Your routine is empty" while the routine is still being chosen:
+			// it showed between the splash and the dialog, and read as the sample
+			// having failed (Nov 2026). Cleared below when the routine exists.
+			_deps.addBodyClass?.(DOM_CLASSES.FIRST_RUN_PICKING);
 		};
 
 		// create/sample get the same welcome splash as 'learn', minus the
@@ -815,6 +819,7 @@ class AppInit {
 		if (this._pendingFirstRunFocusView) {
 			const firstRunChoice = this._pendingFirstRunFocusView.choice;
 			this._pendingFirstRunFocusView = null;
+			_deps.removeBodyClass?.(DOM_CLASSES.FIRST_RUN_PICKING);
 			_deps.getOnboardingManager?.()?.startFocusViewForNewRoutine?.(firstRunChoice);
 		}
 
