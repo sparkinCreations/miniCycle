@@ -1,3 +1,7 @@
+## [2.658] - 2026-11-01
+- feat(routines): input bar open for routines created in Focus View; new phone users browse in Grid
+
+
 ## [2.657] - 2026-11-01
 - fix(high-contrast): priority stays visible, and the glass surfaces become solid panels
 - fix(help-window): the call-to-action wraps inside the box instead of running out of it
