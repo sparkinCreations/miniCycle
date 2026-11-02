@@ -6391,9 +6391,9 @@ async function journeyAppShortcuts(browser, baseURL) {
         await reset();
 
         const keys = await page.evaluate(() => Object.fromEntries(
-            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button', 'open-shortcuts-modal']
+            ['new-mini-cycle', 'routine-switcher-btn', 'mode-picker-btn', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button', 'open-shortcuts-modal']
                 .map(id => [id, document.getElementById(id)?.getAttribute('aria-keyshortcuts') || null])));
-        const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-selector': 'Alt+Shift+M',
+        const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-picker-btn': 'Alt+Shift+M',
             'focus-mode-btn': 'Alt+Shift+F', 'focus-mode-exit-btn': 'Alt+Shift+F', 'toggle-task-input-btn': 'Alt+Shift+I', 'open-user-manual': 'Alt+Shift+U',
             'open-settings': 'Alt+Shift+S', 'menu-button': 'Alt+Shift+.', 'open-shortcuts-modal': 'Alt+Shift+?' };
         const wrongKeys = Object.keys(wantKeys).filter(id => keys[id] !== wantKeys[id]);
@@ -7264,7 +7264,7 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 const btn = document.getElementById('routine-switcher-btn');
                 const label = btn.querySelector('.routine-switcher-btn-label');
                 const r = btn.getBoundingClientRect();
-                const mode = document.getElementById('mode-selector').getBoundingClientRect();
+                const mode = document.getElementById('mode-picker-btn').getBoundingClientRect();
                 const plus = document.getElementById('quick-actions-btn').getBoundingClientRect();
                 return {
                     plusW: Math.round(plus.width), btnW: Math.round(r.width), plusClear: plus.right <= mode.left,

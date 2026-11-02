@@ -27,6 +27,12 @@
     fill: currentColor;  /* Default for fill-based icons */
 }
 
+/* A stroked path inside a filled icon (the mode icons' arrows and ticks) says
+   fill="none" on the path itself; the rule above would fill it solid. */
+.icon svg path[fill="none"] {
+    fill: none;
+}
+
 /* Stroke-based icons (thin/light style) - don't override fill="none" */
 .icon svg[fill="none"] path {
     fill: none;

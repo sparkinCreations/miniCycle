@@ -33,7 +33,7 @@ import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
-import { describeMode, getModeIcon } from './routineBrowserRender.js';
+import { createModeIcon, describeMode } from './routineBrowserRender.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { scrollBehavior } from '../utils/motionPreference.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -1336,9 +1336,9 @@ export class RoutineSwitcher {
         listItem.dataset.cycleName = cycleData.title || cycleKey;
         listItem.dataset.cycleKey = cycleKey;
 
-        // Mode icon — the same glyph Browse and the help window draw.
+        // Mode icon — the same SVG Browse and the help window draw.
         // Decorative: the row is named by its title.
-        const emoji = describeMode(cycleData).emoji;
+        const { mode } = describeMode(cycleData);
 
         // Left side: emoji + title
         const leftSide = document.createElement("span");
@@ -1347,7 +1347,7 @@ export class RoutineSwitcher {
         const emojiSpan = document.createElement("span");
         emojiSpan.className = "cycle-item-emoji";
         emojiSpan.setAttribute("aria-hidden", "true");
-        emojiSpan.textContent = emoji;
+        emojiSpan.appendChild(createModeIcon(mode));
 
         const titleSpan = document.createElement("span");
         titleSpan.className = "cycle-item-title";
@@ -1849,16 +1849,14 @@ export class RoutineSwitcher {
             return;
         }
 
-        // Option text from the labels and the shared mode icons (the HTML
-        // carries the same text as a fallback). The leading &nbsp; indent of
-        // each mode option is kept.
+        // Option text from the labels (the HTML carries the same text as a
+        // fallback). Text only: a native <select> cannot draw the mode SVGs.
+        // The leading &nbsp; indent of each mode option is kept.
         for (const option of filterSelect.options) {
             const key = FILTER_OPTION_LABELS[option.value];
             if (!key) continue;
             const indent = option.textContent.match(/^\s*/)[0];
-            option.textContent = option.value === 'all'
-                ? getLabel(key)
-                : `${indent}${getModeIcon(option.value)} ${getLabel(key)}`;
+            option.textContent = option.value === 'all' ? getLabel(key) : `${indent}${getLabel(key)}`;
         }
 
         // Set dropdown to current filter mode

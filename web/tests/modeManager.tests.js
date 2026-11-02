@@ -6,9 +6,9 @@
  * Uses dependency injection pattern - imports module directly
  *
  * Tests the three cycling modes:
- * - Auto Cycle 🔄: Tasks auto-reset when all completed
- * - Manual Cycle ✋: Tasks reset only on manual button click
- * - To-Do Mode 📋: Tasks are deleted instead of reset
+ * - Auto Cycle: Tasks auto-reset when all completed
+ * - Manual Cycle: Tasks reset only on manual button click
+ * - To-Do Mode: Tasks are deleted instead of reset
  */
 
 // Import module directly for DI testing (not via appContext which may not be populated)
@@ -205,8 +205,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('auto-cycle');
-        if (result !== '🔄 Auto Cycle') {
-            throw new Error(`Expected '🔄 Auto Cycle', got '${result}'`);
+        if (result !== 'Auto Cycle') {
+            throw new Error(`Expected 'Auto Cycle', got '${result}'`);
         }
     });
 
@@ -214,8 +214,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('manual-cycle');
-        if (result !== '✋ Manual Cycle') {
-            throw new Error(`Expected '✋ Manual Cycle', got '${result}'`);
+        if (result !== 'Manual Cycle') {
+            throw new Error(`Expected 'Manual Cycle', got '${result}'`);
         }
     });
 
@@ -223,8 +223,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('todo-mode');
-        if (result !== '📋 To-Do Mode') {
-            throw new Error(`Expected '📋 To-Do Mode', got '${result}'`);
+        if (result !== 'To-Do Mode') {
+            throw new Error(`Expected 'To-Do Mode', got '${result}'`);
         }
     });
 
@@ -241,8 +241,8 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         setModeManagerDependencies(createMockDeps());
         const manager = new ModeManager();
         const result = manager.getModeName('invalid-mode');
-        if (result !== '🔄 Auto Cycle') {
-            throw new Error(`Expected default '🔄 Auto Cycle', got '${result}'`);
+        if (result !== 'Auto Cycle') {
+            throw new Error(`Expected default 'Auto Cycle', got '${result}'`);
         }
     });
 

@@ -16,6 +16,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { createIconElement } from '../utils/icons.js';
 import { getActiveRoutine, getCycleMode, routineHasTasks } from '../utils/cycleMode.js';
 // NOTE: taskToAddTaskOptions injected via DI to avoid duplicate module loading
 
@@ -454,7 +455,7 @@ export function checkCompleteAllButton() {
         completeAllButton.classList.add(DOM_CLASSES.TODO_MODE_BTN);
         completeAllButton.classList.remove(DOM_CLASSES.CYCLE_MODE_BTN);
     } else {
-        completeAllButton.textContent = '🔄 ' + getLabel('action.completeCycle');
+        completeAllButton.replaceChildren(createIconElement('mode-auto'), ' ' + getLabel('action.completeCycle'));
         completeAllButton.classList.add(DOM_CLASSES.CYCLE_MODE_BTN);
         completeAllButton.classList.remove(DOM_CLASSES.TODO_MODE_BTN);
     }

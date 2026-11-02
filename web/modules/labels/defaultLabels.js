@@ -2712,14 +2712,9 @@ export const DEFAULT_LABELS = deepFreeze({
         celebrate:      '🎉',
         milestoneTrail: '🚀',
 
-        // Routine modes — the ONE glyph per mode, wherever a mode is drawn
-        // (header picker, Mode Info, help window, switcher rows and filter,
-        // Browse). Read through getIcon('modeAuto') etc., never retyped.
-        modeAuto:       '🔄',
-        modeManual:     '✋',
-        modeTodo:       '📋',
-        // Recurring tasks. 🔄 is a cycle and ✋ a manual one, so recurring
-        // keeps its own arrows and never borrows theirs.
+        // Routine modes are SVGs, not emoji: 'mode-auto' / 'mode-manual' /
+        // 'mode-todo' in the ICONS registry (utils/icons.js).
+        // Recurring tasks keep their own arrows, distinct from the modes'.
         recurring:      '🔁',
 
         // UI state toggles

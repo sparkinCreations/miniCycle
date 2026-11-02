@@ -164,6 +164,86 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
 }
 
 /* =============================================================================
+   MODE PICKER (Nov 2026)
+   The visible mode control is a menu button (.mode-picker-btn) that carries
+   the .mode-selector class, so every rule above — header sizing, dark mode,
+   High Contrast, the per-mode accent border — styles it unchanged. The native
+   #mode-selector stays the source of truth, hidden here (not display:none:
+   tests and modules still set and select it).
+   ============================================================================= */
+
+.mode-selector-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mode-picker {
+    position: relative;
+    display: flex;
+}
+
+.mode-picker-btn {
+    gap: var(--space-1-25);
+    font-family: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.mode-picker-btn .mode-picker-icon {
+    width: 1.25em;
+    height: 1.25em;
+    flex-shrink: 0;
+}
+
+/* Centered under the button; .quick-actions-menu supplies the panel look and
+   is display:none until shown, so the hidden attribute is mapped back here.
+   Scoped under .mode-picker: .quick-actions-menu comes later in this file at
+   the same specificity and would win left/min-width. */
+.mode-picker .mode-picker-menu {
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 190px;
+    width: max-content;
+    padding: var(--space-1) 0;
+}
+
+.mode-picker .mode-picker-menu:not([hidden]) {
+    display: block;
+}
+
+.mode-picker-item .icon {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.mode-picker-item .quick-action-text {
+    flex: 1;
+    white-space: nowrap;
+}
+
+.mode-picker-item[aria-checked="false"] .mode-picker-check {
+    visibility: hidden;
+}
+
+.mode-picker-item[aria-checked="true"] {
+    font-weight: 600;
+}
+
+.mode-picker-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.6));
+    outline-offset: -2px;
+}
+
+/* =============================================================================
    QUICK ACTIONS
    ============================================================================= */
 

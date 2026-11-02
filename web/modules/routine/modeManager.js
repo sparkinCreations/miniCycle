@@ -7,7 +7,7 @@
  * - Auto Cycle 🔄: Tasks auto-reset when all completed
  * - Manual Cycle ✋: Tasks reset only on manual button click
  * - To-Do Mode 📋: Tasks are deleted instead of reset
- * (The glyphs are icons.modeAuto / modeManual / modeTodo — getModeIcon().)
+ * (Their icons are the 'mode-auto' / 'mode-manual' / 'mode-todo' SVGs — getModeIcon().)
  *
  * Mode changes refresh UI in-place without page reload.
  *
@@ -16,11 +16,12 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
-import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { getLabel } from '../labels/labelResolver.js';
+import { createIconElement } from '../utils/icons.js';
+import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
 const MODE_LABEL_KEYS = Object.freeze({ 'auto-cycle': 'mode.auto', 'manual-cycle': 'mode.manual', 'todo-mode': 'mode.todo' });
-const MODE_ICON_KEYS = Object.freeze({ 'auto-cycle': 'modeAuto', 'manual-cycle': 'modeManual', 'todo-mode': 'modeTodo' });
 
 /** AppState subscription key for the + button's first-time shimmer. */
 const MODE_MANAGER_SHIMMER_SUBSCRIBER = 'modeManager:firstTimeShimmer';
@@ -139,21 +140,23 @@ export class ModeManager {
     }
 
     /**
-     * The mode's icon — the same glyph everywhere a mode is drawn.
+     * The mode's icon: a NAME in the ICONS registry (utils/icons.js) — the
+     * SVG drawn everywhere a mode is shown.
      * @param {string} mode - Mode identifier
      * @returns {string}
      */
     getModeIcon(mode) {
-        return getIcon(MODE_ICON_KEYS[mode] || MODE_ICON_KEYS['auto-cycle']);
+        return MODE_PICKER_ICONS[mode] || MODE_PICKER_ICONS['auto-cycle'];
     }
 
     /**
-     * Get friendly name for a mode, icon first ("✋ Manual Cycle")
+     * Get friendly name for a mode ("Manual Cycle"). Text only: it labels the
+     * native <select>'s options, which cannot draw the SVG icon.
      * @param {string} mode - Mode identifier (auto-cycle, manual-cycle, todo-mode)
-     * @returns {string} Friendly mode name with icon
+     * @returns {string} Friendly mode name
      */
     getModeName(mode) {
-        return `${this.getModeIcon(mode)} ${this.getModeLabel(mode)}`;
+        return this.getModeLabel(mode);
     }
 
     /**
@@ -603,10 +606,7 @@ export class ModeManager {
         if (toggleBtn) {
             const badge = toggleBtn.querySelector('.mode-badge');
             if (badge) {
-                const icon = document.createElement('span');
-                icon.setAttribute('aria-hidden', 'true');
-                icon.textContent = this.getModeIcon(currentMode);
-                badge.replaceChildren(icon, ` ${this.getModeLabel(currentMode)}`);
+                badge.replaceChildren(createIconElement(this.getModeIcon(currentMode)), ` ${this.getModeLabel(currentMode)}`);
             }
         }
 
@@ -637,10 +637,21 @@ export class ModeManager {
         // Mark setup as complete
         this._modeSelectorSetupComplete = true;
 
-        // Option text from the labels and the shared mode icons ("✋ Manual
-        // Cycle"); the HTML carries the same text as a fallback.
+        // Option text from the labels (the HTML carries the same text as a
+        // fallback), then the visible menu button that draws over the select.
         for (const option of modeSelector.options) {
             option.textContent = this.getModeName(option.value);
+        }
+        const pickerBtn = this.deps.getElementById(DOM_IDS.MODE_PICKER_BTN);
+        const pickerMenu = this.deps.getElementById(DOM_IDS.MODE_PICKER_MENU);
+        if (pickerBtn && pickerMenu) {
+            this._modePicker?.destroy();
+            this._modePicker = new ModePicker({
+                select: modeSelector,
+                button: pickerBtn,
+                menu: pickerMenu,
+                getModeLabel: (mode) => this.getModeLabel(mode)
+            });
         }
 
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)
@@ -1035,8 +1046,10 @@ export class ModeManager {
         document.addEventListener(EVENTS.ADD_TASK_DISCOVERED, this._onAddTaskDiscovered);
     }
 
-    /** Remove the shimmer listeners (tests and teardown). */
+    /** Remove the mode picker's and the shimmer's listeners (tests and teardown). */
     destroy() {
+        this._modePicker?.destroy();
+        this._modePicker = null;
         if (!this._shimmerWired) return;
         this.deps.AppState?.unsubscribe?.(MODE_MANAGER_SHIMMER_SUBSCRIBER, this._onStateForShimmer);
         document.removeEventListener(EVENTS.FIRST_RUN_REARM, this._onFirstRunRearm);

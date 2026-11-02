@@ -20,7 +20,8 @@
  */
 
 import { DOM_CLASSES } from '../core/constants.js';
-import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { getLabel } from '../labels/labelResolver.js';
+import { createIconElement } from '../utils/icons.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { getCycleMode } from '../utils/cycleMode.js';
 
@@ -39,26 +40,32 @@ const CARD_THEME_VARS = Object.freeze({
     checkmark:            '--pref-checkmark'
 });
 
-// Keyed by cycleMode.getCycleMode()'s values. The glyphs live in
-// icons.modeAuto/modeManual/modeTodo, shared with every other mode display.
-const MODE_ICON = Object.freeze({ auto: 'modeAuto', manual: 'modeManual', todo: 'modeTodo' });
+// Keyed by cycleMode.getCycleMode()'s values. Names in the ICONS registry
+// (utils/icons.js): the mode SVGs every mode display draws.
+const MODE_ICON = Object.freeze({ auto: 'mode-auto', manual: 'mode-manual', todo: 'mode-todo' });
 const MODE_LABEL = Object.freeze({ auto: 'focusMode.modeAutoName', manual: 'focusMode.modeManualName', todo: 'focusMode.modeTodoName' });
 
 /**
  * @param {'auto'|'manual'|'todo'} mode - a cycleMode.getCycleMode() value
- * @returns {string} the mode's icon (unknown modes read as manual, as getCycleMode does)
+ * @param {string} [className] - extra class on the icon span
+ * @returns {HTMLElement} the mode's SVG icon, aria-hidden (unknown modes read
+ *   as manual, as getCycleMode does)
  */
-export function getModeIcon(mode) {
-    return getIcon(MODE_ICON[mode] || MODE_ICON.manual);
+export function createModeIcon(mode, className = '') {
+    const known = Object.prototype.hasOwnProperty.call(MODE_ICON, mode) ? mode : 'manual';
+    const icon = createIconElement(MODE_ICON[known], className);
+    icon.dataset.mode = known;
+    return icon;
 }
 
 /**
  * @param {Object} routine
- * @returns {{emoji: string, name: string}} the routine's mode, for display
+ * @returns {{mode: string, name: string}} the routine's mode, for display
+ *   (draw its icon with createModeIcon(mode))
  */
 export function describeMode(routine) {
     const mode = getCycleMode(routine);
-    return { emoji: getModeIcon(mode), name: getLabel(MODE_LABEL[mode]) };
+    return { mode, name: getLabel(MODE_LABEL[mode]) };
 }
 
 /**
@@ -146,7 +153,7 @@ export function fillCard(card, routine, { name, isCurrent }) {
  * @returns {HTMLElement}
  */
 export function buildTile(routine, { key, name, isCurrent, activeRoutine, maxTasks }) {
-    const { emoji, name: modeName } = describeMode(routine);
+    const { mode, name: modeName } = describeMode(routine);
     const tile = document.createElement('div');
     tile.className = DOM_CLASSES.RB_TILE;
     tile.dataset.key = key;
@@ -164,7 +171,8 @@ export function buildTile(routine, { key, name, isCurrent, activeRoutine, maxTas
     head.className = `${DOM_CLASSES.RB_PANEL_TITLE} ${DOM_CLASSES.RB_TILE_HEAD}`;
     const title = document.createElement('span');
     title.className = DOM_CLASSES.RB_TILE_NAME;
-    title.textContent = `${name} ${emoji}`;
+    title.textContent = name;
+    title.append(' ', createModeIcon(mode, 'rb-mode-icon'));
     head.appendChild(title);
     if (isCurrent) head.appendChild(currentTag());
     panel.appendChild(head);

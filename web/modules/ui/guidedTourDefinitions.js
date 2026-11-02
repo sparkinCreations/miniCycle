@@ -43,7 +43,7 @@ export const TOUR_DEFINITIONS = Object.freeze([
         steps: [
             {
                 targetType: 'id',
-                target: DOM_IDS.MODE_SELECTOR,
+                target: DOM_IDS.MODE_PICKER_BTN,
                 messageKey: 'tour.step1',
                 position: 'auto'
             },

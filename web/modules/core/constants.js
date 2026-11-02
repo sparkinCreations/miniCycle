@@ -1596,7 +1596,9 @@ export const DOM_IDS = Object.freeze({
 
     // ---- Routine / Cycle ----
     MINI_CYCLE_TITLE: 'mini-cycle-title',
-    MODE_SELECTOR: 'mode-selector',
+    MODE_SELECTOR: 'mode-selector',   /* hidden native <select>: the mode's source of truth */
+    MODE_PICKER_BTN: 'mode-picker-btn',   /* the visible Home View mode control (routine/modePicker.js) */
+    MODE_PICKER_MENU: 'mode-picker-menu',
     TOGGLE_AUTO_RESET: 'toggleAutoReset',
     DELETE_CHECKED_TASKS: 'deleteCheckedTasks',
     DELETE_CHECKED_TASKS_CONTAINER: 'deleteCheckedTasksContainer',

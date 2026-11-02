@@ -13,7 +13,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOI
 // `max-height: calc(100vh - 385px)` (header + 200px bottom padding). The
 // side-layout hysteresis compares content height against the same budget.
 const VIEWPORT_CHROME_PX = 385;
-import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { getIcon as getSvgIcon } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
@@ -342,17 +342,17 @@ export class HelpWindowManager {
 
         const modeDescriptions = {
             'auto-cycle': {
-                icon: getIcon('modeAuto'),
+                icon: 'mode-auto',
                 title: getLabel('mode.autoTitle'),
                 description: getLabel('help.modeAutoShort')
             },
             'manual-cycle': {
-                icon: getIcon('modeManual'),
+                icon: 'mode-manual',
                 title: getLabel('mode.manualTitle'),
                 description: getLabel('help.modeManualShort')
             },
             'todo-mode': {
-                icon: getIcon('modeTodo'),
+                icon: 'mode-todo',
                 title: getLabel('mode.todoTitle'),
                 description: getLabel('help.modeTodoShort')
             }
@@ -362,7 +362,7 @@ export class HelpWindowManager {
 
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
-                <h4 style="margin: 0 0 8px 0;"><span aria-hidden="true">${modeInfo.icon}</span> ${modeInfo.title}</h4>
+                <h4 style="margin: 0 0 8px 0;"><span class="icon" aria-hidden="true">${getSvgIcon(modeInfo.icon)}</span> ${modeInfo.title}</h4>
                 <p style="margin: 0; line-height: 1.4;">${modeInfo.description}</p>
             </div>
         `;

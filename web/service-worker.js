@@ -214,6 +214,7 @@ var BOOT_CRITICAL = [
   './modules/routine/routineCopy.js',
   './modules/routine/routineBrowser.js',
   './modules/routine/routineBrowserRender.js',
+  './modules/routine/modePicker.js',
   './modules/routine/modeManager.js',
   './modules/routine/migrationManager.js',
   // UI modules
