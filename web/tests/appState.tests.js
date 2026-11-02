@@ -261,7 +261,12 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
             }
         };
         const notes = [];
-        const sm = createStateManager({ storage: fullStorage, showNotification: (msg, type, _d, opts) => notes.push({ msg, type, action: opts?.actionButton }) });
+        let savedText = null;   // the "file" — no real download from a test
+        const sm = createStateManager({
+            storage: fullStorage,
+            showNotification: (msg, type, _d, opts) => notes.push({ msg, type, action: opts?.actionButton }),
+            saveFile: async ({ text }) => { savedText = text; return true; }
+        });
         await sm.init();
         if (!sm.isReady()) throw new Error('the app should still run on a repaired copy in memory');
         if (localStorage.getItem('miniCycleData') !== damaged) throw new Error('start-up wrote over the only copy of the damaged data');
@@ -274,6 +279,7 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         // The user saves the copy: the hold lifts and the held edit is saved.
         const lifted = await sm.saveHeldDamagedOriginal();
         if (!lifted) throw new Error('saving the copy did not lift the hold');
+        if (savedText !== damaged) throw new Error('the file saved was not the damaged original');
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
         if (stored?.settings?.theme !== 'edited-while-held') throw new Error('the edit made while held was not saved once the hold lifted');
     });

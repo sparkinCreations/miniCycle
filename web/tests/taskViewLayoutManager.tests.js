@@ -1144,9 +1144,14 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         // non-mouse recovery was Settings → Reset Home View Layout.
         const AppState = makeAppState();
         const fixture = makeFixture();
-        Object.assign(fixture.wrapper.style, { position: 'fixed', top: '150px', left: '100px', width: '640px', height: '550px' });
+        // Small enough for the windows it runs in — the in-app runner's
+        // 800x600 frame (App Diagnostics → Run All Tests) down to a 390px
+        // phone. The old 640x550 layout from 150px down overflowed 800x600,
+        // so the keep-on-screen clamp pulled the card UP and the "moved down"
+        // check failed there while passing in npm test's bigger window (Nov 2026).
+        Object.assign(fixture.wrapper.style, { position: 'fixed', top: '120px', left: '40px', width: '260px', height: '300px' });
         const card = fixture.byId[DOM_IDS.TASK_CARD_GROUP];
-        Object.assign(card.style, { width: '600px', height: '200px' });
+        Object.assign(card.style, { width: '220px', height: '140px' });
         setTaskViewLayoutManagerDependencies(makeDeps({ AppState, getElementById: fixture.getElementById }));
         const mgr = new TaskViewLayoutManager();
         try {

@@ -2373,7 +2373,7 @@
                 // 🛡️ RESTORE ORIGINAL handlers FIRST to stop test interference
                 window.onbeforeunload = singleTestOriginalBeforeUnload;
                 window.setTimeout = singleTestOriginalSetTimeout;
-                localStorage.clear = singleTestOriginalClear;
+                delete localStorage.clear;   // delete, not re-assign: an own copy would shadow Storage.prototype.clear
 
                 // ⏱️ WAIT for any debounced saves to settle
                 console.log('%c⏱️ [SingleTest] Waiting for debounced saves to settle...', 'background: #333; color: #fff; padding: 2px 6px;');
@@ -2663,7 +2663,9 @@
                 { name: 'CycleImportManager', key: 'cycleImportManager', runFn: runCycleImportManagerTests, importPath: '../modules/ui/cycleImportManager.js' },
                 { name: 'ShareManager', key: 'shareManager', runFn: runShareManagerTests, importPath: '../modules/ui/shareManager.js' },
                 { name: 'TaskButtons', key: 'taskButtons', runFn: runTaskButtonsTests, importPath: '../modules/task/taskButtons.js' },
-                { name: 'TaskCycleReset', key: 'taskCycleReset', runFn: runTaskCycleResetTests, importPath: '../modules/task/taskCycleReset.js' },
+                // ~34s alone (real reset animations and the 2.1s help-message chain):
+                // the default 30s budget always cut it off in Run All Tests (Nov 2026).
+                { name: 'TaskCycleReset', key: 'taskCycleReset', runFn: runTaskCycleResetTests, importPath: '../modules/task/taskCycleReset.js', timeoutMs: 90000 },
                 { name: 'BackupReminder', key: 'backupReminder', runFn: runBackupReminderTests, importPath: '../modules/features/backupReminder.js' },
                 { name: 'UXRatings', key: 'uxRatings', runFn: runUXRatingsTests, importPath: '../modules/features/uxRatings.js' },
                 { name: 'Orchestrator', key: 'orchestrator', runFn: runOrchestratorTests, importPath: '../modules/boot/orchestrator.js' },
@@ -2780,7 +2782,7 @@
                     // wall-clock cap is the safety net so an abandoned hidden run can't hang
                     // the whole suite forever, and a run that DID go hidden is labelled as
                     // such instead of as a confusing timeout.
-                    const MODULE_TIMEOUT_MS = 30000;          // budget of VISIBLE time
+                    const MODULE_TIMEOUT_MS = module.timeoutMs || 30000;   // budget of VISIBLE time (a slow module names its own)
                     const MODULE_WALLCLOCK_CAP_MS = 300000;   // 5 min hard cap (abandoned-hidden-run safety net)
                     let result;
 
@@ -2889,6 +2891,26 @@
                         html: `<div class="result fail">❌ Failed to run tests: ${error.message}</div>`
                     });
                     }
+
+                    // Start the next module clean, as npm test does with a fresh page per
+                    // module. A <dialog> a module left open makes the whole page inert, so
+                    // every later focus / modal-stack test failed (Nov 2026: 23 false
+                    // failures in Run All Tests, all from one leaked History dialog).
+                    // Named in the console so the leaking module can still be fixed.
+                    document.querySelectorAll('dialog[open]').forEach((leaked) => {
+                        console.warn(`🧹 ${module.name} left <dialog id="${leaked.id}"> open — closed before the next module`);
+                        try { leaked.close(); } catch { /* already closing */ }
+                    });
+                    document.activeElement?.blur?.();
+                    // Same for a Storage method a module replaced on the localStorage
+                    // OBJECT and did not delete: it shadows Storage.prototype, so later
+                    // tests that fake a full disk by patching the prototype see nothing.
+                    ['setItem', 'getItem', 'removeItem', 'clear', 'key'].forEach((method) => {
+                        if (Object.prototype.hasOwnProperty.call(localStorage, method)) {
+                            console.warn(`🧹 ${module.name} left localStorage.${method} replaced — removed before the next module`);
+                            delete localStorage[method];
+                        }
+                    });
                 }
 
                 const endTime = performance.now();

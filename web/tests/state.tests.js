@@ -451,7 +451,12 @@ export async function runStateTests(resultsDiv, isPartOfSuite = false) {
         try {
             state.save();
         } finally {
-            localStorage.setItem = realSet;
+            // DELETE, never re-assign: the assignment above added an OWN setItem
+            // to localStorage, and assigning realSet back keeps one. Left there,
+            // it shadows Storage.prototype.setItem, so every later test that
+            // fakes a full disk by patching the prototype saw no writes (Nov
+            // 2026: 4 false failures in Run All Tests).
+            delete localStorage.setItem;
         }
 
         if (wrote) {

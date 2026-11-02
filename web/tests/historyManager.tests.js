@@ -126,9 +126,16 @@ export async function runHistoryManagerTests(resultsDiv) {
         mgr._getClearedTasks = () => ({ entries: [{ id: 'ce1', taskText: 'x', clearedAt: Date.now() }] });
         mgr.selectedTasks = new Set(['ce1']);
         mgr.isRecreateMode = true;
-        await mgr._recreateSelectedTasks();
-        if (calls.showTaskView !== 0) throw new Error('must not navigate when nothing was recreated');
-        if (calls.notify[0] !== 'warning') throw new Error(`expected a warning, got ${calls.notify.join(',')}`);
+        try {
+            await mgr._recreateSelectedTasks();
+            if (calls.showTaskView !== 0) throw new Error('must not navigate when nothing was recreated');
+            if (calls.notify[0] !== 'warning') throw new Error(`expected a warning, got ${calls.notify.join(',')}`);
+        } finally {
+            // Staying put re-renders History, which opens its real <dialog>.
+            // Left open, it made every later module in Run All Tests inert
+            // (Nov 2026: 23 false failures in the in-app runner).
+            mgr.closeModal();
+        }
     });
 
     await test('creates instance', () => {
