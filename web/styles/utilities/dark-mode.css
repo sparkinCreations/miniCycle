@@ -1216,7 +1216,9 @@ body.dark-mode .mode-selector-wrapper .mode-selector {
 }
 
 body.dark-mode .routine-switcher-btn,
-body.dark-mode .quick-actions-btn {
+body.dark-mode .quick-actions-btn,
+body.dark-mode #personalization-btn,
+body.dark-mode #quick-dark-toggle {
     background: var(--dark-overlay-heavy);
     color: var(--theme-text-primary);
     border-color: var(--dark-overlay-strong);

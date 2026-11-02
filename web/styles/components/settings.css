@@ -600,20 +600,34 @@ button.settings-btn.close-btn:hover {
     background: var(--overlay-light);
 }
 
+/* The two corner buttons wear the header buttons' look (.routine-switcher-btn:
+   frosted light blue, thin blue rim, navy icon) as circles, so the navy reads
+   on any background — a theme's, an image, a custom colour — not just the
+   default blue. Dark mode and High Contrast restyle them with those buttons
+   (dark-mode.css, accessibility.css). */
+#quick-dark-toggle,
+#personalization-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--overlay-white-light);
+    box-shadow: var(--shadow-button);
+    border: 1px solid var(--border-blue-subtle-hover);
+    color: var(--color-navy);
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    cursor: pointer;
+}
+
 /* Quick dark toggle */
 #quick-dark-toggle {
     position: fixed;
     bottom: 30px;
-    right: 10px;
+    right: 14px;
     z-index: var(--z-content);
-    background: none;
-    color: var(--color-white);
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 32px;
-    cursor: pointer;
 }
 
 #quick-dark-toggle:hover {
@@ -624,37 +638,21 @@ button.settings-btn.close-btn:hover {
 #personalization-btn {
     position: fixed;
     bottom: 30px;
-    left: 10px;
+    left: 14px;
     z-index: var(--z-content);
-    background: none;
-    color: var(--color-white);
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 32px;
-    cursor: pointer;
 }
 
 #personalization-btn:hover {
     transform: scale(1.15);
 }
 
-/* The two corner icons are white SVGs (utils/icons.js 'paint-brush', 'moon' /
-   'sun'). White on the light blue measured 2.06:1, so light mode gives them a
-   soft shadow to hold their edge; on dark backgrounds they need none. */
-body:not(.dark-mode) #personalization-btn .icon,
-body:not(.dark-mode) #quick-dark-toggle .icon {
-    filter: drop-shadow(0 1px 2px rgba(12, 32, 145, 0.45));
-}
-
 /* Mobile: Smaller buttons for better space usage */
 @media (max-width: 768px) {
     #quick-dark-toggle,
     #personalization-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 26px;
+        width: 46px;
+        height: 46px;
+        font-size: 21px;
         bottom: 25px;
     }
 }
@@ -662,9 +660,9 @@ body:not(.dark-mode) #quick-dark-toggle .icon {
 @media (max-width: 480px) {
     #quick-dark-toggle,
     #personalization-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 24px;
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
         bottom: 20px;
     }
 }
