@@ -1,3 +1,7 @@
+## [2.660] - 2026-11-02
+- Phones: no Keyboard Shortcuts in Focus View's menu either
+
+
 ## [2.659] - 2026-11-02
 - Run All Tests in App Diagnostics: 23 false failures fixed, no file downloads
 - Auto Cycle reset turns the mode control's arrows once
