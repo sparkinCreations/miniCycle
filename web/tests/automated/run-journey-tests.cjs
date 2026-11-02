@@ -1913,7 +1913,11 @@ async function journeyKeyboardOnlyItems(browser, baseURL) {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
             await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
-            await page.waitForFunction(() => !!document.getElementById('toggle-single-key-shortcuts') && !!document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]'), null, { timeout: 20000 });
+            // Wait for Focus View itself (body.focus-mode), not just the item: its
+            // own `display: block` rule only applies then, and reading the item
+            // before it did let a phone keep the item in Focus View's menu while
+            // this journey passed (Nov 2026).
+            await page.waitForFunction(() => !!document.getElementById('toggle-single-key-shortcuts') && !!document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]') && document.body.classList.contains('focus-mode'), null, { timeout: 20000 });
             const seen = await page.evaluate(() => Object.fromEntries([
                 ['menu', document.getElementById('open-shortcuts-modal')],
                 ['focusMenu', document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]')],

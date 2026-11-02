@@ -256,11 +256,15 @@ dialog.due-date-picker-overlay[open] {
    "Phone" is the SHORT side, not the width: a phone held sideways is wider
    than 600px and showed the item again (Oct 2026). The Settings switch for
    single-key shortcuts goes with it — it does nothing without a keyboard.
-   Alt+? still opens the list, and the user manual has every shortcut. */
+   Alt+? still opens the list, and the user manual has every shortcut.
+   The Focus View item is scoped like focus-mode.css's own item rule
+   (body.focus-mode .focus-mode-menu-item { display: block }): unscoped, that
+   rule out-ranked this one and the item stayed in Focus View's menu on
+   phones (Nov 2026). */
 @media (hover: none) and (pointer: coarse) and (max-width: 600px),
        (hover: none) and (pointer: coarse) and (max-height: 600px) {
     #open-shortcuts-modal,
-    .focus-mode-menu-item[data-action="keyboard-shortcuts"],
+    body.focus-mode .focus-mode-menu-item[data-action="keyboard-shortcuts"],
     .settings-option.keyboard-only {
         display: none;
     }
