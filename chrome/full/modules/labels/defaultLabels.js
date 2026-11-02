@@ -2225,14 +2225,14 @@ export const DEFAULT_LABELS = deepFreeze({
         completeCycle:      'Complete Cycle',
         clearCompleted:     'Clear Completed',
         solidButtons:       'Solid buttons',   // Buttons & Progress: filled Complete Cycle / Clear instead of glass
-        cornerButtons:      'Corner Buttons',   // section: the paintbrush + dark-mode buttons in the bottom corners
-        cornerBtnColor:     'Button Color',
-        cornerBtnStyle:     'Style',
+        // Buttons & Progress: the paintbrush + dark-mode buttons in the bottom corners
+        cornerBtnColor:     'Corner Button Color',
+        cornerBtnStyle:     'Corner Button Style',
         cornerStyleFrosted: 'Frosted',
         cornerStyleSolid:   'Solid',
         cornerStyleEmoji:   'Emoji',
-        cornerBtnLabels:    'Show labels',   // the captions under the buttons (desktop only)
-        showDarkModeBtn:    'Dark mode button',   // off hides it; Settings and Themes still switch dark mode
+        cornerBtnLabels:    'Corner Button Labels',   // the captions under the buttons (desktop only)
+        showDarkModeBtn:    'Dark Mode Button',   // off hides it; Settings and Themes still switch dark mode
         progressBar:        'Progress Bar',
         routineList:        'Routine List',
         statsPanel:         'Stats Panel',
@@ -2281,7 +2281,6 @@ export const DEFAULT_LABELS = deepFreeze({
         ariaToggleRoutineList: 'Toggle Routine List section',
         ariaToggleTasks:    'Toggle Tasks section',
         ariaToggleButtons:  'Toggle Buttons and Progress section',
-        ariaToggleCornerButtons: 'Toggle Corner Buttons section',
         ariaToggleStats:    'Toggle Stats Panel section'
     },
 

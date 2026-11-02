@@ -712,17 +712,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <input type="color" id="pref-progress-bar" value="#82db8c" />
                         <button class="preferences-reset-btn" data-target="pref-progress-bar" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
-                </div>
-            </div>
-
-            <!-- Corner Buttons Section: the paintbrush + dark-mode buttons -->
-            <div class="preferences-section collapsed" data-section="corner-buttons">
-                <div class="preferences-section-header collapsible" role="button" tabindex="0" data-toggle="corner-buttons" aria-expanded="false" aria-label="${getLabel('prefs.ariaToggleCornerButtons')}" aria-controls="pref-section-corner-buttons">
-                    <span class="preferences-section-icon" aria-hidden="true">${getIcon('paint-brush')}</span>
-                    <span>${getLabel('prefs.cornerButtons')}</span>
-                    <span class="preferences-section-toggle" aria-hidden="true">&#x25BC;</span>
-                </div>
-                <div class="preferences-section-content" id="pref-section-corner-buttons">
+                    <!-- Corner buttons: the paintbrush + dark-mode buttons in the bottom corners -->
                     <div class="preferences-color-row">
                         <span class="pref-color-icon" aria-hidden="true">${getIcon('palette')}</span>
                         <label for="pref-corner-btn">${getLabel('prefs.cornerBtnColor')}</label>

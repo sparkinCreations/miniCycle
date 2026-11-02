@@ -1,62 +1,35 @@
 (function() {
-    var settings = null;
-    try {
-      var data = localStorage.getItem('miniCycleData');
-      if (!data) return;
-      var parsed = JSON.parse(data);
-      settings = (parsed && parsed.settings) || null;
-    } catch (e) {
-      return; // Unreadable/corrupt — everything gets applied later by app JS.
-    }
-
-    // Local helper; this block shares nothing with other gauntlet scripts.
-    function onReady(fn) {
-      document.addEventListener('DOMContentLoaded', fn);
-    }
-    var root = document.documentElement;
-
-    // 1. Dark mode — prevents flash of light mode.
-    try {
-      if (settings && settings.darkMode) {
-        // Apply to html immediately (body doesn't exist yet), body once ready.
-        root.classList.add('dark-mode');
-        onReady(function() { document.body.classList.add('dark-mode'); });
-      } else {
-        // Ensure dark mode is removed (in case of stale state).
-        root.classList.remove('dark-mode');
-        onReady(function() { document.body.classList.remove('dark-mode'); });
-      }
-    } catch (e) {
-      // Silently fail - dark mode will be applied later by JS
-    }
-
-    // 2. Accessibility — prevents animation/contrast/font-size flash.
-    try {
-      if (settings) {
-        if (settings.reducedMotion) {
-          root.classList.add('reduced-motion');
-          onReady(function() { document.body.classList.add('reduced-motion'); });
-        }
-        if (settings.highContrast) {
-          root.classList.add('high-contrast');
-          onReady(function() { document.body.classList.add('high-contrast'); });
-        }
-        if (settings.fontSize && settings.fontSize !== '16') {
-          root.style.setProperty('--font-size-base', settings.fontSize + 'px');
-        }
-      }
-    } catch (e) {
-      // Silently fail - accessibility settings will be applied later by JS
-    }
-
-    // 3. Custom app background — only set when a custom color is saved, so the
-    //    default gradient survives.
-    try {
-      var customAppBg = settings && settings.customColors && settings.customColors.appBg;
-      if (customAppBg) {
-        root.style.setProperty('--pref-app-bg', customAppBg);
-      }
-    } catch (e) {
-      // Silently fail - gradient will be used as default
-    }
-  })();
+  // Guarded like the block at ~line 168 (see version-check block note):
+  // forced-full users on pre-es2020 browsers bypass the feature gate.
+  var g = typeof globalThis !== 'undefined' ? globalThis : {};
+  var v = g.APP_VERSION || 'dev-local';
+  // Bundled dist: version.js also sets __MC_MODULE_MAP (source path → hashed
+  // URL). Preload the hashed URL BARE so it matches the exact URL the boot
+  // chain imports; dev has no map and keeps the ?v= form.
+  var map = g.__MC_MODULE_MAP || null;
+  var modules = [
+    './miniCycle-main.js',
+    './modules/boot/orchestrator.js',
+    './modules/boot/coreBoot.js',
+    './modules/boot/featureBoot.js',
+    './modules/boot/uiBoot.js',
+    './modules/boot/moduleLoader.js',
+    './modules/boot/moduleManifests.js',
+    './modules/core/appState.js',
+    './modules/core/appGlobalState.js',
+    './modules/core/appInit.js',
+    './modules/utils/globalUtils.js',
+    './modules/utils/debugMode.js',
+    './modules/utils/storageUtils.js',
+    './modules/utils/errorHandler.js',
+    './modules/utils/notifications.js'
+  ];
+  var head = document.head;
+  for (var i = 0; i < modules.length; i++) {
+    var hashed = map && map[modules[i].slice(1)]; // './x' → '/x' (map keys are root-absolute)
+    var link = document.createElement('link');
+    link.rel = 'modulepreload';
+    link.href = hashed || (modules[i] + '?v=' + v);
+    head.appendChild(link);
+  }
+})();

@@ -622,7 +622,7 @@ button.settings-btn.close-btn:hover {
     /* The soft white rim Focus View's round button and the glass Complete /
        Clear buttons wear (1px, 40%). */
     border: 1px solid var(--overlay-white-medium);
-    /* --pref-corner-btn: Personalization → Corner Buttons → Button Color */
+    /* --pref-corner-btn: Personalization → Buttons & Progress → Corner Button Color */
     color: var(--pref-corner-btn, var(--color-navy));
     border-radius: 50%;
     width: 48px;
@@ -661,7 +661,7 @@ button.settings-btn.close-btn:hover {
    in from the corners to make room: "Personalization" is about twice the
    button's width. Phones and tablets keep the icon alone — the footer line
    sits between the two corners there — and the long-press hint.
-   Personalization → Corner Buttons → Show labels off drops the captions
+   Personalization → Buttons & Progress → Corner Button Labels off drops the captions
    (body.corner-btns-no-labels) and the buttons go back to the corners. */
 @media (min-width: 1024px) and (hover: hover) {
     body:not(.corner-btns-no-labels) #quick-dark-toggle::after,
@@ -702,7 +702,7 @@ button.settings-btn.close-btn:hover {
     }
 }
 
-/* Personalization → Corner Buttons → Style. Frosted (above) is the default.
+/* Personalization → Buttons & Progress → Corner Button Style. Frosted (above) is the default.
    Solid: a filled circle in the button colour with a white icon, in light
    and dark mode alike (:not(.high-contrast) leaves High Contrast its own). */
 body.corner-btns-solid:not(.high-contrast) #quick-dark-toggle,

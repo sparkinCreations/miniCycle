@@ -1349,7 +1349,7 @@ export class PreferencesManager {
     }
 
     /**
-     * Save one corner-button option (Personalization → Corner Buttons) and
+     * Save one corner-button option (Personalization → Buttons & Progress, the corner-button rows) and
      * re-apply: cornerBtnStyle ('frosted' | 'solid' | 'emoji'), cornerBtnLabels
      * or showDarkModeBtn (booleans).
      * @param {string} key - customColors key

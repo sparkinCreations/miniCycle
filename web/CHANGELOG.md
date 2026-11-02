@@ -1,3 +1,8 @@
+## [2.663] - 2026-11-02
+- minicycle.app is the product page; the app moves to /app
+- Personalization: corner-button options live in Buttons & Progress
+
+
 ## [2.662] - 2026-11-02
 - Themes: glass Complete / Clear buttons, and a help window in their words
 

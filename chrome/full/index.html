@@ -48,6 +48,7 @@
 
      ── CONTRACT 2: ORDER (the head gauntlet) ────────────────────────────────
      The sequence IS the engineering. Do not reorder:
+       0. /app/ → /app (before ANY relative URL loads; sits above the gauntlet banner)
        1. async-CSS swap
        2. version.js (SYNCHRONOUS, and BEFORE any modulepreload)
        3. getBuildVersion helper
@@ -95,19 +96,20 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.662">
+<meta name="app-version" content="2.663">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
 
+<script src="ext-boot/01.js"></script>
 <title>miniCycle&trade; - ROUTINE MANAGER</title>
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
-<link rel="canonical" href="https://minicycle.app/minicycle">
+<link rel="canonical" href="https://minicycle.app/app">
 <!-- Social previews (Reddit, iMessage, Slack, X): the product page's image
      and wording, with og:url naming the same address as the canonical above. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="miniCycle">
-<meta property="og:url" content="https://minicycle.app/minicycle">
+<meta property="og:url" content="https://minicycle.app/app">
 <meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
 <meta property="og:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline. No account needed.">
 <meta property="og:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
@@ -147,17 +149,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.662" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.662" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.662" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.662" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.662" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.662" as="style">
+<link rel="preload" href="styles/main.css?v=2.663" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.663" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.663" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.663" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.663" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.663" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.662" media="print" id="async-main-css">
-<script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.662"></noscript>
+<link rel="stylesheet" href="styles/main.css?v=2.663" media="print" id="async-main-css">
+<script src="ext-boot/02.js"></script>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.663"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -168,7 +170,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.662"></script>
+<script src="./version.js?v=2.663"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -177,10 +179,10 @@
      than the stale HTML/CSS that's actually rendered. The About dialog and the
      update checks use getBuildVersion(), never APP_VERSION, so they reflect the
      real build instead of the network. -->
-<script src="ext-boot/02.js"></script>
+<script src="ext-boot/03.js"></script>
 
 <!-- iOS PWA Detection - adds .ios-pwa class for safe area fixes -->
-<script src="ext-boot/03.js"></script>
+<script src="ext-boot/04.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      BOOT FAILURE FAILSAFE: Auto-clear caches after repeated boot failures
@@ -199,7 +201,7 @@
      Modules with unversioned static imports (constants.js, diBase.js,
      labelResolver.js) are excluded to avoid duplicate module instances.
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/04.js"></script>
+<script src="ext-boot/05.js"></script>
 
 <!-- Critical CSS - extracted to external file for CSP compliance (no 'unsafe-inline' needed) -->
 <link rel="stylesheet" href="./styles/base/critical.css">
@@ -222,7 +224,7 @@
      template literals, no optional chaining. See the file-map banner at the top
      of this file for the full parse-safety contract.
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/05.js"></script>
+<script src="ext-boot/06.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      PRE-PAINT FIRST-RUN READER (ES5 — above the feature gate)
@@ -245,7 +247,7 @@
      controller keeps all behaviour (choice handlers, use-case rotation,
      data-awaiting-choice) and now only runs when this class is present.
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/06.js"></script>
+<script src="ext-boot/07.js"></script>
 
 <!-- NOTE: version.js and cache clearing script moved BEFORE modulepreload hints (line ~71) -->
 <!-- This ensures version check runs before browser starts prefetching modules -->
@@ -259,9 +261,9 @@
      free of anything that could throw at RUNTIME — a runtime error would be
      indistinguishable from the parse failure it exists to detect.
      validate-inline.py exempts this block by the marker on its first line. -->
-<script src="ext-boot/07.js"></script>
-
 <script src="ext-boot/08.js"></script>
+
+<script src="ext-boot/09.js"></script>
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
      ⛔ END OF THE ES5-ONLY REGION. Everything BELOW this line may use modern
@@ -275,8 +277,8 @@
      to the 16-second late fallback and were logged as 'no-boot' rather than
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
-<script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.662" defer></script>
+<script src="ext-boot/10.js"></script>
+    <script src="boot-sw.js?v=2.663" defer></script>
 
 
 
@@ -371,7 +373,7 @@
     </div>
   </div>
 
-  <script src="ext-boot/10.js"></script>
+  <script src="ext-boot/11.js"></script>
 
   <!-- First-run choice screen controller (ES5-safe, like the other inline scripts).
        Shows the three-choice screen for brand-new users (no miniCycleData) while
@@ -379,7 +381,7 @@
        while data-awaiting-choice='true' and resumes on the 'firstrun:choice' event.
        If boot fails, orchestrator's showBootError() replaces the loader's content,
        which removes this screen — error UI takes precedence by construction. -->
-  <script src="ext-boot/11.js"></script>
+  <script src="ext-boot/12.js"></script>
 
   <div id="loading-overlay" class="loading-overlay" role="status" aria-label="Operation in progress">
     <div class="loading-spinner">
@@ -1411,9 +1413,9 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.662"></script>
+ <script type="module" src="miniCycle-main.js?v=2.663"></script>
 
-<script src="ext-boot/12.js"></script>
+<script src="ext-boot/13.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
 
 
