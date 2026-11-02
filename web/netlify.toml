@@ -81,7 +81,8 @@
     Pragma = "no-cache"
     Expires = "0"
 
-# Root document. `_redirects` serves it via a 200 REWRITE ("/  /miniCycle.html  200"),
+# Root document — the product page since Nov 2026 (the app until then; it is at
+# /app now). `_redirects` serves it via a 200 REWRITE ("/  /pages/product.html  200"),
 # so Netlify matches headers on the REQUEST path "/", which the "*.html" rule above
 # cannot match (no extension). Without this, "/" falls through to the "/*" catch-all
 # and the entry HTML is cached for a YEAR — serving stale markup that references old
@@ -115,6 +116,16 @@
 # Verify with: curl -sI "https://minicycle.app/minicycle?cb=$RANDOM" | grep -i cache-control
 [[headers]]
   for = "/minicycle"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    Pragma = "no-cache"
+    Expires = "0"
+
+# The app's address since Nov 2026 (_redirects rewrites /app → miniCycle.html;
+# /minicycle now redirects here). Same no-cache reason as /minicycle above:
+# an extensionless entry point must never be served from a year-long cache.
+[[headers]]
+  for = "/app"
   [headers.values]
     Cache-Control = "no-cache, no-store, must-revalidate"
     Pragma = "no-cache"

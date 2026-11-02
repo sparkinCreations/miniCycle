@@ -1,6 +1,6 @@
 # Domain redirect for minicycleapp.com (with forced redirect)
-https://minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
-https://www.minicycleapp.com/*  https://minicycle.app/pages/product.html  301!
+https://minicycleapp.com/*  https://minicycle.app/  301!
+https://www.minicycleapp.com/*  https://minicycle.app/  301!
 
 # Docs subdomain (own origin — Docsify's multi-MB localStorage search index
 # must not share the app origin's ~5MB quota; see netlify.toml DOCS SUBDOMAIN
@@ -13,13 +13,15 @@ https://minicycle.app/docs/*  https://docs.minicycle.app/:splat  301!
 /privacy.html           /legal/privacy.html           301
 /terms.html             /legal/terms.html             301
 /user-manual.html       /legal/user-manual.html       301
-/product.html           /pages/product.html           301
-# Netlify's pretty URLs ALSO serve this page at /pages/product (no extension) — two
-# live addresses for one page. Everything else (old domain, legacy path, og:url,
-# sitemap, canonical) names the .html one, so send the twin there too. FORCED
-# (301!): pretty-URL resolution matches the file first and an unforced rule is
-# never consulted — measured live after v2.593, the twin still answered 200.
-/pages/product          /pages/product.html           301!
+/product.html           /                             301
+# The product page lives at the site root (Nov 2026, the app moved to /app).
+# Netlify's pretty URLs also serve it at /pages/product (no extension), so send
+# that twin to the root. FORCED (301!): pretty-URL resolution matches the file
+# first and an unforced rule is never consulted (measured live after v2.593).
+# /pages/product.html itself is NOT redirected: the root rewrite below serves
+# that file, and a redirect on a rewrite's own target risks a loop. It still
+# answers 200, with its canonical / og:url naming the root.
+/pages/product          /                             301!
 /learn_more.html        /pages/learn_more.html        301
 /miniCycle-lite.html    /lite/miniCycle-lite.html     301
 /miniCycleGames/*       /games/:splat                 301
@@ -38,8 +40,17 @@ https://minicycle.app/docs/*  https://docs.minicycle.app/:splat  301!
 /lite                   /lite/miniCycle-lite.html     301
 /lite/                  /lite/miniCycle-lite.html     301
 
-# Redirect root to miniCycle.html
-/    /miniCycle.html    200
+# The app (Nov 2026: moved from the root, which is now the product page).
+# /app is the address; the old app addresses lead to it. /minicycle is the
+# pretty URL Netlify gives miniCycle.html (and /miniCycle.html 301s to it), so
+# FORCED to beat the file. NO "/app/ → /app" rule: Netlify matches /app and
+# /app/ as one path, so it would redirect /app to itself forever. The page
+# fixes the slash itself (step 0 of miniCycle.html's head gauntlet).
+/minicycle   /app               301!
+/app         /miniCycle.html    200
+
+# The site root is the product page.
+/    /pages/product.html    200
 
 # Handle 404s by serving miniCycle.html (SPA fallback)
 /*   /miniCycle.html    404

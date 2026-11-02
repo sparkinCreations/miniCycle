@@ -787,6 +787,9 @@ function pickShell(urlObj) {
 var FRESH_FIRST_PAGES = ['/pages/dashboard', '/pages/product'];
 
 function isFreshFirstPage(pathname) {
+  // The site root is the product page (Nov 2026; the app is at /app): a
+  // standalone page like the list above. Exact match — every path starts "/".
+  if (isSiteRoot(pathname)) return true;
   for (var i = 0; i < FRESH_FIRST_PAGES.length; i++) {
     // FRESH_FIRST_PAGES is a file-local array of two string literals and `i` is a
     // loop counter bounded by .length — no user input reaches the index, so there
@@ -794,6 +797,11 @@ function isFreshFirstPage(pathname) {
     if (pathname.indexOf(FRESH_FIRST_PAGES[i]) === 0) return true;
   }
   return false;
+}
+
+/** True for the scope root ("/" on minicycle.app) — the product page. */
+function isSiteRoot(pathname) {
+  return pathname === new URL(self.registration.scope).pathname;
 }
 
 // ============================================================================
@@ -1001,6 +1009,17 @@ self.addEventListener('fetch', function (event) {
               if (cached) {
                 console.log('📱 Offline fallback (network-first page):', url.pathname);
                 return cleanResponse(cached);
+              }
+              // The root used to be the app, and offline someone opening the
+              // bare domain is a user, not a visitor: give them the app shell
+              // rather than an error when the product page was never cached.
+              if (isSiteRoot(url.pathname)) {
+                return caches.match(fromScope('miniCycle.html')).then(function (shell) {
+                  return shell ? cleanResponse(shell) : new Response('Offline - No cached version available', {
+                    status: 503,
+                    headers: { 'Content-Type': 'text/plain' }
+                  });
+                });
               }
               return new Response('Offline - No cached version available', {
                 status: 503,

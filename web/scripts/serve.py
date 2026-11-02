@@ -27,6 +27,15 @@ from datetime import datetime
 class NoCacheHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
     """HTTP request handler with cache-busting headers for development."""
 
+    # The production routes from _redirects (Nov 2026): the site root is the
+    # product page and the app lives at /app. Netlify serves /app/ by the same
+    # rule (it matches both spellings), so mirror that; the page fixes the slash.
+    ROUTES = {'/': '/pages/product.html', '/app': '/miniCycle.html', '/app/': '/miniCycle.html'}
+
+    def translate_path(self, path):
+        clean = path.split('?', 1)[0].split('#', 1)[0]
+        return super().translate_path(self.ROUTES.get(clean, path))
+
     def end_headers(self):
         """Add cache control headers to every response."""
         # Tell browser not to cache anything

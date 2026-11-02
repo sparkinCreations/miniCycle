@@ -3,7 +3,7 @@
   "name": "miniCycle",
   "short_name": "miniCycle",
   "description": "Full-featured task cycling app with advanced features – Turn Your Routine Into Progress",
-  "start_url": "./miniCycle.html",
+  "start_url": "./app",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay"],

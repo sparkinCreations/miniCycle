@@ -48,6 +48,7 @@
 
      ── CONTRACT 2: ORDER (the head gauntlet) ────────────────────────────────
      The sequence IS the engineering. Do not reorder:
+       0. /app/ → /app (before ANY relative URL loads; sits above the gauntlet banner)
        1. async-CSS swap
        2. version.js (SYNCHRONOUS, and BEFORE any modulepreload)
        3. getBuildVersion helper
@@ -100,14 +101,23 @@
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
 
+<script>
+  // Step 0 (Nov 2026): the app lives at /app, and at /app/ every relative URL in
+  // this page resolves under /app/ and 404s. Netlify matches /app and /app/ as one
+  // path, so a redirect rule would loop; fix the slash here, before anything
+  // loads. Native builds never have this path. ES5 (Contract 1).
+  if (/\/app\/$/.test(location.pathname)) {
+    location.replace(location.pathname.slice(0, -1) + location.search + location.hash);
+  }
+</script>
 <title>miniCycle&trade; - ROUTINE MANAGER</title>
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
-<link rel="canonical" href="https://minicycle.app/minicycle">
+<link rel="canonical" href="https://minicycle.app/app">
 <!-- Social previews (Reddit, iMessage, Slack, X): the product page's image
      and wording, with og:url naming the same address as the canonical above. -->
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="miniCycle">
-<meta property="og:url" content="https://minicycle.app/minicycle">
+<meta property="og:url" content="https://minicycle.app/app">
 <meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
 <meta property="og:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline. No account needed.">
 <meta property="og:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">

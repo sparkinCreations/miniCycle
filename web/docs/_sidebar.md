@@ -161,7 +161,7 @@
 
 
 * **Links**
-  * [📱 Launch App](https://minicycle.app/miniCycle.html)
+  * [📱 Launch App](https://minicycle.app/app)
   * [🧪 Run Tests](https://minicycle.app/tests/module-test-suite.html)
   * [💾 GitHub Repository](https://github.com/sparkinCreations/miniCycle)
 
