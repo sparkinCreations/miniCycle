@@ -290,6 +290,19 @@ function parseSVG(svgString) {
  * @param {string} [className] - Optional CSS class
  * @returns {HTMLElement} Span wrapper with SVG element
  */
+/**
+ * Set an element's content to a decorative icon followed by text — a modal
+ * title, for instance ("<brush> Personalization"). For any title JS writes:
+ * writing it with textContent would wipe the icon.
+ * @param {Element|null} el
+ * @param {string} name - ICONS name
+ * @param {string} text - already through getLabel()
+ */
+export function setIconText(el, name, text) {
+    if (!el) return;
+    el.replaceChildren(createIconElement(name), ` ${text}`);
+}
+
 export function createIconElement(name, className = '') {
     const wrapper = document.createElement('span');
     wrapper.className = `icon ${className}`.trim();

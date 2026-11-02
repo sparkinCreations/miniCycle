@@ -6696,7 +6696,7 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
         const list = await page.evaluate(() => {
             const d = document.getElementById('shortcuts-modal');
             const link = d.querySelector('.shortcuts-more a');
-            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent,
+            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent.trim(),   // trim: an icon + space lead the title
                 rows: d.querySelectorAll('.shortcuts-row').length, fits: d.querySelector('.shortcuts-modal-content').scrollHeight <= innerHeight,
                 href: link?.getAttribute('href'), target: link?.target,
                 label: d.getAttribute('aria-labelledby'), closeName: d.querySelector('.close-modal')?.getAttribute('aria-label') };

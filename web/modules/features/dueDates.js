@@ -20,6 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_REMINDERS, LIMITS, DEBOUNCE, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { setIconText } from '../utils/icons.js';
 // What a due date means (overdue, notify moment, label) and the line that
 // shows it. A task stores dueDate and, separately, an optional dueTime.
 import { createDueDateChip, renderDueDateChip, isTaskOverdue, getDueMoment, normalizeDueTime, formatDueTime } from '../utils/dueDateUtils.js';
@@ -482,7 +483,7 @@ export class MiniCycleDueDates {
 
         const title = document.createElement('h3');
         title.id = DOM_IDS.DUE_DATE_PICKER_TITLE;
-        title.textContent = getLabel('dueDate.pickerTitle');
+        setIconText(title, 'calendar-alt', getLabel('dueDate.pickerTitle'));
         form.appendChild(title);
 
         const taskName = document.createElement('p');

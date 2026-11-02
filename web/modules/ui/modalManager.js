@@ -49,6 +49,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, s
 import { USER_MANUAL_SHORTCUTS_HASH, linkToUserManual } from '../utils/userManualLink.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { setIconText } from '../utils/icons.js';
 
 // Import for local use within this module
 import { hasActiveNotifications, isClickOnNotification, restoreFocusAfterClose } from './modalUtils.js';
@@ -260,7 +261,7 @@ export class ModalManager {
         const emailLabel = feedbackModal.querySelector('label[for="feedback-email"]');
         const emailInput = document.getElementById(DOM_IDS.FEEDBACK_EMAIL);
 
-        if (titleEl) titleEl.textContent = getLabel('feedback.title');
+        setIconText(titleEl, 'comment', getLabel('feedback.title'));
         if (descEl) descEl.textContent = getLabel('feedback.description');
         if (closeFeedbackBtn) closeFeedbackBtn.setAttribute('aria-label', getLabel('feedback.closeAria'));
         if (feedbackText) feedbackText.placeholder = getLabel('feedback.placeholder');
@@ -510,7 +511,7 @@ export class ModalManager {
         if (label) label.textContent = getLabel('shortcuts.menuItem');
         openBtn.title = getLabel('shortcuts.menuItemTitle');
         const title = document.getElementById(DOM_IDS.SHORTCUTS_MODAL_TITLE);
-        if (title) title.textContent = getLabel('shortcuts.title');
+        setIconText(title, 'keyboard', getLabel('shortcuts.title'));
         closeBtn?.setAttribute('aria-label', getLabel('shortcuts.closeAria'));
 
         openBtn._clickHandler = () => {

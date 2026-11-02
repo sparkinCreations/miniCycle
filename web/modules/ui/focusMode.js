@@ -17,7 +17,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getIcon } from '../utils/icons.js';
+import { getIcon, setIconText } from '../utils/icons.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
 import { replayAnimationClass } from '../utils/motionPreference.js';
@@ -442,7 +442,7 @@ export class FocusMode {
         const heading = document.createElement('h2');
         heading.id = titleId;
         heading.className = DOM_CLASSES.FOCUS_MODE_MODE_MODAL_TITLE;
-        heading.textContent = getLabel('focusMode.modeModalTitle');
+        setIconText(heading, 'sliders-h', getLabel('focusMode.modeModalTitle'));
         this._modeModal.appendChild(heading);
 
         // Descriptions name Focus View's own round button by its label, not

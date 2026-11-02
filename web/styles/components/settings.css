@@ -612,6 +612,8 @@ button.settings-btn.close-btn:hover {
     justify-content: center;
     padding: 0;
     background: var(--overlay-white-light);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
     box-shadow: var(--shadow-button);
     border: 1px solid var(--border-blue-subtle-hover);
     color: var(--color-navy);
@@ -644,6 +646,48 @@ button.settings-btn.close-btn:hover {
 
 #personalization-btn:hover {
     transform: scale(1.15);
+}
+
+/* Desktop: a caption under each (data-label, set from the label system by
+   preferencesManager / themeManager), in the buttons' own frosted pill so it
+   reads on any background. Each hugs its outer edge: centred, the left one
+   would run off the screen. Phones and tablets keep the icon alone — the
+   footer line sits between the two corners there — and the long-press hint. */
+@media (min-width: 1024px) and (hover: hover) {
+    #quick-dark-toggle::after,
+    #personalization-btn::after {
+        content: attr(data-label);
+        position: absolute;
+        top: calc(100% + 5px);
+        padding: 1px var(--space-2);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        line-height: 1.5;
+        white-space: nowrap;
+        color: var(--color-navy);
+        background: var(--overlay-white-light);
+        -webkit-backdrop-filter: blur(12px) saturate(140%);
+        backdrop-filter: blur(12px) saturate(140%);
+        border: 1px solid var(--border-blue-subtle-hover);
+        pointer-events: none;
+    }
+
+    #personalization-btn::after { left: 0; }
+    #quick-dark-toggle::after { right: 0; }
+
+    /* Room for the caption under the buttons */
+    #quick-dark-toggle,
+    #personalization-btn {
+        bottom: 40px;
+    }
+
+    body.dark-mode #quick-dark-toggle::after,
+    body.dark-mode #personalization-btn::after {
+        color: var(--theme-text-primary);
+        background: var(--dark-overlay-heavy);
+        border-color: var(--dark-overlay-strong);
+    }
 }
 
 /* Mobile: Smaller buttons for better space usage */

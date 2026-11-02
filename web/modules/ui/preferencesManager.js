@@ -424,6 +424,7 @@ export class PreferencesManager {
             // shows the same words without opening the modal (Oct 2026). They
             // say what is inside, not just the screen's name.
             personalizationBtn.title = getLabel('nav.personalizationHint');
+            personalizationBtn.dataset.label = getLabel('nav.personalizationCaption');
             attachLongPressHint(personalizationBtn, {
                 getText: () => getLabel('nav.personalizationHint')
             });

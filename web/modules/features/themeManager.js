@@ -666,6 +666,7 @@ export class ThemeManager {
             // button does no longer toggles dark mode (Oct 2026). The words name
             // the mode a press switches TO, read from the live state each time.
             newQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
+            newQuickToggle.dataset.label = getLabel('nav.darkModeCaption');
             attachLongPressHint(newQuickToggle, {
                 getText: () => getLabel(newQuickToggle.getAttribute('aria-pressed') === 'true'
                     ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn')

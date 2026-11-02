@@ -15,6 +15,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { setIconText } from '../utils/icons.js';
 import { announce } from '../utils/announce.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
@@ -780,7 +781,7 @@ export class RoutineManager {
         const titleEl = document.createElement('h2');
         titleEl.id = DOM_IDS.ROUTINE_CREATION_TITLE;
         titleEl.className = 'miniCycle-prompt-title';
-        titleEl.textContent = getLabel(title);
+        setIconText(titleEl, 'sparkles', getLabel(title));
         nameView.appendChild(titleEl);
 
         // The instruction IS the field's label: a <label for>, so the name
@@ -851,7 +852,7 @@ export class RoutineManager {
             const sampleTitle = document.createElement('h2');
             sampleTitle.id = DOM_IDS.SAMPLE_CREATION_TITLE;
             sampleTitle.className = 'sample-list-title';
-            sampleTitle.textContent = getLabel('modal.chooseSample');
+            setIconText(sampleTitle, 'book', getLabel('modal.chooseSample'));
             header.appendChild(sampleTitle);
 
             sampleView.appendChild(header);

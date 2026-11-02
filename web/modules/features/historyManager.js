@@ -11,6 +11,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { getPriorityLevel, getLevelColor, hasPriority } from '../utils/priorityLevel.js';
 import { COLORS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { getIcon as getSvgIcon } from '../utils/icons.js';
 import { handleVerticalArrowNav, handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
@@ -316,7 +317,7 @@ export class HistoryManager {
             <div class="history-modal">
                 <header class="history-header">
                     <button class="history-back-btn" aria-label="${getLabel('button.close')}">&larr;</button>
-                    <h2 class="history-title">${getLabel('history.title')}</h2>
+                    <h2 class="history-title"><span class="icon" aria-hidden="true">${getSvgIcon('history')}</span> ${getLabel('history.title')}</h2>
                     <button class="history-action-btn history-action-btn--danger">${getLabel('history.clearAll')}</button>
                 </header>
                 ${clearedCount > 0 ? `
@@ -688,7 +689,7 @@ export class HistoryManager {
         const hasRecurring = Object.keys(activeCycle?.recurringTemplates || {}).length > 0;
         const recurringNote = `
             <div class="history-recurring-note">
-                <span class="history-recurring-note-icon" aria-hidden="true">${getIcon('recurring')}</span>
+                <span class="history-recurring-note-icon icon" aria-hidden="true">${getSvgIcon('repeat')}</span>
                 ${getLabel('history.recurringNote')}
                 ${hasRecurring ? `<br><a href="#" class="cleared-view-recurring">${getLabel('history.viewRecurring')}</a>` : ''}
             </div>

@@ -14,7 +14,7 @@ import { DOM_IDS, DOM_CLASSES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
 <dialog id="recurring-panel-overlay" class="modal-overlay" aria-labelledby="recurring-panel-title" aria-modal="true">
   <div id="recurring-panel" class="modal-panel has-corner-logo">
-    <h2 id="recurring-panel-title" data-label-key="recurring.title">${getLabel('recurring.title')}</h2>
+    <h2 id="recurring-panel-title"><span class="icon" aria-hidden="true">${getIcon('repeat')}</span> <span data-label-key="recurring.title">${getLabel('recurring.title')}</span></h2>
     <div class="recurring-panel-body">
     <div class="recurring-panel-left">
     <div id="recurring-toggle-actions" class="hidden">
@@ -377,7 +377,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
 export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
 <dialog class="preferences-modal" data-modal id="preferences-modal" aria-labelledby="preferences-modal-title" aria-modal="true">
     <div class="preferences-modal-content has-corner-logo">
-        <h2 id="preferences-modal-title">${getLabel('prefs.title')}</h2>
+        <h2 id="preferences-modal-title"><span class="icon" aria-hidden="true">${getIcon('paint-brush')}</span> ${getLabel('prefs.title')}</h2>
 
         <!-- Theme Notice -->
         <div class="preferences-theme-notice" id="preferences-theme-notice">

@@ -1797,6 +1797,9 @@ export const DEFAULT_LABELS = deepFreeze({
         // The two icon-only corner buttons' hover tooltip AND long-press hint:
         // what pressing does, so the toggle names the mode it will switch TO.
         personalizationHint: 'Personalize colors and layout',
+        // Captions under those two buttons (desktop only — settings.css)
+        personalizationCaption: 'Personalization',
+        darkModeCaption: 'Dark mode',
         darkModeHintOn:  'Switch to dark mode',
         darkModeHintOff: 'Switch to light mode',
         appSubtitle:    'ROUTINE MANAGER',
@@ -2732,10 +2735,9 @@ export const DEFAULT_LABELS = deepFreeze({
         celebrate:      '🎉',
         milestoneTrail: '🚀',
 
-        // Routine modes are SVGs, not emoji: 'mode-auto' / 'mode-manual' /
-        // 'mode-todo' in the ICONS registry (utils/icons.js).
-        // Recurring tasks keep their own arrows, distinct from the modes'.
-        recurring:      '🔁',
+        // Routine modes and recurring tasks are SVGs, not emoji: 'mode-auto' /
+        // 'mode-manual' / 'mode-todo' / 'repeat' in the ICONS registry
+        // (utils/icons.js).
 
         // Theme identifiers
         themeOcean:     '🌊',

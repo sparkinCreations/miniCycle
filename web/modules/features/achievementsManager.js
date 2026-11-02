@@ -15,6 +15,7 @@ import { prefersReducedMotion } from '../utils/motionPreference.js';
 // Coin-flip easter egg: one haptic tick per half rotation of the spun coin
 const HAPTIC_ROTATION_STEP_DEG = 180;
 import { getLabel } from '../labels/labelResolver.js';
+import { getIcon } from '../utils/icons.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 
@@ -289,7 +290,7 @@ export class AchievementsManager {
             <div class="achievements-modal">
                 <header class="achievements-header">
                     <button class="achievements-back-btn" aria-label="${getLabel('button.close')}">&larr;</button>
-                    <h2 class="achievements-title">${getLabel('achievement.title')}</h2>
+                    <h2 class="achievements-title"><span class="icon" aria-hidden="true">${getIcon('trophy')}</span> ${getLabel('achievement.title')}</h2>
                 </header>
                 <div class="achievements-modal-content"></div>
             </div>
