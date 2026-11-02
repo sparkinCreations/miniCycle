@@ -180,7 +180,7 @@ export class OnboardingManager {
         // auto-fades after its animation completes, no caller coordination
         // needed. _attachFirstSessionLifecycle calls this again later as a
         // no-op (idempotent) for the reload-mid-first-run path.
-        this._splash._showFirstRunSplash();
+        const splashDone = this._splash._showFirstRunSplash();
 
         // Attach activation listener BEFORE any await. runFirstRunFlow is
         // called fire-and-forget from runInitialSetup which then returns,
@@ -214,7 +214,58 @@ export class OnboardingManager {
         // continuous-text handoff.
         this._attachFirstSessionLifecycle();
 
+        // Cursor in Add task once the splash is gone and Focus View is up.
+        this._focusAddTaskWhenLanded(splashDone);
+
         return true;
+    }
+
+    /**
+     * Put the cursor in Add task once a first-run landing has settled, so the
+     * user can type their first task straight away (Nov 2026; "Create My First
+     * Routine" and "Learn How Cycles Work"). Waits for the welcome splash to be
+     * gone (when given), for Focus View — entering it focuses its own ⋯ button,
+     * and this runs after that — and for the Add task bar to show: the learn
+     * path enters Focus View before its starter routine has rendered. Gives up
+     * after UI_TIMEOUTS.FIRST_RUN_ADD_TASK_FOCUS_WAIT, and never takes focus
+     * from something the user has moved it to meanwhile.
+     * @param {Promise|null} [splashDone] - settles once the splash is off screen
+     * @returns {void}
+     * @private
+     */
+    _focusAddTaskWhenLanded(splashDone = null) {
+        this._stopAddTaskFocusWait();
+        const tryFocus = () => {
+            const input = document.getElementById(DOM_IDS.TASK_INPUT);
+            if (!input || input.closest('[inert]')) return false;
+            if (!document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)) return false;
+            if (typeof input.checkVisibility === 'function' && !input.checkVisibility({ visibilityProperty: true })) return false;
+            const active = document.activeElement;
+            const untouched = !active || active === document.body || active.id === DOM_IDS.FOCUS_MODE_MENU_BTN;
+            if (untouched) {
+                try { input.focus({ preventScroll: true }); } catch { /* focus refused — the user can tap it */ }
+            }
+            return true;   // done either way: the user's own focus wins
+        };
+        const start = () => {
+            if (tryFocus()) return;
+            // Re-check on each body class change (Focus View on, input bar shown)
+            // and each render into the task view, until it lands or the cap.
+            this._addTaskFocusObserver = new MutationObserver(() => {
+                if (tryFocus()) this._stopAddTaskFocusWait();
+            });
+            this._addTaskFocusObserver.observe(document.body, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
+            this._addTaskFocusTimer = setTimeout(() => this._stopAddTaskFocusWait(), UI_TIMEOUTS.FIRST_RUN_ADD_TASK_FOCUS_WAIT);
+        };
+        Promise.resolve(splashDone).then(start, start);
+    }
+
+    /** End a pending _focusAddTaskWhenLanded() wait (landed, timed out, or destroy). @private */
+    _stopAddTaskFocusWait() {
+        this._addTaskFocusObserver?.disconnect();
+        this._addTaskFocusObserver = null;
+        clearTimeout(this._addTaskFocusTimer);
+        this._addTaskFocusTimer = null;
     }
 
     /**
@@ -322,6 +373,9 @@ export class OnboardingManager {
         // depended on a behaviour in another module, which is exactly the kind of
         // coupling that rots silently.
         this._attachFirstExitWelcome();
+
+        // A blank routine: the cursor goes straight to Add task.
+        if (choice === 'create') this._focusAddTaskWhenLanded();
     }
 
     /**
@@ -1060,6 +1114,9 @@ export class OnboardingManager {
             document.removeEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler);
             this._sampleFirstExitHandler = null;
         }
+
+        // A first-run landing still waiting to put the cursor in Add task.
+        this._stopAddTaskFocusWait();
 
         // First-run welcome banner — remove DOM + listener if still mounted
         this._hideFirstRunWelcome?.();

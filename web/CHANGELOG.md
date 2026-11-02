@@ -1,3 +1,10 @@
+## [2.661] - 2026-11-02
+- Mode descriptions speak each vocabulary theme's words
+- Recurring panel: Repeat uses the app's own dropdown
+- First run: the cursor lands in Add task after Create My First Routine and Learn
+- Settings: App Diagnostics only shows while Debug Mode is on
+
+
 ## [2.660] - 2026-11-02
 - Phones: no Keyboard Shortcuts in Focus View's menu either
 

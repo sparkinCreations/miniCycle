@@ -211,6 +211,7 @@ export const UI_TIMEOUTS = Object.freeze({
     FIRST_RUN_WELCOME_SLIDE_HOLD: 8000,    // 8000ms - How long each first-run welcome banner slide is visible before auto-advance
     TITLE_SCREEN_USECASE_HOLD: 2800,       // 2800ms - Welcome Screen use-case crossfade. Matches the first-run screen's inline rotator: it is the same line doing the same job, and the two screens are meant to feel identical.
     TIP_ARCHIVE_SLIDE_HOLD: 8000,          // 8000ms - How long one tip stays up in the tip archive before auto-advancing. Matches FIRST_RUN_WELCOME_SLIDE_HOLD: same job (read one short line, unhurried) so the two should not drift apart. Deliberately far slower than the 4s BOOT rotator, which the user is not expected to read completely.
+    FIRST_RUN_ADD_TASK_FOCUS_WAIT: 8000,   // 8000ms - After a first-run landing, how long onboardingManager waits for the Add task bar to show before giving up on putting the cursor in it (the learn path enters Focus View before its starter routine renders)
     FIRST_RUN_SPLASH_WATCHDOG: 12000,      // 12000ms - Hard ceiling on the typewriter splash. Its phase chain hangs off animationend, which never fires if the char animations are disabled or interrupted; this guarantees the splash always fades and its completion promise always resolves (the create/sample picks open their dialog on it)
 
     // Cycle-demo SVG choreography (slide 3) — relative offsets WITHIN one
@@ -1734,7 +1735,9 @@ export const DOM_IDS = Object.freeze({
     CLOSE_RECURRING_PANEL: 'close-recurring-panel',
     OPEN_RECURRING_PANEL: 'open-recurring-panel',
     CHANGE_RECURRING_SETTINGS: 'change-recurring-settings',
-    RECUR_FREQUENCY: 'recur-frequency',
+    RECUR_FREQUENCY: 'recur-frequency',   // hidden native <select>: the Repeat value's source of truth
+    RECUR_FREQUENCY_BTN: 'recur-frequency-btn',   // the visible Repeat control (routine/modePicker.js)
+    RECUR_FREQUENCY_MENU: 'recur-frequency-menu',
     RECUR_FREQUENCY_CONTAINER: 'recur-frequency-container',
     SET_DEFAULT_RECURRING_CONTAINER: 'set-default-recurring-container',
     SET_DEFAULT_RECURRING: 'set-default-recurring',

@@ -1364,7 +1364,7 @@ body.high-contrast:not(.dark-mode) .recurring-settings-title {
     color: #000;
 }
 
-body.high-contrast:not(.dark-mode) #recur-frequency {
+body.high-contrast:not(.dark-mode) #recur-frequency-btn {
     border: 2px solid #333;
 }
 
@@ -1490,7 +1490,7 @@ body.high-contrast.dark-mode .recurring-settings-title {
     color: #fff;
 }
 
-body.high-contrast.dark-mode #recur-frequency {
+body.high-contrast.dark-mode #recur-frequency-btn {
     border: 2px solid #aaa;
 }
 

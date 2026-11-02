@@ -38,7 +38,7 @@ export class ModePicker {
      * @param {HTMLElement} opts.menu - role="menu" container of the items
      * @param {(mode: string) => string} opts.getModeLabel - a mode's name
      * @param {(mode: string) => (string|null)} [opts.getModeIcon] - an option's
-     *   ICONS name (default: the mode icons by mode value)
+     *   ICONS name (default: the mode icons by mode value); null draws none
      * @param {(label: string) => string} [opts.getButtonAria] - the button's
      *   accessible name for the current label (default: the label itself)
      * @param {(mode: string) => string} [opts.getItemTitle] - an option's
@@ -68,7 +68,7 @@ export class ModePicker {
         const labelEl = document.createElement('span');
         labelEl.className = DOM_CLASSES.MODE_PICKER_LABEL;
         labelEl.textContent = label;
-        this.button.replaceChildren(this._icon(mode), labelEl);
+        this.button.replaceChildren(...[this._icon(mode), labelEl].filter(Boolean));
         this.button.setAttribute('aria-label', this.getButtonAria(label));
         for (const item of this._items()) {
             item.setAttribute('aria-checked', String(item.dataset.mode === mode));
@@ -77,6 +77,7 @@ export class ModePicker {
 
     open() {
         if (!this.menu.hidden) return;
+        this._relabelItems();
         this.menu.hidden = false;
         this.button.setAttribute('aria-expanded', 'true');
         const items = this._items();
@@ -99,8 +100,20 @@ export class ModePicker {
 
     // ---- internals --------------------------------------------------------
 
+    /** @returns {HTMLElement|null} the option's icon, or null when it has none */
     _icon(mode) {
-        return createIconElement(this.getModeIcon(mode) || '', DOM_CLASSES.MODE_PICKER_ICON);
+        const name = this.getModeIcon(mode);
+        return name ? createIconElement(name, DOM_CLASSES.MODE_PICKER_ICON) : null;
+    }
+
+    /** Re-read each item's text and tooltip: a vocabulary theme may have renamed them since. */
+    _relabelItems() {
+        for (const item of this._items()) {
+            const text = item.querySelector(`.${DOM_CLASSES.QUICK_ACTION_TEXT}`);
+            if (text) text.textContent = this.getModeLabel(item.dataset.mode);
+            const title = this.getItemTitle?.(item.dataset.mode);
+            if (title) item.title = title;
+        }
     }
 
     _items() {
@@ -123,7 +136,7 @@ export class ModePicker {
             text.className = DOM_CLASSES.QUICK_ACTION_TEXT;
             text.textContent = this.getModeLabel(option.value);
             const check = createIconElement('check', DOM_CLASSES.MODE_PICKER_CHECK);
-            item.append(this._icon(option.value), text, check);
+            item.append(...[this._icon(option.value), text, check].filter(Boolean));
             return item;
         });
         this.menu.replaceChildren(...items);
@@ -163,6 +176,7 @@ export class ModePicker {
         this._on(this.button, 'keydown', (e) => {
             if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
                 e.preventDefault();
+                e.stopPropagation();
                 this.open();
             }
         });
@@ -174,7 +188,10 @@ export class ModePicker {
         this._on(this.menu, 'keydown', (e) => {
             const items = this._items();
             const i = items.indexOf(document.activeElement);
-            const move = (to) => { e.preventDefault(); items[(to + items.length) % items.length].focus(); };
+            // The menu owns its keys: a container's own arrow navigation (the
+            // recurring panel has one) moved focus a second item per press
+            // when these bubbled on (Nov 2026).
+            const move = (to) => { e.preventDefault(); e.stopPropagation(); items[(to + items.length) % items.length].focus(); };
             switch (e.key) {
                 case 'ArrowDown': move(i + 1); break;
                 case 'ArrowUp': move(i - 1); break;
@@ -184,7 +201,7 @@ export class ModePicker {
                 case 'Tab': this.close(false); break;
                 case 'Enter':
                 case ' ':
-                    if (i >= 0) { e.preventDefault(); this._choose(items[i].dataset.mode); }
+                    if (i >= 0) { e.preventDefault(); e.stopPropagation(); this._choose(items[i].dataset.mode); }
                     break;
                 default: break;
             }

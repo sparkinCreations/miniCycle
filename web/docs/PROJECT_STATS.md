@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.660 |
+| **App Version** | 2.661 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
-| **Total Modules** | 174 |
-| **Total Tests** | 4477 |
+| **Total Modules** | 175 |
+| **Total Tests** | 4480 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1682 |
+| **JSDoc Blocks** | 1685 |
 | **Documentation Files** | 253 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -46,13 +46,13 @@
 | `ui/` | 46 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 12 | Themes, stats, achievements, history, reminders |
 | `utils/` | 34 | Notifications, device detection, utilities |
-| `labels/` | 3 | Default labels + label resolver |
+| `labels/` | 4 | Default labels + label resolver |
 | `storage/` | 3 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **174** | |
+| **Total** | **175** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4477 |
+| Total Tests | 4480 |
 | Test Files | 153 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

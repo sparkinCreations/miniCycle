@@ -73,11 +73,12 @@ export const DEFAULT_LABELS = deepFreeze({
         todo:               'To-Do Mode',
         todoDescription:    'Simple To-Do list mode',
         autoTitle:          'Auto Cycle Mode',
-        autoDetail:         'Tasks will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.',
+        // *Detail: the theme's words via labels/modeWording.js ({tasks}, {taskWord}, {cycleWord}, {completeButton}, {clearButton})
+        autoDetail:         '{tasks} will automatically reset to incomplete when all are completed. This is the traditional miniCycle experience.',
         manualTitle:        'Manual Cycle Mode',
-        manualDetail:       'Tasks will only reset when you manually press the Complete Cycle button. The Complete Cycle button will complete any remaining tasks and then reset all tasks to incomplete.',
+        manualDetail:       '{tasks} will only reset when you manually press the {completeButton} button. The {completeButton} button will complete any remaining {taskWord} and then reset all {taskWord} to incomplete.',
         todoTitle:          'To-Do Mode',
-        todoDetail:         'This mode will not complete any cycles. Instead, it will remove completed tasks when you hit the Clear Completed button.',
+        todoDetail:         'This mode will not complete any {cycleWord}. Instead, it will remove completed {taskWord} when you hit the {clearButton} button.',
         autoToggle:         'Auto Reset',
         deleteChecked:      'Delete Checked Tasks after Complete',
         info:               'Mode Info'
@@ -1343,6 +1344,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     freq: {
         frequency: 'Frequency',
+        repeatAria: 'Repeat: {frequency}',   // the recurring panel's Repeat dropdown button (accessible name)
         hourly:   'Hourly',
         daily:    'Daily',
         weekly:   'Weekly',
@@ -1551,7 +1553,7 @@ export const DEFAULT_LABELS = deepFreeze({
         resetRecurringDefaultDesc: 'New recurring tasks start as Daily, repeating indefinitely, again.',
         resetAchievementsDesc:  'Locks every badge and sets progress toward them back to zero. Your routines and their own stats stay. This cannot be undone.',
         clearUndoHistoryDesc:   'Deletes the undo steps saved for every routine. This cannot be undone.',
-        debugModeDesc:          'Writes the app\'s detailed log to the browser console, for troubleshooting.',
+        debugModeDesc:          'Writes the app\'s detailed log to the browser console and shows App Diagnostics, for troubleshooting.',
         ariaToggleDisplay:    'Toggle Display settings',
         ariaToggleAccessibility: 'Toggle Accessibility settings',
         ariaToggleBehavior:   'Toggle Behavior settings',
@@ -1914,8 +1916,9 @@ export const DEFAULT_LABELS = deepFreeze({
         // name the round action button by its live label ({button} — the
         // themed cycleActionLabel / clearActionLabel, one line). Auto Cycle
         // has no button and keeps help.modeAutoShort.
-        modeManualDesc: { touch: 'Tasks only reset when you tap the {button} button.', pointer: 'Tasks only reset when you click the {button} button.' },
-        modeTodoDesc:   { touch: 'Completed tasks are removed when you tap the {button} button.', pointer: 'Completed tasks are removed when you click the {button} button.' }
+        // {tasks} / {taskWord}: the theme's words (labels/modeWording.js).
+        modeManualDesc: { touch: '{tasks} only reset when you tap the {button} button.', pointer: '{tasks} only reset when you click the {button} button.' },
+        modeTodoDesc:   { touch: 'Completed {taskWord} are removed when you tap the {button} button.', pointer: 'Completed {taskWord} are removed when you click the {button} button.' }
     },
 
     // ========================================================================
@@ -2717,9 +2720,11 @@ export const DEFAULT_LABELS = deepFreeze({
 
     help: {
         welcome:           'Welcome to miniCycle!',
-        modeAutoShort:     'Tasks automatically reset when all are completed.',
-        modeManualShort:   { touch: 'Tasks only reset when you tap the Complete Cycle button.', pointer: 'Tasks only reset when you click the Complete Cycle button.' },
-        modeTodoShort:     { touch: 'Completed tasks are removed when you tap Clear Completed.', pointer: 'Completed tasks are removed when you click Clear Completed.' },
+        // The mode descriptions name the theme's words (labels/modeWording.js):
+        // {tasks} "Habits", {taskWord} "habits", {completeButton} / {clearButton}.
+        modeAutoShort:     '{tasks} automatically reset when all are completed.',
+        modeManualShort:   { touch: '{tasks} only reset when you tap the {completeButton} button.', pointer: '{tasks} only reset when you click the {completeButton} button.' },
+        modeTodoShort:     { touch: 'Completed {taskWord} are removed when you tap {clearButton}.', pointer: 'Completed {taskWord} are removed when you click {clearButton}.' },
         cycleComplete:     'Cycle Complete! Tasks reset.',
         tasksCleared:      '{count} {taskWord} cleared!',
         addFirstTask:      'Add your first task to get started!',
