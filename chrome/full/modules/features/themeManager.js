@@ -32,6 +32,8 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTO
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { createIconElement } from '../utils/icons.js';
+import { renderCompleteAllButton } from '../ui/completeAllButton.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
@@ -249,9 +251,8 @@ function _refreshLiveLensLabels() {
     const completeBtn = _deps.getElementById(DOM_IDS.COMPLETE_ALL);
     if (completeBtn) {
         const isToDoMode = _deps.getBody().classList.contains(DOM_CLASSES.TODO_MODE_MODE);
-        completeBtn.textContent = isToDoMode
-            ? '🧹 ' + getLabel('action.clearCompletedTasks')
-            : '🔄 ' + getLabel('action.completeCycle');
+        renderCompleteAllButton(completeBtn, isToDoMode,
+            getLabel(isToDoMode ? 'action.clearCompletedTasks' : 'action.completeCycle'));
     }
 
     // Empty state headline ("Your routine is empty" — no longer vocab-swapped,
@@ -640,7 +641,7 @@ export class ThemeManager {
             quickToggle.parentNode?.replaceChild(newQuickToggle, quickToggle);
             
             // Set correct initial icon state
-            newQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            newQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
             
             const safeAdd = _deps.safeAddEventListener;
             newQuickToggle._clickHandler = (e) => {
@@ -660,11 +661,15 @@ export class ThemeManager {
                 }
             };
             safeAdd(newQuickToggle, "click", newQuickToggle._clickHandler);
-            // Icon-only (🌙 / ☀️): `title` covers hover; on touch a long press
-            // shows the same label and swallows the click, so asking what the
-            // button does no longer toggles dark mode (Oct 2026).
+            // Icon-only (moon / sun): `title` covers hover; on touch a long press
+            // shows the same words and swallows the click, so asking what the
+            // button does no longer toggles dark mode (Oct 2026). The words name
+            // the mode a press switches TO, read from the live state each time.
+            newQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
+            newQuickToggle.dataset.label = getLabel('nav.darkModeCaption');
             attachLongPressHint(newQuickToggle, {
-                getText: () => newQuickToggle.getAttribute('aria-label') || newQuickToggle.title
+                getText: () => getLabel(newQuickToggle.getAttribute('aria-pressed') === 'true'
+                    ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn')
             });
 
         } catch (error) {
@@ -710,7 +715,8 @@ export class ThemeManager {
             const currentQuickToggle = _deps.getElementById(DOM_IDS.QUICK_DARK_TOGGLE);
             if (!currentQuickToggle) return;
 
-            currentQuickToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            currentQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
+            currentQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
 
             // The emoji was the ONLY state cue, and it is invisible to assistive
             // tech twice over: it is decorative content, and the button's

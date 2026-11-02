@@ -320,7 +320,7 @@ export async function handleConfirmAddRecurring(deps, panelState, cb = {}) {
         }, 0);
 
         const taskWord = getLabel('noun.task', { count: selectedTaskIds.length });
-        deps.showNotification(`🔁 ${getLabel('notify.recurringAdded', { vars: { count: selectedTaskIds.length, taskWord } })}`, 'success');
+        deps.showNotification(getLabel('notify.recurringAdded', { vars: { count: selectedTaskIds.length, taskWord } }), 'success', undefined, { icon: 'repeat' });
 
     } catch (error) {
         console.error('❌ Error adding tasks as recurring:', error);

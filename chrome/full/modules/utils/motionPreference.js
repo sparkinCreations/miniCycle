@@ -65,3 +65,28 @@ export function getAnimationDurationMs(el) {
     const delays = style.animationDelay.split(',').map(toMs);
     return durations.reduce((max, d, i) => Math.max(max, d + (delays[i] || 0)), 0);
 }
+
+/**
+ * Play a one-shot CSS animation keyed by a class on `el`: restart it if it is
+ * already running, and take the class off again once it has run. The length
+ * is read from a motion token (e.g. '--anim-action-spin') at play time, so it
+ * is 0 — and the class comes straight off — under either reduced-motion
+ * source. A timer rather than `animationend`, for the reason given above
+ * getAnimationDurationMs(): the animated part may be a ::before, a child that
+ * is replaced mid-flight, or display:none.
+ *
+ * @param {Element|null} el
+ * @param {string} className - the class whose rules start the animation
+ * @param {string} durationVar - the CSS custom property holding its duration
+ */
+export function replayAnimationClass(el, className, durationVar) {
+    if (!el) return;
+    el.classList.remove(className);
+    void el.offsetWidth; // reflow, so re-adding the class restarts the animation
+    el.classList.add(className);
+    const raw = getComputedStyle(el).getPropertyValue(durationVar).trim();
+    const value = parseFloat(raw) || 0;
+    const ms = raw.endsWith('ms') ? value : value * 1000;   // a token may be written in s
+    clearTimeout(el._replayAnimationTimer);
+    el._replayAnimationTimer = setTimeout(() => el.classList.remove(className), ms);
+}

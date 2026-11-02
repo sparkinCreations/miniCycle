@@ -596,7 +596,7 @@ export function setupThreeDotsToggle() {
         // Show tip when disabling on touch devices
         if (!enabled && ('ontouchstart' in window)) {
             setTimeout(() => {
-                _deps.showNotification('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                _deps.showNotification(getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED, { icon: 'lightbulb' });
             }, 300);
         }
     };

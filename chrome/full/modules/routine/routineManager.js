@@ -15,6 +15,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { setIconText } from '../utils/icons.js';
 import { announce } from '../utils/announce.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
@@ -207,7 +208,7 @@ export class RoutineManager {
                     const appState = this.deps.AppState;
 
                     if (!this._ensureAppStateReady('cycle creation')) {
-                        this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                        this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                         return;
                     }
 
@@ -215,7 +216,7 @@ export class RoutineManager {
                     const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                     if (wasModified) {
-                        this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                        this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     }
 
                     await appState.update(state => {
@@ -328,7 +329,7 @@ export class RoutineManager {
         const appState = this.deps.AppState;
 
         if (!this._ensureAppStateReady('fallback cycle creation')) {
-            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToCreateCycle'), "error", UI_TIMEOUTS.NOTIFICATION_SLOW);
+            this.deps.showNotification(getLabel('notify.failedToCreateCycle'), "error", UI_TIMEOUTS.NOTIFICATION_SLOW);
             return;
         }
 
@@ -413,7 +414,7 @@ export class RoutineManager {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for createNewMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -442,7 +443,7 @@ export class RoutineManager {
                 const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
 
                 if (wasModified) {
-                    this.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
                 const storageKey = finalTitle;
@@ -550,7 +551,7 @@ export class RoutineManager {
                 }
 
                 if (finalResult) {
-                    this.deps.showNotification(`✅ ${getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } })}`, "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(getLabel('notify.routineCreated', { vars: { name: finalResult.finalTitle } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
                     // Creating a routine replaces the title AND the entire task
                     // list. None of that was announced: routineManager had zero
                     // live-region writes, so a screen-reader user's whole context
@@ -662,9 +663,10 @@ export class RoutineManager {
             // Silent path: caller (e.g., first-run focus-view flow) handles all messaging.
             if (!isOnboarding && !silent) {
                 this.deps.showNotification(
-                    '✨ ' + getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
+                    getLabel('notify.sampleLoaded', { vars: { name: sampleTitle } }),
                     'success',
-                    UI_TIMEOUTS.NOTIFICATION_SLOW
+                    UI_TIMEOUTS.NOTIFICATION_SLOW,
+                    { icon: 'sparkles' }
                 );
             }
 
@@ -702,7 +704,7 @@ export class RoutineManager {
 
             if (!options.silent) {
                 this.deps.showNotification(
-                    '❌ ' + getLabel('notify.sampleLoadFailed'),
+                    getLabel('notify.sampleLoadFailed'),
                     'error',
                     UI_TIMEOUTS.NOTIFICATION_LONG
                 );
@@ -779,7 +781,7 @@ export class RoutineManager {
         const titleEl = document.createElement('h2');
         titleEl.id = DOM_IDS.ROUTINE_CREATION_TITLE;
         titleEl.className = 'miniCycle-prompt-title';
-        titleEl.textContent = getLabel(title);
+        setIconText(titleEl, 'sparkles', getLabel(title));
         nameView.appendChild(titleEl);
 
         // The instruction IS the field's label: a <label for>, so the name
@@ -850,7 +852,7 @@ export class RoutineManager {
             const sampleTitle = document.createElement('h2');
             sampleTitle.id = DOM_IDS.SAMPLE_CREATION_TITLE;
             sampleTitle.className = 'sample-list-title';
-            sampleTitle.textContent = getLabel('modal.chooseSample');
+            setIconText(sampleTitle, 'book', getLabel('modal.chooseSample'));
             header.appendChild(sampleTitle);
 
             sampleView.appendChild(header);
@@ -925,7 +927,7 @@ export class RoutineManager {
                 // role="alert", so this is announced). Cleared on next input.
                 input.classList.add(DOM_CLASSES.MINICYCLE_INPUT_ERROR);
                 input.setAttribute('aria-invalid', 'true');
-                this.deps.showNotification('⚠️ ' + getLabel('notify.routineNameEmpty'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                this.deps.showNotification(getLabel('notify.routineNameEmpty'), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
                 input.focus();
                 return;
             }
@@ -935,7 +937,7 @@ export class RoutineManager {
             // otherwise a long name is silently cut to the limit.
             const nameLimit = LIMITS.CYCLE_NAME_CHARACTER;
             if (value.length > nameLimit) {
-                this.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: nameLimit } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                this.deps.showNotification(getLabel('notify.titleTruncated', { vars: { limit: nameLimit } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
             }
 
             cleanup();

@@ -219,7 +219,32 @@ const ICONS = {
     'arrows-alt': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M278.6 9.4c-12.5-12.5-32.8-12.5-45.3 0l-64 64c-9.2 9.2-11.9 22.9-6.9 34.9s16.6 19.8 29.6 19.8h32v96H128V192c0-12.9-7.8-24.6-19.8-29.6s-25.7-2.2-34.9 6.9l-64 64c-12.5 12.5-12.5 32.8 0 45.3l64 64c9.2 9.2 22.9 11.9 34.9 6.9s19.8-16.6 19.8-29.6V288h96v96H192c-12.9 0-24.6 7.8-29.6 19.8s-2.2 25.7 6.9 34.9l64 64c12.5 12.5 32.8 12.5 45.3 0l64-64c9.2-9.2 11.9-22.9 6.9-34.9s-16.6-19.8-29.6-19.8H288V288h96v32c0 12.9 7.8 24.6 19.8 29.6s25.7 2.2 34.9-6.9l64-64c12.5-12.5 12.5-32.8 0-45.3l-64-64c-9.2-9.2-22.9-11.9-34.9-6.9s-19.8 16.6-19.8 29.6v32H288V128h32c12.9 0 24.6-7.8 29.6-19.8s2.2-25.7-6.9-34.9l-64-64z"/></svg>',
     'sync': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M105.1 202.6c7.7-21.8 20.2-42.3 37.8-59.8c62.5-62.5 163.8-62.5 226.3 0L386.3 160H336c-17.7 0-32 14.3-32 32s14.3 32 32 32H463.5c0 0 0 0 0 0h.4c17.7 0 32-14.3 32-32V64c0-17.7-14.3-32-32-32s-32 14.3-32 32v51.2L414.4 97.6c-87.5-87.5-229.3-87.5-316.8 0C73.2 122 55.6 150.7 44.8 181.4c-5.9 16.7 2.9 34.9 19.5 40.8s34.9-2.9 40.8-19.5zM39 289.3c-5 1.5-9.8 4.2-13.7 8.2c-4 4-6.7 8.8-8.1 14c-.3 1.2-.6 2.5-.8 3.8c-.3 1.7-.4 3.4-.4 5.1V448c0 17.7 14.3 32 32 32s32-14.3 32-32V396.9l17.6 17.5 0 0c87.5 87.4 229.3 87.4 316.7 0c24.4-24.4 42.1-53.1 52.9-83.7c5.9-16.7-2.9-34.9-19.5-40.8s-34.9 2.9-40.8 19.5c-7.7 21.8-20.2 42.3-37.8 59.8c-62.5 62.5-163.8 62.5-226.3 0l-.1-.1L125.6 352H176c17.7 0 32-14.3 32-32s-14.3-32-32-32H48.4c-1.6 0-3.2 .1-4.8 .3s-3.1 .5-4.6 1z"/></svg>',
     'history': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg>',
-    'flask': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor"><path d="M288 0H160 128C110.3 0 96 14.3 96 32s14.3 32 32 32V196.8c0 11.8-3.3 23.5-9.5 33.5L10.3 406.2c-7.1 11.5-10.3 25-9.1 38.5C4.3 479 33.7 512 70.9 512H377.1c37.1 0 66.6-33 69.7-67.3c1.2-13.5-2-27-9.1-38.5L329.5 230.4c-6.2-10.1-9.5-21.7-9.5-33.5V64c17.7 0 32-14.3 32-32s-14.3-32-32-32H288zM192 196.8V64h64V196.8c0 23.7 6.6 46.9 19 67.1L309.5 320h-171L173 263.9c12.4-20.2 19-43.4 19-67.1z"/></svg>'
+    'flask': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor"><path d="M288 0H160 128C110.3 0 96 14.3 96 32s14.3 32 32 32V196.8c0 11.8-3.3 23.5-9.5 33.5L10.3 406.2c-7.1 11.5-10.3 25-9.1 38.5C4.3 479 33.7 512 70.9 512H377.1c37.1 0 66.6-33 69.7-67.3c1.2-13.5-2-27-9.1-38.5L329.5 230.4c-6.2-10.1-9.5-21.7-9.5-33.5V64c17.7 0 32-14.3 32-32s-14.3-32-32-32H288zM192 196.8V64h64V196.8c0 23.7 6.6 46.9 19 67.1L309.5 320h-171L173 263.9c12.4-20.2 19-43.4 19-67.1z"/></svg>',
+    'chart-bar': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M32 448h448v32H32zM64 288h64v144H64zm112-128h64v272h-64zm112 64h64v208h-64zm112-128h64v336h-64z"/></svg>',
+    'chart-donut': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M256 48a208 208 0 1 1 0 416a208 208 0 1 1 0-416zm0 96a112 112 0 1 0 0 224a112 112 0 1 0 0-224z"/></svg>',
+    'desktop': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M64 48h384a32 32 0 0 1 32 32v256a32 32 0 0 1-32 32H64a32 32 0 0 1-32-32V80a32 32 0 0 1 32-32zm8 40v240h368V88z"/><path d="M224 368h64v64h-64zm-64 64h192a16 16 0 0 1 0 32H160a16 16 0 0 1 0-32z"/></svg>',
+    'save': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M64 32h320l96 96v320a32 32 0 0 1-32 32H64a32 32 0 0 1-32-32V64a32 32 0 0 1 32-32zm32 48v96h224V80zm160 176a64 64 0 1 0 0 128a64 64 0 1 0 0-128z"/></svg>',
+    'bolt': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M304 16L80 288h144l-32 208 240-288H288z"/></svg>',
+    'font': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M216 48h80l160 416h-80l-36-96H172l-36 96H56zm40 122l-50 134h100z"/></svg>',
+    'droplet': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M256 32s-160 200-160 304a160 160 0 0 0 320 0C416 232 256 32 256 32z"/></svg>',
+    'image': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M64 64h384a32 32 0 0 1 32 32v320a32 32 0 0 1-32 32H64a32 32 0 0 1-32-32V96a32 32 0 0 1 32-32zm16 48v288h352V112z"/><path d="M112 368l96-128 64 80 48-56 80 104zm64-216a40 40 0 1 1 0 80a40 40 0 1 1 0-80z"/></svg>',
+    'eye': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M256 96C144 96 64 176 24 256c40 80 120 160 232 160s192-80 232-160C448 176 368 96 256 96zm0 64a96 96 0 1 0 0 192a96 96 0 1 0 0-192zm0 48a48 48 0 1 1 0 96a48 48 0 1 1 0-96z"/></svg>',
+    'square': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M96 64h320a32 32 0 0 1 32 32v320a32 32 0 0 1-32 32H96a32 32 0 0 1-32-32V96a32 32 0 0 1 32-32z"/></svg>',
+    'bookmark': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M112 32h288a16 16 0 0 1 16 16v432L256 384 96 480V48a16 16 0 0 1 16-16z"/></svg>',
+    'check': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M190 410L40 260l45-45 105 105 237-237 45 45z"/></svg>',
+    'ban': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path fill-rule="evenodd" d="M256 32a224 224 0 1 1 0 448a224 224 0 1 1 0-448zm0 64a160 160 0 1 0 0 320a160 160 0 1 0 0-320z"/><path d="M142 187l45-45 183 183-45 45z"/></svg>',
+    // Routine modes (Nov 2026) — drawn for miniCycle; the manual hand is one outline.
+    'mode-auto': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(100 32 32)"><path d="M38.8 13.2A20 20 0 1 1 19.1 16.7" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M14.6 11.6L23.4 22L26.3 10.9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g></svg>',
+    'mode-manual': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path transform="translate(-9 -1) scale(1.21875)" d="M20.4 36.4V23.3a2.3 2.3 0 0 1 4.6 0v7.2q.45.7.9 0V19.8a2.3 2.3 0 0 1 4.6 0v10.7q.45.7.9 0v-9.2a2.3 2.3 0 0 1 4.6 0v9.2q.45.7.9 0v-5.2a2.3 2.3 0 0 1 4.6 0v14.2c0 6-4.5 10.5-10 10.5h-1.5c-5 0-9.4-3-10.4-5.7l-7.5-10.6a2.3 2.3 0 0 1 3.8-2.6l3.9 5.6q.6.8.6-.1z"/><path d="M44.7 9.3A10 10 0 1 1 41.6 19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M37.6 20.4L44.4 21.8L42.3 15Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>',
+    'mode-todo': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><rect x="14" y="11" width="36" height="47" rx="5" fill="none" stroke="currentColor" stroke-width="4.5"/><rect x="23" y="6" width="18" height="11" rx="3"/><path d="M20.5 28l3 3 5-5.5M20.5 39l3 3 5-5.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 28.5h11M33 39.5h11M21.5 49.5h22.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg>',
+    // The two bottom-corner buttons' moon / sun (Nov 2026): monochrome in
+    // currentColor like the rest of the set; the brush is 'paint-brush'.
+    'moon': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M28.73 11.03A23 23 0 1 0 52.79 37.11A18 18 0 0 1 28.73 11.03Z"/></svg>',
+    'sun': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><path d="M32 21a11 11 0 1 1 0 22a11 11 0 1 1 0-22z"/><path fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" d="M32 6v6M32 52v6M6 32h6M52 32h6M13.6 13.6l4.2 4.2M46.2 46.2l4.2 4.2M13.6 50.4l4.2-4.2M46.2 17.8l4.2-4.2"/></svg>',
+    // Clearing (Nov 2026): the help window's cleared count and flash
+    'broom': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(35 32 32)"><path d="M32 4v29" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><rect x="23" y="31" width="18" height="7" rx="2"/><path d="M23 40h18l8 19-4 3-4-3-4 3-4-3-4 3-4-3-4 3-4-3-4 3-3-3z"/></g></svg>',
+    // Debugging (Nov 2026): App Diagnostics' Debug tab — head, body, six legs
+    'bug': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="currentColor"><circle cx="32" cy="16" r="8"/><path d="M21 26h22a5 5 0 0 1 5 5v9a16 16 0 0 1-32 0v-9a5 5 0 0 1 5-5z"/><path d="M7 33h9M48 33h9M9 50l8-5M55 50l-8-5M10 18l8 6M54 18l-8 6" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>'
 };
 
 /**
@@ -269,6 +294,19 @@ function parseSVG(svgString) {
  * @param {string} [className] - Optional CSS class
  * @returns {HTMLElement} Span wrapper with SVG element
  */
+/**
+ * Set an element's content to a decorative icon followed by text — a modal
+ * title, for instance ("<brush> Personalization"). For any title JS writes:
+ * writing it with textContent would wipe the icon.
+ * @param {Element|null} el
+ * @param {string} name - ICONS name
+ * @param {string} text - already through getLabel()
+ */
+export function setIconText(el, name, text) {
+    if (!el) return;
+    el.replaceChildren(createIconElement(name), ` ${text}`);
+}
+
 export function createIconElement(name, className = '') {
     const wrapper = document.createElement('span');
     wrapper.className = `icon ${className}`.trim();
@@ -333,6 +371,7 @@ export const FA_MAP = {
     'fa-star': 'star',
     'fa-sparkles': 'sparkles',
     'fa-folder-open': 'folder-open',
+    'fa-folder': 'folder',
     'fa-copy': 'copy',
     'fa-file-download': 'file-download',
     'fa-file-upload': 'file-upload',
@@ -377,7 +416,12 @@ export const FA_MAP = {
     'fa-arrows-alt': 'arrows-alt',
     'fa-sync': 'sync',
     'fa-history': 'history',
-    'fa-flask': 'flask'
+    'fa-flask': 'flask',
+    'fa-chart-bar': 'chart-bar',
+    'fa-bug': 'bug',
+    'fa-desktop': 'desktop',
+    'fa-save': 'save',
+    'fa-bolt': 'bolt'
 };
 
 export { ICONS };

@@ -14,7 +14,21 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, BREAKPOI
 // side-layout hysteresis compares content height against the same budget.
 const VIEWPORT_CHROME_PX = 385;
 import { getLabel } from '../labels/labelResolver.js';
+import { getIcon as getSvgIcon } from '../utils/icons.js';
+import { runsAsInstalledApp } from '../utils/userManualLink.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
+
+// First-use notices (showNotice): label + ICONS name.
+const HELP_NOTICES = Object.freeze({
+    'offline-ready': { labelKey: 'help.noticeOfflineReady', icon: 'check-circle' },
+    'install': { labelKey: 'help.noticeInstall', icon: 'download' }
+});
+
+/** Only a plain browser tab needs telling it works offline / can be installed. */
+function noticeApplies() {
+    if (runsAsInstalledApp()) return false;   // PWA, iOS / Android, desktop
+    return !/-extension:$/.test(location.protocol);   // chrome- / moz-extension
+}
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -75,6 +89,7 @@ export class HelpWindowManager {
         this.sideLayoutEnabled = false;
         this._pendingTimeouts = [];
         this._customizerTipShownOnHover = false;
+        this._pendingNotices = new Set();
         this._focusExitTipShownOnHover = false;
 
         this.init();
@@ -283,7 +298,7 @@ export class HelpWindowManager {
         if (this.isShowingCycleComplete || this.isShowingModeDescription) return;
 
         const parts = this.getCurrentStatusMessage();
-        const partsKey = `${parts.icon}|${parts.body}|${parts.size}`;
+        const partsKey = `${parts.icon}|${parts.body}|${parts.ctaIcon}|${parts.size}`;
 
         if (partsKey !== this._currentPartsKey) {
             this._currentPartsKey = partsKey;
@@ -341,15 +356,18 @@ export class HelpWindowManager {
 
         const modeDescriptions = {
             'auto-cycle': {
-                title: "🔄 " + getLabel('mode.autoTitle'),
+                icon: 'mode-auto',
+                title: getLabel('mode.autoTitle'),
                 description: getLabel('help.modeAutoShort')
             },
             'manual-cycle': {
-                title: "✋ " + getLabel('mode.manualTitle'),
+                icon: 'mode-manual',
+                title: getLabel('mode.manualTitle'),
                 description: getLabel('help.modeManualShort')
             },
             'todo-mode': {
-                title: "📋 " + getLabel('mode.todoTitle'),
+                icon: 'mode-todo',
+                title: getLabel('mode.todoTitle'),
                 description: getLabel('help.modeTodoShort')
             }
         };
@@ -358,7 +376,7 @@ export class HelpWindowManager {
 
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
-                <h4 style="margin: 0 0 8px 0;">${modeInfo.title}</h4>
+                <h4 style="margin: 0 0 8px 0;"><span class="icon" aria-hidden="true">${getSvgIcon(modeInfo.icon)}</span> ${modeInfo.title}</h4>
                 <p style="margin: 0; line-height: 1.4;">${modeInfo.description}</p>
             </div>
         `;
@@ -406,7 +424,7 @@ export class HelpWindowManager {
 
         this.isShowingCycleComplete = true;
         this.helpWindow.innerHTML = `
-            <p>✅ ${toastMessage}</p>
+            <p><span class="icon help-window-icon" aria-hidden="true">${getSvgIcon('check-circle')}</span> ${toastMessage}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -436,7 +454,7 @@ export class HelpWindowManager {
         this.isShowingCycleComplete = true; // Reuse flag to prevent updates
         const taskWord = getLabel('noun.task', { count });
         this.helpWindow.innerHTML = `
-            <p>🧹 ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
+            <p><span class="icon help-window-icon" aria-hidden="true">${getSvgIcon('broom')}</span> ${getLabel('help.tasksCleared', { vars: { count, taskWord } })}</p>
         `;
 
         // Auto-hide after 2 seconds and return to normal message
@@ -486,15 +504,37 @@ export class HelpWindowManager {
     }
 
     /**
-     * Replace the status line with a one-line tip for 10 s, then restore it.
+     * A first-use notice — "miniCycle now works offline", "Install miniCycle"
+     * — in the Help window for a few seconds (Nov 2026; they were toasts).
+     * Raised by boot-sw.js through the app:helpNotice event. Only in a plain
+     * browser tab: an installed PWA, the iOS / Android / desktop apps and the
+     * browser extension work offline already and cannot be installed again.
+     * Held until the window is on screen if it is not yet.
+     * @param {'offline-ready'|'install'} kind
+     * @returns {void}
+     */
+    showNotice(kind) {
+        const notice = HELP_NOTICES[kind];
+        if (!notice || !noticeApplies()) return;
+        if (!this.helpWindow || !this.isVisible) {
+            this._pendingNotices.add(kind);
+            return;
+        }
+        this._showTransientTip(notice.labelKey, { icon: notice.icon, durationMs: UI_TIMEOUTS.HELP_NOTICE });
+    }
+
+    /**
+     * Replace the status line with a one-line tip (UI_TIMEOUTS.HELP_TIP), then restore it.
      * Shared by showCustomizerTip() and showFocusExitTip(); never interrupts
      * the cycle-complete message. Holds the isShowingModeDescription lock the
      * same way showModeDescription() does (see clearTemporaryMessage()).
      * @param {string} labelKey - getLabel() key of the tip text
+     * @param {{icon?: string, durationMs?: number}} [opts] - an ICONS name
+     *   in front of the text; how long before the status line returns
      * @returns {void}
      * @private
      */
-    _showTransientTip(labelKey) {
+    _showTransientTip(labelKey, { icon = null, durationMs = UI_TIMEOUTS.HELP_TIP } = {}) {
         // Don't interrupt cycle complete message
         if (this.isShowingCycleComplete) return;
 
@@ -508,20 +548,22 @@ export class HelpWindowManager {
         this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
 
         const tipText = getLabel(labelKey);
+        const iconSvg = icon ? getSvgIcon(icon) : '';
+        const iconHtml = iconSvg ? `<span class="icon help-window-icon" aria-hidden="true">${iconSvg}</span> ` : '';
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
-                <p style="margin: 0; line-height: 1.4;">${tipText}</p>
+                <p style="margin: 0; line-height: 1.4;">${iconHtml}${tipText}</p>
             </div>
         `;
 
-        // Auto-hide after 10 seconds
+        // Auto-hide after durationMs
         this.modeDescriptionTimeout = setTimeout(() => {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             this._restoreConstantMessage();
-        }, 10000);
+        }, durationMs);
     }
 
     /**
@@ -550,14 +592,14 @@ export class HelpWindowManager {
             </div>
         `;
 
-        // Auto-hide after 10 seconds
+        // Auto-hide after UI_TIMEOUTS.HELP_TIP
         this.modeDescriptionTimeout = setTimeout(() => {
             this.isShowingModeDescription = false;
             this.modeDescriptionTimeout = null;
             const taskView = document.getElementById(DOM_IDS.TASK_VIEW);
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             this._restoreConstantMessage();
-        }, 10000);
+        }, UI_TIMEOUTS.HELP_TIP);
     }
 
     /**
@@ -602,39 +644,48 @@ export class HelpWindowManager {
             ? getLabel('help.progressCleared', { vars: { count: clearedTasksCount, taskWord: getLabel('noun.task', { count: clearedTasksCount }) } })
             : getLabel('help.progressCycles', { vars: { count: cycleCount, cycleWord: getLabel('noun.cycle', { count: cycleCount }) } });
 
+        // The progress phrase's icon: the cycle arrows for "N cycles completed",
+        // the broom for To-Do's "N tasks cleared". Only when the CTA IS that
+        // phrase — the first-time prompts ("Complete your first cycle!") have none.
+        const progressIcon = isToDoMode ? 'broom' : 'mode-auto';
+
         // Return parts for different constant messages based on state.
+        // `icon` is a NAME in the ICONS registry (utils/icons.js); the
+        // renderer looks it up, so only the trusted SVG set reaches innerHTML.
         // `body` is the preamble (e.g. "3 tasks remaining"); `cta` is the
         // post-bullet phrase (e.g. "Complete your first cycle!"). The
         // renderer joins them with " • " and wraps `cta` in a nowrap span
         // so when the line wraps it breaks at the bullet rather than
         // splitting the call-to-action mid-phrase.
         if (totalTasks === 0) {
-            return { icon: '📝', body: getLabel('help.addFirstTask'), cta: progressText, size: routineSize };
+            return { icon: 'edit', body: getLabel('help.addFirstTask'), cta: progressText, ctaIcon: progressIcon, size: routineSize };
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return { icon: '🎉', body: getLabel('help.allComplete'), cta: progressText, size: routineSize };
+            return { icon: 'trophy', body: getLabel('help.allComplete'), cta: progressText, ctaIcon: progressIcon, size: routineSize };
         }
 
         const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
 
         // First-time message for either mode
         if (isToDoMode && clearedTasksCount === 0) {
-            return { icon: '📋', body: remainingText, cta: getLabel('help.clearFirst'), size: routineSize };
+            return { icon: 'list', body: remainingText, cta: getLabel('help.clearFirst'), size: routineSize };
         }
         if (!isToDoMode && cycleCount === 0) {
-            return { icon: '📋', body: remainingText, cta: getLabel('help.completeFirst'), size: routineSize };
+            return { icon: 'list', body: remainingText, cta: getLabel('help.completeFirst'), size: routineSize };
         }
 
         // Show progress and cycle count or cleared tasks
-        return { icon: '📋', body: remainingText, cta: progressText, size: routineSize };
+        return { icon: 'list', body: remainingText, cta: progressText, ctaIcon: progressIcon, size: routineSize };
     }
 
     /**
      * Render structured status parts inside the help window.
      * Wraps the leading icon and storage-size in dedicated spans so
      * focus mode can strip them via CSS (.help-window-icon / .help-window-size).
-     * Each dynamic part is escaped individually for XSS safety (Fix #40).
+     * Each dynamic part is escaped individually for XSS safety (Fix #40);
+     * the icon is an ICONS name, looked up rather than escaped — a name not
+     * in the registry draws nothing.
      * @param {{icon: string, body: string, size: string}} parts
      * @returns {void}
      */
@@ -646,11 +697,12 @@ export class HelpWindowManager {
             return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;');
         };
 
-        const iconHtml = parts.icon
-            ? `<span class="help-window-icon">${escapeHtml(parts.icon)} </span>`
+        const iconSvg = parts.icon ? getSvgIcon(parts.icon) : '';
+        const iconHtml = iconSvg
+            ? `<span class="icon help-window-icon" aria-hidden="true">${iconSvg}</span> `
             : '';
         const sizeHtml = parts.size
-            ? `<span class="help-window-size"> • 💾 ${escapeHtml(parts.size)}</span>`
+            ? `<span class="help-window-size"> • <span class="icon" aria-hidden="true">${getSvgIcon('save')}</span> ${escapeHtml(parts.size)}</span>`
             : '';
         // Preamble and CTA get their own inline spans. Only the CTA is
         // white-space: nowrap (buttons.css), so when the line wraps the
@@ -662,8 +714,10 @@ export class HelpWindowManager {
         const bodyHtml = `<span class="help-window-body">${escapeHtml(parts.body)}</span>`;
         // Leading space lives OUTSIDE the CTA span — that is the break
         // opportunity before the unbreakable CTA.
+        const ctaSvg = parts.ctaIcon ? getSvgIcon(parts.ctaIcon) : '';
+        const ctaIconHtml = ctaSvg ? `<span class="icon help-window-cta-icon" aria-hidden="true">${ctaSvg}</span> ` : '';
         const ctaHtml = parts.cta
-            ? ` <span class="help-window-cta">• ${escapeHtml(parts.cta)}</span>`
+            ? ` <span class="help-window-cta">• ${ctaIconHtml}${escapeHtml(parts.cta)}</span>`
             : '';
 
         this.helpWindow.innerHTML = `<p>${iconHtml}${bodyHtml}${ctaHtml}${sizeHtml}</p>`;
@@ -736,6 +790,14 @@ export class HelpWindowManager {
         this.helpWindow.classList.add(DOM_CLASSES.SHOW);
         // Don't toggle display - use opacity only to prevent CLS
         this.isVisible = true;
+
+        // A notice that arrived while the window was hidden (the first visit's
+        // "works offline" usually fires on the first-run screen) shows now.
+        const [held] = this._pendingNotices;
+        if (held) {
+            this._pendingNotices.delete(held);
+            this._pendingTimeouts.push(setTimeout(() => this.showNotice(held), UI_TIMEOUTS.HELP_NOTICE_DELAY));
+        }
     }
 
     hide() {

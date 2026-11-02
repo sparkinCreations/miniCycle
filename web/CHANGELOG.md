@@ -1,3 +1,36 @@
+## [2.659] - 2026-11-02
+- Run All Tests in App Diagnostics: 23 false failures fixed, no file downloads
+- Auto Cycle reset turns the mode control's arrows once
+- Delete the unused testing-modal-tab-html.html snippet
+- App Diagnostics: SVG icons, plain buttons, labelled test runner
+- Remove the empty-routine shimmer on the + button
+- App page: social preview tags; name three buttons that started empty
+- First run: no "Your routine is empty" flash before the sample / create dialog
+- One folder for the Open Routine list everywhere
+- Standards pass over the unpushed work: constants and tokens
+- Personalization: Corner Buttons options; desktop captions centred under the buttons
+- Help-window first-use notices, ~3s welcome splash skipped when already loaded, bigger cycle icon
+- style(buttons): brighter white rim on Home View's glass Complete / Clear
+- fix(focus-view): action button caption follows the mode from any source
+- feat(buttons): glass Complete Cycle / Clear buttons, with a Solid option
+- feat(ui): ⓘ for the recurring explanation; cycle / broom icons in the help window
+- feat(ui): icons in every modal title, captioned corner buttons, SVG recurring link
+- test: long-press hint tests expect the new corner-button wording
+- feat(ui): corner buttons' tooltip and long-press hint say what a press does
+- feat(ui): tooltips on the custom mode menu and routine filter
+- feat(ui): corner buttons wear the header buttons' navy-on-frosted look
+- feat(icons): monochrome corner buttons (option A)
+- feat(buttons): press animation on the Complete Cycle / Clear glyph
+- feat(switcher): custom mode filter with the mode icons
+- fix(focus-view): Switch Mode descriptions name Focus View's own button
+- feat(icons): coloured corner buttons, light-blue header menus, one-swirl Auto Cycle
+- feat(modes): SVG mode icons and a custom Home View mode picker
+- feat(help-window): SVG status and cycle-complete icons
+- feat(icons): SVG for notification type icons and section headers
+- fix(icons): one icon per mode, recurring notice no longer shows "icons.recurring"
+- test(journeys): match v2.658 — Focus View opens a new routine's input bar; phones browse in Grid
+
+
 ## [2.658] - 2026-11-01
 - feat(routines): input bar open for routines created in Focus View; new phone users browse in Grid
 

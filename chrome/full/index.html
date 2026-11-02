@@ -95,7 +95,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.658">
+<meta name="app-version" content="2.659">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -103,6 +103,21 @@
 <title>miniCycle&trade; - ROUTINE MANAGER</title>
 <meta name="description" content="miniCycle is a routine workflow companion that turns repeatable tasks into effortless cycles. Track progress, build momentum, and manage daily routines with auto-cycling task lists.">
 <link rel="canonical" href="https://minicycle.app/minicycle">
+<!-- Social previews (Reddit, iMessage, Slack, X): the product page's image
+     and wording, with og:url naming the same address as the canonical above. -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="miniCycle">
+<meta property="og:url" content="https://minicycle.app/minicycle">
+<meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
+<meta property="og:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline. No account needed.">
+<meta property="og:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
+<meta property="og:image:width" content="1600">
+<meta property="og:image:height" content="1200">
+<meta property="og:image:alt" content="miniCycle checklist app shown in light and dark mode across four phone mockups, including the cycle completion moment">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="miniCycle - Routine Checklists That Reset Automatically">
+<meta name="twitter:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline.">
+<meta name="twitter:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
 
 <!-- Preload the dominant weights so Poppins is available AT first paint. The
      bundled build inlines fonts.css, which makes first paint early enough that
@@ -132,17 +147,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.658" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.658" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.658" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.658" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.658" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.658" as="style">
+<link rel="preload" href="styles/main.css?v=2.659" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.659" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.659" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.659" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.659" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.659" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.658" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.659" media="print" id="async-main-css">
 <script src="ext-boot/01.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.658"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.659"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -153,7 +168,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.658"></script>
+<script src="./version.js?v=2.659"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -261,7 +276,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/09.js"></script>
-    <script src="boot-sw.js?v=2.658" defer></script>
+    <script src="boot-sw.js?v=2.659" defer></script>
 
 
 
@@ -408,20 +423,28 @@
     </button>
     <div id="quick-actions-menu" class="quick-actions-menu">
       <button id="toggle-task-input-btn" class="quick-action-item">
-        <span class="quick-action-icon">📝</span>
+        <span class="quick-action-icon"><i class="fas fa-edit"></i></span>
         <span id="toggle-task-input-text" class="quick-action-text"></span>
       </button>
       <button id="create-routine-btn" class="quick-action-item">
-        <span class="quick-action-icon">✨</span>
+        <span class="quick-action-icon"><i class="fas fa-sparkles"></i></span>
         <span class="quick-action-text">Create New Routine</span>
       </button>
     </div>
   </div>
-  <select id="mode-selector" class="mode-selector" aria-label="Select mode" title="Switch mode: Auto Cycle, Manual Cycle, or To-Do">
-    <option value="auto-cycle" title="Tasks reset automatically when all are completed — great for daily routines">Auto Cycle ↻</option>
-    <option value="manual-cycle" title="Tasks stay checked until you manually reset them — complete at your own pace">Manual Cycle ✋↻</option>
-    <option value="todo-mode" title="Completed tasks are removed — use as a traditional checklist">To-Do Mode 📋</option>
+  <!-- The mode's source of truth stays this native select (every module and
+       test drives it), hidden from sight and assistive tech. The visible
+       control is the menu button below, which can draw the SVG mode icons a
+       <select> cannot — modules/routine/modePicker.js. -->
+  <select id="mode-selector" class="mode-selector-native" aria-hidden="true" tabindex="-1">
+    <option value="auto-cycle">Auto Cycle</option>
+    <option value="manual-cycle">Manual Cycle</option>
+    <option value="todo-mode">To-Do Mode</option>
   </select>
+  <div class="mode-picker">
+    <button type="button" id="mode-picker-btn" class="mode-selector mode-picker-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="mode-picker-menu" title="Switch mode">Auto Cycle</button>
+    <div id="mode-picker-menu" class="quick-actions-menu mode-picker-menu" role="menu" aria-label="Mode" hidden></div>
+  </div>
   <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routine" title="Switch routine">
     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
@@ -503,7 +526,7 @@
                 <div class="menu-section-grid" id="menu-section-routines">
                     <button id="new-mini-cycle" title="Create a new routine"><i class="fas fa-sparkles"></i>New</button>
                     <button id="export-mini-cycle" title="Download the current routine as a file"><i class="fas fa-file-download"></i>Download</button>
-                    <button id="open-mini-cycle" title="Switch routines"><i class="fas fa-folder-open"></i>Switch</button>
+                    <button id="open-mini-cycle" title="Switch routines"><i class="fas fa-folder"></i>Switch</button>
                     <button id="import-mini-cycle" title="Import a routine from a file"><i class="fas fa-file-upload"></i>Import</button>
                     <button id="save-as-mini-cycle" title="Duplicate the current routine"><i class="fas fa-copy"></i>Duplicate</button>
                     <button id="share-routine" title="Share the current routine as a file" aria-label="Share the current routine as a file"><i class="fas fa-share-nodes"></i>Share</button>
@@ -697,7 +720,7 @@
 
     <dialog id="games-panel" class="games-modal" data-modal aria-labelledby="games-panel-title" aria-modal="true">
         <div class="games-modal-content has-corner-logo">
-          <h2 id="games-panel-title">🎮 Games</h2>
+          <h2 id="games-panel-title"><i class="fas fa-gamepad"></i> Games</h2>
           <p>Try to complete tasks in the correct order as fast as you can!</p>
           <button id="open-task-order-game">Play Whack-a-Order</button>
           <button id="close-games-panel" class="close-btn">Close</button>
@@ -706,7 +729,7 @@
 
         <dialog id="reminders-modal" class="reminders-modal" data-modal aria-labelledby="reminders-modal-title" aria-modal="true">
             <div class="reminders-modal-content has-corner-logo">
-                <h2 id="reminders-modal-title">Reminders & Notifications</h2>
+                <h2 id="reminders-modal-title"><i class="fas fa-bell"></i> Reminders & Notifications</h2>
                 <p id="reminders-bell-note" class="settings-warning reminders-bell-note">Reminders only cover tasks with the 🔔 button on.</p>
         
                 <label class="settings-option">
@@ -774,20 +797,20 @@
 <dialog id="testing-modal" class="testing-modal" data-modal aria-labelledby="testing-modal-title" aria-modal="true">
     <div class="testing-modal-content">
         <div class="testing-modal-header">
-            <h2 id="testing-modal-title">🔬 App Diagnostics & Testing</h2>
+            <h2 id="testing-modal-title"><i class="fas fa-flask"></i> App Diagnostics & Testing</h2>
             <button class="close-testing-modal" aria-label="Close testing modal">&times;</button>
         </div>
 
         <div class="testing-modal-body">
             <div class="testing-tabs" role="tablist" aria-label="Testing categories">
-                <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab">📊 Diagnostics</button>
-                <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab">🐛 Debug Info</button>
-                <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab">🧪 Automated Tests</button>
+                <button class="testing-tab active" data-tab="diagnostics" role="tab" aria-selected="true" aria-controls="diagnostics-tab"><i class="fas fa-chart-bar"></i> Diagnostics</button>
+                <button class="testing-tab" data-tab="debug" role="tab" aria-selected="false" aria-controls="debug-tab"><i class="fas fa-bug"></i> Debug Info</button>
+                <button class="testing-tab" data-tab="automated-tests" role="tab" aria-selected="false" aria-controls="automated-tests-tab"><i class="fas fa-check-circle"></i> Automated Tests</button>
             </div>
 
             <div id="diagnostics-tab" class="testing-tab-content active" role="tabpanel">
                 <div class="testing-section">
-                    <h3>📋 Quick Health Check</h3>
+                    <h3><i class="fas fa-shield-alt"></i> Quick Health Check</h3>
                     <button id="run-health-check" class="test-btn test-primary">Run Full Diagnostic</button>
                     <button id="check-data-integrity" class="test-btn test-info">Check Data Integrity</button>
                     <button id="validate-schema" class="test-btn test-info">Validate Schema</button>
@@ -795,7 +818,7 @@
                 </div>
 
                 <div class="testing-section">
-                    <h3>📱 App Information</h3>
+                    <h3><i class="fas fa-info-circle"></i> App Information</h3>
                     <button id="show-app-info" class="test-btn test-secondary">Show App Details</button>
                     <button id="show-storage-info" class="test-btn test-secondary">Storage Analysis</button>
                     <button id="show-performance-info" class="test-btn test-secondary">Performance Info</button>
@@ -803,14 +826,14 @@
                 </div>
 
                 <div class="testing-section">
-                    <h3>🛠️ Data Tools</h3>
+                    <h3><i class="fas fa-cog"></i> Data Tools</h3>
                     <button id="run-full-analysis" class="test-btn test-primary">Run Full Analysis</button>
                     <button id="export-debug-data" class="test-btn test-success">Export Debug Package</button>
                     <button id="repair-data" class="test-btn test-danger">Repair Corrupted Data</button>
                 </div>
 
                 <div class="testing-section">
-                    <h3>💾 Backup Management</h3>
+                    <h3><i class="fas fa-history"></i> Backup Management</h3>
                     <button id="list-available-backups" class="test-btn test-info">List Available Backups</button>
                     <button id="create-manual-backup" class="test-btn test-success">Create Manual Backup</button>
                     <button id="restore-from-backup" class="test-btn test-warning">Restore from Backup</button>
@@ -820,42 +843,40 @@
 
             <div id="debug-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
-                    <h3>🐛 Debug Information</h3>
+                    <h3><i class="fas fa-bug"></i> Debug Information</h3>
                     <button id="generate-debug-report" class="test-btn test-primary">Generate Debug Report</button>
                     <button id="view-local-storage-btn" class="test-btn test-secondary">View Local Storage</button>
-                    <button id="show-service-worker-info" class="test-btn test-secondary">📡 Service Worker Info</button>
-                    <button id="test-service-worker-update" class="test-btn test-secondary">🔄 Test SW Update</button>
+                    <button id="show-service-worker-info" class="test-btn test-secondary">Service Worker Info</button>
+                    <button id="test-service-worker-update" class="test-btn test-secondary">Test SW Update</button>
                 </div>
 
                 <div class="testing-section">
-                    <h3>📋 System Info</h3>
+                    <h3><i class="fas fa-desktop"></i> System Info</h3>
                     <button id="show-browser-info" class="test-btn test-secondary">Browser Capabilities</button>
                 </div>
 
                 <div class="button-group">
-                    <h4>🎯 Auto Console Capture</h4>
-                    <button id="enable-auto-capture" class="test-btn test-info">🔄 Enable Auto-Capture Mode</button>
-                    <button id="show-all-console-logs" class="test-btn test-secondary">📊 Show All Captured Logs</button>
-                    <button id="show-migration-errors" class="test-btn test-warning">🚨 Show Migration Issues</button>
-                    <button id="clear-all-console-logs" class="test-btn test-secondary">🧹 Clear All Captured Logs</button>
-                    <button id="stop-console-capture" class="test-btn test-danger">⏹️ Stop Auto Capture</button>
+                    <h4><i class="fas fa-scroll"></i> Auto Console Capture</h4>
+                    <button id="enable-auto-capture" class="test-btn test-info">Enable Auto-Capture Mode</button>
+                    <button id="show-all-console-logs" class="test-btn test-secondary">Show All Captured Logs</button>
+                    <button id="show-migration-errors" class="test-btn test-warning">Show Migration Issues</button>
+                    <button id="clear-all-console-logs" class="test-btn test-secondary">Clear All Captured Logs</button>
+                    <button id="stop-console-capture" class="test-btn test-danger">Stop Auto Capture</button>
                 </div>
 
             </div>
 
             <div id="automated-tests-tab" class="testing-tab-content" role="tabpanel">
                 <div class="testing-section">
-                    <h3>🧪 Quick Test</h3>
-                    <button id="run-all-automated-tests" class="test-btn test-primary">
-                        🏁 Run All Tests
-                    </button>
+                    <h3><i class="fas fa-bolt"></i> Quick Test</h3>
+                    <button id="run-all-automated-tests" class="test-btn test-primary">Run All Tests</button>
                     <p id="quick-test-hint" class="testing-hint-text">
                         Runs the full suite and shows a pass/fail summary.
                     </p>
                 </div>
 
                 <div class="testing-section">
-                    <h3>🔬 Full Test Suite</h3>
+                    <h3><i class="fas fa-flask"></i> Full Test Suite</h3>
                     <p class="testing-hint-text">
                         For detailed testing with individual module controls:
                     </p>
@@ -872,7 +893,7 @@
 
         <div class="testing-results-area">
             <div class="testing-results-header">
-                <h3>📝 Test Results</h3>
+                <h3><i class="fas fa-file-alt"></i> Test Results</h3>
                 <div class="testing-results-controls">
                     <button id="clear-test-results" class="test-btn test-clear">Clear</button>
                     <button id="export-test-results" class="test-btn test-export">Export Results</button>
@@ -882,7 +903,7 @@
             <div id="testing-results" class="testing-results">
                 <div id="testing-output" class="testing-output">
                     <div class="welcome-message">
-                        <p>👋 Welcome to App Diagnostics!</p>
+                        <p>Welcome to App Diagnostics!</p>
                         <p>Use the tabs above to run tests and diagnostics.</p>
                         <p>Results will appear here.</p>
                     </div>
@@ -898,7 +919,7 @@
 
 <dialog id="storage-viewer-overlay" class="storage-modal-overlay" aria-labelledby="storage-viewer-title" aria-modal="true">
   <div class="storage-modal-box">
-    <div class="storage-modal-header" id="storage-viewer-title">📦 Local Storage Viewer</div>
+    <div class="storage-modal-header" id="storage-viewer-title"><i class="fas fa-save"></i> Local Storage Viewer</div>
     <div class="storage-modal-body scrollable" id="storage-content">
       <!-- Content injected here -->
     </div>
@@ -914,7 +935,7 @@
 
 <dialog class="themes-modal" data-modal id="themes-modal" aria-labelledby="themes-modal-title" aria-modal="true">
     <div class="themes-modal-content has-corner-logo">
-      <h2 id="themes-modal-title">🎨 Theme Settings</h2>
+      <h2 id="themes-modal-title"><i class="fas fa-palette"></i> Theme Settings</h2>
   
       <div id="vocab-theme-section">
         <!-- Vocabulary theme options injected by JS -->
@@ -926,7 +947,7 @@
         <label class="custom-checkbox">
           <input type="checkbox" id="darkModeToggleThemes" name="darkModeToggleThemes">
           <span class="checkmark"></span>
-          Dark Mode 🌙
+          Dark Mode <i class="fas fa-moon"></i>
         </label>
       </div>
   
@@ -941,17 +962,24 @@
     <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
         <!-- Top-right corner: Browse Routines (icon + label set by routineSwitcher._wireBrowseCorner) -->
         <button type="button" id="switch-browse-btn" class="switch-browse-btn" aria-label="Browse routines one at a time" title="Browse routines one at a time">Browse</button>
-        <div class="mini-cycle-switch-title" id="routine-switcher-title">Open Routine</div>
+        <div class="mini-cycle-switch-title" id="routine-switcher-title"><i class="fas fa-folder"></i> Open Routine</div>
 
         <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         <div class="routine-sort-filter-row">
             <div class="routine-filter-controls">
-                <select id="routine-filter-select" class="routine-filter-select" aria-label="Filter routines by mode">
+                <!-- Source of truth, hidden; the visible control is the menu
+                     button below (modules/routine/modePicker.js), which can
+                     draw the mode icons a <select> cannot. -->
+                <select id="routine-filter-select" class="mode-selector-native" aria-hidden="true" tabindex="-1">
                     <option value="all">All Modes</option>
-                    <option value="auto">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;🔄 Auto Cycle</option>
-                    <option value="manual">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;✋ Manual Cycle</option>
-                    <option value="todo">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;📋 To-Do</option>
+                    <option value="auto">Auto Cycle</option>
+                    <option value="manual">Manual Cycle</option>
+                    <option value="todo">To-Do</option>
                 </select>
+                <div class="mode-picker mode-picker--start">
+                    <button type="button" id="routine-filter-btn" class="routine-filter-select mode-picker-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="routine-filter-menu" aria-label="Filter routines by mode" title="Filter routines by mode">All Modes</button>
+                    <div id="routine-filter-menu" class="quick-actions-menu mode-picker-menu" role="menu" aria-label="Filter routines by mode" hidden></div>
+                </div>
             </div>
             <div class="routine-sort-controls">
                 <span class="routine-sort-label">Sort:</span>
@@ -999,7 +1027,7 @@
                     <div class="storage-bar-label" title="Space used by your saved routines on this device">Routine Storage</div>
                     <div class="storage-bar-hint">Saved locally on this device</div>
                 </div>
-                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage quota">
+                <button id="storage-refresh-btn" class="storage-refresh-btn" title="Refresh storage usage" aria-label="Refresh storage usage">
                     <i class="fas fa-sync-alt"></i>
                 </button>
             </div>
@@ -1023,7 +1051,7 @@
 <dialog id="shortcuts-modal" class="modal shortcuts-modal" data-modal aria-labelledby="shortcuts-modal-title" aria-modal="true">
     <div class="modal-content shortcuts-modal-content">
         <button class="close-modal" aria-label="Close keyboard shortcuts">&times;</button>
-        <h2 id="shortcuts-modal-title">Keyboard Shortcuts</h2>
+        <h2 id="shortcuts-modal-title"><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h2>
         <div id="shortcuts-list" class="shortcuts-list"></div>
     </div>
 </dialog>
@@ -1031,7 +1059,7 @@
 <dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal aria-modal="true">
     <div class="feedback-modal-content has-corner-logo">
         <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
-        <h2 id="feedback-modal-title">Provide Feedback</h2>
+        <h2 id="feedback-modal-title"><i class="fas fa-comment"></i> Provide Feedback</h2>
         <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
 
         <form id="feedback-form" action="https://api.web3forms.com/submit" method="POST" novalidate>
@@ -1071,7 +1099,7 @@
         </form>
 
         <p id="thank-you-message" style="display: none; color: green; font-weight: bold;">
-            ✅ Thank you for your feedback!
+            <span aria-hidden="true">✅</span> Thank you for your feedback!
         </p>
     </div>
 </dialog>
@@ -1089,10 +1117,10 @@
 
 <main id="app-container" role="main" tabindex="-1">
   <button id="personalization-btn" aria-label="Personalization" title="Personalize colors">
-    🖌️
+    <i class="fas fa-paint-brush"></i>
   </button>
   <button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">
-    🌓
+    <i class="fas fa-moon"></i>
   </button>
 <!-- ═══════════════════════════════════════════════════════════════════════════
      § APP ROOT
@@ -1122,7 +1150,7 @@
             <span id="focus-task-due-indicator" class="focus-task-indicator hidden"></span>
             <span id="focus-task-reset-indicator" class="focus-task-indicator hidden" role="img"></span>
         </div>
-        <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn"></button>
+        <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn">Complete task</button>
         <div class="focus-task-nav">
             <button type="button" id="focus-task-prev-btn" class="focus-task-nav-btn"><span aria-hidden="true">‹</span></button>
             <button type="button" id="focus-task-next-btn" class="focus-task-nav-btn"><span aria-hidden="true">›</span></button>
@@ -1196,7 +1224,7 @@
         <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
 
         <div id="empty-state" class="empty-state">
-            <div class="empty-state-icon">📋</div>
+            <div class="empty-state-icon" aria-hidden="true">📋</div>
             <div class="empty-state-text">Your routine is empty</div>
             <!-- What the app IS, in one line, shown in every view/input-bar state.
                  Vocabulary-neutral on purpose (no "task"/"habit" noun), so vocab
@@ -1224,14 +1252,14 @@
 
         <!-- Onboarding Placeholder - shown before user creates/loads a routine -->
         <div id="onboarding-placeholder" class="onboarding-placeholder">
-            <div class="onboarding-placeholder-icon">🚀</div>
+            <div class="onboarding-placeholder-icon" aria-hidden="true">🚀</div>
             <div class="onboarding-placeholder-title">Create your first routine</div>
             <div class="onboarding-placeholder-text">or try a sample</div>
         </div>
 
         <div class="completed-tasks-section" id="completed-tasks-section">
             <button type="button" class="completed-tasks-header clickable" id="completed-tasks-header" aria-expanded="false" aria-label="Toggle completed tasks">
-                ✓ Completed (<span id="completed-count">0</span>) <span class="toggle-icon">▼</span>
+                <i class="fas fa-check"></i> Completed (<span id="completed-count">0</span>) <span class="toggle-icon" aria-hidden="true">▼</span>
             </button>
             <ul id="completedTaskList" class="completed-task-list"></ul>
         </div>
@@ -1258,7 +1286,7 @@
 </div>
 
     <section id="stats-panel" class="stats-panel" role="tabpanel" aria-labelledby="stats-header" inert>
-        <h2 id="stats-header">📊 Stats</h2>
+        <h2 id="stats-header"><i class="fas fa-chart-bar"></i> Stats</h2>
         <!-- Scroll surface lives HERE, not on the panel: the title above stays
              pinned because it is outside the scroller (no sticky, no background
              needed), and this wrapper's top mask fades content out before it
@@ -1266,7 +1294,7 @@
         <div class="stats-panel-content" id="stats-panel-content">
         <div class="current-routine-status" id="current-routine-status">
             <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
-                📋 Current Routine <span class="toggle-icon">▼</span>
+                <i class="fas fa-list"></i> Current Routine <span class="toggle-icon" aria-hidden="true">▼</span>
             </h3>
             <p id="current-routine-name" class="current-routine-name"></p>
             <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
@@ -1292,7 +1320,7 @@
         </div>
                   <div class="theme-unlock-status" id="theme-unlock-status">
             <h3 class="clickable" tabindex="0" aria-expanded="false" aria-label="Toggle milestone rewards">
-                🎯 Milestone Rewards <span class="toggle-icon">▼</span>
+                <i class="fas fa-route"></i> Milestone Rewards <span class="toggle-icon" aria-hidden="true">▼</span>
               </h3>
             <p id="theme-unlock-message">Loading...</p>
             <p id="golden-unlock-message">Loading...</p>
@@ -1300,7 +1328,7 @@
           </div>
         <div class="badge-container">
             <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn">
-                🏅 Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
+                <i class="fas fa-trophy"></i> Achievement Badges <span id="achievement-count-badge" class="achievement-count-badge">0</span>
             </button>
             <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
             <div class="badges">
@@ -1383,7 +1411,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.658"></script>
+ <script type="module" src="miniCycle-main.js?v=2.659"></script>
 
 <script src="ext-boot/12.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

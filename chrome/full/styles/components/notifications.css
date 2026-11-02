@@ -160,9 +160,24 @@
     gap: var(--space-2-5);
 }
 
+/* Leading SVG — the type's (success / warning / error) or one the caller
+   names. In the plain layout it is a flex item beside .notification-text; in
+   the action/hint layout it sits inline at the start of the message. */
 .notification .notification-icon {
-    font-size: var(--font-size-base);
+    display: inline-flex;
     flex-shrink: 0;
+    width: 1.15em;
+    height: 1.15em;
+    vertical-align: -0.2em;
+}
+
+.notification .notification-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.notification .notification-message > .notification-icon {
+    margin-right: var(--space-2);
 }
 
 .notification .notification-text {
@@ -429,6 +444,18 @@ dialog .notification .notification-action-btn {
 }
 
 /* Task name line */
+/* The ⓘ's note under the schedule line (shared .info-btn pattern) */
+.notification.recurring .recurring-info-note {
+    margin: var(--space-1) 0 var(--space-2);
+    font-size: var(--font-size-xs);
+    line-height: 1.4;
+    opacity: 0.92;
+}
+
+.notification.recurring .recurring-info-note[hidden] {
+    display: none;
+}
+
 .notification.recurring .recurring-task-name {
     margin-bottom: var(--space-2);
     font-size: var(--font-size-sm);

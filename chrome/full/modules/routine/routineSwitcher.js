@@ -33,6 +33,8 @@ import * as listTransforms from './routineSwitcherListTransforms.js';
 import { validateAndRepairCycleData } from './routineSwitcherRepair.js';
 import { RoutineSwitcherActions } from './routineSwitcherActions.js';
 import { RoutineBrowser, orderRoutines } from './routineBrowser.js';
+import { createModeIcon, describeMode } from './routineBrowserRender.js';
+import { ModePicker } from './modePicker.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { scrollBehavior } from '../utils/motionPreference.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -58,6 +60,15 @@ let getUniqueCycleName;
 // mistaken for (see setupModalClickOutside). Local by design: it describes this
 // modal's markup, not an app-wide selector.
 const INTERACTIVE_CONTROL_SELECTOR = 'button, input, select, textarea, a, label, [role="button"], [contenteditable]';
+
+// The mode filter's option values → their labels and icons (setupFilterControls).
+const FILTER_OPTION_LABELS = Object.freeze({
+    all: 'switcher.filterAll', auto: 'switcher.filterAuto', manual: 'switcher.filterManual', todo: 'switcher.filterTodo'
+});
+const FILTER_OPTION_ICONS = Object.freeze({ all: 'list', auto: 'mode-auto', manual: 'mode-manual', todo: 'mode-todo' });
+const FILTER_OPTION_TITLES = Object.freeze({
+    all: 'switcher.filterAllTitle', auto: 'switcher.filterAutoTitle', manual: 'switcher.filterManualTitle', todo: 'switcher.filterTodoTitle'
+});
 
 const di = createDIModule('RoutineSwitcher', {
     AppState: optional(null),
@@ -222,7 +233,7 @@ export class RoutineSwitcher {
         const menuBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
         if (menuBtn) {
             menuBtn.replaceChildren(
-                createIconElement(browse ? 'cards' : 'folder-open'),
+                createIconElement(browse ? 'cards' : 'folder'),
                 document.createTextNode(getLabel(browse ? 'routine.menuBrowse' : 'routine.menuSwitch'))
             );
             menuBtn.title = getLabel(browse ? 'routine.browseAria' : 'routine.switchTitle');
@@ -291,6 +302,8 @@ export class RoutineSwitcher {
             this._openViewWatch = null;
         }
         this._browser.destroy();
+        this._filterPicker?.destroy();
+        this._filterPicker = null;
     }
 
     /**
@@ -305,14 +318,14 @@ export class RoutineSwitcher {
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for switchMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for switchMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -722,14 +735,14 @@ export class RoutineSwitcher {
         const selectedCycle = this._getSelectedItem();
 
         if (!selectedCycle) {
-            this.deps.showNotification('⚠️ ' + getLabel('notify.selectFirst'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.selectFirst'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for confirmMiniCycle');
-            this.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -737,7 +750,7 @@ export class RoutineSwitcher {
 
         if (!cycleKey) {
             console.error("❌ Invalid cycle selection - missing cycleKey");
-            this.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -785,7 +798,7 @@ export class RoutineSwitcher {
 
         if (newActiveId !== cycleKey) {
             console.error('❌ State update failed! Expected:', cycleKey, 'Got:', newActiveId);
-            this.deps.showNotification('⚠️ ' + getLabel('notify.failedToSwitch'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.failedToSwitch'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -818,7 +831,7 @@ export class RoutineSwitcher {
         }
 
         const cycleName = getRoutine(this.deps.AppState.get(), cycleKey)?.title || cycleKey;
-        this.deps.showNotification('✅ ' + getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.deps.showNotification(getLabel('notify.routineSwitched', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -1330,13 +1343,9 @@ export class RoutineSwitcher {
         listItem.dataset.cycleName = cycleData.title || cycleKey;
         listItem.dataset.cycleKey = cycleKey;
 
-        // Mode emoji
-        let emoji = " ✋"; // Manual Cycle
-        if (cycleData.deleteCheckedTasks) {
-            emoji = " 📋"; // To-Do Mode
-        } else if (cycleData.autoReset) {
-            emoji = " 🔄"; // Auto Cycle Mode
-        }
+        // Mode icon — the same SVG Browse and the help window draw.
+        // Decorative: the row is named by its title.
+        const { mode } = describeMode(cycleData);
 
         // Left side: emoji + title
         const leftSide = document.createElement("span");
@@ -1344,7 +1353,8 @@ export class RoutineSwitcher {
 
         const emojiSpan = document.createElement("span");
         emojiSpan.className = "cycle-item-emoji";
-        emojiSpan.textContent = emoji;
+        emojiSpan.setAttribute("aria-hidden", "true");
+        emojiSpan.appendChild(createModeIcon(mode));
 
         const titleSpan = document.createElement("span");
         titleSpan.className = "cycle-item-title";
@@ -1509,6 +1519,9 @@ export class RoutineSwitcher {
     setupStorageRefreshButton() {
         const refreshBtn = this.deps.getElementById(DOM_IDS.STORAGE_REFRESH_BTN);
         if (!refreshBtn) return;
+        // Icon-only: named for assistive tech, not just by its hover title.
+        refreshBtn.setAttribute('aria-label', getLabel('switcher.refreshStorage'));
+        refreshBtn.title = getLabel('switcher.refreshStorage');
 
         const safeAdd = this.deps.safeAddEventListener;
         if (!safeAdd) {
@@ -1846,7 +1859,31 @@ export class RoutineSwitcher {
             return;
         }
 
-        // Set dropdown to current filter mode
+        // Option text from the labels (the HTML carries the same text as a
+        // fallback).
+        for (const option of filterSelect.options) {
+            const key = FILTER_OPTION_LABELS[option.value];
+            if (key) option.textContent = getLabel(key);
+        }
+
+        // The visible control: a menu button over the hidden select, the same
+        // one the header uses for the mode, so it can draw the mode icons.
+        const filterBtn = this.deps.getElementById(DOM_IDS.ROUTINE_FILTER_BTN);
+        const filterMenu = this.deps.getElementById(DOM_IDS.ROUTINE_FILTER_MENU);
+        if (!this._filterPicker && filterBtn && filterMenu) {
+            this._filterPicker = new ModePicker({
+                select: filterSelect,
+                button: filterBtn,
+                menu: filterMenu,
+                getModeLabel: (value) => getLabel(FILTER_OPTION_LABELS[value] || FILTER_OPTION_LABELS.all),
+                getModeIcon: (value) => FILTER_OPTION_ICONS[value] || FILTER_OPTION_ICONS.all,
+                getButtonAria: (label) => getLabel('switcher.filterAria', { vars: { mode: label } }),
+                getItemTitle: (value) => getLabel(FILTER_OPTION_TITLES[value] || FILTER_OPTION_TITLES.all)
+            });
+            filterBtn.title = getLabel('switcher.filterTitle');
+        }
+
+        // Set dropdown to current filter mode (the picker redraws from it)
         filterSelect.value = this._filterMode;
 
         // Setup handler (only once)

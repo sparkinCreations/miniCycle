@@ -471,8 +471,13 @@ export class FocusTaskPanel {
     /** ARIA labels + titles (getLabel — refreshed values on re-init only;
      *  visible text refreshes every render()). */
     _applyStaticLabels() {
-        const { panel, prevBtn, nextBtn } = this.elements;
+        const { panel, prevBtn, nextBtn, completeBtn } = this.elements;
         panel.setAttribute('aria-label', getLabel('focusTask.panelAria'));
+        // render() words it for the current task; until the first render it
+        // was an empty button (accessibility audits flag it).
+        if (completeBtn && !completeBtn.textContent.trim()) {
+            completeBtn.textContent = getLabel('focusTask.completeTask');
+        }
         prevBtn.setAttribute('aria-label', getLabel('focusTask.prevTask'));
         prevBtn.title = getLabel('focusTask.prevTask');
         nextBtn.setAttribute('aria-label', getLabel('focusTask.nextTask'));

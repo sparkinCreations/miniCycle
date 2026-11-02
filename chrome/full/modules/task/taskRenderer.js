@@ -273,8 +273,9 @@ export class TaskRenderer {
                 }
             }
 
-            // Toggle tasks-empty class on body for shimmer effect
-            // Uses managed class instead of :has(.task-list:empty) for PWA reliability
+            // body.tasks-empty: the active routine renders no tasks. A managed
+            // class instead of :has(.task-list:empty), for PWA reliability.
+            // (It no longer drives a + shimmer — that is first-time only.)
             document.body.classList.toggle(DOM_CLASSES.TASKS_EMPTY, taskList.children.length === 0);
         } else {
             console.warn('⚠️ Render failed - existing task list preserved');

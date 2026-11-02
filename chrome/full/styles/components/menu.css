@@ -82,7 +82,7 @@ body.dark-mode,
    MAIN MENU BACKDROP
    Subtle dim + blur behind the menu (and the +-button dropdown) when either
    is open. Driven by body classes (.main-menu-open / .quick-actions-open) for
-   PWA reliability — see precedent in mode-selector.css for .tasks-empty.
+   PWA reliability (as body.tasks-empty is, from taskRenderer).
    Uses opacity/visibility so the transition fades cleanly both ways.
    ============================================================================= */
 
@@ -100,8 +100,8 @@ body.dark-mode,
     transition: opacity 0.25s ease, visibility 0.25s ease;
 }
 
-/* Body-class triggers — JS-managed for PWA reliability (matches the
-   existing precedent in mode-selector.css for .tasks-empty). uiBoot.js
+/* Body-class triggers — JS-managed for PWA reliability (rather than
+   :has()). uiBoot.js
    toggles .main-menu-open; modeManager.js toggles .quick-actions-open. */
 body.main-menu-open .main-menu-backdrop,
 body.quick-actions-open .main-menu-backdrop {

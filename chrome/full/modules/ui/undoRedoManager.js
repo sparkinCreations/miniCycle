@@ -1077,7 +1077,7 @@ export async function performStateBasedUndo() {
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack);
       const stepsText = stepsLeft === 0 ? getLabel('notify.undoStepsNone') :
                         getLabel('notify.undoStepsLeft', { vars: { count: stepsLeft } });
-      _deps.showNotification('↩️ ' + getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      _deps.showNotification(getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'history' });
     }
 
     // Clear dedup trackers so the next user-initiated change is always captured
@@ -1109,7 +1109,7 @@ export async function performStateBasedUndo() {
       updateUndoRedoButtons();
 
       if (_deps.showNotification) {
-        _deps.showNotification('⚠️ ' + getLabel('notify.undoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        _deps.showNotification(getLabel('notify.undoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       }
     } catch (rollbackError) {
       console.error('❌ Rollback also failed:', rollbackError);
@@ -1278,7 +1278,7 @@ export async function performStateBasedRedo() {
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack);
       const stepsText = stepsLeft === 0 ? getLabel('notify.redoStepsNone') :
                         getLabel('notify.redoStepsLeft', { vars: { count: stepsLeft } });
-      _deps.showNotification('↪️ ' + getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      _deps.showNotification(getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'redo' });
     }
 
     // Clear dedup trackers so the next user-initiated change is always captured
@@ -1304,7 +1304,7 @@ export async function performStateBasedRedo() {
       updateUndoRedoButtons();
 
       if (_deps.showNotification) {
-        _deps.showNotification('⚠️ ' + getLabel('notify.redoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        _deps.showNotification(getLabel('notify.redoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       }
     } catch (rollbackError) {
       console.error('❌ Rollback also failed:', rollbackError);
@@ -1435,7 +1435,7 @@ export async function onCycleSwitched(newCycleId) {
     updateUndoRedoButtons();
 
     if (_deps.showNotification) {
-      _deps.showNotification('⚠️ ' + getLabel('notify.undoHistoryUnavailableCycle'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+      _deps.showNotification(getLabel('notify.undoHistoryUnavailableCycle'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
   } finally {
     // ✅ Always clear the flag, even on error
@@ -1666,7 +1666,7 @@ export async function initUndoSystemForApp() {
     updateUndoRedoButtons();
 
     if (_deps.showNotification) {
-      _deps.showNotification('⚠️ ' + getLabel('notify.undoHistoryUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+      _deps.showNotification(getLabel('notify.undoHistoryUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
   }
 }

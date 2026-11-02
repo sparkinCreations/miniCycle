@@ -226,7 +226,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         }
     } else {
         assertInjected('showNotification', Deps.showNotification);
-        Deps.showNotification(`✅ ${getLabel('notify.taskSetRecurring', { vars: { frequency } })}`, "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
+        Deps.showNotification(getLabel('notify.taskSetRecurring', { vars: { frequency } }), "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
     }
 
     // Restart watcher at active interval since a template was created
@@ -313,7 +313,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     }
 
     assertInjected('showNotification', Deps.showNotification);
-    Deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+    Deps.showNotification(getLabel('notify.recurringTurnedOff'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'history' });
 
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         Deps.updatePanelButtonVisibility();

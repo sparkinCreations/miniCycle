@@ -52,7 +52,7 @@ import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
 import { compareNames } from '../utils/taskSort.js';
 import { getActiveRoutineId, getRoutineBrowserLayout, getRoutineBrowserSort, getRoutines } from '../utils/cycleMode.js';
-import { applyRoutineTheme, buildTile, describeMode, fillCard } from './routineBrowserRender.js';
+import { applyRoutineTheme, buildTile, createModeIcon, describeMode, fillCard } from './routineBrowserRender.js';
 import { routineNameMatches, routineRecency } from './routineSwitcherListTransforms.js';
 
 // Re-exported: tests and callers have always reached it here.
@@ -416,7 +416,7 @@ export class RoutineBrowser {
         const name = routine.title || this._currentKey();
         const total = this._order.length;
         const single = total < 2;
-        const { emoji, name: modeName } = describeMode(routine);
+        const { mode, name: modeName } = describeMode(routine);
 
         title.textContent = name;
         let place;
@@ -427,11 +427,11 @@ export class RoutineBrowser {
         }
         else if (single) place = getLabel('routineBrowser.onlyOne');
         else place = getLabel('routineBrowser.position', { vars: { position: this._index + 1, total } });
-        const parts = [`${emoji} ${modeName}`, place];
+        const parts = [modeName, place];
         // When it was last used — what the old "All routines" list showed.
         const when = routineRecency(routine);
         if (when) parts.push(getLabel('routineBrowser.lastUsed', { vars: { date: formatDay(when) } }));
-        metaMode.textContent = parts.join(' · ');
+        metaMode.replaceChildren(createModeIcon(mode, 'rb-mode-icon'), ` ${parts.join(' · ')}`);
         metaSize.textContent = this._storageLine(routine);
 
         prevBtn.disabled = single || this._index === 0;

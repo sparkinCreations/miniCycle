@@ -1005,7 +1005,7 @@ export class OnboardingManager {
 
         if (!this.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for reset onboarding');
-            this.deps.showNotification("❌ " + getLabel('notify.appStateNotReady'), "error", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            this.deps.showNotification(getLabel('notify.appStateNotReady'), "error", UI_TIMEOUTS.NOTIFICATION_SHORT);
             return;
         }
 
@@ -1031,7 +1031,7 @@ export class OnboardingManager {
         // with the toast message ("...next time you open the app").
 
         this.deps.showNotification(
-            "✅ " + getLabel('notify.onboardingReset'),
+            getLabel('notify.onboardingReset'),
             "success",
             UI_TIMEOUTS.NOTIFICATION_LONG
         );

@@ -15,6 +15,7 @@
 
 import { DOM_IDS, getTestOrigin, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getIcon, createIconElement } from '../utils/icons.js';
 import { createDIModule, required, optional } from '../core/diBase.js';
 
 const di = createDIModule('TestingModalIntegration', {
@@ -84,10 +85,10 @@ function displayTestResults(resultData) {
 
     // Clean pass (no failures, no timeouts).
     if (allPassed) {
-        appendToAutomatedTestResults(`✅ ALL TESTS PASSED\n\n`);
+        appendToAutomatedTestResults(`ALL TESTS PASSED\n\n`);
         appendToAutomatedTestResults(`${totalPassed}/${totalTests} tests passed (100%)\n`);
         appendToAutomatedTestResults(`Completed in ${duration}s\n`);
-        getShowNotification()(`✅ All ${totalTests} tests passed!`, "success", 5000);
+        getShowNotification()(getLabel('notify.testsAllPassed', { vars: { count: totalTests } }), "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
         return;
     }
 
@@ -95,7 +96,7 @@ function displayTestResults(resultData) {
     // timing-sensitive tests fail OR time out spuriously, so anything below may be
     // false. (Foreground runs are 100%.)
     if (suiteWentHidden) {
-        appendToAutomatedTestResults(`⏸️ THIS RUN WAS BACKGROUNDED — results below may be FALSE.\n`);
+        appendToAutomatedTestResults(`THIS RUN WAS BACKGROUNDED — results below may be FALSE.\n`);
         appendToAutomatedTestResults(`Hidden tabs pause animation frames and throttle timers, so timing-sensitive tests stall. Re-run with this tab kept in the foreground (don't switch tabs/apps) before treating anything below as a real bug.\n\n`);
     }
 
@@ -105,23 +106,23 @@ function displayTestResults(resultData) {
     const realFailures = failedModules.filter(m => !m.timedOut);
 
     appendToAutomatedTestResults(realFailures.length > 0
-        ? `⚠️ SOME TESTS FAILED\n\n`
-        : `⏱️ TESTS INCOMPLETE (timeouts, no real failures)\n\n`);
+        ? `SOME TESTS FAILED\n\n`
+        : `TESTS INCOMPLETE (timeouts, no real failures)\n\n`);
     appendToAutomatedTestResults(`${totalPassed}/${totalTests} tests passed\n\n`);
 
     if (realFailures.length > 0) {
         appendToAutomatedTestResults(`Failed modules:\n`);
         realFailures.forEach(m => {
             const errorMsg = m.error ? ` - ${m.error}` : '';
-            appendToAutomatedTestResults(`  ❌ ${m.name}: ${m.passed}/${m.total}${errorMsg}\n`);
+            appendToAutomatedTestResults(`  ✗ ${m.name}: ${m.passed}/${m.total}${errorMsg}\n`);
         });
     }
 
     if (incompleteModules.length > 0) {
-        appendToAutomatedTestResults(`\n⏱️ Timed out — may be incomplete (count is the rendered subset; later tests may not have run):\n`);
+        appendToAutomatedTestResults(`\nTimed out — may be incomplete (count is the rendered subset; later tests may not have run):\n`);
         incompleteModules.forEach(m => {
             const tag = m.backgrounded ? ' — while tab was backgrounded' : '';
-            appendToAutomatedTestResults(`  ⏱️ ${m.name}: ${m.passed}/${m.total} rendered${tag}\n`);
+            appendToAutomatedTestResults(`  … ${m.name}: ${m.passed}/${m.total} rendered${tag}\n`);
         });
         appendToAutomatedTestResults(`Re-run (tab focused) to confirm these.\n`);
     }
@@ -130,11 +131,11 @@ function displayTestResults(resultData) {
     appendToAutomatedTestResults(`\nSee Test Suite Browser for detailed debugging.\n`);
 
     if (suiteWentHidden) {
-        getShowNotification()(`⏸️ Run was backgrounded — re-run with the tab focused`, "warning", 6000);
+        getShowNotification()(getLabel('notify.testsBackgrounded'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
     } else if (realFailures.length > 0) {
-        getShowNotification()(`⚠️ ${realFailures.length} module(s) have failures`, "warning", 5000);
+        getShowNotification()(getLabel('notify.testsModulesFailed', { vars: { count: realFailures.length } }), "warning", UI_TIMEOUTS.NOTIFICATION_SLOW);
     } else {
-        getShowNotification()(`⏱️ ${incompleteModules.length} module(s) timed out (incomplete) — re-run`, "warning", 6000);
+        getShowNotification()(getLabel('notify.testsModulesTimedOut', { vars: { count: incompleteModules.length } }), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
     }
 
 }
@@ -162,7 +163,7 @@ function createTestRunnerModal() {
     // Tests are network-only BY DESIGN (the SW never caches /tests/ so results
     // always match deployed code) — say so instead of showing a dead iframe.
     if (!navigator.onLine) {
-        getShowNotification()('📡 ' + getLabel('notify.testsRequireNetwork'), 'warning', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+        getShowNotification()(getLabel('notify.testsRequireNetwork'), 'warning', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
         return;
     }
     // Remove any existing modal
@@ -181,8 +182,8 @@ function createTestRunnerModal() {
     const header = document.createElement('div');
     header.className = 'test-runner-header';
     header.innerHTML = `
-        <span id="test-runner-title" class="test-runner-title">🧪 Running Tests...</span>
-        <button id="close-test-runner" class="test-runner-close-btn">✕ Close</button>
+        <span id="test-runner-title" class="test-runner-title"><span class="icon" aria-hidden="true">${getIcon('flask')}</span> ${getLabel('test.runnerTitle')}</span>
+        <button id="close-test-runner" class="test-runner-close-btn"><span class="icon" aria-hidden="true">${getIcon('times')}</span> ${getLabel('test.close')}</button>
     `;
 
     // Progress section - main content area
@@ -190,19 +191,19 @@ function createTestRunnerModal() {
     progressSection.id = 'test-progress-section';
     progressSection.className = 'test-runner-progress';
     progressSection.innerHTML = `
-        <div class="test-runner-emoji">🧪</div>
+        <div class="test-runner-icon icon" aria-hidden="true">${getIcon('flask')}</div>
         <div id="test-status-text" class="test-runner-status">
-            ⏳ Initializing tests...
+            ${getLabel('test.runnerInitializing')}
         </div>
         <div id="test-time-estimate" class="test-runner-time">
-            Estimating time...
+            ${getLabel('test.runnerEstimating')}
         </div>
         <div class="test-runner-bar-track">
             <div id="test-progress-bar" class="test-runner-bar-fill"></div>
         </div>
         <div class="test-runner-warning">
             <span class="test-runner-warning-text">
-                ⚠️ Please do not close this window while tests are running
+                <span class="icon" aria-hidden="true">${getIcon('exclamation-triangle')}</span> ${getLabel('test.runnerKeepOpen')}
             </span>
         </div>
     `;
@@ -263,12 +264,12 @@ function runAllAutomatedTests() {
         output.textContent = '';
     }
 
-    appendToAutomatedTestResults("🧪 Opening Test Runner (separate origin)...\n\n");
+    appendToAutomatedTestResults("Opening Test Runner (separate origin)...\n\n");
 
     // Create and show the iframe modal (loads the runner from the test origin)
     createTestRunnerModal();
 
-    appendToAutomatedTestResults("⏳ Tests running...\n");
+    appendToAutomatedTestResults("Tests running...\n");
     appendToAutomatedTestResults("Modal will close automatically when complete.\n\n");
 
     // Listen for progress and results via postMessage from the cross-origin iframe.
@@ -312,7 +313,7 @@ function runAllAutomatedTests() {
 
             if (statusText) {
                 statusText.textContent = '';
-                const prefix = document.createTextNode('🧪 Testing: ');
+                const prefix = document.createTextNode(`${getLabel('test.runnerTesting')} `);
                 const strong = document.createElement('strong');
                 strong.textContent = moduleName;
                 const suffix = document.createTextNode(` (${currentIndex}/${totalModules})`);
@@ -328,9 +329,9 @@ function runAllAutomatedTests() {
                 if (estimatedRemaining > 60) {
                     const mins = Math.floor(estimatedRemaining / 60);
                     const secs = estimatedRemaining % 60;
-                    timeEstimate.textContent = `~${mins}m ${secs}s remaining`;
+                    timeEstimate.textContent = getLabel('test.runnerRemaining', { vars: { time: `${mins}m ${secs}s` } });
                 } else {
-                    timeEstimate.textContent = `~${estimatedRemaining}s remaining`;
+                    timeEstimate.textContent = getLabel('test.runnerRemaining', { vars: { time: `${estimatedRemaining}s` } });
                 }
             }
 
@@ -349,17 +350,18 @@ function runAllAutomatedTests() {
 
             if (progressBar) progressBar.style.width = '100%';
             if (statusText) statusText.textContent = data.allPassed
-                ? '✅ All tests passed!'
-                : `⚠️ ${data.totalTests - data.totalPassed} test(s) failed`;
+                ? getLabel('test.runnerAllPassed')
+                : getLabel('test.runnerSomeFailed', { vars: { count: data.totalTests - data.totalPassed } });
             if (timeEstimate) {
                 const totalTime = ((Date.now() - testStartTime) / 1000).toFixed(1);
-                timeEstimate.textContent = `Completed in ${totalTime}s`;
+                timeEstimate.textContent = getLabel('test.runnerCompletedIn', { vars: { seconds: totalTime } });
             }
-            if (title) title.textContent = data.allPassed
-                ? '✅ Tests Complete'
-                : '⚠️ Tests Complete (with failures)';
+            if (title) title.replaceChildren(
+                createIconElement(data.allPassed ? 'check-circle' : 'exclamation-triangle'),
+                ` ${getLabel(data.allPassed ? 'test.runnerComplete' : 'test.runnerCompleteFailures')}`
+            );
 
-            // Brief pause so the ✅ completion state is visible, then tear down.
+            // Brief pause so the completion state is visible, then tear down.
             setTimeout(() => finalizeTeardown(data), 1200);
             return;
         }
@@ -370,7 +372,7 @@ function runAllAutomatedTests() {
     setTimeout(() => {
         if (!resultsReceived) {
             window.removeEventListener('message', handleTestMessages);
-            appendToAutomatedTestResults("⚠️ Test timeout - closing modal.\n");
+            appendToAutomatedTestResults("Test timeout - closing modal.\n");
             closeTestRunnerModal();
         }
     }, 1200000);

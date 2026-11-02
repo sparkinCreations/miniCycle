@@ -642,7 +642,7 @@ async function shareBackupNative(AppState, fileName, defaultName) {
         }
         const saved = await saveFileToDocumentsNative({ data: file.text, fileName: file.name });
         if (saved.handled) {
-            _deps.showNotification('✅ ' + getLabel('notify.backupSavedToDocuments', { vars: { name: file.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification(getLabel('notify.backupSavedToDocuments', { vars: { name: file.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
             AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.lastFileBackupTimestamp = Date.now();
@@ -664,7 +664,7 @@ async function shareBackupNative(AppState, fileName, defaultName) {
 
 /** Tell the user, and record the timestamp the backup-reminder system reads. */
 function markBackupSaved(AppState) {
-    _deps.showNotification('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    _deps.showNotification(getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     AppState.update(state => {
         if (!state.settings) state.settings = {};
         state.settings.lastFileBackupTimestamp = Date.now();
@@ -1110,7 +1110,7 @@ async function processRestoreData(fileContent, options = {}) {
                     const liteOk = restoreLiteStorageSnapshot(backupData.liteStorage);
                     const extrasOk = restoreExtraStorageKeys(backupData.extraStorageKeys);
                     if (liteOk && extrasOk) {
-                        _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                        _deps.showNotification(getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                     } else {
                         _deps.showNotification(getLabel('notify.restorePartialSettings'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
                     }
@@ -1539,7 +1539,7 @@ export function downloadPreMigrationCopy() {
     a.download = `miniCycle-before-update-${stamp}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    _deps.showNotification('✅ ' + getLabel('notify.preMigrationDownloaded'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    _deps.showNotification(getLabel('notify.preMigrationDownloaded'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     return true;
 }
 
@@ -1622,7 +1622,7 @@ export async function restorePreMigrationCopy() {
         return false;
     }
 
-    _deps.showNotification('✅ ' + getLabel('notify.preMigrationRestored'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+    _deps.showNotification(getLabel('notify.preMigrationRestored'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
     reloadWithLoader('Pre-migration restore');
     return true;
 }
@@ -1938,9 +1938,9 @@ export function setupFactoryResetButton() {
             } else {
                 console.warn('Factory reset: these databases could not be confirmed removed:', failedDeletes);
             }
-            _deps.showNotification("⚠️ " + getLabel('notify.factoryResetPartial'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification(getLabel('notify.factoryResetPartial'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
-            _deps.showNotification("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            _deps.showNotification(getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         // Full re-init. armFirstRunChoice puts the user back on the create /

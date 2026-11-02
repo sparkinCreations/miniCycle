@@ -828,13 +828,13 @@ body.app-loading .skip-to-content {
    class and reads the remaining animation via getAnimations().
    ============================================================================ */
 .first-run-splash.first-run-splash--preboot {
-  --first-run-splash-char-duration: 280ms;
-  --first-run-splash-char-stagger: 90ms;
+  --first-run-splash-char-duration: 220ms;
+  --first-run-splash-char-stagger: 45ms;
   --first-run-splash-char-start-scale: 1.8;
   --first-run-splash-letter-spread: 14px;
   --first-run-splash-line-gap: var(--space-8, 32px);
   --first-run-splash-word-gap: 0.7em;
-  --first-run-splash-fade-duration: 600ms;
+  --first-run-splash-fade-duration: 400ms;
   --first-run-splash-phase1-total: calc(
     var(--last-char-index, 19) * var(--first-run-splash-char-stagger)
     + var(--first-run-splash-char-duration)

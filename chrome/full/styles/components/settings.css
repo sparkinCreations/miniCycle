@@ -92,6 +92,20 @@
     flex-shrink: 0;
 }
 
+/* Section and title icons are SVGs from the ICONS registry (utils/icons.js),
+   sized to the text they sit beside — the same set the main menu draws. */
+.settings-section-icon,
+.settings-title-icon {
+    display: inline-flex;
+    vertical-align: -0.125em;
+}
+
+.settings-section-icon svg,
+.settings-title-icon svg {
+    width: 1em;
+    height: 1em;
+}
+
 .settings-section-header {
     display: flex;
     align-items: center;
@@ -586,20 +600,39 @@ button.settings-btn.close-btn:hover {
     background: var(--overlay-light);
 }
 
+/* The two corner buttons wear the header buttons' look (.routine-switcher-btn:
+   frosted light blue, thin blue rim, navy icon) as circles, so the navy reads
+   on any background — a theme's, an image, a custom colour — not just the
+   default blue. Dark mode and High Contrast restyle them with those buttons
+   (dark-mode.css, accessibility.css). */
+#quick-dark-toggle,
+#personalization-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    background: var(--overlay-white-light);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    box-shadow: var(--shadow-button);
+    /* The soft white rim Focus View's round button and the glass Complete /
+       Clear buttons wear (1px, 40%). */
+    border: 1px solid var(--overlay-white-medium);
+    /* --pref-corner-btn: Personalization → Corner Buttons → Button Color */
+    color: var(--pref-corner-btn, var(--color-navy));
+    border-radius: 50%;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+    cursor: pointer;
+}
+
 /* Quick dark toggle */
 #quick-dark-toggle {
     position: fixed;
     bottom: 30px;
-    right: 10px;
+    right: 14px;
     z-index: var(--z-content);
-    background: none;
-    color: var(--color-white);
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 32px;
-    cursor: pointer;
 }
 
 #quick-dark-toggle:hover {
@@ -610,29 +643,97 @@ button.settings-btn.close-btn:hover {
 #personalization-btn {
     position: fixed;
     bottom: 30px;
-    left: 10px;
+    left: 14px;
     z-index: var(--z-content);
-    background: none;
-    color: var(--color-white);
-    border: none;
-    border-radius: 50%;
-    width: 60px;
-    height: 60px;
-    font-size: 32px;
-    cursor: pointer;
 }
 
 #personalization-btn:hover {
     transform: scale(1.15);
 }
 
+/* Desktop: a caption under each (data-label, set from the label system by
+   preferencesManager / themeManager), in the buttons' own frosted pill so it
+   reads on any background, centred under its button. The buttons sit further
+   in from the corners to make room: "Personalization" is about twice the
+   button's width. Phones and tablets keep the icon alone — the footer line
+   sits between the two corners there — and the long-press hint.
+   Personalization → Corner Buttons → Show labels off drops the captions
+   (body.corner-btns-no-labels) and the buttons go back to the corners. */
+@media (min-width: 1024px) and (hover: hover) {
+    body:not(.corner-btns-no-labels) #quick-dark-toggle::after,
+    body:not(.corner-btns-no-labels) #personalization-btn::after {
+        content: attr(data-label);
+        position: absolute;
+        top: calc(100% + 5px);
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 1px var(--space-2);
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-xs);
+        font-weight: 600;
+        line-height: 1.5;
+        white-space: nowrap;
+        color: var(--pref-corner-btn, var(--color-navy));
+        background: var(--overlay-white-light);
+        -webkit-backdrop-filter: blur(12px) saturate(140%);
+        backdrop-filter: blur(12px) saturate(140%);
+        border: 1px solid var(--overlay-white-medium);
+        pointer-events: none;
+    }
+
+    /* Room for the caption: under the buttons, and beside them so the
+       centred "Personalization" pill stays on screen */
+    body:not(.corner-btns-no-labels) #quick-dark-toggle,
+    body:not(.corner-btns-no-labels) #personalization-btn {
+        bottom: 40px;
+    }
+    body:not(.corner-btns-no-labels) #personalization-btn { left: 52px; }
+    body:not(.corner-btns-no-labels) #quick-dark-toggle { right: 52px; }
+
+    body.dark-mode #quick-dark-toggle::after,
+    body.dark-mode #personalization-btn::after {
+        color: var(--theme-text-primary);
+        background: var(--dark-overlay-heavy);
+        border-color: var(--dark-overlay-strong);
+    }
+}
+
+/* Personalization → Corner Buttons → Style. Frosted (above) is the default.
+   Solid: a filled circle in the button colour with a white icon, in light
+   and dark mode alike (:not(.high-contrast) leaves High Contrast its own). */
+body.corner-btns-solid:not(.high-contrast) #quick-dark-toggle,
+body.corner-btns-solid:not(.high-contrast) #personalization-btn {
+    background: var(--pref-corner-btn, var(--color-navy));
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    border-color: var(--overlay-white-medium);
+    color: var(--color-white);
+}
+
+/* Emoji: the original 🎨 / 🌙 (☀️ in dark mode) on the frosted circle, in
+   place of the SVG. ::before is free (::after is the desktop caption). */
+body.corner-btns-emoji #quick-dark-toggle > *,
+body.corner-btns-emoji #personalization-btn > * {
+    display: none;
+}
+
+body.corner-btns-emoji #personalization-btn::before { content: '🎨'; }
+body.corner-btns-emoji #quick-dark-toggle::before { content: '🌙'; }
+body.corner-btns-emoji.dark-mode #quick-dark-toggle::before { content: '☀️'; }
+
+/* Dark mode button turned off (Settings and the Themes panel still switch
+   dark mode). */
+body.hide-dark-mode-btn #quick-dark-toggle {
+    display: none;
+}
+
 /* Mobile: Smaller buttons for better space usage */
 @media (max-width: 768px) {
     #quick-dark-toggle,
     #personalization-btn {
-        width: 50px;
-        height: 50px;
-        font-size: 26px;
+        width: 46px;
+        height: 46px;
+        font-size: 21px;
         bottom: 25px;
     }
 }
@@ -640,9 +741,9 @@ button.settings-btn.close-btn:hover {
 @media (max-width: 480px) {
     #quick-dark-toggle,
     #personalization-btn {
-        width: 45px;
-        height: 45px;
-        font-size: 24px;
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
         bottom: 20px;
     }
 }

@@ -296,10 +296,11 @@ function handleMilestoneUnlocks(miniCycleName, globalCyclesCompleted) {
         if (!hasGameUnlock) {
             if (typeof deps.showNotification === 'function') {
                 deps.showNotification(
-                    `🎮 ${getLabel('notify.gameUnlocked')}`,
+                    getLabel('notify.gameUnlocked'),
                     "success",
                     6000,
                     {
+                        icon: 'gamepad',
                         actionButton: {
                             label: getLabel('action.openGamesModal'),
                             onClick: () => document.getElementById(DOM_IDS.OPEN_GAMES_PANEL)?.click()

@@ -722,6 +722,20 @@ dialog.preferences-modal::backdrop {
 
 .preferences-section-icon {
     font-size: var(--font-size-sm);
+    display: inline-flex;
+}
+
+/* SVGs from the ICONS registry (utils/icons.js), sized to their text. */
+.preferences-section-icon svg,
+.pref-color-icon svg,
+.preview-panel-icon svg {
+    width: 1em;
+    height: 1em;
+}
+
+.preview-panel-icon {
+    display: inline-flex;
+    vertical-align: -0.125em;
 }
 
 .preferences-quick-presets-grid {
@@ -1089,7 +1103,8 @@ dialog.preferences-modal::backdrop {
     font-size: var(--font-size-sm);
     flex-shrink: 0;
     width: 20px;
-    text-align: center;
+    display: inline-flex;
+    justify-content: center;
 }
 
 .preferences-color-row label {

@@ -359,7 +359,9 @@ body.high-contrast:not(.dark-mode) .mini-cycle-switch-btn {
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-body.high-contrast:not(.dark-mode) .routine-switcher-btn {
+body.high-contrast:not(.dark-mode) .routine-switcher-btn,
+body.high-contrast:not(.dark-mode) #personalization-btn,
+body.high-contrast:not(.dark-mode) #quick-dark-toggle {
     border: 2px solid rgba(0, 0, 0, 0.4);
     background: rgba(255, 255, 255, 0.4);
 }
@@ -942,7 +944,9 @@ body.high-contrast.dark-mode .mini-cycle-switch-btn {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-body.high-contrast.dark-mode .routine-switcher-btn {
+body.high-contrast.dark-mode .routine-switcher-btn,
+body.high-contrast.dark-mode #personalization-btn,
+body.high-contrast.dark-mode #quick-dark-toggle {
     border: 2px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.15);
     color: #e0e0e0;

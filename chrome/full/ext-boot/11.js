@@ -269,7 +269,15 @@
       // handles same-tab routing; localStorage handles the cross-launch gate.
       try { localStorage.setItem('miniCycle_firstRunChoiceMade', '1'); } catch (err) { /* storage unavailable — worst case the choice screen re-shows */ }
       try { performance.mark('mc:firstrun:choiceTapped'); } catch (err) { /* Performance API unavailable — marks are diagnostics only */ }
-      if (value === 'create' || value === 'sample') showPrebootSplash();
+      // The welcome splash covers loading. If the app finished loading while
+      // the user read the choices (hideAppLoader sets data-app-loaded), there
+      // is nothing to cover: skip it, and tell onboardingSplash not to play
+      // its own (data-skip-welcome-splash) so the pick opens straight away.
+      if (document.documentElement.getAttribute('data-app-loaded') === 'true') {
+        document.documentElement.setAttribute('data-skip-welcome-splash', 'true');
+      } else if (value === 'create' || value === 'sample') {
+        showPrebootSplash();
+      }
 
       // Button takeover: the tapped button becomes the progress surface.
       var btns = choice.querySelectorAll('.first-run-btn');

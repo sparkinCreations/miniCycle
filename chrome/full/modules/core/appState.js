@@ -113,7 +113,10 @@ class MiniCycleState {
             // from the real factory (missing unlockedThemes, most tour steps, the
             // whole accessibility block) and that nothing could reach.
             createInitialData: mergedDeps.createInitialData || null,
-            addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn))
+            addWindowListener: mergedDeps.addWindowListener || ((evt, fn) => window.addEventListener(evt, fn)),
+            // Saves the held damaged original as a file (share sheet / download).
+            // Injectable so tests do not download a real file.
+            saveFile: mergedDeps.saveFile || saveTextAsFile
         };
 
         this.data = null;
@@ -825,7 +828,7 @@ class MiniCycleState {
     async saveHeldDamagedOriginal() {
         const raw = this.heldDamagedOriginal;
         if (raw === null) return true;
-        const saved = await saveTextAsFile({
+        const saved = await this.deps.saveFile({
             text: raw,
             fileName: `miniCycle-damaged-data-${Date.now()}.txt`,
             title: getLabel('noun.backupFileType')

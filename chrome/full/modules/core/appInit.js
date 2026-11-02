@@ -64,6 +64,9 @@ const di = createDIModule('AppInit', {
 	syncModeFromToggles: optional(null),
 	getElementById: optional((id) => document.getElementById(id)),
 	addBodyClass: optional((cls) => document.body.classList.add(cls)),
+	// The recovery screen's Download (share sheet / file); injectable so tests
+	// do not download a real file.
+	saveTextAsFile: optional(saveTextAsFile),
 	removeBodyClass: optional((cls) => document.body.classList.remove(cls))
 });
 
@@ -408,6 +411,10 @@ class AppInit {
 		// loadSampleRoutine completes without it.)
 		const landInFocusViewWhenRoutineReady = ({ showInputBar, choice }) => {
 			this._pendingFirstRunFocusView = { showInputBar, choice };
+			// No "Your routine is empty" while the routine is still being chosen:
+			// it showed between the splash and the dialog, and read as the sample
+			// having failed (Nov 2026). Cleared below when the routine exists.
+			_deps.addBodyClass?.(DOM_CLASSES.FIRST_RUN_PICKING);
 		};
 
 		// create/sample get the same welcome splash as 'learn', minus the
@@ -815,6 +822,7 @@ class AppInit {
 		if (this._pendingFirstRunFocusView) {
 			const firstRunChoice = this._pendingFirstRunFocusView.choice;
 			this._pendingFirstRunFocusView = null;
+			_deps.removeBodyClass?.(DOM_CLASSES.FIRST_RUN_PICKING);
 			_deps.getOnboardingManager?.()?.startFocusViewForNewRoutine?.(firstRunChoice);
 		}
 
@@ -953,7 +961,7 @@ class AppInit {
 
 		// Download can be pressed again (a closed share sheet, a second copy).
 		downloadBtn.addEventListener('click', async () => {
-			const saved = await saveTextAsFile({
+			const saved = await _deps.saveTextAsFile({
 				text: raw,
 				fileName: `miniCycle-damaged-data-${Date.now()}.txt`,
 				title: getLabel('noun.backupFileType')

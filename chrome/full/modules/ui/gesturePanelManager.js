@@ -494,14 +494,14 @@ export class GesturePanelManager {
             if (result) {
                 event.preventDefault();
                 const labelKey = ARROW_TOAST_BY_PANEL[result.id];
-                if (labelKey) showNotification(`⌨️ ${getLabel(labelKey)}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+                if (labelKey) showNotification(getLabel(labelKey), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'keyboard' });
             }
         } else if (event.key === "ArrowLeft") {
             const result = this._navigate(-1);
             if (result) {
                 event.preventDefault();
                 const labelKey = ARROW_TOAST_BY_PANEL[result.id];
-                if (labelKey) showNotification(`⌨️ ${getLabel(labelKey)}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+                if (labelKey) showNotification(getLabel(labelKey), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'keyboard' });
             }
         }
 
@@ -519,7 +519,7 @@ export class GesturePanelManager {
             const result = this._navigate(1) || this._navigate(-1);
             if (result) {
                 const labelKey = QUICK_TOGGLE_TOAST_BY_PANEL[result.id];
-                if (labelKey) showNotification(`⌨️ ${getLabel(labelKey)}`, "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+                if (labelKey) showNotification(getLabel(labelKey), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'keyboard' });
             }
         }
     }
