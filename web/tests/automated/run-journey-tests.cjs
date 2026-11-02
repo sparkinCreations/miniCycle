@@ -3355,6 +3355,7 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
             return {
                 onScreen,
                 bodyClass: document.body.classList.contains('input-bar-visible'),
+                focus: document.body.classList.contains('focus-mode'),
                 emptyShown: Boolean(es && getComputedStyle(es).display !== 'none'),
                 shown,
             };
@@ -3404,17 +3405,27 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
             !(after.shown && after.shown.includes('visible') && !after.onScreen),
             `hint "${after.shown}" tells the user to type in a bar that is not on screen`);
 
-        // Hidden-by-default is the product's teaching mechanism, not an
-        // oversight: miniCycle is a routine manager, so the input bar is
-        // scaffolding you put away once the routine is built. A new routine
-        // must therefore start with it HIDDEN — and the hint must name the
-        // control that opens it (+ in Home, the ⋯ menu in Focus).
-        record('a new routine starts with the input bar hidden',
-            after.onScreen === false,
-            'a new routine opened the input bar; hidden-by-default is what teaches users to put it away');
-        record('the hint names a way to open the bar',
-            Boolean(after.shown) && !after.shown.includes('visible'),
-            `expected a bar-hidden hint naming + or the ⋯ menu, got "${after.shown}"`);
+        // Which way the bar starts depends on the view (v2.658). In Home View
+        // the bar is scaffolding you put away once the routine is built, so a
+        // new routine starts with it HIDDEN and the hint names the + that
+        // opens it. Focus View has no + in reach, and an empty routine there
+        // has nothing else to do, so a new routine opens the bar and the hint
+        // says to type in it.
+        if (after.focus) {
+            record('in Focus View a new routine starts with the input bar open',
+                after.onScreen === true,
+                'a routine created in Focus View hid the input bar; it should open ready to type');
+            record('the hint points at the open bar',
+                after.shown === '.empty-state-hint-focus-visible',
+                `expected the Focus View bar-visible hint, got "${after.shown}"`);
+        } else {
+            record('in Home View a new routine starts with the input bar hidden',
+                after.onScreen === false,
+                'a new routine opened the input bar; hidden-by-default is what teaches users to put it away');
+            record('the hint names a way to open the bar',
+                Boolean(after.shown) && !after.shown.includes('visible'),
+                `expected a bar-hidden hint naming +, got "${after.shown}"`);
+        }
 
         record('no starved dependencies', page.__diWarnings.length === 0,
             `DI warnings: ${page.__diWarnings.join(' | ')}`);
@@ -7244,6 +7255,9 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.waitForTimeout(1500);
             const fresh = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView);
             record(`${width}px: a brand-new user on a touch device starts with Browse`, fresh === 'browse', `routineOpenView=${fresh}`);
+            // …and in the Grid layout (v2.658): a phone shows several routines at once there.
+            const freshLayout = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineBrowserLayout);
+            record(`${width}px: a brand-new phone user browses in the Grid`, freshLayout === 'grid', `routineBrowserLayout=${freshLayout}`);
 
             await seed(page, { view: 'browse' });
             const header = await page.evaluate(() => {
@@ -7267,6 +7281,11 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 header.plusW === header.btnW && header.plusClear, JSON.stringify(header));
             await page.tap('#routine-switcher-btn');
             await page.waitForTimeout(800);
+            const openedInGrid = await page.evaluate(() => !!document.querySelector('#routine-browser .rb-tile'));
+            record(`${width}px: Browse opens in the Grid it was given`, openedInGrid, 'no grid tiles on open');
+            // The card checks below need Cards; the Grid has its own checks further down.
+            await page.tap('#routine-browser .rb-layout-btn[data-layout="cards"]');
+            await page.waitForTimeout(500);
             record(`${width}px: the routine button opens Browse`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
             const layout = await page.evaluate(() => {
                 const d = document.getElementById('routine-browser');
