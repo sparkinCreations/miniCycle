@@ -614,6 +614,24 @@ export class PreferencesManager {
             }
         }
 
+        // Solid Complete Cycle / Clear buttons toggle (default: glass)
+        const solidActionToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_ACTION_BUTTONS);
+        if (solidActionToggle) {
+            solidActionToggle._changeHandler = (e) => this.handleSolidBgToggle('solidActionButtons', e.target.checked);
+            safeAdd(solidActionToggle, 'change', solidActionToggle._changeHandler);
+
+            const toggleSwitch = solidActionToggle.closest(DOM_SELECTORS.TOGGLE_SWITCH);
+            if (toggleSwitch) {
+                toggleSwitch._clickHandler = (e) => {
+                    if (e.target !== solidActionToggle) {
+                        solidActionToggle.checked = !solidActionToggle.checked;
+                        this.handleSolidBgToggle('solidActionButtons', solidActionToggle.checked);
+                    }
+                };
+                safeAdd(toggleSwitch, 'click', toggleSwitch._clickHandler);
+            }
+        }
+
         // Background image visibility toggle
         const bgImageVisibleToggle = _deps.getElementById(DOM_IDS.TOGGLE_BG_IMAGE_VISIBLE);
         if (bgImageVisibleToggle) {
@@ -1094,6 +1112,10 @@ export class PreferencesManager {
         if (solidStatsBgToggle) {
             solidStatsBgToggle.checked = customColors.solidStatsBg === true; // Default false
         }
+        const solidActionToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_ACTION_BUTTONS);
+        if (solidActionToggle) {
+            solidActionToggle.checked = customColors.solidActionButtons === true; // Default false: glass
+        }
 
         // Load cycle completion settings
         const settings = state?.settings || {};
@@ -1559,6 +1581,7 @@ export class PreferencesManager {
                     showBgImage: false,
                     solidListBg: false,
                     solidStatsBg: false,
+                    solidActionButtons: false,
                     showHelpWindow: true,
                     showQuickActions: true
                 };
@@ -1570,6 +1593,8 @@ export class PreferencesManager {
         if (solidListBgToggle) solidListBgToggle.checked = false;
         const solidStatsBgToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_STATS_BG);
         if (solidStatsBgToggle) solidStatsBgToggle.checked = false;
+        const solidActionToggle = _deps.getElementById(DOM_IDS.TOGGLE_SOLID_ACTION_BUTTONS);
+        if (solidActionToggle) solidActionToggle.checked = false;
 
         // Reset panel visibility (both visible, sync all checkboxes)
         resetPanelVisibility();
@@ -1653,10 +1678,19 @@ export class PreferencesManager {
         const customColors = state?.settings?.customColors || {};
         const root = _deps.getRootElement();
 
+        // Complete Cycle / Clear: glass by default, filled when the user asks
+        // (buttons.css). Before the theme early-return so it holds in every
+        // theme; only touched when it differs, because a body class change
+        // re-runs this method through setupThemeObserver.
+        const body = _deps.getBody();
+        const solidActions = customColors.solidActionButtons === true;
+        if (body && body.classList.contains(DOM_CLASSES.SOLID_ACTION_BUTTONS) !== solidActions) {
+            body.classList.toggle(DOM_CLASSES.SOLID_ACTION_BUTTONS, solidActions);
+        }
+
         if (!this.isDefaultTheme()) {
             // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).
             // Vocab themes apply their own --pref-* vars directly — don't clear them.
-            const body = _deps.getBody();
             if (body.classList.contains(DOM_CLASSES.DARK_MODE) ||
                 body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) ||
                 body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW)) {

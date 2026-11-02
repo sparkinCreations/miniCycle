@@ -33,7 +33,7 @@ const PRESET_COLOR_KEYS = [
 
 const PRESET_BOOLEAN_KEYS = [
     'showCheckboxFill', 'showCheckboxIncomplete', 'showBgPattern',
-    'showBgImage', 'solidListBg', 'solidStatsBg',
+    'showBgImage', 'solidListBg', 'solidStatsBg', 'solidActionButtons',
     'showHelpWindow', 'showQuickActions'
 ];
 

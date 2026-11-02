@@ -615,7 +615,9 @@ button.settings-btn.close-btn:hover {
     -webkit-backdrop-filter: blur(12px) saturate(140%);
     backdrop-filter: blur(12px) saturate(140%);
     box-shadow: var(--shadow-button);
-    border: 1px solid var(--border-blue-subtle-hover);
+    /* The soft white rim Focus View's round button and the glass Complete /
+       Clear buttons wear (1px, 40%). */
+    border: 1px solid rgba(255, 255, 255, 0.4);
     color: var(--color-navy);
     border-radius: 50%;
     width: 48px;
@@ -669,7 +671,7 @@ button.settings-btn.close-btn:hover {
         background: var(--overlay-white-light);
         -webkit-backdrop-filter: blur(12px) saturate(140%);
         backdrop-filter: blur(12px) saturate(140%);
-        border: 1px solid var(--border-blue-subtle-hover);
+        border: 1px solid rgba(255, 255, 255, 0.4);
         pointer-events: none;
     }
 

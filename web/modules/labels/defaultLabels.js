@@ -2217,6 +2217,7 @@ export const DEFAULT_LABELS = deepFreeze({
         buttonsProgress:    'Buttons & Progress',
         completeCycle:      'Complete Cycle',
         clearCompleted:     'Clear Completed',
+        solidButtons:       'Solid buttons',   // Buttons & Progress: filled Complete Cycle / Clear instead of glass
         progressBar:        'Progress Bar',
         routineList:        'Routine List',
         statsPanel:         'Stats Panel',

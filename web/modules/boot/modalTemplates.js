@@ -692,6 +692,14 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                         <button class="preferences-reset-btn" data-target="pref-clear-btn" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                     <div class="preferences-color-row">
+                        <span class="pref-color-icon" aria-hidden="true">${getIcon('square')}</span>
+                        <label for="toggle-solid-action-buttons">${getLabel('prefs.solidButtons')}</label>
+                        <span class="toggle-switch pref-toggle">
+                            <input type="checkbox" id="toggle-solid-action-buttons" name="toggle-solid-action-buttons">
+                            <span class="toggle-slider"></span>
+                        </span>
+                    </div>
+                    <div class="preferences-color-row">
                         <span class="pref-color-icon" aria-hidden="true">${getIcon('chart-bar')}</span>
                         <label for="pref-progress-bar">${getLabel('prefs.progressBar')}</label>
                         <input type="color" id="pref-progress-bar" value="#82db8c" />

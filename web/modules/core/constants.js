@@ -1265,7 +1265,8 @@ export const DOM_CLASSES = Object.freeze({
     AUTO_CYCLE_MODE: 'auto-cycle-mode',
     MANUAL_CYCLE_MODE: 'manual-cycle-mode',
     TODO_MODE_MODE: 'todo-mode-mode',
-    ACTION_PLAYING: 'is-acting',   /* Complete Cycle / Clear button: its glyph's press animation is running */
+    ACTION_PLAYING: 'is-acting',
+    SOLID_ACTION_BUTTONS: 'solid-action-buttons',   /* body: the user chose filled Complete Cycle / Clear buttons (Personalization) */   /* Complete Cycle / Clear button: its glyph's press animation is running */
     TODO_MODE_BTN: 'todo-mode-btn',
     CYCLE_MODE_BTN: 'cycle-mode-btn',
     COMPLETE_BTN_VISIBLE: 'complete-btn-visible',
@@ -1577,6 +1578,7 @@ export const DOM_IDS = Object.freeze({
     PREF_STATS_DOUGHNUT: 'pref-stats-doughnut',
     TOGGLE_SOLID_LIST_BG: 'toggle-solid-list-bg',
     TOGGLE_SOLID_STATS_BG: 'toggle-solid-stats-bg',
+    TOGGLE_SOLID_ACTION_BUTTONS: 'toggle-solid-action-buttons',   // Personalization: filled Complete Cycle / Clear buttons instead of glass
     CHECKMARK_STYLE_OPTIONS: 'checkmark-style-options',
 
     // ---- Cycle Completion ----
