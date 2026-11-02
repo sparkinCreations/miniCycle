@@ -313,8 +313,8 @@ export const DEFAULT_LABELS = deepFreeze({
     stats: {
         title:              'Stats',
         currentRoutine:     'Current Routine',
-        completion:         '{completed} of {total} {taskWord} Completed This {cycleWord}',
-        cyclesCompleted:    '{count} {cycleWord} Completed',
+        completion:         '{completed} of {total} {taskWord} completed this {cycleWord}',
+        cyclesCompleted:    '{count} {cycleWord} completed',
         clearedTasks:       '{count} Cleared {taskWord}',
         // ── REWARD VOCABULARY — keep these three distinct ──────────────────
         // Measured Aug 2026, because the words had drifted into each other and

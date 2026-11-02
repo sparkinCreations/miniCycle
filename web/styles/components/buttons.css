@@ -19,15 +19,30 @@ button {
     font-family: inherit;
 }
 
-/* Hover only where a pointer can hover. This rule outranks any one-class
-   button colour (two pseudo-classes beat one class), so it is the one iOS
-   leaves stuck after a tap: touch has no hover, WebKit emulates it on tap and
-   keeps it until the next tap elsewhere — Focus View's Complete Task button
-   stayed recoloured after every press on the iPhone / PWA even after its own
-   hover rule was guarded (Oct 2026). Same guard task-options.css uses;
-   :active and :focus-visible are untouched. */
+/* Hover only where a pointer can hover. Same guard task-options.css uses;
+   :active and :focus-visible are untouched.
+
+   WRAPPED IN :where() SO IT HAS ZERO SPECIFICITY (Nov 2026). As
+   `button:not(.dot):hover` this was (0,2,1) and outranked every one-class
+   button colour, so hovering ANY button whose background comes from a single
+   class replaced that background with the SECONDARY hover grey while the
+   class's own `color` stayed — Focus View's Complete Task button went from
+   #3a5fc7 with white text to #d0d0d0 with white text, a measured 1.54:1, i.e.
+   the label vanished exactly while you pointed at it. `.btn-primary:hover`
+   (0,2,0) lost to it too, so no primary button ever showed
+   --theme-button-primary-hover-bg. The Oct 2026 pass found the same rule from
+   the iOS end (WebKit emulates hover on tap and leaves it stuck) and guarded
+   it by media query, which fixed the stuck state but left the desktop
+   recolouring in place. :where() makes this what it was always meant to be: a
+   DEFAULT for buttons that bring no colour of their own, which any component
+   rule beats. A button that sets its own background now keeps it on hover and
+   supplies its own hover treatment (the Complete Task button's is
+   `filter: brightness(1.08)` in focus-task-panel.css).
+
+   Not reachable by npm run test:contrast — axe only evaluates the resting
+   state, never :hover. */
 @media (hover: hover) and (pointer: fine) {
-    button:not(.dot):hover {
+    :where(button:not(.dot):hover) {
         background: var(--theme-button-secondary-hover-bg);
     }
 }

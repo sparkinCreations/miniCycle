@@ -1,3 +1,7 @@
+## [2.665] - 2026-11-02
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.664] - 2026-11-02
 - Returning users: one redirect to /app with a 'we moved' notice
 - minicycle.app always shows the product page
