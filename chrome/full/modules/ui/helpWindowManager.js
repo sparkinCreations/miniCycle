@@ -17,7 +17,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { getIcon as getSvgIcon } from '../utils/icons.js';
 import { runsAsInstalledApp } from '../utils/userManualLink.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
-import { modeWordVars } from '../labels/modeWording.js';
+import { themeWordVars } from '../labels/themeWords.js';
 
 // First-use notices (showNotice): label + ICONS name.
 const HELP_NOTICES = Object.freeze({
@@ -357,7 +357,7 @@ export class HelpWindowManager {
 
         // The active theme's words ("Habits", "Complete Check-in"). Vars are
         // label / theme text only, never user text, so innerHTML-safe below.
-        const vars = modeWordVars();
+        const vars = themeWordVars();
         const modeDescriptions = {
             'auto-cycle': {
                 icon: 'mode-auto',
@@ -551,7 +551,7 @@ export class HelpWindowManager {
         this.isShowingModeDescription = true;
         this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
 
-        const tipText = getLabel(labelKey);
+        const tipText = getLabel(labelKey, { vars: themeWordVars() });   // tips may name the theme's words
         const iconSvg = icon ? getSvgIcon(icon) : '';
         const iconHtml = iconSvg ? `<span class="icon help-window-icon" aria-hidden="true">${iconSvg}</span> ` : '';
         this.helpWindow.innerHTML = `
@@ -589,7 +589,7 @@ export class HelpWindowManager {
         this.isShowingModeDescription = true;
         this.currentMode = null; // Not a mode description — refreshLabels() will fall through to updateConstantMessage()
 
-        const message = getLabel('help.recurringRemoved');
+        const message = getLabel('help.recurringRemoved', { vars: themeWordVars() });
         this.helpWindow.innerHTML = `
             <div class="mode-help-content">
                 <p style="margin: 0; line-height: 1.4;">${message}</p>
@@ -666,17 +666,17 @@ export class HelpWindowManager {
         }
 
         if (remaining === 0 && totalTasks > 0) {
-            return { icon: 'trophy', body: getLabel('help.allComplete'), cta: progressText, ctaIcon: progressIcon, size: routineSize };
+            return { icon: 'trophy', body: getLabel('help.allComplete', { vars: themeWordVars() }), cta: progressText, ctaIcon: progressIcon, size: routineSize };
         }
 
         const remainingText = getLabel('help.tasksRemaining', { vars: { remaining, taskWord: getLabel('noun.task', { count: remaining }) } });
 
         // First-time message for either mode
         if (isToDoMode && clearedTasksCount === 0) {
-            return { icon: 'list', body: remainingText, cta: getLabel('help.clearFirst'), size: routineSize };
+            return { icon: 'list', body: remainingText, cta: getLabel('help.clearFirst', { vars: themeWordVars() }), size: routineSize };
         }
         if (!isToDoMode && cycleCount === 0) {
-            return { icon: 'list', body: remainingText, cta: getLabel('help.completeFirst'), size: routineSize };
+            return { icon: 'list', body: remainingText, cta: getLabel('help.completeFirst', { vars: themeWordVars() }), size: routineSize };
         }
 
         // Show progress and cycle count or cleared tasks

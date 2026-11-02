@@ -1,3 +1,7 @@
+## [2.662] - 2026-11-02
+- Themes: glass Complete / Clear buttons, and a help window in their words
+
+
 ## [2.661] - 2026-11-02
 - Mode descriptions speak each vocabulary theme's words
 - Recurring panel: Repeat uses the app's own dropdown
