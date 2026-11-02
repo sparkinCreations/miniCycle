@@ -198,12 +198,47 @@
     font-size: var(--font-size-sm);
 }
 
-#recur-frequency {
-    width: 50%;
-    padding: var(--space-1-5);
+/* The Repeat control: the app's dropdown (routine/modePicker.js) over the
+   hidden #recur-frequency select, in the field look the select had, with its
+   caret drawn in currentColor. The menu is the shared light-blue one. */
+.recur-frequency-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 50%;
+    padding: var(--space-1-5) var(--space-2-5);
     border-radius: var(--radius-6);
     border: 1px solid var(--theme-input-border);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, inherit);
     font-size: var(--font-size-sm);
+    cursor: pointer;
+}
+
+.recur-frequency-btn::after {
+    content: "";
+    flex-shrink: 0;
+    margin-left: var(--space-2);
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+}
+
+.recur-frequency-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus-ring);
+}
+
+/* Keeps the field look on hover (the generic button:hover fill is grey) */
+.recur-frequency-btn:hover {
+    background: var(--theme-input-bg, var(--color-white));
+    border-color: var(--border-blue-subtle-hover);
+}
+
+/* Centred under "Repeat:" as the select was; inline so the left-aligned
+   menu (.mode-picker--start) opens under the button, not the panel edge. */
+#recur-frequency-container .mode-picker {
+    display: inline-flex;
 }
 
 /* =============================================================================

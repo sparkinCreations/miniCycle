@@ -103,8 +103,11 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
       </div>
 
       <div id="recur-frequency-container">
-        <label for="recur-frequency">${getLabel('recurring.repeat')}</label>
-        <select id="recur-frequency">
+        <label for="recur-frequency-btn">${getLabel('recurring.repeat')}</label>
+        <!-- Source of truth, hidden; the visible control is the menu button
+             below (modules/routine/modePicker.js), the same dropdown as the
+             mode selector and the routine filter. -->
+        <select id="recur-frequency" class="mode-selector-native" aria-hidden="true" tabindex="-1">
           <option value="hourly">${getLabel('freq.hourly')}</option>
           <option value="daily" selected>${getLabel('freq.daily')}</option>
           <option value="weekly">${getLabel('freq.weekly')}</option>
@@ -112,6 +115,10 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <option value="monthly">${getLabel('freq.monthly')}</option>
           <option value="yearly">${getLabel('freq.yearly')}</option>
         </select>
+        <div class="mode-picker mode-picker--start">
+          <button type="button" id="recur-frequency-btn" class="recur-frequency-btn mode-picker-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="recur-frequency-menu">${getLabel('freq.daily')}</button>
+          <div id="recur-frequency-menu" class="quick-actions-menu mode-picker-menu" role="menu" aria-label="${getLabel('freq.frequency')}" hidden></div>
+        </div>
       </div>
       <!-- Time Picker Section — surfaced outside advanced options for discoverability -->
       <div id="time-picker-section">

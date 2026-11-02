@@ -1735,7 +1735,9 @@ export const DOM_IDS = Object.freeze({
     CLOSE_RECURRING_PANEL: 'close-recurring-panel',
     OPEN_RECURRING_PANEL: 'open-recurring-panel',
     CHANGE_RECURRING_SETTINGS: 'change-recurring-settings',
-    RECUR_FREQUENCY: 'recur-frequency',
+    RECUR_FREQUENCY: 'recur-frequency',   // hidden native <select>: the Repeat value's source of truth
+    RECUR_FREQUENCY_BTN: 'recur-frequency-btn',   // the visible Repeat control (routine/modePicker.js)
+    RECUR_FREQUENCY_MENU: 'recur-frequency-menu',
     RECUR_FREQUENCY_CONTAINER: 'recur-frequency-container',
     SET_DEFAULT_RECURRING_CONTAINER: 'set-default-recurring-container',
     SET_DEFAULT_RECURRING: 'set-default-recurring',

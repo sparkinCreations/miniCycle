@@ -1343,6 +1343,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     freq: {
         frequency: 'Frequency',
+        repeatAria: 'Repeat: {frequency}',   // the recurring panel's Repeat dropdown button (accessible name)
         hourly:   'Hourly',
         daily:    'Daily',
         weekly:   'Weekly',
