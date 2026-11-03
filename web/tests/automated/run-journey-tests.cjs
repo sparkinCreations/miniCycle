@@ -995,7 +995,8 @@ async function journeyTodoStatsSync(browser, baseURL) {
         const result = await page.evaluate(() => {
             const panelText = (document.getElementById('stats-panel')?.innerText || '')
                 .replace(/\s+/g, ' ').trim();
-            const m = panelText.match(/(\d+) of (\d+) tasks? Completed/);
+            // Case-insensitive: 2.665 put the stats labels in sentence case ("tasks completed").
+            const m = panelText.match(/(\d+) of (\d+) tasks? completed/i);
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
             const id = p.appState.activeRoutineId;
             const tasks = (p.data.routine[id] || {}).tasks || [];
@@ -1013,7 +1014,7 @@ async function journeyTodoStatsSync(browser, baseURL) {
             `${result.stateTotal} task(s) left in state, expected ${expectedRemaining} ` +
             `(${pre.total} total minus ${pre.completed} completed)`);
         record('stats panel reports a task count', result.panelTotal !== null,
-            `could not parse "N of M tasks Completed" from: ${result.panelText.slice(0, 120)}`);
+            `could not parse "N of M tasks completed" from: ${result.panelText.slice(0, 120)}`);
         record('stats panel total matches state after clearing',
             result.panelTotal === result.stateTotal,
             `panel says ${result.panelTotal}, state has ${result.stateTotal} ` +
