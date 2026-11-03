@@ -1,3 +1,13 @@
+## [2.666] - 2026-11-03
+- perf(boot): preload every file boot imports, staged after the boot chain
+- perf(recurring): load recurringCore and recurringSettingsApplicator in parallel at boot
+- test(journeys): stats task-count match is case-insensitive (2.665 sentence-case labels)
+- feat(site): guide page icons are SVGs, not emojis; title says "Features & FAQ"
+- fix(site): name the guide link "Features & FAQ", fix the product nav overlap, current tagline everywhere
+- fix(site): changelog shows no TODO placeholders; brand-blue contrast on the guide and format pages
+- fix(product): accessibility, SEO link text, image weight and layout shift on the product page
+
+
 ## [2.665] - 2026-11-02
 - fix(a11y): buttons keep their own colour on hover, so the Complete Task label no longer vanishes while you point at it
 - Stats labels in sentence case
