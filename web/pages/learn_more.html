@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Learn More - miniCycle | Routine Manager</title>
+    <title>Features &amp; FAQ - miniCycle | Routine Manager</title>
     <link rel="icon" type="image/png" href="../assets/images/logo/pwa-icons/icon-192.png">
 
     <!-- SEO Meta Tags -->
@@ -11,7 +11,7 @@
     <meta name="keywords" content="miniCycle, routine manager, repeatable process, checklist that resets, task cycling, privacy-focused, repeating tasks">
 
     <!-- Open Graph -->
-    <meta property="og:title" content="Learn More About miniCycle">
+    <meta property="og:title" content="miniCycle Features &amp; FAQ">
     <meta property="og:description" content="A privacy-focused tool for repeatable multi-step processes. Build your checklist once — it resets every time you finish.">
     <meta property="og:image" content="https://minicycle.app/assets/images/logo/logo.png">
     <meta property="og:url" content="https://minicycle.app/pages/learn_more.html">
@@ -343,8 +343,20 @@
         }
 
         .mode-icon {
-            font-size: 2.5rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: rgba(0, 136, 255, 0.1);
+            color: #0088ff;
             margin-bottom: 1rem;
+        }
+
+        .mode-icon svg {
+            width: 30px;
+            height: 30px;
         }
 
         .mode-card h3 {
@@ -393,8 +405,22 @@
             color: #666;
         }
 
+        /* Same tinted square + duotone stroke icons as the product page's feature cards */
         .feature-icon {
-            font-size: 1.3rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            border-radius: 9px;
+            background: rgba(0, 136, 255, 0.1);
+            color: #0088ff;
+            flex-shrink: 0;
+        }
+
+        .feature-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
         /* Who It's For Section */
@@ -413,8 +439,29 @@
         }
 
         .persona-icon {
-            font-size: 3rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(0, 136, 255, 0.1);
+            color: #0088ff;
             margin-bottom: 1rem;
+        }
+
+        .persona-icon svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        .badge-icon {
+            display: inline-flex;
+        }
+
+        .badge-icon svg {
+            width: 18px;
+            height: 18px;
         }
 
         .persona-card h3 {
@@ -718,7 +765,7 @@
                     <p>miniCycle organizes your tasks into <strong>routines</strong>. When you complete all your tasks, they automatically reset so you can tackle them again. Your progress is tracked by <strong>cycle count</strong> - how many times you've completed the routine.</p>
                     <p>It's perfect for any multi-step process you run more than once — daily routines, shift checklists, and procedures that have to come out the same way every time.</p>
                     <div class="privacy-badge">
-                        <span aria-hidden="true">🔒</span> 100% Private - All data stays on your device
+                        <span class="badge-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2l8 4v6c0 5-3.5 9-8 10-4.5-1-8-5-8-10V6l8-4z" fill="currentColor" fill-opacity="0.12"/><rect x="9" y="11" width="6" height="6" rx="1"/><path d="M10.5 11V9.5a1.5 1.5 0 0 1 3 0V11"/><circle cx="12" cy="14" r="0.8" fill="currentColor"/></svg></span> 100% Private - All data stays on your device
                     </div>
                 </div>
                 <div class="intro-image">
@@ -757,17 +804,17 @@
 
             <div class="modes-grid">
                 <div class="mode-card">
-                    <div class="mode-icon" aria-hidden="true">🔄</div>
+                    <div class="mode-icon" aria-hidden="true"><svg viewBox="0 0 64 64" fill="currentColor"><g transform="rotate(100 32 32)"><path d="M38.8 13.2A20 20 0 1 1 19.1 16.7" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round"/><path d="M14.6 11.6L23.4 22L26.3 10.9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></g></svg></div>
                     <h3>Auto Cycle</h3>
                     <p>Tasks automatically reset when all are complete. Perfect for daily routines you repeat consistently.</p>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-icon" aria-hidden="true">✅</div>
+                    <div class="mode-icon" aria-hidden="true"><svg viewBox="0 0 64 64" fill="currentColor"><path transform="translate(-9 -1) scale(1.21875)" d="M20.4 36.4V23.3a2.3 2.3 0 0 1 4.6 0v7.2q.45.7.9 0V19.8a2.3 2.3 0 0 1 4.6 0v10.7q.45.7.9 0v-9.2a2.3 2.3 0 0 1 4.6 0v9.2q.45.7.9 0v-5.2a2.3 2.3 0 0 1 4.6 0v14.2c0 6-4.5 10.5-10 10.5h-1.5c-5 0-9.4-3-10.4-5.7l-7.5-10.6a2.3 2.3 0 0 1 3.8-2.6l3.9 5.6q.6.8.6-.1z"/><path d="M44.7 9.3A10 10 0 1 1 41.6 19" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round"/><path d="M37.6 20.4L44.4 21.8L42.3 15Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>
                     <h3>Manual Cycle</h3>
                     <p>Select "Complete Cycle" when you're ready to finish and reset the routine. Gives you time to review before starting fresh.</p>
                 </div>
                 <div class="mode-card">
-                    <div class="mode-icon" aria-hidden="true">📝</div>
+                    <div class="mode-icon" aria-hidden="true"><svg viewBox="0 0 64 64" fill="currentColor"><rect x="14" y="11" width="36" height="47" rx="5" fill="none" stroke="currentColor" stroke-width="4.5"/><rect x="23" y="6" width="18" height="11" rx="3"/><path d="M20.5 28l3 3 5-5.5M20.5 39l3 3 5-5.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M33 28.5h11M33 39.5h11M21.5 49.5h22.5" fill="none" stroke="currentColor" stroke-width="3.2" stroke-linecap="round"/></svg></div>
                     <h3>To-Do Mode</h3>
                     <p>Completed tasks are moved to Cleared Tasks, where eligible non-recurring tasks can be restored for up to 90 days. Recurring tasks continue on their own schedule instead. Works like a traditional to-do list for one-time tasks.</p>
                 </div>
@@ -783,59 +830,59 @@
 
             <div class="features-grid">
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🔁</span> Recurring Tasks</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12a8 8 0 0 1 14-5.3L20 5" fill="currentColor" fill-opacity="0.12"/><polyline points="20 4 20 9 15 9"/><path d="M20 12a8 8 0 0 1-14 5.3L4 19"/><polyline points="4 20 4 15 9 15"/></svg></span> Recurring Tasks</h3>
                     <p>Set tasks to automatically appear on a schedule - hourly, daily, weekly, biweekly, monthly, or yearly.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">📅</span> Due Dates & Reminders</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" fill="currentColor" fill-opacity="0.12"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 13v3l2 1.5"/></svg></span> Due Dates & Reminders</h3>
                     <p>Set deadlines and get browser notifications. Overdue tasks are highlighted so nothing slips through.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">📁</span> Multiple Routines</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" fill="currentColor" fill-opacity="0.12"/><line x1="3" y1="11" x2="21" y2="11"/></svg></span> Multiple Routines</h3>
                     <p>Create separate routines for different areas of life - work, home, fitness, personal projects.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🔍</span> Search, Filter & Sort</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7" fill="currentColor" fill-opacity="0.12"/><line x1="21" y1="21" x2="16" y2="16"/></svg></span> Search, Filter & Sort</h3>
                     <p>Find tasks instantly with inline search. Filter by status, priority, due date, or recurring. Sort alphabetically, by priority, or by due date.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">📊</span> Progress & Achievements</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v4a6 6 0 0 1-12 0V4z" fill="currentColor" fill-opacity="0.12"/><path d="M6 6H4a2 2 0 0 0 0 4h2"/><path d="M18 6h2a2 2 0 0 1 0 4h-2"/><line x1="12" y1="14" x2="12" y2="18"/><rect x="8" y="18" width="8" height="3" rx="0.5"/></svg></span> Progress & Achievements</h3>
                     <p>Track cycle counts, view statistics, and earn milestone badges and achievements as you build consistency.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🎨</span> Vocabulary Themes</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 0 0 20c1.1 0 2-.9 2-2 0-.5-.2-1-.5-1.4-.3-.3-.5-.8-.5-1.3 0-1.1.9-2 2-2h1.6c3 0 5.4-2.4 5.4-5.4C22 5.3 17.5 2 12 2z" fill="currentColor" fill-opacity="0.12"/><circle cx="6.5" cy="12" r="1.3" fill="currentColor"/><circle cx="9.5" cy="7.5" r="1.3" fill="currentColor"/><circle cx="14.5" cy="7.5" r="1.3" fill="currentColor"/><circle cx="17.5" cy="12" r="1.3" fill="currentColor"/></svg></span> Vocabulary Themes</h3>
                     <p>Unlock themed vocabularies as you hit milestones - Habit Tracker, Fitness, Scholar, and more. Each theme changes labels, icons, and colors.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🔄</span> Drag & Drop Reordering</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2.5" width="14" height="19" rx="3" fill="currentColor" fill-opacity="0.12"/><circle cx="9.5" cy="7" r="1.2" fill="currentColor"/><circle cx="14.5" cy="7" r="1.2" fill="currentColor"/><circle cx="9.5" cy="12" r="1.2" fill="currentColor"/><circle cx="14.5" cy="12" r="1.2" fill="currentColor"/><circle cx="9.5" cy="17" r="1.2" fill="currentColor"/><circle cx="14.5" cy="17" r="1.2" fill="currentColor"/></svg></span> Drag & Drop Reordering</h3>
                     <p>Rearrange tasks by dragging on desktop or long-pressing on mobile. From the keyboard, select a task and press Alt+&uarr;/&darr; (Option on a Mac); move arrows can also be turned on in Settings.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">♿</span> Accessibility</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10" fill="currentColor" fill-opacity="0.12"/><circle cx="12" cy="6.8" r="1.4" fill="currentColor"/><path d="M7 9.5l5 1.3 5-1.3"/><path d="M12 10.8v3.8l-2.6 4.6M12 14.6l2.6 4.6"/></svg></span> Accessibility</h3>
                     <p>Reduced motion, high contrast mode, adjustable font sizes, and full keyboard navigation. Built for everyone.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🛡️</span> Backup & Restore</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="5" rx="1" fill="currentColor" fill-opacity="0.12"/><path d="M5 9v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V9"/><path d="M12 12v5"/><path d="M9.5 14.5L12 17l2.5-2.5"/></svg></span> Backup & Restore</h3>
                     <p>miniCycle keeps automatic daily backups on your device — restore any of the last 10 in a couple of taps, or save up to 50 named backups of your own. Export a file whenever you want a copy off-device.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🎯</span> Focus View</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8V3h5M21 8V3h-5M3 16v5h5M21 16v5h-5"/><path d="M6 12c1.8-3 3.8-4.5 6-4.5s4.2 1.5 6 4.5c-1.8 3-3.8 4.5-6 4.5S7.8 15 6 12z" fill="currentColor" fill-opacity="0.12"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/></svg></span> Focus View</h3>
                     <p>Hides distractions and highlights the next incomplete task. Great for working through routines one step at a time.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">🌙</span> Dark Mode & Personalization</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" fill="currentColor" fill-opacity="0.12"/></svg></span> Dark Mode & Personalization</h3>
                     <p>Toggle dark mode, customize colors, background patterns, and font sizes. Your preferences persist across sessions.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">💾</span> Export & Share</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" fill="currentColor" fill-opacity="0.12"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="M9 15l3-3 3 3"/></svg></span> Export & Share</h3>
                     <p>Download routines as .mcyc files. Back up your data or share templates with others. The <a href="mcyc-format.html">.mcyc format</a> is open and documented.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">↩️</span> Undo & Redo</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h10a6 6 0 0 1 0 12H9" fill="currentColor" fill-opacity="0.12"/><polyline points="8 5 3 10 8 15"/></svg></span> Undo & Redo</h3>
                     <p>Made a mistake? Undo recent actions. Your history is preserved per routine.</p>
                 </div>
                 <div class="feature-card">
-                    <h3><span class="feature-icon" aria-hidden="true">📱</span> Works Everywhere</h3>
+                    <h3><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="15" height="11" rx="1.5" fill="currentColor" fill-opacity="0.12"/><path d="M6 19h6M9 15v4"/><rect x="15.5" y="9" width="6.5" height="12" rx="1.5" fill="#fff"/><line x1="18" y1="18.5" x2="19.5" y2="18.5"/></svg></span> Works Everywhere</h3>
                     <p>Responsive design for phone, tablet, or desktop. Install as a PWA for offline use.</p>
                 </div>
             </div>
@@ -850,25 +897,25 @@
 
             <div class="personas-grid">
                 <div class="persona-card">
-                    <div class="persona-icon" aria-hidden="true">🏠</div>
+                    <div class="persona-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10v10h14V10" fill="currentColor" fill-opacity="0.12"/><path d="M3 11.5l9-7.5 9 7.5"/><path d="M10 20v-5.5h4V20"/></svg></div>
                     <h3>Home Routine Managers</h3>
                     <p>Keep track of household tasks, cleaning schedules, and daily chores that need doing again and again.</p>
                     <p class="persona-examples">Morning routine, evening routine, weekly cleaning</p>
                 </div>
                 <div class="persona-card">
-                    <div class="persona-icon" aria-hidden="true">💼</div>
+                    <div class="persona-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2" fill="currentColor" fill-opacity="0.12"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M3 13h18"/><line x1="12" y1="12" x2="12" y2="14"/></svg></div>
                     <h3>Professionals</h3>
                     <p>Manage recurring work tasks, daily standups, weekly reports, and consistent workflows.</p>
                     <p class="persona-examples">Daily tasks, weekly reviews, monthly reports</p>
                 </div>
                 <div class="persona-card">
-                    <div class="persona-icon" aria-hidden="true">💪</div>
+                    <div class="persona-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="8" width="2.5" height="8" rx="0.5" fill="currentColor" fill-opacity="0.2"/><rect x="4" y="10" width="2" height="4" rx="0.5" fill="currentColor" fill-opacity="0.1"/><line x1="6" y1="12" x2="18" y2="12" stroke-width="2.6"/><rect x="18" y="10" width="2" height="4" rx="0.5" fill="currentColor" fill-opacity="0.1"/><rect x="20" y="8" width="2.5" height="8" rx="0.5" fill="currentColor" fill-opacity="0.2"/></svg></div>
                     <h3>Fitness & Health</h3>
                     <p>Run workout routines, medication schedules, and health check-ins the same way every time.</p>
                     <p class="persona-examples">Workout plan, supplements, stretching routine</p>
                 </div>
                 <div class="persona-card">
-                    <div class="persona-icon" aria-hidden="true">📚</div>
+                    <div class="persona-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5h6a4 4 0 0 1 4 4v11a3 3 0 0 0-3-3H2z" fill="currentColor" fill-opacity="0.12"/><path d="M22 5h-6a4 4 0 0 0-4 4v11a3 3 0 0 1 3-3h7z" fill="currentColor" fill-opacity="0.12"/></svg></div>
                     <h3>Students & Learners</h3>
                     <p>Run a repeatable study routine, track assignments, and keep revision sessions consistent.</p>
                     <p class="persona-examples">Study schedule, reading goals, practice sessions</p>
