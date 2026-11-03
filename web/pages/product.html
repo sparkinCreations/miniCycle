@@ -151,6 +151,9 @@
         .header-nav a:hover { color: var(--color-white); }
         header .cta-btn { display: inline-block; position: absolute; top: 50%; right: max(20px, calc(50% - 580px)); transform: translateY(-50%); z-index: 2; background: var(--color-white); color: var(--color-primary-dark); padding: 0.6rem 1.4rem; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s; }
         header .cta-btn:hover { background: transparent; color: var(--color-white); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 4px 16px rgba(0, 0, 0, 0.2); transform: translateY(calc(-50% - 2px)); }
+        /* The five links need ~940px to clear the logo (measured: at 800px they overlapped it by
+           117px); below that the header is logo + Try Now, as on phones. */
+        @media (min-width: 940px) { .header-nav a { display: inline; } }
         @media (min-width: 768px) { .header-nav { position: absolute; top: 50%; right: max(140px, calc(50% - 460px)); transform: translateY(-50%); z-index: 1; } }
 
         /* ============================
@@ -498,7 +501,6 @@
            Desktop (768px+)
            ============================ */
         @media (min-width: 768px) {
-            .header-nav a { display: inline; }
             section { padding: var(--space-2xl) 0; }
             .section-title { font-size: 2rem; }
             .hero-headline { font-size: 2.6rem; }
@@ -558,7 +560,7 @@
                 <a href="#how-it-works">How It Works</a>
                 <a href="#demos">See It In Action</a>
                 <a href="#features">Features</a>
-                <a href="/pages/learn_more.html">Full Guide</a>
+                <a href="/pages/learn_more.html">Features &amp; FAQ</a>
                 <a href="/pages/mcyc-format.html">.mcyc Format</a>
             </nav>
             <a href="/app" class="cta-btn" data-track="app-launch">Try Now</a>
@@ -587,7 +589,7 @@
                         </a>
                     </div>
                     <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device</p>
-                    <a href="/pages/learn_more.html" class="hero-learn-more">Read the full guide &#8594;</a>
+                    <a href="/pages/learn_more.html" class="hero-learn-more">See features &amp; FAQ &#8594;</a>
                 </div>
                 <div class="hero-desk-photo">
                     <img src="../assets/images/Product/phone-on-desk-updated-320.webp" srcset="../assets/images/Product/phone-on-desk-updated-320.webp 320w, ../assets/images/Product/phone-on-desk-updated.webp 640w" sizes="320px" width="320" height="480" alt="miniCycle open on a phone, ready for a routine">
@@ -1122,7 +1124,7 @@
         <p>Start your first cycle in under a minute.</p>
         <div class="cta-row">
             <a href="/app" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
-            <a href="/pages/learn_more.html" class="cta-secondary">Read the Full Guide</a>
+            <a href="/pages/learn_more.html" class="cta-secondary">Features &amp; FAQ</a>
         </div>
         <div class="cta-chrome-row">
             <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" class="cta-chrome-link" data-track="chrome-install-full" target="_blank" rel="noopener">
