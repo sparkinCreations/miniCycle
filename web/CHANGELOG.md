@@ -1,5 +1,6 @@
 ## [2.665] - 2026-11-02
-- TODO(changelog): uncommitted work shipped in this release — describe it here
+- fix(a11y): buttons keep their own colour on hover, so the Complete Task label no longer vanishes while you point at it
+- Stats labels in sentence case
 
 
 ## [2.664] - 2026-11-02
