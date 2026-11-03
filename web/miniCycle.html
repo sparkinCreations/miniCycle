@@ -386,6 +386,21 @@
   // URL). Preload the hashed URL BARE so it matches the exact URL the boot
   // chain imports; dev has no map and keeps the ?v= form.
   var map = g.__MC_MODULE_MAP || null;
+  var head = document.head;
+  var link;
+  // Bundled dist: version.js also lists every hashed file boot imports
+  // (build-web.cjs computeBootPreload). Preload all of them so the phases stop
+  // waiting on one download wave after another; the hand list below covers dev.
+  var bootPreload = map && g.__MC_BOOT_PRELOAD;
+  if (bootPreload && bootPreload.length) {
+    for (var j = 0; j < bootPreload.length; j++) {
+      link = document.createElement('link');
+      link.rel = 'modulepreload';
+      link.href = bootPreload[j];
+      head.appendChild(link);
+    }
+    return;
+  }
   var modules = [
     './miniCycle-main.js',
     './modules/boot/orchestrator.js',
@@ -403,10 +418,9 @@
     './modules/utils/errorHandler.js',
     './modules/utils/notifications.js'
   ];
-  var head = document.head;
   for (var i = 0; i < modules.length; i++) {
     var hashed = map && map[modules[i].slice(1)]; // './x' → '/x' (map keys are root-absolute)
-    var link = document.createElement('link');
+    link = document.createElement('link');
     link.rel = 'modulepreload';
     link.href = hashed || (modules[i] + '?v=' + v);
     head.appendChild(link);
