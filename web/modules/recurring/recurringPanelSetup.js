@@ -19,6 +19,16 @@ import { getLabel } from '../labels/labelResolver.js';
 import { ICONS } from '../utils/icons.js';
 import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { formatLocalDate } from './recurringDateUtils.js';
+import { ModePicker } from '../routine/modePicker.js';
+
+// The Repeat dropdown's option values → their labels (setupFrequencySelector).
+const FREQUENCY_LABEL_KEYS = Object.freeze({
+    hourly: 'freq.hourly', daily: 'freq.daily', weekly: 'freq.weekly',
+    biweekly: 'freq.biweekly', monthly: 'freq.monthly', yearly: 'freq.yearly'
+});
+
+/** The visible Repeat control over #recur-frequency; replaced if setup runs again. */
+let _frequencyPicker = null;
 
 // ============================================================================
 // SHARED HELPERS
@@ -53,6 +63,24 @@ function getFrequencyOptionMap(deps) {
 export function setupFrequencySelector(deps, onUpdate) {
     const frequencySelect = deps.getElementById(DOM_IDS.RECUR_FREQUENCY);
     if (!frequencySelect) return;
+
+    // The visible control: the app's own dropdown (as the mode selector and
+    // the routine filter use) drawn over the hidden select, which stays the
+    // source of truth — picking dispatches its 'change', so the listener
+    // below runs exactly as before (Nov 2026).
+    const pickerBtn = deps.getElementById(DOM_IDS.RECUR_FREQUENCY_BTN);
+    const pickerMenu = deps.getElementById(DOM_IDS.RECUR_FREQUENCY_MENU);
+    if (pickerBtn && pickerMenu) {
+        _frequencyPicker?.destroy();
+        _frequencyPicker = new ModePicker({
+            select: frequencySelect,
+            button: pickerBtn,
+            menu: pickerMenu,
+            getModeLabel: (value) => getLabel(FREQUENCY_LABEL_KEYS[value] || FREQUENCY_LABEL_KEYS.daily),
+            getModeIcon: () => null,
+            getButtonAria: (label) => getLabel('freq.repeatAria', { vars: { frequency: label } })
+        });
+    }
 
     deps.safeAddEventListener(frequencySelect, "change", () => {
         const selectedFrequency = frequencySelect.value;

@@ -20,14 +20,14 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { getDefaultPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { isClickOnNotification, restoreFocusAfterClose, installDialogTabWrap } from './modalUtils.js';
-import { getRoutine, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
+import { getRoutine, getActiveRoutineId, getActiveRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -114,6 +114,11 @@ export function _resetForTesting() {
     _initialized.reducedMotionToggle = false;
     _initialized.highContrastToggle = false;
     _initialized.fontSizeSelect = false;
+    _initialized.routineOpenViewRadios = false;
+    _initialized.singleKeyShortcutsToggle = false;
+    _initialized.oneSectionAtATimeToggle = false;
+    _initialized.scrollToNewTaskToggle = false;
+    _initialized.scrollOnLoadToggle = false;
     _initialized.notificationsToggle = false;
 }
 
@@ -136,6 +141,11 @@ const _initialized = {
     reducedMotionToggle: false,
     highContrastToggle: false,
     fontSizeSelect: false,
+    routineOpenViewRadios: false,
+    singleKeyShortcutsToggle: false,
+    oneSectionAtATimeToggle: false,
+    scrollToNewTaskToggle: false,
+    scrollOnLoadToggle: false,
     notificationsToggle: false,
 };
 
@@ -586,7 +596,7 @@ export function setupThreeDotsToggle() {
         // Show tip when disabling on touch devices
         if (!enabled && ('ontouchstart' in window)) {
             setTimeout(() => {
-                _deps.showNotification('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                _deps.showNotification(getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED, { icon: 'lightbulb' });
             }, 300);
         }
     };
@@ -629,6 +639,13 @@ export function setupOneSectionAtATimeToggle() {
     if (AppState?.isReady?.()) {
         toggle.checked = usesExclusiveSections(AppState.get()?.settings);
     }
+
+    // Wired once: initAllToggles() runs on every Settings open, and a fresh
+    // handler per call is never removed (safeAddEventListener drops only the
+    // same function), so each open stacked another save. The value above is
+    // re-synced every time.
+    if (_initialized.oneSectionAtATimeToggle) return;
+    _initialized.oneSectionAtATimeToggle = true;
 
     toggle._changeHandler = async () => {
         const enabled = toggle.checked;
@@ -832,6 +849,13 @@ export function setupScrollToNewTaskToggle() {
 
     scrollToggle.checked = scrollEnabled;
 
+    // Wired once: initAllToggles() runs on every Settings open, and a fresh
+    // handler per call is never removed (safeAddEventListener drops only the
+    // same function), so each open stacked another save. The value above is
+    // re-synced every time.
+    if (_initialized.scrollToNewTaskToggle) return;
+    _initialized.scrollToNewTaskToggle = true;
+
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
 
@@ -875,6 +899,13 @@ export function setupScrollOnLoadToggle() {
 
     scrollToggle.checked = scrollEnabled;
 
+    // Wired once: initAllToggles() runs on every Settings open, and a fresh
+    // handler per call is never removed (safeAddEventListener drops only the
+    // same function), so each open stacked another save. The value above is
+    // re-synced every time.
+    if (_initialized.scrollOnLoadToggle) return;
+    _initialized.scrollOnLoadToggle = true;
+
     scrollToggle._changeHandler = async () => {
         const enabled = scrollToggle.checked;
 
@@ -893,6 +924,46 @@ export function setupScrollOnLoadToggle() {
     };
 
     safeAddEventListener(scrollToggle, "change", scrollToggle._changeHandler);
+}
+
+/**
+ * Settings → Behavior → "Single-key shortcuts" (`settings.singleKeyShortcuts`,
+ * off unless turned on). uiBoot.handleAppShortcut reads the stored value on
+ * every key, so nothing else needs telling. The value is re-synced on EVERY
+ * call (initAllToggles runs on each Settings open); the handler is wired once
+ * — a fresh handler per call would not be removed by safeAddEventListener,
+ * which can only drop the same function.
+ */
+export function setupSingleKeyShortcutsToggle() {
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS);
+    if (!toggle) return;
+
+    const AppState = _deps.AppState();
+    toggle.checked = AppState?.isReady?.() ? AppState.get()?.settings?.singleKeyShortcuts === true : false;
+
+    if (_initialized.singleKeyShortcutsToggle) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.singleKeyShortcutsToggle = true;
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.singleKeyShortcuts = enabled;
+        }, true);
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
 }
 
 /**
@@ -917,8 +988,16 @@ export function setupDebugModeToggle() {
     const debugEnabled = _deps.isDebug?.() ?? false;
     debugModeToggle.checked = debugEnabled;
 
+    // App Diagnostics (Validate Schema, Run All Tests, data repair…) is a
+    // developer tool, so it is only offered while Debug Mode is on (Nov 2026:
+    // a review called out developer tools shown to everyday users).
+    const diagnosticsBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
+    const syncDiagnosticsButton = (on) => { if (diagnosticsBtn) diagnosticsBtn.hidden = !on; };
+    syncDiagnosticsButton(debugEnabled);
+
     debugModeToggle._changeHandler = () => {
         const enabled = debugModeToggle.checked;
+        syncDiagnosticsButton(enabled);
 
         if (enabled) {
             _deps.enableDebug?.();
@@ -1402,6 +1481,50 @@ export function setupFontSizeSelect() {
  * Initialize all settings UI components
  */
 /**
+ * "When you open routines, show: List / Browse". Wired once; its value is
+ * re-read on EVERY call, and initAllToggles() runs on every Settings open, so
+ * the control never shows a stale choice — a brand-new user's value is only
+ * written when their first routine is created, after boot ran this, and a
+ * restore or import can change it too. The routine button, Quick Action and
+ * Focus View menu follow the stored value on their own (routineSwitcher
+ * watches it), so this only writes it.
+ */
+export function setupRoutineOpenViewRadios() {
+    const radios = Array.from(document.querySelectorAll(DOM_SELECTORS.ROUTINE_OPEN_VIEW_RADIO));
+    if (radios.length === 0) return;
+    const check = (view) => radios.forEach(radio => { radio.checked = radio.value === view; });
+    if (currentSettings()) check(getRoutineOpenView(_deps.AppState().get()));
+
+    if (_initialized.routineOpenViewRadios) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.routineOpenViewRadios = true;
+
+    const changeHandler = async (event) => {
+        if (!event.target.checked) return;
+        const view = event.target.value === ROUTINE_OPEN_VIEW.BROWSE ? ROUTINE_OPEN_VIEW.BROWSE : ROUTINE_OPEN_VIEW.LIST;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            check(ROUTINE_OPEN_VIEW.LIST);
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.routineOpenView = view;
+        }, true);
+    };
+
+    radios.forEach(radio => {
+        radio._changeHandler = changeHandler;
+        safeAddEventListener(radio, 'change', changeHandler);
+    });
+}
+
+/**
  * Setup notifications toggle
  * When disabled, showNotification() silently skips all notifications.
  */
@@ -1489,6 +1612,8 @@ export function initAllToggles() {
     setupReducedMotionToggle();
     setupHighContrastToggle();
     setupFontSizeSelect();
+    setupRoutineOpenViewRadios();
+    setupSingleKeyShortcutsToggle();
     setupNotificationsToggle();
     applyPriorityColor();
 }

@@ -4,9 +4,10 @@
  * @pattern Resilient Constructor 🛡️
  *
  * Handles three cycling modes:
- * - Auto Cycle ↻: Tasks auto-reset when all completed
- * - Manual Cycle ✔︎↻: Tasks reset only on manual button click
- * - To-Do Mode ✓: Tasks are deleted instead of reset
+ * - Auto Cycle 🔄: Tasks auto-reset when all completed
+ * - Manual Cycle ✋: Tasks reset only on manual button click
+ * - To-Do Mode 📋: Tasks are deleted instead of reset
+ * (Their icons are the 'mode-auto' / 'mode-manual' / 'mode-todo' SVGs — getModeIcon().)
  *
  * Mode changes refresh UI in-place without page reload.
  *
@@ -16,7 +17,14 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { createIconElement } from '../utils/icons.js';
+import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
+import { themeWordVars } from '../labels/themeWords.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
+
+const MODE_LABEL_KEYS = Object.freeze({ 'auto-cycle': 'mode.auto', 'manual-cycle': 'mode.manual', 'todo-mode': 'mode.todo' });
+// The mode menu's item tooltips: each mode's one-line explanation (the help window's).
+const MODE_HELP_KEYS = Object.freeze({ 'auto-cycle': 'help.modeAutoShort', 'manual-cycle': 'help.modeManualShort', 'todo-mode': 'help.modeTodoShort' });
 
 /** AppState subscription key for the + button's first-time shimmer. */
 const MODE_MANAGER_SHIMMER_SUBSCRIBER = 'modeManager:firstTimeShimmer';
@@ -126,19 +134,42 @@ export class ModeManager {
     }
 
     /**
-     * Get friendly name for a mode
+     * The mode's name alone ("Manual Cycle"); unknown modes read as Auto.
      * @param {string} mode - Mode identifier (auto-cycle, manual-cycle, todo-mode)
-     * @returns {string} Friendly mode name with icon
+     * @returns {string}
+     */
+    getModeLabel(mode) {
+        return getLabel(MODE_LABEL_KEYS[mode] || MODE_LABEL_KEYS['auto-cycle']);
+    }
+
+    /**
+     * The mode's icon: a NAME in the ICONS registry (utils/icons.js) — the
+     * SVG drawn everywhere a mode is shown.
+     * @param {string} mode - Mode identifier
+     * @returns {string}
+     */
+    getModeIcon(mode) {
+        return MODE_PICKER_ICONS[mode] || MODE_PICKER_ICONS['auto-cycle'];
+    }
+
+    /**
+     * Get friendly name for a mode ("Manual Cycle"). Text only: it labels the
+     * native <select>'s options, which cannot draw the SVG icon.
+     * @param {string} mode - Mode identifier (auto-cycle, manual-cycle, todo-mode)
+     * @returns {string} Friendly mode name
      */
     getModeName(mode) {
-        const modeNames = {
-            'auto-cycle': getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji'),
-            'manual-cycle': getLabel('mode.manual') + ' ' + getLabel('mode.manualEmoji'),
-            'todo-mode': getLabel('mode.todo') + ' ' + getLabel('mode.todoEmoji')
-        };
+        return this.getModeLabel(mode);
+    }
 
-        const result = modeNames[mode] || getLabel('mode.auto') + ' ' + getLabel('mode.autoEmoji');
-        return result;
+    /**
+     * "Switched to Manual Cycle" — the name alone. The notification draws its
+     * own SVG type icon; the mode emoji stays in the picker and help window.
+     * @param {string} mode - Mode identifier
+     * @returns {string}
+     */
+    _modeSwitchedMessage(mode) {
+        return getLabel('notify.modeSwitched', { vars: { mode: this.getModeLabel(mode) } });
     }
 
     /**
@@ -391,7 +422,10 @@ export class ModeManager {
 
         // Update body classes
         const body = this.deps.getBody();
-        body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+        // todo-mode-mode FIRST, as routineManager has it: `\b` matches at a hyphen,
+        // so `todo-mode` alone stripped half of `todo-mode-mode` and left a stray
+        // `-mode` class on <body> after every To-Do switch (Oct 2026).
+        body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, '');
         body.classList.add(mode + '-mode');
 
         // ✅ FIXED: Update container visibility based on mode, not just autoReset
@@ -540,15 +574,15 @@ export class ModeManager {
         if (deleteChecked) {
             currentMode = "todo-mode";
             modeTitle = getLabel('mode.todoTitle');
-            modeDetail = getLabel('mode.todoDetail');
+            modeDetail = getLabel('mode.todoDetail', { vars: themeWordVars() });
         } else if (autoReset) {
             currentMode = "auto-cycle";
             modeTitle = getLabel('mode.autoTitle');
-            modeDetail = getLabel('mode.autoDetail');
+            modeDetail = getLabel('mode.autoDetail', { vars: themeWordVars() });
         } else {
             currentMode = "manual-cycle";
             modeTitle = getLabel('mode.manualTitle');
-            modeDetail = getLabel('mode.manualDetail');
+            modeDetail = getLabel('mode.manualDetail', { vars: themeWordVars() });
         }
 
         // Built with createElement/textContent, not innerHTML: every mode.*Title/
@@ -575,7 +609,7 @@ export class ModeManager {
         if (toggleBtn) {
             const badge = toggleBtn.querySelector('.mode-badge');
             if (badge) {
-                badge.textContent = this.getModeName(currentMode);
+                badge.replaceChildren(createIconElement(this.getModeIcon(currentMode)), ` ${this.getModeLabel(currentMode)}`);
             }
         }
 
@@ -605,6 +639,25 @@ export class ModeManager {
 
         // Mark setup as complete
         this._modeSelectorSetupComplete = true;
+
+        // Option text from the labels (the HTML carries the same text as a
+        // fallback), then the visible menu button that draws over the select.
+        for (const option of modeSelector.options) {
+            option.textContent = this.getModeName(option.value);
+        }
+        const pickerBtn = this.deps.getElementById(DOM_IDS.MODE_PICKER_BTN);
+        const pickerMenu = this.deps.getElementById(DOM_IDS.MODE_PICKER_MENU);
+        if (pickerBtn && pickerMenu) {
+            this._modePicker?.destroy();
+            this._modePicker = new ModePicker({
+                select: modeSelector,
+                button: pickerBtn,
+                menu: pickerMenu,
+                getModeLabel: (mode) => this.getModeLabel(mode),
+                getItemTitle: (mode) => getLabel(MODE_HELP_KEYS[mode] || MODE_HELP_KEYS['auto-cycle'], { vars: themeWordVars() })
+            });
+            pickerBtn.title = getLabel('mode.pickerTitle');
+        }
 
         // ✅ Function to sync toggles from either selector (NESTED FUNCTION - stays inside)
         // ✅ FIXED: Made async to properly await storage update before UI sync
@@ -694,7 +747,7 @@ export class ModeManager {
             }
 
             if (this.deps.showNotification) {
-                this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(e.target.value) } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+                this.deps.showNotification(this._modeSwitchedMessage(e.target.value), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
             }
 
         };
@@ -770,7 +823,7 @@ export class ModeManager {
                 this.updateCycleModeDescription();
 
                 if (this.deps.showNotification) {
-                    this.deps.showNotification(getLabel('notify.modeSwitched', { vars: { mode: this.getModeName(modeToRestore) } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(this._modeSwitchedMessage(modeToRestore), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
             }, 500);
         }
@@ -998,8 +1051,10 @@ export class ModeManager {
         document.addEventListener(EVENTS.ADD_TASK_DISCOVERED, this._onAddTaskDiscovered);
     }
 
-    /** Remove the shimmer listeners (tests and teardown). */
+    /** Remove the mode picker's and the shimmer's listeners (tests and teardown). */
     destroy() {
+        this._modePicker?.destroy();
+        this._modePicker = null;
         if (!this._shimmerWired) return;
         this.deps.AppState?.unsubscribe?.(MODE_MANAGER_SHIMMER_SUBSCRIBER, this._onStateForShimmer);
         document.removeEventListener(EVENTS.FIRST_RUN_REARM, this._onFirstRunRearm);
@@ -1499,7 +1554,7 @@ export class ModeManager {
 
             // Update body class
             const body = this.deps.getBody();
-            body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode)\b/g, '');
+            body.className = body.className.replace(/\b(auto-cycle-mode|manual-cycle-mode|todo-mode-mode|todo-mode)\b/g, ''); // see the note above in the mode sync
             body.classList.add(correctMode + '-mode');
 
             // Refresh UI to reflect correct mode

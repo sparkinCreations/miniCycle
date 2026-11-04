@@ -165,6 +165,112 @@ dialog.due-date-picker-overlay[open] {
 }
 
 /* =============================================================================
+   KEYBOARD SHORTCUTS MODAL (main menu → Help & Support)
+   Rows are built by modalManager.renderShortcutsList(). Scrolls inside the
+   safe area on short screens, like the Task Options card.
+   ============================================================================= */
+
+.shortcuts-modal-content {
+    width: 480px;
+    max-height: calc(100vh - var(--modal-viewport-inset));
+    max-height: calc(100dvh - var(--modal-viewport-inset));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    text-align: left;
+}
+
+.shortcuts-modal-content h2 {
+    margin: 0 0 var(--space-2) 0;
+    text-align: center;
+}
+
+.shortcuts-intro {
+    margin: 0 0 var(--space-3) 0;
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+.shortcuts-list h3 {
+    margin: var(--space-4) 0 var(--space-2) 0;
+    font-size: var(--font-size-base);
+}
+
+.shortcuts-list dl {
+    margin: 0;
+}
+
+/* Under the five keys: the way to the complete list (the user manual), then
+   — while single keys are off — where to turn them on. */
+.shortcuts-more {
+    margin: var(--space-4) 0 var(--space-2) 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--theme-border);
+    text-align: center;
+    font-weight: var(--font-weight-semibold);
+}
+
+.shortcuts-more a {
+    color: inherit;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.shortcuts-note {
+    margin: 0;
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+.shortcuts-row {
+    display: grid;
+    grid-template-columns: minmax(0, 11rem) minmax(0, 1fr);
+    gap: var(--space-3);
+    align-items: baseline;
+    padding: var(--space-1) 0;
+    border-top: 1px solid var(--theme-border);
+}
+
+.shortcuts-row dt,
+.shortcuts-row dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.shortcuts-row kbd {
+    display: inline-block;
+    min-width: 1.6em;
+    padding: 0 var(--space-1);
+    border: 1px solid var(--theme-border);
+    border-bottom-width: 2px;
+    border-radius: var(--radius-sm);
+    background: var(--theme-input-bg);
+    color: var(--theme-modal-text);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
+    text-align: center;
+}
+
+/* Phones have no keyboard to use these with; the item would only add noise
+   to the menu there. A tablet keeps it — it may have a keyboard attached.
+   "Phone" is the SHORT side, not the width: a phone held sideways is wider
+   than 600px and showed the item again (Oct 2026). The Settings switch for
+   single-key shortcuts goes with it — it does nothing without a keyboard.
+   Alt+? still opens the list, and the user manual has every shortcut.
+   The Focus View item is scoped like focus-mode.css's own item rule
+   (body.focus-mode .focus-mode-menu-item { display: block }): unscoped, that
+   rule out-ranked this one and the item stayed in Focus View's menu on
+   phones (Nov 2026). */
+@media (hover: none) and (pointer: coarse) and (max-width: 600px),
+       (hover: none) and (pointer: coarse) and (max-height: 600px) {
+    #open-shortcuts-modal,
+    body.focus-mode .focus-mode-menu-item[data-action="keyboard-shortcuts"],
+    .settings-option.keyboard-only {
+        display: none;
+    }
+}
+
+/* =============================================================================
    ABOUT MODAL (glassmorphism style, matches stats panel)
    ============================================================================= */
 
@@ -1099,4 +1205,81 @@ body.dark-mode .btn-choice:hover {
     font-size: var(--font-size-sm);
     opacity: 0.75;
     font-variant-numeric: tabular-nums;  /* stops the counter jittering as it counts up */
+}
+
+/* ============================================================================
+   Full-screen start-up notices (appInit): saved data that cannot be read, and
+   data saved by a newer version. They cover a half-started app, so they carry
+   their own dark panel instead of following the theme.
+   ============================================================================ */
+.critical-notice {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-critical);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-5);
+    box-sizing: border-box;
+    background: var(--overlay-heavy);
+}
+
+.critical-notice-panel {
+    width: 100%;
+    max-width: 500px;
+    padding: var(--space-8);
+    border-radius: var(--radius-xl);
+    background: var(--color-navy);
+    color: var(--color-white);
+    font-family: var(--font-family);
+    box-shadow: var(--shadow-modal);
+}
+
+.critical-notice-title {
+    margin: 0 0 var(--space-4);
+    font-size: var(--font-size-xl);
+}
+
+.critical-notice-text {
+    margin: 0 0 var(--space-4);
+    line-height: var(--line-height-normal);
+    white-space: pre-line;
+}
+
+.critical-notice-preview {
+    margin: 0 0 var(--space-6);
+    padding: var(--space-2);
+    border-radius: var(--radius-sm);
+    background: var(--overlay-backdrop);
+    font-family: var(--font-family-mono);
+    font-size: var(--font-size-sm);
+    word-break: break-all;
+}
+
+.critical-notice-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.critical-notice-btn {
+    width: 100%;
+    padding: var(--space-3) var(--space-5);
+    border: 1px solid var(--overlay-white-medium);
+    border-radius: var(--radius-md);
+    background: transparent;
+    color: var(--color-white);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+}
+
+.critical-notice-btn-primary {
+    border-color: transparent;
+    background: var(--color-primary-dark);
+}
+
+.critical-notice-btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
 }

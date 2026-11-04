@@ -698,6 +698,47 @@ export async function runTaskUITests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
+    // === COMPLETE / CLEAR BUTTON GLYPH (Nov 2026) ===
+    resultsDiv.innerHTML += '<h4 class="test-section">🧹 Complete / Clear button glyph</h4>';
+    const cacheBusterGlyph = window.testCacheBuster || Date.now();
+    const { renderCompleteAllButton } = await import(`../modules/ui/completeAllButton.js?v=${cacheBusterGlyph}`);
+    const { replayAnimationClass } = await import(`../modules/utils/motionPreference.js?v=${cacheBusterGlyph}`);
+
+    await test('renders the arrows SVG for a cycle mode and the broom for To-Do', () => {
+        const btn = document.createElement('button');
+        renderCompleteAllButton(btn, false, 'Complete Cycle');
+        if (!btn.querySelector('.action-glyph-cycle svg') || btn.textContent.trim() !== 'Complete Cycle') {
+            throw new Error(`cycle: ${btn.innerHTML}`);
+        }
+        renderCompleteAllButton(btn, true, 'Clear Completed Tasks');
+        const broom = btn.querySelector('.action-glyph-broom');
+        if (!broom || broom.textContent !== '🧹' || broom.getAttribute('aria-hidden') !== 'true') {
+            throw new Error(`clear: ${btn.innerHTML}`);
+        }
+    });
+
+    await test('does not rebuild the glyph when nothing changed (a press animation keeps running)', () => {
+        const btn = document.createElement('button');
+        renderCompleteAllButton(btn, false, 'Complete Cycle');
+        const glyph = btn.querySelector('.action-glyph');
+        renderCompleteAllButton(btn, false, 'Complete Cycle');
+        if (btn.querySelector('.action-glyph') !== glyph) throw new Error('glyph was replaced on an unchanged render');
+        renderCompleteAllButton(btn, false, 'Complete Workout');
+        if (btn.querySelector('.action-glyph') === glyph) throw new Error('a new label must redraw');
+    });
+
+    await test('replayAnimationClass adds the class, then takes it off after the token\'s duration', async () => {
+        const el = document.createElement('div');
+        el.style.setProperty('--test-anim', '40ms');
+        document.body.appendChild(el);
+        replayAnimationClass(el, 'is-acting', '--test-anim');
+        const on = el.classList.contains('is-acting');
+        await new Promise(r => setTimeout(r, 120));
+        const off = !el.classList.contains('is-acting');
+        el.remove();
+        if (!on || !off) throw new Error(`on=${on} off=${off}`);
+    });
+
     // Final cleanup
     cleanupTestDOM();
 

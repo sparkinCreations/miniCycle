@@ -33,11 +33,20 @@ The **create** and **sample** first-run picks reuse the same typewriter splash v
 `onboardingManager.showWelcomeSplash()` → `_showFirstRunSplash({ standalone: true })`, but with **no
 welcome banner behind it** (those paths go straight to the routine-creation dialog). So **Phase 3
 (word landing) is skipped** — the title rests centered, then fades. The centered hold is longer
-(`--first-run-splash-hold-standalone`, 1500ms) to fill the beat the banner path spends on the landing.
+(`--first-run-splash-hold-standalone`, 400ms) to fill the beat the banner path spends on the landing.
 
 `showWelcomeSplash()` returns a promise that resolves once the splash is fully gone, and `appInit`
 opens the creation dialog **after** it resolves (not behind it) so the dialog's autofocused name input
 can't raise the mobile keyboard against a black overlay. (v2.328)
+
+### No splash when the app is already loaded
+
+The splash exists to cover loading. If boot finished while the user was still reading the choice
+screen (`hideAppLoader` sets `html[data-app-loaded="true"]`), the tap handler in `miniCycle.html`
+mounts no pre-boot splash and marks `html[data-skip-welcome-splash="true"]`; `_showFirstRunSplash`
+sees the marker and resolves at once, so the pick opens straight away. This holds for all three
+choices. A replay (`{ replay: true }`) still plays, and a reload mid-first-session plays it as before,
+since the marker only lives for the page that was tapped. (Nov 2026)
 
 **Reliability.** The phase chain hangs off `animationend`, which never fires when the character
 animations are disabled — so `_showFirstRunSplash` takes a reduced-motion fast-path (straight to the
@@ -60,8 +69,8 @@ Letters fade in one at a time, left-to-right across both lines, while held at pe
 
 - Each letter starts invisible (`opacity: 0`) at peak scale (`2.4×`) and pushed outward from its line's center (`letter-pos × spread`)
 - The `first-run-splash-fade-in` keyframe animates only `opacity: 0 → 1`
-- Stagger between letters is `--first-run-splash-char-stagger` (default 90ms)
-- Each letter's fade lasts `--first-run-splash-char-duration` (default 280ms)
+- Stagger between letters is `--first-run-splash-char-stagger` (default 45ms)
+- Each letter's fade lasts `--first-run-splash-char-duration` (default 220ms)
 
 **Default state of every char span** holds them at peak scale + spread until the animation runs:
 
@@ -117,7 +126,7 @@ The CSS keyframe simply animates `translate` from 0 to those measured deltas:
 }
 ```
 
-Once the last word's landing animation ends, the splash holds for `--first-run-splash-hold` (default 400ms) and then fades out over `--first-run-splash-fade-duration` (default 600ms). The banner is already in place underneath, so when the splash dissolves the user sees the title text exactly where the splash text just landed.
+Once the last word's landing animation ends, the splash holds for `--first-run-splash-hold` (default 200ms) and then fades out over `--first-run-splash-fade-duration` (default 400ms). The banner is already in place underneath, so when the splash dissolves the user sees the title text exactly where the splash text just landed.
 
 ### Total timeline
 
@@ -220,8 +229,8 @@ Every variable below lives at the top of `styles/components/first-run-welcome.cs
 | Variable | Default | Controls |
 |----------|---------|----------|
 | `--first-run-splash-char-start-scale` | `2.4` | Peak letter size — bigger number = more dramatic. Try `4` for a stronger entrance, `1.5` for subtle |
-| `--first-run-splash-char-duration` | `280ms` | How long each individual letter takes to fade in / shrink |
-| `--first-run-splash-char-stagger` | `90ms` | Time between consecutive letters starting their animation |
+| `--first-run-splash-char-duration` | `220ms` | How long each individual letter takes to fade in / shrink |
+| `--first-run-splash-char-stagger` | `45ms` | Time between consecutive letters starting their animation |
 
 The total duration of phase 1 is `(maxCharIndex × stagger) + duration`. Phase 2 has the same length.
 
@@ -229,14 +238,14 @@ The total duration of phase 1 is `(maxCharIndex × stagger) + duration`. Phase 2
 
 | Variable | Default | Controls |
 |----------|---------|----------|
-| `--first-run-splash-land-duration` | `900ms` | How long words take to translate from their splash position to their banner position |
+| `--first-run-splash-land-duration` | `500ms` | How long words take to translate from their splash position to their banner position |
 
 ### End
 
 | Variable | Default | Controls |
 |----------|---------|----------|
-| `--first-run-splash-hold` | `400ms` | Pause between phase 3 ending and the splash fade starting |
-| `--first-run-splash-fade-duration` | `600ms` | How long the black splash takes to fade away |
+| `--first-run-splash-hold` | `200ms` | Pause between phase 3 ending and the splash fade starting |
+| `--first-run-splash-fade-duration` | `400ms` | How long the black splash takes to fade away |
 
 > **Note:** JS reads `--first-run-splash-hold` at runtime via `getComputedStyle(document.documentElement)` so the hold timer stays in sync with the CSS value. See `_readSplashHoldDuration()` in `onboardingManager.js`.
 
@@ -246,15 +255,22 @@ The total duration of phase 1 is `(maxCharIndex × stagger) + duration`. Phase 2
 
 ### "I want the animation faster overall"
 
-Reduce the per-letter timings:
+The defaults were cut to about 3 s in Nov 2026 (from about 6 s). To go faster
+still, shrink the per-letter timings first — they are paid 19 times, twice:
 
 ```css
---first-run-splash-char-duration: 200ms;   /* was 280ms */
---first-run-splash-char-stagger:  60ms;    /* was 90ms */
---first-run-splash-land-duration: 600ms;   /* was 900ms */
---first-run-splash-hold:          250ms;
---first-run-splash-fade-duration: 400ms;
+--first-run-splash-char-duration: 180ms;   /* default 220ms */
+--first-run-splash-char-stagger:  35ms;    /* default 45ms */
+--first-run-splash-land-duration: 400ms;   /* default 500ms */
+--first-run-splash-hold:          150ms;   /* default 200ms */
+--first-run-splash-fade-duration: 300ms;   /* default 400ms */
 ```
+
+**Change `styles/base/critical.css` too.** The pre-boot copy of the splash
+(`.first-run-splash--preboot`, mounted by the create/sample tap before the main
+stylesheet loads) sets char-duration, char-stagger and fade-duration on the
+element itself, and those win over `:root`. Forget it and the create/sample
+splash keeps the old timing while the learn splash changes.
 
 ### "Letters are too dramatic at peak / too small at peak"
 

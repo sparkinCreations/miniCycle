@@ -752,6 +752,26 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
     });
 
+    await test('createNewMiniCycle in Focus View opens the new routine\'s input bar; Home View does not', async () => {
+        const create = async (focusModeActive, name) => {
+            const mockData = createMockSchemaData();
+            mockData.settings = { ...(mockData.settings || {}), focusModeActive };
+            const deps = createValidDeps({
+                AppState: { isReady: () => true, get: () => mockData, update: (fn) => { fn(mockData); } },
+                sanitizeInput: (input) => input.trim()
+            });
+            new RoutineManager(deps).createNewMiniCycle();
+            await fillAndConfirmCreationDialog(name, 300);
+            return mockData.data.routine[name];
+        };
+        const focus = await create(true, 'Focus Created');
+        if (!focus) throw new Error('routine not created in Focus View');
+        if (focus.showTaskInput !== true) throw new Error(`Focus View: showTaskInput should be true, got ${focus.showTaskInput}`);
+        const home = await create(false, 'Home Created');
+        if (!home) throw new Error('routine not created in Home View');
+        if ('showTaskInput' in home) throw new Error('Home View: the bar stays hidden by default (v2.529)');
+    });
+
     await test('createNewMiniCycle handles duplicate title with numbered suffix', async () => {
         const notifications = [];
         const mockData = createMockSchemaData();

@@ -60,6 +60,14 @@ export class OnboardingSplash {
             return Promise.resolve();
         }
 
+        // The app had finished loading before the first-run pick (the choice
+        // handler in miniCycle.html marks it): the splash would only delay
+        // what the user picked. A replay was asked for, so it still plays.
+        if (!replay && document.documentElement.dataset.skipWelcomeSplash === 'true') {
+            this._discardPrebootSplash();
+            return Promise.resolve();
+        }
+
         if (this.m._firstRunSplash) return this.m._firstRunSplashDone ?? Promise.resolve();
 
         // The tap handler's splash already played and was removed (its 12 s

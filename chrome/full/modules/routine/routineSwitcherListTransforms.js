@@ -42,15 +42,20 @@
  * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
+import { compareNames } from '../utils/taskSort.js';
+
 /**
- * Strip leading emoji (including ZWJ sequences and variation selectors) so an
- * alphabetical sort keys off the words a reader sees. Without this, "🔥 Apple"
- * sorts by the fire emoji's code point and lands nowhere near A.
- * @param {string} text
- * @returns {string}
+ * When the routine was last used: opened, else edited, else created. Routines
+ * opened before lastAccessedAt was recorded have none, and must still sort.
+ * The one definition of "Recent" — the list's Recent sort, Browse's Recent
+ * order and Alt+Shift+[ / ] all read it, so they agree. (The list used to sort
+ * by lastModified, which is stamped on the routine you LEAVE when switching:
+ * the routine you were on sank down its own Recent list — Oct 2026.)
+ * @param {Object} routine
+ * @returns {number} epoch ms, 0 when nothing is known
  */
-function stripLeadingEmoji(text) {
-    return text.replace(/^[\p{Extended_Pictographic}\uFE0F\u200D\s]+/u, '');
+export function routineRecency(routine) {
+    return routine?.lastAccessedAt || routine?.lastModified || routine?.createdAt || 0;
 }
 
 /**
@@ -71,11 +76,10 @@ export function sortCycles(cycleEntries, { mode, direction, sizeOf } = {}) {
     const isAsc = direction === 'asc';
 
     if (mode === 'recent') {
-        // Sort by lastModified, fall back to createdAt
-        // asc = newest first, desc = oldest first
+        // Last used (routineRecency); asc = newest first, desc = oldest first
         return cycleEntries.sort((a, b) => {
-            const aTime = a[1].lastModified || a[1].createdAt || 0;
-            const bTime = b[1].lastModified || b[1].createdAt || 0;
+            const aTime = routineRecency(a[1]);
+            const bTime = routineRecency(b[1]);
             return isAsc ? bTime - aTime : aTime - bTime;
         });
     } else if (mode === 'size') {
@@ -87,12 +91,11 @@ export function sortCycles(cycleEntries, { mode, direction, sizeOf } = {}) {
             return isAsc ? bSize - aSize : aSize - bSize;
         });
     } else {
-        // Default: alphabetical by title
-        // asc = A-Z, desc = Z-A
+        // Default: alphabetical by title — the same A–Z as Browse and the task
+        // sort (compareNames). asc = A-Z, desc = Z-A
         return cycleEntries.sort((a, b) => {
-            const aTitle = stripLeadingEmoji((a[1].title || a[0]).toLowerCase());
-            const bTitle = stripLeadingEmoji((b[1].title || b[0]).toLowerCase());
-            return isAsc ? aTitle.localeCompare(bTitle) : bTitle.localeCompare(aTitle);
+            const order = compareNames(a[1].title || a[0], b[1].title || b[0]);
+            return isAsc ? order : -order;
         });
     }
 }
@@ -132,4 +135,17 @@ export function filterCycles(cycleEntries, filterMode) {
     return cycleEntries.filter(([key, cycleData]) => {
         return getCycleMode(cycleData) === filterMode;
     });
+}
+
+/**
+ * Whether a routine's name matches a search — the one rule the Open Routine
+ * list and Browse Routines' search share: case-insensitive, anywhere in the
+ * name, surrounding spaces ignored. An empty search matches everything.
+ * @param {string} name
+ * @param {string} query
+ * @returns {boolean}
+ */
+export function routineNameMatches(name, query) {
+    const q = String(query || '').toLowerCase().trim();
+    return q === '' || String(name || '').toLowerCase().includes(q);
 }

@@ -191,7 +191,7 @@ export async function runAchievementsManagerTests(resultsDiv) {
         if (captured.length !== 1) {
             throw new Error(`expected exactly 1 notification, got ${captured.length}: ${JSON.stringify(captured.map(c => c.msg))}`);
         }
-        if (!captured[0].msg.includes('🎮') || !captured[0].opts?.actionButton) {
+        if (captured[0].opts?.icon !== 'gamepad' || !captured[0].opts?.actionButton) {
             throw new Error(`expected the actionable game toast, got '${captured[0].msg}'`);
         }
     });
@@ -288,7 +288,7 @@ export async function runAchievementsManagerTests(resultsDiv) {
         if (!state.settings.unlockedFeatures.includes('task-order-game')) {
             throw new Error('game feature flag should be set after the 100th cycle');
         }
-        const gameToasts = captured.filter(c => c.msg.includes('🎮'));
+        const gameToasts = captured.filter(c => c.opts?.icon === 'gamepad');
         if (gameToasts.length !== 1) {
             throw new Error(`expected exactly 1 game toast across both modules, got ${gameToasts.length}: ${JSON.stringify(captured.map(c => c.msg))}`);
         }

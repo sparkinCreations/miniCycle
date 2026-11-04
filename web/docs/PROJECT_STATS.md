@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: October 30, 2026
+**Last Updated**: November 03, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.656 |
+| **App Version** | 2.666 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
-| **Total Modules** | 172 |
-| **Total Tests** | 4151 |
+| **Total Modules** | 175 |
+| **Total Tests** | 4480 |
 | **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
-| **JSDoc Blocks** | 1674 |
+| **JSDoc Blocks** | 1686 |
 | **Documentation Files** | 253 |
 | **DI Completion** | 100% |
 | **Custom window.* Globals (modules)** | 0 |
@@ -41,18 +41,18 @@
 | `boot/` | 7 | Boot sequence, orchestration, module loading |
 | `core/` | 8 | AppState, appInit, appContext, DI base, constants |
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
-| `routine/` | 14 | Routine management, switching, migration |
+| `routine/` | 15 | Routine management, switching, migration |
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
-| `ui/` | 45 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 46 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 12 | Themes, stats, achievements, history, reminders |
 | `utils/` | 34 | Notifications, device detection, utilities |
-| `labels/` | 3 | Default labels + label resolver |
+| `labels/` | 4 | Default labels + label resolver |
 | `storage/` | 3 | Backup manager (IndexedDB), storage persistence (eviction protection) |
 | `progress/` | 1 | Cycle completion tracking |
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **172** | |
+| **Total** | **175** | |
 
 ---
 
@@ -63,9 +63,9 @@
 | `miniCycle-main.js` | ~50 | Entrypoint |
 | `modules/boot/orchestrator.js` | ~1320 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~770 | Core state & init |
-| `modules/boot/featureBoot.js` | ~623 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1535 | UI handlers |
-| **Total** | **~4298** | |
+| `modules/boot/featureBoot.js` | ~628 | DI wiring hub |
+| `modules/boot/uiBoot.js` | ~1567 | UI handlers |
+| **Total** | **~4335** | |
 
 ---
 
@@ -73,7 +73,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4151 |
+| Total Tests | 4480 |
 | Test Files | 153 |
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |

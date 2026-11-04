@@ -14,7 +14,7 @@ import {
     DOM_SELECTORS,
     DATA_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { buildRecurringTemplate } from './recurringTemplate.js';
+import { buildRecurringTemplate, withoutBiweeklyStart } from './recurringTemplate.js';
 import { autoClearFields, getActiveRoutineId, getAutoClear, getRoutine, setAutoClearSettings } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
 
@@ -163,7 +163,9 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     const normalizedSettings = Deps.normalizeRecurringSettings(structuredClone(
         (task.recurringSettings && Object.keys(task.recurringSettings).length > 0)
             ? task.recurringSettings
-            : defaultSettings
+            // Defaults saved by older versions carry the date they were saved on as the
+            // biweekly Week 1 start; a task made from them starts its own count now.
+            : withoutBiweeklyStart(defaultSettings)
     ));
 
     // Commit state FIRST (single source of truth), then sync DOM
@@ -224,7 +226,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
         }
     } else {
         assertInjected('showNotification', Deps.showNotification);
-        Deps.showNotification(`✅ ${getLabel('notify.taskSetRecurring', { vars: { frequency } })}`, "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
+        Deps.showNotification(getLabel('notify.taskSetRecurring', { vars: { frequency } }), "success", UI_TIMEOUTS.NOTIFICATION_SLOW);
     }
 
     // Restart watcher at active interval since a template was created
@@ -311,7 +313,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     }
 
     assertInjected('showNotification', Deps.showNotification);
-    Deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+    Deps.showNotification(getLabel('notify.recurringTurnedOff'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'history' });
 
     if (Deps.updatePanelButtonVisibility && typeof Deps.updatePanelButtonVisibility === 'function') {
         Deps.updatePanelButtonVisibility();

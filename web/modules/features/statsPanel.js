@@ -28,7 +28,7 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { UI_TIMEOUTS, CHART, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
-import { ICONS } from '../utils/icons.js';
+import { ICONS, createIconElement } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine, getActiveRoutine } from '../utils/cycleMode.js';
 // Pure utility class (no side effects/module state) — safe static import.
 // Owns the ordered panel registry; statsPanel registers its panels into it.
@@ -325,7 +325,7 @@ export class StatsPanelManager {
             routineButtonsContainer.className = 'routine-buttons-container';
             routineButtonsContainer.innerHTML = `
                 <button class="stats-feature-btn history-btn" id="${DOM_IDS.HISTORY_BTN}">
-                    <span>${getIcon('history')}</span> ${getLabel('stats.history')}
+                    <span class="icon" aria-hidden="true">${ICONS.history}</span> ${getLabel('stats.history')}
                 </button>
             `;
             // Insert after cleared count (if exists) so order is: Cycles > Cleared Tasks > History
@@ -351,7 +351,7 @@ export class StatsPanelManager {
             const infoBtn = document.createElement('button');
             infoBtn.type = 'button';
             infoBtn.id = DOM_IDS.ALL_ROUTINES_INFO_BTN;
-            infoBtn.className = DOM_CLASSES.STATS_INFO_BTN;
+            infoBtn.className = `${DOM_CLASSES.STATS_INFO_BTN} ${DOM_CLASSES.INFO_BTN}`;
             infoBtn.setAttribute('aria-label', infoLabel);
             infoBtn.title = infoLabel;
             infoBtn.setAttribute('aria-expanded', 'false');
@@ -1118,7 +1118,8 @@ export class StatsPanelManager {
 
         // Update icon
         if (this.elements.quickDarkToggle) {
-            this.elements.quickDarkToggle.textContent = isDark ? getIcon('lightMode') : getIcon('darkMode');
+            this.elements.quickDarkToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
+            this.elements.quickDarkToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
         }
         
     }

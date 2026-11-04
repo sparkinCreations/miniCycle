@@ -465,8 +465,8 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const parts = manager.getCurrentStatusMessage();
 
-        if (parts.icon !== '📝') {
-            throw new Error(`Empty list icon should be 📝, got: ${parts.icon}`);
+        if (parts.icon !== 'edit') {
+            throw new Error(`Empty list icon should be 'edit', got: ${parts.icon}`);
         }
     });
 
@@ -505,18 +505,18 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         const manager = new HelpWindowManager();
         const parts = manager.getCurrentStatusMessage();
 
-        if (parts.icon !== '🎉') {
-            throw new Error(`All-complete icon should be 🎉, got: ${parts.icon}`);
+        if (parts.icon !== 'trophy') {
+            throw new Error(`All-complete icon should be 'trophy', got: ${parts.icon}`);
         }
     });
 
-    await test('status message uses 📋 icon when tasks remain', () => {
+    await test('status message uses the list icon when tasks remain', () => {
         addMockTasks(3, 1); // 2 remaining
         const manager = new HelpWindowManager();
         const parts = manager.getCurrentStatusMessage();
 
-        if (parts.icon !== '📋') {
-            throw new Error(`In-progress icon should be 📋, got: ${parts.icon}`);
+        if (parts.icon !== 'list') {
+            throw new Error(`In-progress icon should be 'list', got: ${parts.icon}`);
         }
     });
 
@@ -568,7 +568,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
     await test('_renderStatusContent escapes script tags in body', () => {
         const manager = new HelpWindowManager();
         manager._renderStatusContent({
-            icon: '📋',
+            icon: 'list',
             body: '<script>alert(1)</script>',
             size: ''
         });
@@ -583,7 +583,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
     await test('_renderStatusContent escapes HTML in size', () => {
         const manager = new HelpWindowManager();
         manager._renderStatusContent({
-            icon: '📋',
+            icon: 'list',
             body: 'safe text',
             size: '<img src=x onerror=alert(1)>'
         });
@@ -606,15 +606,37 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
     await test('_renderStatusContent wraps icon in .help-window-icon span', () => {
         const manager = new HelpWindowManager();
-        manager._renderStatusContent({ icon: '📋', body: 'test', size: '' });
-        if (!helpWindowEl.querySelector('.help-window-icon')) {
-            throw new Error('Icon should be wrapped in .help-window-icon span');
+        manager._renderStatusContent({ icon: 'list', body: 'test', size: '' });
+        if (!helpWindowEl.querySelector('.help-window-icon svg')) {
+            throw new Error('Icon should be an SVG inside a .help-window-icon span');
+        }
+    });
+
+    await test('_renderStatusContent puts the progress icon in front of the progress phrase', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: 'list', body: '2 tasks remaining', cta: '3 cycles completed', ctaIcon: 'mode-auto', size: '' });
+        if (!helpWindowEl.querySelector('.help-window-cta .help-window-cta-icon svg')) throw new Error('no icon in the CTA');
+        manager._renderStatusContent({ icon: 'list', body: '2 tasks remaining', cta: 'Complete your first cycle!', size: '' });
+        if (helpWindowEl.querySelector('.help-window-cta-icon')) throw new Error('a first-time prompt must not get the progress icon');
+    });
+
+    await test('status parts: cycle modes pair the progress with the cycle arrows, To-Do with the broom', () => {
+        const manager = new HelpWindowManager();
+        const parts = manager.getCurrentStatusMessage();
+        if (parts.cta && parts.ctaIcon && !['mode-auto', 'broom'].includes(parts.ctaIcon)) throw new Error(`unexpected ctaIcon ${parts.ctaIcon}`);
+    });
+
+    await test('_renderStatusContent draws nothing for a name not in ICONS', () => {
+        const manager = new HelpWindowManager();
+        manager._renderStatusContent({ icon: 'not-an-icon', body: 'test', size: '' });
+        if (helpWindowEl.querySelector('.help-window-icon')) {
+            throw new Error('An unknown icon name should render no icon span');
         }
     });
 
     await test('_renderStatusContent wraps size in .help-window-size span', () => {
         const manager = new HelpWindowManager();
-        manager._renderStatusContent({ icon: '📋', body: 'test', size: '~1.2 KB' });
+        manager._renderStatusContent({ icon: 'list', body: 'test', size: '~1.2 KB' });
         if (!helpWindowEl.querySelector('.help-window-size')) {
             throw new Error('Size should be wrapped in .help-window-size span');
         }
@@ -630,7 +652,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
     await test('_renderStatusContent omits size span when size is empty', () => {
         const manager = new HelpWindowManager();
-        manager._renderStatusContent({ icon: '📋', body: 'test', size: '' });
+        manager._renderStatusContent({ icon: 'list', body: 'test', size: '' });
         if (helpWindowEl.querySelector('.help-window-size')) {
             throw new Error('Size span should be omitted when size is empty');
         }
@@ -638,7 +660,7 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
 
     await test('_renderStatusContent renders body text', () => {
         const manager = new HelpWindowManager();
-        manager._renderStatusContent({ icon: '📋', body: 'hello world', size: '' });
+        manager._renderStatusContent({ icon: 'list', body: 'hello world', size: '' });
         if (!helpWindowEl.textContent.includes('hello world')) {
             throw new Error('Body text should be visible in rendered content');
         }

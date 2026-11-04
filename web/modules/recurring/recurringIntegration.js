@@ -111,8 +111,11 @@ export async function initRecurringModules(options = {}) {
         if (!options.AppMeta?.version) {
             console.warn('⚠️ recurringIntegration: AppMeta.version not provided, using globalThis fallback');
         }
-        const recurringCore = await import(`./recurringCore.js?v=${version}`);
-        const settingsApplicator = await import(`./recurringSettingsApplicator.js?v=${version}`);
+        // Independent of each other — fetch both at once instead of one after the other.
+        const [recurringCore, settingsApplicator] = await Promise.all([
+            import(`./recurringCore.js?v=${version}`),
+            import(`./recurringSettingsApplicator.js?v=${version}`)
+        ]);
 
         // ============================================================================
         // DEFERRED PANEL (perf): recurringPanel.js + sub-modules (~3.6k lines) are the

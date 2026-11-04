@@ -94,6 +94,13 @@
     display: flex;
 }
 
+/* …but not while a first-run Create / Sample pick is still choosing its
+   routine (body.first-run-picking, appInit): the list is empty only because
+   nothing has loaded yet. */
+body.first-run-picking .empty-state {
+    visibility: hidden;
+}
+
 .empty-state {
     display: none;
     flex-direction: column;

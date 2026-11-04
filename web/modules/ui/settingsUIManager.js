@@ -596,7 +596,7 @@ export function setupThreeDotsToggle() {
         // Show tip when disabling on touch devices
         if (!enabled && ('ontouchstart' in window)) {
             setTimeout(() => {
-                _deps.showNotification('💡 ' + getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                _deps.showNotification(getLabel('notify.threeDotsDisabledTip'), 'info', UI_TIMEOUTS.NOTIFICATION_EXTENDED, { icon: 'lightbulb' });
             }, 300);
         }
     };
@@ -988,8 +988,16 @@ export function setupDebugModeToggle() {
     const debugEnabled = _deps.isDebug?.() ?? false;
     debugModeToggle.checked = debugEnabled;
 
+    // App Diagnostics (Validate Schema, Run All Tests, data repair…) is a
+    // developer tool, so it is only offered while Debug Mode is on (Nov 2026:
+    // a review called out developer tools shown to everyday users).
+    const diagnosticsBtn = document.getElementById(DOM_IDS.OPEN_TESTING_MODAL);
+    const syncDiagnosticsButton = (on) => { if (diagnosticsBtn) diagnosticsBtn.hidden = !on; };
+    syncDiagnosticsButton(debugEnabled);
+
     debugModeToggle._changeHandler = () => {
         const enabled = debugModeToggle.checked;
+        syncDiagnosticsButton(enabled);
 
         if (enabled) {
             _deps.enableDebug?.();

@@ -17,7 +17,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // <a download> click there goes nowhere. The share sheet (with "Save to Files")
 // is the destination picker on those platforms — same path the routine export
 // and share already take.
-import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative, saveFileAsNative } from '../platform/capacitorBridge.js';
+import { isNativeApp, getNativePlatform, shareRoutineFileNative, saveFileToDocumentsNative, saveFileAsNative, cancelNativeReminderSeries, cancelNativeDueDateNotifications } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
 // Pure, DI-free module (same known-acceptable dual-instance pattern as
 // appState's static import of it) — shared payload validation with the
@@ -262,6 +262,11 @@ function rearmFirstRunChoiceScreen() {
     if (!loader || !choice) return false;
 
     document.documentElement.classList.add(DOM_CLASSES.MC_FIRST_RUN);
+    // The same state a first-run page load starts in: critical.css hides the
+    // app and the footer under .app-loading, which is also what keeps Tab on
+    // this screen instead of running into the controls under it. Removed again
+    // by the choice handler below.
+    document.body.classList.add(DOM_CLASSES.APP_LOADING);
     loader.classList.add(DOM_CLASSES.FIRST_RUN_MODE);
     loader.classList.remove(DOM_CLASSES.FADE_OUT);
     loader.style.display = '';
@@ -305,6 +310,7 @@ function rearmFirstRunChoiceScreen() {
     // is long gone and boot's fade-out already ran.
     document.addEventListener('firstrun:choice', () => {
         document.documentElement.classList.remove(DOM_CLASSES.MC_FIRST_RUN);
+        document.body.classList.remove(DOM_CLASSES.APP_LOADING);
         loader.classList.remove(DOM_CLASSES.FIRST_RUN_MODE);
         loader.setAttribute('data-awaiting-choice', 'false');
         _deps.hideLoader?.();
@@ -636,7 +642,7 @@ async function shareBackupNative(AppState, fileName, defaultName) {
         }
         const saved = await saveFileToDocumentsNative({ data: file.text, fileName: file.name });
         if (saved.handled) {
-            _deps.showNotification('✅ ' + getLabel('notify.backupSavedToDocuments', { vars: { name: file.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification(getLabel('notify.backupSavedToDocuments', { vars: { name: file.name } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
             AppState.update(state => {
                 if (!state.settings) state.settings = {};
                 state.settings.lastFileBackupTimestamp = Date.now();
@@ -658,7 +664,7 @@ async function shareBackupNative(AppState, fileName, defaultName) {
 
 /** Tell the user, and record the timestamp the backup-reminder system reads. */
 function markBackupSaved(AppState) {
-    _deps.showNotification('✅ ' + getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    _deps.showNotification(getLabel('notify.backupCreated'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     AppState.update(state => {
         if (!state.settings) state.settings = {};
         state.settings.lastFileBackupTimestamp = Date.now();
@@ -1104,7 +1110,7 @@ async function processRestoreData(fileContent, options = {}) {
                     const liteOk = restoreLiteStorageSnapshot(backupData.liteStorage);
                     const extrasOk = restoreExtraStorageKeys(backupData.extraStorageKeys);
                     if (liteOk && extrasOk) {
-                        _deps.showNotification("✅ " + getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                        _deps.showNotification(getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
                     } else {
                         _deps.showNotification(getLabel('notify.restorePartialSettings'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
                     }
@@ -1279,7 +1285,11 @@ export async function refreshAutoBackupsList() {
     const folderNote = document.getElementById(DOM_IDS.AUTO_BACKUPS_FOLDER_NOTE);
     if (folderNote) {
         folderNote.hidden = !folder;
-        if (folder) folderNote.textContent = getLabel('settings.autoBackupsFolderNote', { vars: { folder } });
+        // iPhone keeps the folder inside the app's own Documents, which iOS
+        // deletes with the app — the general note's "stay even if the app is
+        // removed" is only true on a computer and on Android.
+        const noteKey = getNativePlatform() === 'ios' ? 'settings.autoBackupsFolderNoteIos' : 'settings.autoBackupsFolderNote';
+        if (folder) folderNote.textContent = getLabel(noteKey, { vars: { folder } });
     }
     renderAutoBackupsList(items, { folder });
     return items;
@@ -1529,7 +1539,7 @@ export function downloadPreMigrationCopy() {
     a.download = `miniCycle-before-update-${stamp}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    _deps.showNotification('✅ ' + getLabel('notify.preMigrationDownloaded'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+    _deps.showNotification(getLabel('notify.preMigrationDownloaded'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
     return true;
 }
 
@@ -1612,7 +1622,7 @@ export async function restorePreMigrationCopy() {
         return false;
     }
 
-    _deps.showNotification('✅ ' + getLabel('notify.preMigrationRestored'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+    _deps.showNotification(getLabel('notify.preMigrationRestored'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
     reloadWithLoader('Pre-migration restore');
     return true;
 }
@@ -1656,6 +1666,22 @@ export async function deletePreMigrationCopy() {
 // ============================================================================
 
 /**
+ * Cancel every notification the phone apps scheduled ahead — the reminder
+ * series and the due-day notifications. The phone keeps them through anything
+ * the app deletes, so a factory reset that skipped this left the phone
+ * delivering reminders after "everything" was gone. No-op on the web; the
+ * bridge calls swallow their own errors.
+ * @returns {Promise<void>}
+ */
+export async function cancelPhoneNotifications() {
+    if (!isNativeApp()) return;
+    await Promise.all([
+        cancelNativeReminderSeries(LIMITS.NATIVE_REMINDER_SCHEDULE_MAX),
+        cancelNativeDueDateNotifications(LIMITS.NATIVE_DUE_DATE_SCHEDULE_MAX)
+    ]);
+}
+
+/**
  * Setup factory reset button functionality
  */
 export function setupFactoryResetButton() {
@@ -1677,7 +1703,10 @@ export function setupFactoryResetButton() {
 
     const runFactoryReset = async () => {
 
-        // Neutralize AppState first
+        // First, before anything is deleted (see cancelPhoneNotifications).
+        await cancelPhoneNotifications();
+
+        // Neutralize AppState
         neutralizeAppState();
 
         // The device-gate override is a DEVICE decision, not user data. It matches
@@ -1909,9 +1938,9 @@ export function setupFactoryResetButton() {
             } else {
                 console.warn('Factory reset: these databases could not be confirmed removed:', failedDeletes);
             }
-            _deps.showNotification("⚠️ " + getLabel('notify.factoryResetPartial'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            _deps.showNotification(getLabel('notify.factoryResetPartial'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         } else {
-            _deps.showNotification("✅ " + getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            _deps.showNotification(getLabel('notify.factoryResetComplete'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         // Full re-init. armFirstRunChoice puts the user back on the create /

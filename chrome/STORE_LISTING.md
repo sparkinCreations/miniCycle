@@ -17,12 +17,25 @@ releases.
 
 Positioning mirrors `web/pages/product.html` (Oct 2026): reusable checklists for
 routines and repeatable procedures lead; "lightweight SOP" is a bridge one
-section down, never the identity. The wording below is the dashboard's as of
-Oct 2026 (synced from the live listing on 2026-10-28), with WHAT'S NEW added.
-The WHAT'S NEW below is what the 2.647 submission carried, covering the gap
-from the previously published store build (2.602). Feature names use the app's own labels
-(Auto Cycle / Manual Cycle / To-Do Mode, Focus View, the four vocabulary
-themes) so the listing never promises something the UI calls something else.
+section down, never the identity. The body below is the dashboard's wording as
+synced from the live listing on 2026-10-28, plus the two FEATURES lines and the
+WHAT'S NEW block prepared for the 2.664 upload (2026-11-02).
+Published store builds so far: 2.602, then 2.647 (submitted 2026-10-28,
+confirmed live). 2.664 was submitted 2026-11-02 with the WHAT'S NEW below, which
+covers 2.648 - 2.664; mark it live here once review clears. Record each
+build here as it goes live — the block's boundary is the last PUBLISHED build, not
+the last release, and that is the one fact this file cannot derive on its own.
+
+The 2.647 listing went live carrying the automatic-backups bullet in its wrong
+form ("a backup file is kept on your device", true only of the iPhone, Android and
+desktop builds; on the web and in the extension the backups are listed under Data
+Management, ready to restore). The 2.664 block below drops that bullet entirely,
+which retires the correction — nothing to carry forward.
+
+Feature names use the app's own labels
+(Auto Cycle / Manual Cycle / To-Do Mode, Focus View, Browse Routines, the
+vocabulary themes, Personalization > Buttons & Progress) so the listing never
+promises something the UI calls something else.
 
 ---
 
@@ -46,6 +59,7 @@ HOW IT WORKS
 FEATURES
 
 • Multiple routines — create and switch between different checklists.
+• Browse Routines — open your routines one at a time, as cards or a grid, with search and sorting built in.
 • Recurring tasks — schedule tasks daily, weekly, monthly, or with a custom pattern.
 • Reminders and due dates — optional nudges when you need them.
 • Priorities and customizable task controls.
@@ -54,6 +68,7 @@ FEATURES
 • Stats, history, and achievements that show your progress over time.
 • Vocabulary themes that adapt the app for habits, fitness, studying, cleaning, and more.
 • Dark mode, high contrast, reduced motion, and adjustable font sizes.
+• Keyboard shortcuts — move between routines, open the menu or Settings, and reorder tasks from the keyboard.
 • Undo and redo across the app.
 • Portable .mcyc routine files — export your routines or import one from a friend or colleague.
 
@@ -72,20 +87,16 @@ PRIVATE BY DESIGN
 
 Privacy focused so your information remains under your control.
 
-WHAT'S NEW (October 2026)
+WHAT'S NEW (November 2026)
 
-• Your automatic backups are now listed under Data Management, each one ready to restore.
-  (NEXT UPLOAD: this replaces the bullet submitted with 2.647, which presented automatic daily backups as new (they date to 1.66x) and said a backup file is kept on your device, which only the iPhone, Android and desktop builds do.)
-• Recurring tasks can be paused and resumed, and removing one offers to put it back.
-• Due dates can send a system notification on the due day, and Reminders now says when the next one fires and which tasks it covers.
-• Open Routine: sort and filter chips have tooltips, a second tap reverses the sort, searching stays applied when you change the filter or sort, and renaming is easier to read.
-• Open Routine responds the moment you tap a routine, and the app starts faster on a first visit.
-• Settings: every control explains what it does, and tour prompts can be turned off as well as on.
-• History: Recreate now returns you to the routine list and highlights the restored tasks.
-• Personalization: uploading a background photo turns Show Image on, and text stays readable on any photo.
-• A modern routine progress bar, and tasks animate into and out of the completed list.
+• Browse Routines — a new way to open your routines one at a time, each in its own theme: Cards shows the routines either side peeking in, Grid shows them all as tiles, and search, Recent or A–Z order and Import are built in. In Settings, under Behavior, "When you open routines, show" chooses Browse or the list.
+• Keyboard shortcuts — Alt+Shift opens the menu, Settings, or the routines you used last; Alt+Up/Down moves the task you’re on; and each view lists its own shortcuts in its menu (Alt+? shows them all). Optional single-key shortcuts live in Settings, under Behavior.
+• A refreshed look — icons throughout the app, glass Complete Cycle and Clear buttons with a Solid option, a new mode picker, and corner buttons whose color, style and captions you set in Personalization, under Buttons & Progress.
+• Vocabulary themes go further — the mode descriptions and the help window now speak each theme’s own words.
+• Recurring tasks and reminders keep better time — editing a biweekly task no longer swaps its two weeks, clock changes are handled, times follow your device’s 12/24-hour clock, and turning on a task’s bell switches reminders on.
+• Safer with your data — if saved data is damaged and storage is too full to keep a copy, miniCycle stops saving and asks you to save a copy first, so the original is never overwritten. Duplicate always makes a fresh copy now, and more changes can be undone.
 
-Full changelog: https://minicycle.app/pages/product.html#changelog
+Full changelog: https://minicycle.app/#changelog
 
 ---
 ---

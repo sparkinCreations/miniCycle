@@ -288,7 +288,8 @@ export class MiniCycleReminders {
             return getLabel('reminders.nextIn', { vars: { count, unit: getLabel('reminders.nextHourUnit', { count }) } });
         }
         const next = new Date(nextTime);
-        const time = next.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit', hour12: true });
+        // The device's own 12/24-hour clock, like every other time in the app.
+        const time = next.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
         const tomorrow = new Date(now);
         tomorrow.setDate(tomorrow.getDate() + 1);
         if (next.toDateString() === tomorrow.toDateString()) {
@@ -426,12 +427,12 @@ export class MiniCycleReminders {
         // Start or stop reminders
         if (globalReminderState) {
             if (!wasEnabled) {
-                this.deps.showNotification('🔔 ' + getLabel('notify.reminderEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                this.deps.showNotification(getLabel('notify.reminderEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_MEDIUM, { icon: 'bell' });
             }
             setTimeout(() => this.startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
         } else {
             if (wasEnabled) {
-                this.deps.showNotification('🔕 ' + getLabel('notify.reminderDisabled'), "error", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                this.deps.showNotification(getLabel('notify.reminderDisabled'), "error", UI_TIMEOUTS.NOTIFICATION_MEDIUM, { icon: 'bell' });
             }
             this.stopReminders();
         }
@@ -802,7 +803,7 @@ export class MiniCycleReminders {
         }
         // No duration = requires manual dismissal (user may be away from app)
         // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
-        this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info", 0);
+        this._activeReminderNotification = this.deps.showNotification(`${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info", 0, { icon: 'bell' });
 
         // Send a system notification if enabled.
         if (remindersSettings.browserNotifications) {
@@ -899,16 +900,30 @@ export class MiniCycleReminders {
             this.state.reminderTimeoutId = null;
         }
 
+        // Every way out below that leaves reminders off also clears the series
+        // the phone may still hold (native only) — as dueDates.syncDueDateNotifications
+        // does. The OS keeps scheduled notifications through a factory reset, a
+        // restore or an import that turns reminders off, and nothing else on
+        // those paths cancels them, so the phone kept delivering reminders the
+        // app no longer has.
+        // Awaited: startReminders() is serialised, so a series scheduled by the
+        // next call can never be cancelled by this one landing late.
+        const clearNativeSeries = async () => {
+            if (isNativeApp()) await cancelNativeReminderSeries(LIMITS.NATIVE_REMINDER_SCHEDULE_MAX);
+        };
+
         // State only
         const state = this._state();
         if (!state) {
             console.warn('⚠️ No state data yet - reminders will start after cycle creation');
+            await clearNativeSeries();
             return; // Gracefully exit - reminders will start when data exists
         }
 
         const remindersSettings = state.customReminders || {};
 
         if (!remindersSettings.enabled) {
+            await clearNativeSeries();
             return;
         }
 
@@ -918,6 +933,7 @@ export class MiniCycleReminders {
 
         // Check if max reminders already sent
         if (!remindersSettings.indefinite && timesReminded >= remindersSettings.repeatCount) {
+            await clearNativeSeries();
             return;
         }
 
@@ -1130,13 +1146,13 @@ export class MiniCycleReminders {
                         ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
                         : getLabel('notify.reminderCustomSettings');
                     const messageKey = autoEnabled ? 'notify.reminderAutoEnabled' : 'notify.reminderEnabledWithSettings';
-                    message = `🔔 ${getLabel(messageKey, { vars: { settings: settingsText } })}`;
+                    message = getLabel(messageKey, { vars: { settings: settingsText } });
                     notificationType = 'success';
                     actionLabel = getLabel('notify.reminderOpenSettings');
                 } else {
-                    // 🔕, not 🔔: the actionable truth is that no notification will
-                    // arrive yet. 'info' rather than 'success' for the same reason.
-                    message = `🔕 ${getLabel('notify.reminderSelectedGlobalOff')}`;
+                    // 'info' rather than 'success': the actionable truth is
+                    // that no notification will arrive yet.
+                    message = getLabel('notify.reminderSelectedGlobalOff');
                     notificationType = 'info';
                     actionLabel = getLabel('notify.reminderTurnOnReminders');
                 }
@@ -1146,6 +1162,7 @@ export class MiniCycleReminders {
                     notificationType,
                     UI_TIMEOUTS.NOTIFICATION_SLOW,
                     {
+                        icon: 'bell',
                         actionButton: {
                             label: actionLabel,
                             onClick: () => this.openRemindersModal()
@@ -1159,7 +1176,7 @@ export class MiniCycleReminders {
                     notificationContent.style.whiteSpace = 'pre-line';
                 }
             } else {
-                this.deps.showNotification('🔕 ' + getLabel('notify.taskReminderDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
+                this.deps.showNotification(getLabel('notify.taskReminderDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'bell' });
             }
         };
         safeAdd(button, "click", button._reminderClickHandler);

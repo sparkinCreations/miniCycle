@@ -365,6 +365,25 @@ function escapeHtml(str) {
 }
 
 /**
+ * The error message as the crash-report email may carry it: anything quoted
+ * replaced with "…". The email promises "No routine/task data is included",
+ * and error messages quote the text they choke on — Chrome's JSON.parse error
+ * opens with the first characters of the unreadable string, which for damaged
+ * saved data is a routine or task name.
+ * @param {string} [message]
+ * @returns {string}
+ */
+export function errorTextForReport(message) {
+  // A single quote opens a quotation only when it does not follow a letter,
+  // so "Can't" survives. (A group, not a lookbehind: Safari before 16.4 cannot
+  // parse lookbehind, and that would stop this module loading at all.)
+  return String(message || 'Unknown')
+    .replace(/"[^"]*"|`[^`]*`|“[^”]*”|‘[^’]*’/g, '"…"')
+    .replace(/(^|[^A-Za-z])'[^']*'/g, '$1"…"')
+    .substring(0, 300);
+}
+
+/**
  * Get user-friendly error description and suggestion
  * @param {Error} error - The error that occurred
  * @param {string} phase - Which phase failed
@@ -649,7 +668,7 @@ function showBootError(phase, error, willRetry = false) {
         'No routine/task data is included.',
         '',
         `Phase: ${phase}`,
-        `Error: ${(error?.message || 'Unknown').substring(0, 300)}`,
+        `Error: ${errorTextForReport(error?.message)}`,
         `Version: ${APP_VERSION} | Attempt: ${bootAttempt}`,
         `Online: ${navigator.onLine} | SW controlling: ${!!navigator.serviceWorker?.controller}`,
         `UA: ${navigator.userAgent}`,

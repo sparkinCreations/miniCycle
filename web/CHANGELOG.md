@@ -1,3 +1,86 @@
+## [2.666] - 2026-11-03
+- perf(boot): preload every file boot imports, staged after the boot chain
+- perf(recurring): load recurringCore and recurringSettingsApplicator in parallel at boot
+- test(journeys): stats task-count match is case-insensitive (2.665 sentence-case labels)
+- feat(site): guide page icons are SVGs, not emojis; title says "Features & FAQ"
+- fix(site): name the guide link "Features & FAQ", fix the product nav overlap, current tagline everywhere
+- fix(site): changelog shows no TODO placeholders; brand-blue contrast on the guide and format pages
+- fix(product): accessibility, SEO link text, image weight and layout shift on the product page
+
+
+## [2.665] - 2026-11-02
+- fix(a11y): buttons keep their own colour on hover, so the Complete Task label no longer vanishes while you point at it
+- Stats labels in sentence case
+
+
+## [2.664] - 2026-11-02
+- Returning users: one redirect to /app with a 'we moved' notice
+- minicycle.app always shows the product page
+
+
+## [2.663] - 2026-11-02
+- minicycle.app is the product page; the app moves to /app
+- Personalization: corner-button options live in Buttons & Progress
+
+
+## [2.662] - 2026-11-02
+- Themes: glass Complete / Clear buttons, and a help window in their words
+
+
+## [2.661] - 2026-11-02
+- Mode descriptions speak each vocabulary theme's words
+- Recurring panel: Repeat uses the app's own dropdown
+- First run: the cursor lands in Add task after Create My First Routine and Learn
+- Settings: App Diagnostics only shows while Debug Mode is on
+
+
+## [2.660] - 2026-11-02
+- Phones: no Keyboard Shortcuts in Focus View's menu either
+
+
+## [2.659] - 2026-11-02
+- Run All Tests in App Diagnostics: 23 false failures fixed, no file downloads
+- Auto Cycle reset turns the mode control's arrows once
+- Delete the unused testing-modal-tab-html.html snippet
+- App Diagnostics: SVG icons, plain buttons, labelled test runner
+- Remove the empty-routine shimmer on the + button
+- App page: social preview tags; name three buttons that started empty
+- First run: no "Your routine is empty" flash before the sample / create dialog
+- One folder for the Open Routine list everywhere
+- Standards pass over the unpushed work: constants and tokens
+- Personalization: Corner Buttons options; desktop captions centred under the buttons
+- Help-window first-use notices, ~3s welcome splash skipped when already loaded, bigger cycle icon
+- style(buttons): brighter white rim on Home View's glass Complete / Clear
+- fix(focus-view): action button caption follows the mode from any source
+- feat(buttons): glass Complete Cycle / Clear buttons, with a Solid option
+- feat(ui): ⓘ for the recurring explanation; cycle / broom icons in the help window
+- feat(ui): icons in every modal title, captioned corner buttons, SVG recurring link
+- test: long-press hint tests expect the new corner-button wording
+- feat(ui): corner buttons' tooltip and long-press hint say what a press does
+- feat(ui): tooltips on the custom mode menu and routine filter
+- feat(ui): corner buttons wear the header buttons' navy-on-frosted look
+- feat(icons): monochrome corner buttons (option A)
+- feat(buttons): press animation on the Complete Cycle / Clear glyph
+- feat(switcher): custom mode filter with the mode icons
+- fix(focus-view): Switch Mode descriptions name Focus View's own button
+- feat(icons): coloured corner buttons, light-blue header menus, one-swirl Auto Cycle
+- feat(modes): SVG mode icons and a custom Home View mode picker
+- feat(help-window): SVG status and cycle-complete icons
+- feat(icons): SVG for notification type icons and section headers
+- fix(icons): one icon per mode, recurring notice no longer shows "icons.recurring"
+- test(journeys): match v2.658 — Focus View opens a new routine's input bar; phones browse in Grid
+
+
+## [2.658] - 2026-11-01
+- feat(routines): input bar open for routines created in Focus View; new phone users browse in Grid
+
+
+## [2.657] - 2026-11-01
+- fix(high-contrast): priority stays visible, and the glass surfaces become solid panels
+- fix(help-window): the call-to-action wraps inside the box instead of running out of it
+- docs(changelog): 2.656 in plain words
+
+
 ## [2.656] - 2026-10-30
 
 ### Keyboard shortcuts

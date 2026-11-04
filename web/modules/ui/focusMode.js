@@ -17,9 +17,11 @@
 import { createDIModule, optional } from '../core/diBase.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, UI_TIMEOUTS, EVENTS, Z_INDEX, LAYOUT_CHANGES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { getIcon } from '../utils/icons.js';
+import { getIcon, setIconText } from '../utils/icons.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
+import { replayAnimationClass } from '../utils/motionPreference.js';
+import { themeWordVars } from '../labels/themeWords.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -188,6 +190,32 @@ export class FocusMode {
         this._actionBtn.className = DOM_CLASSES.FOCUS_ACTION_BTN;
         body.appendChild(this._actionBtn);
         this._updateActionButtonAria();
+        this._watchModeClass(body);
+    }
+
+    /**
+     * Keep the action button's caption and accessible name on the mode the
+     * page is showing. Its icon follows the body's mode class in CSS, at once;
+     * the caption and aria-label are written here — and were only re-written
+     * from activate(), Focus View's own Switch Mode dialog and a theme change.
+     * Every other path (the Alt+Shift+M shortcut, undo / redo of a mode
+     * change) flipped the icon and left "Cycle" under a broom until a reload
+     * (Nov 2026). Watching that same class closes all of them, including any
+     * added later.
+     * @param {HTMLElement} body
+     */
+    _watchModeClass(body) {
+        this._modeClassObserver?.disconnect();
+        const MODE_CLASSES = [DOM_CLASSES.AUTO_CYCLE_MODE, DOM_CLASSES.MANUAL_CYCLE_MODE, DOM_CLASSES.TODO_MODE_MODE];
+        const currentModeClass = () => MODE_CLASSES.find(c => body.classList.contains(c)) || '';
+        let last = currentModeClass();
+        this._modeClassObserver = new MutationObserver(() => {
+            const now = currentModeClass();
+            if (now === last) return;
+            last = now;
+            this._updateActionButtonAria();
+        });
+        this._modeClassObserver.observe(body, { attributes: true, attributeFilter: ['class'] });
     }
 
     /**
@@ -279,6 +307,9 @@ export class FocusMode {
         }
 
         body.appendChild(this._menu);
+        // Named from the start, not only when the menu first opens: until then
+        // the item was an empty button (accessibility audits flag it).
+        this._refreshModeItemLabel();
 
         // Build the mode-switch modal (hidden until opened)
         this._createModeModal();
@@ -404,6 +435,20 @@ export class FocusMode {
      * The dialog is keyboard accessible (Escape, Tab, Enter on radio).
      * Switching is immediate on radio change; "Done" closes the modal.
      */
+    /**
+     * A Switch Mode description in the active theme's words (themeWordVars),
+     * naming the action button by its current one-line label when the mode
+     * has one.
+     * @param {string} descKey
+     * @param {string} [buttonKey] - the button's label key (may hold a \n)
+     * @returns {string}
+     */
+    _modeDescription(descKey, buttonKey) {
+        if (!buttonKey) return getLabel(descKey, { vars: themeWordVars() });
+        const button = getLabel(buttonKey).replace(/\s*\n\s*/g, ' ');
+        return getLabel(descKey, { vars: themeWordVars({ button }) });
+    }
+
     _createModeModal() {
         const body = this.deps.getBody();
         if (!body) return;
@@ -428,17 +473,20 @@ export class FocusMode {
         const heading = document.createElement('h2');
         heading.id = titleId;
         heading.className = DOM_CLASSES.FOCUS_MODE_MODE_MODAL_TITLE;
-        heading.textContent = getLabel('focusMode.modeModalTitle');
+        setIconText(heading, 'sliders-h', getLabel('focusMode.modeModalTitle'));
         this._modeModal.appendChild(heading);
 
+        // Descriptions name Focus View's own round button by its label, not
+        // Home View's "Complete Cycle" / "Clear Completed" (buttonKey).
         const modeOptions = [
             { value: 'auto-cycle',   nameKey: 'focusMode.modeAutoName',   descKey: 'help.modeAutoShort' },
-            { value: 'manual-cycle', nameKey: 'focusMode.modeManualName', descKey: 'help.modeManualShort' },
-            { value: 'todo-mode',    nameKey: 'focusMode.modeTodoName',   descKey: 'help.modeTodoShort' },
+            { value: 'manual-cycle', nameKey: 'focusMode.modeManualName', descKey: 'focusMode.modeManualDesc', buttonKey: 'focusMode.cycleActionLabel' },
+            { value: 'todo-mode',    nameKey: 'focusMode.modeTodoName',   descKey: 'focusMode.modeTodoDesc',   buttonKey: 'focusMode.clearActionLabel' },
         ];
+        this._modeDescs = [];
 
         const radioName = 'focus-mode-mode-radio';
-        for (const { value, nameKey, descKey } of modeOptions) {
+        for (const { value, nameKey, descKey, buttonKey } of modeOptions) {
             const optionLabel = document.createElement('label');
             optionLabel.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION;
 
@@ -456,7 +504,8 @@ export class FocusMode {
 
             const desc = document.createElement('div');
             desc.className = DOM_CLASSES.FOCUS_MODE_MODE_OPTION_DESC;
-            desc.textContent = getLabel(descKey);
+            desc.textContent = this._modeDescription(descKey, buttonKey);
+            this._modeDescs.push({ el: desc, descKey, buttonKey });
 
             text.appendChild(name);
             text.appendChild(desc);
@@ -492,7 +541,11 @@ export class FocusMode {
         // The mode action (Cycle in manual, Clear in to-do) is the action
         // button's job. Auto Cycle hides it via CSS, so that branch is a guard.
         this._actionClickHandler = () => {
-            if (this._getCurrentMode() === 'auto-cycle') return;
+            const mode = this._getCurrentMode();
+            if (mode === 'auto-cycle') return;
+            // Same press animation as Home View's button, on the ::before glyph.
+            replayAnimationClass(this._actionBtn, DOM_CLASSES.ACTION_PLAYING,
+                mode === 'todo-mode' ? '--anim-action-sweep' : '--anim-action-spin');
             const completeAllBtn = this.deps.getElementById(DOM_IDS.COMPLETE_ALL);
             completeAllBtn?.click();
         };
@@ -761,6 +814,12 @@ export class FocusMode {
      */
     _openModeModal() {
         if (!this._modeModal || !this._modeBackdrop || this._modeModalOpen) return;
+
+        // Re-word on every open: a vocab theme renames the button
+        // ("Cycle" → "Complete Workout") after the dialog was built.
+        for (const { el, descKey, buttonKey } of this._modeDescs || []) {
+            el.textContent = this._modeDescription(descKey, buttonKey);
+        }
 
         const currentMode = this._getCurrentMode();
         const radios = this._modeModal.querySelectorAll(DOM_SELECTORS.FOCUS_MODE_MODE_RADIO);
@@ -1491,6 +1550,8 @@ export class FocusMode {
     }
 
     destroy() {
+        this._modeClassObserver?.disconnect();
+        this._modeClassObserver = null;
         if (this._panelChangeHandler) {
             document.removeEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
             this._panelChangeHandler = null;

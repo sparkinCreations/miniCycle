@@ -9,6 +9,8 @@
  *      in DEFAULT_LABELS (to a string, or a {one, other} plural object).
  *      A miss is SILENT in production: labelResolver warns to console and
  *      returns the raw key as the user-facing string.
+ *      Same for every literal labelResolver `getIcon('key')`, which resolves
+ *      `icons.key` and renders "icons.key" on a miss.
  *   2. Every event type passed to `logHistoryEvent('type', ...)` must have an
  *      entry in BOTH the icons and labels maps in historyManager.js — a miss
  *      renders 📌 + the raw type string in the history modal.
@@ -111,6 +113,34 @@ for (const file of files) {
     dynamicCount += [...src.matchAll(DYNAMIC_RE)].length;
 }
 
+// ---------------------------------------------------------------------------
+// Diff 1b: getIcon keys vs DEFAULT_LABELS.icons
+// ---------------------------------------------------------------------------
+// labelResolver's getIcon(key) falls through to getLabel(`icons.${key}`), so a
+// missing key renders the raw "icons.key" text — the same silent miss as Diff
+// 1, which Diff 1 cannot see because the getLabel call is dynamic. Measured
+// Nov 2026: getIcon('recurring') put "icons.recurring" at the front of both
+// recurring-finished notifications. Only files that import getIcon from
+// labelResolver count: utils/icons.js exports a getIcon of its own (the SVG
+// registry), with different keys.
+const unresolvedIcons = [];
+let iconCount = 0;
+const LABEL_ICON_IMPORT_RE = /import\s*\{[^}]*\bgetIcon\b[^}]*\}\s*from\s*['"][^'"]*labelResolver\.js/;
+const ICON_LITERAL_RE = /\bgetIcon\(\s*['"]([a-zA-Z0-9_-]+)['"]/g;
+
+for (const file of files) {
+    const src = fs.readFileSync(file, 'utf8');
+    if (!LABEL_ICON_IMPORT_RE.test(src)) continue;
+    const rel = path.relative(WEB_ROOT, file);
+    for (const m of src.matchAll(ICON_LITERAL_RE)) {
+        iconCount++;
+        if (!resolveKey(`icons.${m[1]}`)) {
+            const line = src.slice(0, m.index).split('\n').length;
+            unresolvedIcons.push({ file: rel, line, key: m[1] });
+        }
+    }
+}
+
 // Bonus: theme-overridable keys must exist in the base table
 const badLensKeys = [...LENS_SENSITIVE_KEYS].filter(k => !resolveKey(k));
 
@@ -166,15 +196,16 @@ if (iconKeys && labelKeys) {
 // Report
 // ---------------------------------------------------------------------------
 
-const failures = unresolved.length + unmappedTypes.length + badLensKeys.length;
+const failures = unresolved.length + unresolvedIcons.length + unmappedTypes.length + badLensKeys.length;
 
 if (process.argv.includes('--json')) {
-    console.log(JSON.stringify({ failures, unresolved, unmappedTypes, badLensKeys, deadMapEntries, literalCount, dynamicCount }, null, 2));
+    console.log(JSON.stringify({ failures, unresolved, unresolvedIcons, unmappedTypes, badLensKeys, deadMapEntries, literalCount, iconCount, dynamicCount }, null, 2));
     process.exit(failures > 0 ? 1 : 0);
 }
 
 console.log(`\n🏷️  LABEL & HISTORY-EVENT REGISTRY CHECK`);
 console.log(`   ${literalCount} literal getLabel keys across ${files.length} modules | ${dynamicCount} dynamic calls (reported, not gated)`);
+console.log(`   ${iconCount} literal getIcon keys (labelResolver)`);
 console.log(`   ${loggedTypes.size} logged history event types vs ${iconKeys?.size ?? '?'} icon / ${labelKeys?.size ?? '?'} label map entries\n`);
 
 if (failures === 0) {
@@ -182,6 +213,7 @@ if (failures === 0) {
 } else {
     console.log(`❌ ${failures} registry mismatch(es) — GATED, must be 0\n`);
     for (const u of unresolved) console.log(`   ${u.file}:${u.line}\n      getLabel('${u.key}') — key does not resolve in DEFAULT_LABELS (renders the raw key)`);
+    for (const u of unresolvedIcons) console.log(`   ${u.file}:${u.line}\n      getIcon('${u.key}') — no icons.${u.key} in DEFAULT_LABELS (renders "icons.${u.key}")`);
     for (const t of unmappedTypes) console.log(`   ${t.site}\n      logHistoryEvent('${t.type}') — missing from ${t.missing} map(s) in historyManager.js (renders 📌 + raw type)`);
     for (const k of badLensKeys) console.log(`   LENS_SENSITIVE_KEYS: '${k}' — theme-overridable key missing from DEFAULT_LABELS`);
 }

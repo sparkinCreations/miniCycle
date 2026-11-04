@@ -40,6 +40,11 @@ function showNotification(message, type, duration) {
     detail: { message, type, duration }
   }));
 }
+// A first-use notice for the Help window ('offline-ready' | 'install').
+const INSTALL_NOTICE_DELAY_MS = 45000;   // the install one waits this long (beforeinstallprompt handler)
+function showHelpNotice(kind) {
+  document.dispatchEvent(new CustomEvent('app:helpNotice', { detail: { kind } }));
+}
 function showConfirmationModal(options) {
   document.dispatchEvent(new CustomEvent('app:showConfirmationModal', {
     detail: options
@@ -466,9 +471,10 @@ if ('serviceWorker' in navigator) {
   // The heal path (applyPendingUpdate) and the testing modal keep their own
   // direct SKIP_WAITING senders for the rare states where `waiting` exists.)
 
-  // ✅ Function to show app cached notification
+  // First install of the offline cache: "works offline" — a Help-window
+  // notice now (helpWindowManager.showNotice), shown only in a browser tab.
   function showAppCachedNotification() {
-    showNotification('📱 miniCycle is now available offline!', 'success', 4000);
+    showHelpNotice('offline-ready');
   }
 
 } else {
@@ -741,14 +747,11 @@ window.addEventListener('beforeinstallprompt', (e) => {
   e.preventDefault();
   deferredPrompt = e;
 
-  // Show install suggestion for new users
-  setTimeout(() => {
-    showNotification(
-      '📱 Install miniCycle for offline access and faster loading!',
-      'info',
-      6000
-    );
-  }, 45000); // After 45 seconds for full version
+  // Install suggestion, a while into the visit: a Help-window notice
+  // (helpWindowManager.showNotice), which also checks it is a plain browser
+  // tab. The wait also lets boot wire the app:helpNotice listener — this
+  // event can fire before it. (A classic script: no constants.js import.)
+  setTimeout(() => showHelpNotice('install'), INSTALL_NOTICE_DELAY_MS);
 });
 
 // Global install function

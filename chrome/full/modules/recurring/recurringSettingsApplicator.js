@@ -12,7 +12,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { getPriorityLevel } from '../utils/priorityLevel.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_RECURRING_DELETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { buildRecurringTemplate } from './recurringTemplate.js';
+import { buildRecurringTemplate, keepBiweeklyStart, withoutBiweeklyStart } from './recurringTemplate.js';
 import { getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, syncTaskAutoClear } from '../utils/cycleMode.js';
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -63,20 +63,20 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringNoActiveFound'));
+            _deps.showNotification(getLabel('notify.recurringNoActiveFound'), 'warning');
             return;
         }
 
         const cycleData = getRoutine(state, activeCycleId);
         if (!cycleData) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringDataNotFound'));
+            _deps.showNotification(getLabel('notify.recurringDataNotFound'), 'warning');
             return;
         }
 
         const checkedEls = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK_CHECKED);
 
         if (!checkedEls.length) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringNoChecked'));
+            _deps.showNotification(getLabel('notify.recurringNoChecked'), 'warning');
             return;
         }
 
@@ -102,7 +102,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                 // Save default recurring settings if requested
                 if (saveAsDefault) {
                     if (!draft.settings) draft.settings = {};
-                    draft.settings.defaultRecurringSettings = settings;
+                    draft.settings.defaultRecurringSettings = withoutBiweeklyStart(settings);
                 }
 
                 const cycle = getRoutine(draft, activeCycleId);
@@ -114,19 +114,24 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                 checkedTaskData.forEach(({ taskId, textFromDOM }) => {
                     // Check if task exists in task list
                     const task = cycle.tasks.find(t => t.id === taskId);
+                    const existingTemplate = cycle.recurringTemplates[taskId];
+                    // A task that was already biweekly keeps its Week 1 start date.
+                    const taskSettings = keepBiweeklyStart(
+                        settings,
+                        existingTemplate?.recurringSettings || task?.recurringSettings
+                    );
 
                     // Only update task if it exists in the task list
                     if (task) {
                         task.recurring = true;
                         task.schemaVersion = 2;
-                        task.recurringSettings = structuredClone(settings);
+                        task.recurringSettings = structuredClone(taskSettings);
                         // Fill a missing map from the recurring defaults and derive the
                         // active value for this routine's mode (utils/cycleMode.js).
                         syncTaskAutoClear(task, mode, DEFAULT_RECURRING_DELETE_SETTINGS);
                     }
 
                     // Always update the template — preserve all fields the watcher reads
-                    const existingTemplate = cycle.recurringTemplates[taskId];
                     const templateText = task?.text ||
                                        existingTemplate?.text ||
                                        textFromDOM ||
@@ -142,7 +147,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         autoClear: getAutoClearSettings(task)
                             || getAutoClearSettings(existingTemplate)
                             || null,
-                        recurringSettings: structuredClone(settings),
+                        recurringSettings: structuredClone(taskSettings),
                         // Re-applying settings does not un-pause.
                         paused: existingTemplate?.paused === true,
                         // Where the task sits now, or the last recorded spot if it is
@@ -155,36 +160,39 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                         // reset progress toward a finite recurrence count.
                         occurrenceCount: existingTemplate?.occurrenceCount ?? 0,
                         lastTriggeredTimestamp: existingTemplate?.lastTriggeredTimestamp ?? null,
-                        nextScheduledOccurrence: _deps.calculateNextOccurrence(settings, Date.now())
+                        nextScheduledOccurrence: _deps.calculateNextOccurrence(taskSettings, Date.now())
                     });
                 });
             }, true); // Immediate save
         }
 
-        // Sync DOM elements with new recurring state
+        // Sync DOM elements with new recurring state — each task's own saved
+        // settings, since a biweekly task keeps its own Week 1 start date.
         if (_deps.syncRecurringStateToDOM) {
+            const savedTemplates = getRoutine(_deps.AppState.get(), activeCycleId)?.recurringTemplates || {};
             checkedEls.forEach(checkbox => {
                 const taskEl = checkbox.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                 if (!taskEl) return;
+                const taskSettings = savedTemplates[taskEl.dataset.taskId]?.recurringSettings || settings;
                 taskEl.classList.add(DOM_CLASSES.RECURRING);
-                taskEl.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(settings));
+                taskEl.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(taskSettings));
                 const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
                 if (recurringBtn) {
                     recurringBtn.classList.add(DOM_CLASSES.ACTIVE);
                     recurringBtn.setAttribute("aria-pressed", "true");
                 }
-                _deps.syncRecurringStateToDOM(taskEl, settings);
+                _deps.syncRecurringStateToDOM(taskEl, taskSettings);
             });
         }
 
         // Show success notifications
         if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
-            _deps.showNotification('✅ ' + getLabel('notify.recurringDefaultSaved'), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            _deps.showNotification(getLabel('notify.recurringDefaultSaved'), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
         // Call panel methods for UI updates
         panel.updateRecurringSummary();
-        _deps.showNotification('✅ ' + getLabel('notify.recurringApplied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        _deps.showNotification(getLabel('notify.recurringApplied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
         // Transition to browsing mode before re-render (hides settings, checkboxes, toggle)
         panel.state.selectedTaskId = null;
@@ -217,7 +225,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
     } catch (error) {
         console.error('❌ Failed to apply recurring settings:', error);
-        _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
+        _deps.showNotification(getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
 
         // Cleanup on error — return to browsing mode
         panel.state.selectedTaskId = null;

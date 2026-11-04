@@ -1195,6 +1195,8 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             return realSetItem.call(this, key, value);
         };
         let modal = null;
+        // Download is stubbed: the test must not save a real file.
+        setAppInitDependencies({ saveTextAsFile: async () => true });
         try {
             appInit.showDataCorruptionRecovery('{"broken');
             modal = document.getElementById('data-corruption-modal');
@@ -1209,6 +1211,7 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             Storage.prototype.setItem = realSetItem;
             modal?.remove();
             clearCorruptKeys();
+            setAppInitDependencies({ saveTextAsFile: undefined });   // back to the real one (optional default)
         }
     });
 

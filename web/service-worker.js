@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.656';
-var CACHE_VERSION = 'v1499';
-var CACHE_VERSION_NUMBER = 1499; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.666';
+var CACHE_VERSION = 'v1509';
+var CACHE_VERSION_NUMBER = 1509; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 // Unlocked mini-games, filled only on the page's CACHE_UNLOCKED_GAMES message
@@ -214,6 +214,7 @@ var BOOT_CRITICAL = [
   './modules/routine/routineCopy.js',
   './modules/routine/routineBrowser.js',
   './modules/routine/routineBrowserRender.js',
+  './modules/routine/modePicker.js',
   './modules/routine/modeManager.js',
   './modules/routine/migrationManager.js',
   // UI modules
@@ -224,6 +225,7 @@ var BOOT_CRITICAL = [
   './modules/ui/settingsUIManager.js',
   './modules/ui/titleManager.js',
   './modules/ui/taskUI.js',
+  './modules/ui/completeAllButton.js',
   './modules/ui/gesturePanelManager.js',
   './modules/ui/completedTasksManager.js',
   './modules/ui/uiEffects.js',
@@ -295,6 +297,7 @@ var BOOT_CRITICAL = [
   './modules/labels/labelResolver.js',
   './modules/labels/defaultLabels.js',
   './modules/labels/themes.js',
+  './modules/labels/themeWords.js',
   // Boot-graph modules that were drifting out of precache — they are statically
   // imported during boot, so without precache they only live in the DYNAMIC
   // cache, which iOS evicts; once evicted, offline boot dies with "Importing
@@ -784,6 +787,9 @@ function pickShell(urlObj) {
 var FRESH_FIRST_PAGES = ['/pages/dashboard', '/pages/product'];
 
 function isFreshFirstPage(pathname) {
+  // The site root is the product page (Nov 2026; the app is at /app): a
+  // standalone page like the list above. Exact match — every path starts "/".
+  if (isSiteRoot(pathname)) return true;
   for (var i = 0; i < FRESH_FIRST_PAGES.length; i++) {
     // FRESH_FIRST_PAGES is a file-local array of two string literals and `i` is a
     // loop counter bounded by .length — no user input reaches the index, so there
@@ -791,6 +797,11 @@ function isFreshFirstPage(pathname) {
     if (pathname.indexOf(FRESH_FIRST_PAGES[i]) === 0) return true;
   }
   return false;
+}
+
+/** True for the scope root ("/" on minicycle.app) — the product page. */
+function isSiteRoot(pathname) {
+  return pathname === new URL(self.registration.scope).pathname;
 }
 
 // ============================================================================
@@ -998,6 +1009,17 @@ self.addEventListener('fetch', function (event) {
               if (cached) {
                 console.log('📱 Offline fallback (network-first page):', url.pathname);
                 return cleanResponse(cached);
+              }
+              // The root used to be the app, and offline someone opening the
+              // bare domain is a user, not a visitor: give them the app shell
+              // rather than an error when the product page was never cached.
+              if (isSiteRoot(url.pathname)) {
+                return caches.match(fromScope('miniCycle.html')).then(function (shell) {
+                  return shell ? cleanResponse(shell) : new Response('Offline - No cached version available', {
+                    status: 503,
+                    headers: { 'Content-Type': 'text/plain' }
+                  });
+                });
               }
               return new Response('Offline - No cached version available', {
                 status: 503,

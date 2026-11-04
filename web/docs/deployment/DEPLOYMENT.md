@@ -19,8 +19,8 @@ All content is hosted at **minicycle.app** via **Netlify**:
 
 | Resource | URL |
 |----------|-----|
-| **Product Page** | [minicycle.app/product.html](https://minicycle.app/product.html) |
-| **Full App** | [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html) |
+| **Product Page** | [minicycle.app](https://minicycle.app/) (the site root since Nov 2026; `/pages/product` and `/product.html` redirect here) |
+| **Full App** | [minicycle.app/app](https://minicycle.app/app) (`/minicycle` and `/miniCycle.html` redirect here) |
 | **Lite Version** | [minicycle.app/miniCycle-lite.html](https://minicycle.app/miniCycle-lite.html) ⚠️ Static fallback, not maintained |
 | **Documentation** | [docs.minicycle.app](https://docs.minicycle.app) |
 
@@ -119,8 +119,8 @@ git push origin main
 Netlify auto-deploys on push to `main`. No manual upload needed.
 
 ### 4. Verify
-- Visit https://minicycleapp.com → should redirect to product page
-- Visit https://minicycle.app/miniCycle.html → app loads
+- Visit https://minicycleapp.com and https://minicycle.app/ → product page
+- Visit https://minicycle.app/app → app loads (and /minicycle redirects to it)
 - Check browser console for errors
 - Test service worker update (should appear within 60 seconds)
 - **Test offline** — see checklist below

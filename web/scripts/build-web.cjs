@@ -396,12 +396,113 @@ function injectSw(builtJs, cssBundle, moduleMap) {
   return jsList.length + cssList.length;
 }
 
-function appendMapToVersionJs(moduleMap) {
+function appendMapToVersionJs(moduleMap, bootPreload) {
   const p = path.join(DIST, 'version.js');
   fs.appendFileSync(p,
     '\n// Injected by scripts/build-web.cjs — source path → content-hashed URL.\n' +
     '// The hash IS the version: mapped URLs are used bare by the boot chain.\n' +
-    'globalThis.__MC_MODULE_MAP = ' + JSON.stringify(moduleMap) + ';\n');
+    'globalThis.__MC_MODULE_MAP = ' + JSON.stringify(moduleMap) + ';\n' +
+    '// Every hashed file a normal boot imports (computeBootPreload). The head\n' +
+    '// injects a modulepreload for each, so phases stop waiting on download waves.\n' +
+    'globalThis.__MC_BOOT_PRELOAD = ' + JSON.stringify(bootPreload) + ';\n');
+}
+
+// ── boot preload list ───────────────────────────────────────────────────────
+// Boot fetched its modules in waves: moduleLoader imports a phase's entries,
+// each entry's static imports name chunks, those name more chunks — one round
+// trip per level, and the next phase only starts when this one finishes. A
+// modulepreload for every file boot will import collapses that into one batch.
+// Preloading only DOWNLOADS: each module still runs when its phase imports it,
+// so boot order is unchanged.
+//
+// Chromium's modulepreload fetches the named file only, not its imports
+// (measured Nov 2026), so the list is the full static closure, chunks included.
+//
+// What boot imports = miniCycle-main.js + every NON-deferred manifest module +
+// every dynamic import reachable from them (facade sub-modules, boot helpers),
+// followed through their static imports. Dynamic targets loaded only on user
+// action are listed in BOOT_PRELOAD_EXCLUDE; one missing from that list costs
+// some bytes, never correctness. Measured against a real first-run boot this
+// rule matched it file for file (Nov 2026).
+const BOOT_PRELOAD_EXCLUDE = new Set([
+  // Loaded when the recurring panel first opens (ensureRecurringPanelLoaded),
+  // deferred from boot on purpose: ~3.6k lines with its sub-modules.
+  '/modules/recurring/recurringPanel.js',
+]);
+
+function computeBootPreload(metafile, moduleMap) {
+  const manifestJs = esbuild.buildSync({
+    entryPoints: [path.join(WEB, 'modules/boot/moduleManifests.js')],
+    bundle: true, format: 'cjs', platform: 'neutral', write: false, logLevel: 'error',
+  }).outputFiles[0].text;
+  const mod = { exports: {} };
+  new Function('module', 'exports', manifestJs)(mod, mod.exports);
+  const manifests = Object.values(mod.exports.MODULE_MANIFESTS || {});
+  if (!manifests.length) fail('computeBootPreload: MODULE_MANIFESTS not found');
+
+  // Source graph: static edges from esbuild's inputs, dynamic edges from the
+  // same specifier scan collectEntries uses (the rewrite plugin hides dynamic
+  // imports from esbuild, so its graph has none).
+  const staticEdges = {};
+  for (const [input, meta] of Object.entries(metafile.inputs)) {
+    const from = '/' + rel(path.resolve(input));
+    staticEdges[from] = meta.imports.filter(i => i.kind === 'import-statement')
+      .map(i => '/' + rel(path.resolve(i.path)));
+  }
+  const dynRe = /import\(\s*(?:withV\(\s*)?[`'"]([^`'"]+?)[`'"]/g;
+  const dynamicTargets = (srcPath) => {
+    const abs = path.join(WEB, srcPath.slice(1));
+    if (!fs.existsSync(abs)) return [];
+    const out = [];
+    for (const m of stripComments(fs.readFileSync(abs, 'utf8')).matchAll(dynRe)) {
+      const clean = m[1].split('?')[0].split('${')[0];
+      if (!clean.startsWith('.') || !clean.endsWith('.js')) continue;
+      out.push('/' + rel(path.resolve(path.dirname(abs), clean)));
+    }
+    return out;
+  };
+
+  // Walk sources. An ENTRY file is fetched only when something import()s it
+  // (roots and dynamic targets); a statically imported module's code arrives
+  // inside the chunks of its importer, so it adds edges but no entry.
+  const roots = ['/miniCycle-main.js'].concat(manifests.filter(m => !m.deferred)
+    .map(m => '/' + rel(path.resolve(WEB, 'modules/boot', m.path))));
+  const entries = new Set(roots);
+  const seen = new Set();
+  const queue = [...roots];
+  while (queue.length) {
+    const f = queue.pop();
+    if (seen.has(f)) continue;
+    seen.add(f);
+    for (const t of staticEdges[f] || []) queue.push(t);
+    for (const t of dynamicTargets(f)) {
+      if (BOOT_PRELOAD_EXCLUDE.has(t)) continue;
+      entries.add(t);
+      queue.push(t);
+    }
+  }
+
+  // Output graph: each needed entry's hashed file plus its static closure.
+  const outImports = {};
+  for (const [outPath, meta] of Object.entries(metafile.outputs)) {
+    if (!outPath.endsWith('.js')) continue;
+    const key = '/' + rel(path.resolve(outPath)).replace(/^dist\//, '');
+    outImports[key] = meta.imports.filter(i => i.kind === 'import-statement')
+      .map(i => '/' + rel(path.resolve(i.path)).replace(/^dist\//, ''));
+  }
+  const files = [];
+  const done = new Set();
+  const visit = (u) => {
+    if (done.has(u)) return;
+    done.add(u);
+    files.push(u);
+    for (const d of outImports[u] || []) visit(d);
+  };
+  for (const e of entries) {
+    if (!moduleMap[e]) fail(`computeBootPreload: no hashed file for boot module ${e}`);
+    visit(moduleMap[e]);
+  }
+  return files;
 }
 
 function rewriteHtml(moduleMap, cssBundle) {
@@ -695,7 +796,8 @@ function makeRewritePlugin() {
     }
   }
 
-  appendMapToVersionJs(moduleMap);
+  const bootPreload = computeBootPreload(result.metafile, moduleMap);
+  appendMapToVersionJs(moduleMap, bootPreload);
   const precacheCount = injectSw(builtJs, cssBundle, moduleMap);
   rewriteHtml(moduleMap, cssBundle);
   const shimCount = emitShims(moduleMap, exportsByHashed);
@@ -707,6 +809,7 @@ function makeRewritePlugin() {
   console.log(`📦 built ${builtJs.length} hashed JS (${builtJs.length - chunkCount} entries + ${chunkCount} chunks), ${(totalBytes / 1024 / 1024).toFixed(2)}MB minified`);
   console.log(`🎨 CSS bundle: ${cssBundle}`);
   console.log(`🗺  module map: ${Object.keys(moduleMap).length} entries (appended to version.js + SW)`);
+  console.log(`⚡ boot preload: ${bootPreload.length} files (appended to version.js)`);
   console.log(`🧷 stable-path shims: ${shimCount} (testing modal)`);
   console.log(`🛰  SW precache regenerated: ${precacheCount} URLs`);
   console.log(`📖 docs site: ${docs.copied} file(s) published, ${docs.rewritten} link(s) repointed to GitHub (archive/future-work/incidents withheld)`);

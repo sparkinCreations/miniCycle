@@ -20,6 +20,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAULT_REMINDERS, LIMITS, DEBOUNCE, SYSTEM_NOTIFICATIONS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { setIconText } from '../utils/icons.js';
 // What a due date means (overdue, notify moment, label) and the line that
 // shows it. A task stores dueDate and, separately, an optional dueTime.
 import { createDueDateChip, renderDueDateChip, isTaskOverdue, getDueMoment, normalizeDueTime, formatDueTime } from '../utils/dueDateUtils.js';
@@ -349,7 +350,7 @@ export class MiniCycleDueDates {
 
         // ✅ Show notification ONLY if there are newly overdue tasks
         if (newlyOverdueTasks.length > 0) {
-            this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
+            this.deps.showNotification(getLabel('notify.dueDateOverdue') + `\n~ ${newlyOverdueTasks.join("\n~ ")}`, "error");
         }
     }
 
@@ -482,7 +483,7 @@ export class MiniCycleDueDates {
 
         const title = document.createElement('h3');
         title.id = DOM_IDS.DUE_DATE_PICKER_TITLE;
-        title.textContent = getLabel('dueDate.pickerTitle');
+        setIconText(title, 'calendar-alt', getLabel('dueDate.pickerTitle'));
         form.appendChild(title);
 
         const taskName = document.createElement('p');
@@ -615,11 +616,11 @@ export class MiniCycleDueDates {
 
         const taskText = before.text || getLabel('notify.dueDateUnnamed');
         if (newDate) {
-            this.deps.showNotification("📅 " + getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.deps.showNotification(getLabel('notify.dueDateUpdated', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'calendar-alt' });
             // Auto-enable due date notifications when a due date is set
             this._autoEnableDueDateReminders();
         } else {
-            this.deps.showNotification("📅 " + getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.deps.showNotification(getLabel('notify.dueDateCleared', { vars: { name: taskText } }), "info", UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'calendar-alt' });
         }
 
         const row = this.deps.querySelectorAll(DATA_SELECTORS.taskById(taskId))[0];
@@ -653,7 +654,7 @@ export class MiniCycleDueDates {
         const daysUntilDue = selectedDate - today;
 
         if (daysUntilDue > 0 && daysUntilDue <= threeDaysMs) {
-            this.deps.showNotification("📅 " + getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default");
+            this.deps.showNotification(getLabel('notify.dueDateDueSoon', { vars: { name: taskText } }), "default", undefined, { icon: 'calendar-alt' });
         }
     }
 
@@ -796,7 +797,7 @@ export class MiniCycleDueDates {
             .filter(Boolean);
 
         if (overdueTasks.length > 0) {
-            this.deps.showNotification("⚠️ " + getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
+            this.deps.showNotification(getLabel('notify.dueDateOverdue') + `\n~ ${overdueTasks.join("\n~ ")}`, "error");
         }
     }
 

@@ -995,7 +995,8 @@ async function journeyTodoStatsSync(browser, baseURL) {
         const result = await page.evaluate(() => {
             const panelText = (document.getElementById('stats-panel')?.innerText || '')
                 .replace(/\s+/g, ' ').trim();
-            const m = panelText.match(/(\d+) of (\d+) tasks? Completed/);
+            // Case-insensitive: 2.665 put the stats labels in sentence case ("tasks completed").
+            const m = panelText.match(/(\d+) of (\d+) tasks? completed/i);
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
             const id = p.appState.activeRoutineId;
             const tasks = (p.data.routine[id] || {}).tasks || [];
@@ -1013,7 +1014,7 @@ async function journeyTodoStatsSync(browser, baseURL) {
             `${result.stateTotal} task(s) left in state, expected ${expectedRemaining} ` +
             `(${pre.total} total minus ${pre.completed} completed)`);
         record('stats panel reports a task count', result.panelTotal !== null,
-            `could not parse "N of M tasks Completed" from: ${result.panelText.slice(0, 120)}`);
+            `could not parse "N of M tasks completed" from: ${result.panelText.slice(0, 120)}`);
         record('stats panel total matches state after clearing',
             result.panelTotal === result.stateTotal,
             `panel says ${result.panelTotal}, state has ${result.stateTotal} ` +
@@ -1913,7 +1914,11 @@ async function journeyKeyboardOnlyItems(browser, baseURL) {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
             await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').click());
-            await page.waitForFunction(() => !!document.getElementById('toggle-single-key-shortcuts') && !!document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]'), null, { timeout: 20000 });
+            // Wait for Focus View itself (body.focus-mode), not just the item: its
+            // own `display: block` rule only applies then, and reading the item
+            // before it did let a phone keep the item in Focus View's menu while
+            // this journey passed (Nov 2026).
+            await page.waitForFunction(() => !!document.getElementById('toggle-single-key-shortcuts') && !!document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]') && document.body.classList.contains('focus-mode'), null, { timeout: 20000 });
             const seen = await page.evaluate(() => Object.fromEntries([
                 ['menu', document.getElementById('open-shortcuts-modal')],
                 ['focusMenu', document.querySelector('.focus-mode-menu-item[data-action="keyboard-shortcuts"]')],
@@ -3355,6 +3360,7 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
             return {
                 onScreen,
                 bodyClass: document.body.classList.contains('input-bar-visible'),
+                focus: document.body.classList.contains('focus-mode'),
                 emptyShown: Boolean(es && getComputedStyle(es).display !== 'none'),
                 shown,
             };
@@ -3404,17 +3410,27 @@ async function journeyNewRoutineHintMatchesBar(browser, baseURL) {
             !(after.shown && after.shown.includes('visible') && !after.onScreen),
             `hint "${after.shown}" tells the user to type in a bar that is not on screen`);
 
-        // Hidden-by-default is the product's teaching mechanism, not an
-        // oversight: miniCycle is a routine manager, so the input bar is
-        // scaffolding you put away once the routine is built. A new routine
-        // must therefore start with it HIDDEN — and the hint must name the
-        // control that opens it (+ in Home, the ⋯ menu in Focus).
-        record('a new routine starts with the input bar hidden',
-            after.onScreen === false,
-            'a new routine opened the input bar; hidden-by-default is what teaches users to put it away');
-        record('the hint names a way to open the bar',
-            Boolean(after.shown) && !after.shown.includes('visible'),
-            `expected a bar-hidden hint naming + or the ⋯ menu, got "${after.shown}"`);
+        // Which way the bar starts depends on the view (v2.658). In Home View
+        // the bar is scaffolding you put away once the routine is built, so a
+        // new routine starts with it HIDDEN and the hint names the + that
+        // opens it. Focus View has no + in reach, and an empty routine there
+        // has nothing else to do, so a new routine opens the bar and the hint
+        // says to type in it.
+        if (after.focus) {
+            record('in Focus View a new routine starts with the input bar open',
+                after.onScreen === true,
+                'a routine created in Focus View hid the input bar; it should open ready to type');
+            record('the hint points at the open bar',
+                after.shown === '.empty-state-hint-focus-visible',
+                `expected the Focus View bar-visible hint, got "${after.shown}"`);
+        } else {
+            record('in Home View a new routine starts with the input bar hidden',
+                after.onScreen === false,
+                'a new routine opened the input bar; hidden-by-default is what teaches users to put it away');
+            record('the hint names a way to open the bar',
+                Boolean(after.shown) && !after.shown.includes('visible'),
+                `expected a bar-hidden hint naming +, got "${after.shown}"`);
+        }
 
         record('no starved dependencies', page.__diWarnings.length === 0,
             `DI warnings: ${page.__diWarnings.join(' | ')}`);
@@ -6380,9 +6396,9 @@ async function journeyAppShortcuts(browser, baseURL) {
         await reset();
 
         const keys = await page.evaluate(() => Object.fromEntries(
-            ['new-mini-cycle', 'routine-switcher-btn', 'mode-selector', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button', 'open-shortcuts-modal']
+            ['new-mini-cycle', 'routine-switcher-btn', 'mode-picker-btn', 'focus-mode-btn', 'focus-mode-exit-btn', 'toggle-task-input-btn', 'open-user-manual', 'open-settings', 'menu-button', 'open-shortcuts-modal']
                 .map(id => [id, document.getElementById(id)?.getAttribute('aria-keyshortcuts') || null])));
-        const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-selector': 'Alt+Shift+M',
+        const wantKeys = { 'new-mini-cycle': 'Alt+Shift+N', 'routine-switcher-btn': 'Alt+Shift+O', 'mode-picker-btn': 'Alt+Shift+M',
             'focus-mode-btn': 'Alt+Shift+F', 'focus-mode-exit-btn': 'Alt+Shift+F', 'toggle-task-input-btn': 'Alt+Shift+I', 'open-user-manual': 'Alt+Shift+U',
             'open-settings': 'Alt+Shift+S', 'menu-button': 'Alt+Shift+.', 'open-shortcuts-modal': 'Alt+Shift+?' };
         const wrongKeys = Object.keys(wantKeys).filter(id => keys[id] !== wantKeys[id]);
@@ -6685,7 +6701,7 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
         const list = await page.evaluate(() => {
             const d = document.getElementById('shortcuts-modal');
             const link = d.querySelector('.shortcuts-more a');
-            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent,
+            return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent.trim(),   // trim: an icon + space lead the title
                 rows: d.querySelectorAll('.shortcuts-row').length, fits: d.querySelector('.shortcuts-modal-content').scrollHeight <= innerHeight,
                 href: link?.getAttribute('href'), target: link?.target,
                 label: d.getAttribute('aria-labelledby'), closeName: d.querySelector('.close-modal')?.getAttribute('aria-label') };
@@ -7244,13 +7260,16 @@ async function journeyBrowseRoutines(browser, baseURL) {
             await page.waitForTimeout(1500);
             const fresh = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineOpenView);
             record(`${width}px: a brand-new user on a touch device starts with Browse`, fresh === 'browse', `routineOpenView=${fresh}`);
+            // …and in the Grid layout (v2.658): a phone shows several routines at once there.
+            const freshLayout = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.routineBrowserLayout);
+            record(`${width}px: a brand-new phone user browses in the Grid`, freshLayout === 'grid', `routineBrowserLayout=${freshLayout}`);
 
             await seed(page, { view: 'browse' });
             const header = await page.evaluate(() => {
                 const btn = document.getElementById('routine-switcher-btn');
                 const label = btn.querySelector('.routine-switcher-btn-label');
                 const r = btn.getBoundingClientRect();
-                const mode = document.getElementById('mode-selector').getBoundingClientRect();
+                const mode = document.getElementById('mode-picker-btn').getBoundingClientRect();
                 const plus = document.getElementById('quick-actions-btn').getBoundingClientRect();
                 return {
                     plusW: Math.round(plus.width), btnW: Math.round(r.width), plusClear: plus.right <= mode.left,
@@ -7267,6 +7286,11 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 header.plusW === header.btnW && header.plusClear, JSON.stringify(header));
             await page.tap('#routine-switcher-btn');
             await page.waitForTimeout(800);
+            const openedInGrid = await page.evaluate(() => !!document.querySelector('#routine-browser .rb-tile'));
+            record(`${width}px: Browse opens in the Grid it was given`, openedInGrid, 'no grid tiles on open');
+            // The card checks below need Cards; the Grid has its own checks further down.
+            await page.tap('#routine-browser .rb-layout-btn[data-layout="cards"]');
+            await page.waitForTimeout(500);
             record(`${width}px: the routine button opens Browse`, (await shown(page)) === 'Gym Push Day', `showing ${await shown(page)}`);
             const layout = await page.evaluate(() => {
                 const d = document.getElementById('routine-browser');

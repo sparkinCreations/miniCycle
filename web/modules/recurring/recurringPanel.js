@@ -845,7 +845,7 @@ export class RecurringPanelManager {
             // pausing it on top would turn an automatic hold into a manual one
             // that outlives the pin. Say how to resume instead.
             if (pausing && getRecurringPauseState(getRoutine(state, activeCycleId), template) === 'pinned') {
-                this.deps.showNotification(`📌 ${getLabel('notify.recurringUnpinToResume')}`, 'info', UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                this.deps.showNotification(getLabel('notify.recurringUnpinToResume'), 'info', UI_TIMEOUTS.NOTIFICATION_MEDIUM, { icon: 'lock' });
                 return;
             }
             await this.deps.updateAppState(draft => {
@@ -960,7 +960,7 @@ export class RecurringPanelManager {
                     }, true); // ✅ Immediate save when removing recurring from panel
                     if (restoreTask) this.deps.refreshUIFromState?.();
 
-                    this.deps.showNotification(`↩️ ${getLabel('notify.recurringTurnedOff')}`, "info", UI_TIMEOUTS.NOTIFICATION_SLOW);
+                    this.deps.showNotification(getLabel('notify.recurringTurnedOff'), "info", UI_TIMEOUTS.NOTIFICATION_SLOW, { icon: 'history' });
 
                     // Remove recurring visual state
                     const matchingTaskItem = this.deps.querySelector(DATA_SELECTORS.taskById(task.id));

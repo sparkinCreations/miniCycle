@@ -94,7 +94,7 @@ export class DeviceDetectionManager {
         userAgent: userAgent
       });
 
-      this.deps.showNotification('✅ ' + getLabel('notify.deviceDetectionComplete'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+      this.deps.showNotification(getLabel('notify.deviceDetectionComplete'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
       return true;
     }
     return false;
@@ -194,7 +194,7 @@ export class DeviceDetectionManager {
       return;
     }
 
-    this.deps.showNotification('📱 ' + getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    this.deps.showNotification(getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'mobile-alt' });
     setTimeout(() => {
       goToLiteVersion({ params: this.liteRedirectParams(), reason: 'device auto-redirect' });
     }, 1000);
@@ -232,7 +232,7 @@ export class DeviceDetectionManager {
 
     if (!this.deps.AppState.isReady()) {
       console.error('❌ State data required for compatibility report');
-      this.deps.showNotification('❌ ' + getLabel('notify.reportRequiresSchema'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+      this.deps.showNotification(getLabel('notify.reportRequiresSchema'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return null;
     }
     
@@ -282,7 +282,7 @@ export class DeviceDetectionManager {
       `${statusMessage}\n` +
       `${getLabel('notify.deviceStatusVersion', { vars: { version: deviceInfo.version } })}\n` +
       `${getLabel('notify.deviceStatusSchema', { vars: { schema: deviceInfo.schema } })}\n` +
-      `${getLabel('notify.deviceStatusLastCheck', { vars: { lastCheck: deviceInfo.lastDetectionVersion || 'Never' } })}`,
+      getLabel('notify.deviceStatusLastCheck', { vars: { lastCheck: deviceInfo.lastDetectionVersion || 'Never' } }),
       statusType,
       UI_TIMEOUTS.NOTIFICATION_PERSISTENT
     );
@@ -290,7 +290,7 @@ export class DeviceDetectionManager {
 
   // Test function for manual testing
   async testDeviceDetection() {
-    this.deps.showNotification('🧪 ' + getLabel('notify.startingDetectionTest'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    this.deps.showNotification(getLabel('notify.startingDetectionTest'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'flask' });
 
     // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
     const appInitModule = this.deps.appInit;
@@ -298,7 +298,7 @@ export class DeviceDetectionManager {
 
     if (!this.deps.AppState.isReady()) {
       console.error('❌ State data required for device detection test');
-      this.deps.showNotification('❌ ' + getLabel('notify.detectionTestFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+      this.deps.showNotification(getLabel('notify.detectionTestFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return;
     }
 

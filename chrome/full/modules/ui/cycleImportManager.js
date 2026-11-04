@@ -23,6 +23,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
+import { fitText, stripDirectionControls } from '../utils/nameUtils.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 import { isPriorityLevel, getLegacyPriorityLevel, getLevelForColor, collectSwatchSets } from '../utils/priorityLevel.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
@@ -197,7 +198,7 @@ function normalizeImportedText(input, maxLength = 100) {
         const code = ch.codePointAt(0);
         return code > 0x1F && !(code >= 0x7F && code <= 0x9F);
     }).join('');
-    return cleaned.trim().substring(0, maxLength);
+    return fitText(stripDirectionControls(cleaned).trim(), maxLength);
 }
 
 // History event detail keys the renderer actually reads (historyManager's

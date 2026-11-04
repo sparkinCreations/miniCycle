@@ -154,8 +154,8 @@ Historical documents and outdated guides are preserved in:
 ## 🌐 Live Application
 
 **Official URL:** [minicycleapp.com](https://minicycleapp.com)
-- Redirects to: [minicycle.app/pages/product.html](https://minicycle.app/pages/product.html)
-- Full App: [minicycle.app/miniCycle.html](https://minicycle.app/miniCycle.html)
+- Redirects to: [minicycle.app](https://minicycle.app/) — the product page (the site root since Nov 2026)
+- Full App: [minicycle.app/app](https://minicycle.app/app) (old `/minicycle` and `/miniCycle.html` links redirect here)
 - Lite Version: [minicycle.app/lite/miniCycle-lite.html](https://minicycle.app/lite/miniCycle-lite.html)
 - Documentation: [docs.minicycle.app](https://docs.minicycle.app)
 - Tests: [minicycle.app/tests/module-test-suite.html](https://minicycle.app/tests/module-test-suite.html)

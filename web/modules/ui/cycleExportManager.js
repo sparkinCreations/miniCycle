@@ -78,7 +78,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
             });
             if (result.handled) {
                 if (!result.cancelled) {
-                    _deps.showNotification("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                    _deps.showNotification(getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
                 }
                 return;
             }
@@ -98,7 +98,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
                 await writable.write(dataBlob);
                 await writable.close();
 
-                _deps.showNotification("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
+                _deps.showNotification(getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", 3000);
                 return;
             } catch (pickerError) {
                 // User cancelled the save dialog — not an error
@@ -130,7 +130,7 @@ export async function exportMiniCycleData(miniCycleData, cycleName) {
                 if (notified) return;
                 notified = true;
                 window.removeEventListener('focus', showSuccess);
-                notify("✅ " + getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                notify(getLabel('notify.exportSuccess', { vars: { name: cycleName } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
             };
             window.addEventListener('focus', showSuccess);
             setTimeout(showSuccess, UI_TIMEOUTS.EXPORT_FALLBACK_SUCCESS); // fallback if no save dialog

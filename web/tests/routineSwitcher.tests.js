@@ -423,20 +423,20 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         const instance = new RoutineSwitcher(mockDeps);
         instance.loadMiniCycleListActual();
 
-        // Morning Routine has autoReset=true, should have 🔄 (auto cycle mode)
+        // Morning Routine has autoReset=true: the Auto Cycle SVG
         const morningItem = [...listContainer.children].find(el =>
             el.textContent.includes('Morning Routine')
         );
-        if (!morningItem || !morningItem.textContent.includes('🔄')) {
-            throw new Error('Auto-reset cycle should have 🔄 emoji');
+        if (!morningItem?.querySelector('.cycle-item-emoji [data-mode="auto"] svg')) {
+            throw new Error('Auto-reset routine should show the Auto Cycle icon');
         }
 
-        // Work Tasks has deleteCheckedTasks, should have 📋 (default)
+        // Work Tasks has deleteCheckedTasks: the To-Do SVG
         const workItem = [...listContainer.children].find(el =>
             el.textContent.includes('Work Tasks')
         );
-        if (!workItem || !workItem.textContent.includes('📋')) {
-            throw new Error('To-do mode cycle should have 📋 emoji');
+        if (!workItem?.querySelector('.cycle-item-emoji [data-mode="todo"] svg')) {
+            throw new Error('To-Do routine should show the To-Do icon');
         }
     });
 

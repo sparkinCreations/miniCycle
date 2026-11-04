@@ -44,6 +44,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, LIMIT
 import { getLabel } from '../labels/labelResolver.js';
 import { buildMcycPayload } from '../utils/mcycPayload.js';
 import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { buildRoutineCopy } from './routineCopy.js';
 
 export class RoutineSwitcherActions {
     /**
@@ -69,14 +70,14 @@ export class RoutineSwitcherActions {
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for renameMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.m.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for renameMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -85,7 +86,7 @@ export class RoutineSwitcherActions {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.m.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -101,21 +102,21 @@ export class RoutineSwitcherActions {
         const selectedCycle = this.m._getSelectedItem();
         if (!selectedCycle) {
             console.warn('⚠️ No cycle selected for deletion');
-            this.m.deps.showNotification("⚠ " + getLabel('switcher.noSelectedForDelete'));
+            this.m.deps.showNotification(getLabel('switcher.noSelectedForDelete'), 'warning');
             return;
         }
 
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for deleteMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.m.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for deleteMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -126,7 +127,7 @@ export class RoutineSwitcherActions {
 
         if (!cycleKey || !currentCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!currentCycle });
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.m.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -149,6 +150,7 @@ export class RoutineSwitcherActions {
                 // Track if we're deleting the active cycle
                 const wasActiveCycle = cycleKey === activeCycle;
                 let newActiveCycleName = null;
+                let newActiveCycleKey = null;
 
                 // ✅ Update through state system
                 this.m.deps.AppState.update(state => {
@@ -161,7 +163,7 @@ export class RoutineSwitcherActions {
 
                         if (remainingCycleKeys.length > 0) {
                             // Switch to the first available miniCycle
-                            const newActiveCycleKey = remainingCycleKeys[0];
+                            newActiveCycleKey = remainingCycleKeys[0];
                             setActiveRoutineId(state, newActiveCycleKey);
 
                             const newActiveCycle = getRoutine(state, newActiveCycleKey);
@@ -181,14 +183,25 @@ export class RoutineSwitcherActions {
                     this.m.updateStorageBarUIEstimated(barElement, textElement);
                 }
 
-                // ✅ Notify undo system of cycle deletion (DI-pure)
+                // ✅ Notify undo system of cycle deletion (DI-pure) — and, when the
+                // open routine was deleted, of the switch to the next one, AFTER the
+                // delete has cleared it. Without the switch notice undo tracked no
+                // routine at all, so the first edit in the next one saved its
+                // one-step stack over that routine's stored undo history.
                 if (typeof this.m.deps.onCycleDeleted === 'function') {
                     // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
                     // call, so it yields undefined when the hook is unwired and `.catch` on
                     // undefined throws here — inside a UI flow, after state already changed.
-                    Promise.resolve(this.m.deps.onCycleDeleted(cycleKey)).catch(err => {
-                        console.warn('⚠️ Undo system cycle deletion notification failed:', err);
-                    });
+                    Promise.resolve(this.m.deps.onCycleDeleted(cycleKey))
+                        .then(() => {
+                            if (wasActiveCycle && newActiveCycleKey && typeof this.m.deps.onCycleSwitched === 'function') {
+                                return this.m.deps.onCycleSwitched(newActiveCycleKey);
+                            }
+                            return undefined;
+                        })
+                        .catch(err => {
+                            console.warn('⚠️ Undo system cycle deletion notification failed:', err);
+                        });
                 }
 
                 // ✅ Check if any cycles remain
@@ -247,9 +260,9 @@ export class RoutineSwitcherActions {
                 }
 
                 if (wasActiveCycle && newActiveCycleName) {
-                    this.m.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                    this.m.deps.showNotification(getLabel('notify.cycleDeletedSwitch', { vars: { deleted: cycleToDelete, active: newActiveCycleName } }), "info", UI_TIMEOUTS.NOTIFICATION_EXTENDED, { icon: 'trash' });
                 } else {
-                    this.m.deps.showNotification('🗑️ ' + getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }));
+                    this.m.deps.showNotification(getLabel('notify.cycleDeleted', { vars: { name: cycleToDelete } }), 'default', undefined, { icon: 'trash' });
                 }
             }
         });
@@ -322,14 +335,14 @@ export class RoutineSwitcherActions {
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for duplicateMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = this.m.deps.AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for duplicateMiniCycle');
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -339,7 +352,7 @@ export class RoutineSwitcherActions {
 
         if (!cycleKey || !originalCycle) {
             console.error('❌ Invalid cycle selection:', { cycleKey, hasCycle: !!originalCycle });
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            this.m.deps.showNotification(getLabel('notify.invalidCycleSelection'), "error", UI_TIMEOUTS.NOTIFICATION_BRIEF);
             return;
         }
 
@@ -347,55 +360,8 @@ export class RoutineSwitcherActions {
         const baseName = `${originalCycle.title} Copy`;
         const { name: uniqueName } = this.m.getUniqueCycleName(baseName, cycles);
 
-        // ✅ Deep copy the cycle data
-        const copiedCycle = structuredClone(originalCycle);
-        copiedCycle.title = uniqueName;
-        copiedCycle.createdAt = Date.now();
-        delete copiedCycle.lastModified; // Show "Created" until actual changes are made
-        copiedCycle.cycleCount = 0; // Reset cycle count for the copy
-
-        // Fresh history for a fresh routine — the clone otherwise inherits the
-        // original's full event log (cycle completions that never happened here).
-        // clearedTasks entries reset too, but autoPrune is a preference and travels.
-        delete copiedCycle.history;
-        if (copiedCycle.clearedTasks && typeof copiedCycle.clearedTasks === 'object') {
-            copiedCycle.clearedTasks = {
-                ...copiedCycle.clearedTasks,
-                entries: [],
-                totalCleared: 0
-            };
-        }
-
-        // ✅ Generate new IDs for all tasks to avoid conflicts — and remap
-        // recurringTemplates in lockstep. The map is keyed by task id and each
-        // template carries its task's id; leaving it un-remapped severed every
-        // taskId↔template link in the copy (watcher spawned duplicates, deleting
-        // a copied recurring task couldn't remove its template, template edits
-        // never synced).
-        if (Array.isArray(copiedCycle.tasks)) {
-            const now = Date.now();
-            const idRemap = new Map();
-            copiedCycle.tasks = copiedCycle.tasks.map((task, index) => {
-                const newId = `task-${now}-${index}-${Math.floor(Math.random() * 10000)}`; // Fix #74: add index to prevent collision
-                if (task.id) idRemap.set(task.id, newId);
-                return { ...task, id: newId };
-            });
-
-            if (copiedCycle.recurringTemplates && typeof copiedCycle.recurringTemplates === 'object') {
-                copiedCycle.recurringTemplates = Object.fromEntries(
-                    Object.entries(copiedCycle.recurringTemplates)
-                        .filter(([, template]) => template && typeof template === 'object')
-                        .map(([oldId, template], templateIndex) => {
-                            // A template without a live task instance is normal
-                            // (deleted instance pending recreation) — keep it,
-                            // under a fresh id so the copy never shares ids with
-                            // the original routine.
-                            const newId = idRemap.get(oldId) || `task-${now}-t${templateIndex}-${Math.floor(Math.random() * 10000)}`;
-                            return [newId, { ...template, id: newId }];
-                        })
-                );
-            }
-        }
+        // ✅ A fresh copy: new ids, no inherited cycles or history (routineCopy.js)
+        const copiedCycle = buildRoutineCopy(originalCycle, uniqueName);
 
         // ✅ Update through state system
         this.m.deps.AppState.update(state => {
@@ -441,7 +407,7 @@ export class RoutineSwitcherActions {
             }
         }, 100);
 
-        this.m.deps.showNotification('📋 ' + getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.m.deps.showNotification(getLabel('notify.routineDuplicated', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'copy' });
     }
 
     /**
@@ -674,7 +640,7 @@ export class RoutineSwitcherActions {
         // sanitizeInput clamps to the name limit; say so, as the title-bar
         // rename (titleManager) does, instead of silently shortening.
         if (rawTrimmed.length > LIMITS.CYCLE_NAME_CHARACTER) {
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            this.m.deps.showNotification(getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
         }
 
         // Get unique name if there's a collision (but not with self)
@@ -685,7 +651,7 @@ export class RoutineSwitcherActions {
         const { name: uniqueName, wasModified } = this.m.getUniqueCycleName(newName, cycles);
 
         if (wasModified) {
-            this.m.deps.showNotification('⚠️ ' + getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.m.deps.showNotification(getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
 
         // Update through state system
@@ -727,6 +693,6 @@ export class RoutineSwitcherActions {
         // Re-apply theme labels/colors in case the active routine was renamed
         this.m.deps.refreshThemeLabels?.();
 
-        this.m.deps.showNotification('✅ ' + getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.m.deps.showNotification(getLabel('notify.routineRenamed', { vars: { name: uniqueName } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 }

@@ -105,7 +105,7 @@
 .mode-selector:focus-visible {
     background: rgba(255, 255, 255, 0.5);
     border-color: var(--color-primary-dark);
-    box-shadow: 0 0 0 2px rgba(12, 32, 145, 0.2);
+    box-shadow: 0 0 0 2px var(--menu-light-blue-focus);
 }
 
 /* =============================================================================
@@ -164,8 +164,150 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
 }
 
 /* =============================================================================
+   MODE PICKER (Nov 2026)
+   The visible mode control is a menu button (.mode-picker-btn) that carries
+   the .mode-selector class, so every rule above — header sizing, dark mode,
+   High Contrast, the per-mode accent border — styles it unchanged. The native
+   #mode-selector stays the source of truth, hidden here (not display:none:
+   tests and modules still set and select it).
+   ============================================================================= */
+
+.mode-selector-native {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.mode-picker {
+    position: relative;
+    display: flex;
+}
+
+.mode-picker-btn {
+    gap: var(--space-1-25);
+    font-family: inherit;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.mode-picker-btn .mode-picker-icon {
+    width: 1.25em;
+    height: 1.25em;
+    flex-shrink: 0;
+}
+
+/* An Auto Cycle reset turns the arrows once (taskCycleReset, .is-acting) */
+.mode-picker-btn.is-acting .mode-picker-icon {
+    animation: action-spin var(--anim-action-spin) ease-in-out;
+}
+
+/* Centered under the button; .quick-actions-menu supplies the panel look and
+   is display:none until shown, so the hidden attribute is mapped back here.
+   Scoped under .mode-picker: .quick-actions-menu comes later in this file at
+   the same specificity and would win left/min-width. */
+.mode-picker .mode-picker-menu {
+    left: 50%;
+    transform: translateX(-50%);
+    min-width: 190px;
+    width: max-content;
+    padding: var(--space-1) 0;
+}
+
+.mode-picker .mode-picker-menu:not([hidden]) {
+    display: block;
+}
+
+/* Left-aligned under its button (the routine switcher's filter sits at the
+   dialog's left edge, where a centred menu would run off it). */
+.mode-picker.mode-picker--start .mode-picker-menu {
+    left: 0;
+    transform: none;
+}
+
+.mode-picker-item .icon {
+    width: 1.25em;
+    height: 1.25em;
+}
+
+.mode-picker-item .quick-action-text {
+    flex: 1;
+    white-space: nowrap;
+}
+
+.mode-picker-item[aria-checked="false"] .mode-picker-check {
+    visibility: hidden;
+}
+
+.mode-picker-item[aria-checked="true"] {
+    font-weight: 600;
+}
+
+.mode-picker-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.6));
+    outline-offset: -2px;
+}
+
+/* =============================================================================
    QUICK ACTIONS
    ============================================================================= */
+
+/* The + (left) and the routine button (right) are one width, always — the pair
+   frames the mode selector (the user's call, Oct 2026). Both read this, so
+   neither can drift: before it the + was 60px to the routine button's 70 at
+   ≤480px, and 70 to its 88 at exactly 768. In Browse the routine button carries
+   "Routines" beside its cards (routineSwitcher.syncEntryPoints puts the view on
+   this wrapper), so the pair widens to fit the word; below 375px the word is
+   dropped (routine-switcher.css) and they are back to 70.
+   The word's room is in --font-size-xs units, so a larger Font Size widens the
+   pair rather than clipping it. */
+.mode-selector-wrapper {
+    --header-side-btn-width: 88px;
+    --header-side-btn-browse-width: calc(var(--font-size-xs) * 4.6 + 34px);   /* "Routines" + icon, gap, padding, border */
+}
+
+.mode-selector-wrapper[data-routine-view="browse"] {
+    --header-side-btn-width: max(88px, var(--header-side-btn-browse-width));
+}
+
+@media (max-width: 767px) {
+    .mode-selector-wrapper {
+        --header-side-btn-width: 70px;
+    }
+
+    .mode-selector-wrapper[data-routine-view="browse"] {
+        --header-side-btn-width: max(70px, var(--header-side-btn-browse-width));
+    }
+}
+
+/* Too narrow for the word: back to 70. Measured in em of the header row, so a
+   larger Font Size drops the word sooner (at 20px it met the mode selector at
+   any phone width) — 22em is 374px at the default size. The container query
+   needs Safari 16; the 374px media query is the floor for older browsers. The
+   word itself is dropped at the same two points (routine-switcher.css). */
+.mode-selector-wrapper {
+    container-type: inline-size;
+}
+
+@container (max-width: 22em) {
+    .quick-actions-btn,
+    .routine-switcher-btn {
+        --header-side-btn-width: 70px;
+    }
+}
+
+@media (max-width: 374px) {
+    .mode-selector-wrapper[data-routine-view="browse"] {
+        --header-side-btn-width: 70px;
+    }
+}
 
 .quick-actions-container {
     position: absolute;
@@ -178,7 +320,7 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     border: 1px solid #0c20913f;
     color: rgb(44, 50, 112);
     border-radius: var(--radius-5);
-    width: 88px;
+    width: var(--header-side-btn-width);   /* = the routine button's (above) */
     /* Match the mode selector's height. The selector is a native <select> whose
        height stays ~25px (browsers don't reliably scale a closed select's box
        with font-size), so a fixed height on the same token keeps all three
@@ -220,32 +362,11 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     stroke-width: 1px;
 }
 
-/* Shimmer effect on "+" button when task list is empty — draws attention to add action */
-/* Uses JS-managed .tasks-empty class instead of :has(.task-list:empty) for PWA reliability */
-body.tasks-empty .quick-actions-btn {
-    background: linear-gradient(
-        110deg,
-        rgba(255, 255, 255, 0.2) 0%,
-        rgba(255, 255, 255, 0.2) 40%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(255, 255, 255, 0.2) 60%,
-        rgba(255, 255, 255, 0.2) 100%
-    );
-    background-size: 200% 100%;
-    animation: shimmer 2s ease-in-out infinite;
-}
-
-/* Disable shimmer under reduced motion */
-@media (prefers-reduced-motion: reduce) {
-    body.tasks-empty .quick-actions-btn {
-        animation: none;
-    }
-}
-body.reduced-motion.tasks-empty .quick-actions-btn {
-    animation: none;
-}
-
-/* Shimmer for first-time users — persists until they press the + button */
+/* Shimmer for first-time users — persists until they press the + button
+   (modeManager: settings.addTaskDiscovered). The ONLY + shimmer: an older
+   rule also shimmered it on every empty routine (body.tasks-empty), whatever
+   the user had already discovered — it read as this one coming back (removed
+   Nov 2026). An empty routine has its own hint in the empty state. */
 .quick-actions-btn.first-time-shimmer {
     background: linear-gradient(
         110deg,
@@ -282,8 +403,10 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     top: 100%;
     left: 0;
     margin-top: var(--space-1-25);
-    background: linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%);
-    border: 1px solid rgba(12, 32, 145, 0.3);
+    /* Light blue, from the header bar's own blue family (both header menus —
+       the + and the mode picker — share this). Dark mode overrides it. */
+    background: linear-gradient(135deg, var(--menu-light-blue-start) 0%, var(--menu-light-blue-end) 100%);
+    border: 1px solid var(--menu-light-blue-rim);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-dropdown);
     min-width: 180px;
@@ -312,12 +435,12 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     cursor: pointer;
     text-align: left;
     font-size: var(--font-size-sm);
-    color: rgb(44, 50, 112);
+    color: var(--color-navy);
     transition: background var(--transition-fast) ease;
 }
 
 .quick-action-item:hover {
-    background: rgba(12, 32, 145, 0.1);
+    background: var(--menu-light-blue-hover);
 }
 
 .quick-action-item svg {
@@ -342,11 +465,6 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
         max-width: 200px;
     }
 
-    .quick-actions-btn {
-        width: 70px;
-        /* height inherits var(--space-6-25) from the base rule so it stays
-           level with the mode selector (which keeps that height here too). */
-    }
 }
 
 @media (max-width: 480px) {
@@ -355,7 +473,6 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     }
 
     .quick-actions-btn {
-        width: 60px;
         font-size: var(--font-size-xs);
     }
 }

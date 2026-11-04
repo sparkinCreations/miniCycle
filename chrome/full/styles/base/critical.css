@@ -432,14 +432,18 @@ html:not(.mc-first-run) .first-run-choice,
   text-shadow: var(--text-shadow-lg);
   opacity: 0;
   pointer-events: none;
+  /* opacity:0 alone left the unrevealed link a Tab stop: keyboard focus landed
+     on an invisible link. visibility takes it out of the Tab order, and the
+     reveal below switches it back on (visibility animates as a single step). */
+  visibility: hidden;
   animation: first-run-lite-in 0.6s ease-out 10s forwards;
 }
 .first-run-lite:hover {
   opacity: 1;
 }
 @keyframes first-run-lite-in {
-  from { opacity: 0; transform: translateY(4px); pointer-events: none; }
-  to { opacity: 0.72; transform: translateY(0); pointer-events: auto; }
+  from { opacity: 0; transform: translateY(4px); pointer-events: none; visibility: visible; }
+  to { opacity: 0.72; transform: translateY(0); pointer-events: auto; visibility: visible; }
 }
 /* Gate: once boot completes (uiBoot sets html[data-app-loaded]), cancel the
    reveal — even though the choice screen lingers awaiting a tap. This is what
@@ -451,12 +455,14 @@ html[data-app-loaded="true"] .first-run-lite {
   animation: none !important;
   opacity: 0 !important;
   pointer-events: none !important;
+  visibility: hidden !important;
 }
 @media (prefers-reduced-motion: reduce) {
   /* Keep the timed reveal (it's a functional gate, not decoration) but drop the slide. */
   .first-run-lite { animation: first-run-lite-fade 0.1s linear 10s forwards; }
   @keyframes first-run-lite-fade {
-    to { opacity: 0.72; pointer-events: auto; }
+    from { visibility: visible; }
+    to { opacity: 0.72; pointer-events: auto; visibility: visible; }
   }
 }
 
@@ -484,6 +490,56 @@ html[data-app-loaded="true"] .first-run-lite {
 }
 .first-run-restore:hover {
   opacity: 0.95;
+}
+
+/* Company · product site · User Manual, under the restore link. Same quiet
+   tier as it: small, underlined, full-strength white (fading it failed AA). */
+.first-run-links {
+  margin-top: 12px;
+  /* Wider than the button column it sits in, so the three fit on one line
+     wherever the screen has room (the column is the buttons' width). */
+  width: max-content;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: var(--font-size-xs, 12px);
+  color: white;
+  text-shadow: var(--text-shadow-lg);
+}
+.first-run-links a {
+  color: white;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* 320px: one line, not two — two ran past the bottom of a 568px-tall screen. */
+@media (max-width: 359px) {
+  .first-run-links {
+    gap: 4px 5px;
+  }
+}
+
+/* Keyboard focus on the choice screen. The global ring is 2px of brand blue,
+   which all but vanished on this blue-tinted photo (review, Oct 2026) — and
+   the photo varies, so no single colour is safe on it. A white ring between
+   two dark bands reads on light and dark parts of any photo: the box-shadow
+   paints dark from the edge out to 9px, and the outline covers the middle of
+   it in white. Hardcoded colours for the same reason as .first-run-btn. */
+.first-run-btn:focus-visible,
+.first-run-lite:focus-visible,
+.first-run-restore:focus-visible,
+.first-run-links a:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+  box-shadow: 0 0 0 9px rgba(0, 0, 0, 0.6);
+}
+.first-run-lite:focus-visible,
+.first-run-restore:focus-visible,
+.first-run-links a:focus-visible {
+  border-radius: 4px;
 }
 
 /* Thin, quiet progress strip pinned to the bottom edge — continuous creep,
@@ -738,6 +794,18 @@ body.app-loading .fixed-header-container {
   visibility: hidden;
 }
 
+/* The same state also has to take the rest of the page out of the Tab order:
+   visibility:hidden is what removes a control from focus, and these two sit
+   outside #app-container. Without it, Tab on the first-run screen ran past
+   "Restore from a backup file" into the footer's view buttons and links, under
+   the splash where nothing visible happens — and the skip link, the first Tab
+   stop, sent focus to an app that wasn't there yet (review, Oct 2026). Both
+   come back with everything else when uiBoot removes .app-loading. */
+body.app-loading #footer-container,
+body.app-loading .skip-to-content {
+  visibility: hidden;
+}
+
 /* Footer mobile layout is defined in components/footer.css */
 
 /* ============================================================================
@@ -760,13 +828,13 @@ body.app-loading .fixed-header-container {
    class and reads the remaining animation via getAnimations().
    ============================================================================ */
 .first-run-splash.first-run-splash--preboot {
-  --first-run-splash-char-duration: 280ms;
-  --first-run-splash-char-stagger: 90ms;
+  --first-run-splash-char-duration: 220ms;
+  --first-run-splash-char-stagger: 45ms;
   --first-run-splash-char-start-scale: 1.8;
   --first-run-splash-letter-spread: 14px;
   --first-run-splash-line-gap: var(--space-8, 32px);
   --first-run-splash-word-gap: 0.7em;
-  --first-run-splash-fade-duration: 600ms;
+  --first-run-splash-fade-duration: 400ms;
   --first-run-splash-phase1-total: calc(
     var(--last-char-index, 19) * var(--first-run-splash-char-stagger)
     + var(--first-run-splash-char-duration)

@@ -219,3 +219,39 @@ export function healTemplatesFromTasks(routine, { dryRun = false } = {}) {
     }
     return healed;
 }
+
+/**
+ * Carry a biweekly task's Week 1 start date across a settings edit.
+ *
+ * Week 1 starts the day a biweekly task is set up (`biweekly.referenceDate`,
+ * which the normaliser fills with "now" when missing). The settings panel never
+ * sent that date back, so every re-save restarted Week 1 from the moment of the
+ * save — editing a task during its Week 2 silently swapped the two weeks for
+ * good. A task that was already biweekly keeps the date it had; a task becoming
+ * biweekly now starts counting from now.
+ *
+ * @param {Object} settings - Normalised settings about to be saved (not mutated)
+ * @param {Object|null|undefined} previousSettings - The task's settings before this save
+ * @returns {Object} `settings`, or a copy carrying the previous start date
+ */
+export function keepBiweeklyStart(settings, previousSettings) {
+    const previousStart = previousSettings?.frequency === 'biweekly'
+        ? previousSettings.biweekly?.referenceDate
+        : null;
+    if (settings?.frequency !== 'biweekly' || !previousStart) return settings;
+    return { ...settings, biweekly: { ...settings.biweekly, referenceDate: previousStart } };
+}
+
+/**
+ * Settings without a biweekly Week 1 start date — for the saved recurring
+ * defaults. A start date stored there would be handed to every task made from
+ * the defaults later, so their weeks counted from the day the defaults were
+ * saved rather than the day each task was set up.
+ *
+ * @param {Object} settings - Recurring settings (not mutated)
+ * @returns {Object} A copy with `biweekly.referenceDate` cleared
+ */
+export function withoutBiweeklyStart(settings) {
+    if (!settings?.biweekly?.referenceDate) return settings;
+    return { ...settings, biweekly: { ...settings.biweekly, referenceDate: null } };
+}

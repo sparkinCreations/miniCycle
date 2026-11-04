@@ -63,20 +63,20 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
         const activeCycleId = getActiveRoutineId(state);
 
         if (!activeCycleId) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringNoActiveFound'));
+            _deps.showNotification(getLabel('notify.recurringNoActiveFound'), 'warning');
             return;
         }
 
         const cycleData = getRoutine(state, activeCycleId);
         if (!cycleData) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringDataNotFound'));
+            _deps.showNotification(getLabel('notify.recurringDataNotFound'), 'warning');
             return;
         }
 
         const checkedEls = _deps.querySelectorAll(DOM_SELECTORS.RECURRING_CHECK_CHECKED);
 
         if (!checkedEls.length) {
-            _deps.showNotification("⚠ " + getLabel('notify.recurringNoChecked'));
+            _deps.showNotification(getLabel('notify.recurringNoChecked'), 'warning');
             return;
         }
 
@@ -187,12 +187,12 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
         // Show success notifications
         if (_deps.getElementById(DOM_IDS.SET_DEFAULT_RECURRING)?.checked) {
-            _deps.showNotification('✅ ' + getLabel('notify.recurringDefaultSaved'), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
+            _deps.showNotification(getLabel('notify.recurringDefaultSaved'), "success", UI_TIMEOUTS.NOTIFICATION_BRIEF);
         }
 
         // Call panel methods for UI updates
         panel.updateRecurringSummary();
-        _deps.showNotification('✅ ' + getLabel('notify.recurringApplied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        _deps.showNotification(getLabel('notify.recurringApplied'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
         // Transition to browsing mode before re-render (hides settings, checkboxes, toggle)
         panel.state.selectedTaskId = null;
@@ -225,7 +225,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
 
     } catch (error) {
         console.error('❌ Failed to apply recurring settings:', error);
-        _deps.showNotification('❌ ' + getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
+        _deps.showNotification(getLabel('notify.recurringApplyFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SLOW);
 
         // Cleanup on error — return to browsing mode
         panel.state.selectedTaskId = null;

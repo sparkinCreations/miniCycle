@@ -3,7 +3,7 @@
   "name": "miniCycle",
   "short_name": "miniCycle",
   "description": "Full-featured task cycling app with advanced features – Turn Your Routine Into Progress",
-  "start_url": "./miniCycle.html",
+  "start_url": "./app",
   "scope": "./",
   "display": "standalone",
   "display_override": ["window-controls-overlay"],
@@ -12,7 +12,7 @@
   "dir": "ltr",
   "theme_color": "#4c79ff",
   "background_color": "#4c79ff",
-  "version": "2.656",
+  "version": "2.666",
   "categories": ["productivity", "lifestyle", "utilities"],
   "icons": [
     {

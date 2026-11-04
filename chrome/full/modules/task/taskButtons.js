@@ -209,7 +209,7 @@ export class TaskButtons {
                     'flag': '🚩',
                     'edit': '✎',
                     'trash': '🗑',
-                    'repeat': '↻',
+                    'repeat': '🔁',
                     'calendar-alt': '📅',
                     'bell': '🔔'
                 };
@@ -448,9 +448,10 @@ export class TaskButtons {
 
             if (isRecurring && !newState) {
                 this.deps.showNotification?.(
-                    `📌 ${getLabel('notify.recurringKeptOnReset')}`,
+                    getLabel('notify.recurringKeptOnReset'),
                     "info",
-                    UI_TIMEOUTS.NOTIFICATION_LONG
+                    UI_TIMEOUTS.NOTIFICATION_LONG,
+                    { icon: 'lock' }
                 );
             }
 
@@ -517,15 +518,16 @@ export class TaskButtons {
                 }
             }
 
+            const kept = !newState && currentMode === 'todo';
             let message;
             if (newState) {
                 message = getLabel('notify.taskRemovedOnReset');
             } else {
-                message = currentMode === 'todo'
-                    ? `📌 ${getLabel('notify.taskKeptOnComplete')}`
+                message = kept
+                    ? getLabel('notify.taskKeptOnComplete')
                     : getLabel('notify.taskRemainOnReset');
             }
-            this.deps.showNotification?.(message, "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+            this.deps.showNotification?.(message, "info", UI_TIMEOUTS.NOTIFICATION_SHORT, kept ? { icon: 'lock' } : undefined);
         };
         safeAdd(button, "click", button._deleteWhenCompleteClickHandler);
     }

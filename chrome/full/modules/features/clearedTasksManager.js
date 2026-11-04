@@ -11,6 +11,7 @@
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { COLORS, DOM_SELECTORS, DOM_CLASSES, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DEFAULT_PRIORITY_SWATCHES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { getIcon } from '../utils/icons.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" dueDates — new Date() reads
@@ -393,7 +394,7 @@ export class ClearedTasksManager {
                         font-size: 18px;
                         font-weight: 600;
                         color: var(--text-primary, #333);
-                    ">${getLabel('history.clearedTasks')}</h2>
+                    "><span class="icon" aria-hidden="true">${getIcon('eraser')}</span> ${getLabel('history.clearedTasks')}</h2>
                     <button class="cleared-recreate-btn" style="
                         background: var(--primary-color, #4c79ff);
                         border: none;

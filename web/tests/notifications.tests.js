@@ -1072,6 +1072,24 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    await test('recurring popup: ⓘ starts open the first time, then collapsed (no 💡, no tip banner)', () => {
+        const notifications = new window.MiniCycleNotifications();
+        let seen = false;
+        notifications.educationalTips = { isTipDismissed: () => seen, dismissTip: () => { seen = true; } };
+        const host = document.createElement('div');
+        host.innerHTML = notifications.createRecurringNotificationWithTip('task-9', 'daily', 'indefinitely', 'Water plants');
+        const btn = host.querySelector('.recurring-info-btn');
+        const note = btn && host.querySelector('#' + CSS.escape(btn.getAttribute('aria-controls')));
+        if (!btn || !note) throw new Error('missing the ⓘ or its note');
+        if (btn.getAttribute('aria-expanded') !== 'true' || note.hidden) throw new Error('first time: the note should be open');
+        if (!seen) throw new Error('first showing should mark the explanation as seen');
+        if (host.querySelector('.tip-toggle-btn, .educational-tip') || host.innerHTML.includes('💡')) throw new Error('old tip banner / lightbulb still rendered');
+        host.innerHTML = notifications.createRecurringNotificationWithTip('task-9', 'daily', 'indefinitely', 'Water plants');
+        const btn2 = host.querySelector('.recurring-info-btn');
+        const note2 = host.querySelector('#' + CSS.escape(btn2.getAttribute('aria-controls')));
+        if (btn2.getAttribute('aria-expanded') !== 'false' || !note2.hidden) throw new Error('after the first time: collapsed');
+    });
+
     await test('createRecurringNotificationWithTip() includes quick options', () => {
         const notifications = new window.MiniCycleNotifications();
 

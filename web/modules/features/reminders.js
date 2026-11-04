@@ -427,12 +427,12 @@ export class MiniCycleReminders {
         // Start or stop reminders
         if (globalReminderState) {
             if (!wasEnabled) {
-                this.deps.showNotification('🔔 ' + getLabel('notify.reminderEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                this.deps.showNotification(getLabel('notify.reminderEnabled'), "success", UI_TIMEOUTS.NOTIFICATION_MEDIUM, { icon: 'bell' });
             }
             setTimeout(() => this.startReminders(), UI_TIMEOUTS.ANIMATION_SHORT);
         } else {
             if (wasEnabled) {
-                this.deps.showNotification('🔕 ' + getLabel('notify.reminderDisabled'), "error", UI_TIMEOUTS.NOTIFICATION_MEDIUM);
+                this.deps.showNotification(getLabel('notify.reminderDisabled'), "error", UI_TIMEOUTS.NOTIFICATION_MEDIUM, { icon: 'bell' });
             }
             this.stopReminders();
         }
@@ -803,7 +803,7 @@ export class MiniCycleReminders {
         }
         // No duration = requires manual dismissal (user may be away from app)
         // Use \n instead of <br> - CSS white-space: pre-line renders newlines (XSS-safe)
-        this._activeReminderNotification = this.deps.showNotification(`🔔 ${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info", 0);
+        this._activeReminderNotification = this.deps.showNotification(`${getLabel('notify.reminderTasksToComplete')}\n~ ${incompleteTasks.join("\n~ ")}`, "info", 0, { icon: 'bell' });
 
         // Send a system notification if enabled.
         if (remindersSettings.browserNotifications) {
@@ -1146,13 +1146,13 @@ export class MiniCycleReminders {
                         ? getLabel('notify.reminderEveryFrequency', { vars: { freq, unit } })
                         : getLabel('notify.reminderCustomSettings');
                     const messageKey = autoEnabled ? 'notify.reminderAutoEnabled' : 'notify.reminderEnabledWithSettings';
-                    message = `🔔 ${getLabel(messageKey, { vars: { settings: settingsText } })}`;
+                    message = getLabel(messageKey, { vars: { settings: settingsText } });
                     notificationType = 'success';
                     actionLabel = getLabel('notify.reminderOpenSettings');
                 } else {
-                    // 🔕, not 🔔: the actionable truth is that no notification will
-                    // arrive yet. 'info' rather than 'success' for the same reason.
-                    message = `🔕 ${getLabel('notify.reminderSelectedGlobalOff')}`;
+                    // 'info' rather than 'success': the actionable truth is
+                    // that no notification will arrive yet.
+                    message = getLabel('notify.reminderSelectedGlobalOff');
                     notificationType = 'info';
                     actionLabel = getLabel('notify.reminderTurnOnReminders');
                 }
@@ -1162,6 +1162,7 @@ export class MiniCycleReminders {
                     notificationType,
                     UI_TIMEOUTS.NOTIFICATION_SLOW,
                     {
+                        icon: 'bell',
                         actionButton: {
                             label: actionLabel,
                             onClick: () => this.openRemindersModal()
@@ -1175,7 +1176,7 @@ export class MiniCycleReminders {
                     notificationContent.style.whiteSpace = 'pre-line';
                 }
             } else {
-                this.deps.showNotification('🔕 ' + getLabel('notify.taskReminderDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF);
+                this.deps.showNotification(getLabel('notify.taskReminderDisabled'), 'info', UI_TIMEOUTS.NOTIFICATION_BRIEF, { icon: 'bell' });
             }
         };
         safeAdd(button, "click", button._reminderClickHandler);

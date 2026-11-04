@@ -19,15 +19,30 @@ button {
     font-family: inherit;
 }
 
-/* Hover only where a pointer can hover. This rule outranks any one-class
-   button colour (two pseudo-classes beat one class), so it is the one iOS
-   leaves stuck after a tap: touch has no hover, WebKit emulates it on tap and
-   keeps it until the next tap elsewhere — Focus View's Complete Task button
-   stayed recoloured after every press on the iPhone / PWA even after its own
-   hover rule was guarded (Oct 2026). Same guard task-options.css uses;
-   :active and :focus-visible are untouched. */
+/* Hover only where a pointer can hover. Same guard task-options.css uses;
+   :active and :focus-visible are untouched.
+
+   WRAPPED IN :where() SO IT HAS ZERO SPECIFICITY (Nov 2026). As
+   `button:not(.dot):hover` this was (0,2,1) and outranked every one-class
+   button colour, so hovering ANY button whose background comes from a single
+   class replaced that background with the SECONDARY hover grey while the
+   class's own `color` stayed — Focus View's Complete Task button went from
+   #3a5fc7 with white text to #d0d0d0 with white text, a measured 1.54:1, i.e.
+   the label vanished exactly while you pointed at it. `.btn-primary:hover`
+   (0,2,0) lost to it too, so no primary button ever showed
+   --theme-button-primary-hover-bg. The Oct 2026 pass found the same rule from
+   the iOS end (WebKit emulates hover on tap and leaves it stuck) and guarded
+   it by media query, which fixed the stuck state but left the desktop
+   recolouring in place. :where() makes this what it was always meant to be: a
+   DEFAULT for buttons that bring no colour of their own, which any component
+   rule beats. A button that sets its own background now keeps it on hover and
+   supplies its own hover treatment (the Complete Task button's is
+   `filter: brightness(1.08)` in focus-task-panel.css).
+
+   Not reachable by npm run test:contrast — axe only evaluates the resting
+   state, never :hover. */
 @media (hover: hover) and (pointer: fine) {
-    button:not(.dot):hover {
+    :where(button:not(.dot):hover) {
         background: var(--theme-button-secondary-hover-bg);
     }
 }
@@ -161,6 +176,71 @@ button.icon-only i {
     text-shadow: var(--text-shadow-sm);
 }
 
+/* ⓘ — the ONE way miniCycle offers "more about this": an inline button
+   after a line that toggles a short note under it (aria-expanded +
+   aria-controls). Used by the Stats panel and the recurring-task popup. */
+.info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    vertical-align: middle;
+    margin-left: var(--space-1);
+    padding: var(--space-1);
+    border: none;
+    background: none;
+    color: inherit;
+    opacity: 0.75;
+    cursor: pointer;
+}
+
+.info-btn .icon {
+    display: inline-flex;
+    width: 1em;
+    height: 1em;
+}
+
+.info-btn:hover,
+.info-btn[aria-expanded="true"] {
+    opacity: 1;
+}
+
+.info-btn:focus-visible {
+    outline: 2px solid currentColor;
+    outline-offset: 1px;
+    border-radius: var(--radius-full);
+}
+
+/* The mode glyph (ui/completeAllButton.js) answers a press: the arrows turn
+   once, the 🧹 broom sweeps — .is-acting is put on and taken off by
+   replayAnimationClass. Both durations are motion tokens, 0 under reduced
+   motion. */
+.complete-all-btn .action-glyph {
+    display: inline-block;
+    vertical-align: -0.125em;
+}
+
+/* Pivot at the top of the handle (the 🧹 handle runs up to the top right),
+   so the bristles at the bottom do the moving. */
+.complete-all-btn .action-glyph-broom {
+    transform-origin: 80% 10%;
+}
+
+/* The cycle arrows a size up from the text (Nov 2026: they read small beside
+   the bold label); the 🧹 emoji is already full-size. */
+.complete-all-btn .action-glyph-cycle {
+    width: 1.3em;
+    height: 1.3em;
+    vertical-align: -0.28em;
+}
+
+.complete-all-btn.is-acting .action-glyph-cycle {
+    animation: action-spin var(--anim-action-spin) ease-in-out;
+}
+
+.complete-all-btn.is-acting .action-glyph-broom {
+    animation: action-sweep var(--anim-action-sweep) ease-in-out;
+}
+
 .complete-all-btn:hover {
     background: var(--color-complete-btn-hover);
     transform: translateY(-1px);
@@ -193,6 +273,102 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
     background: var(--pref-clear-btn, var(--color-todo-btn));
     box-shadow: var(--shadow-button);
+}
+
+/* =============================================================================
+   GLASS COMPLETE / CLEAR (default, Nov 2026)
+   The same glass as Focus View's round action button (focus-mode.css): 25%
+   white, a light 2px blur, its thin 1px white rim (brighter here, 65%, on
+   the larger button), and like it a white cycle icon. The mode's colour moves from the fill
+   to the words — --action-color is the user's Complete Cycle / Clear colour
+   (Personalization) or the default — darkened, because on near-clear glass
+   the words sit on the page's blue: the colour kept at 40% (color-mix; the
+   plain colour is the fallback where color-mix is unsupported) measured
+   ≥ 3.6:1 across the default blue gradient for green and blue, above the 3:1
+   large bold text needs. Dark mode: the colour lightened, ≥ 4:1.
+   Where it applies: Classic and the vocabulary themes, light or dark. The
+   themes' backgrounds are dark gradients, so there the words go light (see
+   the vocab-theme rule below). The legacy colour themes and High Contrast
+   keep the filled button, and so does anyone who turns on
+   Personalization → Buttons & Progress → Solid buttons
+   (body.solid-action-buttons).
+   ============================================================================= */
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn {
+    --action-color: var(--pref-complete-btn, var(--color-complete-btn));
+    background: var(--glass-btn-bg);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
+    border: 1px solid var(--glass-btn-rim);   /* Focus View's thin rim, a little brighter on this larger button */
+    color: var(--action-color);
+    color: color-mix(in srgb, var(--action-color) 40%, var(--color-black));
+    text-shadow: none;
+    box-shadow: var(--shadow-button);
+}
+
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
+    --action-color: var(--pref-clear-btn, var(--color-todo-btn));
+}
+
+/* The cycle arrows are white, as on Focus View's round button; the words keep
+   the green. (The To-Do broom is an emoji and keeps its own colours.) */
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn .action-glyph-cycle {
+    color: var(--color-white);
+}
+
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:hover {
+    background: var(--glass-btn-bg-hover);
+}
+
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn {
+    --action-color: var(--color-complete-btn);
+    background: var(--glass-btn-bg-dark);
+    border-color: var(--glass-btn-rim-dark);
+    color: color-mix(in srgb, var(--action-color) 60%, var(--color-white));
+}
+
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn.todo-mode-btn {
+    --action-color: var(--color-todo-btn);
+}
+
+body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn:hover {
+    background: var(--glass-btn-bg-dark-hover);
+}
+
+/* Vocabulary themes (light mode): the same glass, frosted heavier, with the
+   words and the cycle arrows in the theme's own text colour (--pref-task-text:
+   brown, forest, indigo, teal). Measured Nov 2026 on all four themes, both
+   buttons: no text colour alone could read on the 25% glass over their
+   mid-tone backgrounds (≈2:1); at 55% the theme text is ≥ 3.4:1 at the
+   worst 10% of the background and ~7:1 typically. White arrows would vanish
+   on the lighter frost, so they take the words' colour. */
+html[data-vocab-theme] body:not(.solid-action-buttons):not(.high-contrast):not(.dark-mode) .complete-all-btn {
+    background: var(--glass-btn-bg-theme);
+    color: var(--pref-task-text, var(--color-black));
+}
+
+html[data-vocab-theme] body:not(.solid-action-buttons):not(.high-contrast):not(.dark-mode) .complete-all-btn:hover {
+    background: var(--glass-btn-bg-theme-hover);
+}
+
+html[data-vocab-theme] body:not(.solid-action-buttons):not(.high-contrast):not(.dark-mode) .complete-all-btn .action-glyph-cycle {
+    color: currentColor;
+}
+
+/* Personalization's live preview shows the same choice. */
+html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-complete-btn,
+html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
+    background: var(--glass-btn-bg);
+    border: 1px solid var(--glass-btn-rim);
+    color: var(--preview-action-color);
+    color: color-mix(in srgb, var(--preview-action-color) 40%, var(--color-black));
+}
+
+html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-complete-btn {
+    --preview-action-color: var(--preview-complete-btn, var(--color-complete-btn));
+}
+
+html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
+    --preview-action-color: var(--preview-clear-btn, var(--color-todo-btn));
 }
 
 /* Complete All and Help Window Container */
@@ -263,8 +439,8 @@ body.hide-help-window .help-window {
     margin: 0;
     line-height: 1.4;
     /* Constrain the paragraph to the help-window's content width so the
-       nowrap preamble + CTA spans actually break between each other
-       instead of overflowing the box. Without this, the flex parent
+       preamble and the CTA unit (.help-window-cta) actually break between
+       each other instead of overflowing the box. Without this, the flex parent
        (align-items: center) lets the p grow to its content width. */
     max-width: 100%;
 }
@@ -279,9 +455,16 @@ body.hide-help-window .help-window {
    at a larger Font Size) has no break opportunity at all and runs past
    the box (reported Oct 2026). Left free to wrap, it still breaks at the
    bullet whenever it fits on its own, because the unbreakable CTA forces
-   the same split. */
+   the same split.
+   The CTA is an inline-BLOCK, not nowrap text: an inline-block is one unit
+   for line breaking, so it still drops to line 2 whole at the bullet, but
+   capped at the box's width it can wrap INSIDE itself when the phrase alone
+   is wider than the column. Plain nowrap had no break at all there, and
+   "• Clear your first completed task!" (To-Do mode, ~245px) ran out of the
+   230px Focus View side box (reported Nov 2026). */
 .help-window-cta {
-    white-space: nowrap;
+    display: inline-block;
+    max-width: 100%;
 }
 
 /* =============================================================================

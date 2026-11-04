@@ -60,6 +60,7 @@ function syncHtmlEventBridge(deps) {
   bridge.showConfirmationModal = (options) =>
     deps.utils.showConfirmationModal?.(options);
   bridge.showStatsPanel = () => deps.ui.showStatsPanel?.();
+  bridge.showHelpNotice = (kind) => deps.ui?.helpWindowManager?.showNotice?.(kind);
   bridge.closeStorageViewer = () => deps.testing?.closeStorageViewer?.();
 }
 
@@ -85,6 +86,10 @@ function ensureHtmlEventListeners(closeStorageViewerButtonId) {
 
   document.addEventListener('app:showConfirmationModal', (e) => {
     bridge.showConfirmationModal?.(e.detail);
+  });
+
+  document.addEventListener('app:helpNotice', (e) => {
+    bridge.showHelpNotice?.(e.detail?.kind);
   });
 
   document.addEventListener('app:showStatsPanel', () => {
@@ -411,6 +416,7 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     load: deps.cycle?.loadMiniCycle,
     create: deps.cycle?.showCycleCreationModal,
     switch: deps.cycle?.switchMiniCycle,
+    stepRecent: deps.cycle?.stepRecentRoutine,   // Alt+Shift+[ / ] (uiBoot.handleAppShortcut)
     rename: deps.cycle?.renameMiniCycle,
     delete: deps.cycle?.deleteMiniCycle,
     check: deps.progress?.checkMiniCycle,

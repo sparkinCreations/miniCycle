@@ -323,7 +323,10 @@
     var NOISE_BULLET_PATTERNS = [
         /^(?:feat|chore|fix)?:?\s*update\s+(?:app|software)\s+version\b/i,
         /^(?:feat|chore|fix)?:?\s*bump\s+version\b/i,
-        /^(?:feat|chore|fix)?:?\s*version\s+bump\b/i
+        /^(?:feat|chore|fix)?:?\s*version\s+bump\b/i,
+        // update-version.sh writes this placeholder when a release ships uncommitted
+        // work with no --release-note; it is a note to the author, never release text.
+        /^TODO\(changelog\)/
     ];
 
     function isNoiseBullet(text) {

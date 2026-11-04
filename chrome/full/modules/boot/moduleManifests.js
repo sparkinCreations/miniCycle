@@ -212,7 +212,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/modalManager.js',
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'safeAddEventListener', 'getModal'],
-        optionalDeps: ['hideMainMenu', 'waitForCore'],
+        optionalDeps: ['hideMainMenu', 'waitForCore', 'AppState'],
         provides: ['hasActiveNotifications'],
         provideInstance: 'modalManager',
         api: 'ui'
@@ -427,8 +427,8 @@ export const MODULE_MANIFESTS = {
         // checkCompleteAllButton + updateStatsPanel removed Aug 2026: the module
         // declared them and never called them. The post-switch refresh runs in
         // routineLoader.updateDependentComponents(), reached via loadMiniCycle().
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
-        provides: ['switchMiniCycle', 'renameMiniCycle', 'deleteMiniCycle'],
+        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'showRoutineBrowserTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
+        provides: ['switchMiniCycle', 'stepRecentRoutine', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
     },
@@ -470,7 +470,7 @@ export const MODULE_MANIFESTS = {
         path: '../ui/menuManager.js',
         phase: PHASES.CYCLE,  // Phase 5 (not Phase 6 UI_MANAGERS) because routineManager needs it in same phase
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['activateFocusMode', 'checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'enableUndoSystemOnFirstInteraction', 'loadMiniCycle', 'organizeCompletedTasks', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateHelpWindow', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
+        optionalDeps: ['activateFocusMode', 'checkCompleteAllButton', 'checkGamesUnlock', 'createNewMiniCycle', 'enableUndoSystemOnFirstInteraction', 'loadMiniCycle', 'onCycleCreated', 'organizeCompletedTasks', 'recurringPanel', 'showConfirmationModal', 'showPromptModal', 'switchMiniCycle', 'trackAction', 'updateCycleData', 'updateCycleModeDescription', 'updateHelpWindow', 'updateProgressBar', 'updateStatsPanel', 'updateUndoRedoButtons'],
         provides: ['hideMainMenu', 'updateMainMenuHeader', 'clearAllTasks', 'deleteAllTasks', 'applyMenuSectionOpenState'],
         api: 'ui',            // Exports to deps.ui — api category != phase
         singleton: true
@@ -509,7 +509,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'getElementById', 'querySelector', 'getBody', 'getRootElement', 'getActiveElement', 'showNotification', 'safeAddEventListener'],
         optionalDeps: ['isModalOpen'],
-        provides: ['startGuidedTour', 'markTourWelcomeShown', 'enableTourPrompts', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'showHistoryTourNotification', 'showClearedTasksTourNotification', 'showAchievementsTourNotification'],
+        provides: ['startGuidedTour', 'markTourWelcomeShown', 'enableTourPrompts', 'showStatsTourNotification', 'showPersonalizationTourNotification', 'showTaskOptionsTourNotification', 'showRemindersTourNotification', 'showMenuTourNotification', 'showSettingsTourNotification', 'showRoutineSwitcherTourNotification', 'showRoutineBrowserTourNotification', 'showRecurringListTourNotification', 'showRecurringSettingsTourNotification', 'showHistoryTourNotification', 'showClearedTasksTourNotification', 'showAchievementsTourNotification'],
         provideInstance: 'guidedTourManager',
         api: 'ui',
         after: ['onboardingManager']

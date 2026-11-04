@@ -241,7 +241,7 @@ export function saveUndoStackToIndexedDB(cycleId, undoStack, redoStack, options 
         console.error('💾 Storage quota exceeded - undo history not saved');
         if (_deps.showNotification) {
           _deps.showNotification(
-            '⚠️ ' + getLabel('notify.undoStorageFull'),
+            getLabel('notify.undoStorageFull'),
             'warning',
             UI_TIMEOUTS.NOTIFICATION_SLOW
           );

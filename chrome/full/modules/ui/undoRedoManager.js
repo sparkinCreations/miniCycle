@@ -36,6 +36,7 @@ import { LIMITS, DEBOUNCE, DOM_IDS, APP_VERSION, UI_TIMEOUTS, EVENTS } from '../
 // undo also calls `describeChange` directly, to name the step it takes back.
 import { computeTransactionDiff, describeChange } from './undoTransactionDiff.js';
 import { clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { undoRedoShortcut } from '../utils/keyboardNav.js';
 
 // Re-exported because it was part of this module's public surface before the
 // split and the test suite imports it from here. Not a `provides` name.
@@ -400,14 +401,13 @@ export function wireUndoRedoKeyboardShortcuts() {
 
   assertInjected('safeAddEventListener', _deps.safeAddEventListener);
 
+  // Same key reading as uiBoot's handler (undoRedoShortcut) — the two must not drift.
   _handleUndoRedoKeydown = function handleUndoRedoKeydown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      performStateBasedUndo();
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-      e.preventDefault();
-      performStateBasedRedo();
-    }
+    const action = undoRedoShortcut(e);
+    if (!action) return;
+    e.preventDefault();
+    if (action === 'undo') performStateBasedUndo();
+    else performStateBasedRedo();
   };
 
   _deps.safeAddEventListener(document, 'keydown', _handleUndoRedoKeydown);
@@ -568,6 +568,33 @@ function relabelOnRekey(producer, globalState) {
   };
 }
 
+// AppState instances already told to report other tabs' saves (one per
+// instance, so a boot retry's fresh AppState subscribes again).
+const _otherTabSubscriptions = new WeakSet();
+
+/**
+ * Drop this tab's undo/redo steps when state is replaced by another tab's save.
+ *
+ * Adopting another tab's save goes around AppState.update(), so no step is
+ * recorded for it — and the steps already on the stack describe this tab's
+ * OLDER view. Undo then put that view back and saved it, erasing the other
+ * tab's change in both tabs. Those steps no longer describe anything that can
+ * be cleanly reversed, so they go.
+ * @returns {void}
+ */
+function subscribeToOtherTabChanges() {
+  const appState = _deps.AppState;
+  if (typeof appState?.subscribe !== 'function' || _otherTabSubscriptions.has(appState)) return;
+  _otherTabSubscriptions.add(appState);
+  appState.subscribe('undo-other-tab', (_newState, _oldState, meta) => {
+    if (!meta?.external) return;
+    if (!_deps.AppGlobalState.activeUndoStack.length && !_deps.AppGlobalState.activeRedoStack.length) return;
+    _deps.AppGlobalState.activeUndoStack = [];
+    _deps.AppGlobalState.activeRedoStack = [];
+    updateUndoRedoButtons();
+  });
+}
+
 /**
  * Set up AppState subscription for automatic snapshots
  */
@@ -671,15 +698,8 @@ export function captureStateSnapshot(state) {
   const currentCycle = getRoutine(state, activeCycle);
   if (!currentCycle) return;
 
-  // Safety check: Ensure we're tracking the right cycle
-  // Self-heal via onCycleSwitched — stale activeCycleIdForUndo permanently disables undo
-  if (_deps.AppGlobalState.activeCycleIdForUndo &&
-      _deps.AppGlobalState.activeCycleIdForUndo !== activeCycle) {
-    console.warn(`⚠️ Cycle mismatch: was tracking "${_deps.AppGlobalState.activeCycleIdForUndo}", correcting to "${activeCycle}"`);
-    onCycleSwitched(activeCycle).catch(() => {});
-    return;
-  }
-
+  // Built now, whatever happens next: `state` is the LIVE state, and the
+  // update this step belongs to changes it as soon as we return.
   const snapshot = {
     activeCycleId: activeCycle,
     tasks: structuredClone(currentCycle.tasks || []),
@@ -699,6 +719,33 @@ export function captureStateSnapshot(state) {
     timestamp: Date.now()
   };
 
+  // Safety check: Ensure we're tracking the right cycle.
+  // Self-heal via onCycleSwitched — a stale activeCycleIdForUndo permanently
+  // disables undo — and THEN record this step on the stack it belongs to.
+  // The heal used to return without recording, so the change that revealed
+  // the mismatch could not be undone.
+  if (_deps.AppGlobalState.activeCycleIdForUndo &&
+      _deps.AppGlobalState.activeCycleIdForUndo !== activeCycle) {
+    console.warn(`⚠️ Cycle mismatch: was tracking "${_deps.AppGlobalState.activeCycleIdForUndo}", correcting to "${activeCycle}"`);
+    onCycleSwitched(activeCycle)
+      .then(() => {
+        if (_deps.AppGlobalState.activeCycleIdForUndo === activeCycle) recordSnapshot(snapshot, activeCycle);
+      })
+      .catch(() => {});
+    return;
+  }
+
+  recordSnapshot(snapshot, activeCycle);
+}
+
+/**
+ * Put a built snapshot on the active undo stack (deduplicated), clear redo for
+ * a genuine user action, refresh the buttons and persist.
+ * @param {Object} snapshot - from captureStateSnapshot
+ * @param {string} activeCycle - the routine it belongs to
+ * @returns {void}
+ */
+function recordSnapshot(snapshot, activeCycle) {
   // ✅ Build and cache signature once for reuse
   const sig = buildSnapshotSignature(snapshot);
   snapshot._sig = sig;  // Cache on object
@@ -1030,7 +1077,7 @@ export async function performStateBasedUndo() {
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeUndoStack);
       const stepsText = stepsLeft === 0 ? getLabel('notify.undoStepsNone') :
                         getLabel('notify.undoStepsLeft', { vars: { count: stepsLeft } });
-      _deps.showNotification('↩️ ' + getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      _deps.showNotification(getLabel('notify.undoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'history' });
     }
 
     // Clear dedup trackers so the next user-initiated change is always captured
@@ -1062,7 +1109,7 @@ export async function performStateBasedUndo() {
       updateUndoRedoButtons();
 
       if (_deps.showNotification) {
-        _deps.showNotification('⚠️ ' + getLabel('notify.undoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        _deps.showNotification(getLabel('notify.undoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       }
     } catch (rollbackError) {
       console.error('❌ Rollback also failed:', rollbackError);
@@ -1231,7 +1278,7 @@ export async function performStateBasedRedo() {
       const stepsLeft = countStepsThatChangeState(_deps.AppGlobalState.activeRedoStack);
       const stepsText = stepsLeft === 0 ? getLabel('notify.redoStepsNone') :
                         getLabel('notify.redoStepsLeft', { vars: { count: stepsLeft } });
-      _deps.showNotification('↪️ ' + getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      _deps.showNotification(getLabel('notify.redoAction', { vars: { description: changeDesc, steps: stepsText } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'redo' });
     }
 
     // Clear dedup trackers so the next user-initiated change is always captured
@@ -1257,7 +1304,7 @@ export async function performStateBasedRedo() {
       updateUndoRedoButtons();
 
       if (_deps.showNotification) {
-        _deps.showNotification('⚠️ ' + getLabel('notify.redoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+        _deps.showNotification(getLabel('notify.redoFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       }
     } catch (rollbackError) {
       console.error('❌ Rollback also failed:', rollbackError);
@@ -1388,7 +1435,7 @@ export async function onCycleSwitched(newCycleId) {
     updateUndoRedoButtons();
 
     if (_deps.showNotification) {
-      _deps.showNotification('⚠️ ' + getLabel('notify.undoHistoryUnavailableCycle'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+      _deps.showNotification(getLabel('notify.undoHistoryUnavailableCycle'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
   } finally {
     // ✅ Always clear the flag, even on error
@@ -1528,6 +1575,10 @@ export async function initUndoSystemForApp() {
       console.warn('🧹 Undo history cleared after the stored-data migration');
     }
 
+    // Before the first-run return below: a first-run tab can still adopt
+    // another tab's save once it has data.
+    subscribeToOtherTabChanges();
+
     if (!activeCycleId) {
       // Normal for first-time users — onboarding hasn't completed yet
       return;
@@ -1615,7 +1666,7 @@ export async function initUndoSystemForApp() {
     updateUndoRedoButtons();
 
     if (_deps.showNotification) {
-      _deps.showNotification('⚠️ ' + getLabel('notify.undoHistoryUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
+      _deps.showNotification(getLabel('notify.undoHistoryUnavailable'), 'warning', UI_TIMEOUTS.NOTIFICATION_LONG);
     }
   }
 }

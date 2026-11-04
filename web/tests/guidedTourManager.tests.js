@@ -63,7 +63,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
     function cleanupDom() {
         document.querySelectorAll(
             '.tour-overlay, .tour-spotlight, .tour-tooltip, ' +
-            '#quick-actions-btn, #progressBar, #mode-selector, ' +
+            '#quick-actions-btn, #progressBar, #mode-picker-btn, ' +
             '#help-window, #quick-actions-window, #personalization-btn, ' +
             '#quick-dark-toggle, #slide-right, #retake-guided-tour, ' +
             '#current-routine-status, #history-btn, '
@@ -96,8 +96,8 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             rect: { left: 48, top: 290, width: 280, height: 16 }
         });
 
-        createTarget('select', {
-            id: 'mode-selector',
+        createTarget('button', {
+            id: 'mode-picker-btn',
             rect: { left: 200, top: 60, width: 160, height: 36 }
         });
 
@@ -328,7 +328,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         manager.startTour();
 
         // Filter: setupTargets() omits focus-mode-btn (step 1 of original 5) and
-        // routine-switcher-btn (step 4), so _filteredSteps = [mode-selector,
+        // routine-switcher-btn (step 4), so _filteredSteps = [mode-picker-btn,
         // help-window, personalization-btn]. Persisted step 2 = personalization-btn.
         if (manager._currentStepIndex !== 2) {
             throw new Error(`Expected current step 2, got ${manager._currentStepIndex}`);
@@ -460,7 +460,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
 
         manager.startTour();
 
-        // Without help-window, filtered = [mode-selector, personalization-btn]
+        // Without help-window, filtered = [mode-picker-btn, personalization-btn]
         if (manager._steps.length !== 2) {
             throw new Error(`Expected 2 filtered steps, got ${manager._steps.length}`);
         }
@@ -473,7 +473,7 @@ export async function runGuidedTourManagerTests(resultsDiv) {
             settings: { onboardingCompleted: true, guidedTourStep: null }
         });
 
-        // Filtered steps: [mode-selector (0), help-window (1), personalization-btn (2)]
+        // Filtered steps: [mode-picker-btn (0), help-window (1), personalization-btn (2)]
         manager.startTour();
         manager.showStep(2);
         manager.prevStep();

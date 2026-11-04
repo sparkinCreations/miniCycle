@@ -56,8 +56,9 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName, APP_URL } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
+import { replayAnimationClass } from '../utils/motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
@@ -456,7 +457,7 @@ const SHORTCUT_MODE_ORDER = ['auto-cycle', 'manual-cycle', 'todo-mode'];
 const SHORTCUT_TARGETS = Object.freeze({
   NEW_ROUTINE:      [DOM_IDS.NEW_MINI_CYCLE],
   OPEN_ROUTINE:     [DOM_IDS.ROUTINE_SWITCHER_BTN],
-  NEXT_MODE:        [DOM_IDS.MODE_SELECTOR],
+  NEXT_MODE:        [DOM_IDS.MODE_PICKER_BTN],
   FOCUS_VIEW:       [DOM_IDS.FOCUS_MODE_BTN, DOM_IDS.FOCUS_MODE_EXIT_BTN],
   TOGGLE_INPUT_BAR: [DOM_IDS.TOGGLE_TASK_INPUT_BTN],
   USER_MANUAL:      [DOM_IDS.OPEN_USER_MANUAL],
@@ -736,13 +737,13 @@ function handleResetTaskViewLayoutClick() {
     try {
       const ok = resetTaskViewLayout();
       if (ok) {
-        showNotification?.('🔄 ' + getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        showNotification?.(getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
       } else {
-        showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        showNotification?.(getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
       }
     } catch (err) {
       console.error('❌ Failed to reset task view layout:', err);
-      showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      showNotification?.(getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
   };
 
@@ -772,7 +773,7 @@ async function handleResetNotificationPosition() {
 
   if (!AppState?.isReady?.()) {
     console.error('❌ AppState not ready for reset notification position');
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     return;
   }
 
@@ -792,10 +793,10 @@ async function handleResetNotificationPosition() {
       console.warn('⚠️ Could not reset notification position UI:', e);
     }
 
-    showNotification?.('🔄 ' + getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
   }
 }
 
@@ -1309,7 +1310,14 @@ export async function finalizeUI(options) {
       completeAllButton,
       'click',
       '__miniCycleUiBootCompleteAllClickHandler',
-      () => getHandleCompleteAllTasks?.()?.()
+      () => {
+        // The glyph answers the press: the arrows turn once (reset), the
+        // broom sweeps (clear). Motion tokens zero it under reduced motion.
+        const clearing = document.body.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
+        replayAnimationClass(completeAllButton, DOM_CLASSES.ACTION_PLAYING,
+          clearing ? '--anim-action-sweep' : '--anim-action-spin');
+        getHandleCompleteAllTasks?.()?.();
+      }
     );
   }
 
@@ -1355,6 +1363,9 @@ export async function finalizeUI(options) {
   // non-blocking notice — so a silently-missing feature doesn't go unnoticed.
   featureAvailability.showDegradedModeWarning(getShowNotification());
 
+  // A returning user sent here once from the old address: say the app moved.
+  announceAppMove();
+
   // Origin hygiene (docs-subdomain move, Jul 2026): Docsify's search plugin
   // used to store a multi-MB full-text index in THIS origin's localStorage
   // when the docs lived at minicycle.app/docs. The docs now live on their own
@@ -1368,6 +1379,27 @@ export async function finalizeUI(options) {
     }
   } catch { /* storage unavailable — nothing to clean */ }
 
+}
+
+/**
+ * minicycle.app/ became the product page and the app moved to /app (Nov
+ * 2026). A returning user who opens the bare domain is sent here ONCE by
+ * pages/product-returning.js with ?moved=1: say why, and take the marker out
+ * of the address bar so it is not bookmarked or shared.
+ * @returns {void}
+ */
+function announceAppMove() {
+  let params;
+  try { params = new URLSearchParams(location.search); } catch { return; }
+  if (params.get('moved') !== '1') return;
+  params.delete('moved');
+  const query = params.toString();
+  history.replaceState(history.state, '', location.pathname + (query ? `?${query}` : '') + location.hash);
+  const home = new URL(APP_URL).host;
+  getShowNotification()?.(
+    getLabel('notify.appMoved', { vars: { app: `${home}/app`, home } }),
+    'info', UI_TIMEOUTS.NOTIFICATION_OVERLAY, { icon: 'bookmark' }
+  );
 }
 
 // ============================================================================

@@ -42,11 +42,8 @@ EXEMPT = {
     # The in-browser test runner is developer-only and versioned by cache-buster
     # query params, so a stale copy is not a user-facing problem.
     '/tests/module-test-suite',
-    # Not a page at all: a copy-paste snippet file whose own content reads "Add
-    # this new tab to your existing testing modal HTML". Nothing in the codebase
-    # references it, and nothing navigates to it. It probably should not be
-    # deployed at all — see AUDIT_RESIDUALS — but a cache rule is not the fix.
-    '/modules/testing/testing-modal-tab-html',
+    # (modules/testing/testing-modal-tab-html.html was exempt here until Nov
+    # 2026: a copy-paste snippet nothing loaded. Deleted — see AUDIT_RESIDUALS.)
 }
 
 

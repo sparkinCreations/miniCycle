@@ -2,20 +2,24 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <!-- Returning users are sent to /app once, with a "we moved" notice. -->
+    <script src="/pages/product-returning.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reusable Routine Checklist App | miniCycle</title>
     <meta name="description" content="Reusable routine checklists that reset when done. Inspections, opening procedures, rounds, workouts — free, private, offline. A lightweight SOP checklist too.">
-    <!-- One permanent URL. /pages/product (no extension) also serves this page and
-         the old minicycleapp.com domain redirects here; this tag plus the sitemap
-         and og:url all name the same address so nothing competes with it. -->
-    <link rel="canonical" href="https://minicycle.app/pages/product.html">
+    <!-- One permanent URL: the site root (Nov 2026; the app is at /app). The root
+         serves this file, /pages/product and the old minicycleapp.com domain
+         redirect to it, and /pages/product.html still answers — so this tag,
+         the sitemap and og:url all name the root and nothing competes with it.
+         Links in this page are root-absolute so they resolve from either path. -->
+    <link rel="canonical" href="https://minicycle.app/">
     <!-- Blue-background square icon, matching the app and the store listings. -->
     <link rel="icon" type="image/png" href="../assets/images/logo/pwa-icons/icon-192.png">
     <link rel="apple-touch-icon" href="../assets/images/logo/pwa-icons/icon-192.png">
 
     <!-- Open Graph / Social -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://minicycle.app/pages/product.html">
+    <meta property="og:url" content="https://minicycle.app/">
     <meta property="og:title" content="miniCycle - Routine Checklists That Reset Automatically">
     <meta property="og:description" content="Reusable checklists for routines and repeatable procedures. Build it once — it resets every time you finish. Free, private, works offline. No account needed.">
     <meta property="og:image" content="https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png">
@@ -48,7 +52,7 @@
       "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
       "creator": { "@type": "Organization", "name": "sparkinCreations", "url": "https://sparkincreations.com" },
       "screenshot": "https://minicycle.app/assets/images/Product/Light_and_Dark_no_background.png",
-      "softwareVersion": "2.656",
+      "softwareVersion": "2.666",
       "datePublished": "2025",
       "featureList": ["Auto-Reset Workflow Cycles","Recurring Task Scheduling","Task Search, Filter & Sort","Drag-and-Drop Reordering","Vocabulary Theme System","Achievement & Milestone Tracking","Undo/Redo History","Smart Routine Reminders","Export & Import .mcyc Files","Dark Mode & Custom Themes","Cross-Platform PWA"]
     }
@@ -102,11 +106,14 @@
             --shadow-elevated: 0 12px 40px rgba(0, 0, 0, 0.1);
 
             --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            --font-heading: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         /* Poppins (self-hosted) */
         @font-face { font-family: 'Poppins'; font-style: normal; font-weight: 600; font-display: swap; src: url('../assets/fonts/poppins-600.woff2') format('woff2'); }
+        /* Arial Bold scaled to Poppins SemiBold's width (measured 1.065x), so the headline wraps the same
+           before and after the swap — without it the phone h1 gains a line when Poppins lands (CLS 0.03). */
+        @font-face { font-family: 'Poppins Fallback'; font-weight: 600; src: local('Arial Bold'), local('Arial-BoldMT'), local('Helvetica Bold'); size-adjust: 106.5%; ascent-override: 98.6%; descent-override: 32.9%; line-gap-override: 9.4%; }
 
         /* ============================
            Base (Mobile-First)
@@ -118,7 +125,7 @@
            Header
            ============================ */
         header {
-            background: rgba(0, 68, 187, 0.6);
+            background: rgba(0, 68, 187, 0.85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             padding: var(--space-sm) 0;
@@ -130,7 +137,7 @@
         .header-content { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
         .header-subtitle { max-width: 1200px; margin: 0 auto; padding: 4px 20px 0; }
         @media (min-width: 768px) { .header-subtitle { padding: 6px 20px 2px; } }
-        .logo-tagline { display: inline-block; font-family: var(--font-heading); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: rgba(255, 255, 255, 0.8); line-height: 1.2; }
+        .logo-tagline { display: inline-block; font-family: var(--font-heading); font-size: 0.6rem; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-white); line-height: 1.2; }
         @media (min-width: 768px) { .logo-tagline { font-size: 0.65rem; letter-spacing: 0.14em; } }
         /* The tagline shares the header row with the Try Now button on phones (its
            left edge is ~196px in at 320px wide), so the line must stay short AND
@@ -140,10 +147,13 @@
         .logo-link img { height: 36px; width: auto; }
         .logo-wordmark { height: 28px; width: auto; filter: brightness(0) invert(1); }
         .header-nav { display: flex; gap: var(--space-md); align-items: center; }
-        .header-nav a { color: rgba(255, 255, 255, 0.9); text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; display: none; }
+        .header-nav a { color: var(--color-white); text-decoration: none; font-weight: 500; font-size: 0.95rem; transition: color 0.2s; display: none; }
         .header-nav a:hover { color: var(--color-white); }
-        header .cta-btn { display: inline-block; position: absolute; top: 50%; right: max(20px, calc(50% - 580px)); transform: translateY(-50%); z-index: 2; background: var(--color-white); color: var(--color-primary); padding: 0.6rem 1.4rem; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s; }
+        header .cta-btn { display: inline-block; position: absolute; top: 50%; right: max(20px, calc(50% - 580px)); transform: translateY(-50%); z-index: 2; background: var(--color-white); color: var(--color-primary-dark); padding: 0.6rem 1.4rem; border-radius: var(--radius-pill); font-weight: 600; font-size: 0.95rem; text-decoration: none; transition: transform 0.2s, box-shadow 0.2s, background 0.2s, color 0.2s; }
         header .cta-btn:hover { background: transparent; color: var(--color-white); box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85), 0 4px 16px rgba(0, 0, 0, 0.2); transform: translateY(calc(-50% - 2px)); }
+        /* The five links need ~940px to clear the logo (measured: at 800px they overlapped it by
+           117px); below that the header is logo + Try Now, as on phones. */
+        @media (min-width: 940px) { .header-nav a { display: inline; } }
         @media (min-width: 768px) { .header-nav { position: absolute; top: 50%; right: max(140px, calc(50% - 460px)); transform: translateY(-50%); z-index: 1; } }
 
         /* ============================
@@ -154,7 +164,7 @@
         .section-title { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 600; margin-bottom: var(--space-xs); color: var(--color-text-dark); text-align: center; }
         .section-subtitle { font-size: 1rem; color: var(--color-text-muted); text-align: center; margin-bottom: var(--space-lg); }
 
-        .cta-primary { display: inline-block; background: var(--color-primary); color: var(--color-white); padding: 0.9rem 2rem; border-radius: var(--radius-pill); font-weight: 600; text-decoration: none; font-size: 1.05rem; white-space: nowrap; box-shadow: 0 8px 22px rgba(0, 136, 255, 0.32); transition: transform 0.2s, box-shadow 0.2s; }
+        .cta-primary { display: inline-block; background: var(--color-primary-dark); color: var(--color-white); padding: 0.9rem 2rem; border-radius: var(--radius-pill); font-weight: 600; text-decoration: none; font-size: 1.05rem; white-space: nowrap; box-shadow: 0 8px 22px rgba(0, 136, 255, 0.32); transition: transform 0.2s, box-shadow 0.2s; }
         .cta-primary:hover { transform: translateY(-3px); box-shadow: 0 14px 32px rgba(0, 136, 255, 0.4); }
         .cta-secondary { display: inline-block; color: var(--color-navy); padding: 0.9rem 2rem; border-radius: var(--radius-pill); font-weight: 600; text-decoration: none; font-size: 1.05rem; white-space: nowrap; border: 2px solid var(--color-navy); transition: background 0.2s, color 0.2s; }
         .cta-secondary:hover { background: var(--color-navy); color: var(--color-white); }
@@ -185,8 +195,8 @@
            middot run above in the same grey as the trust claims, so it read as a
            fourth claim rather than an action. min-height keeps the tap target at
            the 44px floor; the text alone is ~24px. */
-        .hero-learn-more { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.25rem; font-size: 0.95rem; font-weight: 600; color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s; }
-        .hero-learn-more:hover { color: var(--color-primary-dark); }
+        .hero-learn-more { display: inline-flex; align-items: center; min-height: 44px; margin-top: 0.25rem; font-size: 0.95rem; font-weight: 600; color: var(--color-primary-dark); text-decoration: underline; text-underline-offset: 3px; transition: color 0.2s; }
+        .hero-learn-more:hover { color: var(--color-navy); }
 
         /* Mobile hero: phone-on-desk photo only */
         .hero-desk-photo { display: block; width: 100%; max-width: 320px; margin: 0 auto; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
@@ -209,7 +219,7 @@
         @media (hover: hover) {
             .step-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-card-hover); }
         }
-        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary); color: var(--color-white); font-family: var(--font-heading); font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-xs); }
+        .step-number { width: 40px; height: 40px; border-radius: 50%; background: var(--color-primary-dark); color: var(--color-white); font-family: var(--font-heading); font-size: 1rem; font-weight: 600; display: flex; align-items: center; justify-content: center; margin: 0 auto var(--space-xs); }
         .step-title { font-family: var(--font-heading); font-size: 1.05rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: var(--space-xs); }
         .step-desc { font-size: 0.9rem; color: var(--color-text-muted); }
         .step-arrow { color: var(--color-primary); font-size: 1.4rem; font-weight: 600; transform: rotate(90deg); opacity: 0.4; align-self: center; }
@@ -220,7 +230,7 @@
         .usecases-section { background: #eaf1f9; text-align: center; }
         .why-lines { max-width: 550px; margin: 0 auto var(--space-lg); }
         .why-line { font-size: 1.05rem; color: var(--color-text-muted); margin-bottom: var(--space-xs); }
-        .why-line-bold { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; color: var(--color-primary); margin-top: var(--space-sm); }
+        .why-line-bold { font-family: var(--font-heading); font-size: 1.25rem; font-weight: 600; color: var(--color-primary-dark); margin-top: var(--space-sm); }
         .usecase-row { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--space-xs); margin-top: var(--space-md); }
         .usecase-chip { background: var(--color-white); border: 1px solid rgba(0, 68, 187, 0.12); padding: 0.55rem 1.1rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 500; color: var(--color-text-dark); display: inline-flex; align-items: center; gap: 0.5rem; box-shadow: 0 2px 8px rgba(0, 68, 187, 0.07); }
         .usecase-chip svg { width: 17px; height: 17px; color: var(--color-primary); flex-shrink: 0; }
@@ -235,7 +245,7 @@
         /* Each row groups related links (e.g. the Lite-version entry points).
            Stacks on mobile, becomes a centered horizontal row at >=768px. */
         .secondary-links-row { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; }
-        .secondary-links a { color: var(--color-primary); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
+        .secondary-links a { color: var(--color-primary-dark); text-decoration: none; font-size: 0.9rem; font-weight: 500; }
         .secondary-links a:hover { text-decoration: underline; }
         /* Chrome Web Store badge — official borderless medium PNG, self-hosted
            under assets/images/external/ (Google branding: self-host, don't modify
@@ -250,7 +260,7 @@
         .secondary-links .cws-link:hover .cws-badge { opacity: 0.88; }
         /* Two store badges side by side: full version (primary) + lite (secondary). */
         .secondary-links .cws-badges { display: flex; gap: var(--space-lg); flex-wrap: wrap; justify-content: center; align-items: flex-start; }
-        .secondary-links .cws-caption-primary { color: var(--color-primary); font-weight: 600; }
+        .secondary-links .cws-caption-primary { color: var(--color-primary-dark); font-weight: 600; }
 
         /* "Add to Chrome" in the bottom CTA: white text link with the colored
            Chrome mark, sized to read directly on the solid blue background
@@ -265,7 +275,7 @@
            ============================ */
         .themes-section { background: #eaf1f9; }
         /* Desktop: full static image */
-        .themes-image { width: 100%; max-width: 1000px; margin: 0 auto var(--space-md); display: none; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
+        .themes-image { width: 100%; height: auto; max-width: 1000px; margin: 0 auto var(--space-md); display: none; border-radius: var(--radius-lg); box-shadow: var(--shadow-elevated); }
         /* Mobile: scrollable strip */
         .themes-scroll-wrapper { position: relative; max-width: 680px; margin: 0 auto var(--space-md); display: block; }
         .themes-scroll-wrapper::after { content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 100px; background: linear-gradient(to right, transparent, var(--color-white)); pointer-events: none; }
@@ -324,10 +334,11 @@
         .features-arrow:hover:not(:disabled) { background: var(--color-primary); color: var(--color-white); transform: scale(1.06); }
         .features-arrow:disabled { opacity: 0.35; cursor: not-allowed; }
 
-        .features-dots { display: none; justify-content: center; gap: 0.5rem; margin-top: var(--space-md); flex-wrap: wrap; }
-        .features-dot { width: 9px; height: 9px; border-radius: 50%; background: rgba(0, 136, 255, 0.22); border: none; cursor: pointer; padding: 0; transition: background 0.2s, transform 0.2s; }
-        .features-dot:hover { background: rgba(0, 136, 255, 0.5); }
-        .features-dot.active { background: var(--color-primary); transform: scale(1.3); }
+        .features-dots { display: none; justify-content: center; gap: 0; margin-top: var(--space-md); flex-wrap: wrap; }
+        .features-dot { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; background: transparent; border: none; cursor: pointer; padding: 0; }
+        .features-dot::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: rgba(0, 136, 255, 0.22); transition: background 0.2s, transform 0.2s; }
+        .features-dot:hover::before { background: rgba(0, 136, 255, 0.5); }
+        .features-dot.active::before { background: var(--color-primary); transform: scale(1.3); }
 
         .features-progress { display: block; margin: var(--space-md) auto 0; max-width: 180px; height: 4px; background: rgba(0, 136, 255, 0.15); border-radius: 2px; overflow: hidden; position: relative; }
         .features-progress-bar { position: absolute; top: 0; left: 0; bottom: 0; width: 0; background: var(--color-primary); border-radius: 2px; transition: width 0.25s ease; }
@@ -385,7 +396,7 @@
         .timeline-item:last-child { padding-bottom: 0; }
         .timeline-item::before { content: ''; position: absolute; left: -24px; top: 6px; width: 10px; height: 10px; border-radius: 50%; background: var(--color-primary); border: 2px solid #eaf1f9; }
         .timeline-item:first-child::before { background: var(--color-primary); box-shadow: 0 0 0 3px rgba(0, 136, 255, 0.2); }
-        .timeline-date { font-size: 0.75rem; color: var(--color-text-light); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; }
+        .timeline-date { font-size: 0.75rem; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 0.15rem; }
         .timeline-title { font-family: var(--font-heading); font-size: 0.95rem; font-weight: 600; color: var(--color-text-dark); margin-bottom: 0.15rem; }
         .timeline-desc { font-size: 0.85rem; color: var(--color-text-muted); line-height: 1.5; }
         /* Collapsed extra timeline items — revealed by the "Show more" toggle. */
@@ -395,8 +406,8 @@
         .timeline-more-btn:hover { color: var(--color-primary); text-decoration: underline; text-underline-offset: 3px; }
 
         /* Changelog toggle */
-        .changelog-toggle-btn { display: block; margin: 0 auto var(--space-md); background: transparent; border: 1px solid var(--color-primary); color: var(--color-primary); padding: 0.5rem 1.4rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; font-family: inherit; }
-        .changelog-toggle-btn:hover { background: var(--color-primary); color: var(--color-white); }
+        .changelog-toggle-btn { display: block; margin: 0 auto var(--space-md); background: transparent; border: 1px solid var(--color-primary-dark); color: var(--color-primary-dark); padding: 0.5rem 1.4rem; border-radius: var(--radius-pill); font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: background 0.2s, color 0.2s; font-family: inherit; }
+        .changelog-toggle-btn:hover { background: var(--color-primary-dark); color: var(--color-white); }
         .changelog-container { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; }
         .changelog-container.open { max-height: 2000px; overflow-y: auto; transition: max-height 0.5s ease-in; }
         .changelog-container::-webkit-scrollbar { width: 5px; }
@@ -408,7 +419,7 @@
         .changelog-question:hover { background: rgba(0, 0, 0, 0.02); }
         .cl-header-row { display: flex; justify-content: space-between; align-items: center; }
         .cl-left { display: flex; align-items: center; gap: 0.45rem; }
-        .cl-badge { background: var(--color-primary); color: var(--color-white); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 20px; letter-spacing: 0.02em; }
+        .cl-badge { background: var(--color-primary-dark); color: var(--color-white); font-size: 0.65rem; font-weight: 600; padding: 0.15rem 0.45rem; border-radius: 20px; letter-spacing: 0.02em; }
         .cl-right { display: flex; align-items: center; gap: 0.5rem; }
         .cl-date { font-size: 0.8rem; color: var(--color-text-muted); font-weight: 400; }
         .cl-expand { font-size: 1.3rem; color: var(--color-primary); transition: transform 0.3s; line-height: 1; }
@@ -447,13 +458,13 @@
         /* ============================
            Bottom CTA
            ============================ */
-        .cta-section { background: var(--color-primary); color: var(--color-white); text-align: center; padding: var(--space-2xl) var(--space-lg); }
+        .cta-section { background: var(--color-primary-dark); color: var(--color-white); text-align: center; padding: var(--space-2xl) var(--space-lg); }
         .cta-section h2 { font-family: var(--font-heading); font-size: 1.8rem; font-weight: 600; margin-bottom: var(--space-xs); }
         .cta-section p { font-size: 1rem; opacity: 0.9; margin-bottom: var(--space-lg); }
-        .cta-section .cta-primary { background: var(--color-white); color: var(--color-primary); }
+        .cta-section .cta-primary { background: var(--color-white); color: var(--color-primary-dark); }
         .cta-section .cta-primary:hover { box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15); }
         .cta-section .cta-secondary { color: var(--color-white); border-color: var(--color-white); }
-        .cta-section .cta-secondary:hover { background: var(--color-white); color: var(--color-primary); }
+        .cta-section .cta-secondary:hover { background: var(--color-white); color: var(--color-primary-dark); }
         .cta-section .cta-row { display: flex; flex-direction: column; gap: var(--space-sm); align-items: center; }
 
         /* ============================
@@ -490,7 +501,6 @@
            Desktop (768px+)
            ============================ */
         @media (min-width: 768px) {
-            .header-nav a { display: inline; }
             section { padding: var(--space-2xl) 0; }
             .section-title { font-size: 2rem; }
             .hero-headline { font-size: 2.6rem; }
@@ -542,18 +552,18 @@
 
     <header role="banner">
         <div class="header-content">
-            <a href="product.html" class="logo-link">
-                <img src="../assets/images/logo/logo.png" alt="miniCycle" class="logo-icon">
-                <img src="../assets/images/logo/App_Name_miniCycle.png" alt="miniCycle" class="logo-wordmark">
+            <a href="/" class="logo-link">
+                <img src="../assets/images/logo/logo-1x.png" srcset="../assets/images/logo/logo-2x.png 2x, ../assets/images/logo/logo-3x.png 3x" alt="miniCycle" class="logo-icon" width="41" height="36">
+                <img src="../assets/images/logo/App_Name_miniCycle-h36.png" srcset="../assets/images/logo/App_Name_miniCycle-h72.png 2x, ../assets/images/logo/App_Name_miniCycle-h108.png 3x" alt="miniCycle" class="logo-wordmark" width="141" height="36">
             </a>
             <nav class="header-nav" aria-label="Page navigation">
                 <a href="#how-it-works">How It Works</a>
                 <a href="#demos">See It In Action</a>
                 <a href="#features">Features</a>
-                <a href="learn_more.html">Learn More</a>
-                <a href="mcyc-format.html">.mcyc Format</a>
+                <a href="/pages/learn_more.html">Features &amp; FAQ</a>
+                <a href="/pages/mcyc-format.html">.mcyc Format</a>
             </nav>
-            <a href="../miniCycle.html" class="cta-btn" data-track="app-launch">Try Now</a>
+            <a href="/app" class="cta-btn" data-track="app-launch">Try Now</a>
         </div>
         <div class="header-subtitle">
             <span class="logo-tagline">Reusable routine checklists</span>
@@ -570,7 +580,7 @@
                     <h1 class="hero-headline">Routine checklists that reset automatically.</h1>
                     <p class="hero-sub">Made by an inspector. Build your checklist once, follow each step, and start fresh when you finish — for inspections, rounds, opening and closing procedures, workouts, study sessions, and any routine you repeat.</p>
                     <div class="hero-ctas">
-                        <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
+                        <a href="/app" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
                         <a href="#demos" class="cta-secondary">See It In Action</a>
                     </div>
                     <div class="hero-chrome">
@@ -579,10 +589,10 @@
                         </a>
                     </div>
                     <p class="trust-text">Free forever &middot; No account needed &middot; Your data stays on your device</p>
-                    <a href="learn_more.html" class="hero-learn-more">Learn more &#8594;</a>
+                    <a href="/pages/learn_more.html" class="hero-learn-more">See features &amp; FAQ &#8594;</a>
                 </div>
                 <div class="hero-desk-photo">
-                    <img src="../assets/images/Product/phone-on-desk-updated.webp" alt="miniCycle open on a phone, ready for a routine">
+                    <img src="../assets/images/Product/phone-on-desk-updated-320.webp" srcset="../assets/images/Product/phone-on-desk-updated-320.webp 320w, ../assets/images/Product/phone-on-desk-updated.webp 640w" sizes="320px" width="320" height="480" alt="miniCycle open on a phone, ready for a routine">
                 </div>
                 <div class="hero-mockup">
                     <div class="hero-phone">
@@ -730,7 +740,7 @@
 
             <div class="secondary-links">
                 <div class="secondary-links-row">
-                    <a href="learn_more.html">Learn more about features &#8594;</a>
+                    <a href="/pages/learn_more.html">Learn more about features &#8594;</a>
                     <a href="https://github.com/sparkinCreations/miniCycle" target="_blank" rel="noopener noreferrer">View on GitHub &#8594;</a>
                     <a href="../lite/miniCycle-lite.html">Try Lite Version &#8594;</a>
                 </div>
@@ -766,11 +776,11 @@
             <!-- Mobile: scrollable strip -->
             <div class="themes-scroll-wrapper reveal">
                 <div class="themes-scroll-track">
-                    <img class="themes-scroll-img" src="../assets/images/Product/No-Background-Unlocked-Themes-Mock-Up.webp" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal)" loading="lazy">
+                    <img class="themes-scroll-img" src="../assets/images/Product/No-Background-Unlocked-Themes-Mock-Up.webp" width="1256" height="780" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal)" loading="lazy">
                 </div>
             </div>
             <!-- Desktop: full static image -->
-            <img class="themes-image reveal" src="../assets/images/Product/Unlocked-Themes-Mock-Up.webp" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal) — each with unique colors, language, and real routines" loading="lazy">
+            <img class="themes-image reveal" src="../assets/images/Product/Unlocked-Themes-Mock-Up-1000.webp" srcset="../assets/images/Product/Unlocked-Themes-Mock-Up-1000.webp 1000w, ../assets/images/Product/Unlocked-Themes-Mock-Up.webp 1577w" sizes="(min-width: 1048px) 1000px, calc(100vw - 48px)" width="1577" height="1023" alt="Four miniCycle vocabulary themes side by side: Study Planner (purple), Habit Tracker (amber), Fitness Tracker (green), and Chore Manager (teal) — each with unique colors, language, and real routines" loading="lazy">
             <p class="themes-desc reveal">Complete cycles to unlock vocabulary themes. Each one changes the app's language, colors, and identity. Your fitness routine becomes a workout tracker. Your study list becomes a study planner.</p>
         </div>
     </section>
@@ -879,7 +889,7 @@
             <h2 class="section-title reveal">Built Different</h2>
             <div class="story-layout">
                 <div class="story-author reveal">
-                    <img class="story-photo" src="../assets/images/Product/Mo_Casual_Outdoors.jpeg" alt="Mo, creator of miniCycle" loading="lazy">
+                    <img class="story-photo" src="../assets/images/Product/Mo_Casual_Outdoors-280.webp" alt="Mo, creator of miniCycle" width="140" height="140" loading="lazy">
                     <blockquote class="story-pull-quote">&ldquo;I needed a checklist that reset every time I finished my routine. I couldn&rsquo;t find one. So I built it.&rdquo;</blockquote>
                     <p class="story-attribution">&mdash; Mo</p>
                 </div>
@@ -1113,8 +1123,8 @@
         <h2>Your routine is waiting.</h2>
         <p>Start your first cycle in under a minute.</p>
         <div class="cta-row">
-            <a href="../miniCycle.html" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
-            <a href="learn_more.html" class="cta-secondary">Learn More</a>
+            <a href="/app" class="cta-primary" data-track="app-launch">Try miniCycle Web</a>
+            <a href="/pages/learn_more.html" class="cta-secondary">Features &amp; FAQ</a>
         </div>
         <div class="cta-chrome-row">
             <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" class="cta-chrome-link" data-track="chrome-install-full" target="_blank" rel="noopener">
@@ -1136,6 +1146,6 @@
         <p>&copy; <span id="year"></span> <a href="https://sparkincreations.com" target="_blank" rel="noopener noreferrer">sparkinCreations</a> &middot; <a href="../lite/miniCycle-lite.html">Lite Version</a> &middot; <a href="https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi" target="_blank" rel="noopener">Chrome Extension</a> &middot; <a href="https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo" target="_blank" rel="noopener">Chrome Extension (Lite)</a> &middot; <a href="../legal/user-manual.html">User Manual</a> &middot; <a href="../legal/terms.html">Terms</a> &middot; <a href="../legal/privacy.html">Privacy</a> &middot; <a href="../legal/accessibility.html">Accessibility</a></p>
     </footer>
 
-    <script src="product.js"></script>
+    <script src="/pages/product.js"></script>
 </body>
 </html>

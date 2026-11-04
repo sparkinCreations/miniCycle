@@ -20,7 +20,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { SCHEMA } from '../core/constants.js';
+import { SCHEMA, ROUTINE_OPEN_VIEW, ROUTINE_BROWSER_LAYOUT, BREAKPOINTS } from '../core/constants.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -113,6 +113,22 @@ export function createInitialSchemaData() {
             // available, primary or not, which is the question that matters here.
             showThreeDots: (window.matchMedia?.('(any-pointer: coarse)')?.matches ?? false)
                 || ('ontouchstart' in window) || (navigator.maxTouchPoints || 0) > 0,
+            // Opening routines shows Browse Routines (one at a time, swipe
+            // through) when touch is the PRIMARY input — `pointer`, not
+            // `any-pointer`: a touchscreen laptop is still driven by its
+            // trackpad, and the list suits that. Decided once, here, and saved,
+            // so it never changes under the user; Settings → "When you open
+            // routines, show" changes it. Data from before Browse has no value
+            // and keeps the list (routineSwitcher._routineOpenView).
+            routineOpenView: (window.matchMedia?.('(pointer: coarse)')?.matches ?? false) ? ROUTINE_OPEN_VIEW.BROWSE : ROUTINE_OPEN_VIEW.LIST,
+            // …and on a PHONE, in the Grid layout. Cards shine where the screen
+            // shows the neighbours peeking at the sides; at phone width they are
+            // parked off-screen, so Cards is one routine at a time while Grid
+            // shows them all (Nov 2026). Touch-first AND phone-width: a tablet
+            // keeps Cards. Same "decided once" rule as above; existing data has
+            // no value and keeps Cards (cycleMode.getRoutineBrowserLayout).
+            ...((window.matchMedia?.(`(pointer: coarse) and (max-width: ${BREAKPOINTS.BROWSE_PHONE_MAX}px)`)?.matches ?? false)
+                ? { routineBrowserLayout: ROUTINE_BROWSER_LAYOUT.GRID } : {}),
             onboardingCompleted: false,
             guidedTourStep: null,
             statsTourStep: null,
@@ -122,6 +138,7 @@ export function createInitialSchemaData() {
             menuTourStep: null,
             settingsTourStep: null,
             routineSwitcherTourStep: null,
+            routineBrowserTourStep: null,
             recurringListTourStep: null,
             recurringSettingsTourStep: null,
             historyTourStep: null,

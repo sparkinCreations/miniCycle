@@ -45,9 +45,11 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { USER_MANUAL_SHORTCUTS_HASH, linkToUserManual } from '../utils/userManualLink.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { setIconText } from '../utils/icons.js';
 
 // Import for local use within this module
 import { hasActiveNotifications, isClickOnNotification, restoreFocusAfterClose } from './modalUtils.js';
@@ -68,7 +70,8 @@ const di = createDIModule('ModalManager', {
     safeAddEventListener: optional(null),
     waitForCore: optional(() => Promise.resolve(false)),
     AppMeta: optional(null),
-    getModal: optional(null)
+    getModal: optional(null),
+    AppState: optional(null)   // the Keyboard Shortcuts list shows the single keys only when they are on
 });
 
 // Late-binding deps via Proxy
@@ -148,6 +151,7 @@ export class ModalManager {
 
         this.setupFeedbackModal();
         this.setupAboutModal();
+        this.setupShortcutsModal();
         this.setupSettingsModalClickOutside();
         this.setupRemindersModalHandlers();
         this.setupGlobalKeyHandlers();
@@ -257,7 +261,7 @@ export class ModalManager {
         const emailLabel = feedbackModal.querySelector('label[for="feedback-email"]');
         const emailInput = document.getElementById(DOM_IDS.FEEDBACK_EMAIL);
 
-        if (titleEl) titleEl.textContent = getLabel('feedback.title');
+        setIconText(titleEl, 'comment', getLabel('feedback.title'));
         if (descEl) descEl.textContent = getLabel('feedback.description');
         if (closeFeedbackBtn) closeFeedbackBtn.setAttribute('aria-label', getLabel('feedback.closeAria'));
         if (feedbackText) feedbackText.placeholder = getLabel('feedback.placeholder');
@@ -265,7 +269,12 @@ export class ModalManager {
         if (emailLabel) emailLabel.textContent = getLabel('feedback.emailLabel');
         if (emailInput) emailInput.placeholder = getLabel('feedback.email');
         if (submitButton) submitButton.textContent = getLabel('feedback.submit');
-        if (thankYouMessage) thankYouMessage.textContent = '\u2705 ' + getLabel('feedback.thanks');
+        if (thankYouMessage) {
+            const icon = document.createElement('span');
+            icon.setAttribute('aria-hidden', 'true');
+            icon.textContent = '\u2705';
+            thankYouMessage.replaceChildren(icon, ' ' + getLabel('feedback.thanks'));
+        }
 
         // Use safeAddEventListener to prevent duplicate listeners
         const safeAdd = _deps.safeAddEventListener;
@@ -314,7 +323,7 @@ export class ModalManager {
                 // message optional — star-only submissions are allowed.
                 const hasRating = !!document.getElementById(DOM_IDS.FEEDBACK_RATING_VALUE)?.value;
                 if (feedbackText && feedbackText.value.trim().length < 10 && !hasRating) {
-                    this.deps.showNotification("⚠️ " + getLabel('feedback.minLengthOrRate'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    this.deps.showNotification(getLabel('feedback.minLengthOrRate'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                     feedbackText.focus();
                     return;
                 }
@@ -355,11 +364,11 @@ export class ModalManager {
                             restoreFocusAfterClose(feedbackModal);
                         }, 2000);
                     } else {
-                        this.deps.showNotification("❌ " + getLabel('feedback.errorSend'), "error");
+                        this.deps.showNotification(getLabel('feedback.errorSend'), "error");
                     }
                 })
                 .catch(error => {
-                    this.deps.showNotification("❌ " + getLabel('feedback.errorNetwork'), "error");
+                    this.deps.showNotification(getLabel('feedback.errorNetwork'), "error");
                 })
                 .finally(() => {
                     if (submitButton) {
@@ -477,6 +486,148 @@ export class ModalManager {
         safeAdd(aboutModal, "close", () => {
             restoreFocusAfterClose(aboutModal);
         });
+    }
+
+    /**
+     * Keyboard Shortcuts dialog (main menu → Help & Support; Focus View's ⋯
+     * menu clicks the same button). Same open/close/backdrop pattern as the
+     * About dialog above. The rows are rebuilt on every open from
+     * KEYBOARD_SHORTCUTS and labels, so the list cannot drift from the keys
+     * uiBoot and dragDropManager actually handle, and the modifier names match
+     * the platform (Option and ⌘ on Apple devices).
+     */
+    setupShortcutsModal() {
+        const modal = _deps.getModal('shortcuts');
+        const openBtn = document.getElementById(DOM_IDS.OPEN_SHORTCUTS_MODAL);
+        if (!modal || !openBtn) {
+            console.warn('⚠️ Keyboard shortcuts modal elements not found');
+            return;
+        }
+
+        const safeAdd = _deps.safeAddEventListener;
+        const closeBtn = modal.querySelector(DOM_SELECTORS.CLOSE_MODAL);
+
+        const label = openBtn.querySelector(`.${DOM_CLASSES.MENU_ITEM_LABEL}`);
+        if (label) label.textContent = getLabel('shortcuts.menuItem');
+        openBtn.title = getLabel('shortcuts.menuItemTitle');
+        const title = document.getElementById(DOM_IDS.SHORTCUTS_MODAL_TITLE);
+        setIconText(title, 'keyboard', getLabel('shortcuts.title'));
+        closeBtn?.setAttribute('aria-label', getLabel('shortcuts.closeAria'));
+
+        openBtn._clickHandler = () => {
+            modal._previousFocus = document.activeElement;
+            this.renderShortcutsList(document.getElementById(DOM_IDS.SHORTCUTS_LIST));
+            if (!modal.open) modal.showModal();
+        };
+        safeAdd(openBtn, "click", openBtn._clickHandler);
+
+        if (closeBtn) {
+            closeBtn._clickHandler = () => {
+                modal.close();
+                restoreFocusAfterClose(modal);
+            };
+            safeAdd(closeBtn, "click", closeBtn._clickHandler);
+        }
+
+        modal._outsideClickHandler = (event) => {
+            if (event.target === modal && !isClickOnNotification(event)) {
+                modal.close();
+                restoreFocusAfterClose(modal);
+            }
+        };
+        safeAdd(modal, "click", modal._outsideClickHandler);
+
+        // Restore focus when the dialog closes (including native Escape)
+        safeAdd(modal, "close", () => {
+            restoreFocusAfterClose(modal);
+        });
+    }
+
+    /**
+     * Fill the Keyboard Shortcuts list. textContent throughout — no innerHTML.
+     *
+     * Short on purpose (Oct 2026): it was 28 rows over two screens, "Alt +
+     * Shift" eleven times, and in Focus View the keys that matter there came
+     * eighteen rows down. Now it is five keys for the view you are in, a link
+     * to the user manual's complete list, and — while they are off — one line
+     * on where to turn on single keys. The manual is the full reference; a
+     * journey checks it lists every KEYBOARD_SHORTCUTS key, so the two cannot
+     * drift.
+     * @param {HTMLElement|null} container
+     */
+    renderShortcutsList(container) {
+        if (!container) return;
+        const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '')
+            || navigator.userAgentData?.platform === 'macOS';
+        const mod = getLabel(apple ? 'shortcuts.keyOption' : 'shortcuts.keyAlt');
+        const shift = getLabel('shortcuts.keyShift');
+        const esc = getLabel('shortcuts.keyEscape');
+        const space = getLabel('shortcuts.keySpace');
+        const app = (name) => [mod, shift, shortcutKeyName(KEYBOARD_SHORTCUTS[name])];
+        const focusView = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+        const singleKeysOn = _deps.AppState?.get?.()?.settings?.singleKeyShortcuts === true;
+
+        // Each row: [alternatives (each a list of keys pressed together), label key]
+        const rows = focusView ? [
+            [[[space]], 'shortcuts.toggleTask'],
+            [[['↑'], ['↓']], 'shortcuts.moveBetween'],
+            [[[shift, '←'], [shift, '→']], 'shortcuts.switchViews'],
+            [[[esc]], 'shortcuts.leaveFocus'],
+            [[app('SHOW_SHORTCUTS')], 'shortcuts.showList']
+        ] : [
+            [[app('NEW_ROUTINE')], 'shortcuts.newRoutine'],
+            [[app('OPEN_ROUTINE')], 'shortcuts.openRoutine'],
+            [[[space]], 'shortcuts.toggleTask'],
+            [[['↑'], ['↓']], 'shortcuts.moveBetween'],
+            [[app('FOCUS_VIEW')], 'shortcuts.focusView']
+        ];
+
+        container.replaceChildren();
+        const intro = document.createElement('p');
+        intro.className = DOM_CLASSES.SHORTCUTS_INTRO;
+        intro.textContent = getLabel('shortcuts.intro');
+        container.appendChild(intro);
+
+        const start = document.createElement('section');
+        start.className = DOM_CLASSES.SHORTCUTS_START;
+        const heading = document.createElement('h3');
+        heading.textContent = getLabel('shortcuts.groupStart');
+        const list = document.createElement('dl');
+        rows.forEach(([alternatives, labelKey]) => {
+            const row = document.createElement('div');
+            row.className = DOM_CLASSES.SHORTCUTS_ROW;
+            const keys = document.createElement('dt');
+            alternatives.forEach((combo, i) => {
+                if (i > 0) keys.appendChild(document.createTextNode(' / '));
+                combo.forEach((k, j) => {
+                    if (j > 0) keys.appendChild(document.createTextNode('+'));
+                    const kbd = document.createElement('kbd');
+                    kbd.textContent = k;
+                    keys.appendChild(kbd);
+                });
+            });
+            const what = document.createElement('dd');
+            what.textContent = getLabel(labelKey);
+            row.append(keys, what);
+            list.appendChild(row);
+        });
+        start.append(heading, list);
+        container.appendChild(start);
+
+        // Everything else: the manual, opened the way the menu's User Manual is.
+        const more = document.createElement('p');
+        more.className = DOM_CLASSES.SHORTCUTS_MORE;
+        const link = linkToUserManual(document.createElement('a'), USER_MANUAL_SHORTCUTS_HASH);
+        link.textContent = getLabel('shortcuts.allInManual');
+        more.appendChild(link);
+        container.appendChild(more);
+
+        if (!singleKeysOn) {
+            const off = document.createElement('p');
+            off.className = DOM_CLASSES.SHORTCUTS_NOTE;
+            off.textContent = getLabel('shortcuts.singleKeysOff');
+            container.appendChild(off);
+        }
     }
 
     /**

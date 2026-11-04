@@ -273,6 +273,39 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
         }
     });
 
+    await test('a new phone user browses routines in Grid; a tablet or mouse user keeps Cards', () => {
+        const realMatchMedia = window.matchMedia;
+        const run = (device) => {
+            // Answer the two device questions createInitialSchemaData asks.
+            window.matchMedia = (query) => ({
+                matches: /max-width/.test(query) ? device.coarse && device.phone : /pointer: coarse/.test(query) ? device.coarse : false,
+                media: query, addEventListener() {}, removeEventListener() {}
+            });
+            MigrationManager.setMigrationManagerDependencies({
+                storage: localStorage, sessionStorage, showNotification: () => {},
+                initialSetup: () => {}, now: () => Date.now(), document
+            });
+            MigrationManager.createInitialSchemaData();
+            return JSON.parse(localStorage.getItem('miniCycleData')).settings;
+        };
+        try {
+            const phone = run({ coarse: true, phone: true });
+            if (phone.routineOpenView !== 'browse' || phone.routineBrowserLayout !== 'grid') {
+                throw new Error(`phone: ${JSON.stringify({ view: phone.routineOpenView, layout: phone.routineBrowserLayout })}`);
+            }
+            const tablet = run({ coarse: true, phone: false });
+            if (tablet.routineOpenView !== 'browse' || 'routineBrowserLayout' in tablet) {
+                throw new Error(`tablet should browse in Cards (no stored layout): ${JSON.stringify(tablet.routineBrowserLayout)}`);
+            }
+            const mouse = run({ coarse: false, phone: true });
+            if (mouse.routineOpenView !== 'list' || 'routineBrowserLayout' in mouse) {
+                throw new Error(`mouse: ${JSON.stringify({ view: mouse.routineOpenView, layout: mouse.routineBrowserLayout })}`);
+            }
+        } finally {
+            window.matchMedia = realMatchMedia;
+        }
+    });
+
     // === BOOT ENTRY TESTS ===
     // The boot entry now only runs setup. It must never read, convert or delete the
     // legacy keys a pre-launch browser may still hold (retired Sep 2026).

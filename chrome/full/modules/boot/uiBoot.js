@@ -56,14 +56,17 @@
 // NOTE: No appContext fallback - all dependencies come through initUIBoot
 // This avoids versioned/unversioned module instance mismatch issues
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, BOOT_TIMEOUTS, EVENTS, BACKUP_TRIGGERS, GESTURE, KEYBOARD_SHORTCUTS, SINGLE_KEY_SHORTCUTS, shortcutKeyName, APP_URL } from '../core/constants.js';
 import { hideLongPressHint } from '../utils/longPressHint.js';
+import { replayAnimationClass } from '../utils/motionPreference.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { initNativeShell, isNativeApp } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
+import { isTextEntryTarget, undoRedoShortcut } from '../utils/keyboardNav.js';
+import { USER_MANUAL_PATH, runsAsInstalledApp } from '../utils/userManualLink.js';
 
 let _appContextMod = null;
 
@@ -73,6 +76,7 @@ const getShowNotification = () => _appContextMod?.ui?.()?.showNotification || nu
 const getStateApi = () => _appContextMod?.state?.() || null;
 const getUndoApi = () => _appContextMod?.undo?.() || null;
 const getUiApi = () => _appContextMod?.ui?.() || null;
+const getCycleApi = () => _appContextMod?.cycle?.() || null;
 const getDeviceDetectionManager = () => _appContextMod?.ui?.()?.deviceDetectionManager || null;
 const getGetModal = () => _appContextMod?.ui?.()?.getModal || null;
 
@@ -193,6 +197,12 @@ export function attachGlobalEventListeners(_GlobalUtils, _options = {}) {
     '__miniCycleUiBootGlobalKeydownHandler',
     handleGlobalKeydown
   );
+  labelShortcutTargets();
+  // Focus View's two buttons are built by focusMode.js, possibly after this
+  // runs; label them when the view first changes. Stored key: a boot retry
+  // replaces it instead of stacking another.
+  replaceStoredEventListener(document, EVENTS.FOCUS_MODE_ACTIVATED, '__miniCycleShortcutLabelOn', labelShortcutTargets);
+  replaceStoredEventListener(document, EVENTS.FOCUS_MODE_DEACTIVATED, '__miniCycleShortcutLabelOff', labelShortcutTargets);
 
   // ========== Global Click: Hide Task Buttons ==========
   replaceStoredEventListener(
@@ -439,30 +449,159 @@ export function attachMenuButtonListener(_GlobalUtils, menuButton, menu) {
 // EVENT HANDLERS
 // ============================================================================
 
+// Mode order for Alt+Shift+M — the order the mode selector lists them.
+const SHORTCUT_MODE_ORDER = ['auto-cycle', 'manual-cycle', 'todo-mode'];
+
+// The control each shortcut stands for. aria-keyshortcuts on it lets a screen
+// reader that supports the attribute say the key when the control is focused.
+const SHORTCUT_TARGETS = Object.freeze({
+  NEW_ROUTINE:      [DOM_IDS.NEW_MINI_CYCLE],
+  OPEN_ROUTINE:     [DOM_IDS.ROUTINE_SWITCHER_BTN],
+  NEXT_MODE:        [DOM_IDS.MODE_PICKER_BTN],
+  FOCUS_VIEW:       [DOM_IDS.FOCUS_MODE_BTN, DOM_IDS.FOCUS_MODE_EXIT_BTN],
+  TOGGLE_INPUT_BAR: [DOM_IDS.TOGGLE_TASK_INPUT_BTN],
+  USER_MANUAL:      [DOM_IDS.OPEN_USER_MANUAL],
+  OPEN_SETTINGS:    [DOM_IDS.OPEN_SETTINGS],
+  OPEN_MENU:        [DOM_IDS.MENU_BUTTON, DOM_IDS.FOCUS_MODE_MENU_BTN],
+  SHOW_SHORTCUTS:   [DOM_IDS.OPEN_SHORTCUTS_MODAL]
+});
+
+/**
+ * Write aria-keyshortcuts onto each shortcut's control, from KEYBOARD_SHORTCUTS
+ * so the advertised key cannot drift from the handled one. Idempotent; called
+ * again when Focus View builds its buttons late (they are created in JS).
+ */
+function labelShortcutTargets() {
+  Object.keys(SHORTCUT_TARGETS).forEach((action) => {
+    const keys = `Alt+Shift+${shortcutKeyName(KEYBOARD_SHORTCUTS[action])}`;
+    SHORTCUT_TARGETS[action].forEach((id) => document.getElementById(id)?.setAttribute('aria-keyshortcuts', keys));
+  });
+}
+
+/**
+ * Which app shortcut a keydown is, if any: Alt+Shift+<key> (KEYBOARD_SHORTCUTS),
+ * or — only when the user turned them on — a single key (SINGLE_KEY_SHORTCUTS).
+ * @param {KeyboardEvent} e
+ * @returns {string|null} the action name
+ */
+function shortcutActionFor(e) {
+  if (e.repeat || e.isComposing || e.ctrlKey || e.metaKey) return null;
+  if (e.altKey) {
+    if (!e.shiftKey) return null;
+    return Object.keys(KEYBOARD_SHORTCUTS).find((name) => KEYBOARD_SHORTCUTS[name] === e.code) || null;
+  }
+  if (getAppState()?.get?.()?.settings?.singleKeyShortcuts !== true) return null;
+  const key = typeof e.key === 'string' && e.key.length === 1 ? e.key.toLowerCase() : '';
+  if (!Object.prototype.hasOwnProperty.call(SINGLE_KEY_SHORTCUTS, key)) return null;
+  // Shift+M is not M (Caps Lock is: it sends "M" with no Shift held). "?"
+  // needs Shift on most layouts, so Shift is fine there.
+  if (e.shiftKey && key !== '?') return null;
+  if (e.target?.closest?.(DOM_SELECTORS.SINGLE_KEY_SKIP)) return null;
+  return SINGLE_KEY_SHORTCUTS[key];
+}
+
+/**
+ * Alt+Shift+<key> app shortcuts (KEYBOARD_SHORTCUTS in constants.js), and the
+ * opt-in single keys that stand for some of them (SINGLE_KEY_SHORTCUTS).
+ *
+ * Each one clicks the control a user would — the same pattern as Quick
+ * Actions, the main menu and the Focus View menu — so a shortcut cannot drift
+ * from the button it stands for (and is counted the same way in action usage).
+ * The buttons exist in the DOM even where they are hidden (Focus View hides the
+ * header chrome); a DOM .click() still runs them.
+ *
+ * Off while typing (a letter shortcut must never eat a character), while a
+ * dialog or the menu is open (the shortcut would act behind it), and on the
+ * first-run screen (there is no routine yet).
+ * @param {KeyboardEvent} e
+ * @returns {boolean} true when the key was an app shortcut and was handled
+ */
+function handleAppShortcut(e) {
+  const action = shortcutActionFor(e);
+  if (!action) return false;
+
+  // A text field only — a task's checkbox is an <input> too, and a shortcut
+  // pressed with a task selected must still work.
+  if (isTextEntryTarget(e.target)) return false;
+  // The menu key also CLOSES the main menu, which counts as an overlay below
+  // — as Escape does, through the same close path, focus going back to where
+  // it was. A dialog open on top still wins.
+  if (action === 'OPEN_MENU' && !document.querySelector('dialog[open]')) {
+    const openMenu = document.querySelector(DOM_SELECTORS.MENU_CONTAINER_VISIBLE);
+    if (openMenu) {
+      closeMainMenu(openMenu, document.querySelector(DOM_SELECTORS.MENU_BUTTON), { restoreFocus: true });
+      e.preventDefault();
+      return true;
+    }
+  }
+  if (isOverlayActive()) return false;
+  if (document.body.classList.contains(DOM_CLASSES.APP_LOADING)) return false;
+
+  const click = (id) => document.getElementById(id)?.click();
+  switch (action) {
+    case 'NEW_ROUTINE':      click(DOM_IDS.NEW_MINI_CYCLE); break;
+    case 'OPEN_ROUTINE':     click(DOM_IDS.ROUTINE_SWITCHER_BTN); break;
+    case 'TOGGLE_INPUT_BAR': click(DOM_IDS.TOGGLE_TASK_INPUT_BTN); break;
+    case 'USER_MANUAL':      click(DOM_IDS.OPEN_USER_MANUAL); break;
+    case 'OPEN_SETTINGS':    click(DOM_IDS.OPEN_SETTINGS); break;
+    case 'SHOW_SHORTCUTS':   click(DOM_IDS.OPEN_SHORTCUTS_MODAL); break;
+    case 'OPEN_MENU': {
+      // One key for the view you are in: Focus View's ⋯ menu, or the header's
+      // ☰ — and a second press closes it (the user's call, Oct 2026; the ☰'s
+      // close is above). Opening moves focus into the menu; the ⋯ button
+      // toggles, so closing it by a click leaves focus on a hidden item —
+      // give it back to the button, as Escape does.
+      if (document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)) {
+        const wasOpen = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE_MENU_OPEN);
+        click(DOM_IDS.FOCUS_MODE_MENU_BTN);
+        if (wasOpen) document.getElementById(DOM_IDS.FOCUS_MODE_MENU_BTN)?.focus();
+      } else {
+        click(DOM_IDS.MENU_BUTTON);
+      }
+      break;
+    }
+    // No button to click: there is no control for "the routine before this
+    // one". The switcher owns the step (and its frozen order); it opens the
+    // routine the way the list does, notification included.
+    case 'PREVIOUS_ROUTINE': getCycleApi()?.stepRecent?.(-1); break;
+    case 'NEXT_ROUTINE':     getCycleApi()?.stepRecent?.(1); break;
+    case 'FOCUS_VIEW':
+      click(document.body.classList.contains(DOM_CLASSES.FOCUS_MODE)
+        ? DOM_IDS.FOCUS_MODE_EXIT_BTN
+        : DOM_IDS.FOCUS_MODE_BTN);
+      break;
+    case 'NEXT_MODE': {
+      // Drive the selector, as Focus View's Switch Mode dialog does: its change
+      // handler owns the switch, the save and the notification (which the
+      // notification container's live region reads out).
+      const selector = document.getElementById(DOM_IDS.MODE_SELECTOR);
+      if (!selector) break;
+      const next = SHORTCUT_MODE_ORDER[(SHORTCUT_MODE_ORDER.indexOf(selector.value) + 1) % SHORTCUT_MODE_ORDER.length];
+      selector.value = next;
+      selector.dispatchEvent(new Event('change', { bubbles: true }));
+      break;
+    }
+  }
+  e.preventDefault();
+  return true;
+}
+
 /**
  * Global keyboard shortcut handler
  */
 function handleGlobalKeydown(e) {
-  // Undo: Ctrl/Cmd + Z
-  if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-    e.preventDefault();
-    try {
-      getUndoApi()?.undo?.();
-    } catch (err) {
-      console.warn('⚠️ Undo not available:', err);
-    }
-  }
+  if (handleAppShortcut(e)) return;
 
-  // Redo: Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y
-  // NOTE: with Shift held the browser reports the key as uppercase 'Z', so the
-  // Shift+Z branch must compare against 'Z' (comparing to 'z' never matches).
-  if ((e.ctrlKey || e.metaKey) && (e.key === 'y' || (e.shiftKey && e.key === 'Z'))) {
-    e.preventDefault();
-    try {
-      getUndoApi()?.redo?.();
-    } catch (err) {
-      console.warn('⚠️ Redo not available:', err);
-    }
+  // Undo: Ctrl/Cmd+Z. Redo: Ctrl/Cmd+Shift+Z or Ctrl/Cmd+Y. Not while typing —
+  // undoRedoShortcut() says why.
+  const action = undoRedoShortcut(e);
+  if (!action) return;
+  e.preventDefault();
+  try {
+    if (action === 'undo') getUndoApi()?.undo?.();
+    else getUndoApi()?.redo?.();
+  } catch (err) {
+    console.warn(`⚠️ ${action} not available:`, err);
   }
 }
 
@@ -598,13 +737,13 @@ function handleResetTaskViewLayoutClick() {
     try {
       const ok = resetTaskViewLayout();
       if (ok) {
-        showNotification?.('🔄 ' + getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        showNotification?.(getLabel('notify.taskViewLayoutReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
       } else {
-        showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+        showNotification?.(getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
       }
     } catch (err) {
       console.error('❌ Failed to reset task view layout:', err);
-      showNotification?.('❌ ' + getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+      showNotification?.(getLabel('notify.taskViewLayoutResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
   };
 
@@ -634,7 +773,7 @@ async function handleResetNotificationPosition() {
 
   if (!AppState?.isReady?.()) {
     console.error('❌ AppState not ready for reset notification position');
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
     return;
   }
 
@@ -654,10 +793,10 @@ async function handleResetNotificationPosition() {
       console.warn('⚠️ Could not reset notification position UI:', e);
     }
 
-    showNotification?.('🔄 ' + getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionReset'), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'sync' });
   } catch (error) {
     console.error('❌ Failed to reset notification position:', error);
-    showNotification?.('❌ ' + getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
+    showNotification?.(getLabel('notify.positionResetFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_SHORT);
   }
 }
 
@@ -1031,13 +1170,28 @@ export function setupUserManual(_GlobalUtils) {
     // Disable button briefly to prevent multiple clicks
     openUserManual.disabled = true;
 
+    // In a browser: a new tab, so the app stays open where it was (Alt+Shift+U
+    // left the app; user report, Oct 2026). Opened NOW, in the click — a
+    // popup blocker refuses window.open from a timer. In the installed app
+    // there are no tabs (a new one would throw the user into the browser), so
+    // it opens here, as before — and so does a blocked popup.
+    if (!runsAsInstalledApp()) {
+      const tab = window.open(USER_MANUAL_PATH, '_blank');
+      if (tab) {
+        tab.opener = null;
+        openUserManual.disabled = false;
+        return;
+      }
+    }
+
     // Redirect to the User Manual page after a short delay
     setTimeout(() => {
-      window.location.href = "legal/user-manual.html";
+      window.location.href = USER_MANUAL_PATH;
       openUserManual.disabled = false;
     }, 200);
   });
 }
+
 
 /**
  * Setup menu "Enable Tour Prompts" button handler (Help & Support section)
@@ -1156,7 +1310,14 @@ export async function finalizeUI(options) {
       completeAllButton,
       'click',
       '__miniCycleUiBootCompleteAllClickHandler',
-      () => getHandleCompleteAllTasks?.()?.()
+      () => {
+        // The glyph answers the press: the arrows turn once (reset), the
+        // broom sweeps (clear). Motion tokens zero it under reduced motion.
+        const clearing = document.body.classList.contains(DOM_CLASSES.TODO_MODE_MODE);
+        replayAnimationClass(completeAllButton, DOM_CLASSES.ACTION_PLAYING,
+          clearing ? '--anim-action-sweep' : '--anim-action-spin');
+        getHandleCompleteAllTasks?.()?.();
+      }
     );
   }
 
@@ -1202,6 +1363,9 @@ export async function finalizeUI(options) {
   // non-blocking notice — so a silently-missing feature doesn't go unnoticed.
   featureAvailability.showDegradedModeWarning(getShowNotification());
 
+  // A returning user sent here once from the old address: say the app moved.
+  announceAppMove();
+
   // Origin hygiene (docs-subdomain move, Jul 2026): Docsify's search plugin
   // used to store a multi-MB full-text index in THIS origin's localStorage
   // when the docs lived at minicycle.app/docs. The docs now live on their own
@@ -1215,6 +1379,27 @@ export async function finalizeUI(options) {
     }
   } catch { /* storage unavailable — nothing to clean */ }
 
+}
+
+/**
+ * minicycle.app/ became the product page and the app moved to /app (Nov
+ * 2026). A returning user who opens the bare domain is sent here ONCE by
+ * pages/product-returning.js with ?moved=1: say why, and take the marker out
+ * of the address bar so it is not bookmarked or shared.
+ * @returns {void}
+ */
+function announceAppMove() {
+  let params;
+  try { params = new URLSearchParams(location.search); } catch { return; }
+  if (params.get('moved') !== '1') return;
+  params.delete('moved');
+  const query = params.toString();
+  history.replaceState(history.state, '', location.pathname + (query ? `?${query}` : '') + location.hash);
+  const home = new URL(APP_URL).host;
+  getShowNotification()?.(
+    getLabel('notify.appMoved', { vars: { app: `${home}/app`, home } }),
+    'info', UI_TIMEOUTS.NOTIFICATION_OVERLAY, { icon: 'bookmark' }
+  );
 }
 
 // ============================================================================

@@ -31,8 +31,20 @@ export function stripLeadingEmoji(text) {
     return String(text ?? '').replace(/^[\p{Extended_Pictographic}️‍\s]+/u, '');
 }
 
-function sortableText(task) {
-    return stripLeadingEmoji(task?.text ?? task?.taskText ?? '').toLowerCase();
+/**
+ * Compare two names the way a reader alphabetises them — the one A–Z for task
+ * names and routine titles alike. Ignores leading emoji and case, and reads
+ * runs of digits as numbers, so "Task 2" comes before "Task 10".
+ * @param {string} a
+ * @param {string} b
+ * @returns {number}
+ */
+export function compareNames(a, b) {
+    return stripLeadingEmoji(a).localeCompare(stripLeadingEmoji(b), undefined, { numeric: true, sensitivity: 'base' });
+}
+
+function taskName(task) {
+    return task?.text ?? task?.taskText ?? '';
 }
 
 /**
@@ -52,7 +64,7 @@ export function compareTasksBySort(sort, a, b, direction = SORT_DIRECTION.ASC) {
     const flip = direction === SORT_DIRECTION.DESC ? -1 : 1;
     switch (sort) {
         case TASK_SORT.AZ:
-            return flip * sortableText(a).localeCompare(sortableText(b));
+            return flip * compareNames(taskName(a), taskName(b));
         case TASK_SORT.PRIORITY: {
             const emptyA = !a?.priority, emptyB = !b?.priority;
             if (emptyA !== emptyB) return emptyA ? 1 : -1;

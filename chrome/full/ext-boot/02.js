@@ -1,5 +1,1 @@
-window.getBuildVersion = function () {
-    var m = document.querySelector('meta[name="app-version"]');
-    return (m && m.getAttribute('content')) ||
-           (typeof globalThis !== 'undefined' && globalThis.APP_VERSION) || 'unknown';
-  };
+(function(){var l=document.getElementById('async-main-css');if(!l)return;function apply(){l.media='all';}if(l.sheet){apply();}else{l.addEventListener('load',apply);}})();

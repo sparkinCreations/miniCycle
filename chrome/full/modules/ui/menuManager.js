@@ -28,6 +28,8 @@ import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { getRoutines, getRoutine, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
+import { scrollBehavior } from '../utils/motionPreference.js';
+import { buildRoutineCopy } from '../routine/routineCopy.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -53,6 +55,7 @@ const di = createDIModule('MenuManager', {
     switchMiniCycle: optional(null),
     createNewMiniCycle: optional(null),
     loadMiniCycle: optional(null),
+    onCycleCreated: optional(null),
     updateCycleModeDescription: optional(null),
     checkGamesUnlock: optional(null),
     sanitizeInput: optional(null),
@@ -140,6 +143,7 @@ export class MenuManager {
             switchMiniCycle: resolvedDeps.switchMiniCycle,
             createNewMiniCycle: resolvedDeps.createNewMiniCycle,
             loadMiniCycle: resolvedDeps.loadMiniCycle,
+            onCycleCreated: resolvedDeps.onCycleCreated,
             updateCycleModeDescription: resolvedDeps.updateCycleModeDescription,
             checkGamesUnlock: resolvedDeps.checkGamesUnlock,
             sanitizeInput: resolvedDeps.sanitizeInput,
@@ -486,7 +490,7 @@ export class MenuManager {
      */
     _scrollSectionIntoView(section) {
         setTimeout(() => {
-            section.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            section.scrollIntoView({ behavior: scrollBehavior(), block: 'nearest' });
         }, 150);
     }
 
@@ -625,14 +629,14 @@ export class MenuManager {
         const AppState = this.deps.AppState();
         if (!AppState?.isReady?.()) {
             console.error('❌ AppState not ready for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ " + getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.appNotReady'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
         const currentState = AppState.get();
         if (!currentState) {
             console.error('❌ No state data available for saveMiniCycleAsNew');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -641,7 +645,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle found to save');
-            this.deps.showNotification("⚠ " + getLabel('notify.noRoutineToSave'));
+            this.deps.showNotification(getLabel('notify.noRoutineToSave'), 'warning');
             return;
         }
 
@@ -671,7 +675,7 @@ export class MenuManager {
             required: true,
             callback: (input) => {
                 if (!input) {
-                    this.deps.showNotification("❌ " + getLabel('notify.saveCancelled'));
+                    this.deps.showNotification(getLabel('notify.saveCancelled'));
                     return;
                 }
 
@@ -680,14 +684,14 @@ export class MenuManager {
 
                 if (!sanitizedName) {
                     console.warn('⚠️ Invalid cycle name provided');
-                    this.deps.showNotification("⚠ " + getLabel('notify.invalidName'));
+                    this.deps.showNotification(getLabel('notify.invalidName'), 'warning');
                     return;
                 }
 
                 // sanitizeInput clamps to the name limit; warn as the rename
                 // path does instead of silently shortening the copy's name.
                 if (rawName.length > LIMITS.CYCLE_NAME_CHARACTER) {
-                    this.deps.showNotification('⚠️ ' + getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
+                    this.deps.showNotification(getLabel('notify.titleTruncated', { vars: { limit: LIMITS.CYCLE_NAME_CHARACTER } }), "warning", UI_TIMEOUTS.NOTIFICATION_SHORT);
                 }
 
                 // ✅ Get unique name (auto-increment if duplicate)
@@ -700,16 +704,9 @@ export class MenuManager {
                 // ✅ Update through state system
                 AppState.update(state => {
 
-                    // ✅ Create the copy as a new routine record (Schema 2.6: keyed by id, named by title)
-                    const newCycleId = `copy_${Date.now()}`;
-
-                    // ✅ Deep copy the current cycle with new title as storage key
-                    getRoutines(state)[finalCycleName] = {
-                        ...JSON.parse(JSON.stringify(currentCycle)),
-                        id: newCycleId,
-                        title: finalCycleName,
-                        createdAt: Date.now()
-                    };
+                    // ✅ The same fresh copy the routine switcher's Duplicate makes —
+                    // new task ids, no inherited cycle count or History (routineCopy.js).
+                    getRoutines(state)[finalCycleName] = buildRoutineCopy(currentCycle, finalCycleName);
 
                     // ✅ Set as active cycle using the title as key
                     setActiveRoutineId(state, finalCycleName);
@@ -717,8 +714,18 @@ export class MenuManager {
 
                 }, true); // immediate save
 
+                // Point undo at the copy, as creating and importing a routine do.
+                // Without it the next change saw "tracking the old routine",
+                // repaired that, and dropped the change it was recording — so the
+                // first edit in a fresh copy could not be undone.
+                if (typeof this.deps.onCycleCreated === 'function') {
+                    Promise.resolve(this.deps.onCycleCreated(finalCycleName)).catch(err => {
+                        console.warn('⚠️ Undo system cycle creation notification failed:', err);
+                    });
+                }
+
                 if (!wasModified) {
-                    this.deps.showNotification("✅ " + getLabel('notify.routineCopied', { vars: { original: currentCycle.title, copy: finalCycleName } }));
+                    this.deps.showNotification(getLabel('notify.routineCopied', { vars: { original: currentCycle.title, copy: finalCycleName } }));
                 }
                 this.hideMainMenu();
 
@@ -744,7 +751,7 @@ export class MenuManager {
         const state = this._liveState();
         if (!state) {
             console.error('❌ State data required for clearAllTasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -753,7 +760,7 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to clear tasks');
-            this.deps.showNotification("⚠ " + getLabel('notify.noActiveCycleClear'));
+            this.deps.showNotification(getLabel('notify.noActiveCycleClear'), 'warning');
             return;
         }
 
@@ -772,7 +779,7 @@ export class MenuManager {
 
         if (!updateSuccess) {
             console.error('❌ Failed to update cycle data');
-            this.deps.showNotification("❌ " + getLabel('notify.clearTasksFailed'), "error");
+            this.deps.showNotification(getLabel('notify.clearTasksFailed'), "error");
             return;
         }
 
@@ -818,7 +825,7 @@ export class MenuManager {
         // ✅ Update undo/redo button states
         this.deps.updateUndoRedoButtons();
 
-        this.deps.showNotification("✅ " + getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        this.deps.showNotification(getLabel('notify.allTasksUnchecked', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
     }
 
     /**
@@ -832,7 +839,7 @@ export class MenuManager {
         const state = this._liveState();
         if (!state) {
             console.error('❌ State data required for deleteAllTasks');
-            this.deps.showNotification("⚠️ " + getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+            this.deps.showNotification(getLabel('notify.dataNotAvailable'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
             return;
         }
 
@@ -841,20 +848,20 @@ export class MenuManager {
 
         if (!activeCycle || !currentCycle) {
             console.warn('⚠️ No active miniCycle to delete tasks from');
-            this.deps.showNotification("⚠ " + getLabel('notify.noActiveCycleDelete'));
+            this.deps.showNotification(getLabel('notify.noActiveCycleDelete'), 'warning');
             return;
         }
 
         // ✅ Use callback pattern with showConfirmationModal
         this.deps.showConfirmationModal({
             title: getLabel('modal.deleteAllTasks'),
-            message: "⚠ " + getLabel('modal.deleteAllMessage', { vars: { name: currentCycle.title } }),
+            message: "⚠️ " + getLabel('modal.deleteAllMessage', { vars: { name: currentCycle.title } }),
             confirmText: getLabel('action.deleteAllMenu'),
             cancelText: getLabel('button.cancel'),
             destructive: true,
             callback: async (confirmed) => {
                 if (!confirmed) {
-                    this.deps.showNotification("❌ " + getLabel('notify.deletionCancelled'));
+                    this.deps.showNotification(getLabel('notify.deletionCancelled'));
                     return;
                 }
 
@@ -879,7 +886,7 @@ export class MenuManager {
 
                 if (!updateSuccess) {
                     console.error('❌ Failed to delete tasks');
-                    this.deps.showNotification("❌ " + getLabel('notify.deleteTasksFailed'), "error");
+                    this.deps.showNotification(getLabel('notify.deleteTasksFailed'), "error");
                     return;
                 }
 
@@ -913,7 +920,7 @@ export class MenuManager {
                 // ✅ Update undo/redo button states
                 this.deps.updateUndoRedoButtons();
 
-                this.deps.showNotification("✅ " + getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
+                this.deps.showNotification(getLabel('notify.allTasksDeleted', { vars: { name: currentCycle.title } }), "success", UI_TIMEOUTS.NOTIFICATION_LONG);
             }
         });
     }

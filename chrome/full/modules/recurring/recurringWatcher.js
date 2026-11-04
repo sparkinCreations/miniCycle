@@ -24,7 +24,7 @@
 
 import { createDIModule, optional } from '../core/diBase.js';
 import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
-import { getIcon, getLabel } from '../labels/labelResolver.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
 
@@ -140,7 +140,7 @@ function showTaskLimitNotification(blockedCount) {
 
     const taskWord = getLabel('noun.task', { count: blockedCount });
     Deps.showNotification?.(
-        `${getIcon('warning')} ${getLabel('notify.recurringLimitBlocked', { vars: { count: blockedCount, taskWord, limit: LIMITS.TASKS_PER_CYCLE } })}`,
+        getLabel('notify.recurringLimitBlocked', { vars: { count: blockedCount, taskWord, limit: LIMITS.TASKS_PER_CYCLE } }),
         'warning',
         UI_TIMEOUTS.NOTIFICATION_PERSISTENT
     );
@@ -478,9 +478,10 @@ export async function catchUpMissedRecurringTasks() {
         assertInjected('showNotification', Deps.showNotification);
         const missedTaskWord = getLabel('noun.task', { count: stats.added });
         Deps.showNotification(
-            `⏰ ${getLabel('notify.recurringMissedAdded', { vars: { count: stats.added, taskWord: missedTaskWord } })}`,
+            getLabel('notify.recurringMissedAdded', { vars: { count: stats.added, taskWord: missedTaskWord } }),
             'info',
-            UI_TIMEOUTS.NOTIFICATION_LONG
+            UI_TIMEOUTS.NOTIFICATION_LONG,
+            { icon: 'clock' }
         );
     }
 
@@ -588,17 +589,19 @@ function notifyExhaustedTemplates(templateUpdates) {
 
         if (countFinished) {
             Deps.showNotification?.(
-                `${getIcon('recurring')} ${getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } })}`,
+                getLabel('notify.recurringCountFinished', { vars: { taskName: updated.text, count: settings.count } }),
                 'info',
-                UI_TIMEOUTS.NOTIFICATION_LONG
+                UI_TIMEOUTS.NOTIFICATION_LONG,
+                { icon: 'repeat' }
             );
         } else if (settings.untilDate) {
             // Null next without a reached count = the calculator clamped at the
             // end date: this spawn was the routine's final occurrence.
             Deps.showNotification?.(
-                `${getIcon('recurring')} ${getLabel('notify.recurringEndDateFinished', { vars: { taskName: updated.text } })}`,
+                getLabel('notify.recurringEndDateFinished', { vars: { taskName: updated.text } }),
                 'info',
-                UI_TIMEOUTS.NOTIFICATION_LONG
+                UI_TIMEOUTS.NOTIFICATION_LONG,
+                { icon: 'repeat' }
             );
         }
     });

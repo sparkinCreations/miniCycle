@@ -698,7 +698,6 @@ export function initTestingModalEnhancements(callbacks = {}) {
                     testingModal._previousFocus = document.activeElement;
                     testingModal.showModal();
                     initTestingModalDrag();
-                    showNotification(getLabel('notify.testingPanelOpened'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
 
                     setTimeout(() => {
                         setupTestingTabs();

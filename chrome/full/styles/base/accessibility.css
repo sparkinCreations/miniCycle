@@ -37,6 +37,17 @@ body.high-contrast:not(.dark-mode) {
 
     /* Progress bar — visible track */
     --theme-progress-track-bg: rgba(0, 0, 0, 0.25);
+
+    /* Complete / Clear Completed button: white 18px bold text, just under the
+       large-text size, measured 3.68:1 on the default blue (Nov 2026). Deeper
+       fills here — including over a user's own button colours (the --pref-*
+       pair Preferences sets on <html>), which High Contrast outranks. */
+    --color-complete-btn: #1e7e34;
+    --color-complete-btn-hover: #155d27;
+    --color-todo-btn: #1d4ed8;
+    --color-todo-btn-hover: #1e40af;
+    --pref-complete-btn: #1e7e34;
+    --pref-clear-btn: #1d4ed8;
 }
 
 /* =============================================================================
@@ -106,6 +117,121 @@ body.high-contrast:not(.dark-mode) .task.overdue-task {
     background: var(--color-error-bg);
     color: #b71c1c;
     border: 2px solid var(--color-error);
+}
+
+/* Priority edge. The 2px outline above (and the overdue border) out-ranked
+   .high-priority's coloured left edge, so in High Contrast a flagged task
+   looked exactly like the rest: measured `2px solid #333` on a high-priority
+   task (Nov 2026). Same specificity as the overdue rule and later, so it
+   wins on the left edge only. Thicker than the outline, plus a dark rule
+   just inside it: the band reads as a band even when the level's swatch is
+   pale against white (the default Medium, #facc15, is ~1.5:1). The colour
+   still says which level. */
+body.high-contrast:not(.dark-mode) .task.high-priority {
+    border-left: 8px solid var(--task-priority-color, var(--priority-color, #dc3545));
+    box-shadow: inset 2px 0 0 #111111, 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Glass surfaces → solid. The status bubble, the Focus View onboarding
+   banner and Focus View's floating controls are white text on translucent
+   white over the blue gradient, and this stylesheet never reached them:
+   measured 1.4-2.9:1 in light High Contrast (Nov 2026). Here they become
+   opaque light panels with dark text, the same shape the dialogs already
+   get; dark High Contrast needs none of this (its backdrop is near-black,
+   5.5-13.7:1 measured). */
+body.high-contrast:not(.dark-mode) #help-window {
+    background: rgba(255, 255, 255, 0.97);
+    border: 2px solid #333333;
+    color: #111111;
+    text-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+body.high-contrast:not(.dark-mode) #help-window h4 {
+    color: #0b3d91;
+}
+
+body.high-contrast:not(.dark-mode) .first-run-welcome {
+    background: rgba(255, 255, 255, 0.97);
+    border: 2px solid #333333;
+    color: #111111;
+    text-shadow: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* The prose is dimmed to 0.85 for the glass; on a solid panel it only
+   costs contrast. The cycle demo pins its own colour to white. */
+body.high-contrast:not(.dark-mode) .first-run-welcome__message {
+    opacity: 1;
+}
+
+body.high-contrast:not(.dark-mode) .first-run-welcome .cycle-demo {
+    color: #111111;
+}
+
+body.high-contrast:not(.dark-mode) #focus-mode-menu-btn,
+body.high-contrast:not(.dark-mode) #focus-mode-btn {
+    background: rgba(255, 255, 255, 0.97);
+    border: 2px solid #333333;
+    color: #111111;
+}
+
+body.high-contrast:not(.dark-mode) #focus-action-btn {
+    background: rgba(255, 255, 255, 0.97);
+    border: 2px solid #333333;
+    color: #111111;
+}
+
+/* Its caption ("Clear Tasks") sits under the circle, straight on the
+   gradient: give it its own light backing. */
+body.high-contrast:not(.dark-mode) #focus-action-btn::after {
+    color: #111111;
+    background: rgba(255, 255, 255, 0.97);
+    padding: 1px var(--space-1-5);
+    border-radius: var(--radius-sm);
+    text-shadow: none;
+}
+
+/* The Recently Used panel (Home View, desktop) is the same glass as the
+   status bubble: its title and arrows measured 1.6-2.6:1. */
+body.high-contrast:not(.dark-mode) #quick-actions-window {
+    /* Its title, arrows and slot icons all read --pref-panel-text (white). */
+    --pref-panel-text: #111111;
+    background: rgba(255, 255, 255, 0.97);
+    border: 2px solid #333333;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-title,
+body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-nav {
+    color: #111111;
+}
+
+body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-nav,
+body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-slot.filled {
+    background: rgba(0, 0, 0, 0.06);
+    border: 1px solid #333333;
+}
+
+body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-slot.empty {
+    border-color: #333333;
+}
+
+/* The routine name is dark grey at 78% alpha on a 40% white strip over the
+   gradient: ~4.3:1 measured. Full-strength here. */
+body.high-contrast:not(.dark-mode) #mini-cycle-title {
+    color: #111111;
+}
+
+body.high-contrast:not(.dark-mode) .undo-redo-btn,
+body.high-contrast:not(.dark-mode) .undo-redo-btn:hover {
+    background: #1f1f1f;
+    border: 2px solid #1f1f1f;
+    color: #ffffff;
+    opacity: 1;
 }
 
 /* Modal overlays */
@@ -233,7 +359,9 @@ body.high-contrast:not(.dark-mode) .mini-cycle-switch-btn {
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
-body.high-contrast:not(.dark-mode) .routine-switcher-btn {
+body.high-contrast:not(.dark-mode) .routine-switcher-btn,
+body.high-contrast:not(.dark-mode) #personalization-btn,
+body.high-contrast:not(.dark-mode) #quick-dark-toggle {
     border: 2px solid rgba(0, 0, 0, 0.4);
     background: rgba(255, 255, 255, 0.4);
 }
@@ -677,6 +805,13 @@ body.high-contrast.dark-mode .task.overdue-task {
     border: 2px solid var(--color-error);
 }
 
+/* Priority edge — see the light-mode rule: the High Contrast outline hid it
+   here too (`2px solid #aaa`). Light rule inside the band on a dark task. */
+body.high-contrast.dark-mode .task.high-priority {
+    border-left: 8px solid var(--task-priority-color, var(--priority-color, var(--dark-priority-border)));
+    box-shadow: inset 2px 0 0 #eeeeee;
+}
+
 /* Modal overlays */
 body.high-contrast.dark-mode dialog::backdrop,
 body.high-contrast.dark-mode .modal-overlay,
@@ -809,7 +944,9 @@ body.high-contrast.dark-mode .mini-cycle-switch-btn {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-body.high-contrast.dark-mode .routine-switcher-btn {
+body.high-contrast.dark-mode .routine-switcher-btn,
+body.high-contrast.dark-mode #personalization-btn,
+body.high-contrast.dark-mode #quick-dark-toggle {
     border: 2px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.15);
     color: #e0e0e0;
@@ -1163,6 +1300,40 @@ body.high-contrast *:focus-visible {
     gap: 8px;
 }
 
+/* Behavior → "When you open routines, show": the one vertical option with a
+   description, which otherwise sits on the toggle below it. */
+.settings-option.settings-option-vertical.settings-option-described {
+    margin-bottom: var(--space-3);
+}
+
+/* The same setting as two radio buttons (one choice of two reads at a glance;
+   a dropdown hid the other). A fieldset, so the question names the group; the
+   rows are the Themes modal's .theme-radio-option, dark and high-contrast
+   variants included. */
+.settings-radio-group {
+    border: 0;
+    padding: 0;
+    margin-inline: 0;
+    min-width: 0;
+}
+
+.settings-radio-group > legend {
+    padding: 0;
+    margin-bottom: var(--space-2);
+}
+
+.settings-radio-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-2);
+    width: 100%;
+}
+
+.settings-radio-row .theme-radio-option {
+    margin: 0;
+    padding: var(--space-2-5) var(--space-3);
+}
+
 .settings-select {
     width: 100%;
     padding: 8px 12px;
@@ -1193,7 +1364,7 @@ body.high-contrast:not(.dark-mode) .recurring-settings-title {
     color: #000;
 }
 
-body.high-contrast:not(.dark-mode) #recur-frequency {
+body.high-contrast:not(.dark-mode) #recur-frequency-btn {
     border: 2px solid #333;
 }
 
@@ -1319,7 +1490,7 @@ body.high-contrast.dark-mode .recurring-settings-title {
     color: #fff;
 }
 
-body.high-contrast.dark-mode #recur-frequency {
+body.high-contrast.dark-mode #recur-frequency-btn {
     border: 2px solid #aaa;
 }
 

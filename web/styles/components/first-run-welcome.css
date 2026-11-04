@@ -40,8 +40,12 @@
        Same stagger + duration in both phases so the rhythm reads as one
        continuous left-to-right sweep that pivots from "appearing" to
        "shrinking" once the line is fully visible. */
-    --first-run-splash-char-duration: 280ms;
-    --first-run-splash-char-stagger: 90ms;
+    /* Whole splash ≈ 3 s (Nov 2026; it was ~6 s): "Welcome to miniCycle"
+       cascades in ~2.1 s (19 chars × 45 ms stagger + 220 ms, twice), then
+       the standalone hold + fade add 0.8 s, or the banner path's landing +
+       hold + fade add 1.1 s. */
+    --first-run-splash-char-duration: 220ms;
+    --first-run-splash-char-stagger: 45ms;
     /* Lower start-scale = sharper peak (less anti-aliasing softness) and
        a more readable hero — 1.8 still feels dramatic without making the
        letters feel ballooned/blurry on a phone screen. */
@@ -58,15 +62,15 @@
     /* Phase 3: after each word has shrunk to scale 1, the entire word
        group translates from its 2-line centered splash position up to its
        exact spot in the welcome banner's single-line title. */
-    --first-run-splash-land-duration: 900ms;
-    --first-run-splash-hold: 400ms;
+    --first-run-splash-land-duration: 500ms;
+    --first-run-splash-hold: 200ms;
     /* Standalone splash (the create / sample first-run picks). There's no
        welcome banner for the title to fly into, so phase 3 is skipped and the
        title simply rests centered — the hold IS the whole payoff there, where
        the banner path fills that same beat with the word-landing animation.
        Longer accordingly. */
-    --first-run-splash-hold-standalone: 1500ms;
-    --first-run-splash-fade-duration: 600ms;
+    --first-run-splash-hold-standalone: 400ms;
+    --first-run-splash-fade-duration: 400ms;
     /* Banner max width — wide enough to read, narrow enough not to fight
        with the centered routine card behind it. */
     --first-run-welcome-max-width: 420px;

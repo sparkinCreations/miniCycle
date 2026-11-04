@@ -226,6 +226,31 @@
 }
 
 /* 🧹 Cleaning — broom sweep */
+/* Complete Cycle button's arrows on press — one turn (Nov 2026) */
+@keyframes action-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Clear button's 🧹 on press: pivoted at the top of the handle (the
+   transform-origin is set where it is used), so the BRISTLES travel — two
+   strokes that settle, like a real sweep. */
+@keyframes action-sweep {
+    0%, 100% {
+        transform: rotate(0);
+    }
+    25% {
+        transform: rotate(16deg);
+    }
+    55% {
+        transform: rotate(-12deg);
+    }
+    80% {
+        transform: rotate(5deg);
+    }
+}
+
 @keyframes badge-sweep {
     0%, 100% {
         transform: rotate(0);

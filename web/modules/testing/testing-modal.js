@@ -94,7 +94,8 @@ function setupTestingModal() {
         }
 
         initTestingModalDrag();
-        showNotification(getLabel('notify.testingPanelOpened'), "info", UI_TIMEOUTS.NOTIFICATION_SHORT);
+        // No "Testing panel opened" notice: the window opening says so, and
+        // the notice sat over its close button (Nov 2026).
 
         // Setup ALL functionality AFTER modal is visible
         setTimeout(() => {

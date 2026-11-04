@@ -35,14 +35,24 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS } from '../core/constants.js';
+import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, BREAKPOINTS, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getLevelForColor } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
 import { EducationalTipManager } from './educationalTips.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import { prefersReducedMotion } from './motionPreference.js';
-import { getIcon } from './icons.js';
+import { createIconElement, getIcon } from './icons.js';
+
+// The SVG drawn in front of a notification of each type. Messages carry no
+// emoji prefix of their own: the type says success / warning / error, and a
+// feature notice names its own icon instead ({ icon: 'bell' }). Info and
+// default notices draw none unless they name one.
+const TYPE_ICONS = Object.freeze({
+  success: 'check-circle',
+  warning: 'exclamation-triangle',
+  error: 'exclamation-triangle'
+});
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -165,9 +175,48 @@ export class MiniCycleNotifications {
     this.educationalTips = new EducationalTipManager(() => this.deps);
     this.isDraggingNotification = false;
     this._activeListeners = new WeakMap(); // Track cleanup functions per notification
+    this._heldForBrowse = [];              // shown once Browse Routines closes (see show())
+    this._browseClosedHandler = null;
 
     // Store instance reference for late dep updates
     _notificationsInstance = this;
+  }
+
+  /** Boot-retry teardown: the one document-level listener this class owns. */
+  destroy() {
+    if (this._browseClosedHandler) {
+      document.removeEventListener(EVENTS.ROUTINE_BROWSER_CLOSED, this._browseClosedHandler);
+      this._browseClosedHandler = null;
+    }
+    this._heldForBrowse = [];
+  }
+
+  /**
+   * Browse Routines is a full-screen look at the user's routines; a toast over
+   * it covers the routine they are reading (the user's call, Oct 2026). While
+   * its dialog is open, every notification but an error is HELD — not dropped:
+   * a reminder that falls due then still shows, the moment Browse closes. Read
+   * from the dialog itself, so no module has to remember to say it is open.
+   * @returns {boolean}
+   * @private
+   */
+  _browseIsOpen() {
+    return document.getElementById(DOM_IDS.ROUTINE_BROWSER)?.open === true;
+  }
+
+  /** @private */
+  _holdForBrowse(args) {
+    if (this._heldForBrowse.some(held => held[0] === args[0])) return;   // same text once
+    this._heldForBrowse.push(args);
+    if (this._browseClosedHandler) return;
+    this._browseClosedHandler = () => {
+      document.removeEventListener(EVENTS.ROUTINE_BROWSER_CLOSED, this._browseClosedHandler);
+      this._browseClosedHandler = null;
+      const held = this._heldForBrowse;
+      this._heldForBrowse = [];
+      held.forEach(heldArgs => this.show(...heldArgs));
+    };
+    document.addEventListener(EVENTS.ROUTINE_BROWSER_CLOSED, this._browseClosedHandler);
   }
 
   // Getter that always returns merged deps (live reference to DI-resolved deps)
@@ -234,6 +283,14 @@ export class MiniCycleNotifications {
         }
       }
 
+      // Browse Routines on screen: hold it until Browse closes (errors still
+      // show). A caller that names its own container is drawing inside a
+      // dialog on purpose and is left alone.
+      if (type !== 'error' && !options?.container && this._browseIsOpen()) {
+        this._holdForBrowse([message, type, duration, options]);
+        return;
+      }
+
       // Optional container override — allows rendering inside a <dialog> where
       // the global notification container is blocked by showModal() inertness.
       // Defensive recovery: if the container has been orphaned (e.g. a dialog
@@ -254,7 +311,7 @@ export class MiniCycleNotifications {
 
       if (typeof message !== "string" || message.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to show().");
-        message = "⚠️ " + getLabel('notify.unknownNotification');
+        message = getLabel('notify.unknownNotification');
       }
 
       // Generate unique ID (DI-pure) - use simple hash fallback for duplicate detection
@@ -319,18 +376,29 @@ export class MiniCycleNotifications {
         ? `<div class="notification-hint">${hintIcon ? `<span class="notification-hint-icon">${hintIcon}</span>` : ''}<span class="notification-hint-text">${getEscapeHtml(this.deps)(hintText)}</span></div>`
         : '';
 
+      // Leading icon: options.icon names one from ICONS (false: none), else
+      // the type's. Looked up by NAME, so only the trusted SVG set reaches
+      // innerHTML. Decorative — the role and the text carry the meaning.
+      const iconName = options?.icon === false ? null
+        : (typeof options?.icon === 'string' ? options.icon : TYPE_ICONS[type]);
+      const iconSvg = iconName ? getIcon(iconName) : '';
+      const iconMarkup = iconSvg ? `<span class="notification-icon" aria-hidden="true">${iconSvg}</span>` : '';
+
       // Always escape user content, regardless of structure
       // When an action button or a hint is present, wrap message in a span so
       // they stack in a flex-column under it
       const hasAction = !!(options?.actionButton);
       const contentClass = ['notification-content', hasAction && 'notification-has-action', hintMarkup && 'notification-has-hint']
         .filter(Boolean).join(' ');
+      // With an icon, the plain layout's body gets its own span: the content
+      // is a flex row, and the icon must not share a flex item with the text.
+      const plainBody = iconMarkup ? `${iconMarkup}<span class="notification-text">${bodyMarkup}</span>` : bodyMarkup;
       notification.innerHTML = (hasAction || hintMarkup)
         ? `<div class="${contentClass}">
-             <span class="notification-message">${bodyMarkup}</span>${hintMarkup}
+             <span class="notification-message">${iconMarkup}${bodyMarkup}</span>${hintMarkup}
            </div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`
-        : `<div class="notification-content">${bodyMarkup}</div>
+        : `<div class="notification-content">${plainBody}</div>
            <button class="close-btn" title="${getLabel('button.close')}" aria-label="${getLabel('notify.closeNotification')}">✖</button>`;
 
       // Track cleanup function for timeouts
@@ -504,7 +572,7 @@ export class MiniCycleNotifications {
 
       if (typeof content !== "string" || content.trim() === "") {
         console.warn("⚠️ Invalid or empty message passed to showWithTip().");
-        content = "⚠️ " + getLabel('notify.unknownNotification');
+        content = getLabel('notify.unknownNotification');
       }
 
       // ✅ XSS PROTECTION: Escape content by default unless explicitly trusted
@@ -1249,21 +1317,23 @@ async setDefaultPosition(notificationContainer) {
   }
 
   /**
-   * 🔁 Create recurring notification with educational tip (two-state: collapsed/expanded)
+   * Recurring-task popup: the task, its schedule with an ⓘ that explains how
+   * recurring tasks behave, and the quick frequency picker (collapsed/expanded).
+   *
+   * The explanation is the shared ⓘ pattern (.info-btn, as in the Stats panel)
+   * — it replaced a tip banner with its own ✕ plus a 💡 to bring it back (Nov
+   * 2026). It starts OPEN the first time anyone makes a task recurring — "it
+   * vanishes on reset" looks like a bug unless you have been told — and
+   * collapsed after that. The "seen" mark is the old tip's dismissal entry
+   * (settings.dismissedEducationalTips), so whoever closed that tip starts
+   * collapsed.
    */
   createRecurringNotificationWithTip(assignedTaskId, frequency, pattern, taskText = '') {
     const tipId = 'recurring-cycle-explanation';
     const tipText = getLabel('notify.recurringTipExplanation');
-
-    const educationalTipHTML = `
-      <div class="educational-tip recurring-tip" id="tip-${tipId}" data-tip-id="${tipId}" style="display: none;">
-        <div class="tip-content">
-          <span class="tip-icon">📍</span>
-          <span class="tip-text">${tipText}</span>
-          <button class="tip-close" aria-label="${getLabel('notify.dismissTip')}">✕</button>
-        </div>
-      </div>
-    `;
+    const firstTime = !this.educationalTips.isTipDismissed(tipId);
+    if (firstTime) this.educationalTips.dismissTip(tipId);
+    const infoLabel = getLabel('notify.recurringInfoAria');
 
     // ✅ XSS PROTECTION: single escape resolver (DI-pure). getEscapeHtml()'s
     // fallback escapes the full set (& < > " ' /), unlike the previous inline
@@ -1275,18 +1345,19 @@ async setDefaultPosition(notificationContainer) {
     // hardening retired. Escaping is round-trip safe: HTML parsing decodes the
     // entities, so the DOM attribute equals the raw id and dataset lookups match.
     const safeTaskId = escape(assignedTaskId);
+    const infoNoteId = escape(`${DOM_CLASSES.RECURRING_INFO_NOTE}-${assignedTaskId}`);
 
     return `
       <div class="main-notification-content"
            data-task-id="${safeTaskId}">
 
-        ${educationalTipHTML}
-
         ${taskText ? `<div class="recurring-task-name">"${escapedTaskText}"</div>` : ''}
 
-        <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}">
-          🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + escape(frequency) + '</strong>', pattern: escape(pattern) } })}
-        </span><br>
+        <span id="${escape(DOM_IDS.notificationCurrentSettings(assignedTaskId))}"><span class="icon" aria-hidden="true">${getIcon('repeat')}</span> ${getLabel('notify.recurringStatus', { vars: { frequency: '<strong>' + escape(frequency) + '</strong>', pattern: escape(pattern) } })}</span><button type="button"
+                class="${DOM_CLASSES.INFO_BTN} ${DOM_CLASSES.RECURRING_INFO_BTN}"
+                aria-label="${infoLabel}" title="${infoLabel}"
+                aria-expanded="${firstTime}" aria-controls="${infoNoteId}"><span class="icon" aria-hidden="true">${getIcon('info-circle')}</span></button>
+        <p id="${infoNoteId}" class="${DOM_CLASSES.RECURRING_INFO_NOTE}"${firstTime ? '' : ' hidden'}>${tipText}</p>
 
         <button class="show-quick-actions"
                 data-task-id="${safeTaskId}">
@@ -1317,13 +1388,9 @@ async setDefaultPosition(notificationContainer) {
 
           <div class="quick-actions">
             <button class="apply-quick-recurring" data-task-id="${safeTaskId}">${getLabel('button.apply')}</button>
-            <button class="open-recurring-settings" data-task-id="${safeTaskId}">⚙ ${getLabel('notify.moreOptions')}</button>
+            <button class="open-recurring-settings" data-task-id="${safeTaskId}"><span class="icon" aria-hidden="true">${getIcon('cog')}</span> ${getLabel('notify.moreOptions')}</button>
           </div>
         </div>
-
-        <button class="tip-toggle-btn"
-                data-tip-id="${tipId}"
-                aria-label="${getLabel('notify.showTip')}">💡</button>
 
         <button class="close-btn"
                 data-task-id="${safeTaskId}"
@@ -1351,6 +1418,17 @@ async setDefaultPosition(notificationContainer) {
     // Delegate clicks inside notification
     notification._clickHandler = async (e) => {
       e.stopPropagation();
+
+      // ⓘ: show / hide how recurring tasks work, under the schedule line.
+      const infoBtn = e.target.closest(`.${DOM_CLASSES.RECURRING_INFO_BTN}`);
+      if (infoBtn) {
+        const note = document.getElementById(infoBtn.getAttribute('aria-controls'));
+        if (note) {
+          note.hidden = !note.hidden;
+          infoBtn.setAttribute('aria-expanded', String(!note.hidden));
+        }
+        return;
+      }
 
       const taskId = e.target.dataset.taskId ||
                      e.target.closest(DATA_SELECTORS.TASK_ID_ELEMENT)?.dataset.taskId;
@@ -1404,7 +1482,7 @@ async setDefaultPosition(notificationContainer) {
         const currentSettingsText = notification.querySelector(`#${DOM_IDS.notificationCurrentSettings(taskId)}`);
 
         if (currentSettingsText) {
-          currentSettingsText.textContent = `🔁 ${getLabel('notify.recurringStatus', { vars: { frequency: newFrequency, pattern } })}`;
+          currentSettingsText.replaceChildren(createIconElement('repeat'), ` ${getLabel('notify.recurringStatus', { vars: { frequency: newFrequency, pattern } })}`);
           currentSettingsText.style.background = "rgba(255, 255, 255, 0.2)";
           setTimeout(() => currentSettingsText.style.background = "transparent", UI_TIMEOUTS.BG_HIGHLIGHT_RESET);
         }
@@ -1665,7 +1743,7 @@ async setDefaultPosition(notificationContainer) {
    */
   showApplyConfirmation(targetElement) {
     const tempConfirm = document.createElement("span");
-    tempConfirm.textContent = "✨  " + getLabel('notify.applied');
+    tempConfirm.textContent = "✨ " + getLabel('notify.applied');
     tempConfirm.style.color = "var(--color-white)";
     tempConfirm.style.fontWeight = "bold";
     tempConfirm.style.marginLeft = "8px";
