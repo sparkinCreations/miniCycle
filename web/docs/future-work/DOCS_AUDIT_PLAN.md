@@ -300,17 +300,19 @@ recommendations"):
 - **Allow-lists for both gates include this plan**: its *Known hot spots*
   quote stale literals on purpose, as dated findings.
 
-Open — MJ to decide (both are restructures, so the *will NOT do* rule "fix, don't
-polish" would otherwise leave them untouched):
+Taken (Nov 5 2026, after the round 0 report — MJ: "I agree with all three"):
 
-- **One front door.** There are four entry points today — `INDEX.md` (780
-  lines), `_sidebar.md` (the Docsify nav), `docs/README.md` and
-  `DEVELOPER_DOCUMENTATION.md` — and the stalest of them (`INDEX.md`) is the
-  one titled as the index. *Recommended:* `_sidebar.md` stays the full map
-  (Docsify renders it and `validate:docs` already gates its reachability);
-  `INDEX.md` shrinks to a ~100-line "start here by task" router;
-  `DEVELOPER_DOCUMENTATION.md` is archived into it; `docs/README.md` stays
-  as the site's landing page. Decide before round 1, which audits all four.
+- **Round 0 signed off;** round 1 may start. Round 0 ships with a release
+  (see *Round 0 result*), merged alongside PR #111.
+- **One front door.** `_sidebar.md` stays the full map (Docsify renders it
+  and `validate:docs` gates its reachability); `INDEX.md` shrinks to a
+  ~100-line "start here by task" router; `DEVELOPER_DOCUMENTATION.md` is
+  archived into it; `docs/README.md` stays as the site's landing page.
+  Done in round 1, which audits all four.
+
+Open — MJ to decide (a restructure, so the *will NOT do* rule "fix, don't
+polish" would otherwise leave it untouched):
+
 - **The two CLAUDE.md files.** The repo-root `CLAUDE.md` (auto-loaded every
   session, "the short summary") and `working-on-code/CLAUDE.md` ("the
   detailed reference") are about the same length with different section
