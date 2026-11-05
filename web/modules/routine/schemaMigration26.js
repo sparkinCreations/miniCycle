@@ -1,7 +1,7 @@
 /**
  * Schema 2.5 → 2.6 migration
  *
- * ONE migration, ONE version bump (docs/future-work/SCHEMA_2_6_PLAN.md, "Ordering" step 7),
+ * ONE migration, ONE version bump (docs/archive/SCHEMA_2_6_PLAN.md, "Ordering" step 7),
  * built from ordered steps that are exported so each is tested on its own:
  *
  *   1. rekeyRoutines        — STATE_TRUTH_MIGRATION #20: routines keyed by a stable generated

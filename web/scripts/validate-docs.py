@@ -487,6 +487,128 @@ def check_public_surfaces(list_mode):
     return errors
 
 
+# --- docs audit gates (round 0, Nov 2026): WARNING mode ------------------------
+# Two of the three gates DOCS_AUDIT_PLAN.md adds. Both report and never fail the
+# run until round 10 flips them; the counts they print are the audit's baselines.
+# The third (backticked code references) lives in validate-comment-refs.js,
+# which already owns the symbol table.
+
+# Volatile counts belong in PROJECT_STATS.md only. A count is "N <noun>" with
+# N >= 20 (smaller numbers are ordinary prose: "two modules", "the 5 incidents"),
+# outside code fences (sample output and ASCII diagrams are illustrations).
+VOLATILE_COUNT_RE = re.compile(
+    r'\b(\d{2,}(?:,\d{3})*)\+?\s+(?:passing\s+)?'
+    r'(tests?|modules?|test files|CSS files|JSDoc blocks|documentation files|'
+    r'markdown files|live docs|docs|sidebar entries)\b', re.I)
+# A line that also carries a version or a date is a dated finding ("3,753 units
+# on the v2.573 release commit", "measured Sep 2026"): kept as a literal by rule.
+DATED_LINE_RE = re.compile(
+    r'\bv\d+\.\d{2,}\b|\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?\s+'
+    r'(?:\d{1,2},?\s+)?20\d\d\b|\b20\d\d-\d\d(?:-\d\d)?\b')
+VOLATILE_COUNT_EXEMPT = {
+    'PROJECT_STATS.md',               # the one place counts live (generated)
+    'future-work/DOCS_AUDIT_PLAN.md', # quotes stale counts on purpose, as findings
+}
+VOLATILE_COUNT_EXEMPT_DIRS = ('incidents/',)  # postmortems are history by design
+
+# Schema 2.5 stored names, renamed in 2.6 (Sep 2026). The gate matches how a
+# name is USED, not the name: the bare words are still correct as a local
+# variable (`const activeCycleId = getActiveRoutineId(state)`, which the live
+# modules write too), as taskOptionButtons option ids (`highPriority: true` in
+# a visibility map — kept by decision, SCHEMA_2_6_PLAN "Risks", Sep 2026), as
+# DOM contracts (`dataset.deleteWhenComplete`), and as the live theme field
+# `colorPreset.priorityColor`. What is stale is reading or describing the old
+# STORED field. Case-sensitive on purpose.
+SCHEMA25_RE = re.compile(
+    r'\.activeCycleId\b'                              # state.appState.activeCycleId
+    r'|\bactiveCycleId\s*:'                           # { activeCycleId: … } stored shape
+    r'|`activeCycleId`'                               # prose naming the field
+    r'|\bdata\??\.cycles\b'                           # data.cycles
+    r'|(?<!visibleOptions)(?<!Buttons)(?<!options)(?<!taskOptions)\.highPriority\b'  # task.highPriority
+    r'|(?<!colorPreset)\.priorityColor\b'             # task/settings .priorityColor
+    r'|(?<!dataset)\.deleteWhenComplete(?:Settings)?\b'
+    r'|\bdeleteWhenCompleteSettings\b')
+SCHEMA25_EXEMPT = {
+    'reference/SCHEMA_2_6.md',        # documents the 2.5 -> 2.6 mapping
+    'reference/MCYC_FILE_FORMAT.md',  # the importer reads every 2.5 spelling, forever
+    'future-work/DOCS_AUDIT_PLAN.md', # quotes them as findings
+}
+SCHEMA25_EXEMPT_DIRS = ('incidents/',)
+# Lines where an old name is correct today: explicit history or migration
+# context, Lite (frozen, keeps its own 2.5-era storage by design), and undo
+# snapshots (below).
+SCHEMA25_CONTEXT_OK = re.compile(
+    r'2\.5|legacy|migrat|renamed|pre-2\.6|\bwas\b|\bwere\b|used to|formerly|\.mcyc|'
+    r'importer|\bLite\b|miniCycleLite|'
+    # Undo snapshots still carry a field named activeCycleId (undoSnapshotUtils.js,
+    # undoRedoManager.js): an undo-history field, not stored routine state.
+    r'snapshot|\bsnap\b|\bs\.activeCycleId', re.I)
+
+
+def _scan_docs(pattern, exempt, exempt_dirs, line_ok, skip_fences=False, keep=None):
+    """[(rel_path, line_no, match, line)] for every live doc line that hits.
+
+    skip_fences: ignore ``` blocks (sample output, ASCII diagrams, examples).
+    keep: optional (match) -> bool filter on individual matches.
+    """
+    hits = []
+    for p in md_files(DOCS):
+        r = rel(p)
+        if r in exempt or r.startswith(exempt_dirs):
+            continue
+        in_fence = False
+        for i, line in enumerate(open(p, encoding='utf-8'), 1):
+            if line.lstrip().startswith('```'):
+                in_fence = not in_fence
+                continue
+            if (skip_fences and in_fence) or line_ok(line):
+                continue
+            for m in pattern.finditer(line):
+                if keep is None or keep(m, line):
+                    hits.append((r, i, m.group(0), line.strip()))
+    return hits
+
+
+def _report_warning(label, hits, list_mode, hint):
+    docs = sorted({h[0] for h in hits})
+    if not hits:
+        print('✅ %-18s none' % label)
+        return
+    print('⚠️  %-18s %d hit(s) in %d doc(s) — warning only until docs-audit round 10'
+          % (label, len(hits), len(docs)))
+    if list_mode:
+        for r, i, m, line in hits:
+            print('     %s:%d  %s  — %s' % (r, i, m, line[:90]))
+    else:
+        top = sorted(docs, key=lambda d: -sum(1 for h in hits if h[0] == d))[:5]
+        print('     heaviest: %s' % ', '.join(
+            '%s (%d)' % (d, sum(1 for h in hits if h[0] == d)) for d in top))
+        print('     %s; --list prints every hit' % hint)
+
+
+def check_volatile_counts(list_mode):
+    """Counts outside PROJECT_STATS.md go stale silently. WARNING only (round 0)."""
+    def keep(m, line):
+        n = int(m.group(1).replace(',', ''))
+        # "35/35 tests": a suite's own result line, not a project total
+        return n >= 20 and not re.search(r'\d+/' + re.escape(m.group(1)) + r'\b', line)
+    hits = _scan_docs(VOLATILE_COUNT_RE, VOLATILE_COUNT_EXEMPT,
+                      VOLATILE_COUNT_EXEMPT_DIRS, lambda l: bool(DATED_LINE_RE.search(l)),
+                      skip_fences=True, keep=keep)
+    _report_warning('Volatile counts', hits, list_mode,
+                    'cite PROJECT_STATS.md or date the finding')
+    return 0
+
+
+def check_schema25_names(list_mode):
+    """2.5 stored names outside history/migration context. WARNING only (round 0)."""
+    hits = _scan_docs(SCHEMA25_RE, SCHEMA25_EXEMPT, SCHEMA25_EXEMPT_DIRS,
+                      lambda l: bool(SCHEMA25_CONTEXT_OK.search(l)))
+    _report_warning('Schema 2.5 names', hits, list_mode,
+                    'use the 2.6 name or the cycleMode.js / priorityLevel.js accessor')
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description='Validate docs/ links and navigation.')
     ap.add_argument('--list', action='store_true',
@@ -510,6 +632,9 @@ def main():
     errors += check_claude_md(args.list)
     errors += check_code_doc_paths(args.list)
     errors += check_public_surfaces(args.list)
+    # Docs-audit gates: warning mode, contribute 0 errors until round 10.
+    errors += check_volatile_counts(args.list)
+    errors += check_schema25_names(args.list)
 
     print()
     if errors:

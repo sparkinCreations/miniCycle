@@ -115,7 +115,7 @@ below.
 
 | Round | Docs | Lines | Scope | Status |
 |---|---|---|---|---|
-| 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | pending |
+| 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | ✅ done Nov 5 2026 — see *Round 0 result* |
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | pending |
 | 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | pending |
 | 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE` | pending |
@@ -131,6 +131,53 @@ below.
 
 Counts and line totals are from the tree on Nov 5 2026; a round may shift a
 doc or two to stay coherent, and the table is updated as rounds close.
+
+### Round 0 result (Nov 5 2026)
+
+**Archived** (status lines confirmed against the code / `CHANGELOG.md`; banner
+added, sidebar entry moved to *Archive → Plans Completed (2026)*, every inbound
+path repointed):
+
+- `LARGE_MODULE_SPLITS_PLAN` — closed Aug 28 2026.
+- `WELCOME_SCREEN_PLAN` — closed Sep 2026 (`modules/ui/titleScreen.js`).
+- `SETTINGS_TOGGLE_LATCH_GAP` — fixed v2.587; lesson kept as REVIEW_PATTERNS #18.
+- `SCHEMA_2_6_PLAN` — shipped v2.573 (`SCHEMA.CURRENT` is `'2.6'`; all success
+  criteria checked; its *Status* line had never been updated). **Split:** its one
+  unshipped item, dev-build `validateTask()` enforcement, moved to
+  `future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md`.
+
+**Gate baselines** (warning-only; the numbers later rounds drive to zero):
+
+| Gate | Where | Baseline |
+|---|---|---|
+| Volatile counts | `validate:docs` | 45 hits in 25 docs |
+| Schema 2.5 stored names | `validate:docs` | 10 hits in 7 docs |
+| Docs code references | `validate:comments` (docs pass) | 124 hits in 41 docs |
+
+All three are *candidates*, not findings: sampled precision was high for the
+first two after tuning (both started far noisier — 95 and 74 — before matching
+on use rather than on bare words), and 9 of 10 sampled docs-reference hits named
+code that exists nowhere (`completeMiniCycle`, `removeRecurring`,
+`setupDueDateButtonInteraction`, …). Known noise in the third: framework names in
+`FRAMEWORK_EQUIVALENTS.md` and template placeholders (`initModuleName`). Before
+round 10 flips any gate to failing, each needs an allow-list for what remains.
+
+**Carried to later rounds:** `STATE_TRUTH_MIGRATION.md` #20 (the UUID re-key)
+shipped inside 2.6 but is not marked done (round 10); `core/constants.js`
+comment on `COLORS.PRIORITY_DEFAULT` still names `task.priorityColor` (code, not
+docs — next code change in that file).
+
+**Code comments touched — so round 0 ships with a release.** Archiving moved
+docs that 12 module files cite by path in comments (`docs/future-work/…` →
+`docs/archive/…`), plus one test file. Comment-only, but measured: the build is
+deterministic (two clean rebuilds identical), and these edits still changed 912
+`dist/` files, because release source maps embed the original source (comments
+included) and the content-hashed names follow. A comment edit in `modules/` is
+therefore a bundle change, and the round cannot be split either: the doc moves
+without the comment edits fail `validate:docs` (code citations). It ships via
+`update-version.sh`, not as a docs-only push. **Lesson for later rounds:**
+archiving a doc that `modules/` cites by path makes that round a release round;
+check `grep -rn "<name>" web/modules` before choosing what to archive.
 
 ## How a round runs
 
@@ -150,7 +197,9 @@ doc or two to stay coherent, and the table is updated as rounds close.
    (it should not), it waits for the next release instead. **The user manual
    is the known case:** `web/legal/user-manual.html` is a shipped page, so
    round 1's fixes to it are prepared in the round but ship with the next
-   `update-version.sh` release, never as a bare push.
+   `update-version.sh` release, never as a bare push. **So does any round that
+   archives a doc `web/modules/` cites by path** — the comment edit changes the
+   shipped source maps and every content hash downstream (measured in round 0).
 6. **Merge open PRs that touch a round's docs before that round starts.**
    As of Nov 5 2026, PR #111 edits `reference/REVIEW_PATTERNS.md` (round 3a)
    and `working-on-code/VALIDATION_GATES.md` (round 5).
@@ -171,14 +220,21 @@ doc or two to stay coherent, and the table is updated as rounds close.
 - `PWA_OFFLINE_ARCHITECTURE.md` and `BOOT_PERF_ROADMAP.md` were rewritten
   piecemeal through Oct 2026 (update path, heal tiers) and need a
   coherence pass, not just a number pass.
-- **Schema 2.5 names** (Nov 5 2026): 29 live docs mention one of
-  `activeCycleId`, `data.cycles`, `highPriority`, `priorityColor`,
-  `deleteWhenComplete`; 25 of them are outside the schema, migration and
-  `.mcyc` docs. Some of those are legitimate history; confirmed stale ones
-  include `features/VOCAB_THEME_SYSTEM.md:20` (`data.routine[activeCycleId]`,
-  which mixes the 2.6 key with a 2.5 id name and matches neither schema),
-  `features/TASK_OPTIONS_CUSTOMIZER.md` (`highPriority: true` in five
-  examples) and `features/AUTO_UNCHECK_DAILY.md:154`.
+- **Schema 2.5 names** (Nov 5 2026): 29 live docs contain one of the bare
+  words `activeCycleId`, `data.cycles`, `highPriority`, `priorityColor`,
+  `deleteWhenComplete`, but most of those are CORRECT today: `activeCycleId`
+  is still a common local variable name (the live modules use it too),
+  `highPriority` / `deleteWhenComplete` are kept `taskOptionButtons` option ids
+  (decided Sep 2026), and the undo snapshot still has a field called
+  `activeCycleId`. The round-0 gate therefore matches stored-field *use*, and
+  finds 10 candidates in 7 docs — e.g. `features/AUTO_UNCHECK_DAILY.md:154`
+  (watches "the `activeCycleId` change"; the field is `activeRoutineId`) and
+  `future-work/STATE_TRUTH_MIGRATION.md:408` (`state.data.cycles[…]`).
+  *Corrected in round 0:* the Nov 5 revision of this plan listed
+  `TASK_OPTIONS_CUSTOMIZER.md` as stale — its `highPriority: true` lines are
+  option ids, so it is not — and overstated `VOCAB_THEME_SYSTEM.md:20`, where
+  `activeCycleId` reads as a local holding the routine id (a naming nit, not a
+  wrong claim).
 - **Stale counts in "read first" guides** (Nov 5 2026): `REVIEW_PATTERNS.md`
   (3134 tests, 136 modules), `VALIDATION_GATES.md` (136 modules),
   `HIDDEN_CODEBASE_INSIGHTS.md` (102 modules) — the pages CLAUDE.md routes

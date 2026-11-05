@@ -383,7 +383,7 @@ Measured Oct 2026 on `setupThreeDotsToggle`: the Settings checkbox flipped to
 applied, and no three-dots button was ever built — with only
 `❌ State data required for three dots toggle` in the console. Fixed v2.587;
 write-up in
-[SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
+[SETTINGS_TOGGLE_LATCH_GAP.md](../archive/SETTINGS_TOGGLE_LATCH_GAP.md).
 
 **Latching correctly is only half of it — something has to retry.**
 `initAllToggles()` is called **once**, from `settingsManager.init()`, gated on

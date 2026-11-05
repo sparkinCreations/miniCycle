@@ -14,7 +14,7 @@
 **Related (do not duplicate):**
 
 - [REVIEW_PATTERNS.md](../reference/REVIEW_PATTERNS.md) — fault lines this review kept hitting
-- [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md) — `cycles` vs routine naming; this doc’s #20 is identity (name-key vs UUID), not the rename
+- [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md) — `cycles` vs routine naming; this doc’s #20 is identity (name-key vs UUID), not the rename
 - [APPSTATE_MERGE_STATES.md](./APPSTATE_MERGE_STATES.md) — tab conflict merge; this doc’s persistence items are `update()` / `get()` / rollback
 - [RECURRING_TASKS_P3_FOLLOWUP.md](./RECURRING_TASKS_P3_FOLLOWUP.md) — leftover recurring polish; #26 (monthly 1st-of-month fallback) lives here because it is a user-visible date bug
 - [HOW_MINICYCLE_WORKS.md](../start-here/HOW_MINICYCLE_WORKS.md) — intended architecture (`update()` is the door)
@@ -525,11 +525,11 @@ unread `revealTaskButtons` copy is dead code — P3 hygiene.)*
 
 ### #20 Cycles keyed by display name + later `id`
 
-**Fix:** New writes: stable UUID map key; `title` is the name. One migration. Do **not** confuse with Schema 2.6’s `cycles` → `routine` rename ([SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md)).
+**Fix:** New writes: stable UUID map key; `title` is the name. One migration. Do **not** confuse with Schema 2.6’s `cycles` → `routine` rename ([SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md)).
 
 **Decided Sep 2026: this re-key ships inside the single Schema 2.6 migration** — one migration and
 one version bump together with Rename A, Rename B and priority storage (see the *Ordering* section
-of [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md)). They stay distinct changes — identity here,
+of [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md)). They stay distinct changes — identity here,
 naming there — but users' data is migrated once. Still sequenced after this plan's P0 and P1.
 
 ### #21 `text` vs `taskText`

@@ -1,3 +1,5 @@
+> Archived Nov 5 2026 (docs audit round 0): plan closed Sep 2026, all three parts shipped; see `modules/ui/titleScreen.js` for the built surface.
+
 # Welcome Screen — a persistent branded surface + a browsable tip archive — ✅ CLOSED
 
 > **Status: ✅ CLOSED — September 2026.** All three parts built and shipped.

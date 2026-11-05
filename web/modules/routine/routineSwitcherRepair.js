@@ -19,7 +19,7 @@
  * and naming it makes the transaction boundary obvious at the call site.
  *
  * @module routine/routineSwitcherRepair
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
 import { getRoutine, getRoutines, getAutoClearSettings, setAutoClearSettings } from '../utils/cycleMode.js';

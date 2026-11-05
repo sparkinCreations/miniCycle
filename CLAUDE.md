@@ -241,7 +241,7 @@ const safeColor = getLevelColor(getPriorityLevel(entry), DEFAULT_PRIORITY_SWATCH
 A task's priority colour **on screen** is not resolved from the stored hex at all: priority is a
 level (High / Medium / Low) shown as the active routine's theme swatch —
 `vocabThemeManager.getTaskPriorityColor(task)` (helpers in `utils/priorityLevel.js`, plan in
-`web/docs/future-work/SCHEMA_2_6_PLAN.md`).
+`web/docs/archive/SCHEMA_2_6_PLAN.md`).
 
 **NEVER** hardcode `setTimeout(fn, 3000)`, `if (x > 100)`, or `'#dc3545'` when the value is a tunable behavior knob or default color. If the right constant doesn't exist yet, **add it to `constants.js`** in the appropriate `Object.freeze({...})` block with a comment describing what it tunes.
 
@@ -349,7 +349,7 @@ on a clone of the live state and reports what it would do.
 
 ### Naming — routine vs cycle, and "clearing" not "deleting"
 
-Since Schema 2.6 (Sep 2026) the stored names ARE the product's words. **Renaming a stored key is never a drive-by** — it needs a migration step in `routine/schemaMigration26.js`, a version bump, and the dry-run tool run on real data (`web/docs/future-work/SCHEMA_2_6_PLAN.md`).
+Since Schema 2.6 (Sep 2026) the stored names ARE the product's words. **Renaming a stored key is never a drive-by** — it needs a migration step in `routine/schemaMigration26.js`, a version bump, and the dry-run tool run on real data (`web/docs/archive/SCHEMA_2_6_PLAN.md`).
 
 - **Routine** = the checklist — what `state.data.routine[id]` holds (`activeRoutineId` is the open routine). **Cycle** = one completion of it (`cycleCount`, `userProgress.cyclesCompleted`), and "cycle" is used for nothing else. Identifiers, variables and comments say routine — `getActiveRoutineTasks()`, `routine`, `routineId`.
 - **Clearing, never deleting**, for the per-task auto-remove option. Users see **"Clear on Reset"** in the cycle modes and **"Marked for Clearing"** in To-Do mode (`taskOption.clearOnReset` / `taskOption.markedForClearing`), and the removed tasks are recorded in `clearedTasks`. "Delete" means a user explicitly destroying a task (`action.deleteTask`). The stored field is `task.autoClear`, one per-mode map; there is no derived mirror any more, so never invent one — and never coin a new name built on "delete" for this option. (The DOM still uses `data-delete-when-complete` / `.delete-when-complete-btn`; those are element contracts, not stored fields.)

@@ -1372,7 +1372,7 @@ export const DEFAULT_LABELS = deepFreeze({
     // codebase's word for first-run onboarding (20 FIRST_RUN_WELCOME_* classes,
     // first-run-welcome.css, onboardingCarousel). The user-facing name is
     // "Welcome Screen": to a user this is the branded screen they met on day one
-    // and can return to. See docs/future-work/WELCOME_SCREEN_PLAN.md.
+    // and can return to. See docs/archive/WELCOME_SCREEN_PLAN.md.
     // ========================================================================
 
     titleScreen: {

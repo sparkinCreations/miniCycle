@@ -38,7 +38,7 @@
  * declared on routineSwitcher, so this extraction needs no manifest change.
  *
  * @module routine/routineSwitcherThemePicker
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
 import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';

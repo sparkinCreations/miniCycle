@@ -418,5 +418,5 @@ If critical issues found post-release:
   would have made structurally impossible. It got the small id-based fix instead (v2.540),
   which is the precedent worth noting: a targeted fix closed it in an hour where this plan
   would have taken ~20 hours and a migration.
-- [SCHEMA_2_6_PLAN.md](./SCHEMA_2_6_PLAN.md) - Could bundle with schema update
+- [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md) - Could bundle with schema update
 - [COMPLETED_TASKS_DROPDOWN.md](../features/COMPLETED_TASKS_DROPDOWN.md) - Current position handling

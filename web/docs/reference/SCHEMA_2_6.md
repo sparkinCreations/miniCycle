@@ -594,5 +594,5 @@ This schema structure is also used in `.mcyc` file exports/imports, ensuring con
 - [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
 - [types.js](../../modules/core/types.js) - Canonical JSDoc type definitions
 - [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md) - Recurring task implementation
-- [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md) - The plan this schema shipped from: decisions, the
+- [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md) - The plan this schema shipped from: decisions, the
   reader sweeps, the migration's ordered steps and the release checklist.

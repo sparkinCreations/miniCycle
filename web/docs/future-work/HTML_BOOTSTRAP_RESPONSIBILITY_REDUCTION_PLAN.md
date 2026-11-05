@@ -79,9 +79,9 @@ Existing plans do not cover this boundary:
   and deferral, not ownership of the HTML bootstrap.
 - [LITE_MCYC_IMPORT_AND_ADOPT_PLAN.md](LITE_MCYC_IMPORT_AND_ADOPT_PLAN.md) adds to
   the first-run path, but assumes the current inline controller remains its home.
-- [WELCOME_SCREEN_PLAN.md](WELCOME_SCREEN_PLAN.md) records why some first-frame
+- [WELCOME_SCREEN_PLAN.md](../archive/WELCOME_SCREEN_PLAN.md) records why some first-frame
   decisions must remain pre-paint; it does not plan an extraction.
-- [LARGE_MODULE_SPLITS_PLAN.md](LARGE_MODULE_SPLITS_PLAN.md) is closed and explicitly
+- [LARGE_MODULE_SPLITS_PLAN.md](../archive/LARGE_MODULE_SPLITS_PLAN.md) is closed and explicitly
   says new responsibility drift should open a new plan rather than revive it.
 
 ## The boundary: what stays and what moves

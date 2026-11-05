@@ -1,7 +1,7 @@
 /**
  * Migration Manager Tests
  * Tests for the boot entry and fresh-install factory. The pre-2.5 migration these
- * tests used to cover was retired Sep 2026 (docs/future-work/SCHEMA_2_6_PLAN.md).
+ * tests used to cover was retired Sep 2026 (docs/archive/SCHEMA_2_6_PLAN.md).
  */
 
 // Module-level variable for dynamic import

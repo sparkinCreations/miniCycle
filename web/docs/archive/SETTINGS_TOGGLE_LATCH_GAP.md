@@ -1,3 +1,5 @@
+> Archived Nov 5 2026 (docs audit round 0): fixed v2.587; the lesson lives on as [REVIEW_PATTERNS.md #18](../reference/REVIEW_PATTERNS.md).
+
 # The Show-Three-Dots Toggle Was Dead on the Session That Created the Data
 
 > **Status:** ✅ FIXED v2.587 — two defects, both required ·

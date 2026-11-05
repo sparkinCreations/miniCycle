@@ -133,7 +133,7 @@ See [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for complete patterns an
 > `ui/ (37 modules)` when there were 45, and `styles/ (44 files)` when there were
 > 46. See [PROJECT_STATS.md](../PROJECT_STATS.md), which is generated — same
 > reasoning that retired the line-count table in
-> [LARGE_MODULE_SPLITS_PLAN.md](../future-work/LARGE_MODULE_SPLITS_PLAN.md).
+> [LARGE_MODULE_SPLITS_PLAN.md](../archive/LARGE_MODULE_SPLITS_PLAN.md).
 
 ```
 web/

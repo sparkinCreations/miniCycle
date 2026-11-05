@@ -1280,7 +1280,7 @@ capability by key presence, not by a version stamp.
 
 ---
 
-> **Shipped September 19, 2026 (v2.573):** [SCHEMA_2_6_PLAN.md](../future-work/SCHEMA_2_6_PLAN.md)
+> **Shipped September 19, 2026 (v2.573):** [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md)
 > renamed the per-task `deleteWhenCompleteSettings` to `autoClear`, dropped the derived
 > `deleteWhenComplete` mirror and replaced `highPriority` + `priorityColor` with the `priority`
 > level. That change altered this format, so it added `schema/mcyc-2.6.schema.json` and left the
