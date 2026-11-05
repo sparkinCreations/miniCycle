@@ -312,12 +312,13 @@ routine: {
 }
 ```
 
-*(Before Schema 2.6 (Sep 2026) routines were keyed by their name. The 2.6
-migration re-keyed every existing routine by a generated id, with the key and
-`id` the same — but routine creation in `routine/routineManager.js` still writes a
-new routine under its title, with an `id` of `cycle_<timestamp>` (checked Nov 5
-2026). So never assume the key equals the title or the `id`: look routines up by
-their key.)*
+*(A routine's key is its generated id, the same value as its `id`; `title` is only
+the name, and renaming changes only the title. Before Schema 2.6 (Sep 2026) routines
+were keyed by their name; the 2.6 migration re-keyed them, but creation, import,
+duplicate and rename kept writing title keys until Nov 2026. Those paths now use
+generated ids, and boot re-keys any routine whose key is not its `id`
+(`AppState._repairRoutineKeys`). Look routines up by key through the `cycleMode.js`
+accessors, and never use the key as display text.)*
 
 **A single task:**
 
