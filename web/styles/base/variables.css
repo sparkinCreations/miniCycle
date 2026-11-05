@@ -2,9 +2,10 @@
  * CSS Variables Foundation
  *
  * Single source of truth for all design tokens.
- * Theme variables (--theme-*) are overridden by theme-manager.js at runtime.
- *
- * @see docs/guides/THEME_CREATION_GUIDE.md
+ * Theme variables (--theme-*) are overridden per [data-theme] in styles/themes/themes.css;
+ * Personalization presets set their own --pref-* colours at runtime (preferencesManager).
+ * The JSON theme system once meant to override these is archived:
+ * docs/archive/JSON_THEME_SYSTEM.md
  * @see docs/future-work/THEME_ARCHITECTURE.md
  */
 
@@ -162,7 +163,7 @@
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Backgrounds
-     These are overridden by theme-manager.js when a theme is applied
+     Overridden per [data-theme] in styles/themes/themes.css
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
   /* Footer links: plain white over the page gradient, no strip, every width.
@@ -185,7 +186,7 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Text
      Note: Original CSS referenced these but never defined them, so they defaulted
-     to inherit. Themes can override these via theme-manager.js.
+     to inherit. Themes can override these in styles/themes/themes.css.
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-text-primary: inherit;
   --theme-text-secondary: inherit;
