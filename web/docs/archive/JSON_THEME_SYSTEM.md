@@ -40,14 +40,25 @@ it was built and it ran.
 |---|---|---|
 | Jan 9 2026 | `afd9d2a` | Created with the schema and the four definitions; `features/themeManager.js` called `await JSONThemeManager.setTheme(...)` to apply every built-in theme |
 | Jan 9 2026 | `256e050` | Follow-up so a JSON theme and dark mode stopped fighting |
+| Jan 12–18 2026 (v1.721–v1.824) | — | Three days later the **Personalization** modal arrived: task-list colours (v1.721), custom colours per component (v1.722), presets (v1.765), background images and patterns (v1.768). Colour choice moved to the user from here on |
+| Jan 15 2026 (v1.730) | — | [`CONTEXTUAL_THEME_SYSTEM_PLAN.md`](CONTEXTUAL_THEME_SYSTEM_PLAN.md) written: milestone unlocks become **vocabulary** themes (Habit Tracker, Fitness, Scholar, Cleaning), not colour themes |
+| Feb 16–21 2026 (v1.949, v1.971) | — | New colour presets; a theme customizer modal |
 | Feb 22 2026 (v1.1018) | `c3314b7` | **Replaced for built-in themes.** The call became a `data-theme` attribute on `<html>`, with the colours in a new `styles/themes/themes.css` ("CSS-native, instant"). The file was kept, its header now saying it was for "custom theme import/export (user-created themes)". The change went in under a commit titled "Add sharing functionality…", so neither the message nor the changelog mentions it |
+| Feb 22 2026 (v1.1025) | — | "Quick Themes" renamed "Quick Colors", to free the word *Theme* for the vocabulary themes. Dark Ocean and Golden Glow stop being unlockables, "equivalent colors (Ocean, Golden) already exist freely in Quick Colors" (the plan's *Decisions Made*) |
 | Feb 22 2026 – Nov 2026 | — | Nothing imported it. The custom-theme import/export it was kept for was never built here |
 | Nov 5 2026 | this archive | Moved out of `styles/`; it had shipped in every release bundle since, unused |
 
-Why built-in themes left it is not written down anywhere. What the code shows: applying a
-JSON theme meant fetching a file and setting each variable in turn (`await`), and the file
-had to be cached for offline use; `data-theme` is one attribute, instant, with nothing extra
-to fetch.
+**Why the plan changed.** The decision is written down in one place:
+[`CONTEXTUAL_THEME_SYSTEM_PLAN.md`](CONTEXTUAL_THEME_SYSTEM_PLAN.md), *Decisions Made*. In the six
+weeks after this system was built, colour moved into Personalization, where the user picks
+and saves their own, and "theme" came to mean the routine's **words** (task → habit,
+cycle → streak) unlocked by milestones. A file-per-theme colour system had no job left
+between those two.
+
+What is *not* written down is why the built-in themes left JSON for `data-theme` on Feb 22.
+What the code shows: applying a JSON theme meant fetching a file and setting each variable
+in turn (`await`), and the file had to be cached for offline use; `data-theme` is one
+attribute, instant, with nothing extra to fetch.
 
 ## Where its job lives now
 
