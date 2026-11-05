@@ -1,7 +1,7 @@
 # miniCycle Folder Structure
 
-**Last Updated:** August 5, 2026
-**Status:** All modules use strict DI | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
+**Last verified:** Nov 5 2026
+**Status:** Live reference | Boot files split (Dec 2025) | CSS modularized (Jan 2026)
 
 > **For current module counts and line counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
@@ -24,10 +24,10 @@
 
 > **"Organization should serve the developer, not complicate deployment."**
 
-miniCycle's folder structure evolved through three major phases:
+miniCycle's folder structure evolved through four major phases:
 
 ### 1. **Modularization First** (Oct 2025)
-The monolithic 15,677-line script was broken into 33 focused modules (12,003 lines extracted). This achieved a 74.8% reduction while maintaining 100% test coverage.
+The monolithic 15,677-line script was broken into 33 focused modules (12,003 lines extracted, Oct 2025). This achieved a 74.8% reduction of the monolith.
 
 ### 2. **Logical Grouping** (Nov 2025)
 Modules were organized into domain-based subfolders (`core/`, `task/`, `routine/`, etc.) to improve discoverability and reduce cognitive load.
@@ -36,15 +36,15 @@ Modules were organized into domain-based subfolders (`core/`, `task/`, `routine/
 Marketing pages, legal documents, and archived code were moved into dedicated folders, leaving the root clean and deployment-ready.
 
 ### 4. **CSS Modularization** (Jan 2026)
-The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused CSS files organized by purpose: base styles, components, layout, utilities, and themes.
+The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused CSS files (Jan 2026) organized by purpose: base styles, components, layout, utilities, and themes.
 
-**Result:** A structure that's easy to navigate, test, and deploy without breaking URLs or requiring build tools.
+**Result:** A structure that's easy to navigate, test, and deploy without breaking URLs, with no build step in development (deploys have been bundled since v2.294 — see below).
 
 ---
 
 ## Design Principles
 
-### ✅ Zero Development Complexity
+### ✅ No Build Step in Development
 - No build step to develop — `npm start` serves pristine source
 - Deploys via a deploy-time bundling step (since v2.294): Netlify runs
   `scripts/build-web.cjs` and publishes `web/dist/` — see
@@ -55,13 +55,16 @@ The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused
 - Not by technical pattern (controllers, services, utils)
 - Makes onboarding and feature work faster
 
-### ✅ Future-Ready Structure
-- Prepared for desktop/mobile expansion
-- Shared code infrastructure ready but empty
-- Can grow without restructuring
+### ✅ Multi-Platform Without Restructuring
+- The desktop (Electron, `desktop/`), mobile (Capacitor, `mobile/`) and Chrome
+  extension (`chrome/`) shells sit beside `web/` at the repo root; each
+  generates its payload from `web/` (`web/scripts/build-capacitor-www.cjs` and
+  its per-platform shims, `web/scripts/build-chrome-full.cjs`)
+- Repo-root `shared/` is still empty by design (see its README)
+- `web/` did not have to be restructured for any of them
 
 ### ✅ Test-Friendly Layout
-- Tests mirror module structure
+- Test files are named after the module they cover (`moduleName.tests.js`), flat in `tests/` (not every module has one)
 - Easy to find corresponding tests
 - See [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts
 
@@ -69,25 +72,30 @@ The monolithic 8,000+ line `miniCycle-styles.css` was refactored into 30 focused
 - Application code in `modules/`
 - Developer docs in `docs/`
 - User-facing pages in `pages/`, `legal/`, `lite/`
-- Historical work in `archive/`
+- Historical work in `archive/` (local-only, gitignored — see below)
 
 ---
 
 ## Complete Structure
 
+Main files and folders of `web/` (not every file is listed; generated `dist/` and `node_modules/` are left out):
+
 ```
 web/
 │
 ├── 📄 miniCycle.html                    # Main PWA entry point
-├── 📄 miniCycle-main.js                 # Entrypoint (~50 lines) - loads orchestrator
+├── 📄 miniCycle-main.js                 # Entrypoint - imports the orchestrator
 ├── 📄 service-worker.js                 # PWA service worker
+├── 📄 boot-sw.js                        # Service-worker registration, updates, PWA install
+├── 📄 netlify.toml                      # Headers/redirects/CSP only (build authority is the repo-root netlify.toml)
+├── 📄 mcyc.schema.json                  # Current .mcyc JSON Schema (pinned versions in schema/)
 │
 ├── 📁 styles/                           # Modular CSS architecture (see PROJECT_STATS.md for count)
 │   ├── main.css                         # Entry point - imports all modules
 │   ├── base/                            # Foundation styles
 │   │   ├── variables.css                # CSS custom properties & theme variables
 │   │   ├── reset.css                    # CSS reset & normalization
-│   │   ├── critical.css                 # Critical above-the-fold styles
+│   │   ├── critical.css                 # Critical above-the-fold styles (linked by miniCycle.html, not main.css)
 │   │   ├── background.css               # Background patterns, images & overlays
 │   │   ├── typography.css               # Font styles & text utilities
 │   │   ├── accessibility.css            # High contrast & accessibility styles
@@ -96,7 +104,7 @@ web/
 │   │   ├── app-container.css            # Main app container & views
 │   │   ├── header.css                   # Header & navigation bar
 │   │   └── safe-areas.css               # iOS safe area handling
-│   ├── components/                      # UI components (29 files)
+│   ├── components/                      # UI components
 │   │   ├── task-list.css                # Task items & list container
 │   │   ├── task-input.css               # Task input field
 │   │   ├── task-options.css             # Task option buttons
@@ -122,17 +130,19 @@ web/
 │   │   ├── guided-tour.css              # Guided tour spotlight overlay
 │   │   ├── history.css                  # History modal
 │   │   ├── icons.css                    # Inline SVG icon styles
+│   │   ├── long-press-hint.css          # Long-press hints for icon-only controls
 │   │   ├── quick-actions.css            # Quick actions panel
 │   │   ├── task-view-layout.css         # Desktop drag-customize layout
 │   │   ├── testing.css                  # Testing modal
-│   │   └── themes-modal.css             # Themes modal
+│   │   ├── themes-modal.css             # Themes modal
+│   │   └── title-screen.css             # Welcome Screen (titleScreen.js)
 │   ├── utilities/                       # Utility styles
 │   │   ├── dark-mode.css                # Dark mode overrides
 │   │   ├── helpers.css                  # Helper classes & navigation dots
 │   │   └── responsive.css               # Media queries
 │   └── themes/                          # Theme system
 │       ├── themes.css                   # Color theme styles
-│       ├── theme-manager.js             # Dynamic theme application
+│       ├── theme-manager.js             # JSON theme validation + custom theme import/export
 │       ├── theme-schema.json            # Theme definition schema
 │       └── definitions/                 # Theme definition files
 ├── 📄 version.js                        # Single source of truth for versions
@@ -140,6 +150,8 @@ web/
 ├── 📄 manifest-lite.json                # PWA manifest (lite version)
 ├── 📄 package.json                      # Dependencies & scripts
 ├── 📄 _redirects                        # Netlify redirects for URL compatibility
+├── 📁 schema/                           # Pinned .mcyc schemas (mcyc-2.5, mcyc-2.6)
+├── 📁 netlify/functions/                # Netlify functions (track.js — CTA/pageview tracking)
 │
 ├── 📁 modules/                          # ES6 application modules (see PROJECT_STATS.md for counts)
 │   ├── boot/                            # Boot sequence, orchestration, module loading
@@ -159,9 +171,11 @@ web/
 │   ├── labels/                          # Label system (all user-facing strings + resolver)
 │   │   ├── defaultLabels.js             # Pure data: all user-facing strings
 │   │   ├── labelResolver.js             # getLabel() with pluralization & interpolation
-│   │   └── themes.js                    # Vocabulary theme definitions & manager
+│   │   ├── themes.js                    # Vocabulary theme definitions & manager
+│   │   ├── themeWords.js                # Active vocab theme's words for label sentences
+│   │   └── loading-tips.json            # Loading tips (tip archive, Welcome Screen)
 │   ├── utils/                           # Notifications, device detection, utilities
-│   ├── storage/                         # Backup manager, storage persistence
+│   ├── storage/                         # Backup manager, backup folder, storage persistence
 │   ├── progress/                        # Cycle completion tracking
 │   ├── platform/                        # capacitorBridge + desktopBridge (shell detection; no-op on web)
 │   ├── testing/                         # Test infrastructure
@@ -169,7 +183,9 @@ web/
 │
 ├── 📁 pages/                            # Marketing & product pages
 │   ├── product.html
-│   └── learn_more.html
+│   ├── learn_more.html
+│   ├── mcyc-format.html                 # .mcyc format page
+│   └── dashboard.html                   # CTA/pageview tracking dashboard (noindex)
 │
 ├── 📁 legal/                            # Standalone static pages (outside the app shell)
 │   ├── privacy.html
@@ -185,16 +201,19 @@ web/
 │   ├── miniCycle-lite-scripts.js        # ES5 compatible - intentionally not updated
 │   └── miniCycle-lite-styles.css        # Simplified styles for older browsers
 │
-├── 📁 games/                            # Hidden mini-games
-│   ├── miniCycle-taskOrder.html         # Whack-a-Order game (unlocks at 100 cycles)
+├── 📁 games/                            # Hidden mini-games (each .html has a matching .js)
+│   ├── miniCycle-taskOrder.html         # Whack-a-Order game (unlock: MILESTONES.TASK_ORDER_GAME global cycles)
 │   ├── miniCycle-taskScramble.html
-│   └── miniCycle-taskGame.html
+│   └── miniCycle- taskGame.html         # (sic — the filename contains a space)
 │
 ├── 📁 docs/                             # Developer documentation (Docsify)
-│   ├── index.html                       # Docsify configuration
+│   ├── index.html                       # Docsify entry page
+│   ├── docsify-config.js                # Docsify configuration
 │   ├── README.md                        # Documentation hub
+│   ├── INDEX.md                         # Task router ("start here by task")
+│   ├── PROJECT_STATS.md                 # Generated counts (modules, tests, lines)
 │   ├── _sidebar.md                      # Navigation sidebar
-│   ├── DEVELOPER_DOCUMENTATION.md       # Complete dev guide
+│   ├── DEVELOPER_DOCUMENTATION.md       # Developer documentation hub
 │   ├── start-here/FOLDER_STRUCTURE.md   # This file!
 │   ├── working-on-code/CLAUDE.md        # AI assistant guide
 │   ├── [architecture docs]
@@ -202,34 +221,38 @@ web/
 │
 ├── 📁 tests/                            # Test suite (see PROJECT_STATS.md for counts)
 │   ├── module-test-suite.html           # Browser test runner
-│   ├── automated/                       # Playwright automation
+│   ├── automated/                       # Playwright runners (browser, journey, layout, a11y, contrast, …)
+│   ├── helpers/                         # Shared test helpers
+│   ├── security/                        # XSS tests
 │   ├── [module test files — see PROJECT_STATS.md]
 │   └── MODULE_TEMPLATE.tests.js         # Template for new tests
 │
 ├── 📁 assets/                           # Static assets
-│   ├── images/                          # Images, logos, onboarding
-│   └── videos/                          # Tutorial videos
+│   ├── fonts/                           # Self-hosted Poppins + fonts.css
+│   ├── images/                          # Images, logos, background patterns, screenshots
+│   └── videos/                          # Sample routine videos (samples/)
 │
-├── 📁 scripts/                          # Build & utility scripts
-│   ├── update-version.sh                # Automated version updater
+├── 📁 scripts/                          # Build, release & validation scripts
+│   ├── update-version.sh                # Automated version updater (run from web/)
 │   ├── build-web.cjs                    # esbuild release bundler (Netlify runs this)
-│   └── backup/                          # Timestamped backups
+│   ├── build-*-www.cjs, build-chrome-full.cjs  # Platform shell payloads generated from web/
+│   └── validate-*.{js,py}               # Validation gates (see VALIDATION_GATES.md)
 │
-├── 📁 examples/                         # Example code & references
+├── 📁 examples/                         # Example routines & references
+│   ├── initial-run/                     # "Your First Routine" — loaded by the app on first run
+│   ├── sample-routines/                 # Create New Routine samples + manifest.json (read by the app)
 │   ├── routines/                        # Example .mcyc files
 │   └── pwa-reference/                   # PWA implementation examples
 │
-├── 📁 archive/                          # Legacy & backup files
-│   ├── backup/                          # Manual backups
-│   └── TTO/                             # "The Takeout" legacy code
-│
-├── 📁 blog/                             # Blog system (optional)
-│   ├── index.html
-│   ├── posts/                           # Blog posts
-│   ├── scripts/                         # Blog app logic
+├── 📁 blog/                             # Blog system (index page is web/blog.html)
+│   ├── posts/                           # Blog posts (Markdown + built HTML)
+│   ├── docs/                            # Post template
+│   ├── scripts/                         # Blog build + page logic
 │   └── styles/                          # Blog styles
 │
-└── 📁 backup/                           # Automatic backups from update-version.sh
+├── 📁 archive/                          # Local-only legacy code (gitignored; not in the repo)
+│
+└── 📁 backup/                           # Local backups from update-version.sh (gitignored)
     └── [timestamped backups]
 ```
 
@@ -245,11 +268,11 @@ web/
 **Structure:**
 - `base/` - Foundation (variables, reset, background, typography, animations)
 - `layout/` - Page structure (app container, header, safe areas)
-- `components/` - UI components (29 files for specific features)
+- `components/` - UI components (one file per feature; total CSS file count in [PROJECT_STATS.md](../PROJECT_STATS.md))
 - `utilities/` - Dark mode, helpers, responsive breakpoints
 - `themes/` - Dynamic theme system
 
-**Entry Point:** `main.css` imports all modules in correct order
+**Entry Point:** `main.css` imports every stylesheet in order except `base/critical.css`, which `miniCycle.html` links directly (the release build inlines it into the HTML)
 
 ### `/modules/` - Application Code
 **Purpose:** All ES6 application modules organized by domain
@@ -262,9 +285,9 @@ web/
 **Why this matters:** GitHub renders Markdown beautifully, Docsify adds navigation
 
 ### `/tests/` - Test Suite
-**Purpose:** Automated tests mirroring module structure (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
+**Purpose:** Automated tests, each file named after the module it covers (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
 **Philosophy:** Tests are first-class citizens, not afterthoughts
-**Why this matters:** 100% passing tests = confidence to refactor fearlessly
+**Why this matters:** A green suite is what makes refactoring safe — and `npm test` is only part of it; CI runs further suites (see [VALIDATION_GATES.md](../working-on-code/VALIDATION_GATES.md))
 
 ### `/pages/` - Marketing Pages
 **Purpose:** Product pages separate from the application
@@ -290,10 +313,10 @@ web/
 >
 > The lite version is frozen (see [PROJECT_STATS.md](../PROJECT_STATS.md) for version) and serves users whose browsers can't run the full app or who prefer a simpler experience.
 
-### `/miniCycleGames/` - Hidden Games
+### `/games/` - Hidden Games
 **Purpose:** Easter egg mini-games (unlock rewards)
 **Philosophy:** Delight users, encourage engagement
-**Why this matters:** 100 cycles is a milestone worth celebrating
+**Why this matters:** Reaching `MILESTONES.TASK_ORDER_GAME` global cycles (`core/constants.js`) is a milestone worth celebrating
 
 ### `/assets/` - Static Files
 **Purpose:** Images, videos, fonts that rarely change
@@ -303,10 +326,10 @@ web/
 ### `/scripts/` - Build Utilities
 **Purpose:** Version management, backups, automation
 **Philosophy:** Scripts should be discoverable and documented
-**Why this matters:** `./update-version.sh` prevents human error
+**Why this matters:** `./scripts/update-version.sh` (run from `web/`) prevents human error
 
 ### `/examples/` - Reference Material
-**Purpose:** Example routines, PWA references, learning resources
+**Purpose:** Example routines, PWA references, learning resources. Not all of it is reference-only: `initial-run/` and `sample-routines/` are fetched by the app at runtime (`routine/routineManager.js`)
 **Philosophy:** Show, don't just tell
 **Why this matters:** Developers learn by example
 
@@ -314,14 +337,15 @@ web/
 **Purpose:** Historical implementations, migration artifacts
 **Philosophy:** Never delete history, just organize it
 **Why this matters:** Sometimes you need to reference "the old way"
+**Note:** `web/archive/` is local-only — the repo-root `.gitignore` excludes it, so it is not in a clone
 
 ### `/backup/` - Automatic Backups
 **Purpose:** Timestamped backups from version updates
 **Philosophy:** Always have an escape hatch
-**Why this matters:** `update-version.sh` creates restore points automatically
+**Why this matters:** `update-version.sh` creates restore points automatically (keeps the newest 3; the folder is gitignored)
 
 ### `/blog/` - Blog System
-**Purpose:** Marketing blog with static generation
+**Purpose:** Marketing blog with static generation (Markdown → HTML via `blog/scripts/build.mjs`; index page `web/blog.html`)
 **Philosophy:** Own your content, keep it simple
 **Why this matters:** No external CMS dependencies
 
@@ -329,9 +353,9 @@ web/
 
 ## Modules Organization
 
-The `/modules/` directory contains 136 ES6 modules organized into 14 logical groups (see [PROJECT_STATS.md](../PROJECT_STATS.md) for live counts). **All modules use strict dependency injection with no `|| window.*` fallbacks.**
+The `/modules/` directory holds the ES6 modules, organized into the domain folders below (see [PROJECT_STATS.md](../PROJECT_STATS.md) for live counts). **Modules receive their dependencies by injection** — `createDIModule()` from `core/diBase.js`, with a few early boot modules (`appState.js`, `globalUtils.js`) still on the legacy `_deps` setter. A grep on Nov 5 2026 found no `|| window.*` fallbacks in `modules/`; no gate enforces that (`validate:di` gates DI *declarations*).
 
-### `boot/` - Boot Sequence Modules (7 modules)
+### `boot/` - Boot Sequence Modules
 **Purpose:** Application boot orchestration split into focused files
 **When to add here:** Only boot-related code (initialization, DI wiring, UI setup)
 
@@ -349,14 +373,14 @@ The `/modules/` directory contains 136 ES6 modules organized into 14 logical gro
 ```
 miniCycle-main.js (entrypoint)
   → modules/boot/orchestrator.js
-      → modules/boot/coreBoot.js (sets AppBootStarted immediately)
+      → modules/boot/coreBoot.js (AppState, GlobalUtils, migration)
       → modules/boot/featureBoot.js (DI wiring)
       → modules/boot/uiBoot.js (UI handlers)
 ```
 
 ---
 
-### `core/` - Essential System Modules (9 modules)
+### `core/` - Essential System Modules
 **Purpose:** Foundation modules required for app initialization
 **When to add here:** Never. Core is frozen - critical infrastructure only.
 
@@ -373,11 +397,11 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `task/` - Task Management System (13 modules)
+### `task/` - Task Management System
 **Purpose:** Everything related to individual task lifecycle
 **When to add here:** Task creation, validation, rendering, events, drag-drop
 
-- `taskCore.js` - CRUD operations and business logic
+- `taskCore.js` - Facade for task operations; delegates to `taskCRUD.js`, `taskCompletion.js`, `taskCycleReset.js`
 - `taskCRUD.js` - Task create, read, update, delete operations
 - `taskDOM.js` - DOM coordination and composition
 - `taskDOMPatch.js` - DOM patching without full re-renders
@@ -393,19 +417,29 @@ miniCycle-main.js (entrypoint)
 
 **Philosophy:** Task system split by responsibility, not by implementation detail. DOM coordination (`taskDOM.js`) orchestrates rendering (`taskRenderer.js`) and events (`taskEvents.js`).
 
-**Reasoning:** A 3,000-line monolith was impossible to test. Focused modules each have clear contracts and 100% test coverage.
+**Reasoning:** A 3,000-line monolith was impossible to test. Focused modules each have clear contracts and their own test file.
 
 ---
 
-### `routine/` - Routine Management System (5 modules)
+### `routine/` - Routine Management System
 **Purpose:** Routine lifecycle from creation to switching to migration
 **When to add here:** Routine operations, mode changes, data migration
 
-- `routineLoader.js` - Data loading and file import/export
-- `routineManager.js` - Routine creation and management
-- `routineSwitcher.js` - Routine switching with modal UI
+- `routineLoader.js` - Loads and renders the active routine from AppState (tasks, UI state, theme)
+- `routineManager.js` - Routine creation and management (also fetches the first-run and sample routines from `examples/`)
+- `routineCopy.js` - The one definition of a routine copy (Duplicate)
+- `routineSwitcher.js` - Routine switching with modal UI (facade; statically imports the `routineSwitcher*`, `routineBrowser*` and `modePicker.js` modules)
+- `routineSwitcherActions.js` - Switcher delete / duplicate / download / rename
+- `routineSwitcherListTransforms.js` - Pure sort/filter transforms for the switcher list
+- `routineSwitcherPreview.js` - Routine preview inside the switcher
+- `routineSwitcherRepair.js` - Normalises a routine's stored shape before switching into it
+- `routineSwitcherThemePicker.js` - Per-routine vocab-theme picker in the switcher
+- `routineBrowser.js` - Browse Routines: full-screen, read-only routine browser
+- `routineBrowserRender.js` - Pure DOM builders for the browser's cards and tiles
 - `modeManager.js` - Auto/Manual/Todo mode management
-- `migrationManager.js` - Schema migrations and data upgrades
+- `modePicker.js` - Home View header mode control (menu button over `#mode-selector`)
+- `migrationManager.js` - Boot entry (`initAppWithAutoMigration`) and fresh-install data shape
+- `schemaMigration26.js` - The one-time Schema 2.5 → 2.6 migration
 
 **Philosophy:** Routines are first-class entities with complex state machines. Each module handles one phase of the routine lifecycle.
 
@@ -413,7 +447,7 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `recurring/` - Recurring Tasks System (16 modules)
+### `recurring/` - Recurring Tasks System
 **Purpose:** Template-based recurring task generation
 **When to add here:** Recurring logic, scheduling, UI
 
@@ -425,6 +459,7 @@ miniCycle-main.js (entrypoint)
 - `recurringIntegration.js` - Integration with task system
 - `recurringMatcher.js` - Pattern matching for recurring rules
 - `recurringPanel.js` - Complex UI for recurring settings
+- `recurringPanelAddTask.js` - "Add existing tasks to recurring" flow
 - `recurringPanelEvents.js` - Panel event handlers
 - `recurringPanelForm.js` - Panel form components
 - `recurringPanelGrids.js` - Panel grid layouts
@@ -432,6 +467,7 @@ miniCycle-main.js (entrypoint)
 - `recurringPanelSummary.js` - Summary display components
 - `recurringSettings.js` - Settings management
 - `recurringSettingsApplicator.js` - Apply settings to tasks
+- `recurringTemplate.js` - Single definition of a `recurringTemplates[taskId]` record
 - `recurringWatcher.js` - Watch for recurring task triggers
 
 **Philosophy:** Recurring is a feature layer on top of tasks. It generates tasks from templates based on schedules.
@@ -440,7 +476,7 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `ui/` - UI Coordination (37 modules)
+### `ui/` - UI Coordination
 **Purpose:** Application-level UI that coordinates multiple systems
 **When to add here:** Modals, menus, settings, onboarding, undo/redo, customization
 
@@ -454,15 +490,23 @@ miniCycle-main.js (entrypoint)
 - `preferencesBgImage.js` - Background image preferences (facade sub-module)
 - `preferencesPresets.js` - Color preset preferences (facade sub-module)
 - `shareManager.js` - Routine sharing (.mcyc)
-- `onboardingManager.js` - First-time user experience
+- `onboardingManager.js` - First-time user experience (facade; statically imports the three below)
+- `onboardingSplash.js` - First-run splash screen
+- `onboardingDemo.js` - First-run interactive demo
+- `onboardingCarousel.js` - First-run welcome carousel
 - `guidedTourManager.js` - Opt-in guided tour with spotlight overlay
-- `undoRedoManager.js` - Per-cycle undo/redo
+- `guidedTourDefinitions.js` - Pure data: the built-in tour definitions
+- `undoRedoManager.js` - Per-routine undo/redo
+- `undoIndexedDB.js` - Durable undo/redo history (IndexedDB)
+- `undoSnapshotUtils.js` - Pure snapshot validation, sanitisation, identity
+- `undoTransactionDiff.js` - Turns a snapshot diff into the undo/redo notification line
 - `gamesManager.js` - Mini-game unlock and panel
-- `taskOptionsCustomizer.js` - Per-cycle button visibility customization
+- `taskOptionsCustomizer.js` - Per-routine button visibility customization
+- `completeAllButton.js` - Complete Cycle / Clear Completed button content
 - `backupRestoreManager.js` - Backup and restore functionality
 - `completedTasksManager.js` - Completed tasks display
-- `cycleExportManager.js` - Cycle export functionality
-- `cycleImportManager.js` - Cycle import functionality
+- `cycleExportManager.js` - Routine export to .mcyc
+- `cycleImportManager.js` - Routine import from .mcyc
 - `helpWindowManager.js` - Help window display
 - `titleScreen.js` - Welcome Screen: full-screen branded surface with the app's primary destinations, restored at boot if the user parked there
 - `pullToRefresh.js` - Pull-to-refresh gesture
@@ -489,7 +533,7 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `features/` - Optional/Pluggable Features (11 modules)
+### `features/` - Optional/Pluggable Features
 **Purpose:** Features that enhance core experience but aren't required
 **When to add here:** New optional features that can be disabled
 
@@ -508,17 +552,19 @@ miniCycle-main.js (entrypoint)
 
 **Philosophy:** Features should be optional and independently testable. The app works without them.
 
-**Reasoning:** Not all users need due dates or themes. Keeping them optional reduces bundle size for minimal installs.
+**Reasoning:** Not all users need due dates or themes. Keeping them optional (`optional: true` in `moduleManifests.js`) means a feature that fails to load does not take the app down (`utils/featureAvailability.js` tracks which ones failed).
 
 ---
 
-### `labels/` - Label System (3 modules)
+### `labels/` - Label System
 **Purpose:** Centralized user-facing string management
 **When to add here:** Label data, resolver logic, vocabulary themes
 
 - `defaultLabels.js` - Pure data module with all user-facing strings, organized by category
 - `labelResolver.js` - `getLabel()` function with DI, pluralization, and interpolation
 - `themes.js` - Vocabulary theme definitions + manager (per-routine label/color overrides)
+- `themeWords.js` - The active vocab theme's words (tasks, cycles, Complete/Clear buttons) for labels that name them in a sentence
+- `loading-tips.json` - Loading-tip data (read by `tipArchive.js`, `titleScreen.js`, `miniCycle.html`)
 
 **Philosophy:** Centralizing strings enables contextual lenses (e.g., "task" becomes "workout" in the Fitness vocabulary theme) and provides a single source of truth for all user-facing text.
 
@@ -526,12 +572,27 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `utils/` - Shared Utilities (19 modules)
+### `utils/` - Shared Utilities
 **Purpose:** Reusable utilities with no business logic dependencies
 **When to add here:** Pure functions, platform detection, logging, validation
 
 - `globalUtils.js` - Pure utility functions
-- `notifications.js` - Toast notification system
+- `notifications.js` - Toast notification system (statically imports and re-exports `educationalTips.js`)
+- `educationalTips.js` - Teaching-moment tips shown inside notifications
+- `announce.js` - Single entry point for screen-reader announcements
+- `cycleMode.js` - State accessors and routine-mode helpers (`getActiveRoutine()`, `getRoutine()`, `getAutoClear()`, …)
+- `priorityLevel.js` - Task priority as a level (`getPriorityLevel()`, `hasPriority()`, …)
+- `schemaVersion.js` - Is a stored document current, older or newer than this build?
+- `dueDateUtils.js` - What a task's due date means, and the line that shows it
+- `taskSort.js` - The one comparator behind the task-search sort chips
+- `collapsibleSections.js` - Shared accordion helpers
+- `longPressHint.js` - Long-press hints for icon-only controls
+- `motionPreference.js` - The one answer to "should this animate?"
+- `readableText.js` - Readable text colours over a painted background
+- `styleValidators.js` - Validators for values that reach `style.setProperty()`
+- `landOnTasks.js` - Brings the user to tasks created elsewhere (History / Cleared Tasks → Recreate)
+- `updateCheck.js` - "Check for Updates", per platform
+- `userManualLink.js` - Where the user manual is, and how to open it
 - `deviceDetection.js` - Platform and capability detection
 - `consoleCapture.js` - Console logging for debugging
 - `dataSanitizer.js` - Data sanitization utilities
@@ -550,13 +611,13 @@ miniCycle-main.js (entrypoint)
 - `popoverUtils.js` - Popover utilities
 - `liteVersion.js` - Single entry point for navigating to the lite version
 
-**Philosophy:** Utils are stateless, dependency-free, and reusable across modules.
+**Philosophy:** Utils are reusable across modules, and most are stateless pure helpers. Some hold state and take injected dependencies (e.g. `notifications.js`, `globalUtils.js`, `storageUtils.js`).
 
 **Reasoning:** Utilities should be boring and predictable. No surprises, just reliable helpers.
 
 ---
 
-### `testing/` - Testing Infrastructure (9 modules)
+### `testing/` - Testing Infrastructure
 **Purpose:** Test-related modules that shouldn't pollute production modules
 **When to add here:** Test helpers, mocks, test UI
 
@@ -570,11 +631,12 @@ miniCycle-main.js (entrypoint)
 
 ---
 
-### `storage/` - Storage & Backup (2 modules)
+### `storage/` - Storage & Backup
 **Purpose:** Storage management, backup, and durability
 **When to add here:** Backup, export, storage quota management, eviction protection
 
 - `backupManager.js` - Backup creation and management
+- `backupFolder.js` - Daily backup file written to a folder on the device (desktop, Android, iPhone)
 - `storagePersistence.js` - Requests durable (non-evictable) origin storage via `navigator.storage.persist` (see [STORAGE_MANAGEMENT.md](../features/STORAGE_MANAGEMENT.md) → Storage Persistence)
 
 **Philosophy:** Storage concerns are isolated from business logic.
@@ -630,7 +692,7 @@ miniCycle-main.js (entrypoint)
 
 ### Why is `archive/` at the root instead of in `docs/archive/`?
 **Separation:** Code archives vs. doc archives
-**Purpose:** `web/archive/` contains legacy code and old implementations. `web/docs/archive/` contains completed documentation.
+**Purpose:** `web/archive/` contains legacy code and old implementations (local-only: gitignored, so not in a clone). `web/docs/archive/` contains completed documentation and is tracked.
 **Reason:** Different audiences. Developers debug old code. Readers browse old docs.
 
 ### Why both `examples/` and `docs/`?
@@ -639,21 +701,23 @@ miniCycle-main.js (entrypoint)
 **Reason:** "Show me an example routine" vs "Explain how recurring tasks work" are different needs.
 
 ### Why `games/` for the mini-games?
-**Naming:** The folder is `games/`; the game files themselves keep the `miniCycle-` prefix (`miniCycle-taskOrder.html`, etc.), consistent with `miniCycle.html`, `miniCycle-main.js`.
+**Naming:** The folder is `games/`; the game files themselves keep the `miniCycle-` prefix (`miniCycle-taskOrder.html`, etc.), consistent with `miniCycle.html`, `miniCycle-main.js`. (One file is currently named `miniCycle- taskGame.html`, with a space.)
 **Reason:** Short folder name, namespaced filenames — the naming convention is established if we add more games.
 
 ---
 
 ## Evolution History
 
+> History, Oct 2025 – Jan 2026: every figure below is as it stood at the time. Current structure is above; current counts are in [PROJECT_STATS.md](../PROJECT_STATS.md).
+
 ### Phase 1: Modularization (Oct 2025)
 - **Before:** 15,677-line monolithic `miniCycle-scripts.js`
-- **After:** 3,674-line orchestrator + 33 modules (12,003 lines extracted)
-- **Impact:** 74.8% reduction, 100% test coverage maintained
+- **After (Oct 2025):** 3,674-line orchestrator + 33 modules (12,003 lines extracted)
+- **Impact:** 74.8% reduction of the monolith
 - **Key commits:** `1a45ec8` → `bd373e2` (40+ commits)
 
 ### Phase 2: Module Subfolders (Nov 10, 2025)
-- **Before:** 33 modules in flat `modules/` directory
+- **Before (Nov 2025):** 33 modules in flat `modules/` directory
 - **After:** 9 domain-based subfolders
 - **Impact:** Easier navigation, clearer organization
 - **Key commits:** `3cdb9d6`, `532fdf6`
@@ -665,7 +729,7 @@ miniCycle-main.js (entrypoint)
 - **Key commits:** `c77da31`, `6dbd703`
 
 ### Phase 4: Documentation Archive (Nov 10, 2025)
-- **Before:** 87 markdown files mixed together in `docs/`
+- **Before (Nov 2025):** 87 markdown files mixed together in `docs/`
 - **After:** Active docs in `docs/`, completed work in `docs/archive/`
 - **Impact:** Easier to find current vs historical docs
 - **Key commits:** `ec40148`
@@ -679,7 +743,7 @@ miniCycle-main.js (entrypoint)
   - `uiBoot.js` (406 lines) - UI event handlers
 - **Entrypoint:** `miniCycle-main.js` (133 lines) in root
 - **Impact:** Better debuggability, each file uploadable for AI debugging
-- **Key docs:** `docs/future-work/BOOT_FILE_SPLIT_PLAN.md`
+- **Key docs:** [BOOT_FILE_SPLIT_PLAN.md](../archive/BOOT_FILE_SPLIT_PLAN.md) (archived)
 
 ### Phase 6: CSS Modularization (Jan 9, 2026)
 - **Before:** 8,000+ line monolithic `miniCycle-styles.css`
@@ -691,7 +755,7 @@ miniCycle-main.js (entrypoint)
   - `themes/` (1 file) - Theme manager
 - **Entry point:** `styles/main.css` imports all modules
 - **Impact:** Easier maintenance, clearer organization, component-based architecture
-- **Original file:** Archived to `archive/miniCycle-styles.css`
+- **Original file:** Archived to `archive/miniCycle-styles.css` (local-only `web/archive/`, not in the repo)
 
 ---
 
@@ -706,8 +770,7 @@ miniCycle-main.js (entrypoint)
 
 ### "I want to understand how tasks work"
 1. Start with `docs/DEVELOPER_DOCUMENTATION.md` for high-level overview
-2. Read `modules/task/README.md` (if exists) for task system guide
-3. Browse `modules/task/` files:
+2. Browse `modules/task/` files:
    - `taskCore.js` - Start here for business logic
    - `taskDOM.js` - How tasks render
    - `taskEvents.js` - How user interactions work
@@ -720,22 +783,22 @@ miniCycle-main.js (entrypoint)
 
 ### "I need to fix a bug"
 1. Check `tests/` for failing tests (or write a failing test first)
-2. Find the corresponding module (tests mirror structure)
+2. Find the corresponding module (test files are named after modules)
 3. Fix in module, verify test passes
-4. Run full suite: `npm test`
+4. Run `npm test` (browser suite) — it is not the full set; CI also runs `test:sw`, `test:layout`, `test:meta`, `test:journey` and more (see [VALIDATION_GATES.md](../working-on-code/VALIDATION_GATES.md))
 
 ### "I want to understand the folder structure"
 **You're here!** This document explains the what, why, and how.
 
 ### "I need to see how it used to work"
-- **Code:** Check `archive/` for old implementations
+- **Code:** Check `archive/` for old implementations (local-only; not in a clone)
 - **Docs:** Check `docs/archive/` for historical documentation
 - **Git:** `git log --oneline --all` and search for relevant commits
 
 ### "I want to deploy"
 - **Production:** Push to `main`, Netlify builds and publishes the bundled `web/dist/` (root `netlify.toml` is the build authority)
-- **Testing:** Netlify deploy previews for all pull requests
-- **Version:** App-code changes ship via `./scripts/update-version.sh --auto --push` (version + cache bump + CSP hashes) — see [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md)
+- **Testing:** Netlify deploy previews for pull requests (per [DEPLOYMENT.md](../deployment/DEPLOYMENT.md); a Netlify site setting, not in `netlify.toml`)
+- **Version:** App-code changes ship via `cd web && ./scripts/update-version.sh --auto --push --changelog` (version + cache bump + CSP hashes + tag + push) — see [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md)
 
 ---
 
@@ -748,9 +811,9 @@ miniCycle-main.js (entrypoint)
 - Netlify builds from `web/` (publishes bundled `web/dist/` since v2.294)
 - No build step for development — source structure IS the runtime structure in dev
 - URLs work immediately
-- Can restructure later when multi-platform actually happens
+- Multi-platform did happen without a restructure: the desktop, mobile and Chrome shells live beside `web/` at the repo root and generate their payloads from it
 
-**Trade-off:** Harder to share code with desktop/mobile (but they don't exist yet)
+**Trade-off:** Other platforms share `web/` by generated copy (build scripts), not by a shared source folder — repo-root `shared/` is still empty
 
 ---
 
@@ -784,7 +847,7 @@ miniCycle-main.js (entrypoint)
 **Reasoning:**
 - Test UI shouldn't pollute production module namespace
 - Testing infrastructure is complex enough to deserve isolation
-- Easier to exclude from production builds (if we add a build step)
+- Could be excluded from production builds — though the build step that now exists (v2.294) deliberately still ships them: the in-app testing modal works in production (`scripts/build-web.cjs` generates stable-path shims for it)
 
 **Trade-off:** Testing modules are less discoverable (acceptable - they're not production code)
 
@@ -839,8 +902,8 @@ miniCycle-main.js (entrypoint)
 ## Future Considerations
 
 ### Multi-Platform Expansion
-When desktop or mobile development starts:
-1. Create `shared/` folder for truly shared code
+Desktop (`desktop/`, Electron), mobile (`mobile/`, Capacitor) and the Chrome extension (`chrome/`) now exist as repo-root shells that generate their payloads from `web/`. If real code sharing is ever needed beyond that:
+1. Use the repo-root `shared/` folder (exists, empty by design) for truly shared code
 2. Move business logic from `modules/` to `shared/business-logic/`
 3. Keep platform-specific UI in respective folders
 4. Maintain URL compatibility with redirects
