@@ -94,7 +94,6 @@ const di = createDIModule('RoutineSwitcher', {
     querySelector: optional((sel) => document.querySelector(sel)),
     querySelectorAll: optional((sel) => document.querySelectorAll(sel)),
     safeAddEventListener: optional(null),
-    onCycleRenamed: optional(null),
     onCycleDeleted: optional(null),
     onCycleSwitched: optional(null),
     getModal: optional(null),

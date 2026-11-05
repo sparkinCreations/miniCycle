@@ -162,10 +162,18 @@ export async function runRoutineSwitcherRepairTests(resultsDiv) {
     // =========================================================
     resultsDiv.innerHTML += '<h4 class="test-section">🧱 Cycle Fields</h4>';
 
-    await test('a missing title falls back to the storage key', async () => {
-        const { instance, cycleAfter } = make({ ...WELL_FORMED(), title: '' });
+    await test('a missing title falls back to the storage key on a legacy title-keyed routine', async () => {
+        // Legacy shape: the key is the name and differs from the routine's id.
+        const { instance, cycleAfter } = make({ ...WELL_FORMED(), id: 'cycle_1', title: '' });
         instance._validateAndRepairCycleData('c1');
         if (cycleAfter().title !== 'c1') throw new Error(`title was "${cycleAfter().title}"`);
+    });
+
+    await test('a missing title on an id-keyed routine becomes "Untitled Routine", never the id', async () => {
+        // 2.6 shape: the key IS the id ("routine-…"), which is not text for the user.
+        const { instance, cycleAfter } = make({ ...WELL_FORMED(), id: 'c1', title: '' });
+        instance._validateAndRepairCycleData('c1');
+        if (cycleAfter().title !== 'Untitled Routine') throw new Error(`title was "${cycleAfter().title}"`);
     });
 
     await test('a negative or non-numeric cycleCount resets to 0', async () => {

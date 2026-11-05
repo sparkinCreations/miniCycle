@@ -907,6 +907,8 @@ export const DEFAULT_LABELS = deepFreeze({
         diagMigrationDryRunOk:    'Migration dry run passed every check',
         diagMigrationDryRunProblems: 'Migration dry run found {count} problem(s)',
         diagMigrationDryRunFailed: 'Migration dry run threw - see the results',
+        diagRoutineKeysOk:        'Routine keys displayed - every routine is keyed by its id',
+        diagRoutineKeysMismatch:  '{count} routine(s) not keyed by id - repaired on the next launch',
         diagAppInfo:              'App information displayed',
         diagPerfInfo:             'Performance info displayed',
         diagBootTiming:           'Boot timing displayed',

@@ -284,6 +284,54 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (stored?.settings?.theme !== 'edited-while-held') throw new Error('the edit made while held was not saved once the hold lifted');
     });
 
+    // ── 2.6 routine-key repair at boot (Nov 2026) ────────────────────────────
+    const PRE_PREFIX = 'miniCycleData_pre-migration_';
+    const clearPreCopies = () => Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX)).forEach(k => localStorage.removeItem(k));
+
+    await test('boot re-keys a title-keyed routine by its id, keeps a copy first, and persists at once', async () => {
+        clearPreCopies();
+        const doc = createMockData();
+        const routine = doc.data.routine['cycle-main'];
+        delete doc.data.routine['cycle-main'];
+        doc.data.routine['Main Cycle'] = { ...routine, id: 'cycle_123', title: 'Main Cycle' };
+        doc.appState.activeRoutineId = 'Main Cycle';
+        const raw = JSON.stringify(doc);
+        localStorage.setItem('miniCycleData', raw);
+
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('a title-keyed 2.6 document should still load');
+        const live = sm.get();
+        if (Object.keys(live.data.routine).includes('Main Cycle')) throw new Error('still keyed by its title');
+        if (live.appState.activeRoutineId !== 'cycle_123') throw new Error(`active id ${live.appState.activeRoutineId}, expected the routine's own id`);
+        if (live.data.routine.cycle_123?.title !== 'Main Cycle') throw new Error('title lost');
+        if (live.data.routine.cycle_123.tasks.length !== routine.tasks.length) throw new Error('tasks lost');
+
+        const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (!stored.data.routine.cycle_123) throw new Error('the repair was not written back at once');
+        const copies = Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX));
+        if (copies.length !== 1) throw new Error(`expected one pre-repair copy, got ${copies.length}`);
+        if (localStorage.getItem(copies[0]) !== raw) throw new Error('the copy is not the raw stored document');
+
+        if (JSON.stringify(sm.repairedRoutineKeysThisBoot) !== JSON.stringify([['Main Cycle', 'cycle_123']])) {
+            throw new Error(`repair flag ${JSON.stringify(sm.repairedRoutineKeysThisBoot)}`);
+        }
+        if (sm.migratedThisBoot) throw new Error('a key repair is not a migration (that flag clears ALL undo history)');
+        clearPreCopies();
+    });
+
+    await test('a 2.6 document already keyed by id is adopted untouched (no copy, no flag)', async () => {
+        clearPreCopies();
+        const raw = JSON.stringify(createMockData());
+        localStorage.setItem('miniCycleData', raw);
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('fixture should load');
+        if (sm.repairedRoutineKeysThisBoot) throw new Error('a clean document was repaired');
+        if (Object.keys(localStorage).some(k => k.startsWith(PRE_PREFIX))) throw new Error('a copy was kept for a clean document');
+        if (!sm.get().data.routine['cycle-main']) throw new Error('an id-keyed routine moved');
+    });
+
     await test('save() refuses to write over newer-version data written by another tab', async () => {
         localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.6' }));
         const warnings = [];

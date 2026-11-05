@@ -43,48 +43,54 @@ export function fitText(text, maxLength) {
     return cut.replace(/(?:\u200D|\uFE0F)+$/, '');
 }
 
-// Deliberately `Object.prototype.hasOwnProperty.call`, NOT `Object.hasOwn`. The build
-// target is es2020 and the feature gate in miniCycle.html admits anything with
-// globalThis (Chrome 71 / Safari 12.1 / Firefox 65); `Object.hasOwn` is es2022
-// (Chrome 93 / Safari 15.4 / Firefox 92). esbuild transpiles syntax, not built-in
-// methods, so it would ship verbatim and throw TypeError through the whole
-// routine-creation path on browsers the gate lets in — iOS 15.3 and earlier included.
-const hasOwn = Object.prototype.hasOwnProperty;
-
 /**
- * Is this name already used as a routine key?
+ * Is this name already used by a routine in the map?
  *
- * Gated on an own-property check before the truthiness check, because routine names are
- * user-typed and land directly as object keys. A bare `existingCycles[name]` read
- * inherits from Object.prototype, so it is truthy on an EMPTY cycles object for
- * "constructor", "toString", "valueOf", "hasOwnProperty" — a routine with any of
- * those names was reported as a collision and silently renamed to "constructor (2)"
- * with wasModified=true, despite nothing to collide with.
+ * Compares NAMES, not keys. Routines are keyed by a generated id (Schema 2.6), and
+ * until Nov 2026 some were still keyed by their title, so a routine's name is its
+ * `title` when it has one and its key otherwise — the same fallback the key repair
+ * uses (routine/schemaMigration26.js repairRoutineKeys). That keeps both shapes
+ * right: `{ 'routine-1': { title: 'Morning' } }` and a legacy `{ 'Morning': {} }`
+ * both reserve "Morning".
  *
- * The truthiness half is kept on purpose: a key present but holding a falsy value is
- * a corrupt/placeholder entry, not a real routine, so it should not reserve the name.
+ * Reading values with Object.entries means a name is never looked up as a key, so
+ * "constructor", "toString" and the other Object.prototype names are ordinary names
+ * (they used to read as collisions on an EMPTY map through a bare `map[name]`).
  *
- * `__proto__` is treated as always-taken on purpose. Assigning it on a plain object
- * sets the prototype instead of creating an own property, so `cycles['__proto__'] = {...}`
- * reads back correctly in memory but serialises to `{}` — the routine survives until
- * reload and then vanishes with no error. Forcing the numbered suffix keeps the name
- * an ordinary own key. (Crafted `.mcyc` imports are a separate path, already covered by
- * DataValidator._checkForPrototypePollution, which sees `__proto__` because JSON.parse
- * DOES create it as an own property.)
+ * The truthiness check is kept on purpose: an entry holding a falsy value is a
+ * corrupt/placeholder entry, not a real routine, so it does not reserve the name.
  *
- * @param {Object} existingCycles - Object with cycle keys (names)
+ * `__proto__` stays always-taken. With id keys it can no longer reach the map as a
+ * key from here, but a legacy title-keyed writer or an old build sharing the same
+ * storage still could, and `map['__proto__'] = {...}` sets the prototype instead of
+ * an own property: it reads back in memory and serialises to `{}`. Forcing the
+ * numbered suffix costs nothing. (Crafted `.mcyc` imports are covered separately by
+ * DataValidator._checkForPrototypePollution.)
+ *
+ * @param {Object} existingCycles - The routines map (key -> routine)
  * @param {string} name - Candidate name
  * @returns {boolean} True if the name is unavailable
  */
 function isNameTaken(existingCycles, name) {
     if (name === '__proto__') return true;
-    return hasOwn.call(existingCycles, name) && !!existingCycles[name];
+    if (!existingCycles || typeof existingCycles !== 'object') return false;
+    return Object.entries(existingCycles).some(([key, routine]) => !!routine && routineName(key, routine) === name);
+}
+
+/**
+ * A routine's display name: its title, or its key for a legacy entry without one.
+ * @param {string} key
+ * @param {Object} routine
+ * @returns {string}
+ */
+function routineName(key, routine) {
+    return typeof routine?.title === 'string' && routine.title.trim() ? routine.title : key;
 }
 
 /**
  * Generate a unique cycle name by appending (2), (3), etc. if needed
  * @param {string} baseName - The desired name
- * @param {Object} existingCycles - Object with cycle keys (names)
+ * @param {Object} existingCycles - The routines map (names are compared by title; see isNameTaken)
  * @param {number} maxAttempts - Max number of variations to try (default 10)
  * @returns {{ name: string, wasModified: boolean }} Unique name and whether it was modified
  */

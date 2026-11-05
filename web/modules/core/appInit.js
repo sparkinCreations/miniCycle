@@ -669,7 +669,9 @@ class AppInit {
 					// Re-read with the fixed activeCycle
 					schemaData = this._readSchemaData();
 					const recoveredActiveCycle = schemaData?.activeCycle || firstCycle;
-					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredActiveCycle } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+					// Name the routine by its title: the key is a generated id, not text for the user.
+					const recoveredName = schemaData?.cycles?.[recoveredActiveCycle]?.title || recoveredActiveCycle;
+					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredName } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
 					await this.runCompleteInitialSetup(recoveredActiveCycle, null, schemaData);
 					return;
 				}

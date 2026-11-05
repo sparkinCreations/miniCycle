@@ -476,6 +476,18 @@ export async function runCycleImportManagerTests(resultsDiv) {
         if (key === 'My Routine') throw new Error('collision must not overwrite the existing cycle');
         if (!state.data.routine['My Routine']) throw new Error('original cycle must survive');
         if (!state.data.routine[key]) throw new Error('imported cycle missing');
+        if (state.data.routine[key].title !== 'My Routine (2)') throw new Error(`imported title ${state.data.routine[key].title}, expected "My Routine (2)"`);
+    });
+
+    await test('an imported routine is keyed by its own generated id, never by its title', async () => {
+        const { state } = await runImport({ name: 'Fresh Import', tasks: [{ id: 'n1', text: 'one' }] });
+        const key = state.appState.activeRoutineId;
+        const routine = state.data.routine[key];
+        if (!routine) throw new Error('imported routine is not the active one');
+        if (key === 'Fresh Import') throw new Error('the import is keyed by its title');
+        if (routine.id !== key) throw new Error(`key ${key} is not the routine's id ${routine.id}`);
+        if (!/^routine-/.test(key)) throw new Error(`key ${key} is not a generated routine id`);
+        if (routine.title !== 'Fresh Import') throw new Error(`title ${routine.title}`);
     });
 
     // ============================================

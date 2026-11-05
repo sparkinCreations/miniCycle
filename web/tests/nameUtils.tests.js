@@ -258,6 +258,35 @@ export async function runNameUtilsTests(resultsDiv) {
         if (out !== 'abcd\u200Fe') throw new Error(`got ${JSON.stringify(out)}`);
     });
 
+    // ── names are TITLES, not keys (Nov 2026) ─────────────────────────────────
+    // Routines are keyed by generated ids; a name is taken when another routine
+    // has it as its TITLE. A legacy title-keyed entry with no title still counts
+    // by its key.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔑 Names are titles, not keys</h4>';
+
+    await test('an id-keyed routine reserves its TITLE', () => {
+        const map = { 'routine-1': { id: 'routine-1', title: 'Morning' } };
+        if (cycleNameExists('Morning', map) !== true) throw new Error('title not seen as taken');
+        const r = getUniqueCycleName('Morning', map);
+        if (r.name !== 'Morning (2)' || r.wasModified !== true) throw new Error(JSON.stringify(r));
+    });
+
+    await test('a routine KEY is not a name', () => {
+        const map = { 'routine-1': { id: 'routine-1', title: 'Morning' } };
+        if (cycleNameExists('routine-1', map) !== false) throw new Error('an id was treated as a name');
+    });
+
+    await test('a legacy title-keyed entry without a title still reserves its key', () => {
+        if (cycleNameExists('Legacy', { 'Legacy': {} }) !== true) throw new Error('legacy key name not reserved');
+    });
+
+    await test('names stay ordinary for Object.prototype words on an id-keyed map', () => {
+        const map = { 'routine-1': { id: 'routine-1', title: 'Morning' } };
+        for (const word of ['constructor', 'toString', 'valueOf', 'hasOwnProperty']) {
+            if (cycleNameExists(word, map)) throw new Error(`"${word}" read as taken`);
+        }
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

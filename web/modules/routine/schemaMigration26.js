@@ -21,9 +21,14 @@
  * Everything it needs from the outside (an id maker, a clock, the theme swatch sets that map a
  * stored colour to its level) is passed in, so it can run in a test, a dry-run tool or boot.
  *
- * NOT WIRED YET. Nothing calls migrateSchema_2_5_to_2_6 at runtime; SCHEMA.CURRENT is still
- * "2.5". Wiring it (the gate, the boot entry, the helpers' internals, the .mcyc schemas) is
- * the release step and waits for the platform builds to carry the forward-compatibility guard.
+ * Wired since v2.573 (Sep 2026): AppState._migrateIfOlder runs migrateSchema_2_5_to_2_6 once at
+ * boot on a 2.5 document, after keeping the raw copy; SCHEMA.CURRENT is "2.6". The testing
+ * modal's dry run calls the same function on a clone.
+ *
+ * Also here, for 2.6 documents: repairRoutineKeys. Until Nov 2026 routine creation, import and
+ * rename still wrote routines under their TITLE, so a 2.6 document can hold title-keyed
+ * routines next to id-keyed ones. The repair re-keys those once at boot (same backup, same
+ * dry run) without a schema bump: the 2.6 shape already promises id keys.
  *
  * @module routine/schemaMigration26
  */
@@ -261,6 +266,73 @@ export function migrateSchema_2_5_to_2_6(doc, { makeId, now = Date.now, swatchSe
     renameRoutineKeys(out);
     stampVersion(out, now);
     return out;
+}
+
+// ── 2.6 maintenance: routine key repair (Nov 2026) ────────────────────────────
+
+/** Ids are machine-made (`routine-<ts>-<rand>`, older `cycle_<ts>`): never spaces or user text. */
+const ID_SHAPE = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Whether a 2.6 routine entry is keyed the way 2.6 promises: by its own `id`.
+ * A title-keyed routine (written by creation, import or rename before Nov 2026)
+ * has key "Morning Routine" and id "cycle_<ts>", so the two differ.
+ * @param {string} key - The routine's key in `data.routine`
+ * @param {Object} routine
+ * @returns {boolean}
+ */
+export function isRoutineKeyedById(key, routine) {
+    return isObject(routine) && typeof routine.id === 'string' && routine.id !== '' && routine.id === key;
+}
+
+/**
+ * Re-key every routine whose key is not its id, on a 2.6 document. A repaired
+ * routine is filed under its OWN `id` when that id is usable — a non-empty
+ * id-shaped string that no other routine holds — so a routine renamed after the
+ * 2.6 migration gets its original key back and anything that stored `routine.id`
+ * stays valid. Otherwise it gets a fresh key from `makeId` (retried on any
+ * collision, so two routines can never merge). Either way `id` becomes the key,
+ * and a missing title falls back to the old key so no name is lost. Routines already keyed by id are
+ * untouched, the map keeps its order, and `appState.activeRoutineId` follows the
+ * active routine. Running it twice changes nothing.
+ *
+ * @param {Object} doc - A 2.6 document (mutated in place — call on a clone)
+ * @param {() => string} makeId
+ * @returns {Array<[string, string]>} [oldKey, newKey] for every re-keyed routine, in map order
+ */
+export function repairRoutineKeys(doc, makeId) {
+    const routines = doc?.data?.routine;
+    if (!isObject(routines)) return [];
+    if (typeof makeId !== 'function') throw new Error('repairRoutineKeys: makeId is required');
+    const entries = Object.entries(routines);
+    if (entries.every(([key, routine]) => !isObject(routine) || isRoutineKeyedById(key, routine))) return [];
+
+    const repaired = {};
+    const keyMap = [];
+    for (const [oldKey, routine] of entries) {
+        if (!isObject(routine) || isRoutineKeyedById(oldKey, routine)) {
+            repaired[oldKey] = routine;
+            continue;
+        }
+        const taken = (key) => hasOwn(repaired, key) || hasOwn(routines, key) || key in Object.prototype;
+        let newKey = typeof routine.id === 'string' && ID_SHAPE.test(routine.id) && !taken(routine.id)
+            ? routine.id
+            : makeId();
+        while (taken(newKey)) newKey = makeId();
+        keyMap.push([oldKey, newKey]);
+        repaired[newKey] = {
+            ...routine,
+            id: newKey,
+            title: typeof routine.title === 'string' && routine.title.trim() ? routine.title : String(oldKey)
+        };
+    }
+    doc.data.routine = repaired;
+    if (isObject(doc.appState)) {
+        const active = doc.appState.activeRoutineId;
+        const moved = keyMap.find(([oldKey]) => oldKey === active);
+        if (moved) doc.appState.activeRoutineId = moved[1];
+    }
+    return keyMap;
 }
 
 /**

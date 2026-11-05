@@ -2647,6 +2647,31 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
     });
 
     // === SUMMARY ===
+    await test('a routine-key repair at boot clears the undo history of the RE-KEYED routines only', async () => {
+        // AppState._repairRoutineKeys re-keys title-keyed routines; their persisted
+        // stacks are filed under the old key and would be orphaned. Every other
+        // routine keeps its history (Nov 2026). A full migration clears all of it.
+        // LAST in the file on purpose: a second initUndoSystemForApp() leaves
+        // module-level wiring that doubles step recording in later tests.
+        const idb = await import('../modules/ui/undoIndexedDB.js');
+        await initUndoIndexedDB();
+        const snap = (id) => ({ activeCycleId: id, title: id, tasks: [], recurringTemplates: {}, timestamp: 1 });
+        saveUndoStackToIndexedDB('Old Title', [snap('Old Title')], []);
+        saveUndoStackToIndexedDB('Keep Me', [snap('Keep Me')], []);
+        idb.flushPendingWritesSync();
+        await new Promise(r => setTimeout(r, 150));
+        if ((await loadUndoStackFromIndexedDB('Old Title')).undoStack.length !== 1) throw new Error('fixture: old-key stack not stored');
+
+        const mockDeps = createMockDependencies();
+        mockDeps.AppState.repairedRoutineKeysThisBoot = [['Old Title', 'cycle_1']];
+        setUndoRedoManagerDependencies(mockDeps);
+        await initUndoSystemForApp();
+
+        if ((await loadUndoStackFromIndexedDB('Old Title')).undoStack.length !== 0) throw new Error('the re-keyed routine kept an orphaned stack');
+        if ((await loadUndoStackFromIndexedDB('Keep Me')).undoStack.length !== 1) throw new Error('an untouched routine lost its undo history');
+        await idb.deleteUndoStackFromIndexedDB('Keep Me');
+    });
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>All Tests Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
 
