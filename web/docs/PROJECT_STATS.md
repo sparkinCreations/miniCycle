@@ -23,16 +23,13 @@
 | **Schema Version** | 2.6 |
 | **Total Modules** | 175 |
 | **Total Tests** | 4480 |
-| **Test Pass Rate** | 100% |
 | **CSS Files** | 46 |
 | **JSDoc Blocks** | 1686 |
 | **Documentation Files** | 253 |
-| **DI Completion** | 100% |
-| **Custom window.* Globals (modules)** | 0 |
 
 ---
 
-**Note:** `miniCycle.html` exposes a small set of window-scoped helpers (service worker update helpers and feature gate flags). Module code remains zero-globals.
+**Note:** `miniCycle.html` exposes a small set of window-scoped helpers (service worker update helpers and feature gate flags). Module code has one known custom global, the boot-timing hook `window.getMiniCycleBootTiming` in `modules/boot/orchestrator.js` (found Nov 2026); no gate counts globals, so this file no longer reports a number.
 
 ## Module Breakdown
 
@@ -75,7 +72,6 @@
 |----------|-------|
 | Total Tests | 4480 |
 | Test Files | 153 |
-| Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
 > **Note:** Test file count is `.tests.js` files only. The `tests/` directory also contains a few helper/utility files (testHelpers.js, testContext.js, performance.benchmark.js, etc.).
@@ -127,10 +123,12 @@ surfaces can't drift apart. These are updated when you run `./scripts/update-ver
 
 These metrics must be updated manually as needed:
 1. **Schema Version** - Only changes with data model updates
-2. **Test Pass Rate** - Update after test runs (should always be 100%)
-3. **DI Completion** - Update when DI migration milestones reached
-4. **Custom window.* Globals** - Update if global count changes
-5. **Architecture Milestones** - Add new milestones as they're reached
+2. **Architecture Milestones** - Add new milestones as they're reached
+
+Test Pass Rate, DI Completion and the custom-globals count were dropped Nov 5 2026
+(docs audit round 1): they were typed by hand, no script refreshed them, and the
+globals count was wrong. CI results are the source for pass/fail; `validate:di`
+gates DI wiring.
 
 ---
 

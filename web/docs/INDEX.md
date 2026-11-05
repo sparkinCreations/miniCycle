@@ -12,12 +12,15 @@ catalogue and absorbed `DEVELOPER_DOCUMENTATION.md`, now archived)
 
 ## I'm new to miniCycle
 
+The same seven steps, in the same order, as the sidebar's *Start Here*:
+
 1. [What is miniCycle?](start-here/WHAT_IS_MINICYCLE.md) — the product: a routine manager, not a to-do app
 2. [How miniCycle works](start-here/HOW_MINICYCLE_WORKS.md) — boot, state, DI and rendering in one read
-3. [Getting started](start-here/GETTING_STARTED.md) and [the dev server](start-here/DEV_SERVER.md)
-4. [Your first contribution](start-here/FIRST_CONTRIBUTION.md)
-5. Reference while you read: [folder structure](start-here/FOLDER_STRUCTURE.md),
-   [framework equivalents](start-here/FRAMEWORK_EQUIVALENTS.md) (framework patterns → what miniCycle builds by hand)
+3. [Getting started](start-here/GETTING_STARTED.md) — run the app and the tests
+4. [Dev server](start-here/DEV_SERVER.md) — what `npm start` serves and why a normal refresh is enough
+5. [Your first contribution](start-here/FIRST_CONTRIBUTION.md)
+6. [Folder structure](start-here/FOLDER_STRUCTURE.md) — keep open while you read code
+7. [Framework equivalents](start-here/FRAMEWORK_EQUIVALENTS.md) — framework patterns → what miniCycle builds by hand
 
 ## I'm about to change code — read the matching guide first
 

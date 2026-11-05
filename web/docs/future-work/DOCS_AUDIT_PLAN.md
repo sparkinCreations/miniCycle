@@ -333,6 +333,23 @@ Taken (Nov 5 2026, after the round 0 report — MJ: "I agree with all three"):
   archived into it; `docs/README.md` stays as the site's landing page.
   Done in round 1, which audits all four.
 
+Taken (Nov 5 2026, round 1 report — MJ):
+
+- **User-manual privacy wording** (now matching `legal/privacy.html`): approved.
+- **LAN addresses removed** — the two in the archived developer hub, plus the
+  same personal address used as the "example" in `GETTING_STARTED.md` and
+  `TESTING_QUICK_REFERENCE.md` (now `192.168.1.20`). Git history still holds
+  them; they are private-range, so history is not rewritten.
+- **`PROJECT_STATS.md` drops its hand-typed claim rows** — Test Pass Rate, DI
+  Completion, custom-globals count (and the duplicate Pass Rate row). Other docs
+  repeating "Test Pass Rate 100%" (`ARCHITECTURE_OVERVIEW`, `TESTING_README`) are
+  fixed in their own rounds (6 and 3b).
+- **Games:** not in use; the space in `games/miniCycle- taskGame.html` is fine
+  for now. No audit action.
+- **Sidebar and INDEX list Start Here in the same order** (1 → 7): what it is,
+  how it works, getting started, dev server, first contribution, folder
+  structure, framework equivalents.
+
 Open — MJ to decide (a restructure, so the *will NOT do* rule "fix, don't
 polish" would otherwise leave it untouched):
 

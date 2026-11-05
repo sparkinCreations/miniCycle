@@ -47,11 +47,11 @@ miniCycle can be tested on iPad/iPhone over local WiFi:
 # 1. Find your Mac's IP address
 ifconfig | grep "inet " | grep -v 127.0.0.1
 
-# Example output: 192.168.4.87
+# Example output: 192.168.1.20
 
 # 2. On your iPad/iPhone (same WiFi), open Safari and visit:
-http://192.168.4.87:8080/miniCycle.html
-http://192.168.4.87:8080/tests/module-test-suite.html
+http://192.168.1.20:8080/miniCycle.html
+http://192.168.1.20:8080/tests/module-test-suite.html
 ```
 
 This is invaluable for testing touch interactions, Safari-specific behavior, and PWA installation on actual mobile hardware.

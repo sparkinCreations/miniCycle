@@ -4,11 +4,11 @@
   * [Home](/)
   * [1. What is miniCycle?](start-here/WHAT_IS_MINICYCLE.md)
   * [2. How miniCycle Works](start-here/HOW_MINICYCLE_WORKS.md)
-  * [3. Your First Contribution](start-here/FIRST_CONTRIBUTION.md)
-  * [4. Getting Started](start-here/GETTING_STARTED.md)
-  * [5. Framework Equivalents](start-here/FRAMEWORK_EQUIVALENTS.md)
+  * [3. Getting Started](start-here/GETTING_STARTED.md)
+  * [4. Dev Server](start-here/DEV_SERVER.md)
+  * [5. Your First Contribution](start-here/FIRST_CONTRIBUTION.md)
   * [6. Folder Structure](start-here/FOLDER_STRUCTURE.md)
-  * [7. Dev Server](start-here/DEV_SERVER.md)
+  * [7. Framework Equivalents](start-here/FRAMEWORK_EQUIVALENTS.md)
 
 * **User Guides**
   * [User Guide](user-guides/USER_GUIDE.md)
