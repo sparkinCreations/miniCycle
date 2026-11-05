@@ -24,6 +24,7 @@ const path = require('path');
 const { chromium } = require('playwright');
 const { AxeBuilder } = require('@axe-core/playwright');
 const { startStaticServer } = require('./_static-server.cjs');
+const { instrumentBrowser } = require('./_di-warnings.cjs');
 
 const WEB_ROOT = path.resolve(__dirname, '..', '..');
 const PORT = 8081;
@@ -345,6 +346,9 @@ async function run() {
     console.log(`${colors.gray}   server on ${srv.url} (web/)${colors.reset}`);
 
     const browser = await chromium.launch({ headless: true });
+    // A dependency that never arrived does not throw: the app degrades on purpose
+    // (ADR-006) and only logs. Collect those lines on every page; any one fails the run.
+    const di = instrumentBrowser(browser);
     const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
     await context.addInitScript(() => {
         if (navigator.serviceWorker) navigator.serviceWorker.register = () => Promise.reject(new Error('SW off for contrast test'));
@@ -522,6 +526,15 @@ async function run() {
         await srv.close?.();
     }
     console.log(`\n${colors.gray}   ${needsReview} node(s) over image/gradient backgrounds need a manual check (axe cannot resolve them).${colors.reset}`);
+    // A starved dependency fails the run whether or not CONTRAST_GATE is set:
+    // GATE is about contrast ratios, and a page missing a feature was not the
+    // page the ratios were measured on.
+    const diFailures = di.failures();
+    if (diFailures.length) {
+        console.log(`${colors.red}⚠️  ${diFailures.length} DI wiring gap(s) while auditing:${colors.reset}`);
+        diFailures.forEach(f => console.log(`   ${colors.red}• ${f}${colors.reset}`));
+        process.exit(1);
+    }
     if (serious.length === 0) {
         console.log(`${colors.green}🎉 No serious contrast violations on solid backgrounds.${colors.reset}`);
         process.exit(0);

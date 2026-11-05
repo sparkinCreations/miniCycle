@@ -41,6 +41,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const { startStaticServer } = require('./_static-server.cjs');
+const { instrumentBrowser } = require('./_di-warnings.cjs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -123,6 +124,9 @@ async function run() {
     console.log(`${colors.gray}   server on ${srv.url} (web/)${colors.reset}`);
 
     const browser = await chromium.launch({ headless: true });
+    // A dependency that never arrived does not throw: the app degrades on purpose
+    // (ADR-006) and only logs. Collect those lines on every page; any one fails the run.
+    const di = instrumentBrowser(browser);
     const context = await browser.newContext({ viewport: { width: 900, height: 950 } });
     await context.addInitScript(installListenerRecorder);
     await context.addInitScript(() => {
@@ -575,6 +579,7 @@ async function run() {
         await browser.close();
         await srv.close?.();
     }
+    failures.push(...di.failures());
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
     if (failures.length) {
