@@ -6854,6 +6854,7 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
                 r.deleteCheckedTasks = i % 3 === 2;
                 r.tasks = Array.from({ length: 2 + (i % 6) }, (_, k) => ({ ...base.tasks[0], id: `m${i}t${k}`, text: `${n} step ${k + 1}`, completed: false }));
                 r.history = { events: [], maxEvents: 100 };
+                r.id = 'm' + i; // 2.6 contract: key === id (see journeyBrowseRoutines)
                 out['m' + i] = r;
             });
             d.data.routine = out;
@@ -7041,6 +7042,10 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 r.history = { events: [], maxEvents: 100 };
                 // Recent order = r0, r1, r2, … (r0 used most recently).
                 r.lastAccessedAt = Date.now() - i * HOUR;
+                // 2.6 contract: a routine's key IS its id. Cloning `base` copied
+                // base's id onto every routine, which boot now (correctly) re-keys
+                // as title-keyed data (AppState._repairRoutineKeys, Nov 2026).
+                r.id = 'r' + i;
                 out['r' + i] = r;
             });
             d.data.routine = out;
