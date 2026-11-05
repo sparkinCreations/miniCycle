@@ -141,10 +141,8 @@ web/
 │   │   ├── helpers.css                  # Helper classes & navigation dots
 │   │   └── responsive.css               # Media queries
 │   └── themes/                          # Theme system
-│       ├── themes.css                   # Color theme styles
-│       ├── theme-manager.js             # JSON theme validation + custom theme import/export
-│       ├── theme-schema.json            # Theme definition schema
-│       └── definitions/                 # Theme definition files
+│       └── themes.css                   # Legacy [data-theme] colour themes (presets replaced the picker);
+│                                        # the old JSON theme system is in docs/archive/JSON_THEME_SYSTEM.md
 ├── 📄 version.js                        # Single source of truth for versions
 ├── 📄 manifest.json                     # PWA manifest (full version)
 ├── 📄 manifest-lite.json                # PWA manifest (lite version)
