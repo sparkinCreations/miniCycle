@@ -391,4 +391,4 @@ If `init()` is awaited before `markCoreSystemsReady()` is called in the boot seq
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** The [docs index](../INDEX.md) routes you to the guide to read first.

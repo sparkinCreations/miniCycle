@@ -399,7 +399,7 @@ if (!state) return // core-ready is not state-ready: still null on a first run
 
 ## Getting Help
 
-- **Read the docs** — The [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) links to everything
+- **Read the docs** — The [docs index](../INDEX.md) routes you to the guide for your change
 - **Check CLAUDE.md** — The [AI assistant guide](../working-on-code/CLAUDE.md) has a concise summary of patterns and rules
 - **Open an issue** — If you're stuck, ask in a GitHub issue before spending hours debugging
 - **Check the archive** — The [docs archive](../archive/README.md) has historical context on past design decisions

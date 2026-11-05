@@ -82,7 +82,6 @@
   * [Review Patterns](reference/REVIEW_PATTERNS.md)
   * [Drift Audit Checklist](DRIFT_AUDIT_CHECKLIST.md)
   * [Documentation Index](INDEX.md)
-  * [Developer Documentation](DEVELOPER_DOCUMENTATION.md)
 
 * **Features**
   * [Stats Panel](features/STATS_PANEL.md)
@@ -212,6 +211,9 @@
     * [Schema 2.6 Plan](archive/SCHEMA_2_6_PLAN.md)
     * [Settings Toggle Latch Gap](archive/SETTINGS_TOGGLE_LATCH_GAP.md)
     * [Welcome Screen + Tip Archive](archive/WELCOME_SCREEN_PLAN.md)
+
+  * **Superseded Docs (2026)** _(archived Nov 5 2026, docs audit round 1)_
+    * [Developer Documentation Hub](archive/DEVELOPER_DOCUMENTATION.md)
 
   * **Historical Updates**
     * [October 2025 Improvements](archive/OCTOBER_2025_IMPROVEMENTS.md)

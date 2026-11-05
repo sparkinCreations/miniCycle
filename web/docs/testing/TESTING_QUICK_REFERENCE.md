@@ -892,7 +892,7 @@ jobs:
 
 ## 🔗 Resources
 
-- **Full Documentation**: `docs/DEVELOPER_DOCUMENTATION.md` (Testing System section)
+- **Full Documentation**: [TESTING_GUIDE.md](../working-on-code/TESTING_GUIDE.md)
 - **Test Template**: `tests/MODULE_TEMPLATE.tests.js`
 - **Example Tests**: `tests/globalUtils.tests.js`
 - **Test UI**: `http://localhost:8080/tests/module-test-suite.html`

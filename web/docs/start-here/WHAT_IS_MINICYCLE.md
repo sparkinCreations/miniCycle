@@ -2,6 +2,8 @@
 
 **Your Routine Manager That Resets Itself**
 
+**Last verified:** Nov 5 2026
+
 <img src="../../assets/images/screenshots/Example/IMG_1286.PNG" alt="miniCycle Main View" width="300">
 
 -----
@@ -148,7 +150,7 @@ miniCycle offers three different ways routines can behave:
 
 <img src="../../assets/images/screenshots/Example/IMG_1183.PNG" alt="Cycle Mode Selection" width="300">
 
-### 🔄 Auto Cycle Mode (Most Popular)
+### 🔄 Auto Cycle Mode (the default)
 
 **How it works:**
 
@@ -171,9 +173,9 @@ miniCycle offers three different ways routines can behave:
 
 **How it works:**
 
-- Complete all tasks
-- "Complete" button appears
-- You click when ready to reset
+- Complete tasks at your own pace
+- A "Complete Cycle" button is always there
+- You tap it when ready to reset (any tasks still open are completed for you)
 - Tasks uncheck and cycle count increases
 
 <img src="../../assets/images/screenshots/Example/IMG_1191.PNG" alt="Manual Cycle Complete Button" width="300">
@@ -192,9 +194,10 @@ miniCycle offers three different ways routines can behave:
 
 **How it works:**
 
-- Complete a task → it gets deleted (not reset)
+- Complete tasks, then tap "Clear Completed Tasks" → they are cleared (removed), not reset
 - Works like a traditional to-do list
 - No cycling — tasks are removed when done
+- Cleared tasks are kept in Cleared Tasks history and can be recreated
 
 **Perfect for:**
 
@@ -313,7 +316,7 @@ Here's what consistent use looks like — **147 cycles completed**:
 [ ] Pack bedroom
 ```
 
-→ Tasks delete when done (no cycling)
+→ Tasks are cleared when done (no cycling)
 
 -----
 
@@ -379,11 +382,11 @@ Designed for repeatable workflows, not one-off tasks.
 
 ### 🎨 Quick Personalization
 
-Personalization button (🖌️) in the bottom-left corner provides instant access to color customization. Change your app background, task colors, and theme with a single tap.
+Personalization button (🖌️) in the bottom-left corner provides instant access to color customization. Change your app background, task colors, and preset color schemes from one panel.
 
 ### 🌓 Easy Dark Mode
 
-Dark mode toggle in the bottom-right corner lets you switch between light and dark themes instantly.
+Dark mode toggle (moon/sun) in the bottom-right corner lets you switch between light and dark themes instantly.
 
 ### 🔒 Privacy-First
 
@@ -423,8 +426,8 @@ Progressive Web App (PWA) works without internet.
 ✅ **Full task management** within routine structure
 ✅ **Time-based features** (recurring, due dates, notifications)
 ✅ **Quick personalization** (🖌️ button for instant color customization)
-✅ **Easy dark mode** (🌓 toggle in bottom corner)
-✅ **Customizable interface** (show/hide task option buttons per cycle)
+✅ **Easy dark mode** (moon/sun toggle in the bottom-right corner)
+✅ **Customizable interface** (show/hide task option buttons per routine)
 ✅ **Privacy-focused** (local storage only)
 ✅ **Works offline** (PWA)
 
@@ -475,7 +478,7 @@ Think about tasks you do repeatedly:
 <img src="../../assets/images/screenshots/Example/IMG_1303.PNG" alt="Empty State - Create First Routine" width="300">
 
 1. Open miniCycle
-1. Click "Create a Routine"
+1. Click "Create My First Routine" on the first screen (later: + → "Create New Routine")
 1. Name it (e.g., "Morning Routine")
 1. Add your tasks
 1. Choose your mode (Auto/Manual/To-Do)
@@ -543,4 +546,4 @@ miniCycle is a routine manager that resets tasks automatically when you finish t
 
 **Questions?** Check out the [User Guide](../user-guides/USER_GUIDE.md) or [FAQ](../user-guides/FAQ.md)
 
-**For Developers:** See [Developer Documentation](../DEVELOPER_DOCUMENTATION.md)
+**For Developers:** Start at the [docs index](../INDEX.md)

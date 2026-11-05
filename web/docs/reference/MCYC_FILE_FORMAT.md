@@ -1263,7 +1263,7 @@ capability by key presence, not by a version stamp.
 **Documentation:**
 - `WHAT_IS_MINICYCLE.md` - App overview
 - `QUICK_REFERENCE.md` - Feature guide
-- `DEVELOPER_DOCUMENTATION.md` - Technical details
+- [INDEX.md](../INDEX.md) - where to start in the docs
 
 **Support:**
 - GitHub: https://github.com/sparkinCreations/miniCycle

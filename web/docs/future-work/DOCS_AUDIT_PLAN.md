@@ -116,7 +116,7 @@ below.
 | Round | Docs | Lines | Scope | Status |
 |---|---|---|---|---|
 | 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | ✅ done Nov 5 2026 — see *Round 0 result* |
-| 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | pending |
+| 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
 | 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | pending |
 | 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE` | pending |
 | 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | pending |
@@ -178,6 +178,29 @@ without the comment edits fail `validate:docs` (code citations). It ships via
 `update-version.sh`, not as a docs-only push. **Lesson for later rounds:**
 archiving a doc that `modules/` cites by path makes that round a release round;
 check `grep -rn "<name>" web/modules` before choosing what to archive.
+
+### Round 1 result (Nov 5 2026)
+
+**Front door built** (MJ's decision): `INDEX.md` 780 → 93 lines, a task router
+mirroring `CLAUDE.md`'s read-first list; `DEVELOPER_DOCUMENTATION.md` **archived**
+into it (its only unique job — pointing at `DEPENDENCY_MAP`, `APPINIT_EXPLAINED`,
+`DEVELOPMENT_WORKFLOW` — moved to INDEX); 15 inbound links repointed;
+`docs/README.md` stays the landing page and its use-case block now defers to INDEX.
+
+**Audited:** all 7 Start Here docs, the 3 user-guide stubs, `docs/README.md`,
+`INDEX.md`, `PROJECT_STATS.md` (prose only — its header is rewritten by
+`update-version.sh`, so it keeps `**Last Updated**`), and the user manual (checks
+2 and 6). Gates: volatile counts 45 → 39; Schema 2.5 names 10 (none were in this
+round's docs); docs code references unchanged at 124 (the 13 in
+`FRAMEWORK_EQUIVALENTS` are framework API names, expected noise).
+
+**Found in code, not fixed** (the audit changes no code — see the round report):
+routine creation still keys new routines by **title**, not a generated id
+(`routineManager.js` ×4); `window.getMiniCycleBootTiming` is a custom global in
+`orchestrator.js`; `--font-size-md` is used in ≥5 stylesheets and defined nowhere;
+`styles/themes/theme-manager.js` is imported by nothing; stale headers in
+`schemaMigration26.js` ("NOT WIRED YET") and an `AppState.update` JSDoc example
+(`state.data.cycles`).
 
 ## How a round runs
 

@@ -213,7 +213,6 @@ web/
 │   ├── INDEX.md                         # Task router ("start here by task")
 │   ├── PROJECT_STATS.md                 # Generated counts (modules, tests, lines)
 │   ├── _sidebar.md                      # Navigation sidebar
-│   ├── DEVELOPER_DOCUMENTATION.md       # Developer documentation hub
 │   ├── start-here/FOLDER_STRUCTURE.md   # This file!
 │   ├── working-on-code/CLAUDE.md        # AI assistant guide
 │   ├── [architecture docs]
@@ -769,7 +768,7 @@ miniCycle-main.js (entrypoint)
 5. Entry point is `styles/main.css` - imports are ordered by dependency
 
 ### "I want to understand how tasks work"
-1. Start with `docs/DEVELOPER_DOCUMENTATION.md` for high-level overview
+1. Start with `docs/INDEX.md`, which routes by task
 2. Browse `modules/task/` files:
    - `taskCore.js` - Start here for business logic
    - `taskDOM.js` - How tasks render

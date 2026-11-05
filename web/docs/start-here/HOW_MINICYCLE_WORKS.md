@@ -4,19 +4,22 @@
 coding knowledge. Nine parts, each building on the last. Read top to bottom the
 first time; after that, jump to whichever part you need.*
 
+**Last verified:** Nov 5 2026
+
 ---
 
 ## The one-paragraph summary
 
 miniCycle is a **local-first, offline** routine app with **no server** — all your
-data lives on your own device. When you open it, the browser loads **one file**,
+data lives on your own device. When you open it, the browser loads **one entry file**,
 which hands off to a **manager** that boots the app in **three ordered phases**.
 At the center sits **AppState**, the single official record of everything (your
 routines, tasks, settings). Every part of the app **reads** that record and
 **changes it through one controlled door** (`update()`), which automatically
-**saves** the change and **tells the screen to redraw**. Your 130+ code files
-(*modules*) are wired together by a system where each module **declares what it
-needs** and gets it **delivered**. The signature behavior — completing a whole
+**saves** the change and **tells the screen to redraw**. Your code files
+(*modules* — the current count is in [PROJECT_STATS.md](../PROJECT_STATS.md)) are
+wired together by a system where each module **declares what it needs** and gets
+it **delivered**. The signature behavior — completing a whole
 routine so it **resets** instead of disappearing — and the **recurring** system
 that spawns tasks on a schedule are both built on top of this same core.
 
@@ -37,8 +40,9 @@ Near the bottom of `miniCycle.html` is a single line that starts everything:
 <script type="module" src="miniCycle-main.js"></script>
 ```
 
-That file, `miniCycle-main.js`, is *the only file the HTML loads*, and it does
-almost nothing:
+That file, `miniCycle-main.js`, is *the only module script the HTML loads* (beside
+it are small classic scripts such as `version.js`, which publishes the app version,
+and inline boot code in the page itself), and it does almost nothing:
 
 ```javascript
 (async () => {
@@ -74,7 +78,9 @@ starts the app in **three strict phases** (files in `modules/boot/`):
    builds the foundation everything else needs — most importantly **AppState**
    (the app's memory), plus data **migration** and shared utilities.
 2. **Phase 2 — Features** (`featureBoot.js`, function `bootFeatures`): brings up
-   all the real features (tasks, routines, recurring, themes, stats, undo/redo).
+   all the real features (tasks, routines, recurring, themes, stats, undo/redo) —
+   `moduleLoader.js` reads `moduleManifests.js` and wires every module's
+   dependencies here (Part 6).
 3. **Phase 3 — UI** (`uiBoot.js`, function `initUIBoot`): wires up buttons,
    gestures, and interactions so you can actually *do* things.
 
@@ -82,7 +88,7 @@ The order is enforced by the word **`await`**, which means *"wait here until thi
 finishes before moving on."* Without it, JavaScript races ahead and tries to
 staff the kitchen before the power is on.
 
-**Why the boot file looks scary:** roughly 80% of it is *failure handling*, not the
+**Why the boot file looks scary:** most of it is *failure handling*, not the
 core logic. It expects boot to sometimes fail (bad network, stale cache), and on
 failure it **cleans up the half-finished attempt** (the "zombie") and **retries**.
 If retries still fail, HTML-level failsafes (a 16-second late-boot check and a
@@ -121,13 +127,21 @@ what it can **do** (its *methods* — its buttons). The three that matter:
 - **`save()`** — "write the truth to the device" so it survives a refresh/close.
   Beyond that live record, the app also keeps **automatic backups** in a separate,
   much larger store (IndexedDB): the last **10 daily** snapshots, **5 session**
-  snapshots, and up to **50 named** backups — all restorable in-app, no exported
-  file needed. File export exists for the cases backups can't cover (device loss,
-  clearing browser data).
+  snapshots, and up to **50 named** backups (`MAX_AUTO_BACKUPS`,
+  `MAX_SESSION_BACKUPS`, `MAX_MANUAL_BACKUPS` in `backupManager.js`) — all
+  restorable in-app, no exported file needed. File export exists for the cases
+  backups can't cover (device loss, clearing browser data).
 
 **Why `update()` instead of editing data directly?** Editing the record directly
 *"skips the undo system, the debounced save, and the change notifications."* Going
 through the one door guarantees all three happen every time.
+
+**First run is the exception.** On a brand-new install there is no record yet:
+AppState finishes booting with no data, so `get()` returns `null` and `update()`
+does nothing (it warns "State not ready for updates" and returns without running
+the change) until the first-run screen creates the first routine. "Booted" does
+not mean "has data" — code that can run on first launch must check before it
+reads, and must not assume its write landed.
 
 **Takeaway:** one official record; read it with `get()`, change it only through
 `update()`, and it survives via `save()`.
@@ -136,10 +150,12 @@ through the one door guarantees all three happen every time.
 
 ## Part 4 — Inside `update()`: the four moves + the "bell"
 
-Every change runs these four moves (plus a safety net):
+Every change runs these four moves (plus a safety net). Simplified from
+`appState.js`:
 
 ```javascript
 async update(updateFn, immediate = false) {
+    if (!this.data) return;                        // first run: nothing to change yet (Part 3)
     const oldData = structuredClone(this.data);   // 1. PHOTOCOPY the record
 
     try {
@@ -149,7 +165,9 @@ async update(updateFn, immediate = false) {
         this.notifyListeners(oldData, this.data);  // 4. RING THE BELL
         return result;
     } catch (error) {
+        const abandoned = this.data;
         this.data = oldData;                       // SAFETY NET: restore photocopy
+        this.notifyListeners(abandoned, this.data); // ...and ring the bell for the restore
         throw error;
     }
 }
@@ -159,7 +177,8 @@ async update(updateFn, immediate = false) {
    insurance in case the change fails.
 2. **Make the change** — the caller hands `update()` a small *instruction*
    (`updateFn`) describing *what* to change; `update()` handles all the ceremony.
-   Example: `AppState.update(state => { state.data.routine[id].tasks.push(task); })`.
+   Example: `AppState.update(state => { getRoutine(state, id).tasks.push(task); })`
+   (`getRoutine` is one of the state accessors in `utils/cycleMode.js`).
 3. **Save** (`scheduleSave`) — **debounced**: normal saves wait ~600ms and *batch*
    (rapid changes collapse into one save); urgent ones (`immediate = true`) save
    instantly. A pending save is **flushed on close** by three handlers —
@@ -171,10 +190,11 @@ async update(updateFn, immediate = false) {
    on every change, calls everyone on it — so the screen **redraws automatically**.
    You never manually tell the screen to update; it *reacts* to data changes.
 
-**Safety net** (`catch`): if the change throws, slam the data back to the photocopy
-and re-throw. The record is never left half-edited. (The undo UI bug found in
-review was this bell *not* being rung on the failure path — data restored, but
-screen not told to redraw.)
+**Safety net** (`catch`): if the change throws, slam the data back to the photocopy,
+ring the bell so the screen redraws the restored record, and re-throw. The record
+is never left half-edited. (Until Sep 2026 the failure path did *not* ring the
+bell — data restored, but the screen not told to redraw;
+`STATE_TRUTH_MIGRATION.md` #7.)
 
 **Takeaway:** change → auto-save → auto-redraw, every time, transactionally.
 
@@ -194,8 +214,8 @@ The handler is `handleTaskCompletionChangeImpl` in
 3. **Change the truth through `update()`:**
    ```javascript
    AppState.update(state => {
-     const cycle = state.data.routine[state.appState.activeRoutineId];
-     const task = cycle.tasks.find(t => t.id === taskId);
+     const routine = getRoutine(state, getActiveRoutineId(state));
+     const task = routine.tasks.find(t => t.id === taskId);
      if (task) task.completed = isCompleted;   // the actual change
    }, false);  // false = let debounce batch the save
    ```
@@ -210,14 +230,15 @@ change through `update()` → touch up visuals → ripple. Learn one, read them 
 
 ---
 
-## Part 6 — How 130+ modules get wired (dependency injection)
+## Part 6 — How the modules get wired (dependency injection)
 
 **Analogy:** A film crew has a *call sheet*. Each member lists what they *require*
 (a generator, a gaffer) and what they *provide*. Production reads all of them,
 works out who must be ready before whom, and makes sure each person arrives to
 find their equipment already set up. Nobody scavenges.
 
-**The problem:** 130+ modules, most needing things from others. Two hard parts:
+**The problem:** well over a hundred modules (current count in
+[PROJECT_STATS.md](../PROJECT_STATS.md)), most needing things from others. Two hard parts:
 figuring out the correct **startup order**, and **delivering** each module's needs.
 
 **The call sheet** is `modules/boot/moduleManifests.js`. Each entry declares:
@@ -229,7 +250,9 @@ optionalDeps: ['vocabThemeManager', 'updateStatsPanel', ...],// uses if availabl
 provides:     ['applyTheme', 'updateThemeColor', ...],       // offers to others
 ```
 
-Every module's `requires` is satisfied by some other module's `provides`. This is
+Every module's `requires` is satisfied by some other module's `provides`, or by one
+of the core services every module can have (`CORE_DEPS` in `moduleManifests.js`:
+`AppState`, `appInit`, the DOM helpers, …). This is
 **declarative** — you *describe* the relationships in a list instead of hand-wiring
 them in code.
 
@@ -260,7 +283,8 @@ and delivers dependencies. `_deps` = "what was delivered to me."
 ## Part 7 — The shape of the data (the schema)
 
 "Schema" = the agreed-upon **shape** of your data. The whole app is one nested
-record (defined in `modules/routine/migrationManager.js`, schema version `"2.6"`):
+record (its fresh-install shape is built by `createInitialSchemaData` in
+`modules/routine/migrationManager.js`; schema version `"2.6"`, `SCHEMA.CURRENT`):
 
 ```javascript
 {
@@ -274,21 +298,26 @@ record (defined in `modules/routine/migrationManager.js`, schema version `"2.6"`
 }
 ```
 
-**`data.routine`** holds your routines. Each routine is keyed by a generated id;
-its display name is the `title` field:
+**`data.routine`** holds your routines, each under a key — the key is what
+`activeRoutineId` names and what `getRoutine(state, routineId)` looks up. Its
+display name is the `title` field:
 
 ```javascript
 routine: {
-  "routine-abc123": {         // KEY = the routine's generated id
-    id: "routine-abc123",      // the same id, repeated on the record
+  "<routine key>": {           // KEY = what activeRoutineId points at
+    id: "...",                 // the record's own id
     title: "Morning Routine",  // display name (there is no `name` field)
     tasks: [ ... ],            // an ordered LIST of tasks
   }
 }
 ```
 
-*(Before Schema 2.6 (Sep 2026) routines were keyed by their name, which is why
-some older routine code still talks about "compensating for both" a name and an id.)*
+*(Before Schema 2.6 (Sep 2026) routines were keyed by their name. The 2.6
+migration re-keyed every existing routine by a generated id, with the key and
+`id` the same — but routine creation in `routine/routineManager.js` still writes a
+new routine under its title, with an `id` of `cycle_<timestamp>` (checked Nov 5
+2026). So never assume the key equals the title or the `id`: look routines up by
+their key.)*
 
 **A single task:**
 
@@ -310,12 +339,15 @@ entry's** text lives in `taskText`. The July 2026 review found an import bug cau
 by exactly this mix-up — round-tripped cleared history rendered blank.)*
 
 So checking a task = navigating `data.routine[activeId].tasks`, finding the one whose
-`id` matches, and flipping `completed`. The paths you see in code
-(`state.data.routine[cid].tasks`) are just walking this nesting.
+`id` matches, and flipping `completed`. The accessors you see in code
+(`getRoutine(state, cid).tasks`, from `utils/cycleMode.js`) are just walking this
+nesting.
 
 **`schemaVersion` is the quiet hero.** With no server, users hold data saved in
-older shapes. On startup, `migrationManager` reads the stamp and **upgrades old data
-to the current shape** (backing it up first). This is what lets the app *evolve* its
+older shapes. On startup, AppState (`_migrateIfOlder` in `core/appState.js`) reads
+the stamp and **upgrades old data to the current shape** with
+`routine/schemaMigration26.js` (keeping the raw document first, under
+`miniCycleData_pre-migration_<timestamp>`). This is what lets the app *evolve* its
 data — e.g. rekey routines by a generated id and store priority as a level
 (Schema 2.6, Sep 2026) — without breaking existing users.
 
@@ -341,44 +373,57 @@ of the tasks vanishing (a to-do app), they **reset** so the routine runs again.
 
 1. **Detect completion.** After each task completes, `checkMiniCycle()` (in
    `modules/progress/cycleCompletion.js`) asks *"are they ALL done now?"* If not —
-   nothing special. If yes — the sequence fires. (Two handlers can both call it per
-   click, so a guard flag prevents a double celebration.)
-2. **Count it** (`incrementCycleCount` in `modules/progress/cycleCompletion.js`):
+   nothing special. If yes, and the routine is in Auto Cycle mode, it waits one
+   second (re-checking that nothing was unchecked meanwhile) and calls `resetTasks()`
+   in `modules/task/taskCycleReset.js`, which runs the next steps in this order. In
+   Manual Cycle mode the **Complete Cycle** button starts the same sequence instead.
+   (Two handlers can both call `checkMiniCycle()` per click, so guard flags
+   prevent a double reset and a double confirmation dialog.)
+2. **Reset the tasks** (`resetTasksData` in `modules/task/taskCycleReset.js`),
+   simplified:
+   ```javascript
+   routine.tasks.forEach(task => {
+     if (!task.recurring) task.completed = false;   // back to unchecked (due dates cleared too)
+   });
+   ```
+   The tasks aren't deleted — their `completed` flags flip back to `false`, and the
+   checkboxes on screen are unchecked to match. *That flip is the entire "cycling"
+   concept.* (Tasks marked **Clear on Reset** are removed instead and recorded in
+   Cleared Tasks, and certain recurring tasks are removed — see Part 9.)
+3. **Count it** (`incrementCycleCount` in `modules/progress/cycleCompletion.js`,
+   called by `resetTasks()` right after the reset):
    ```javascript
    AppState.update(state => {
-     const cycle = state.data.routine[activeCycle];
-     cycle.cycleCount = (cycle.cycleCount || 0) + 1;               // this routine +1
+     const routine = getRoutine(state, activeCycle);
+     routine.cycleCount = (routine.cycleCount || 0) + 1;           // this routine +1
      state.userProgress.cyclesCompleted =                          // lifetime total +1
        (state.userProgress.cyclesCompleted || 0) + 1;
    }, true);  // ← immediate save: completing a cycle is a milestone, don't risk losing it
    ```
    Two counts: per-routine (`cycleCount`) and global lifetime (`cyclesCompleted`).
-3. **Rewards ripple.** A first-cycle celebration, then milestone overlays at
-   10, 25, 50, 100, 200, 500, and 1000 cycles, guarded so each fires once.
-   (Vocabulary themes unlock on their own schedule — 5/25/50/75 cycles — and the
-   Whack-a-Order game at 100.) Two careful details: a `!firstCycleCelebrated` flag
-   (so *migrated* users don't wrongly get the "first cycle!" party) and `>=` not
-   `===` threshold checks (so a backup restore past a threshold still triggers once).
-4. **Reset the tasks** (`modules/task/taskCycleReset.js`):
-   ```javascript
-   cycle.tasks.forEach(task => { task.completed = false; });  // all back to unchecked
-   ```
-   The tasks aren't deleted — their `completed` flags flip back to `false`, and the
-   checkboxes on screen are unchecked to match. *That flip is the entire "cycling"
-   concept.* (Certain recurring tasks are removed instead — see Part 9.)
+4. **Rewards ripple.** A first-cycle celebration; a short milestone message when the
+   lifetime total lands exactly on 10, 25, 50, 100, 200, 500 or 1000; and one-time
+   full-screen celebrations at 100 and 500 cycles (`MILESTONES` in
+   `core/constants.js`). (Vocabulary themes unlock on their own schedule — 5/25/50/75
+   cycles — and the Whack-a-Order game at 100.) Two careful details: a
+   `!firstCycleCelebrated` flag (so a user whose count was carried over doesn't
+   wrongly get the "first cycle!" party) and `>=` not `===` checks on the one-time
+   celebrations, each guarded by its own flag (so a backup restore past a threshold
+   still triggers once).
 
 Because every change went through `update()` (Part 4), the bell rang and the screen
 redrew itself to show a fresh, unchecked routine.
 
-**Takeaway:** all done → count it (saved immediately) → celebrate milestones → flip
-every `completed` back to `false`. The app's name describes a field resetting.
+**Takeaway:** all done → flip every `completed` back to `false` → count it (saved
+immediately) → celebrate milestones. The app's name describes a field resetting.
 
 ---
 
 ## Part 9 — The recurring system (the hardest part)
 
 Unlike everything else (which *reacts* to clicks), the recurring system must make
-things happen **on its own, over time**, even when you're not in the app.
+things happen **on its own, over time** — and catch up on what fell due while you
+were away when you come back.
 
 **Analogy:** a **rubber stamp** and a **timer**. The *template* is the stamp ("Take
 vitamins, daily, 8am") — not a task you check, but the *definition of a task that
@@ -403,7 +448,8 @@ tasks: a fresh one will be stamped later.)
   timer (`setInterval`), waking repeatedly to ask *"is anything past its due
   timestamp? If so, stamp it and compute the new next-due."* Clever detail: it
   **changes its own pulse rate** — every ~15 seconds when you have templates
-  (responsive), slowing to every ~2 hours when you have none (saves battery).
+  (responsive), slowing to every ~2 hours when you have none (saves battery) —
+  `INTERVALS.RECURRING_WATCHER` / `INTERVALS.RECURRING_WATCHER_IDLE`.
 
 **The sharpest decision — system vs. user changes.** When the watcher spawns a task,
 that's a data change, but it must **not** enter undo history — you shouldn't be able
@@ -412,10 +458,10 @@ watcher uses a separate path (`commitSystemUpdate`) that changes data *without*
 recording undo. The rule it draws: **user actions belong in undo; system actions
 don't.** Subtle, correct, and easy to get wrong.
 
-**Why 16 files:** the **logic** (calculators, watcher, matcher, activation) is cleanly
+**Why so many files:** the **logic** (calculators, watcher, matcher, activation) is cleanly
 separated from the **UI** (`recurringPanel.js` and its helpers — about half the
-files, where you *configure* recurrence). The panel being large is a known UI
-refactor target, but it's walled off from the scheduling brains, so its size doesn't
+files, where you *configure* recurrence). The panel is the largest file in the
+folder, but it's walled off from the scheduling brains, so its size doesn't
 endanger the logic.
 
 **Takeaway:** templates + a self-pacing background watcher + per-frequency date math,
@@ -427,11 +473,11 @@ with spawned tasks deliberately kept out of undo.
 
 ```
 Browser opens miniCycle.html
-   └─ loads ONE file: miniCycle-main.js
+   └─ loads ONE entry module: miniCycle-main.js
         └─ hands off to the manager: orchestrator.js
              └─ boots in 3 phases:
                   Phase 1: build AppState (the single record) + migrate old data
-                  Phase 2: load & WIRE 130+ modules (declare needs → get injected)
+                  Phase 2: load & WIRE every module (declare needs → get injected)
                   Phase 3: wire up buttons & gestures
 
 Once running, everything is the same loop:
@@ -442,7 +488,7 @@ Once running, everything is the same loop:
 
 Built on that loop:
    • Check a task      → flip one `completed` to true  (Part 5)
-   • Complete a cycle  → count it, then flip ALL `completed` back to false  (Part 8)
+   • Complete a cycle  → flip ALL `completed` back to false, then count it  (Part 8)
    • Recurring tasks   → a background watcher stamps fresh copies on schedule  (Part 9)
 
 All data lives in ONE nested record (Part 7), stamped with a schemaVersion
@@ -459,9 +505,10 @@ so it can be safely upgraded as the app evolves.
 | Boot manager | `modules/boot/orchestrator.js` |
 | Boot phases | `modules/boot/coreBoot.js`, `featureBoot.js`, `uiBoot.js` |
 | Module wiring | `modules/boot/moduleManifests.js`, `moduleLoader.js` |
-| The DI container | `modules/core/diBase.js` |
+| Per-module DI helper (`createDIModule`) | `modules/core/diBase.js` |
 | **AppState (the record)** | `modules/core/appState.js` |
-| Data shape + migration | `modules/routine/migrationManager.js` |
+| Data shape (fresh install) | `modules/routine/migrationManager.js` |
+| Schema migration | `modules/core/appState.js` (`_migrateIfOlder`) + `modules/routine/schemaMigration26.js` |
 | Checking off a task | `modules/task/taskCompletion.js` |
 | Cycle completion | `modules/progress/cycleCompletion.js` |
 | Task reset (the "cycle") | `modules/task/taskCycleReset.js` |
