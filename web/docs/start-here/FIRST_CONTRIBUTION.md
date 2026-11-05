@@ -2,6 +2,8 @@
 
 A step-by-step walkthrough for making your first pull request.
 
+**Last verified:** Nov 5 2026
+
 > **Before you start**, read [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) so you understand the product. miniCycle is a **routine manager**, not a todo app — tasks cycle (reset) instead of being deleted.
 
 ---
@@ -13,13 +15,13 @@ A step-by-step walkthrough for making your first pull request.
 git clone https://github.com/sparkinCreations/miniCycle.git
 cd miniCycle/web
 
-# Install dependencies (for automated tests only)
+# Install dependencies (for automated tests and lint only)
 npm install
 
-# Start the dev server
-python3 -m http.server 8080
-# OR
-npx serve .
+# Start the dev server (scripts/serve.py: no-cache headers, port 8080)
+npm start
+# OR, plain Python static server on the same port
+npm run start:simple
 
 # Open in browser
 open http://localhost:8080/miniCycle.html
@@ -47,14 +49,14 @@ All tests must pass before and after your changes. See [PROJECT_STATS.md](../PRO
 
 ## 3. Understand the Architecture (5-minute version)
 
-miniCycle uses **strict dependency injection** with zero `window.*` globals. Every module declares what it needs and gets it wired at boot time.
+miniCycle uses **strict dependency injection** instead of `window.*` globals. Every module declares what it needs and gets it wired at boot time.
 
 **Key concepts:**
 
 | Concept | What it means |
 |---------|---------------|
 | **DI Framework** | `createDIModule()` from `diBase.js` with `required()` and `optional()` markers |
-| **Module Manifests** | `modules/boot/moduleManifests.js` declares every module, its dependencies, and what it provides |
+| **Module Manifests** | `modules/boot/moduleManifests.js` declares each boot-loaded module, its dependencies, and what it provides (facade sub-modules are loaded by their facade instead — see [HIDDEN_CODEBASE_INSIGHTS.md](../working-on-code/HIDDEN_CODEBASE_INSIGHTS.md)) |
 | **Three-Phase Boot** | `coreBoot` → `featureBoot` → `uiBoot`, each loading modules in dependency order |
 | **AppState** | Centralized state — always use `AppState.update()`, never mutate directly |
 
@@ -73,6 +75,7 @@ modules/
  ├── labels/      ← Label system and registry
  ├── storage/     ← Backup manager
  ├── progress/    ← Cycle completion tracking
+ ├── platform/    ← iOS/Android and desktop shell bridges (no-op on web)
  ├── testing/     ← Test infrastructure
  └── other/       ← Plugins, experimental
 ```
@@ -135,7 +138,7 @@ const _deps = new Proxy({}, {
 **Rules:**
 - Never use `window.*` to access dependencies — use DI
 - Never mutate `AppState` directly — use `AppState.update()`
-- Always guard optional dependencies: `if (_deps.showNotification) { ... }`
+- Always guard optional dependencies: `if (_deps.showNotification) { ... }` — but read `required()` deps unguarded, so a wiring failure throws where it happens (`npm run validate:chains` gates this)
 - Always handle missing DOM elements: `if (!element) return`
 
 ### The 5 patterns you'll use daily
@@ -150,10 +153,10 @@ Notification text, modal titles, button labels, ARIA labels, hint text — every
 import { getLabel } from '../labels/labelResolver.js';
 
 button.textContent = getLabel('action.addTask');
-button.setAttribute('aria-label', getLabel('action.addTaskAria'));
+titleElement.setAttribute('aria-label', getLabel('accessibility.routineTitle'));
 ```
 
-If a label key doesn't exist yet, **add it to `modules/labels/defaultLabels.js` first**, then use it. Never inline emojis or icons (`📝`, `⋯`) into label text — pass them as `vars` for interpolation.
+If a label key doesn't exist yet, **add it to `modules/labels/defaultLabels.js` first**, then use it. Never inline emojis or icons (`📝`, `⋯`) into label text — prepend them in the calling code.
 
 → Deep dive: [`CODING_STANDARDS.md`](../working-on-code/CODING_STANDARDS.md) §Label System
 
@@ -210,8 +213,10 @@ this._element.removeEventListener('click', this._clickHandler);
 #### 5. Update state via `AppState.update(state => …)`, never directly
 
 ```javascript
+import { getRoutine } from '../utils/cycleMode.js';
+
 this.deps.AppState.update(state => {
-    state.data.routine[cycleId].tasks.push(newTask);
+    getRoutine(state, routineId).tasks.push(newTask);
 }, true); // true = save immediately, default is debounced
 ```
 
@@ -245,7 +250,7 @@ const mockDeps = {
 ## 6. Verify Your Changes
 
 `npm test` runs the **module suites only** — it is not the full set. CI also runs
-four real-app suites and eight static gates, so a PR verified with `npm test` alone
+the real-app suites and the static gates below, so a PR verified with `npm test` alone
 can still go red on checks you never saw locally.
 
 ```bash
@@ -256,18 +261,27 @@ npm test         # expected: "All tests passed! (XXXX/XXXX - 100%)"
 # Real-app suites — each starts its own server, no npm start needed
 npm run test:layout
 npm run test:sw
-npm run test:meta
 npm run test:journey
+npm run test:a11y
+npm run test:contrast
 
 # Static gates — no server needed
+npm run test:meta
 npm run lint
 npm run validate:di
 npm run validate:legacy
+npm run validate:chains
 npm run validate:inline
 npm run validate:comments
 npm run validate:builtins
+npm run validate:api
+npm run validate:provides
+npm run validate:reset
 npm run validate:labels
+npm run validate:keys
+npm run validate:cache
 npm run validate:docs
+npm run validate:html
 ```
 
 **Added a new module file?** `npm run test:sw` is the one that matters. Its precache
@@ -275,8 +289,11 @@ drift guard fails when a module in the boot graph is missing from `BOOT_CRITICAL
 `service-worker.js` — and nothing else catches it. A new module can pass the entire
 browser suite and every other gate while leaving offline boot broken.
 
-If anything fails, fix it before submitting. CI runs exactly this list.
-Full reference: [`VALIDATION_GATES.md`](../working-on-code/VALIDATION_GATES.md).
+If anything fails, fix it before submitting. CI runs this list plus the Lite suite
+(`test:lite`), the release-tooling checks (`test:changelog`, `test:csp-sync`,
+`test:restore`) and a non-blocking WebKit run (`test:webkit`); the authoritative list is
+`.github/workflows/test.yml` (and `performance.yml`, which runs `validate:html` and
+`validate:docs`). Full reference: [`VALIDATION_GATES.md`](../working-on-code/VALIDATION_GATES.md).
 
 ---
 
@@ -301,8 +318,8 @@ Then open a PR on GitHub with:
 
 ## Test Plan
 - [ ] Module suites pass (`npm test`)
-- [ ] Real-app suites pass (`test:layout`, `test:sw`, `test:meta`, `test:journey`)
-- [ ] Static gates pass (`lint`, `validate:di/legacy/inline/comments/builtins/labels/docs`)
+- [ ] Real-app suites pass (`test:layout`, `test:sw`, `test:journey`, `test:a11y`, `test:contrast`)
+- [ ] Static gates pass (`test:meta`, `lint`, and every `validate:*` in step 6)
 - [ ] New/updated tests added (if applicable)
 - [ ] Manually tested in browser
 - [ ] Tested on mobile (if touch/gesture related)
@@ -357,9 +374,10 @@ const mod = await import(`./mySubModule.js?v=${version}`)
 ```
 
 > Still required in source even though production is content-hashed: dev serves raw
-> source where `?v=` is the cache identity, and the release build's rewriter recognizes
-> exactly these patterns to rewrite them onto hashed `/build/…` URLs (see
-> `docs/deployment/BUILD_PROCESS.md`). A bare `import('./x.js')` breaks BOTH worlds.
+> source where `?v=` is the cache identity. The release build's rewriter
+> (`scripts/build-web.cjs`) maps this form — and a bare `import('./x.js')` — onto hashed
+> `/build/…` URLs (see `docs/deployment/BUILD_PROCESS.md`), so the bare form is a dev
+> problem: it skips the version cache-busting every other dynamic import uses.
 
 ### 3. Assuming the app is a todo list
 
@@ -374,6 +392,7 @@ const state = _deps.AppState.get()
 // ✅ Wait for core systems first
 await _deps.appInit.waitForCore()
 const state = _deps.AppState.get()
+if (!state) return // core-ready is not state-ready: still null on a first run
 ```
 
 ---

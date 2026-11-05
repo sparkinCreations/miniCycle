@@ -1,5 +1,7 @@
 # Frequently Asked Questions
 
+**Last verified:** Nov 5 2026
+
 > The FAQ is in the **[User Manual](https://minicycle.app/legal/user-manual.html#faq)**, along with the rest of the guide.
 
 - [Getting Started](https://minicycle.app/legal/user-manual.html#getting-started)
@@ -17,6 +19,7 @@
 
 ---
 
-This page used to hold its own copy of the user guide. Two copies drifted apart — different keyboard shortcuts, different undo limits, links to pages that do not exist here — so there is now one guide, kept current with every release, and this page points to it.
+This page used to hold its own copy of the user guide. Two copies drifted apart — different keyboard shortcuts, different undo limits, links to pages that do not exist here — so there is now one guide and this page points to it. (`npm run validate:docs` checks
+that the manual's version stamp stays within 250 minor versions of the app.)
 
 For how miniCycle is built — architecture, modules, tests — see the rest of this documentation site.

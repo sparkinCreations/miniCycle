@@ -78,7 +78,7 @@
 | Pass Rate | 100% |
 | Platforms Tested | Mac, iPad, iPhone |
 
-> **Note:** Test file count is `.tests.js` files only. The `tests/` directory also contains 5 helper/utility files (testHelpers.js, testContext.js, performance.benchmark.js, etc.).
+> **Note:** Test file count is `.tests.js` files only. The `tests/` directory also contains a few helper/utility files (testHelpers.js, testContext.js, performance.benchmark.js, etc.).
 
 ---
 
