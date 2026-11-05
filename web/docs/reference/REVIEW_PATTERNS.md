@@ -695,3 +695,39 @@ with state already ready cannot see this class at all. The failing sequence is
 assertion must read the **stored value**, never the checkbox: `checked` is set by
 the browser on click whether or not a handler exists, which is precisely why it
 hid.
+
+## 19. A dep the facade has is not a dep its sub-module has
+
+```javascript
+// recurringIntegration — appInit IS delivered here (manifest `requires`)…
+await recurringCore.setRecurringCoreDependencies({
+    AppState: deps.AppState,
+    // …but never written into this hand-built object, so recurringCore and
+    // the watcher it forwards to (`...overrides`) resolved appInit: null
+});
+```
+
+A facade that wires its sub-modules with a hand-written deps object is a second,
+unvalidated manifest. `validate:di` checks what the loader delivers to the
+facade; nothing checks what the facade passes on. When the dropped dep is
+`optional(null)` downstream, every read is `?.`-guarded, nothing warns, and the
+code takes its fallback branch forever.
+
+Measured Nov 2026: the recurring watcher's three `await Deps.appInit?.waitForCore()`
+calls had never waited on anything in production. It surfaced only because the
+wider starved-dependency gate (`tests/automated/_di-warnings.cjs`) caught its
+boot-time refresh running before the phase-6 providers existed
+(`Lazy dep 'updateProgressBar' resolved to null at call time`, under CPU load).
+
+**The trap caught the fix too.** The first fix feature-checked
+`typeof appInit?.isAppReady === 'function'` before deferring the refresh. Its unit
+tests passed, because they inject `appInit`. In the real app the check was false
+and the old path ran unchanged, which only showed when the throttled reproduction
+still warned. A unit test that injects a dep cannot tell you production supplies it.
+
+**Check:** when a facade fans deps out by hand (`recurringIntegration` →
+`recurringCore` → watcher/activation, and the facades in CLAUDE.md's table), diff
+what each sub-module's `createDIModule` schema reads against what the facade's
+object actually passes. Verify a fix for a boot-timing bug by reproducing the
+failure in the real app (throttle the CPU through CDP:
+`Emulation.setCPUThrottlingRate`), not only with an injected stub.

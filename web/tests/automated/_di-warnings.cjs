@@ -43,23 +43,7 @@ const DI_STARVATION_PATTERN = new RegExp([
 // list is meant to SHRINK (the same ratchet as lint's --max-warnings). An entry
 // that no longer matches anything is reported so it can be deleted.
 // Shape: { pattern: RegExp, reason: string }
-const DI_WARNING_ALLOWLIST = [
-    {
-        // Seen in the journey "import keeps recurring templates with no live
-        // task": a template already due at reload makes the recurring watcher
-        // spawn its task DURING BOOT, and recurringIntegration then calls these
-        // two before their providers exist (cycleCompletion is phase 6,
-        // menuManager later). The manifest says recurringIntegration's
-        // lazyRequires are "only called after user interaction" — this path
-        // breaks that. Probably harmless (the UI renders from state later in
-        // boot), not verified on screen. Fix in the app (defer the watcher's
-        // first pass to app-ready, or skip UI refresh calls before it), then
-        // delete this entry. Caveat: the message carries no call site, so this
-        // also hides the same line from any other path until it is removed.
-        pattern: /Lazy dep '(updateProgressBar|updateMainMenuHeader)' resolved to null at call time/,
-        reason: 'recurring watcher refreshes UI during boot, before phase-6 providers (Nov 2026)'
-    }
-];
+const DI_WARNING_ALLOWLIST = [];
 
 /**
  * Is this console text a starved-dependency warning that should fail a run?
