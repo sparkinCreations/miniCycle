@@ -84,6 +84,13 @@ the raw document is kept first as above; the schema version does not change; per
 history is cleared for the re-keyed routines only. The dry run reports what the repair would
 do, and *Show Routine Keys* lists every routine's key, title and task count.
 
+**No colour themes.** `settings.theme` could hold `golden-glow`, `dark-ocean` or `dark` until
+Nov 2026, when those themes were retired. Boot retires one once (`retireLegacyColorTheme`, same
+module, called by `AppState._retireLegacyTheme`; same backup, reported by the dry run): with no
+colours of the user's own, the Golden or Ocean preset is written into `settings.customColors`
+(with `preset`); with colours of their own, those are kept; `dark` turns on `darkMode`. Then
+`settings.theme` is `"default"`. Nothing reads the field any more.
+
 ## Complete Schema Structure
 
 ```javascript
@@ -107,7 +114,7 @@ do, and *Show Routine Keys* lists every routine's key, title and task count.
   },
 
   settings: {
-    theme: "default",                      // Current theme name
+    theme: "default",                      // Always "default" (colour themes retired Nov 2026)
     darkMode: false,                       // Dark mode enabled
     alwaysShowRecurring: false,            // Always show recurring panel
     autoSave: true,                        // Auto-save enabled
@@ -255,7 +262,7 @@ Tracks application-level information and migration history:
 #### Theme & Display
 | Field | Type | Description |
 |-------|------|-------------|
-| `theme` | string | Currently selected theme name |
+| `theme` | string | Always `"default"`: the colour themes were retired in Nov 2026 (see above) |
 | `darkMode` | boolean | Dark mode enabled/disabled |
 | `unlockedThemes` | string[] | Themes unlocked through milestones |
 | `unlockedFeatures` | string[] | Features unlocked through milestones |

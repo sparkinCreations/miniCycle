@@ -179,7 +179,7 @@ root.style.setProperty('--pref-task-list-bg', colors.taskListBg);
 
 Custom colors set the same `--pref-*` variables. The Personalization modal provides the color pickers.
 
-A separate legacy pair of **unlockable color themes** (Dark Ocean, Golden Glow) is managed by `themeManager.js` as a CSS class on `<body>` (`theme-dark-ocean` / `theme-golden-glow`); their unlock state lives in `state.settings.unlockedThemes`.
+The legacy **colour themes** (Dark Ocean, Golden Glow, and an unused `dark`) were retired in Nov 2026. They had no picker since the presets replaced them (the Ocean and Golden presets were made from them); boot moves a `settings.theme` that still names one to its preset, or to dark mode for `dark`, keeping colours the user picked themselves (`retireLegacyColorTheme` in `routine/schemaMigration26.js`).
 
 ### Interaction with Vocabulary Themes
 
