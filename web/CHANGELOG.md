@@ -1,3 +1,8 @@
+## [2.668] - 2026-11-06
+- test(journeys): device in dark mode, app in light mode keeps the app's colours
+- fix(styles): restore the pre-2.667 stylesheets; the retired themes' selectors carried rule weight
+
+
 ## [2.667] - 2026-11-06
 - test: refresh the test-count manifest after a full run (4189)
 - docs(future-work): plugin system and Task Timer plan
