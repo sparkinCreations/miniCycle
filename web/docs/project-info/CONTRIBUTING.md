@@ -1,17 +1,19 @@
 # Contributing to miniCycle
 
+**Last verified:** Nov 6 2026
+
 Welcome to the **miniCycle developer community!**
 This guide explains how the app is structured, how modules communicate, and how to safely extend or contribute new functionality.
 
-miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure dependency injection system** with zero global fallbacks.
+miniCycle is built with **vanilla JavaScript (ES6 modules)** and uses a **pure dependency injection system** with no `window.*` fallbacks (a `CLAUDE.md` rule, held by review — no gate checks it).
 
 > **New here?** Start with the [Your First Contribution](../start-here/FIRST_CONTRIBUTION.md) guide for a step-by-step walkthrough.
 
 > **Pure Dependency Injection**
 >
-> miniCycle uses a custom DI framework (`diBase.js`) with zero `window.*` fallbacks. All dependencies are explicitly injected via `createDIModule()` with `required()` and `optional()` markers. The boot orchestrator (`moduleLoader.js`) wires all modules at startup.
+> miniCycle uses a custom DI framework (`diBase.js`) with no `window.*` fallbacks. Dependencies are explicitly injected via `createDIModule()` with `required()` and `optional()` markers. The module loader (`boot/moduleLoader.js`, run from `featureBoot.js`) wires the manifest modules at startup; `npm run validate:di` gates the declarations.
 >
-> **This enables true unit testing** — the test suite injects pure mocks without touching global state.
+> **This enables isolated module tests** — a test hands a module mock dependencies directly instead of booting the app.
 >
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current module and test counts.
 
@@ -63,8 +65,9 @@ modules/
  ├── features/    ← Themes, stats, achievements, history, reminders
  ├── utils/       ← Notifications, device detection, helpers
  ├── labels/      ← Label system and registry
- ├── storage/     ← Backup manager
+ ├── storage/     ← Backup manager, storage persistence
  ├── progress/    ← Cycle completion tracking
+ ├── platform/    ← iOS/Android (Capacitor) and desktop (Electron) bridges; no-op on web
  ├── testing/     ← Test infrastructure
  └── other/       ← Plugins, experimental
 ```
@@ -109,7 +112,7 @@ project and what a failure means.
 
 ## 4. Module Patterns
 
-Each module declares its pattern in the header comment:
+Some module headers declare one of these patterns with `@pattern` (only a handful do today; most rely on the `createDIModule()` header shown in §6):
 
 | Pattern | Meaning |
 |----------|----------|
@@ -134,10 +137,10 @@ When creating a new file, include this in the header:
 
 | Category | Guidelines |
 |-----------|-------------|
-| **Formatting** | Use 2 spaces, no semicolons, ES6 imports/exports. |
+| **Formatting** | Match the file you are in (indentation varies between 2 and 4 spaces); statements end with semicolons; ES6 imports/exports. `npm run lint` is the gate. |
 | **Logging** | Use emoji-coded logs for clarity. Keep them developer-friendly, not verbose. |
 | **Versioning** | Increment `@version` in each module when you make meaningful internal changes. |
-| **Dependency Checks** | Always guard optional dependencies: `if (_deps.showNotification) { ... }`. |
+| **Dependency Checks** | Guard `optional()` dependencies: `if (_deps.someOptionalDep) { ... }`. Read `required()` deps **unguarded** — `CLAUDE.md` rule #19, gated by `npm run validate:chains`. |
 | **Schema Access** | Never manipulate `localStorage` directly — always through `AppState` or helper functions. |
 | **Initialization Safety** | Wrap DOM-dependent logic in `await _deps.appInit.waitForCore()`. |
 
@@ -152,8 +155,10 @@ When creating a new file, include this in the header:
 ### Step 2 — Define dependencies
 ```js
 import { createDIModule, required, optional } from '../core/diBase.js'
+import { getLabel } from '../labels/labelResolver.js'
 
 const di = createDIModule('MyModule', {
+    appInit: required(),
     AppState: required(),
     showNotification: required(),
     optionalDep: optional(null)
@@ -162,6 +167,8 @@ const di = createDIModule('MyModule', {
 const _deps = new Proxy({}, {
     get(_, prop) { return di.resolve()[prop] }
 })
+// For a class, CLAUDE.md's template is a getter instead:
+//   get deps() { return di.resolve(); }
 ```
 
 ### Step 3 — Register in manifest
@@ -170,7 +177,7 @@ Add your module to `modules/boot/moduleManifests.js`:
 myModule: {
     path: '../path/to/myModule.js',
     phase: PHASES.FEATURES,
-    requires: ['AppState', 'showNotification'],
+    requires: ['appInit', 'AppState', 'showNotification'],
     provides: ['myFunction'],
     api: 'features'
 }
@@ -179,8 +186,9 @@ myModule: {
 ### Step 4 — Use dependencies
 ```js
 export async function myFunction() {
-    await _deps.appInit?.waitForCore()
-    _deps.showNotification('Ready!', 'success')
+    await _deps.appInit.waitForCore()
+    // user-facing text comes from getLabel() (labels/labelResolver.js), never a raw string
+    _deps.showNotification(getLabel('notify.yourKey'), 'success')
 }
 ```
 
@@ -192,6 +200,7 @@ export async function myFunction() {
 
 ```js
 import { createDIModule, required, optional } from '../core/diBase.js'
+import { getLabel } from '../labels/labelResolver.js'
 
 const di = createDIModule('CustomStats', {
     appInit: required(),
@@ -206,7 +215,7 @@ const _deps = new Proxy({}, {
 export class CustomStats {
     async init() {
         await _deps.appInit.waitForCore()
-        _deps.showNotification?.('Custom Stats Module Ready', 'info')
+        _deps.showNotification?.(getLabel('notify.yourKey'), 'info')
     }
 }
 ```
@@ -234,8 +243,8 @@ open http://localhost:8080/tests/module-test-suite.html
 
 ## 9. Versioning & Schema Migration
 
-- Schema version is tracked in AppState (currently 2.6)
-- Always bump `schemaVersion` and include backward transformation logic
+- Schema version is `SCHEMA.CURRENT` in `core/constants.js` (2.6 since v2.573)
+- A shape change bumps it and adds a one-time forward migration, run at boot from `AppState._migrateIfOlder` (2.5 → 2.6 lives in `routine/schemaMigration26.js`); renaming a stored key is never a drive-by (see `CLAUDE.md`)
 - See [SCHEMA_2_6.md](../reference/SCHEMA_2_6.md) for the current data structure
 
 ---
@@ -253,6 +262,8 @@ open http://localhost:8080/tests/module-test-suite.html
 ---
 
 ## 11. Finding Issues to Work On
+
+> **Process and licensing live in the repo-root [`CONTRIBUTING.md`](../../../CONTRIBUTING.md)** — the code is under a view-only `LICENSE`, so forking needs written permission, granted in the issue you open first. §11–12 here summarise the workflow; where they differ, the root file wins.
 
 ### Good First Issues
 
@@ -285,7 +296,7 @@ Remember: miniCycle is a **routine manager**, not a todo app. Features should su
 
 ### Before Submitting
 
-- [ ] All tests pass (`npm test` — expect 100% pass rate)
+- [ ] All tests pass (`npm test`, plus the CI suites `CLAUDE.md` lists — `test:sw`, `test:layout`, `test:journey`, …)
 - [ ] New or changed behavior has test coverage
 - [ ] Code follows existing DI patterns (no `window.*` globals)
 - [ ] Module headers include `@version`, `@pattern`, `@description`

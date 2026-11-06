@@ -1,7 +1,7 @@
 # miniCycle Feature List
 
-> **Last Updated:** February 24, 2026
-> **Status:** Production Ready
+> **Last verified:** Nov 6 2026
+> **Status:** Reference — each row checked against the module it names on Nov 6 2026
 >
 > See [PROJECT_STATS.md](../PROJECT_STATS.md) for current version.
 
@@ -59,7 +59,7 @@ Three different modes for how routines behave when tasks are completed.
 - **Module:** `modules/routine/modeManager.js`
 
 ### To-Do Mode 📋
-- **Behavior:** Completed tasks are deleted (not reset)
+- **Behavior:** Completed tasks are cleared (not reset) and kept in Cleared Tasks for 90 days; a task with *Marked for Clearing* turned off stays on the list
 - **Feedback:** "🧹 X tasks cleared!" message displays when tasks are cleared
 - **Use Case:** One-time tasks, shopping lists, project checklists
 - **Module:** `modules/routine/modeManager.js`, `modules/ui/helpWindowManager.js`
@@ -81,7 +81,7 @@ Three different modes for how routines behave when tasks are completed.
 |---------|-------------|--------|
 | Drag-and-Drop Reorder | Reorder tasks via drag or arrow buttons | `task/dragDropManager.js` |
 | Move Arrows | Up/down arrows for task reordering | `task/dragDropManager.js` |
-| High Priority Flag | Mark tasks as high priority (visual distinction) | `task/taskCore.js` |
+| Priority | Mark a task High, Medium or Low priority, shown as the active theme's swatch | `task/taskCRUD.js` (via `task/taskCore.js`), `utils/priorityLevel.js` |
 | Task Search | Filter tasks with inline search (appears at 3+ tasks) | `ui/taskSearch.js` |
 
 ### Task Options Customization
@@ -106,7 +106,7 @@ Create tasks that automatically appear on a schedule.
 ### Scheduling Frequencies
 | Frequency | Description | Module |
 |-----------|-------------|--------|
-| Hourly | Every X hours at specific minute | `recurring/recurringCalculators.js` |
+| Hourly | Every hour, optionally at a specific minute | `recurring/recurringCalculators.js` |
 | Daily | Every day at specified time | `recurring/recurringCalculators.js` |
 | Weekly | Specific days of week (Mon, Tue, etc.) | `recurring/recurringCalculators.js` |
 | Biweekly | Alternating weeks with different day patterns | `recurring/recurringCalculators.js` |
@@ -123,7 +123,7 @@ Create tasks that automatically appear on a schedule.
 ### Recurring System
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Watch Function | Polls every 15 seconds for due recurring tasks (2h idle when no templates) | `recurring/recurringWatcher.js` |
+| Watch Function | Polls for due recurring tasks every `INTERVALS.RECURRING_WATCHER` (15s), slowing to `INTERVALS.RECURRING_WATCHER_IDLE` (2h) when no templates exist | `recurring/recurringWatcher.js` |
 | Offline Catch-Up | Catches up on missed tasks after device sleep/offline | `recurring/recurringWatcher.js` |
 | DST-Safe Calculations | Handles timezone and daylight saving edge cases | `recurring/recurringDateUtils.js` |
 | Recurring Panel | Dedicated UI for managing recurring settings | `recurring/recurringPanel.js` |
@@ -145,7 +145,7 @@ Create tasks that automatically appear on a schedule.
 | Per-Task Reminders | Enable/disable reminders on individual tasks | `features/reminders.js` |
 | Flexible Scheduling | Set reminders in minutes, hours, or days | `features/reminders.js` |
 | Repeat Options | Indefinite or limited repeat counts | `features/reminders.js` |
-| Browser Notifications | Uses browser notification API | `features/reminders.js` |
+| System Notifications | Optional — the browser Notification API on the web, native local notifications in the iOS/Android app (`platform/capacitorBridge.js`) | `features/reminders.js` |
 
 ---
 
@@ -155,8 +155,8 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Create Routine | Create new routines from scratch | `routine/routineManager.js` |
-| Delete Routine | Remove routines with confirmation | `routine/routineManager.js` |
-| Rename Routine | Edit routine title/name | `routine/routineSwitcher.js` |
+| Delete Routine | Remove routines with confirmation | `routine/routineSwitcherActions.js` |
+| Rename Routine | Edit routine title | `routine/routineSwitcherActions.js` |
 | Routine Switcher | Modal to switch between routines | `routine/routineSwitcher.js` |
 
 ### Routine Loading
@@ -164,13 +164,13 @@ Create tasks that automatically appear on a schedule.
 |---------|-------------|--------|
 | Quick Switch | Instant switching between active routines | `routine/routineSwitcher.js` |
 | Search Routines | Filter routine list by name | `routine/routineSwitcher.js` |
-| Sort Routines | Sort by Name, Date Created, Date Modified, or Mode | `routine/routineSwitcher.js` |
+| Sort Routines | Sort by name (A–Z / Z–A), recency (Recent / Oldest) or size (Largest / Smallest) | `routine/routineSwitcher.js` |
 | Filter by Mode | Filter list by Auto 🔄, Manual ✋, or To-Do 📋 modes | `routine/routineSwitcher.js` |
-| Duplicate Routine | Create a copy of any routine with inline rename | `routine/routineSwitcher.js` |
+| Duplicate Routine | Create a copy of any routine with inline rename | `routine/routineSwitcherActions.js` |
 | Visual Mode Indicators | Emojis show routine mode at a glance in list | `routine/routineSwitcher.js` |
 | Date Display | Shows "Modified" or "Created" date for each routine | `routine/routineSwitcher.js` |
 | Storage Size Display | Shows storage size per routine | `routine/routineSwitcher.js` |
-| Data Validation | Validates and repairs routine data on load | `routine/routineSwitcher.js` |
+| Data Validation | Validates and repairs routine data before switching into it | `routine/routineSwitcherRepair.js` |
 
 ---
 
@@ -181,14 +181,14 @@ Create tasks that automatically appear on a schedule.
 |---------|-------------|--------|
 | Cycle Count | Tracks number of times routine completed | `progress/cycleCompletion.js` |
 | Progress Bar | Visual indicator of completion progress | `progress/cycleCompletion.js` |
-| Complete All Button | Mode-aware button (🔄 green for Cycle, 🧹 blue for To-Do) | `ui/taskUI.js` |
+| Complete All Button | Mode-aware button (cycle arrows for Auto/Manual, 🧹 broom for To-Do) | `ui/taskUI.js`, `ui/completeAllButton.js` |
 | Celebration Animation | Green checkmark on cycle completion | `progress/cycleCompletion.js` |
 | Clear Animation | Blue broom animation for To-Do mode task clearing | `progress/cycleCompletion.js` |
 
 ### Milestones & Achievements
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Milestone Notifications | Notifications at 5, 10, 25, 50, 75, 100, 200, 500, 1000 milestones | `progress/cycleCompletion.js` |
+| Milestone Notifications | Notifications when a routine's cycle count reaches 10, 25, 50, 100, 200, 500 or 1000 | `progress/cycleCompletion.js` |
 | Achievement System | OR-based achievement unlocking (cycles OR tasks) | `features/achievementsManager.js` |
 | Achievement Modal | View unlocked achievements and upcoming milestones | `features/achievementsManager.js` |
 | Achievement History | Track when and how each achievement was unlocked | `features/achievementsManager.js` |
@@ -205,7 +205,7 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Cleared Tasks Tracking | Records tasks cleared in To-Do Mode | `features/clearedTasksManager.js` |
-| Cleared Tasks Modal | View recently cleared tasks (last 90 days) | `features/clearedTasksManager.js` |
+| Cleared Tasks Modal | View recently cleared tasks (last 90 days — `PRUNE_DAYS`) | `features/clearedTasksManager.js` |
 | Task Recreation | Recreate cleared tasks as new tasks in active routine | `features/clearedTasksManager.js` |
 | Auto-Prune | Automatically removes cleared tasks older than 90 days | `features/clearedTasksManager.js` |
 
@@ -213,17 +213,17 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Vocabulary Themes | Each routine uses its own terminology (Classic/Habit Tracker/Fitness/Scholar/Cleaning) | `labels/themes.js` |
-| Per-Routine Theme | Assign a vocabulary theme to each routine independently | `routine/routineSwitcher.js` |
+| Per-Routine Theme | Assign a vocabulary theme to each routine independently | `routine/routineSwitcherThemePicker.js` |
 | Theme Color Presets | Vocabulary themes apply matching color schemes via CSS variables | `features/themeManager.js` |
-| Theme Unlock Progression | Unlock new vocabulary themes at 0/5/25/50/75 total cycles | `progress/cycleCompletion.js` |
-| Theme Picker | 🎨 chip picker in the routine switcher action row | `routine/routineSwitcher.js` |
+| Theme Unlock Progression | Unlock new vocabulary themes at 0/5/25/50/75 total cycles (`unlockAt`; milestone rewards in `MILESTONES.TIERS`) | `labels/themes.js` (`checkThemeUnlocks`) |
+| Theme Picker | 🎨 chip picker in the routine switcher action row; also the Themes modal (vocabulary themes + dark mode) | `routine/routineSwitcherThemePicker.js` |
 
 ### Mini-Games
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Game Unlocking | Games unlock through cycle milestones | `ui/gamesManager.js` |
+| Game Unlocking | Games unlock through cycle milestones (`MILESTONES.TASK_ORDER_GAME`) | `ui/gamesManager.js` |
 | Games Panel | Access unlocked mini-games | `ui/gamesManager.js` |
-| Task Order Game | Whack-a-Order game (unlocks at 100 cycles) | `miniCycleGames/` |
+| Task Order Game | Whack-a-Order game (unlocks at 100 cycles) | `games/miniCycle-taskOrder.html` |
 
 ---
 
@@ -252,8 +252,8 @@ Create tasks that automatically appear on a schedule.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | LocalStorage Persistence | All data stored locally (no server) | `core/appState.js` |
-| Schema 2.6 Format | Structured data format with migrations | `core/dataAccess.js` |
-| Debounced Saves | 600ms debounce to prevent excessive writes | `core/appState.js` |
+| Schema 2.6 Format | Structured data format; 2.5 data migrated once at boot | `core/appState.js`, `routine/schemaMigration26.js` |
+| Debounced Saves | `DEBOUNCE.STATE_SAVE` (600ms) debounce to prevent excessive writes | `core/appState.js` |
 | Quota Management | Monitors and warns when storage is low | `utils/storageUtils.js` |
 
 ### Import & Export
@@ -340,9 +340,9 @@ Create tasks that automatically appear on a schedule.
 ### Onboarding
 | Feature | Description | Module |
 |---------|-------------|--------|
-| First-Launch Welcome | Introduction for new users | `ui/onboardingManager.js` |
-| Sample Routine Option | Start with example routine | `ui/onboardingManager.js` |
-| Import Existing | Import routine during onboarding | `ui/onboardingManager.js` |
+| First-Launch Choice Screen | Learn How Cycles Work (guided tour), Load a Sample, or Create My First Routine | inline in `miniCycle.html`; tour in `ui/onboardingManager.js` |
+| Restore on First Launch | "Restore from a backup file" on the first-run screen | inline in `miniCycle.html` |
+| Welcome Screen | Branded screen with the app's main destinations, returnable later | `ui/titleScreen.js` |
 
 ### Title Management
 | Feature | Description | Module |
@@ -367,46 +367,46 @@ Customize app colors and visual appearance.
 |---------|-------------|--------|
 | Live Color Preview | See color changes in real-time; shows blue gradient by default | `ui/preferencesManager.js` |
 | Dynamic Preview Update | Preview section background updates when app background changes | `ui/preferencesManager.js` |
-| Header Color | Customize the app header color | `ui/preferencesManager.js` |
-| Background Color | Customize the main background color | `ui/preferencesManager.js` |
-| Accent Color | Customize buttons and interactive elements | `ui/preferencesManager.js` |
-| Text Color | Customize main text color | `ui/preferencesManager.js` |
-| Task Background | Customize task item background color | `ui/preferencesManager.js` |
+| App & Task List | App background, list background, title background and title text | `ui/preferencesManager.js` |
+| Tasks & Checkboxes | Task background and text, checkbox fill/empty, checkmark colour and style | `ui/preferencesManager.js` |
+| Buttons & Progress | Complete Cycle / Clear Completed colours (glass or solid), corner-button colour/style/labels, progress bar | `ui/preferencesManager.js` |
+| Stats Panel & Cycle Completion | Stats background, text, progress and doughnut colours; completion animation colour and message | `ui/preferencesManager.js` |
+| Classic-only | Custom colors apply only in the Classic (default) vocabulary theme; other themes bring their own colours | `ui/preferencesManager.js` |
 
 ### Theme Presets
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Quick Presets | Pre-built color themes (Ocean, Sunset, Forest, etc.) | `ui/preferencesManager.js` |
-| Default Preset | Reset all colors to default values | `ui/preferencesManager.js` |
-| Saved Presets | Save your custom color combinations | `ui/preferencesManager.js` |
-| Apply Saved Preset | Apply previously saved presets with one click | `ui/preferencesManager.js` |
-| Delete Saved Preset | Remove saved presets you no longer need | `ui/preferencesManager.js` |
+| Quick Colors | Pre-built color presets (Warm, Cool, Forest, Ocean, Berry, etc.) | `ui/preferencesPresets.js` |
+| Default Preset | Reset all colors to default values | `ui/preferencesPresets.js` |
+| Saved Presets | Save your custom color combinations | `ui/preferencesPresets.js` |
+| Apply Saved Preset | Apply previously saved presets with one click | `ui/preferencesPresets.js` |
+| Rename / Delete Saved Preset | Rename or remove saved presets | `ui/preferencesPresets.js` |
 
 ### Theme Import/Export
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Export Theme | Export custom theme as shareable JSON file | `ui/preferencesManager.js` |
-| Import Theme | Import shared themes from JSON files | `ui/preferencesManager.js` |
-| Theme File Validation | Validates imported theme files | `ui/preferencesManager.js` |
+| Export Preset | Export a saved preset as a shareable code (copied to the clipboard) | `ui/preferencesPresets.js` |
+| Import Preset | Import a preset by pasting its code | `ui/preferencesPresets.js` |
+| Preset Validation | Only known colour keys are accepted on import; unknown keys are stripped | `ui/preferencesPresets.js` |
 
 ### Background Pattern
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Pattern Toggle | Show/hide decorative stationery pattern on background | `ui/preferencesManager.js` |
 | SVG Pattern | Tiled stationery elements (pencils, notebooks, paperclips) | `styles/base/background.css` |
-| Subtle Design | 4% opacity for non-intrusive aesthetic | `styles/base/background.css` |
+| Pattern Color & Opacity | Adjustable pattern colour and opacity (default 4%) | `ui/preferencesManager.js` |
 
 ### Background Image
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Image Upload | Upload custom background image (max 2MB) | `ui/preferencesManager.js` |
-| IndexedDB Storage | Images stored locally in browser database | `ui/preferencesManager.js` |
-| Display Mode: Cover | Stretch image to fill entire background | `ui/preferencesManager.js` |
-| Display Mode: Center | Display image at original size, centered | `ui/preferencesManager.js` |
-| Display Mode: Tile | Repeat image in a pattern | `ui/preferencesManager.js` |
-| Image Preview | Preview uploaded image in settings | `ui/preferencesManager.js` |
-| Image Removal | Remove uploaded image and restore default | `ui/preferencesManager.js` |
-| Persistent Storage | Image persists across browser sessions | `ui/preferencesManager.js` |
+| Image Upload | Upload custom background image (files up to 20MB accepted; anything over 2MB is compressed) | `ui/preferencesBgImage.js` |
+| IndexedDB Storage | Images stored locally in browser database | `ui/preferencesBgImage.js` |
+| Display Mode: Stretch to Fill | Stretch image to fill entire background | `ui/preferencesBgImage.js` |
+| Display Mode: Centered | Display image at original size, centered | `ui/preferencesBgImage.js` |
+| Display Mode: Tiled | Repeat image in a pattern | `ui/preferencesBgImage.js` |
+| Image Preview | Preview uploaded image in settings | `ui/preferencesBgImage.js` |
+| Image Removal | Remove uploaded image and restore default | `ui/preferencesBgImage.js` |
+| Persistent Storage | Image persists across browser sessions | `ui/preferencesBgImage.js` |
 
 ---
 
@@ -418,7 +418,7 @@ Customize app colors and visual appearance.
 | Multiple Levels | Configurable undo stack limit | `ui/undoRedoManager.js` |
 | Per-Routine Context | Undo history is per-routine | `ui/undoRedoManager.js` |
 | Debounced Saving | Prevents excessive state captures | `ui/undoRedoManager.js` |
-| Undo/Redo Buttons | Visual buttons in header | `ui/undoRedoManager.js` |
+| Undo/Redo Buttons | Visual buttons in the footer | `ui/undoRedoManager.js` |
 
 ---
 
@@ -430,7 +430,7 @@ Customize app colors and visual appearance.
 | Installable | Add to home screen on any device | `manifest.json` |
 | Offline Support | Works without internet connection | `service-worker.js` |
 | App-Like Experience | Full-screen, no browser chrome | `manifest.json` |
-| iOS Status Bar Integration | Status bar matches app theme (blue default, black for dark mode/custom backgrounds) | `features/themeManager.js` |
+| iOS Status Bar Integration | Status bar matches the app background (custom or vocabulary-theme colour if set, black for dark mode / background images, blue otherwise) | `features/themeManager.js` |
 | Loading State | Black status bar during app load, transitions to theme color | `miniCycle.html` |
 
 ### Mobile Features
@@ -438,7 +438,7 @@ Customize app colors and visual appearance.
 |---------|-------------|--------|
 | Pull-to-Refresh | Mobile swipe gesture to refresh (main task view only) | `ui/pullToRefresh.js` |
 | Smart Context Detection | Pull-to-refresh disabled in modals, menus, stats view | `ui/pullToRefresh.js` |
-| Touch Gestures | Swipe, drag, touch support | `ui/taskInteractions.js` |
+| Touch Gestures | Swipe, drag, touch support | `task/dragDropManager.js`, `ui/gesturePanelManager.js` |
 | Responsive Design | Adapts to all screen sizes | CSS |
 
 ### Device Detection
@@ -453,11 +453,11 @@ Customize app colors and visual appearance.
 
 | Feature | Description |
 |---------|-------------|
-| **Local-Only Storage** | All data stored on device, never sent to servers |
+| **Local-Only Storage** | All data stored on device; nothing is sent unless you submit the feedback form |
 | **No Accounts Required** | Use immediately without signup |
 | **No Tracking/Analytics** | Zero external analytics or tracking |
 | **No Ads** | Completely ad-free experience |
-| **No External API Calls** | App functions entirely offline |
+| **Works Offline** | Core features need no network. Other requests go to the app's own origin (update checks, sample routines, tips); the one third-party call is the optional feedback form (`api.web3forms.com`, `ui/modalManager.js`) |
 | **Input Sanitization** | XSS prevention, HTML escaping |
 | **Data Validation** | JSON schema and type checking |
 
@@ -470,7 +470,7 @@ Customize app colors and visual appearance.
 | Feature | Description | Module |
 |---------|-------------|--------|
 | Keyboard Navigation | Tab through tasks and controls | `ui/taskInteractions.js` |
-| Enter to Complete | Keyboard task completion | `ui/taskInteractions.js` |
+| Enter to Complete | Enter or Space toggles a focused task | `task/taskDOM.js` |
 | High Contrast Support | Enhanced visual clarity option | `ui/settingsUIManager.js` |
 | Reduced Motion | Respects `prefers-reduced-motion` | CSS, `features/statsPanel.js` |
 | Large Touch Targets | Mobile-friendly button sizes | CSS |
@@ -517,29 +517,6 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 
 ---
 
-## Feature Summary
-
-| Category | Count |
-|----------|-------|
-| Routine Modes | 3 |
-| Task Management | 12 |
-| Recurring Tasks | 10 |
-| Due Dates & Reminders | 7 |
-| Routine Management | 13 |
-| Progress & Gamification | 23 |
-| Statistics | 7 |
-| Data Management | 12 |
-| User Interface | 28 |
-| Personalization | 14 |
-| Undo/Redo | 5 |
-| Mobile & PWA | 8 |
-| Privacy & Security | 7 |
-| Accessibility | 5 |
-| Developer Features | 8 |
-| **Total** | **~162 features** |
-
----
-
 ## Related Documentation
 
 - **Product Vision:** [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md)
@@ -547,7 +524,7 @@ A **static, frozen fallback** for older devices (ES5 compatible).
 - **Quick Reference:** [QUICK_REFERENCE.md](../user-guides/QUICK_REFERENCE.md)
 - **FAQ:** [FAQ.md](../user-guides/FAQ.md)
 - **Task Options Customizer:** [TASK_OPTIONS_CUSTOMIZER.md](../features/TASK_OPTIONS_CUSTOMIZER.md)
-- **Recurring Tasks Guide:** [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md)
+- **Recurring System Reference:** [RECURRING_SYSTEM_REFERENCE.md](RECURRING_SYSTEM_REFERENCE.md)
 - **Architecture Overview:** [ARCHITECTURE_OVERVIEW.md](../architecture/ARCHITECTURE_OVERVIEW.md)
 - **Folder Structure:** [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md)
 
