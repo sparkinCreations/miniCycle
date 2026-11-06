@@ -455,22 +455,6 @@ miniCycle's source code is publicly viewable for verification and educational pu
 
 ---
 
-## Privacy Comparison
-
-### vs. Other Task Apps
-
-| Feature | miniCycle | Todoist | Asana | Trello |
-|---------|-----------|---------|-------|--------|
-| **Data Collection** | None | Yes | Yes | Yes |
-| **Cloud Required** | No | Yes | Yes | Yes |
-| **Account Required** | No | Yes | Yes | Yes |
-| **Analytics** | No | Yes | Yes | Yes |
-| **Third-party Scripts** | No | Yes | Yes | Yes |
-| **Ad Tracking** | No | Free tier: Yes | No | No |
-| **Data Portability** | Yes | Limited | Limited | Limited |
-
----
-
 ## Summary
 
 **miniCycle is private by design:**
