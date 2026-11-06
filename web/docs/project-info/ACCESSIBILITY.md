@@ -529,7 +529,6 @@ across a range of widths.
 - [ ] Zoom verified at 200% / 400%
 - [ ] Touch targets measured
 - [ ] User testing with disabled users
-- [ ] WCAG AAA compliance
 
 ---
 

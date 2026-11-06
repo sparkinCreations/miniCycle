@@ -271,17 +271,15 @@ See [SECURITY.md](../security/SECURITY.md) for details.
 
 ## Children's Privacy
 
-### COPPA Compliance
+miniCycle does not knowingly collect personal data from anyone, including children
+under 13. App data stays local on the device; since we have no access to it, we cannot
+determine the age of our users. Parents and guardians should supervise children's use
+of any web application.
 
-miniCycle is safe for all ages:
-
-- No data collection
-- No account creation
-- No social features
-- No advertising
-- No tracking
-
-**Parents:** miniCycle is as safe as an offline notebook app.
+The app has no accounts, no social features, no advertising and no analytics. The only
+things that leave a device are the optional feedback form (only when someone submits
+it) and, on the marketing pages, the anonymous counter described in "Analytics &
+Tracking" below.
 
 ---
 

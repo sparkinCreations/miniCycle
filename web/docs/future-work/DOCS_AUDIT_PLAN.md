@@ -242,7 +242,7 @@ loads; a hardcoded string in `preferencesBgImage.js`; the milestone levels are a
 literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.js`,
 `guidedTourDefinitions.js` ("thirteen" tours; there are 14), `appContext.js`.
 
-**Open questions (MJ):** `PRIVACY.md`'s COPPA heading; WCAG 2.2 as the target; the
+**Open questions (MJ):** the
 roadmap's tiers, prices and dates; the PR checklist's `@version` / `@pattern` requirement; system-aware dark mode in the
 README; merging `DATA_SCHEMA_GUIDE` into `SCHEMA_2_6` (round 3a) and trimming
 `ACCESSIBILITY` to its developer parts. *Decided (MJ, Nov 6 2026):* the privacy policy (`legal/privacy.html`, a shipped page,
@@ -250,7 +250,12 @@ and `PRIVACY.md`; version 2.9) now names the .mcyc format page among the counted
 and discloses the 50 most recent event times kept for the owner-only dashboard
 (`MAX_RECENT`, `netlify/functions/track.js`); `PRIVACY.md`'s comparison table of
 other apps' data practices (Todoist, Asana, Trello) is removed — claims about other
-companies that this project cannot verify or keep current. The copyright
+companies that this project cannot verify or keep current; its "COPPA Compliance"
+heading becomes plain "Children's Privacy" in the public page's words (a compliance
+claim it did not need, beside bullets that said "no tracking" without the counter).
+**WCAG:** 2.2 Level AA stays the stated *goal*, never a conformance claim — as the
+public statement already words it; the two "WCAG AAA" items (`ROADMAP`,
+`ACCESSIBILITY`'s not-done list) are removed, AAA was never a realistic target. The copyright
 statement's author name stays out of the repo — the placeholder now says it is filled
 in on the signed copy only.
 

@@ -100,7 +100,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 - [ ] Performance optimizations
 - [ ] Mobile experience improvements
-- [ ] Accessibility enhancements (WCAG AAA) — *partly: `npm run test:a11y` and `npm run test:contrast` gate keyboard operability, names and serious contrast violations; nothing measures AAA*
+- [ ] Accessibility enhancements towards WCAG 2.2 Level AA, the goal the accessibility statement names (not a conformance claim) — *partly: `npm run test:a11y` and `npm run test:contrast` gate keyboard operability, names and serious contrast violations. AAA is not a goal*
 - [x] Additional themes (achievement unlocks) — ✅ Habit Tracker, Fitness, Scholar, Cleaning (`MILESTONES.TIERS` in `core/constants.js`)
 - [ ] Bug fixes and stability
 - [ ] Documentation improvements
