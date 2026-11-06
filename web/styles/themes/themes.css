@@ -8,8 +8,9 @@
    The default theme values live in styles/base/variables.css (:root).
    Only non-default themes need overrides here.
 
-   See styles/themes/definitions/*.json for the source-of-truth token values
-   (used for documentation and custom theme import/export).
+   These replaced the JSON theme system (Feb 2026), now archived with its
+   definitions: docs/archive/JSON_THEME_SYSTEM.md. User-created and
+   shared themes are Personalization presets (modules/ui/preferencesPresets.js).
    ═══════════════════════════════════════════════════════════════════════════ */
 
 /* =============================================================================
