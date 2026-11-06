@@ -332,6 +332,52 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (!sm.get().data.routine['cycle-main']) throw new Error('an id-keyed routine moved');
     });
 
+    // Each copy is a full copy of the data in the same quota; Settings shows only the newest.
+    const titleKeyedRaw = () => {
+        const doc = createMockData();
+        const routine = doc.data.routine['cycle-main'];
+        delete doc.data.routine['cycle-main'];
+        doc.data.routine['Main Cycle'] = { ...routine, id: 'cycle_123', title: 'Main Cycle' };
+        doc.appState.activeRoutineId = 'Main Cycle';
+        return JSON.stringify(doc);
+    };
+
+    await test('a new pre-migration copy replaces the older ones (only the newest is kept)', async () => {
+        clearPreCopies();
+        localStorage.setItem(`${PRE_PREFIX}1000`, '{"old":"september"}');
+        localStorage.setItem(`${PRE_PREFIX}2000`, '{"old":"october"}');
+        const raw = titleKeyedRaw();
+        localStorage.setItem('miniCycleData', raw);
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.repairedRoutineKeysThisBoot) throw new Error('fixture should need the key repair');
+        const copies = Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX));
+        if (copies.length !== 1) throw new Error(`expected only the newest copy, got ${JSON.stringify(copies)}`);
+        if (localStorage.getItem(copies[0]) !== raw) throw new Error('the copy kept is not the one just written');
+        clearPreCopies();
+    });
+
+    await test('when the new copy cannot be written, the older copy is kept', async () => {
+        clearPreCopies();
+        localStorage.setItem(`${PRE_PREFIX}1000`, '{"old":"september"}');
+        localStorage.setItem('miniCycleData', titleKeyedRaw());
+        const fullStorage = {
+            getItem: (k) => localStorage.getItem(k),
+            removeItem: (k) => localStorage.removeItem(k),
+            key: (i) => localStorage.key(i),
+            get length() { return localStorage.length; },
+            setItem: (k, v) => {
+                if (k.startsWith(PRE_PREFIX)) { const e = new Error('full'); e.name = 'QuotaExceededError'; throw e; }
+                localStorage.setItem(k, v);
+            }
+        };
+        const sm = createStateManager({ storage: fullStorage, showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('the repair should still run without a new copy');
+        if (localStorage.getItem(`${PRE_PREFIX}1000`) !== '{"old":"september"}') throw new Error('the only copy was removed although no new one was written');
+        clearPreCopies();
+    });
+
     // ── retiring the legacy colour themes at boot (Nov 2026) ─────────────────
     await test('boot retires a legacy colour theme to its preset; one copy covers both repairs', async () => {
         clearPreCopies();

@@ -840,7 +840,8 @@ export const STORAGE_KEYS = Object.freeze({
  * to a newer schema: `<DATA>_pre-migration_<timestamp>` (appState._migrateIfOlder),
  * beside the `<DATA>_corrupted_<ts>` copies dataRecovery keeps. Settings → Data
  * Management lets the user download, restore or delete it (backupRestoreManager).
- * Not a STORAGE_KEYS entry: the key is dynamic, and the factory reset sweeps it by
+ * Only the newest copy is kept: writing one removes the older ones
+ * (appState._removeOlderPreMigrationCopies). Not a STORAGE_KEYS entry: the key is dynamic, and the factory reset sweeps it by
  * the name-matching rule.
  * @constant {string}
  */

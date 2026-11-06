@@ -709,10 +709,35 @@ class MiniCycleState {
     _keepPreMigrationCopy(doc, rawStored) {
         if (this._preMigrationCopyKept) return;
         this._preMigrationCopyKept = true;
+        const newKey = `${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`;
         try {
-            this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
+            this.deps.storage.setItem(newKey, rawStored ?? JSON.stringify(doc));
         } catch (error) {
             console.warn('⚠️ Could not keep a pre-migration copy:', error);
+            return; // an older copy, if any, is still better than none
+        }
+        this._removeOlderPreMigrationCopies(newKey);
+    }
+
+    /**
+     * Keep only the newest pre-migration copy. Each one is a full copy of the
+     * user's data in the same storage as the data itself, and Settings only
+     * ever shows the newest, so older ones were invisible dead weight eating
+     * into the quota every later save needs (decided Nov 2026). Runs only
+     * after the new copy was written.
+     * @param {string} keepKey - The copy just written
+     * @private
+     */
+    _removeOlderPreMigrationCopies(keepKey) {
+        const storage = this.deps.storage;
+        try {
+            const keys = typeof storage.key === 'function' && typeof storage.length === 'number'
+                ? Array.from({ length: storage.length }, (_, i) => storage.key(i))
+                : Object.keys(storage);
+            keys.filter(key => typeof key === 'string' && key !== keepKey && key.startsWith(PRE_MIGRATION_BACKUP_PREFIX))
+                .forEach(key => storage.removeItem(key));
+        } catch (error) {
+            console.warn('⚠️ Could not remove older pre-migration copies:', error);
         }
     }
 
