@@ -800,6 +800,18 @@ body.focus-mode #stats-panel {
     box-shadow: var(--shadow-milestone-classic);
 }
 
+.badge.unlocked.ocean-theme {
+    background-color: #4ecdc4;
+    color: var(--color-white);
+    box-shadow: 0 4px 10px rgba(0, 160, 147, 0.4);
+}
+
+.badge.unlocked.golden-theme {
+    background-color: #ffd700;
+    color: #4a3d00;
+    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.5);
+}
+
 .badge.unlocked.game-unlocked {
     background-color: rgba(0, 0, 0, 0.868);
     color: var(--color-white);
@@ -857,30 +869,30 @@ body.focus-mode #stats-panel {
    CUSTOM PREFERENCE COLORS (Default Theme Only)
    ============================================================================= */
 
-body:not(.dark-mode) .stats-panel {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .stats-panel {
     background: var(--pref-stats-bg, var(--theme-stats-bg));
     color: var(--pref-stats-text, var(--theme-stats-text));
 }
 
-body:not(.dark-mode) #stats-panel p,
-body:not(.dark-mode) #stats-header,
-body:not(.dark-mode) .doughnut-text,
-body:not(.dark-mode) #current-routine-name,
-body:not(.dark-mode) #current-cycle-progress-text,
-body:not(.dark-mode) #current-routine-cycle-count,
-body:not(.dark-mode) #current-routine-cleared-count,
-body:not(.dark-mode) #theme-unlock-message,
-body:not(.dark-mode) #golden-unlock-message,
-body:not(.dark-mode) #game-unlock-message,
-body:not(.dark-mode) #all-routines-count,
-body:not(.dark-mode) #milestone-progress-text,
-body:not(.dark-mode) .achievement-badges-btn,
-body:not(.dark-mode) .history-btn {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-panel p,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-header,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-name,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-cycle-progress-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-cycle-count,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #current-routine-cleared-count,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #theme-unlock-message,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #golden-unlock-message,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #game-unlock-message,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #all-routines-count,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #milestone-progress-text,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .achievement-badges-btn,
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .history-btn {
     color: var(--pref-stats-text, var(--theme-stats-text, #333));
 }
 
 /* Stats progress bar — pref override (gradient from chosen color to lighter tint) */
-body:not(.dark-mode) #stats-progress-bar {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-progress-bar {
     background: linear-gradient(90deg,
         var(--pref-stats-progress, var(--color-primary, #4c79ff)),
         color-mix(in srgb, var(--pref-stats-progress, var(--color-primary, #4c79ff)), white 30%)
@@ -888,7 +900,7 @@ body:not(.dark-mode) #stats-progress-bar {
 }
 
 /* Doughnut chart — pref override (solid color replaces gradient when set) */
-body:not(.dark-mode) .doughnut-progress {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-progress {
     stroke: var(--pref-stats-doughnut, url(#gradient));
 }
 
@@ -896,7 +908,8 @@ body:not(.dark-mode) .doughnut-progress {
    DARK MODE ADJUSTMENTS
    ============================================================================= */
 
-body.dark-mode .stats-panel {
+body.dark-mode .stats-panel,
+body.theme-dark-ocean .stats-panel {
     border-color: rgba(255, 255, 255, 0.15);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.3),
@@ -905,32 +918,43 @@ body.dark-mode .stats-panel {
 }
 
 body.dark-mode .current-routine-status:has(.visible),
-body.dark-mode .theme-unlock-status:has(.visible) {
+body.dark-mode .theme-unlock-status:has(.visible),
+body.theme-dark-ocean .current-routine-status:has(.visible),
+body.theme-dark-ocean .theme-unlock-status:has(.visible) {
     background: rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode .current-routine-status .clickable,
-body.dark-mode .theme-unlock-status .clickable {
+body.dark-mode .theme-unlock-status .clickable,
+body.theme-dark-ocean .current-routine-status .clickable,
+body.theme-dark-ocean .theme-unlock-status .clickable {
     background: rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode .current-routine-status .clickable:hover,
-body.dark-mode .theme-unlock-status .clickable:hover {
+body.dark-mode .theme-unlock-status .clickable:hover,
+body.theme-dark-ocean .current-routine-status .clickable:hover,
+body.theme-dark-ocean .theme-unlock-status .clickable:hover {
     background: rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .achievement-badges-btn,
-body.dark-mode .history-btn {
+body.dark-mode .history-btn,
+body.theme-dark-ocean .achievement-badges-btn,
+body.theme-dark-ocean .history-btn {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .achievement-badges-btn:hover,
-body.dark-mode .history-btn:hover {
+body.dark-mode .history-btn:hover,
+body.theme-dark-ocean .achievement-badges-btn:hover,
+body.theme-dark-ocean .history-btn:hover {
     background: rgba(255, 255, 255, 0.15);
 }
 
-body.dark-mode .badge-container {
+body.dark-mode .badge-container,
+body.theme-dark-ocean .badge-container {
     background: rgba(255, 255, 255, 0.08);
 }
 

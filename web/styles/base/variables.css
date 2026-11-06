@@ -2,7 +2,7 @@
  * CSS Variables Foundation
  *
  * Single source of truth for all design tokens.
- * Theme variables (--theme-*) are overridden by dark mode (utilities/dark-mode.css);
+ * Theme variables (--theme-*) are overridden per [data-theme] in styles/themes/themes.css;
  * Personalization presets set their own --pref-* colours at runtime (preferencesManager).
  * The JSON theme system once meant to override these is archived:
  * docs/archive/JSON_THEME_SYSTEM.md
@@ -163,7 +163,7 @@
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Backgrounds
-     Overridden by dark mode (utilities/dark-mode.css)
+     Overridden per [data-theme] in styles/themes/themes.css
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
   /* Footer links: plain white over the page gradient, no strip, every width.
@@ -175,7 +175,7 @@
   /* Only when more contrast is asked for — the OS "Increase contrast" setting
      (prefers-contrast) or the app's own High Contrast mode — the links get
      the navy glass strip on desktop (white at 4.6:1 over the gradient's light
-     end) and near-black text on phones; dark mode sets a light colour. */
+     end) and near-black text on phones; the dark themes set a light colour. */
   --footer-strip-bg: rgba(10, 25, 60, 0.43);
   --footer-strip-border: rgba(255, 255, 255, 0.35);
   --footer-text-contrast: #111111;
@@ -186,7 +186,7 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Text
      Note: Original CSS referenced these but never defined them, so they defaulted
-     to inherit. Dark mode overrides these (utilities/dark-mode.css).
+     to inherit. Themes can override these in styles/themes/themes.css.
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-text-primary: inherit;
   --theme-text-secondary: inherit;
@@ -333,7 +333,7 @@
   --theme-progress-track-bg: rgba(0, 0, 0, 0.1);
   /* Routine progress bar track (progress-bar.css, Oct 2026 restyle). A
      frosted groove: translucent so the page shows through, with a 1px edge.
-     Dark mode overrides both below. */
+     Dark mode and the colour themes override both below / in themes.css. */
   --progress-track-bg: rgba(0, 0, 0, 0.22);
   --progress-track-border: rgba(255, 255, 255, 0.22);
   --theme-progress-fill-bg: var(--color-primary);

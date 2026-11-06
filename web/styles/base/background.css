@@ -12,7 +12,7 @@
 /* `html body`, not `body`: critical.css paints the default gradient on
    `html, body` before main.css arrives (no flash of white), and it sits AFTER
    main.css in document order, so at equal specificity it kept winning and the
-   themes' own gradient never reached the page (the retired colour themes
+   colour themes' gradient never reached the page (Dark Ocean and Golden Glow
    painted the default blue until Oct 2026; the contrast runner measured every
    theme over it). One extra type selector outranks it; dark mode's
    `body.dark-mode` rule still outranks this. */
@@ -52,7 +52,7 @@ html[data-vocab-theme="cleaning"] body::before {
 }
 
 /* Custom app background color (Preferences - Default theme only) */
-body:not(.dark-mode) {
+body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
     background-size: cover;
 }
@@ -61,13 +61,13 @@ body:not(.dark-mode) {
    themeManager sets --pref-app-bg on body.style directly (not html), so the
    body always has a tracked dependency on the var and repaints immediately.
    This rule provides an extra specificity layer as a fallback. */
-html[data-vocab-theme] body:not(.dark-mode) {
+html[data-vocab-theme] body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
     background-size: cover;
 }
 
 /* Custom pattern color (Preferences - Default and dark mode) */
-body.custom-pattern:not(.no-bg-pattern)::before {
+body.custom-pattern:not(.theme-dark-ocean):not(.theme-golden-glow):not(.no-bg-pattern)::before {
     background: var(--custom-pattern-bg) repeat;
     background-size: 400px 400px;
 }
@@ -87,8 +87,8 @@ body.no-bg-pattern {
     background-color: var(--theme-bg-solid);
 }
 
-/* Outranks the custom app colour rule, body:not(.dark-mode) (0,1,1), with .no-bg-pattern: (0,2,1) */
-body.no-bg-pattern:not(.dark-mode) {
+/* Match specificity of the pattern rule above (0,3,1) + .no-bg-pattern = (0,4,1) */
+body.no-bg-pattern:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
     background-size: cover;
 }
@@ -96,7 +96,7 @@ body.no-bg-pattern:not(.dark-mode) {
 /* Custom background image (from personalization) */
 /* Use high specificity to override pattern rules */
 body.has-bg-image,
-body.has-bg-image:not(.dark-mode) {
+body.has-bg-image:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--custom-bg-image);
     background-color: var(--theme-bg-solid);
 }
@@ -114,7 +114,7 @@ body.has-bg-image::before {
    and light under the same word, so picking one colour from its brightness
    cannot work; the ring does. Only with a photo: the gradient look is unchanged.
    The ID selector outranks the subtitle's theme and dark-mode colours. Both
-   footer colours are overridden: a theme may set --footer-text dark, and on
+   footer colours are overridden: Golden Glow sets --footer-text dark, and on
    phones Increase Contrast, High Contrast and a picked app colour switch the
    copyright to --footer-text-contrast (#111) — dark letters inside a dark
    ring would be mud on a dark photo. */
@@ -143,43 +143,68 @@ body.has-bg-image #help-window h4 {
     text-shadow: var(--text-shadow-photo);
 }
 
-/* Background image display modes - specificity (0,3,1) to override pattern rules */
+/* Background image display modes - specificity (0,4,1) to override pattern rules */
 body.has-bg-image.bg-mode-cover,
-body.has-bg-image.bg-mode-cover:not(.dark-mode) {
+body.has-bg-image.bg-mode-cover:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--custom-bg-image) center/cover no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
 body.has-bg-image.bg-mode-center,
-body.has-bg-image.bg-mode-center:not(.dark-mode) {
+body.has-bg-image.bg-mode-center:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--custom-bg-image) center/auto no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
 body.has-bg-image.bg-mode-tile,
-body.has-bg-image.bg-mode-tile:not(.dark-mode) {
+body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--custom-bg-image) top left/auto repeat;
     background-color: var(--theme-bg-solid);
 }
 
 /* Dark mode overlay for custom background images */
-body.dark-mode.has-bg-image.bg-mode-cover {
+body.dark-mode.has-bg-image.bg-mode-cover,
+body.theme-dark-ocean.has-bg-image.bg-mode-cover {
     background:
         linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) center/cover no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
-body.dark-mode.has-bg-image.bg-mode-center {
+body.dark-mode.has-bg-image.bg-mode-center,
+body.theme-dark-ocean.has-bg-image.bg-mode-center {
     background:
         linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) center/auto no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
-body.dark-mode.has-bg-image.bg-mode-tile {
+body.dark-mode.has-bg-image.bg-mode-tile,
+body.theme-dark-ocean.has-bg-image.bg-mode-tile {
     background:
         linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        var(--custom-bg-image) top left/auto repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+/* Golden Glow theme - lighter overlay to preserve warm tones */
+body.theme-golden-glow.has-bg-image.bg-mode-cover {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/cover no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-center {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
+        var(--custom-bg-image) center/auto no-repeat;
+    background-color: var(--theme-bg-solid);
+}
+
+body.theme-golden-glow.has-bg-image.bg-mode-tile {
+    background:
+        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
         var(--custom-bg-image) top left/auto repeat;
     background-color: var(--theme-bg-solid);
 }

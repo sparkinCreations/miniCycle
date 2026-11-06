@@ -165,7 +165,7 @@ body.custom-app-bg .footer-links {
 
     /* When more contrast is asked for, a strip around one short caption would
        be a pill under the Undo button and the page dots; dark text does the
-       same job on its own (dark mode keeps light text). */
+       same job on its own (the dark themes keep light text). */
     @media (prefers-contrast: more), (prefers-contrast: high) {
         #footer-container .footer-links {
             background: none;

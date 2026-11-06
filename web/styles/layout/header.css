@@ -286,6 +286,15 @@ body.dark-mode .app-subtitle {
     color: var(--color-gray-300);
 }
 
+/* The dark colour themes: black at 0.8 vanishes on their navy headers
+   (Dark Ocean measured 1.65:1 once the themes actually painted, Oct 2026 —
+   see background.css). Keyed by the root attribute the theme tokens use, so
+   this outranks critical.css's plain .app-subtitle too. */
+:root[data-theme="dark-ocean"] .app-subtitle,
+:root[data-theme="dark"] .app-subtitle {
+    color: var(--theme-header-text, var(--color-gray-300));
+}
+
 /* =============================================================================
    MOBILE HEADER ADJUSTMENTS
    ============================================================================= */

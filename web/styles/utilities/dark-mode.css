@@ -39,12 +39,14 @@ body.dark-mode {
 }
 
 /* =============================================================================
-   DARK MODE VARIABLE OVERRIDES
-   The dark-mode palette over the default tokens in base/variables.css.
+   DARK MODE VARIABLE OVERRIDES (Only when no custom theme is active)
+   When a CSS theme is applied via [data-theme] on <html>, the theme variables
+   in themes.css take precedence. Dark-mode overrides only apply when no theme
+   is selected (default blue theme + dark mode toggle).
    ============================================================================= */
 
-html.dark-mode,
-body.dark-mode {
+html.dark-mode:not([data-theme]),
+body.dark-mode:not([data-theme]) {
 
     /* ─── Dark mode palette ─── */
     --dark-bg-start: #1c1c1c;
@@ -152,8 +154,8 @@ body.dark-mode {
     --theme-modal-text: var(--theme-text-primary);
     --theme-modal-border: var(--dark-button-hover-bg);
     /* The one --theme-modal-* token this block was missing. Without it a light
-       modal-header colour (the retired golden-glow's #fff9e0) survived while
-       --theme-modal-text above went to #f0f0f0. Matches --modal-header-bg
+       colour theme kept its light modal-header colour (golden-glow: #fff9e0)
+       while --theme-modal-text above went to #f0f0f0. Matches --modal-header-bg
        so the modal heading sits flush with the modal body in dark mode. */
     --theme-modal-header-bg: #2b2b2b;
     --theme-card-bg: #2e2e2e;
@@ -165,8 +167,8 @@ body.dark-mode {
     --theme-text-primary: #f0f0f0;
     --theme-text-secondary: #cccccc;
     --theme-text-muted: #999999;
-    /* Light text on dark surfaces. Consumers on static light surfaces must pin
-       a static dark color instead (see .mode-description). */
+    /* Matches [data-theme] dark (themes.css). Consumers on static light
+       surfaces must pin a static dark color instead (see .mode-description). */
     --theme-text-on-surface: #e0e0e0;
     --theme-bg-surface: #3a3a3a;
     --theme-bg-surface-elevated: #4a4a4a;
@@ -1731,8 +1733,9 @@ body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
     background-color: rgba(150, 150, 150, 0.5);
 }
 
-/* Auto-uncheck banner: the dimmer dark-mode text, falling back to the
-   surface text token. */
+/* Auto-uncheck banner uses --theme-text-on-surface, which the dark-mode
+   variable block does not remap (only [data-theme] themes do) — override
+   here, falling back to the theme token when a data-theme is active. */
 body.dark-mode .auto-uncheck-banner {
     color: var(--dark-text-dim, var(--theme-text-on-surface));
 }
@@ -1805,12 +1808,12 @@ body.dark-mode .chip-group-icon {
    ============================================================================= */
 
 @media (prefers-color-scheme: dark) {
-    html:not(.dark-mode) {
+    html:not(.dark-mode):not([data-theme]) {
         background: #1c1c1c;
         color: #e0e0e0;
     }
 
-    html:not(.dark-mode) body {
+    html:not(.dark-mode):not([data-theme]) body {
         background: linear-gradient(135deg, #1c1c1c, #2a2a2a);
         color: #e0e0e0;
     }
