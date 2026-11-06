@@ -218,7 +218,8 @@ const skipOnEngine = (name, why) =>
     console.log(`   ${colors.yellow}⏭${colors.reset} ${name} ${colors.gray}— skipped on ${ENGINE_NAME}: ${why}${colors.reset}`);
 
 async function openFresh(browser, baseURL, opts = {}) {
-    const context = await browser.newContext();
+    // colorScheme: the DEVICE's light/dark setting (prefers-color-scheme), not the app's dark mode.
+    const context = await browser.newContext(opts.colorScheme ? { colorScheme: opts.colorScheme } : {});
     await context.grantPermissions(['notifications'], { origin: baseURL });
     if (opts.saveDialog) await applySaveDialogStub(context, opts.saveDialog);
     if (opts.initScript) await context.addInitScript(opts.initScript, opts.initArg);
@@ -663,6 +664,53 @@ async function journeyTheme(browser, baseURL) {
         await context.close();
     }
     return { name: 'theme & settings persistence', failures };
+}
+
+// ── Device in dark mode, app in light mode (v2.667 regression) ──────────────
+// dark-mode.css paints a dark gradient under prefers-color-scheme: dark until JS
+// loads; the page background and the routine title's bar must outrank it once the
+// app runs. 2.667 shortened those rules' selectors (the retired colour themes'
+// :not() chains had carried their weight), so on every device set to dark mode
+// the page went black with the app's dark mode OFF, and Focus View lost the
+// title bar. Light-scheme runs could never see it.
+async function journeyDeviceDarkAppLight(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { colorScheme: 'dark' });
+    try {
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); });
+        if (await page.evaluate(() => document.documentElement.classList.contains('dark-mode'))) {
+            await page.evaluate(() => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                d.settings.darkMode = false;
+                localStorage.setItem('miniCycleData', JSON.stringify(d));
+            });
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            await bootApp(page);
+        }
+        const schemeDark = await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches);
+        const appDark = await page.evaluate(() => document.documentElement.classList.contains('dark-mode'));
+        record('the device reports dark and the app is in light mode', schemeDark && !appDark, `scheme dark=${schemeDark}, app dark=${appDark}`);
+
+        const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
+        record("the page background is the app's, not the pre-boot dark gradient",
+            !bodyBg.includes('rgb(28, 28, 28)'), `body background-image: ${bodyBg.slice(0, 90)}`);
+
+        await page.evaluate(() => { if (!document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForFunction(() => document.body.classList.contains('focus-mode'), null, { timeout: 8000 }).catch(() => {});
+        const title = await page.evaluate(() => {
+            const t = document.querySelector('.mini-cycle-title');
+            return { focus: document.body.classList.contains('focus-mode'), bg: t ? getComputedStyle(t).backgroundColor : null };
+        });
+        const transparent = !title.bg || title.bg === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(title.bg);
+        record('Focus View keeps the routine title bar', title.focus && !transparent, `focus=${title.focus}, title background-color: ${title.bg}`);
+
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: "device dark mode with the app in light mode keeps the app's colours", failures };
 }
 
 // ── Journey 5: recurring tasks ──────────────────────────────────────────────
@@ -7711,6 +7759,7 @@ const JOURNEYS = [
     { name: 'routine switching', fn: journeyRoutineSwitch },
     { name: 'undo / redo', fn: journeyUndoRedo },
     { name: 'theme & settings persistence', fn: journeyTheme },
+    { name: "device dark mode with the app in light mode keeps the app's colours", fn: journeyDeviceDarkAppLight },
     { name: 'recurring tasks', fn: journeyRecurring },
     { name: 'to-do mode clearing', fn: journeyTodoMode },
     { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
