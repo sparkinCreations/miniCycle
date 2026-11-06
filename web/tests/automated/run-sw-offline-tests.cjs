@@ -201,6 +201,25 @@ async function run() {
         await page.waitForFunction(() => navigator.serviceWorker.controller !== null, { timeout: 10000 });
         console.log(`${colors.gray}   SW active + controlling, cache warm${colors.reset}`);
 
+        // ── Test 0b: the install check's offline fetch of start_url ─────────
+        // Right after the first install the browser fetches the manifest's
+        // start_url (./app) as a plain request, offline, to see whether the app
+        // works offline. /app is not cached yet (this harness only ever opened
+        // miniCycle.html); until Nov 2026 that request fell through to the
+        // catch-all and came back 504 in the console. Offline = the server is
+        // DOWN: context.setOffline does not reach the worker's own fetches.
+        console.log(`\n${colors.cyan}▸ install check: offline fetch of start_url before it is cached${colors.reset}`);
+        await srv.close();
+        const startUrl = await page.evaluate(async () => {
+            try {
+                const res = await fetch('/app');
+                const text = await res.text();
+                return { status: res.status, shell: text.includes('id="app-root"') };
+            } catch (e) { return { status: 'threw ' + e.message }; }
+        });
+        srv = await startStaticServer(WEB_ROOT, PORT);
+        record('start_url (/app) answers offline with the app shell', startUrl.status === 200 && startUrl.shell, JSON.stringify(startUrl));
+
         // ── Test 1: online, SW-controlled boot ──────────────────────────────
         console.log(`\n${colors.cyan}▸ online (SW-controlled)${colors.reset}`);
         const online = await reloadAndBoot(page, 20000);

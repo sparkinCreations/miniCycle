@@ -799,6 +799,11 @@ function isFreshFirstPage(pathname) {
   return false;
 }
 
+/** True for the app's route ("/app" on minicycle.app) — the manifest's start_url. */
+function isAppRoute(pathname) {
+  return pathname === new URL('app', self.registration.scope).pathname;
+}
+
 /** True for the scope root ("/" on minicycle.app) — the product page. */
 function isSiteRoot(pathname) {
   return pathname === new URL(self.registration.scope).pathname;
@@ -909,8 +914,13 @@ self.addEventListener('fetch', function (event) {
   }
 
   var accept = (request.headers && request.headers.get('accept')) || '';
+  // The app's own route counts as a page load whoever asks for it. The
+  // browser's install check fetches the manifest's start_url (./app) as a plain
+  // request, offline, right after the first install, before /app is cached:
+  // through §7d that was a 504 in the console; here it gets the cached shell.
   var isNavigate = request.mode === 'navigate' ||
-                   (request.destination === '' && accept.indexOf('text/html') !== -1);
+                   (request.destination === '' && accept.indexOf('text/html') !== -1) ||
+                   isAppRoute(url.pathname);
 
   // ✅ Assets belonging to a network-first page (e.g. /pages/dashboard.js) —
   // network-first, cache only as an offline fallback. The navigation branch
