@@ -4,7 +4,7 @@
 >
 > **For current app version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Last verified:** November 6, 2026
+**Last verified:** Nov 6 2026
 **WCAG target:** 2.2 Level AA — the goal stated in the user-facing
 [accessibility statement](../../legal/accessibility.html), which is not a claim of
 full conformance.

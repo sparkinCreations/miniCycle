@@ -1,5 +1,7 @@
 # Contributing to miniCycle
 
+**Last verified:** Nov 6 2026
+
 Contributions are welcome. miniCycle is source-available under a proprietary
 license (see [LICENSE](LICENSE)), which means forking and modifying the code
 requires prior written consent from Sparkin Creations.
@@ -39,15 +41,16 @@ and a missed layer fails silently, so it's worth a conversation first.
   Roughly 20 minutes, and it covers the whole architecture end to end.
 - **The one rule for new code:** data changes go through `AppState.update()`.
   Nearly every other convention in the codebase exists to protect that one.
-  (Older code still reads through the `loadMiniCycleData()` wrapper — a ratcheted
-  gate keeps that count from growing. Don't add to it.)
+  (The legacy `loadMiniCycleData()` reader was retired in Sep 2026; read state with
+  `AppState.get()` and the `utils/cycleMode.js` helpers. `validate:legacy` is a
+  one-way ratchet that keeps the name from coming back.)
 - **No build step to develop.** Clone, `npm install`, `npm start`, open the file.
   The esbuild bundle is for releases only.
 
 ## Before you open the PR
 
 `npm test` is **not** the full test set — it runs the module suites only. CI runs
-four more suites and eight static gates, and a PR that skips them goes red on
+more suites and a longer list of static gates, and a PR that skips them goes red on
 checks you never saw locally. Run these from `web/`:
 
 ```bash
@@ -59,6 +62,12 @@ npm run validate:inline     # inline scripts in miniCycle.html
 npm run validate:comments   # identifiers named in comments must exist
 npm run validate:builtins   # no post-es2020 built-ins (they ship verbatim)
 npm run validate:labels     # every getLabel() key resolves
+npm run validate:keys       # no object literal defines the same key twice
+npm run validate:chains     # a required() dep is never read through ?.
+npm run validate:api        # appContext API reads resolve
+npm run validate:provides   # manifest `provides` names exist, one owner each
+npm run validate:reset      # every storage key is covered by the factory reset
+npm run validate:cache      # no HTML route is long-cached
 npm run validate:docs       # docs links, sidebar, and CLAUDE.md routing
 
 # Module suites — need a server
@@ -68,6 +77,7 @@ npm test
 # Real-app suites — each starts its own server
 npm run test:layout
 npm run test:a11y
+npm run test:contrast
 npm run test:sw
 npm run test:meta
 npm run test:journey

@@ -2,7 +2,7 @@
 
 > Reviews conducted February 2026 against version 1.1015.
 
-**Last verified:** November 6, 2026
+**Last verified:** Nov 6 2026
 
 > **Status:** Historical snapshot. Every count, score and weakness below is the
 > reviewer's measurement **in February 2026** and is kept as written; none of it is

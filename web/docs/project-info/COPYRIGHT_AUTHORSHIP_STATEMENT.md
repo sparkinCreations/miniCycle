@@ -2,7 +2,7 @@
 
 **Prepared for potential U.S. Copyright Office registration**
 
-**Last verified:** November 6, 2026
+**Last verified:** Nov 6 2026
 
 ---
 

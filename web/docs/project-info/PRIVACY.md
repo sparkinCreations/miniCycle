@@ -6,7 +6,7 @@
 **Policy last updated:** October 16, 2026
 **Version:** 2.8
 **miniCycle version at that update:** 2.618
-**Last verified:** November 6, 2026 (against `web/legal/privacy.html` and the code)
+**Last verified:** Nov 6 2026 (against `web/legal/privacy.html` and the code)
 
 > This file mirrors the published policy. The canonical text is `web/legal/privacy.html` (minicycle.app/legal/privacy); when the two differ, the HTML wins.
 

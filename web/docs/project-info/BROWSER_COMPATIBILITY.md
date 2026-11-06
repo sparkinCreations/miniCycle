@@ -2,7 +2,7 @@
 
 > **Comprehensive browser support for miniCycle**
 
-**Last verified:** November 6, 2026
+**Last verified:** Nov 6 2026
 
 > **Status:** Reference. The browser floor is defined by code, not by this page:
 > the feature gate at the bottom of `<head>` in `web/miniCycle.html`. If this page
