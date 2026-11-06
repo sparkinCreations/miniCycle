@@ -1147,7 +1147,7 @@ Use mode-aware coordination when:
 ### Further Reading
 
 - [UNDO_REDO_ARCHITECTURE.md](./UNDO_REDO_ARCHITECTURE.md) - State management patterns
-- [DEVELOPER_DOCUMENTATION.md](../DEVELOPER_DOCUMENTATION.md) - Module system
+- [MODULE_LOADER_GUIDE.md](MODULE_LOADER_GUIDE.md) - Module system
 - [APPINIT_EXPLAINED.md](./APPINIT_EXPLAINED.md) - 2-phase initialization patterns
 
 ---

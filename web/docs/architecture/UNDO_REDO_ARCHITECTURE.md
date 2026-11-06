@@ -878,7 +878,7 @@ console.log(JSON.parse(cache));
 ## Related Documentation
 
 - **[TESTING_QUICK_REFERENCE.md](../testing/TESTING_QUICK_REFERENCE.md)** - Test suite guide
-- **[DEVELOPER_DOCUMENTATION.md](../DEVELOPER_DOCUMENTATION.md)** - Overall architecture
+- **[ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md)** - Overall architecture
 - **[SCHEMA_2_6.md](../reference/SCHEMA_2_6.md)** - Data structure details
 
 ---

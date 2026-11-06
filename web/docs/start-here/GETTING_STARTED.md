@@ -1,7 +1,7 @@
 # Getting Started with miniCycle
 
 **Version**: see [PROJECT_STATS.md](../PROJECT_STATS.md) for the current app version
-**Last Updated**: August 5, 2026
+**Last verified:** Nov 5 2026
 
 ---
 
@@ -20,17 +20,18 @@
 # 1. Navigate to project
 cd miniCycle/web
 
-# 2. Start local server (choose one)
-python3 -m http.server 8080        # Python (recommended)
-# OR
-npx serve .                         # Node.js
+# 2. Start the dev server (no-cache headers, so a normal refresh shows changes)
+npm start                           # = python3 scripts/serve.py — see DEV_SERVER.md
+# OR, with ordinary browser caching:
+npm run start:simple                # = python3 -m http.server 8080
 
 # 3. Open browser
 # Full version: http://localhost:8080/miniCycle.html
 # Lite version: http://localhost:8080/lite/miniCycle-lite.html (static fallback, not maintained)
 
 # 4. Run tests (optional)
-npm test                            # Automated tests (all passing)
+npm test                            # Module suite — needs the server running
+                                    # (CI runs more suites: see VALIDATION_GATES.md)
 open http://localhost:8080/tests/module-test-suite.html  # Browser tests
 ```
 
@@ -46,11 +47,11 @@ miniCycle can be tested on iPad/iPhone over local WiFi:
 # 1. Find your Mac's IP address
 ifconfig | grep "inet " | grep -v 127.0.0.1
 
-# Example output: 192.168.4.87
+# Example output: 192.168.1.20
 
 # 2. On your iPad/iPhone (same WiFi), open Safari and visit:
-http://192.168.4.87:8080/miniCycle.html
-http://192.168.4.87:8080/tests/module-test-suite.html
+http://192.168.1.20:8080/miniCycle.html
+http://192.168.1.20:8080/tests/module-test-suite.html
 ```
 
 This is invaluable for testing touch interactions, Safari-specific behavior, and PWA installation on actual mobile hardware.
@@ -69,7 +70,10 @@ setTimeout(() => {
 }, 1000);
 ```
 
-Refresh the page and see your notification appear!
+Refresh the page and see your notification appear! This is a throwaway
+experiment: real code never hardcodes the text or the delays — it uses
+`getLabel()` and `UI_TIMEOUTS` (the mandatory patterns in the repo-root
+`CLAUDE.md`).
 
 ---
 
@@ -92,7 +96,7 @@ Refresh the page and see your notification appear!
 ```javascript
 // Your morning routine cycle:
 const morningRoutine = {
-    name: "Morning Routine",
+    title: "Morning Routine",   // a routine's name is `title` (Schema 2.6)
     tasks: [
         "☕ Make coffee",
         "🧘 Meditate 10 mins",
@@ -119,4 +123,4 @@ This is fundamentally different from traditional to-do apps where completed task
 
 ---
 
-**Questions?** Check the [Developer Documentation Hub](../DEVELOPER_DOCUMENTATION.md) for links to all guides.
+**Questions?** The [docs index](../INDEX.md) routes you to the guide to read first.

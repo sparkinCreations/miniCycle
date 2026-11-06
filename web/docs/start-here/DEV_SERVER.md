@@ -1,5 +1,7 @@
 # Development Server
 
+**Last verified:** Nov 5 2026
+
 ## Quick Start
 
 ```bash
@@ -16,7 +18,7 @@ The server runs on http://localhost:8080 by default.
 The development server sends `no-cache` headers with every response, which means:
 - ✅ Normal refresh (⌘R / Ctrl+R) shows latest changes
 - ✅ No need for hard refresh (⌘⇧R / Ctrl+Shift+R)
-- ✅ Works perfectly with `update-version.sh` workflow
+- ✅ No version bump needed to see a change (`update-version.sh` is the release tool, not part of the edit loop)
 
 ### 📊 Clean Logs
 Only logs actual requests (skips favicon spam):
@@ -49,23 +51,15 @@ npm run start:simple
 
 ## Development Workflow
 
-### Before (With Caching)
 ```bash
 # 1. Make code changes
-# 2. Run update-version.sh
-./scripts/update-version.sh
-# 3. Hard refresh browser ⌘⇧R
-# 4. See changes
+# 2. Normal refresh ⌘R / Ctrl+R — changes show immediately
 ```
 
-### After (No Caching)
-```bash
-# 1. Make code changes
-# 2. Run update-version.sh (if bumping version)
-./scripts/update-version.sh
-# 3. Normal refresh ⌘R
-# 4. See changes immediately ✅
-```
+Do **not** run `./scripts/update-version.sh` to see a change. It is the
+**release** script (interactive version bump, `version.js`, `PROJECT_STATS.md`,
+CSP hashes, git tag) and with `--push` it deploys, because every push to `main`
+goes to production. Run it only to ship: `./scripts/update-version.sh --auto --push --changelog`.
 
 ## How It Works
 
@@ -95,7 +89,7 @@ This tells the browser:
 ## Production
 
 This server is **for development only**. In production:
-- Your hosting service (Cloudflare, Netlify, etc.) handles cache headers
+- Netlify serves the content-hashed `web/dist/` bundle with its own cache headers (`web/netlify.toml`)
 - Service worker handles updates
 - `update-version.sh` manages version bumps
 
@@ -125,16 +119,15 @@ Press `Ctrl+C` to stop the server gracefully.
 
 - **scripts/serve.py** - Development server with no-cache headers
 - **package.json** - NPM scripts (start, start:simple)
-- **scripts/update-version.sh** - Version bump utility (use with npm start)
+- **scripts/update-version.sh** - the release script (not needed during development)
 
 ## Benefits
 
 ✅ **Faster development** - No more hard refreshes
 ✅ **Less cognitive load** - Just reload normally
 ✅ **Better DX** - Immediate feedback
-✅ **Works with tools** - Compatible with update-version.sh
 ✅ **Simple** - Pure Python, no dependencies
 
 ---
 
-**Next**: See [update-version.sh](../../scripts/update-version.sh) for version management
+**Next**: shipping a change is covered in [UPDATE-VERSION-GUIDE.md](../deployment/UPDATE-VERSION-GUIDE.md)

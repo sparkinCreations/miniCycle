@@ -25,11 +25,11 @@ python3 -m http.server 8080
 ```bash
 # 1. Find your Mac's IP address
 ifconfig | grep "inet " | grep -v 127.0.0.1
-# Example: 192.168.4.87
+# Example: 192.168.1.20
 
 # 2. On your iPad/iPhone (same WiFi network):
 # Open Safari and visit:
-# http://192.168.4.87:8080/tests/module-test-suite.html
+# http://192.168.1.20:8080/tests/module-test-suite.html
 
 # 3. Run tests in browser
 # Tap "Run All Tests" or select individual modules
@@ -892,7 +892,7 @@ jobs:
 
 ## 🔗 Resources
 
-- **Full Documentation**: `docs/DEVELOPER_DOCUMENTATION.md` (Testing System section)
+- **Full Documentation**: [TESTING_GUIDE.md](../working-on-code/TESTING_GUIDE.md)
 - **Test Template**: `tests/MODULE_TEMPLATE.tests.js`
 - **Example Tests**: `tests/globalUtils.tests.js`
 - **Test UI**: `http://localhost:8080/tests/module-test-suite.html`

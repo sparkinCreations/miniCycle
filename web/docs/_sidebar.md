@@ -4,11 +4,11 @@
   * [Home](/)
   * [1. What is miniCycle?](start-here/WHAT_IS_MINICYCLE.md)
   * [2. How miniCycle Works](start-here/HOW_MINICYCLE_WORKS.md)
-  * [3. Your First Contribution](start-here/FIRST_CONTRIBUTION.md)
-  * [4. Getting Started](start-here/GETTING_STARTED.md)
-  * [5. Framework Equivalents](start-here/FRAMEWORK_EQUIVALENTS.md)
+  * [3. Getting Started](start-here/GETTING_STARTED.md)
+  * [4. Dev Server](start-here/DEV_SERVER.md)
+  * [5. Your First Contribution](start-here/FIRST_CONTRIBUTION.md)
   * [6. Folder Structure](start-here/FOLDER_STRUCTURE.md)
-  * [7. Dev Server](start-here/DEV_SERVER.md)
+  * [7. Framework Equivalents](start-here/FRAMEWORK_EQUIVALENTS.md)
 
 * **User Guides**
   * [User Guide](user-guides/USER_GUIDE.md)
@@ -82,7 +82,6 @@
   * [Review Patterns](reference/REVIEW_PATTERNS.md)
   * [Drift Audit Checklist](DRIFT_AUDIT_CHECKLIST.md)
   * [Documentation Index](INDEX.md)
-  * [Developer Documentation](DEVELOPER_DOCUMENTATION.md)
 
 * **Features**
   * [Stats Panel](features/STATS_PANEL.md)
@@ -212,6 +211,9 @@
     * [Schema 2.6 Plan](archive/SCHEMA_2_6_PLAN.md)
     * [Settings Toggle Latch Gap](archive/SETTINGS_TOGGLE_LATCH_GAP.md)
     * [Welcome Screen + Tip Archive](archive/WELCOME_SCREEN_PLAN.md)
+
+  * **Superseded Docs (2026)** _(archived Nov 5 2026, docs audit round 1)_
+    * [Developer Documentation Hub](archive/DEVELOPER_DOCUMENTATION.md)
 
   * **Historical Updates**
     * [October 2025 Improvements](archive/OCTOBER_2025_IMPROVEMENTS.md)

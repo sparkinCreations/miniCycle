@@ -1,6 +1,6 @@
 # Framework Equivalents — What miniCycle Builds by Hand
 
-**Last Updated:** August 2026
+**Last verified:** Nov 5 2026
 
 This document maps miniCycle's hand-built architecture to the established frameworks and libraries that solve the same problems. Every pattern listed here was built from scratch in vanilla JavaScript — not because frameworks don't exist, but to understand the problems they solve at a foundational level.
 
@@ -32,22 +32,22 @@ This document maps miniCycle's hand-built architecture to the established framew
 A custom DI framework in `modules/core/diBase.js` with:
 
 - `createDIModule()` — declares a module with named dependencies
-- `required()` / `optional()` — dependency declarations with fail-fast validation
+- `required()` / `optional()` — dependency declarations validated at resolve time (a missing `required()` dep warns and resolves to null, or throws in a module created with `{ strict: true }`)
 - `di.resolve()` — lazy resolution via getter pattern
 - `Object.defineProperties` — preserves lazy getters during wiring (the same problem Angular solves with its injector hierarchy)
 
 ```javascript
 // miniCycle
-const di = createDIModule('RecurringPanel', {
+const di = createDIModule('MyModule', {
     AppState: required(),
     showNotification: required(),
     safeAddEventListener: optional(null),
 });
-export const setRecurringPanelDependencies = di.setDependencies;
+export const setMyModuleDependencies = di.setDependencies;
 
 // Angular equivalent
 @Injectable()
-export class RecurringPanel {
+export class MyModule {
     constructor(
         private appState: AppState,           // required
         private notification: NotificationService, // required
@@ -78,17 +78,17 @@ A manifest-based wiring layer — dependencies are declared in `moduleManifests.
 - Single centralized state object (Schema 2.6)
 - `AppState.update(producer)` — mutates state via a producer function (like Immer)
 - `AppState.subscribe()` — reactive listeners notified on changes
-- 600ms debounced persistence to localStorage
+- 600ms debounced persistence to localStorage (`DEBOUNCE.STATE_SAVE`)
 - Immediate save option for critical mutations
 
 ```javascript
 // miniCycle
 AppState.update(state => {
-    state.data.routine[cycleId].tasks.push(newTask);
+    getRoutine(state, routineId).tasks.push(newTask); // accessor from utils/cycleMode.js
 }, true); // true = immediate save
 
 // Redux equivalent
-dispatch({ type: 'ADD_TASK', payload: { cycleId, task: newTask } });
+dispatch({ type: 'ADD_TASK', payload: { routineId, task: newTask } });
 // + reducer + middleware + store.subscribe()
 
 // Zustand equivalent
@@ -116,7 +116,7 @@ Built-in debounced persistence to localStorage and an undo/redo system (`undoRed
 ### What miniCycle builds
 A label system in `modules/labels/`:
 
-- `defaultLabels.js` — centralized keys across 32+ categories (the "translation file")
+- `defaultLabels.js` — centralized keys grouped by category (the "translation file")
 - `labelResolver.js` — `getLabel(key, options)` with pluralization and interpolation
 - Theme-aware resolution — vocabulary themes override specific keys at runtime
 
@@ -136,7 +136,7 @@ t('notify.taskRenamed', { name: 'Buy milk' })                   // 'Task renamed
 User-facing strings scattered across hundreds of files make consistency impossible and localization impractical. Both systems centralize strings into a registry with key-based lookups, keeping presentation logic separate from text content.
 
 ### What miniCycle adds
-Theme-aware resolution via `LENS_SENSITIVE_KEYS` — a set of keys that vocabulary themes can override. When a routine uses the "Fitness" theme, `getLabel('noun.task')` returns "workout" instead of "task." This is conceptually similar to i18next namespaces or contexts, but driven by app state rather than user locale.
+Theme-aware resolution via `LENS_SENSITIVE_KEYS` — a set of keys that vocabulary themes can override. When a routine uses the "Fitness" theme, `getLabel('noun.task')` returns "exercise" instead of "task." This is conceptually similar to i18next namespaces or contexts, but driven by app state rather than user locale.
 
 ---
 
@@ -194,12 +194,12 @@ An `ensureBootModalTemplate()` idempotency pattern that makes boot phases retry-
 - **Angular Router**: `RouterModule`, route resolvers, guards
 
 ### What miniCycle builds
-`modeManager.js` — a state machine that manages three app modes (Auto Cycle, Manual Cycle, To-Do) and panel states (browsing, previewing, editing):
+`modeManager.js` — manages three app modes (Auto Cycle, Manual Cycle, To-Do), derived from two flags stored on the routine (`autoReset`, `deleteCheckedTasks`):
 
 ```javascript
-// miniCycle — mode determines UI behavior
-modeManager.setMode('todo');
-// Updates: button labels, help text, completion behavior, task lifecycle
+// miniCycle — the stored flags determine the mode; ModeManager re-applies it
+await modeManager.syncModeFromToggles();
+// Updates: mode selector, body mode class, mode-specific UI
 
 // React Router equivalent (conceptually)
 <Route path="/todo" element={<TodoView />} />
@@ -241,7 +241,7 @@ safeAddEventListener(button, 'click', handleClick);
 
 // miniCycle — event delegation
 container.addEventListener('click', (e) => {
-    const taskItem = e.target.closest('.task-item');
+    const taskItem = e.target.closest(DOM_SELECTORS.TASK);
     if (taskItem) handleTaskClick(taskItem);
 });
 
@@ -265,9 +265,9 @@ Event listeners in long-lived apps leak memory if not cleaned up, duplicate if a
 ### What miniCycle builds
 A token-based design system in `styles/base/variables.css`:
 
-- CSS custom properties for spacing (`--space-1` through `--space-12`), colors, typography, z-index, transitions
+- CSS custom properties for spacing (`--space-1`, `--space-2`, …), colors, typography, z-index, transitions
 - CSS files organized by component (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
-- Dark mode via `prefers-color-scheme` and manual toggle
+- Dark mode via a `body.dark-mode` class (manual toggle), with a `prefers-color-scheme` fallback before JS loads
 - Reduced motion support via `prefers-reduced-motion` (timing variables auto-disable)
 - Vocabulary theme color presets applied as `--pref-*` CSS variables at runtime
 
@@ -275,7 +275,7 @@ A token-based design system in `styles/base/variables.css`:
 /* miniCycle — token-based */
 background: var(--theme-task-bg);
 padding: var(--space-4);
-font-size: var(--font-size-md);
+font-size: var(--font-size-base);
 transition: opacity var(--transition-normal);
 z-index: var(--z-modal);
 
@@ -304,9 +304,9 @@ Hardcoded values (colors, spacing, z-indexes) create inconsistency and make them
 ### What miniCycle builds
 A hand-written service worker (`service-worker.js`) with:
 
-- Tiered caching strategies per request type: cache-first navigation with background revalidation (staleness healed page-side by `verifyVersionFresh()`), immutable cache-first for content-hashed `/build/` assets, network-first on version mismatch, stale-while-revalidate for the rest
+- Tiered caching strategies per request type: cache-first navigation with background revalidation (staleness healed page-side by `verifyVersionFresh()`), immutable cache-first for content-hashed `/build/` assets, network-first on version mismatch, stale-while-revalidate for the remaining scripts and styles, cache-first for everything else
 - Versioned cache management (`CACHE_VERSION` in `version.js`)
-- Graceful offline support — full app functionality without network
+- Offline boot from the precache (pinned by `npm run test:sw`)
 - Lite version redirect failsafes in the HTML (16-second late-boot check + 60-second load timeout)
 
 ### The problem both solve
@@ -324,13 +324,14 @@ Web apps need to work offline, cache assets efficiently, and update gracefully. 
 ### What miniCycle builds
 Playwright browser tests (`web/tests/`) that:
 
-- Run against the actual app in a real browser (localhost:8080)
+- Run module suites (`npm test`) in a real browser via `tests/module-test-suite.html` (localhost:8080), with mock dependencies injected through DI
+- Run real-app suites (`test:journey`, `test:layout`, `test:sw`, `test:a11y`, `test:contrast`) against the actual app
 - Use `createProtectedTest()` to backup/restore localStorage between tests
 - Test the full boot sequence, DI wiring, and UI interactions
-- Comprehensive test files (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
+- Test files: see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts
 
 ### The problem both solve
-Code needs automated verification. The approach differs — React Testing Library tests components in isolation with a virtual DOM, while miniCycle tests the full app in a real browser. miniCycle's approach is closer to Cypress or Playwright E2E testing, validating that the entire system works together rather than testing units in isolation.
+Code needs automated verification. The approach differs — React Testing Library tests components in isolation with a virtual DOM, while miniCycle runs everything in a real browser: module suites test one module at a time with injected mocks, and the journey suites are closer to Cypress or Playwright E2E testing, validating that the entire system works together.
 
 ---
 
