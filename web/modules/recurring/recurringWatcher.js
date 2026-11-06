@@ -94,6 +94,47 @@ async function commitSystemUpdate(producer, immediate) {
     return await Deps.updateAppState(producer, immediate, { system: true });
 }
 
+/** True while a boot-time spawn has a UI refresh queued behind app-ready. */
+let _refreshQueuedForAppReady = false;
+
+/**
+ * Refresh the task list after a spawn — but never before the app is ready.
+ *
+ * setupRecurringWatcher() runs its first pass inside recurringIntegration's
+ * init (phase 4), so a template already due at launch spawns DURING BOOT. A
+ * next-tick refresh then re-renders before the later-phase providers exist:
+ * TaskRenderer's updateProgressBar (cycleCompletion) and updateMainMenuHeader
+ * (menuManager) resolve to null and silently do nothing (measured Nov 2026,
+ * under CPU load). So during boot the refresh waits for app-ready instead.
+ *
+ * Never AWAIT app-ready here: app-ready needs this phase-4 init to finish, so
+ * awaiting it from inside would deadlock boot (the same trap as making
+ * waitForCore() await isReady() — see CLAUDE.md, Boot Sequence). waitForApp()
+ * times out and resolves false rather than hanging, and the refresh runs
+ * either way, so the worst case is the old behaviour, later.
+ *
+ * Feature-checks isAppReady: appInit is an optional dep, and the unit tests
+ * inject a stub with only waitForCore — those keep the next-tick refresh.
+ * @returns {void}
+ */
+function scheduleUiRefresh() {
+    const appInit = Deps.appInit;
+    const bootInProgress = typeof appInit?.isAppReady === 'function' && !appInit.isAppReady();
+    if (!bootInProgress) {
+        setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
+        return;
+    }
+    // Several spawns during boot share ONE refresh; it renders fresh state.
+    if (_refreshQueuedForAppReady) return;
+    _refreshQueuedForAppReady = true;
+    appInit.waitForApp().finally(() => {
+        // Cleared before the refresh, so a throwing refresh cannot pin the
+        // latch and swallow every later boot-time refresh.
+        _refreshQueuedForAppReady = false;
+        Deps.refreshUIFromState?.();
+    });
+}
+
 // ============================================================================
 // MODULE STATE
 // ============================================================================
@@ -384,8 +425,8 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
             });
         }, true); // Immediate save
 
-        // Refresh DOM on the next tick
-        setTimeout(() => { Deps.refreshUIFromState?.(); }, 0);
+        // Refresh DOM on the next tick — or after app-ready, if this spawn ran during boot
+        scheduleUiRefresh();
         notifyExhaustedTemplates(committedUpdates);
 
         // A successful spawn means space freed up — end the "blocked era" so
@@ -696,6 +737,7 @@ export function resetWatcherState() {
     _currentIntervalMs = null;
     _lastWatchTickMs = null;
     _taskLimitNotificationShown = false;
+    _refreshQueuedForAppReady = false;
     if (_visibilityChangeHandler) {
         document.removeEventListener("visibilitychange", _visibilityChangeHandler);
         _visibilityChangeHandler = null;

@@ -499,6 +499,121 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(as.get().data.routine.c1.tasks.length, 1, 'missed occurrence delivered on wake');
     });
 
+    // ── UI refresh timing (boot vs ready) ────────────────────────────────────
+    // A template already due at launch spawns DURING BOOT (the watcher's first
+    // pass runs inside phase 4). A next-tick refresh then rendered before the
+    // phase-6 providers existed, so TaskRenderer's progress-bar and menu-header
+    // calls silently did nothing. During boot the refresh must wait for app-ready.
+    resultsDiv.innerHTML += '<h4 class="test-section">🖼️ UI Refresh Timing</h4>';
+
+    const tick = () => new Promise(r => setTimeout(r, 20));
+    // An appInit whose app-ready the test releases by hand.
+    function makeBootingAppInit() {
+        let release;
+        const ready = new Promise(r => { release = r; });
+        const appInit = {
+            appReady: false,
+            waitForCore: async () => {},
+            isAppReady: () => appInit.appReady,
+            waitForApp: () => ready.then(() => true),
+            markReady: () => { appInit.appReady = true; release(); }
+        };
+        return appInit;
+    }
+
+    await test('a spawn during boot refreshes the UI only after app-ready', async () => {
+        mod.resetWatcherState();
+        // Drain next-tick refreshes queued by EARLIER tests: Deps resolves at call
+        // time, so a stale timer would hit this test's counter.
+        await tick();
+        const appInit = makeBootingAppInit();
+        let refreshes = 0;
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: cycleState({ t1: dueTemplate('t1') }, []),
+            appInit,
+            refreshUIFromState: () => { refreshes++; }
+        }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(r.added, 1, 'the due template still spawns during boot');
+        await tick();
+        eq(refreshes, 0, 'no refresh before app-ready (its providers do not exist yet)');
+        appInit.markReady();
+        await tick();
+        eq(refreshes, 1, 'one refresh once app-ready resolves');
+    });
+
+    await test('several spawns during boot share ONE refresh', async () => {
+        mod.resetWatcherState();
+        // Drain next-tick refreshes queued by EARLIER tests: Deps resolves at call
+        // time, so a stale timer would hit this test's counter.
+        await tick();
+        const appInit = makeBootingAppInit();
+        let refreshes = 0;
+        const as = cycleState({ t1: dueTemplate('t1') }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as, appInit, refreshUIFromState: () => { refreshes++; } }));
+        await mod.catchUpMissedRecurringTasks();
+        as.get().data.routine.c1.recurringTemplates.t2 = dueTemplate('t2');
+        await mod.watchRecurringTasks();
+        eq(as.get().data.routine.c1.tasks.length, 2, 'both templates spawned');
+        appInit.markReady();
+        await tick();
+        eq(refreshes, 1, 'one refresh renders both');
+    });
+
+    await test('once the app is ready a spawn refreshes on the next tick', async () => {
+        mod.resetWatcherState();
+        // Drain next-tick refreshes queued by EARLIER tests: Deps resolves at call
+        // time, so a stale timer would hit this test's counter.
+        await tick();
+        let refreshes = 0;
+        let waited = false;
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: cycleState({ t1: dueTemplate('t1') }, []),
+            appInit: {
+                waitForCore: async () => {},
+                isAppReady: () => true,
+                waitForApp: async () => { waited = true; return true; }
+            },
+            refreshUIFromState: () => { refreshes++; }
+        }));
+        await mod.catchUpMissedRecurringTasks();
+        await tick();
+        eq(refreshes, 1, 'refreshed');
+        eq(waited, false, 'did not wait on app-ready when already ready');
+    });
+
+    await test('a throwing boot-time refresh does not block the next one', async () => {
+        mod.resetWatcherState();
+        // Drain next-tick refreshes queued by EARLIER tests: Deps resolves at call
+        // time, so a stale timer would hit this test's counter.
+        await tick();
+        const appInit = makeBootingAppInit();
+        let refreshes = 0;
+        const as = cycleState({ t1: dueTemplate('t1') }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({
+            AppState: as,
+            appInit,
+            refreshUIFromState: () => { refreshes++; if (refreshes === 1) throw new Error('render failed'); }
+        }));
+        // The throw lands in the .finally() chain; keep it from reporting as unhandled.
+        const swallow = (e) => { if (e.reason?.message === 'render failed') e.preventDefault(); };
+        window.addEventListener('unhandledrejection', swallow);
+        try {
+            await mod.catchUpMissedRecurringTasks();
+            appInit.markReady();
+            await tick();
+            eq(refreshes, 1, 'first refresh ran (and threw)');
+            // Still mid-boot as far as this instance knows: queue another.
+            appInit.appReady = false;
+            as.get().data.routine.c1.recurringTemplates.t2 = dueTemplate('t2');
+            await mod.watchRecurringTasks();
+            await tick();
+            eq(refreshes, 2, 'the latch was released, so the next boot-time refresh still ran');
+        } finally {
+            window.removeEventListener('unhandledrejection', swallow);
+        }
+    });
+
     // cleanup global singleton state
     mod.resetWatcherState();
 

@@ -33,6 +33,7 @@ if (!engine) { console.error(`Unknown PW_BROWSER "${ENGINE_NAME}" (chromium | we
 const { chromium } = playwright;
 const path = require('path');
 const { startStaticServer } = require('./_static-server.cjs');
+const { instrumentBrowser } = require('./_di-warnings.cjs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -224,31 +225,23 @@ async function openFresh(browser, baseURL, opts = {}) {
     if (PROBE_NEEDS_PAGE_GUARD) await context.addInitScript(RESET_PROBE_DENY);
     const page = await context.newPage();
     await page.route(RESET_PROBE, (r) => r.abort());
-    // Collected here and asserted by the caller, so a starved dependency FAILS the
-    // journey instead of scrolling past in green output. See diWarnings below.
-    page.__diWarnings = [];
-    _pagesThisJourney.push(page);
+    // DI warnings are COLLECTED for every page by instrumentBrowser() in run()
+    // (into page.__diWarnings) and fail the journey there — not here, so a
+    // journey that opens its own context is covered too.
     page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
     // Surface DI-shaped console warnings. `pageerror` only fires for UNCAUGHT
     // exceptions, and a starved dependency is not one: `deps.foo?.()` no-ops and
     // the module logs a warning. That blind spot is why a journey failure reads as
     // a bare 10s waitForFunction timeout with nothing explaining it — the
     // "missing dependencies" line the app had already printed never left the page.
+    // Print-only and deliberately broader than _di-warnings.cjs: the extra shapes
+    // (a validation warning on purposely bad input, say) can legitimately appear,
+    // so they explain a failure without being one.
     page.on('console', (msg) => {
         if (msg.type() !== 'warning' && msg.type() !== 'error') return;
         const text = msg.text();
         if (!/missing dep|not injected|undefined|validation failed|is not a function|could not load|DI /i.test(text)) return;
         console.log(`   ${colors.gray}page ${msg.type()}: ${text.slice(0, 240)}${colors.reset}`);
-        // Only the DI-wiring shapes are treated as failures. The rest of the
-        // pattern above is diagnostic noise that can legitimately appear (a
-        // validation warning on purposely bad input, say), but these two mean a
-        // module asked for a dependency and got nothing — which under
-        // ENFORCE_REQUIRES silently removes a feature rather than breaking
-        // loudly. Every To-Do mode bug in v2.436-v2.438 printed one of these
-        // lines and shipped anyway, because printing was all this did.
-        if (/DI access|missing (required )?dep/i.test(text)) {
-            page.__diWarnings.push(text.slice(0, 240));
-        }
     });
     // A journey that needs to SEE the first-run choice screen must navigate itself:
     // everything below here consumes it (it clicks "learn" to seed a routine), so a
@@ -1908,8 +1901,6 @@ async function journeyKeyboardOnlyItems(browser, baseURL) {
     for (const [name, viewport, touch, shown] of DEVICES) {
         const context = await browser.newContext({ viewport, isMobile: touch, hasTouch: touch });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -1947,8 +1938,6 @@ async function journeyFocusMenuSafeArea(browser, baseURL) {
     ]) {
         const context = await browser.newContext({ viewport, isMobile: inset > 0, hasTouch: inset > 0 });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             const cdp = await context.newCDPSession(page);
             await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: inset, left: 0, bottom: 0, right: 0 } });
@@ -2049,8 +2038,6 @@ async function journeyPhoneRenameInactive(browser, baseURL) {
     for (const way of ['routine button', 'from Browse', 'expanded list']) {
         const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -6875,8 +6862,6 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
     for (const width of [320, 390]) {
         const context = await browser.newContext({ viewport: { width, height: 780 }, isMobile: true, hasTouch: true });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -7250,8 +7235,6 @@ async function journeyBrowseRoutines(browser, baseURL) {
     for (const width of [320, 390]) {
         const context = await browser.newContext({ viewport: { width, height: 740 }, isMobile: true, hasTouch: true });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -7458,8 +7441,6 @@ async function journeyRecurringAcrossClockChanges(browser, baseURL) {
     for (const zone of zones) {
         const context = await browser.newContext({ timezoneId: zone.timezoneId });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             // A light page on the app's origin — only the modules are needed, not a booted app.
             await page.goto(`${baseURL}/legal/user-manual.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -7531,8 +7512,6 @@ async function journeyTimesFollowDeviceClock(browser, baseURL) {
     ]) {
         const context = await browser.newContext({ locale, timezoneId: 'UTC' });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/legal/user-manual.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.clock.setFixedTime(new Date('2027-01-04T10:00:00Z')); // a Monday
@@ -7692,6 +7671,13 @@ async function run() {
     console.log(`${colors.gray}   server on ${srv.url} (web/, real service worker enabled)${colors.reset}`);
 
     const browser = await engine.launch({ headless: true });
+    // Every page any journey opens — through openFresh() or its own
+    // browser.newContext() — is registered for this journey and has its DI
+    // warnings collected. Before Nov 2026 only openFresh() attached the
+    // listener: seven journeys that built their own context set an empty
+    // page.__diWarnings and could never fail on one, and four more pages were
+    // never registered at all.
+    const di = instrumentBrowser(browser, { onPage: (page) => _pagesThisJourney.push(page) });
     // JOURNEY_FILTER=<substring> runs only the journeys whose name contains
     // it (case-insensitive) — for chasing one failure without the full run.
     const filter = (process.env.JOURNEY_FILTER || '').toLowerCase();
@@ -7721,6 +7707,11 @@ async function run() {
     } finally {
         await browser.close();
         await srv.close();
+    }
+    // A filtered run skips most pages, so only a full run can call an entry stale.
+    if (!filter) {
+        di.staleAllowlist().forEach(e =>
+            console.log(`${colors.yellow}   DI allow-list entry matched nothing — delete it from _di-warnings.cjs: ${e}${colors.reset}`));
     }
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
