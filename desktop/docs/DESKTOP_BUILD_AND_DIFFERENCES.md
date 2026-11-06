@@ -56,7 +56,7 @@ it, each mirroring an existing `isNativeApp()` check:
 | `utils/updateCheck.js` | `detectUpdateChannel()` returns `'desktop'`; a newer live `version.js` says "Get it from minicycleapp.com" (`noun.desktopDownloadSite`) instead of naming a store |
 | `utils/liteVersion.js` | lite/ is not bundled; `goToLiteVersion()` is suppressed |
 | `boot/uiBoot.js` | the "Try Lite Version" menu and settings entries are hidden |
-| `utils/deviceDetection.js` | the slow-device auto-redirect to lite is suppressed |
+| `utils/deviceDetection.js` | the slow-device Lite offer is never shown |
 | `boot/orchestrator.js` | `waitForServiceWorker()` returns immediately (otherwise `navigator.serviceWorker.ready` hangs for the full 8s timeout on every launch) |
 
 `desktopBridge.js` is statically imported by boot-critical modules, so it is listed in

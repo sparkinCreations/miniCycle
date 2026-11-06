@@ -216,12 +216,9 @@ function dumpDiagnosticSnapshot() {
 
     // --- Device ---
     log('  --- Device ---');
-    const device = state.settings?.deviceCompatibility;
-    if (device?.deviceInfo) {
-        const info = device.deviceInfo;
-        log(`  Screen: ${info.screenWidth || '?'}x${info.screenHeight || '?'}`);
-        log(`  Cores: ${info.hardwareConcurrency || '?'}, Connection: ${info.connectionType || '?'}`);
-    }
+    const device = state.settings?.deviceCompatibility || {};
+    log(`  Screen: ${window.screen?.width || '?'}x${window.screen?.height || '?'}, Cores: ${navigator.hardwareConcurrency || '?'}`);
+    log(`  Lite offer: ${device.liteOffer || 'not asked'}, slow boots in a row: ${device.slowBootStreak || 0}`);
     log(`  UA: ${navigator.userAgent}`);
 
     // --- Settings Summary ---

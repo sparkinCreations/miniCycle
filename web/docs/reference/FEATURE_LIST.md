@@ -444,8 +444,8 @@ Customize app colors and visual appearance.
 ### Device Detection
 | Feature | Description | Module |
 |---------|-------------|--------|
-| Capability Detection | Detects device capabilities | `utils/deviceDetection.js` |
-| Lite Version Routing | Routes to lite version if needed | `utils/deviceDetection.js` |
+| Touch Detection | Touch-primary vs touch-capable input (`isTouchDevice`, `isTouchCapable`) | `utils/deviceDetection.js` |
+| Lite Version Offer | Asks once, after repeated slow boots, whether to switch to Lite | `utils/deviceDetection.js` |
 
 ---
 

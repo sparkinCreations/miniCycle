@@ -48,17 +48,29 @@ at zero of them.
 
 > **Note:** miniCycle Lite is a **static, frozen version** (see [PROJECT_STATS.md](../PROJECT_STATS.md) for version) that provides the core routine-tracking concept without advanced features. It is intentionally NOT maintained or kept in sync with the full app - it exists as a permanent fallback for older devices and slow connections.
 
-### Device detection (after boot)
+### The Lite offer (after boot)
 
-On the first boot of each new app version, `modules/utils/deviceDetection.js`
-(`DeviceDetectionManager.shouldRedirectToLite`) also sends the device to Lite when
-any of these hold, unless the force-full flag is set:
+A browser that passes the feature gate is never moved to Lite automatically.
+Instead, `modules/utils/deviceDetection.js` (`assessBootPerformance`, called at the
+end of UI boot) times each boot and, on a device where the full app is
+measurably slow, **asks** whether to switch:
 
-- an old user agent (Android 1–4, Chrome or Firefox 10–49, a `Safari/` token of 1–7, MSIE/Trident)
-- `navigator.hardwareConcurrency` of 2 or fewer
-- `navigator.connection.effectiveType` of `slow-2g`, `2g` or `3g`
+- A boot counts as slow at `BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER` after navigation.
+  The first boot after an update (it downloads the new build) and a boot in a
+  hidden tab are not counted.
+- The offer appears after `LIMITS.SLOW_BOOTS_BEFORE_LITE_OFFER` slow boots in a
+  row, or after one on a device reporting 2 or fewer cores.
+- It says plainly that Lite keeps its own separate list (Lite uses its own
+  storage keys; nothing moves over).
+- The answer is kept in `settings.deviceCompatibility.liteOffer` and never asked
+  again. Choosing *Try Full Version* in Lite (the force-full flag) counts as no.
 
-The packaged apps (iOS/Android shell, desktop) suppress this redirect and always
+Until Nov 2026 this was an automatic redirect on every new version, triggered by
+user-agent regexes, 2 or fewer cores, or a `3g`-or-slower `effectiveType`. The
+user-agent checks were redundant with the feature gate, and the connection check
+measured the network at that moment rather than the device.
+
+The packaged apps (iOS/Android shell, desktop) never show the offer and always
 run the full app.
 
 ---
@@ -176,14 +188,9 @@ measures boot and module micro-benchmarks on Chromium only; see the
 
 ### Safari/iOS
 
-**Issue:** `navigator.connection` API unavailable
-- **Impact:** Device detection slightly limited
-- **Workaround:** Graceful fallback implemented
-- **Status:** Fixed in v1.341
-
 **Issue:** `navigator.hardwareConcurrency` may be undefined
-- **Impact:** Performance detection may default
-- **Workaround:** Boolean() checks added
+- **Impact:** The Lite offer then needs the full slow-boot streak
+- **Workaround:** Boolean() checks
 - **Status:** Fixed in v1.341
 
 **Issue:** Background task limitations

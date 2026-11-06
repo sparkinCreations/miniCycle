@@ -117,7 +117,7 @@ below.
 |---|---|---|---|---|
 | 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | ✅ done Nov 5 2026 — see *Round 0 result* |
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
-| 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | pending |
+| 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | ✅ audited Nov 6 2026 — see *Round 2 result* (questions open) |
 | 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE` | pending |
 | 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | pending |
 | 4 | 13 | ~5,000 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
@@ -201,6 +201,45 @@ routine creation still keys new routines by **title**, not a generated id
 `styles/themes/theme-manager.js` is imported by nothing; stale headers in
 `schemaMigration26.js` ("NOT WIRED YET") and an `AppState.update` JSDoc example
 (`state.data.cycles`).
+
+### Round 2 result (Nov 6 2026)
+
+**Audited:** all 16 docs (three readers, disjoint files). Heaviest corrections:
+`API_REFERENCE` (most documented calls did not exist; rewritten to the DI / appContext
+names — every call in its examples now exists except the Theme Manager section, left
+for PR #116), `ACCESSIBILITY` (claimed the skip link, reduced motion and keyboard
+shortcuts were missing, and contrast unverified — all exist, contrast is CI-gated),
+`BROWSER_COMPATIBILITY` (real floor from the feature gate: Chrome 80 / Firefox 74 /
+Safari 13.1), `FEATURE_LIST` and `DATA_SCHEMA_GUIDE` (~15 wrong rows each), `ROADMAP`
+("open source" → source-available, per `LICENSE`). Gates: volatile counts 39 → 33;
+Schema 2.5 names 10 (none in this round); docs code references 125 (only noise left
+in this round). Check 4: every sidebar title is its H1's short form. Nothing archived
+yet: `CODE_REVIEW_REPORT.md` (Dec 2025, all 7 recommendations closed) is proposed.
+
+**App code in this round — so it ships with a release.** Reading the Lite routing
+for `BROWSER_COMPATIBILITY` led to a change MJ asked for in this PR:
+`utils/deviceDetection.js` no longer redirects to Lite on every new version from
+user-agent regexes, ≤2 cores or a `3g` connection. It times each boot and, after
+`LIMITS.SLOW_BOOTS_BEFORE_LITE_OFFER` slow boots in a row
+(`BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER`; one on ≤2 cores), **asks** once, saying Lite
+keeps its own separate list — it does (`miniCycleLite*` storage keys), so the old
+silent redirect landed users with routines on an empty Lite list. The answer is kept;
+Lite's *Try Full Version* counts as no.
+
+**Found in code or shipped pages, not fixed:** `legal/accessibility.html` says
+keyboard reordering needs *Show Move Arrows* (Alt+↑/↓ works without it);
+`netlify.toml` CSP still allows cdnjs, Google Fonts and Formspree, which nothing
+loads; a hardcoded string in `preferencesBgImage.js`; the milestone levels are a
+literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.js`,
+`guidedTourDefinitions.js` ("thirteen" tours; there are 14), `appContext.js`.
+
+**Open questions (MJ):** archive `CODE_REVIEW_REPORT.md`; the privacy policy vs
+the tracking on the `.mcyc` format page and the 50 raw timestamps the tracker keeps;
+`PRIVACY.md`'s COPPA heading and competitor table; WCAG 2.2 as the target; the
+copyright statement's name placeholder; the roadmap's tiers, prices and dates; the
+PR checklist's `@version` / `@pattern` requirement; system-aware dark mode in the
+README; merging `DATA_SCHEMA_GUIDE` into `SCHEMA_2_6` (round 3a) and trimming
+`ACCESSIBILITY` to its developer parts.
 
 ## How a round runs
 
