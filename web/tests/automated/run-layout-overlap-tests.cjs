@@ -973,8 +973,9 @@ async function run() {
         // only one:
         //   1. the vocab theme's colorPreset (--pref-*), built for a LIGHT modal
         //      — Scholar's modalText is #1e1b4b;
-        //   2. the colour theme ([data-theme]), which may be light (golden-glow)
-        //      or dark (dark, dark-ocean);
+        //   2. a colour theme ([data-theme]) — none since the three were retired
+        //      in Nov 2026 (golden-glow was light, dark and dark-ocean dark); the
+        //      sweep still reads them from the stylesheets in case one returns;
         //   3. dark mode, which overrides --theme-modal-* but not --theme-header-bg.
         // Every measured failure so far was two of those layers disagreeing:
         // preset text on a dark-mode panel (2.48:1), dark-mode text on golden
@@ -1076,8 +1077,8 @@ async function run() {
                     document.body.classList.toggle('dark-mode', mode === 'dark');
 
                     for (const theme of colorThemes) {
-                        // Mirror themeManager.applyTheme(): the [data-theme] attribute
-                        // AND the body.theme-<name> class. Setting only the attribute
+                        // Apply a colour theme the way the retired ones were applied:
+                        // the [data-theme] attribute AND the body.theme-<name> class. Setting only the attribute
                         // left the page background on the default palette, which
                         // changes what translucent modal layers composite over.
                         for (const t of colorThemes) document.body.classList.remove('theme-' + t);

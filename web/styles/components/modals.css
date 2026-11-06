@@ -523,12 +523,11 @@ body {
 }
 
 /* Dark surfaces drop the preset layer: --pref-menu-accent is authored against a
-   LIGHT themed surface. Same theme list as themes-modal.css and menu.css — a new
-   dark theme must be added to all three, and the menu-contrast gate in
-   run-layout-overlap-tests.cjs fails the day one is missed. */
-body.dark-mode,
-:root[data-theme="dark"] body,
-:root[data-theme="dark-ocean"] body {
+   LIGHT themed surface. Same list as themes-modal.css and menu.css: anything
+   that paints these surfaces dark must be added to all three, and the
+   menu-contrast gate in run-layout-overlap-tests.cjs fails the day one is
+   missed. */
+body.dark-mode {
     --close-btn-effective: var(--menu-action-bg);
 }
 

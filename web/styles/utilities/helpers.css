@@ -566,9 +566,9 @@ dialog .edit-focus-overlay,
 }
 
 /* Solid background overrides — specificity exceeds task-list.css
-   (html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task) */
-html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.edit-focus-target,
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.edit-focus-target {
+   (html:not(.dark-mode) body:not(.dark-mode) .task) */
+html:not(.dark-mode) body:not(.dark-mode) .task.edit-focus-target,
+body:not(.dark-mode) .task.edit-focus-target {
     background: #fff;
 }
 

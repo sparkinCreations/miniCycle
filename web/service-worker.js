@@ -334,7 +334,6 @@ var BOOT_CRITICAL = [
 var CSS_FILES = [
   './styles/base/critical.css?v=' + APP_VERSION,
   './styles/base/variables.css?v=' + APP_VERSION,
-  './styles/themes/themes.css?v=' + APP_VERSION,
   './styles/base/reset.css?v=' + APP_VERSION,
   './styles/base/background.css?v=' + APP_VERSION,
   './styles/base/typography.css?v=' + APP_VERSION,

@@ -48,7 +48,7 @@
    gradient at low values. The fill colour is ONE token, --progress-fill, so
    the gradient, the glow and the sheen all follow whatever sets it: the
    personalization colour in the default theme, the theme's own colour in
-   Dark Ocean / Golden Glow / dark mode, --color-success-light otherwise.
+   dark mode, --color-success-light otherwise.
    ============================================================================= */
 
 .progress-bar {
@@ -131,21 +131,21 @@
 /* =============================================================================
    CUSTOM PREFERENCE COLORS (Default Theme Only)
    The personalization colour is the fill token in the default theme; the
-   gradient / glow / sheen derive from it. Dark mode and the colour themes keep
-   their own token (they are not personalizable, as before).
+   gradient / glow / sheen derive from it. Dark mode keeps its own token (it is
+   not personalizable, as before).
    ============================================================================= */
 
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-bar {
+body:not(.dark-mode) .progress-bar {
     --progress-fill: var(--pref-progress-bar, var(--theme-progress-bar, var(--color-success-light)));
     background: var(--pref-progress-bar, var(--theme-progress-bar, var(--color-success-light)));
 }
 
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-bar.complete {
+body:not(.dark-mode) .progress-bar.complete {
     background: var(--pref-progress-bar, var(--theme-progress-bar, var(--color-success-light)));
 }
 
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-container--routine .progress-bar,
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-container--routine .progress-bar.complete {
+body:not(.dark-mode) .progress-container--routine .progress-bar,
+body:not(.dark-mode) .progress-container--routine .progress-bar.complete {
     /* the gradient must win over the flat background the two rules above set */
     background: linear-gradient(
         90deg,
