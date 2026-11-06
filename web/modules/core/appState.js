@@ -34,7 +34,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { recoverCorruptedData, saveTextAsFile } from '../utils/dataRecovery.js';
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import { getRoutines, getActiveRoutine, getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
-import { migrateSchema_2_5_to_2_6, repairRoutineKeys, isRoutineKeyedById } from '../routine/schemaMigration26.js';
+import { migrateSchema_2_5_to_2_6, repairRoutineKeys, isRoutineKeyedById, retireLegacyColorTheme, isLegacyColorTheme } from '../routine/schemaMigration26.js';
 import { GlobalUtils } from '../utils/globalUtils.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { collectSwatchSets } from '../utils/priorityLevel.js';
@@ -264,7 +264,7 @@ class MiniCycleState {
                     this.data = this._ensureMetadata(parsed);
                     this.isInitialized = true;
                     this._registerPersistenceListeners();
-                    if (this.migratedThisBoot || this.repairedRoutineKeysThisBoot) this._persistRepairedData(this.data);
+                    if (this._storedDocChangedThisBoot()) this._persistRepairedData(this.data);
                     return this.data;
                 }
             }
@@ -345,7 +345,7 @@ class MiniCycleState {
                     // debounced save: a tab closed before its first edit would
                     // otherwise re-migrate on every boot (and keep a new
                     // pre-migration copy each time).
-                    if (existingData && (this.migratedThisBoot || this.repairedRoutineKeysThisBoot)) this._persistRepairedData(existingData);
+                    if (existingData && this._storedDocChangedThisBoot()) this._persistRepairedData(existingData);
                 }
             } catch (parseError) {
                 console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
@@ -667,7 +667,8 @@ class MiniCycleState {
      * Today that is one step, 2.5 -> 2.6 (routine/schemaMigration26.js — the
      * same function the testing modal's dry run exercises on real data). A
      * current document goes through the routine-key repair instead
-     * (_repairRoutineKeys); a newer one passes through untouched.
+     * (_repairRoutineKeys); a newer one passes through untouched. Either way
+     * the result then goes through _retireLegacyTheme.
      *
      * The raw pre-migration document is kept first under
      * `<DATA>_pre-migration_<timestamp>`, the way corruption recovery keeps the
@@ -682,19 +683,77 @@ class MiniCycleState {
      * @private
      */
     _migrateIfOlder(doc, rawStored) {
-        if (classifyStoredVersion(doc) !== 'older') return this._repairRoutineKeys(doc, rawStored);
-        try {
-            this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
-        } catch (error) {
-            console.warn('⚠️ Could not keep a pre-migration copy:', error);
+        this._preMigrationCopyKept = false; // one copy per document read, not per instance
+        if (classifyStoredVersion(doc) !== 'older') {
+            return this._retireLegacyTheme(this._repairRoutineKeys(doc, rawStored), doc, rawStored);
         }
+        this._keepPreMigrationCopy(doc, rawStored);
         const migrated = migrateSchema_2_5_to_2_6(doc, {
             makeId: () => GlobalUtils.generateId('routine'),
             swatchSets: collectSwatchSets(THEME_DEFINITIONS)
         });
         this.migratedThisBoot = { from: String(doc.schemaVersion), to: SCHEMA.CURRENT };
         console.warn(`✅ Migrated stored data ${this.migratedThisBoot.from} -> ${this.migratedThisBoot.to}`);
-        return migrated;
+        return this._retireLegacyTheme(migrated, doc, rawStored);
+    }
+
+    /**
+     * Keep the raw stored document under `<DATA>_pre-migration_<timestamp>`
+     * before a boot step rewrites it. Once per document read (_migrateIfOlder
+     * resets the latch): the migration and the repairs can all run on the same
+     * read, and one copy of the original covers them.
+     * @param {Object} doc - The parsed stored document, as read
+     * @param {string|null} rawStored - The raw storage string, when available
+     * @private
+     */
+    _keepPreMigrationCopy(doc, rawStored) {
+        if (this._preMigrationCopyKept) return;
+        this._preMigrationCopyKept = true;
+        try {
+            this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
+        } catch (error) {
+            console.warn('⚠️ Could not keep a pre-migration copy:', error);
+        }
+    }
+
+    /**
+     * Whether a boot step rewrote the stored document (migration or a repair),
+     * so the callers write it back at once instead of on the next debounced
+     * save: a tab closed before its first edit would otherwise redo the step,
+     * and keep a new pre-migration copy, on every boot.
+     * @returns {boolean}
+     * @private
+     */
+    _storedDocChangedThisBoot() {
+        return !!(this.migratedThisBoot || this.repairedRoutineKeysThisBoot || this.retiredLegacyThemeThisBoot);
+    }
+
+    /**
+     * Retire a legacy colour theme on a CURRENT document before it is adopted.
+     *
+     * Until Nov 2026 `settings.theme` could hold golden-glow, dark-ocean or dark,
+     * applied at every boot by a stylesheet that is now gone. retireLegacyColorTheme
+     * (routine/schemaMigration26.js — the testing modal's dry run reports it too)
+     * moves the look to the Personalization preset made from it, or dark mode,
+     * keeping colours the user picked themselves. Same safety net as the
+     * migration (the raw stored copy, once per boot). `retiredLegacyThemeThisBoot`
+     * holds what was done.
+     *
+     * @param {Object} doc - The document after migration / key repair
+     * @param {Object} original - The stored document as read, for the backup
+     * @param {string|null} rawStored - The raw storage string, when available
+     * @returns {Object} The document to adopt (a repaired copy, or `doc` untouched)
+     * @private
+     */
+    _retireLegacyTheme(doc, original, rawStored) {
+        if (classifyStoredVersion(doc) !== 'current') return doc;
+        const theme = doc?.settings?.theme;
+        if (!isLegacyColorTheme(theme)) return doc;
+        this._keepPreMigrationCopy(original, rawStored);
+        const repaired = structuredClone(doc);
+        this.retiredLegacyThemeThisBoot = retireLegacyColorTheme(repaired);
+        console.warn(`✅ Retired the legacy colour theme "${theme}"`);
+        return repaired;
     }
 
     /**
@@ -725,11 +784,7 @@ class MiniCycleState {
         const needsRepair = Object.entries(routines).some(([key, routine]) =>
             routine && typeof routine === 'object' && !isRoutineKeyedById(key, routine));
         if (!needsRepair) return doc;
-        try {
-            this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
-        } catch (error) {
-            console.warn('⚠️ Could not keep a copy before repairing routine keys:', error);
-        }
+        this._keepPreMigrationCopy(doc, rawStored);
         const repaired = structuredClone(doc);
         const keyMap = repairRoutineKeys(repaired, () => GlobalUtils.generateId('routine'));
         this.repairedRoutineKeysThisBoot = keyMap;

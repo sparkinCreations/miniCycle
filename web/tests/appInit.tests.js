@@ -720,7 +720,9 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         }
     });
 
-    await test('runCompleteInitialSetup applies theme from settings', async () => {
+    // The colour themes were retired in Nov 2026 (boot moves a stored one to its
+    // preset), so a leftover settings.theme must not paint a theme-* class.
+    await test('runCompleteInitialSetup applies no retired colour theme from settings', async () => {
         let themeApplied = null;
         let themesRemoved = [];
 
@@ -752,8 +754,8 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
             settings: { theme: 'dark-ocean' }
         });
 
-        if (themeApplied !== 'theme-dark-ocean') {
-            throw new Error(`Expected theme-dark-ocean, got: ${themeApplied}`);
+        if (themeApplied !== null) {
+            throw new Error(`Expected no theme class, got: ${themeApplied}`);
         }
     });
 

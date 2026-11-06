@@ -1096,19 +1096,8 @@ export class AchievementsManager {
 
             badge.classList.toggle(DOM_CLASSES.UNLOCKED, isUnlocked);
 
-            // Reset theme badge classes
-            badge.classList.remove(DOM_CLASSES.OCEAN_THEME, DOM_CLASSES.GOLDEN_THEME, DOM_CLASSES.GAME_UNLOCKED);
-
-            // Assign custom theme class based on reward type from constant
-            if (isUnlocked && tierConfig) {
-                if (tierConfig.reward === 'dark-ocean') {
-                    badge.classList.add(DOM_CLASSES.OCEAN_THEME);
-                } else if (tierConfig.reward === 'golden-glow') {
-                    badge.classList.add(DOM_CLASSES.GOLDEN_THEME);
-                } else if (tierConfig.reward === 'whack-a-order') {
-                    badge.classList.add(DOM_CLASSES.GAME_UNLOCKED);
-                }
-            }
+            // The game reward's badge has its own look
+            badge.classList.toggle(DOM_CLASSES.GAME_UNLOCKED, !!(isUnlocked && tierConfig?.reward === 'whack-a-order'));
         });
     }
 }

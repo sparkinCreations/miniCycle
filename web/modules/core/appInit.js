@@ -796,12 +796,6 @@ class AppInit {
 			document.documentElement?.classList.remove(DOM_CLASSES.DARK_MODE);
 		}
 
-		if (settings.theme && settings.theme !== 'default') {
-			const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
-			allThemes.forEach(theme => _deps.removeBodyClass?.(theme));
-			_deps.addBodyClass?.(`theme-${settings.theme}`);
-		}
-
 		_deps.updateThemeColor?.();
 
 		// Accessibility settings

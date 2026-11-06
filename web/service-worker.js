@@ -189,6 +189,7 @@ var BOOT_CRITICAL = [
   './modules/utils/dueDateUtils.js',
   './modules/utils/schemaVersion.js',
   './modules/routine/schemaMigration26.js',
+  './modules/ui/quickPresetData.js',          // static import of schemaMigration26 (legacy theme retirement)
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',

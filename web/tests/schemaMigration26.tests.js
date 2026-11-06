@@ -1,7 +1,8 @@
 /**
  * Schema 2.5 → 2.6 migration tests — one group per step, then the whole.
- * The migration is pure; AppState runs it at boot. Last group: repairRoutineKeys, the 2.6
- * maintenance step that re-keys title-keyed routines (Nov 2026).
+ * The migration is pure; AppState runs it at boot. Last groups: the 2.6 maintenance steps
+ * (Nov 2026) — repairRoutineKeys re-keys title-keyed routines, retireLegacyColorTheme moves a
+ * retired colour theme to the preset made from it.
  */
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 
@@ -10,7 +11,8 @@ export async function runSchemaMigration26Tests(resultsDiv) {
     const mod = await import(`../modules/routine/schemaMigration26.js?v=${cacheBuster}`);
     const themes = await import(`../modules/labels/themes.js?v=${cacheBuster}`);
     const prio = await import(`../modules/utils/priorityLevel.js?v=${cacheBuster}`);
-    const { migrateSchema_2_5_to_2_6, rekeyRoutines, collapseAutoClear, convertPriority, renameRoutineKeys, stampVersion, toAutoClear, toPriorityLevel, repairRoutineKeys, isRoutineKeyedById } = mod;
+    const { migrateSchema_2_5_to_2_6, rekeyRoutines, collapseAutoClear, convertPriority, renameRoutineKeys, stampVersion, toAutoClear, toPriorityLevel, repairRoutineKeys, isRoutineKeyedById, retireLegacyColorTheme, hasCustomColors, LEGACY_THEME_PRESETS } = mod;
+    const { QUICK_PRESET_DATA } = await import(`../modules/ui/quickPresetData.js?v=${cacheBuster}`);
     const SWATCH_SETS = prio.collectSwatchSets(themes.THEME_DEFINITIONS);
     const HABIT_HIGH = themes.THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'high').hex;
 
@@ -279,6 +281,68 @@ export async function runSchemaMigration26Tests(resultsDiv) {
         seq = 0;
         const out = migrate(fixture25());
         if (repairRoutineKeys(out, makeId).length !== 0) throw new Error('migration output was not id-keyed');
+    });
+
+    // ── retireLegacyColorTheme ────────────────────────────────────────────────
+    const withTheme = (theme, extra = {}) => ({ schemaVersion: '2.6', settings: { theme, darkMode: false, ...extra }, data: { routine: {} } });
+
+    await test('golden-glow / dark-ocean with no colours of their own get the preset made from them', () => {
+        for (const [from, preset] of [['golden-glow', 'goldenGlow'], ['dark-ocean', 'darkOcean']]) {
+            const doc = withTheme(from, { customColors: { showBgPattern: false } });
+            const report = retireLegacyColorTheme(doc);
+            if (report?.preset !== preset || report.keptCustomColors || report.from !== from) throw new Error(`${from}: report ${JSON.stringify(report)}`);
+            const cc = doc.settings.customColors;
+            for (const [key, hex] of Object.entries(QUICK_PRESET_DATA[preset].colors)) {
+                if (cc[key] !== hex) throw new Error(`${from}: ${key} is ${cc[key]}, preset says ${hex}`);
+            }
+            if (cc.preset !== preset) throw new Error(`${from}: not marked as the ${preset} preset`);
+            if (cc.showBgPattern !== false) throw new Error(`${from}: a toggle was lost`);
+            if (doc.settings.theme !== 'default') throw new Error(`${from}: theme left as ${doc.settings.theme}`);
+        }
+    });
+
+    await test("a user's own colours are kept; only the legacy theme goes", () => {
+        const doc = withTheme('golden-glow', { customColors: { appBg: '#123456', taskText: '#000000' } });
+        const report = retireLegacyColorTheme(doc);
+        if (!report?.keptCustomColors || report.preset !== null) throw new Error(JSON.stringify(report));
+        if (JSON.stringify(doc.settings.customColors) !== JSON.stringify({ appBg: '#123456', taskText: '#000000' })) throw new Error('custom colours changed');
+        if (doc.settings.theme !== 'default') throw new Error('theme not reset');
+    });
+
+    await test('hasCustomColors counts colours, not toggles', () => {
+        if (hasCustomColors({ customColors: { showBgPattern: true, solidListBg: true, patternOpacity: 5, preset: 'warm' } })) throw new Error('toggles counted');
+        if (!hasCustomColors({ customColors: { patternColor: '#ffffff' } })) throw new Error('a colour not counted');
+        if (hasCustomColors({}) || hasCustomColors({ customColors: null })) throw new Error('missing map counted');
+    });
+
+    await test('dark turns dark mode on; a value that was never a shipped theme is left alone', () => {
+        const dark = withTheme('dark');
+        const report = retireLegacyColorTheme(dark);
+        if (!report?.darkMode || dark.settings.darkMode !== true || dark.settings.theme !== 'default') throw new Error(JSON.stringify(dark.settings));
+        if (dark.settings.customColors !== undefined) throw new Error('dark got colours');
+        const odd = withTheme('neon');
+        const before = JSON.stringify(odd);
+        if (retireLegacyColorTheme(odd) !== null || JSON.stringify(odd) !== before) throw new Error(JSON.stringify(odd.settings));
+        if (retireLegacyColorTheme(withTheme('__proto__')) !== null || retireLegacyColorTheme(withTheme('constructor')) !== null) throw new Error('a prototype name counted as a theme');
+    });
+
+    await test('no legacy theme: nothing happens, and a second run changes nothing', () => {
+        for (const settings of [{ theme: 'default' }, {}, { theme: '' }, { theme: null }]) {
+            const doc = { settings: { ...settings } };
+            const before = JSON.stringify(doc);
+            if (retireLegacyColorTheme(doc) !== null || JSON.stringify(doc) !== before) throw new Error(`changed ${before}`);
+        }
+        if (retireLegacyColorTheme({}) !== null) throw new Error('a document without settings was touched');
+        const doc = withTheme('dark-ocean');
+        retireLegacyColorTheme(doc);
+        const once = JSON.stringify(doc);
+        if (retireLegacyColorTheme(doc) !== null || JSON.stringify(doc) !== once) throw new Error('second run changed the document');
+    });
+
+    await test('every retired theme with a preset names a preset that exists', () => {
+        for (const [from, preset] of Object.entries(LEGACY_THEME_PRESETS)) {
+            if (!QUICK_PRESET_DATA[preset] || !Object.keys(QUICK_PRESET_DATA[preset].colors).length) throw new Error(`${from} -> ${preset} has no colours`);
+        }
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

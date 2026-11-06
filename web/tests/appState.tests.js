@@ -332,6 +332,51 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (!sm.get().data.routine['cycle-main']) throw new Error('an id-keyed routine moved');
     });
 
+    // ── retiring the legacy colour themes at boot (Nov 2026) ─────────────────
+    await test('boot retires a legacy colour theme to its preset; one copy covers both repairs', async () => {
+        clearPreCopies();
+        const doc = createMockData();
+        const routine = doc.data.routine['cycle-main'];
+        delete doc.data.routine['cycle-main'];
+        doc.data.routine['Main Cycle'] = { ...routine, id: 'cycle_123', title: 'Main Cycle' };
+        doc.appState.activeRoutineId = 'Main Cycle';
+        doc.settings = { ...doc.settings, theme: 'golden-glow' };
+        const raw = JSON.stringify(doc);
+        localStorage.setItem('miniCycleData', raw);
+
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('should load');
+        const settings = sm.get().settings;
+        if (settings.theme !== 'default') throw new Error(`theme ${settings.theme}`);
+        if (settings.customColors?.preset !== 'goldenGlow' || !settings.customColors.appBg) throw new Error(`customColors ${JSON.stringify(settings.customColors)}`);
+        if (sm.retiredLegacyThemeThisBoot?.preset !== 'goldenGlow') throw new Error(`flag ${JSON.stringify(sm.retiredLegacyThemeThisBoot)}`);
+        if (!sm.repairedRoutineKeysThisBoot) throw new Error('the routine-key repair did not run alongside');
+
+        const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (stored.settings.theme !== 'default' || stored.settings.customColors?.preset !== 'goldenGlow') throw new Error('the retirement was not written back at once');
+        const copies = Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX));
+        if (copies.length !== 1) throw new Error(`expected one copy for both repairs, got ${copies.length}`);
+        if (localStorage.getItem(copies[0]) !== raw) throw new Error('the copy is not the raw stored document');
+        if (sm.migratedThisBoot) throw new Error('a theme retirement is not a migration');
+        clearPreCopies();
+    });
+
+    await test('boot keeps a user\'s own colours when it retires their legacy theme', async () => {
+        clearPreCopies();
+        const doc = createMockData();
+        doc.settings = { ...doc.settings, theme: 'dark-ocean', customColors: { appBg: '#123456' } };
+        localStorage.setItem('miniCycleData', JSON.stringify(doc));
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        const settings = sm.get().settings;
+        if (settings.theme !== 'default') throw new Error(`theme ${settings.theme}`);
+        if (JSON.stringify(settings.customColors) !== JSON.stringify({ appBg: '#123456' })) throw new Error(`customColors ${JSON.stringify(settings.customColors)}`);
+        if (!sm.retiredLegacyThemeThisBoot?.keptCustomColors) throw new Error(`flag ${JSON.stringify(sm.retiredLegacyThemeThisBoot)}`);
+        if (sm.repairedRoutineKeysThisBoot) throw new Error('an id-keyed document had its keys repaired');
+        clearPreCopies();
+    });
+
     await test('save() refuses to write over newer-version data written by another tab', async () => {
         localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.6' }));
         const warnings = [];

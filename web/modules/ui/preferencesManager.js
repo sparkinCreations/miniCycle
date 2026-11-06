@@ -1060,15 +1060,13 @@ export class PreferencesManager {
     }
 
     /**
-     * Check if the default theme is active (no CSS-class override and no vocab theme)
+     * Check if the default theme is active (not dark mode, no vocab theme)
      * @returns {boolean}
      */
     isDefaultTheme() {
         const body = _deps.getBody();
         const root = _deps.getRootElement();
-        return !body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) &&
-               !body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW) &&
-               !body.classList.contains(DOM_CLASSES.DARK_MODE) &&
+        return !body.classList.contains(DOM_CLASSES.DARK_MODE) &&
                (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
     }
 
@@ -1078,11 +1076,8 @@ export class PreferencesManager {
      * @returns {boolean}
      */
     isPatternCustomizable() {
-        const body = _deps.getBody();
         const root = _deps.getRootElement();
-        return !body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) &&
-               !body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW) &&
-               (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
+        return !root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic';
     }
 
     /**
@@ -1776,11 +1771,9 @@ export class PreferencesManager {
         setBodyClass(DOM_CLASSES.HIDE_DARK_MODE_BTN, customColors.showDarkModeBtn === false);
 
         if (!this.isDefaultTheme()) {
-            // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).
+            // Only clear --pref-* vars for the dark-mode class override.
             // Vocab themes apply their own --pref-* vars directly — don't clear them.
-            if (body.classList.contains(DOM_CLASSES.DARK_MODE) ||
-                body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) ||
-                body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW)) {
+            if (body.classList.contains(DOM_CLASSES.DARK_MODE)) {
                 this.removeCustomColors();
             }
             return;

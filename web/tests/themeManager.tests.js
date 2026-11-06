@@ -80,102 +80,19 @@ export async function runThemeManagerTests(resultsDiv) {
 
     await test('ThemeManager creates successfully', () => {
         const tm = new ThemeManager();
-        if (!tm || typeof tm.applyTheme !== 'function') {
+        if (!tm || typeof tm.updateThemeColor !== 'function') {
             throw new Error('ThemeManager not properly initialized');
         }
     });
 
-    await test('has correct theme definitions', () => {
+    // The colour themes (dark-ocean, golden-glow, dark) were retired in Nov 2026:
+    // Personalization presets replaced them, and boot moves a stored one to its
+    // preset (retireLegacyColorTheme, tested in schemaMigration26.tests.js).
+    await test('the retired colour themes leave no API behind', () => {
         const tm = new ThemeManager();
-        if (!tm.themes || tm.themes.length !== 2) {
-            throw new Error('Theme definitions incorrect');
-        }
-        if (tm.themes[0].unlockKey !== 'dark-ocean') {
-            throw new Error('Dark ocean theme not found');
-        }
-        if (tm.themes[1].unlockKey !== 'golden-glow') {
-            throw new Error('Golden glow theme not found');
-        }
-    });
-
-    await test('has theme color definitions', () => {
-        const tm = new ThemeManager();
-        if (!tm.themeColors || !tm.themeColors.light || !tm.themeColors.dark) {
-            throw new Error('Theme colors not defined');
-        }
-    });
-
-    // ===== THEME APPLICATION TESTS =====
-
-    resultsDiv.innerHTML += '<h4 class="test-section">🎨 Theme Application</h4>';
-
-    await test('applies default theme correctly', () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        tm.applyTheme('default');
-
-        if (document.body.classList.contains('theme-dark-ocean')) {
-            throw new Error('Should not have dark-ocean class');
-        }
-        if (document.body.classList.contains('theme-golden-glow')) {
-            throw new Error('Should not have golden-glow class');
-        }
-    });
-
-    await test('applies dark-ocean theme', () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        tm.applyTheme('dark-ocean');
-
-        if (!document.body.classList.contains('theme-dark-ocean')) {
-            throw new Error('Theme not applied');
-        }
-    });
-
-    await test('applies golden-glow theme', () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        tm.applyTheme('golden-glow');
-
-        if (!document.body.classList.contains('theme-golden-glow')) {
-            throw new Error('Theme not applied');
-        }
-    });
-
-    await test('switches between themes correctly', () => {
-        const tm = new ThemeManager();
-        const mockData = {
-            metadata: { version: "2.5", lastModified: Date.now() },
-            settings: { theme: 'default', darkMode: false, unlockedThemes: [] }
-        };
-        localStorage.setItem('miniCycleData', JSON.stringify(mockData));
-
-        tm.applyTheme('dark-ocean');
-        if (!document.body.classList.contains('theme-dark-ocean')) {
-            throw new Error('Dark ocean not applied');
-        }
-
-        tm.applyTheme('golden-glow');
-        if (document.body.classList.contains('theme-dark-ocean')) {
-            throw new Error('Dark ocean should be removed');
-        }
-        if (!document.body.classList.contains('theme-golden-glow')) {
-            throw new Error('Golden glow not applied');
+        for (const name of ['themes', 'themeColors', 'applyTheme', 'refreshThemeToggles', 'addThemeToggle',
+            'updateThemeToggles', 'initThemesPanel', 'saveThemeToStorage', 'unlockDarkOceanTheme', 'unlockGoldenGlowTheme']) {
+            if (typeof tm[name] !== 'undefined') throw new Error(`${name} should have been removed`);
         }
     });
 
@@ -284,17 +201,6 @@ export async function runThemeManagerTests(resultsDiv) {
         // Just verify it runs without throwing
     });
 
-    await test('has correct theme color definitions', () => {
-        const tm = new ThemeManager();
-
-        if (tm.themeColors.light.default !== '#5680ff') {
-            throw new Error('Default light color incorrect');
-        }
-        if (tm.themeColors.dark.default !== '#1c1c1c') {
-            throw new Error('Default dark color incorrect');
-        }
-    });
-
     // ===== STORAGE TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">💾 Storage</h4>';
@@ -331,8 +237,8 @@ export async function runThemeManagerTests(resultsDiv) {
         const tm = new ThemeManager();
         localStorage.clear();
 
-        // Should not throw - applyTheme is now async
-        await tm.applyTheme('dark-ocean');
+        // Should not throw with no stored data
+        tm.updateThemeColor();
     });
 
     await test('handles null body element gracefully', () => {
@@ -482,41 +388,6 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     }
 
-    await test('saveThemeToStorage writes only via AppState.update', async () => {
-        await withInertAppState(async (h) => {
-            const tm = new ThemeManager();
-            await tm.saveThemeToStorage('dark-ocean');
-
-            if (h.calls.length !== 1) {
-                throw new Error(`Expected exactly 1 update call, got ${h.calls.length}`);
-            }
-            if (h.state.settings.theme !== 'default') {
-                throw new Error(
-                    `State was mutated outside the producer (theme = ${h.state.settings.theme})`
-                );
-            }
-            // Now run the captured producer — it must apply the change.
-            h.calls[0].producer(h.state);
-            if (h.state.settings.theme !== 'dark-ocean') {
-                throw new Error(`Producer did not set theme, got ${h.state.settings.theme}`);
-            }
-            if (h.calls[0].immediate !== true) {
-                throw new Error('Theme write should be an immediate save');
-            }
-        });
-    });
-
-    await test('saveThemeToStorage falls back to "default" for empty input', async () => {
-        await withInertAppState(async (h) => {
-            const tm = new ThemeManager();
-            await tm.saveThemeToStorage('');
-            h.calls[0].producer(h.state);
-            if (h.state.settings.theme !== 'default') {
-                throw new Error(`Expected 'default', got ${h.state.settings.theme}`);
-            }
-        });
-    });
-
     await test('saveDarkModeToStorage writes only via AppState.update', async () => {
         await withInertAppState(async (h) => {
             const tm = new ThemeManager();
@@ -538,10 +409,10 @@ export async function runThemeManagerTests(resultsDiv) {
     await test('settings producer creates state.settings when absent', async () => {
         await withInertAppState(async (h) => {
             const tm = new ThemeManager();
-            await tm.saveThemeToStorage('golden-glow');
+            await tm.saveDarkModeToStorage(true);
             const bare = {};
             h.calls[0].producer(bare);
-            if (bare.settings?.theme !== 'golden-glow') {
+            if (bare.settings?.darkMode !== true) {
                 throw new Error('Producer should create settings when missing');
             }
         });
@@ -551,7 +422,6 @@ export async function runThemeManagerTests(resultsDiv) {
         setThemeManagerDependencies({ AppState: null });
         try {
             const tm = new ThemeManager();
-            await tm.saveThemeToStorage('dark-ocean');
             await tm.saveDarkModeToStorage(true);
         } finally {
             setThemeManagerDependencies({ AppState: env.AppState });

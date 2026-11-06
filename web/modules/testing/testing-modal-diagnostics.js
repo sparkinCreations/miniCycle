@@ -12,7 +12,7 @@ import { getLocalStorageQuota, getLocalStorageUsedBytes, formatBytes } from '../
 import { GlobalUtils } from '../utils/globalUtils.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { collectSwatchSets } from '../utils/priorityLevel.js';
-import { migrateSchema_2_5_to_2_6, SCHEMA_2_6, repairRoutineKeys, isRoutineKeyedById } from '../routine/schemaMigration26.js';
+import { migrateSchema_2_5_to_2_6, SCHEMA_2_6, repairRoutineKeys, isRoutineKeyedById, retireLegacyColorTheme } from '../routine/schemaMigration26.js';
 import { getRoutines, getActiveRoutineId } from '../utils/cycleMode.js';
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import {
@@ -281,6 +281,21 @@ function findKeys(value, keys, path = '', hits = []) {
  * asks for (SCHEMA_2_6_PLAN.md, Risks), runnable on any device with data.
  * @returns {Object|null} The report (also printed), or null when it could not run
  */
+/**
+ * One dry-run line for what boot's legacy colour theme retirement would do
+ * (retireLegacyColorTheme; AppState._retireLegacyTheme runs it).
+ * @param {Object|null} report - retireLegacyColorTheme's result
+ * @returns {string}
+ */
+function describeLegacyThemeRetirement(report) {
+    if (!report) return '- Colour theme: no legacy theme - nothing to retire\n';
+    let outcome = 'nothing else changes';
+    if (report.preset) outcome = `the ${report.preset} preset is applied`;
+    else if (report.keptCustomColors) outcome = "the user's own colours are kept";
+    else if (report.darkMode) outcome = 'dark mode is turned on';
+    return `- Colour theme: legacy "${report.from}" would be retired at next launch (${outcome})\n`;
+}
+
 export function dryRunSchema26Migration() {
     const deps = getDeps();
     appendToTestResults(`Schema 2.5 -> ${SCHEMA_2_6} migration dry run (nothing is written):\n`);
@@ -313,10 +328,13 @@ export function dryRunSchema26Migration() {
                 repaired.slice(0, 5).forEach(([oldKey, newKey]) => appendToTestResults(`    "${oldKey}" -> ${newKey}\n`));
                 if (repaired.length > 5) appendToTestResults(`    ... ${repaired.length - 5} more\n`);
             }
-            if (JSON.stringify(live) !== liveBefore) appendToTestResults('- PROBLEM: the LIVE state was modified\n');
         }
+        // A 2.6 document can also hold a legacy colour theme; boot retires it.
+        const retired = kind === 'current' ? retireLegacyColorTheme(structuredClone(live)) : null;
+        if (kind === 'current') appendToTestResults(describeLegacyThemeRetirement(retired));
+        if (JSON.stringify(live) !== liveBefore) appendToTestResults('- PROBLEM: the LIVE state was modified\n');
         appendToTestResults('\n');
-        return { kind, migrated: false, repaired: repaired.length };
+        return { kind, migrated: false, repaired: repaired.length, retiredTheme: retired };
     }
 
     const options = {
@@ -349,6 +367,7 @@ export function dryRunSchema26Migration() {
     appendToTestResults(`- Tasks: ${tasksAfter.length}, recurring templates: ${templatesAfter.length}, cleared entries: ${entriesAfter.length}\n`);
     appendToTestResults(`- Priority levels: ${PRIORITY_LEVELS.map(l => `${l} ${levels[l]}`).join(', ')}, none ${levels.none}\n`);
     appendToTestResults(`- Default priority: ${migrated.settings?.defaultPriority ?? 'none'}\n`);
+    appendToTestResults(describeLegacyThemeRetirement(retireLegacyColorTheme(structuredClone(migrated))));
 
     // Release checks
     const problems = [];
