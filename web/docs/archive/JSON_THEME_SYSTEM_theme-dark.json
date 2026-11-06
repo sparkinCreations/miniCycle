@@ -1,5 +1,5 @@
 {
-  "$schema": "../theme-schema.json",
+  "$schema": "./JSON_THEME_SYSTEM_theme-schema.json",
   "id": "dark",
   "name": "Dark Mode",
   "description": "Dark theme for reduced eye strain",

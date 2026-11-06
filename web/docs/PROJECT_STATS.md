@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: November 03, 2026
+**Last Updated**: November 06, 2026
 
 ---
 
@@ -18,14 +18,14 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.666 |
+| **App Version** | 2.670 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
-| **Total Modules** | 175 |
-| **Total Tests** | 4480 |
-| **CSS Files** | 46 |
-| **JSDoc Blocks** | 1686 |
-| **Documentation Files** | 253 |
+| **Total Modules** | 176 |
+| **Total Tests** | 4189 |
+| **CSS Files** | 45 |
+| **JSDoc Blocks** | 1698 |
+| **Documentation Files** | 256 |
 
 ---
 
@@ -40,7 +40,7 @@
 | `task/` | 13 | Task CRUD, DOM, events, drag-drop, validation |
 | `routine/` | 15 | Routine management, switching, migration |
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
-| `ui/` | 46 | Modals, menus, settings, onboarding, gestures |
+| `ui/` | 47 | Modals, menus, settings, onboarding, gestures |
 | `features/` | 12 | Themes, stats, achievements, history, reminders |
 | `utils/` | 34 | Notifications, device detection, utilities |
 | `labels/` | 4 | Default labels + label resolver |
@@ -49,7 +49,7 @@
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **175** | |
+| **Total** | **176** | |
 
 ---
 
@@ -70,7 +70,7 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4480 |
+| Total Tests | 4189 |
 | Test Files | 153 |
 | Platforms Tested | Mac, iPad, iPhone |
 

@@ -284,6 +284,145 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (stored?.settings?.theme !== 'edited-while-held') throw new Error('the edit made while held was not saved once the hold lifted');
     });
 
+    // ── 2.6 routine-key repair at boot (Nov 2026) ────────────────────────────
+    const PRE_PREFIX = 'miniCycleData_pre-migration_';
+    const clearPreCopies = () => Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX)).forEach(k => localStorage.removeItem(k));
+
+    await test('boot re-keys a title-keyed routine by its id, keeps a copy first, and persists at once', async () => {
+        clearPreCopies();
+        const doc = createMockData();
+        const routine = doc.data.routine['cycle-main'];
+        delete doc.data.routine['cycle-main'];
+        doc.data.routine['Main Cycle'] = { ...routine, id: 'cycle_123', title: 'Main Cycle' };
+        doc.appState.activeRoutineId = 'Main Cycle';
+        const raw = JSON.stringify(doc);
+        localStorage.setItem('miniCycleData', raw);
+
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('a title-keyed 2.6 document should still load');
+        const live = sm.get();
+        if (Object.keys(live.data.routine).includes('Main Cycle')) throw new Error('still keyed by its title');
+        if (live.appState.activeRoutineId !== 'cycle_123') throw new Error(`active id ${live.appState.activeRoutineId}, expected the routine's own id`);
+        if (live.data.routine.cycle_123?.title !== 'Main Cycle') throw new Error('title lost');
+        if (live.data.routine.cycle_123.tasks.length !== routine.tasks.length) throw new Error('tasks lost');
+
+        const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (!stored.data.routine.cycle_123) throw new Error('the repair was not written back at once');
+        const copies = Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX));
+        if (copies.length !== 1) throw new Error(`expected one pre-repair copy, got ${copies.length}`);
+        if (localStorage.getItem(copies[0]) !== raw) throw new Error('the copy is not the raw stored document');
+
+        if (JSON.stringify(sm.repairedRoutineKeysThisBoot) !== JSON.stringify([['Main Cycle', 'cycle_123']])) {
+            throw new Error(`repair flag ${JSON.stringify(sm.repairedRoutineKeysThisBoot)}`);
+        }
+        if (sm.migratedThisBoot) throw new Error('a key repair is not a migration (that flag clears ALL undo history)');
+        clearPreCopies();
+    });
+
+    await test('a 2.6 document already keyed by id is adopted untouched (no copy, no flag)', async () => {
+        clearPreCopies();
+        const raw = JSON.stringify(createMockData());
+        localStorage.setItem('miniCycleData', raw);
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('fixture should load');
+        if (sm.repairedRoutineKeysThisBoot) throw new Error('a clean document was repaired');
+        if (Object.keys(localStorage).some(k => k.startsWith(PRE_PREFIX))) throw new Error('a copy was kept for a clean document');
+        if (!sm.get().data.routine['cycle-main']) throw new Error('an id-keyed routine moved');
+    });
+
+    // Each copy is a full copy of the data in the same quota; Settings shows only the newest.
+    const titleKeyedRaw = () => {
+        const doc = createMockData();
+        const routine = doc.data.routine['cycle-main'];
+        delete doc.data.routine['cycle-main'];
+        doc.data.routine['Main Cycle'] = { ...routine, id: 'cycle_123', title: 'Main Cycle' };
+        doc.appState.activeRoutineId = 'Main Cycle';
+        return JSON.stringify(doc);
+    };
+
+    await test('a new pre-migration copy replaces the older ones (only the newest is kept)', async () => {
+        clearPreCopies();
+        localStorage.setItem(`${PRE_PREFIX}1000`, '{"old":"september"}');
+        localStorage.setItem(`${PRE_PREFIX}2000`, '{"old":"october"}');
+        const raw = titleKeyedRaw();
+        localStorage.setItem('miniCycleData', raw);
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.repairedRoutineKeysThisBoot) throw new Error('fixture should need the key repair');
+        const copies = Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX));
+        if (copies.length !== 1) throw new Error(`expected only the newest copy, got ${JSON.stringify(copies)}`);
+        if (localStorage.getItem(copies[0]) !== raw) throw new Error('the copy kept is not the one just written');
+        clearPreCopies();
+    });
+
+    await test('when the new copy cannot be written, the older copy is kept', async () => {
+        clearPreCopies();
+        localStorage.setItem(`${PRE_PREFIX}1000`, '{"old":"september"}');
+        localStorage.setItem('miniCycleData', titleKeyedRaw());
+        const fullStorage = {
+            getItem: (k) => localStorage.getItem(k),
+            removeItem: (k) => localStorage.removeItem(k),
+            key: (i) => localStorage.key(i),
+            get length() { return localStorage.length; },
+            setItem: (k, v) => {
+                if (k.startsWith(PRE_PREFIX)) { const e = new Error('full'); e.name = 'QuotaExceededError'; throw e; }
+                localStorage.setItem(k, v);
+            }
+        };
+        const sm = createStateManager({ storage: fullStorage, showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('the repair should still run without a new copy');
+        if (localStorage.getItem(`${PRE_PREFIX}1000`) !== '{"old":"september"}') throw new Error('the only copy was removed although no new one was written');
+        clearPreCopies();
+    });
+
+    // ── retiring the legacy colour themes at boot (Nov 2026) ─────────────────
+    await test('boot retires a legacy colour theme to its preset; one copy covers both repairs', async () => {
+        clearPreCopies();
+        const doc = createMockData();
+        const routine = doc.data.routine['cycle-main'];
+        delete doc.data.routine['cycle-main'];
+        doc.data.routine['Main Cycle'] = { ...routine, id: 'cycle_123', title: 'Main Cycle' };
+        doc.appState.activeRoutineId = 'Main Cycle';
+        doc.settings = { ...doc.settings, theme: 'golden-glow' };
+        const raw = JSON.stringify(doc);
+        localStorage.setItem('miniCycleData', raw);
+
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        if (!sm.isReady()) throw new Error('should load');
+        const settings = sm.get().settings;
+        if (settings.theme !== 'default') throw new Error(`theme ${settings.theme}`);
+        if (settings.customColors?.preset !== 'goldenGlow' || !settings.customColors.appBg) throw new Error(`customColors ${JSON.stringify(settings.customColors)}`);
+        if (sm.retiredLegacyThemeThisBoot?.preset !== 'goldenGlow') throw new Error(`flag ${JSON.stringify(sm.retiredLegacyThemeThisBoot)}`);
+        if (!sm.repairedRoutineKeysThisBoot) throw new Error('the routine-key repair did not run alongside');
+
+        const stored = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (stored.settings.theme !== 'default' || stored.settings.customColors?.preset !== 'goldenGlow') throw new Error('the retirement was not written back at once');
+        const copies = Object.keys(localStorage).filter(k => k.startsWith(PRE_PREFIX));
+        if (copies.length !== 1) throw new Error(`expected one copy for both repairs, got ${copies.length}`);
+        if (localStorage.getItem(copies[0]) !== raw) throw new Error('the copy is not the raw stored document');
+        if (sm.migratedThisBoot) throw new Error('a theme retirement is not a migration');
+        clearPreCopies();
+    });
+
+    await test('boot keeps a user\'s own colours when it retires their legacy theme', async () => {
+        clearPreCopies();
+        const doc = createMockData();
+        doc.settings = { ...doc.settings, theme: 'dark-ocean', customColors: { appBg: '#123456' } };
+        localStorage.setItem('miniCycleData', JSON.stringify(doc));
+        const sm = createStateManager({ showNotification: () => {} });
+        await sm.init();
+        const settings = sm.get().settings;
+        if (settings.theme !== 'default') throw new Error(`theme ${settings.theme}`);
+        if (JSON.stringify(settings.customColors) !== JSON.stringify({ appBg: '#123456' })) throw new Error(`customColors ${JSON.stringify(settings.customColors)}`);
+        if (!sm.retiredLegacyThemeThisBoot?.keptCustomColors) throw new Error(`flag ${JSON.stringify(sm.retiredLegacyThemeThisBoot)}`);
+        if (sm.repairedRoutineKeysThisBoot) throw new Error('an id-keyed document had its keys repaired');
+        clearPreCopies();
+    });
+
     await test('save() refuses to write over newer-version data written by another tab', async () => {
         localStorage.setItem('miniCycleData', JSON.stringify({ ...createMockData(), schemaVersion: '2.6' }));
         const warnings = [];

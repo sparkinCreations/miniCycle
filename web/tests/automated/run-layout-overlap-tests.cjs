@@ -27,6 +27,7 @@
 const { chromium } = require('playwright');
 const path = require('path');
 const { startStaticServer } = require('./_static-server.cjs');
+const { instrumentBrowser } = require('./_di-warnings.cjs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -434,6 +435,9 @@ async function run() {
     console.log(`${colors.gray}   server on ${baseURL} (web/)${colors.reset}`);
 
     const browser = await chromium.launch({ headless: !HEADED });
+    // A dependency that never arrived does not throw: the app degrades on purpose
+    // (ADR-006) and only logs. Collect those lines on every page; any one fails the run.
+    const di = instrumentBrowser(browser);
     const context = await browser.newContext({ bypassCSP: true });
     // Keep the service worker out of the way so each resize sees fresh CSS.
     await context.addInitScript(() => {
@@ -973,8 +977,9 @@ async function run() {
         // only one:
         //   1. the vocab theme's colorPreset (--pref-*), built for a LIGHT modal
         //      — Scholar's modalText is #1e1b4b;
-        //   2. the colour theme ([data-theme]), which may be light (golden-glow)
-        //      or dark (dark, dark-ocean);
+        //   2. a colour theme ([data-theme]) — none since the three were retired
+        //      in Nov 2026 (golden-glow was light, dark and dark-ocean dark); the
+        //      sweep still reads them from the stylesheets in case one returns;
         //   3. dark mode, which overrides --theme-modal-* but not --theme-header-bg.
         // Every measured failure so far was two of those layers disagreeing:
         // preset text on a dark-mode panel (2.48:1), dark-mode text on golden
@@ -1076,8 +1081,8 @@ async function run() {
                     document.body.classList.toggle('dark-mode', mode === 'dark');
 
                     for (const theme of colorThemes) {
-                        // Mirror themeManager.applyTheme(): the [data-theme] attribute
-                        // AND the body.theme-<name> class. Setting only the attribute
+                        // Apply a colour theme the way the retired ones were applied:
+                        // the [data-theme] attribute AND the body.theme-<name> class. Setting only the attribute
                         // left the page background on the default palette, which
                         // changes what translucent modal layers composite over.
                         for (const t of colorThemes) document.body.classList.remove('theme-' + t);
@@ -1779,6 +1784,7 @@ async function run() {
         await browser.close();
         if (srv) await srv.close();
     }
+    failures.push(...di.failures());
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
     if (failures.length === 0) {

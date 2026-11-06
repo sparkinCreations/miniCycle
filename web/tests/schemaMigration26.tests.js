@@ -1,6 +1,8 @@
 /**
  * Schema 2.5 → 2.6 migration tests — one group per step, then the whole.
- * The migration is pure and not wired at runtime; these pin its contract before it is.
+ * The migration is pure; AppState runs it at boot. Last groups: the 2.6 maintenance steps
+ * (Nov 2026) — repairRoutineKeys re-keys title-keyed routines, retireLegacyColorTheme moves a
+ * retired colour theme to the preset made from it.
  */
 import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
 
@@ -9,7 +11,8 @@ export async function runSchemaMigration26Tests(resultsDiv) {
     const mod = await import(`../modules/routine/schemaMigration26.js?v=${cacheBuster}`);
     const themes = await import(`../modules/labels/themes.js?v=${cacheBuster}`);
     const prio = await import(`../modules/utils/priorityLevel.js?v=${cacheBuster}`);
-    const { migrateSchema_2_5_to_2_6, rekeyRoutines, collapseAutoClear, convertPriority, renameRoutineKeys, stampVersion, toAutoClear, toPriorityLevel } = mod;
+    const { migrateSchema_2_5_to_2_6, rekeyRoutines, collapseAutoClear, convertPriority, renameRoutineKeys, stampVersion, toAutoClear, toPriorityLevel, repairRoutineKeys, isRoutineKeyedById, retireLegacyColorTheme, hasCustomColors, LEGACY_THEME_PRESETS } = mod;
+    const { QUICK_PRESET_DATA } = await import(`../modules/ui/quickPresetData.js?v=${cacheBuster}`);
     const SWATCH_SETS = prio.collectSwatchSets(themes.THEME_DEFINITIONS);
     const HABIT_HIGH = themes.THEME_DEFINITIONS['habit-tracker'].priorityColors.find(s => s.level === 'high').hex;
 
@@ -194,6 +197,152 @@ export async function runSchemaMigration26Tests(resultsDiv) {
     await test('an empty 2.5 document (brand-new user) migrates to an empty 2.6 one', () => {
         const out = migrate({ schemaVersion: '2.5', metadata: { totalCyclesCreated: 0 }, settings: {}, data: { cycles: {} }, appState: { activeCycleId: null }, userProgress: {}, customReminders: {} });
         if (Object.keys(out.data.routine).length !== 0 || out.appState.activeRoutineId !== null) throw new Error(JSON.stringify(out));
+    });
+
+    resultsDiv.innerHTML += '<h4 class="test-section">🔑 2.6 repair — routine keys</h4>';
+
+    // A 2.6 document as creation/import/rename left it before Nov 2026: id-keyed
+    // routines next to title-keyed ones.
+    const fixtureMixed = () => ({
+        schemaVersion: '2.6',
+        data: { routine: {
+            'routine-1-a': { id: 'routine-1-a', title: 'Already fine', tasks: [{ id: 't1', text: 'keep' }] },
+            'Morning': { id: 'cycle_100', title: 'Morning', tasks: [{ id: 't2', text: 'wake' }] },
+            'Renamed Later': { id: 'routine-2-b', title: 'Renamed Later', tasks: [] }
+        } },
+        appState: { activeRoutineId: 'Morning' }
+    });
+
+    await test('isRoutineKeyedById: only key === id counts', () => {
+        if (!isRoutineKeyedById('routine-1', { id: 'routine-1' })) throw new Error('id-keyed rejected');
+        if (isRoutineKeyedById('Morning', { id: 'cycle_1', title: 'Morning' })) throw new Error('title-keyed accepted');
+        if (isRoutineKeyedById('x', { title: 'x' })) throw new Error('missing id accepted');
+    });
+
+    await test('a title-keyed routine is filed under its own id; id-keyed routines are untouched', () => {
+        const doc = fixtureMixed();
+        const map = repairRoutineKeys(doc, () => 'unused');
+        const keys = Object.keys(doc.data.routine);
+        if (keys.join(',') !== 'routine-1-a,cycle_100,routine-2-b') throw new Error(`keys/order ${keys.join(',')}`);
+        if (JSON.stringify(map) !== JSON.stringify([['Morning', 'cycle_100'], ['Renamed Later', 'routine-2-b']])) throw new Error(`map ${JSON.stringify(map)}`);
+        if (!Object.entries(doc.data.routine).every(([k, r]) => r.id === k)) throw new Error('a key still differs from its id');
+        if (doc.data.routine.cycle_100.tasks[0].text !== 'wake' || doc.data.routine.cycle_100.title !== 'Morning') throw new Error('routine content changed');
+    });
+
+    await test('the active routine id follows its routine', () => {
+        const doc = fixtureMixed();
+        repairRoutineKeys(doc, () => 'unused');
+        if (doc.appState.activeRoutineId !== 'cycle_100') throw new Error(`active ${doc.appState.activeRoutineId}`);
+    });
+
+    await test('an unusable id (missing, duplicate, not id-shaped, a prototype name) gets a fresh key', () => {
+        let n = 0;
+        const doc = { data: { routine: {
+            'routine-1-a': { id: 'routine-1-a', title: 'A' },
+            'No Id': { title: 'No Id' },
+            'Dup': { id: 'routine-1-a', title: 'Dup' },
+            'Spaced': { id: 'has space', title: 'Spaced' },
+            'Proto': { id: '__proto__', title: 'Proto' }
+        } }, appState: { activeRoutineId: 'routine-1-a' } };
+        const map = repairRoutineKeys(doc, () => `routine-new-${++n}`);
+        if (map.map(([, k]) => k).join(',') !== 'routine-new-1,routine-new-2,routine-new-3,routine-new-4') throw new Error(`new keys ${JSON.stringify(map)}`);
+        if (Object.getPrototypeOf(doc.data.routine) !== Object.prototype) throw new Error('prototype changed');
+        if (Object.keys(doc.data.routine).length !== 5) throw new Error('a routine was merged or dropped');
+        if (doc.appState.activeRoutineId !== 'routine-1-a') throw new Error('an untouched active id moved');
+    });
+
+    await test('a collision with an existing key is retried, never merged', () => {
+        const ids = ['routine-1-a', 'routine-1-a', 'fresh'];
+        let i = 0;
+        const doc = { data: { routine: { 'routine-1-a': { id: 'routine-1-a', title: 'A' }, 'B': { title: 'B' } } }, appState: {} };
+        repairRoutineKeys(doc, () => ids[i++]);
+        if (Object.keys(doc.data.routine).join(',') !== 'routine-1-a,fresh') throw new Error(Object.keys(doc.data.routine).join(','));
+    });
+
+    await test('a missing title falls back to the old key, so no name is lost', () => {
+        const doc = { data: { routine: { 'Evening': { tasks: [] } } }, appState: {} };
+        repairRoutineKeys(doc, () => 'routine-9');
+        if (doc.data.routine['routine-9'].title !== 'Evening') throw new Error(JSON.stringify(doc.data.routine));
+    });
+
+    await test('running the repair twice changes nothing; a clean document is left as it is', () => {
+        const doc = fixtureMixed();
+        repairRoutineKeys(doc, () => 'unused');
+        const once = JSON.stringify(doc);
+        const second = repairRoutineKeys(doc, () => { throw new Error('makeId must not be called'); });
+        if (second.length !== 0 || JSON.stringify(doc) !== once) throw new Error('second run changed the document');
+        const clean = { data: { routine: { 'r-1': { id: 'r-1' } } }, appState: { activeRoutineId: 'r-1' } };
+        const routinesBefore = clean.data.routine;
+        repairRoutineKeys(clean, () => 'x');
+        if (clean.data.routine !== routinesBefore) throw new Error('a clean map was rebuilt');
+    });
+
+    await test('a 2.5 document migrated to 2.6 needs no repair (the migration already keys by id)', () => {
+        seq = 0;
+        const out = migrate(fixture25());
+        if (repairRoutineKeys(out, makeId).length !== 0) throw new Error('migration output was not id-keyed');
+    });
+
+    // ── retireLegacyColorTheme ────────────────────────────────────────────────
+    const withTheme = (theme, extra = {}) => ({ schemaVersion: '2.6', settings: { theme, darkMode: false, ...extra }, data: { routine: {} } });
+
+    await test('golden-glow / dark-ocean with no colours of their own get the preset made from them', () => {
+        for (const [from, preset] of [['golden-glow', 'goldenGlow'], ['dark-ocean', 'darkOcean']]) {
+            const doc = withTheme(from, { customColors: { showBgPattern: false } });
+            const report = retireLegacyColorTheme(doc);
+            if (report?.preset !== preset || report.keptCustomColors || report.from !== from) throw new Error(`${from}: report ${JSON.stringify(report)}`);
+            const cc = doc.settings.customColors;
+            for (const [key, hex] of Object.entries(QUICK_PRESET_DATA[preset].colors)) {
+                if (cc[key] !== hex) throw new Error(`${from}: ${key} is ${cc[key]}, preset says ${hex}`);
+            }
+            if (cc.preset !== preset) throw new Error(`${from}: not marked as the ${preset} preset`);
+            if (cc.showBgPattern !== false) throw new Error(`${from}: a toggle was lost`);
+            if (doc.settings.theme !== 'default') throw new Error(`${from}: theme left as ${doc.settings.theme}`);
+        }
+    });
+
+    await test("a user's own colours are kept; only the legacy theme goes", () => {
+        const doc = withTheme('golden-glow', { customColors: { appBg: '#123456', taskText: '#000000' } });
+        const report = retireLegacyColorTheme(doc);
+        if (!report?.keptCustomColors || report.preset !== null) throw new Error(JSON.stringify(report));
+        if (JSON.stringify(doc.settings.customColors) !== JSON.stringify({ appBg: '#123456', taskText: '#000000' })) throw new Error('custom colours changed');
+        if (doc.settings.theme !== 'default') throw new Error('theme not reset');
+    });
+
+    await test('hasCustomColors counts colours, not toggles', () => {
+        if (hasCustomColors({ customColors: { showBgPattern: true, solidListBg: true, patternOpacity: 5, preset: 'warm' } })) throw new Error('toggles counted');
+        if (!hasCustomColors({ customColors: { patternColor: '#ffffff' } })) throw new Error('a colour not counted');
+        if (hasCustomColors({}) || hasCustomColors({ customColors: null })) throw new Error('missing map counted');
+    });
+
+    await test('dark turns dark mode on; a value that was never a shipped theme is left alone', () => {
+        const dark = withTheme('dark');
+        const report = retireLegacyColorTheme(dark);
+        if (!report?.darkMode || dark.settings.darkMode !== true || dark.settings.theme !== 'default') throw new Error(JSON.stringify(dark.settings));
+        if (dark.settings.customColors !== undefined) throw new Error('dark got colours');
+        const odd = withTheme('neon');
+        const before = JSON.stringify(odd);
+        if (retireLegacyColorTheme(odd) !== null || JSON.stringify(odd) !== before) throw new Error(JSON.stringify(odd.settings));
+        if (retireLegacyColorTheme(withTheme('__proto__')) !== null || retireLegacyColorTheme(withTheme('constructor')) !== null) throw new Error('a prototype name counted as a theme');
+    });
+
+    await test('no legacy theme: nothing happens, and a second run changes nothing', () => {
+        for (const settings of [{ theme: 'default' }, {}, { theme: '' }, { theme: null }]) {
+            const doc = { settings: { ...settings } };
+            const before = JSON.stringify(doc);
+            if (retireLegacyColorTheme(doc) !== null || JSON.stringify(doc) !== before) throw new Error(`changed ${before}`);
+        }
+        if (retireLegacyColorTheme({}) !== null) throw new Error('a document without settings was touched');
+        const doc = withTheme('dark-ocean');
+        retireLegacyColorTheme(doc);
+        const once = JSON.stringify(doc);
+        if (retireLegacyColorTheme(doc) !== null || JSON.stringify(doc) !== once) throw new Error('second run changed the document');
+    });
+
+    await test('every retired theme with a preset names a preset that exists', () => {
+        for (const [from, preset] of Object.entries(LEGACY_THEME_PRESETS)) {
+            if (!QUICK_PRESET_DATA[preset] || !Object.keys(QUICK_PRESET_DATA[preset].colors).length) throw new Error(`${from} -> ${preset} has no colours`);
+        }
     });
 
     const percentage = Math.round((passed.count / total.count) * 100);

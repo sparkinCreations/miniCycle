@@ -33,6 +33,7 @@ if (!engine) { console.error(`Unknown PW_BROWSER "${ENGINE_NAME}" (chromium | we
 const { chromium } = playwright;
 const path = require('path');
 const { startStaticServer } = require('./_static-server.cjs');
+const { instrumentBrowser } = require('./_di-warnings.cjs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -217,38 +218,31 @@ const skipOnEngine = (name, why) =>
     console.log(`   ${colors.yellow}⏭${colors.reset} ${name} ${colors.gray}— skipped on ${ENGINE_NAME}: ${why}${colors.reset}`);
 
 async function openFresh(browser, baseURL, opts = {}) {
-    const context = await browser.newContext();
+    // colorScheme: the DEVICE's light/dark setting (prefers-color-scheme), not the app's dark mode.
+    const context = await browser.newContext(opts.colorScheme ? { colorScheme: opts.colorScheme } : {});
     await context.grantPermissions(['notifications'], { origin: baseURL });
     if (opts.saveDialog) await applySaveDialogStub(context, opts.saveDialog);
     if (opts.initScript) await context.addInitScript(opts.initScript, opts.initArg);
     if (PROBE_NEEDS_PAGE_GUARD) await context.addInitScript(RESET_PROBE_DENY);
     const page = await context.newPage();
     await page.route(RESET_PROBE, (r) => r.abort());
-    // Collected here and asserted by the caller, so a starved dependency FAILS the
-    // journey instead of scrolling past in green output. See diWarnings below.
-    page.__diWarnings = [];
-    _pagesThisJourney.push(page);
+    // DI warnings are COLLECTED for every page by instrumentBrowser() in run()
+    // (into page.__diWarnings) and fail the journey there — not here, so a
+    // journey that opens its own context is covered too.
     page.on('pageerror', err => console.log(`   ${colors.yellow}page error: ${err.message}${colors.reset}`));
     // Surface DI-shaped console warnings. `pageerror` only fires for UNCAUGHT
     // exceptions, and a starved dependency is not one: `deps.foo?.()` no-ops and
     // the module logs a warning. That blind spot is why a journey failure reads as
     // a bare 10s waitForFunction timeout with nothing explaining it — the
     // "missing dependencies" line the app had already printed never left the page.
+    // Print-only and deliberately broader than _di-warnings.cjs: the extra shapes
+    // (a validation warning on purposely bad input, say) can legitimately appear,
+    // so they explain a failure without being one.
     page.on('console', (msg) => {
         if (msg.type() !== 'warning' && msg.type() !== 'error') return;
         const text = msg.text();
         if (!/missing dep|not injected|undefined|validation failed|is not a function|could not load|DI /i.test(text)) return;
         console.log(`   ${colors.gray}page ${msg.type()}: ${text.slice(0, 240)}${colors.reset}`);
-        // Only the DI-wiring shapes are treated as failures. The rest of the
-        // pattern above is diagnostic noise that can legitimately appear (a
-        // validation warning on purposely bad input, say), but these two mean a
-        // module asked for a dependency and got nothing — which under
-        // ENFORCE_REQUIRES silently removes a feature rather than breaking
-        // loudly. Every To-Do mode bug in v2.436-v2.438 printed one of these
-        // lines and shipped anyway, because printing was all this did.
-        if (/DI access|missing (required )?dep/i.test(text)) {
-            page.__diWarnings.push(text.slice(0, 240));
-        }
     });
     // A journey that needs to SEE the first-run choice screen must navigate itself:
     // everything below here consumes it (it clicks "learn" to seed a routine), so a
@@ -670,6 +664,53 @@ async function journeyTheme(browser, baseURL) {
         await context.close();
     }
     return { name: 'theme & settings persistence', failures };
+}
+
+// ── Device in dark mode, app in light mode (v2.667 regression) ──────────────
+// dark-mode.css paints a dark gradient under prefers-color-scheme: dark until JS
+// loads; the page background and the routine title's bar must outrank it once the
+// app runs. 2.667 shortened those rules' selectors (the retired colour themes'
+// :not() chains had carried their weight), so on every device set to dark mode
+// the page went black with the app's dark mode OFF, and Focus View lost the
+// title bar. Light-scheme runs could never see it.
+async function journeyDeviceDarkAppLight(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL, { colorScheme: 'dark' });
+    try {
+        await page.evaluate(() => { document.getElementById('first-run-welcome-dismiss')?.click(); document.getElementById('first-run-welcome')?.remove(); });
+        if (await page.evaluate(() => document.documentElement.classList.contains('dark-mode'))) {
+            await page.evaluate(() => {
+                const d = JSON.parse(localStorage.getItem('miniCycleData'));
+                d.settings.darkMode = false;
+                localStorage.setItem('miniCycleData', JSON.stringify(d));
+            });
+            await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+            await bootApp(page);
+        }
+        const schemeDark = await page.evaluate(() => matchMedia('(prefers-color-scheme: dark)').matches);
+        const appDark = await page.evaluate(() => document.documentElement.classList.contains('dark-mode'));
+        record('the device reports dark and the app is in light mode', schemeDark && !appDark, `scheme dark=${schemeDark}, app dark=${appDark}`);
+
+        const bodyBg = await page.evaluate(() => getComputedStyle(document.body).backgroundImage);
+        record("the page background is the app's, not the pre-boot dark gradient",
+            !bodyBg.includes('rgb(28, 28, 28)'), `body background-image: ${bodyBg.slice(0, 90)}`);
+
+        await page.evaluate(() => { if (!document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-btn')?.click(); });
+        await page.waitForFunction(() => document.body.classList.contains('focus-mode'), null, { timeout: 8000 }).catch(() => {});
+        const title = await page.evaluate(() => {
+            const t = document.querySelector('.mini-cycle-title');
+            return { focus: document.body.classList.contains('focus-mode'), bg: t ? getComputedStyle(t).backgroundColor : null };
+        });
+        const transparent = !title.bg || title.bg === 'transparent' || /rgba\([^)]*,\s*0\)$/.test(title.bg);
+        record('Focus View keeps the routine title bar', title.focus && !transparent, `focus=${title.focus}, title background-color: ${title.bg}`);
+
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: "device dark mode with the app in light mode keeps the app's colours", failures };
 }
 
 // ── Journey 5: recurring tasks ──────────────────────────────────────────────
@@ -1908,8 +1949,6 @@ async function journeyKeyboardOnlyItems(browser, baseURL) {
     for (const [name, viewport, touch, shown] of DEVICES) {
         const context = await browser.newContext({ viewport, isMobile: touch, hasTouch: touch });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -1947,8 +1986,6 @@ async function journeyFocusMenuSafeArea(browser, baseURL) {
     ]) {
         const context = await browser.newContext({ viewport, isMobile: inset > 0, hasTouch: inset > 0 });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             const cdp = await context.newCDPSession(page);
             await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: inset, left: 0, bottom: 0, right: 0 } });
@@ -2049,8 +2086,6 @@ async function journeyPhoneRenameInactive(browser, baseURL) {
     for (const way of ['routine button', 'from Browse', 'expanded list']) {
         const context = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -4749,6 +4784,96 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
 // history cleared, and NOTHING left to migrate (and no second copy) on the next
 // boot. The migration function's unit tests own each rule; this owns "boot runs
 // it, once, and the app renders the result".
+// Routines are keyed by a generated id, never their title. Until Nov 2026
+// creation, import, duplicate and rename still wrote title keys into 2.6 data;
+// boot re-keys those once (AppState._repairRoutineKeys), keeping the raw
+// document first, WITHOUT a schema bump. A rename afterwards changes only the
+// title.
+async function journeyBootRepairsTitleKeyedRoutines(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const task = (id, text) => ({ id, text, completed: false, priority: null, autoClear: { cycle: false, todo: true }, schemaVersion: 2 });
+    const doc = {
+        schemaVersion: '2.6',
+        metadata: { createdAt: 1, lastModified: 2, schemaVersion: '2.6', totalRoutinesCreated: 2 },
+        settings: { theme: 'default', darkMode: false, onboardingCompleted: true, defaultPriority: 'medium' },
+        data: { routine: {
+            'routine-1-a': { id: 'routine-1-a', title: 'Evening', cycleCount: 0, autoReset: true, deleteCheckedTasks: false,
+                recurringTemplates: {}, tasks: [task('e1', 'Read')] },
+            'Morning Routine': { id: 'cycle_100', title: 'Morning Routine', cycleCount: 2, autoReset: true, deleteCheckedTasks: false,
+                recurringTemplates: {}, tasks: [task('m1', 'Stretch'), task('m2', 'Coffee')] }
+        } },
+        appState: { activeRoutineId: 'Morning Routine' },
+        userProgress: { cyclesCompleted: 2 }
+    };
+    const raw = JSON.stringify(doc);
+    const { context, page } = await openFresh(browser, baseURL, {
+        noNavigate: true,
+        initScript: (d) => { if (!localStorage.getItem('__seeded')) { localStorage.setItem('miniCycleData', d); localStorage.setItem('__seeded', '1'); } },
+        initArg: raw
+    });
+    const read = () => page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData'));
+        const map = (d.data && d.data.routine) || {};
+        return {
+            version: d.schemaVersion,
+            keys: Object.keys(map),
+            allById: Object.entries(map).every(([k, r]) => r.id === k),
+            titles: Object.values(map).map(r => r.title),
+            active: d.appState && d.appState.activeRoutineId,
+            activeTitle: map[d.appState && d.appState.activeRoutineId] && map[d.appState.activeRoutineId].title,
+            copies: Object.keys(localStorage).filter(k => k.startsWith('miniCycleData_pre-migration_')),
+            rows: document.querySelectorAll('#taskList .task').length
+        };
+    });
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+        const after = await read();
+        record('the title-keyed routine is filed under its own id; the id-keyed one is untouched',
+            after.keys.join(',') === 'routine-1-a,cycle_100' && after.allById, JSON.stringify(after.keys));
+        record('titles survive and the active routine follows its key',
+            after.titles.join(',') === 'Evening,Morning Routine' && after.active === 'cycle_100' && after.activeTitle === 'Morning Routine',
+            JSON.stringify({ titles: after.titles, active: after.active }));
+        record('the schema stays 2.6 (a repair is not a version bump)', after.version === '2.6', after.version);
+        record('a copy of the raw document was kept first', after.copies.length === 1, `copies: ${after.copies.join(',')}`);
+        const copy = await page.evaluate((k) => localStorage.getItem(k), after.copies[0] || '');
+        record('the copy is the byte-identical stored document', copy === raw, 'copy differs from what was stored');
+        record('the repaired active routine rendered', after.rows === 2, `${after.rows} task rows`);
+
+        // Rename from the title bar: only the title may change.
+        const renamed = await page.evaluate(async () => {
+            const el = document.getElementById('mini-cycle-title');
+            if (!el) return { error: 'no title element' };
+            el.focus();
+            el.textContent = 'Morning Renamed';
+            el.dispatchEvent(new Event('blur'));
+            await new Promise(r => setTimeout(r, 1200));
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const map = d.data.routine;
+            return { keys: Object.keys(map), active: d.appState.activeRoutineId, title: map.cycle_100 && map.cycle_100.title };
+        });
+        record('a title-bar rename changes only the title — the key and active id stay',
+            !renamed.error && renamed.keys.join(',') === 'routine-1-a,cycle_100' && renamed.active === 'cycle_100' && renamed.title === 'Morning Renamed',
+            JSON.stringify(renamed));
+
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        const again = await read();
+        record('a second boot repairs nothing: same keys, still ONE copy',
+            again.keys.join(',') === 'routine-1-a,cycle_100' && again.copies.length === 1 && again.allById,
+            JSON.stringify({ keys: again.keys, copies: again.copies.length }));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'title-keyed routines are re-keyed by id at boot; rename keeps the key', failures };
+}
+
 async function journeyBootMigratesSchema25(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const legacyDoc = {
@@ -5488,8 +5613,9 @@ async function journeyRecurringPanelAfterInPlaceReset(browser, baseURL) {
 }
 
 // ── Renaming the routine can be undone ──────────────────────────────────────
-// A rename re-keys the routine and relabels the undo stacks to the new key. The
-// relabel also overwrote every snapshot's TITLE with the new name, so the
+// A rename used to re-key the routine and relabel the undo stacks to the new
+// key (since Nov 2026 it changes only the title). The relabel also overwrote
+// every snapshot's TITLE with the new name, so the
 // snapshot taken just before the rename matched the current state, Undo skipped
 // it, and pressing Undo after a rename undid the step BEFORE it instead
 // (Oct 2026 audit). Undo must put the old name back — in state and on the
@@ -6763,6 +6889,7 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
                 r.deleteCheckedTasks = i % 3 === 2;
                 r.tasks = Array.from({ length: 2 + (i % 6) }, (_, k) => ({ ...base.tasks[0], id: `m${i}t${k}`, text: `${n} step ${k + 1}`, completed: false }));
                 r.history = { events: [], maxEvents: 100 };
+                r.id = 'm' + i; // 2.6 contract: key === id (see journeyBrowseRoutines)
                 out['m' + i] = r;
             });
             d.data.routine = out;
@@ -6875,8 +7002,6 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
     for (const width of [320, 390]) {
         const context = await browser.newContext({ viewport: { width, height: 780 }, isMobile: true, hasTouch: true });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -6950,6 +7075,10 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 r.history = { events: [], maxEvents: 100 };
                 // Recent order = r0, r1, r2, … (r0 used most recently).
                 r.lastAccessedAt = Date.now() - i * HOUR;
+                // 2.6 contract: a routine's key IS its id. Cloning `base` copied
+                // base's id onto every routine, which boot now (correctly) re-keys
+                // as title-keyed data (AppState._repairRoutineKeys, Nov 2026).
+                r.id = 'r' + i;
                 out['r' + i] = r;
             });
             d.data.routine = out;
@@ -7250,8 +7379,6 @@ async function journeyBrowseRoutines(browser, baseURL) {
     for (const width of [320, 390]) {
         const context = await browser.newContext({ viewport: { width, height: 740 }, isMobile: true, hasTouch: true });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.waitForFunction(() => !!document.querySelector('.first-run-btn[data-choice="learn"]'), null, { timeout: 20000 });
@@ -7458,8 +7585,6 @@ async function journeyRecurringAcrossClockChanges(browser, baseURL) {
     for (const zone of zones) {
         const context = await browser.newContext({ timezoneId: zone.timezoneId });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             // A light page on the app's origin — only the modules are needed, not a booted app.
             await page.goto(`${baseURL}/legal/user-manual.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
@@ -7531,8 +7656,6 @@ async function journeyTimesFollowDeviceClock(browser, baseURL) {
     ]) {
         const context = await browser.newContext({ locale, timezoneId: 'UTC' });
         const page = await context.newPage();
-        _pagesThisJourney.push(page);
-        page.__diWarnings = [];
         try {
             await page.goto(`${baseURL}/legal/user-manual.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
             await page.clock.setFixedTime(new Date('2027-01-04T10:00:00Z')); // a Monday
@@ -7622,6 +7745,7 @@ const JOURNEYS = [
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
     { name: 'a 2.5 document is migrated at boot', fn: journeyBootMigratesSchema25 },
+    { name: 'title-keyed routines are re-keyed by id at boot; rename keeps the key', fn: journeyBootRepairsTitleKeyedRoutines },
     { name: 'the pre-migration copy is usable from Settings', fn: journeyPreMigrationCopyFromSettings },
     { name: 'a backup made before 2.6 restores from Settings', fn: journeySettingsRestoreAcceptsOlderBackup },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
@@ -7635,6 +7759,7 @@ const JOURNEYS = [
     { name: 'routine switching', fn: journeyRoutineSwitch },
     { name: 'undo / redo', fn: journeyUndoRedo },
     { name: 'theme & settings persistence', fn: journeyTheme },
+    { name: "device dark mode with the app in light mode keeps the app's colours", fn: journeyDeviceDarkAppLight },
     { name: 'recurring tasks', fn: journeyRecurring },
     { name: 'to-do mode clearing', fn: journeyTodoMode },
     { name: 'to-do stats stay in sync', fn: journeyTodoStatsSync },
@@ -7692,6 +7817,13 @@ async function run() {
     console.log(`${colors.gray}   server on ${srv.url} (web/, real service worker enabled)${colors.reset}`);
 
     const browser = await engine.launch({ headless: true });
+    // Every page any journey opens — through openFresh() or its own
+    // browser.newContext() — is registered for this journey and has its DI
+    // warnings collected. Before Nov 2026 only openFresh() attached the
+    // listener: seven journeys that built their own context set an empty
+    // page.__diWarnings and could never fail on one, and four more pages were
+    // never registered at all.
+    const di = instrumentBrowser(browser, { onPage: (page) => _pagesThisJourney.push(page) });
     // JOURNEY_FILTER=<substring> runs only the journeys whose name contains
     // it (case-insensitive) — for chasing one failure without the full run.
     const filter = (process.env.JOURNEY_FILTER || '').toLowerCase();
@@ -7721,6 +7853,11 @@ async function run() {
     } finally {
         await browser.close();
         await srv.close();
+    }
+    // A filtered run skips most pages, so only a full run can call an entry stale.
+    if (!filter) {
+        di.staleAllowlist().forEach(e =>
+            console.log(`${colors.yellow}   DI allow-list entry matched nothing — delete it from _di-warnings.cjs: ${e}${colors.reset}`));
     }
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);

@@ -366,23 +366,23 @@ export async function runIntegrationTests(resultsDiv, isPartOfSuite = false) {
 
     resultsDiv.innerHTML += '<h4 class="test-section">🎨 Priority 2: Theme & Settings</h4>';
 
-    await test('INTEGRATION: Theme change persists to storage', async () => {
+    await test('INTEGRATION: Dark mode and priority settings persist to storage', async () => {
         const data = loadData();
-        data.settings.theme = 'dark-ocean';
+        data.settings.defaultPriority = 'low';
         data.settings.darkMode = true;
         saveData(data);
 
         const savedData = loadData();
-        if (savedData.settings.theme !== 'dark-ocean') {
-            throw new Error('Theme not saved to storage');
+        if (savedData.settings.defaultPriority !== 'low') {
+            throw new Error('Default priority not saved to storage');
         }
         if (savedData.settings.darkMode !== true) {
             throw new Error('Dark mode not saved to storage');
         }
 
         const reloadedData = loadData();
-        if (reloadedData.settings.theme !== 'dark-ocean') {
-            throw new Error('Theme did not persist after reload');
+        if (reloadedData.settings.defaultPriority !== 'low' || reloadedData.settings.darkMode !== true) {
+            throw new Error('Settings did not persist after reload');
         }
     });
 

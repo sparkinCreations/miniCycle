@@ -247,7 +247,7 @@ figuring out the correct **startup order**, and **delivering** each module's nee
 path: '../features/themeManager.js',
 requires:     ['appInit', 'showNotification', 'getModal'],  // cannot work without
 optionalDeps: ['vocabThemeManager', 'updateStatsPanel', ...],// uses if available
-provides:     ['applyTheme', 'updateThemeColor', ...],       // offers to others
+provides:     ['updateThemeColor', 'setupDarkModeToggle', ...], // offers to others
 ```
 
 Every module's `requires` is satisfied by some other module's `provides`, or by one

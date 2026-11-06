@@ -237,18 +237,22 @@ const next = recurring.calculateNextOccurrence(recurringSettings, Date.now());
 
 ### Theme Manager Module
 
+Reached through DI (`deps.themeManager`, or the `provides` names below), not imported.
+Colour choice lives in Personalization presets (`ui/preferencesPresets.js`); vocabulary
+themes (unlocked by milestones) in `labels/themes.js` (`vocabThemeManager`).
+
 ```javascript
-import { ThemeManager } from './modules/themeManager.js';
-
-// Apply theme
-ThemeManager.applyTheme(themeName);
-
-// Check if unlocked
-const unlocked = ThemeManager.isThemeUnlocked(themeName, cycleCount);
-
-// Get available themes
-const themes = ThemeManager.getAvailableThemes();
+// modules/features/themeManager.js provides:
+updateThemeColor();       // PWA theme-color / status bar for the current look
+setupDarkModeToggle(id);  // wire a dark-mode toggle (synced with the others)
+setupQuickDarkToggle();   // the corner quick toggle
+setupThemesPanel();       // the Themes modal (vocabulary themes)
+renderVocabThemes();      // refresh the modal's theme list
 ```
+
+The colour themes (Dark Ocean, Golden Glow, dark) and `applyTheme` were retired in
+Nov 2026; boot moves a stored one to its preset (`retireLegacyColorTheme`,
+`routine/schemaMigration26.js`).
 
 ### Mode Manager Module
 

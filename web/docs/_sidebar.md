@@ -149,6 +149,7 @@
   * [i18n Language Packs](future-work/I18N_LANGUAGE_PACK_PLAN.md)
   * [Lite ↔ Full: .mcyc Import + Adopt Lite Data](future-work/LITE_MCYC_IMPORT_AND_ADOPT_PLAN.md)
   * [Module Deferral Audit](future-work/MODULE_DEFERRAL_AUDIT.md)
+  * [Plugin System & Task Timer Plan](future-work/MINICYCLE_PLUGIN_SYSTEM_AND_TASK_TIMER_PLAN.md)
   * [Prompt Modal Theme Token Gap](future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md)
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
   * [Single-Source Consolidation](future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md)
@@ -196,6 +197,7 @@
     * [Notification Standardization](archive/NOTIFICATION_STANDARDIZATION_PLAN.md)
     * [Menu Settings Extraction](archive/MENU_SETTINGS_EXTRACTION_PLAN.md)
     * [Recurring Integration Guide](archive/recurring-integration-guide.md)
+    * [JSON Theme System (superseded by presets)](archive/JSON_THEME_SYSTEM.md)
 
   * **Testing & Undo/Redo (Complete)**
     * [Undo/Redo Phase 1 Complete](archive/PHASE1_COMPLETE_undoRedoManager.md)

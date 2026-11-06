@@ -187,7 +187,7 @@ function dumpDiagnosticSnapshot() {
     const cycleIds = Object.keys(cycles);
     const activeCycleId = getActiveRoutineId(state);
     const activeCycle = cycles[activeCycleId];
-    const activeRoutineName = activeCycle?.name || '(unnamed)';
+    const activeRoutineName = activeCycle?.title || '(unnamed)';
     const activeMode = activeCycle?.mode || '?';
 
     let totalTasks = 0;

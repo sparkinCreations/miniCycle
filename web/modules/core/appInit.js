@@ -669,7 +669,9 @@ class AppInit {
 					// Re-read with the fixed activeCycle
 					schemaData = this._readSchemaData();
 					const recoveredActiveCycle = schemaData?.activeCycle || firstCycle;
-					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredActiveCycle } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
+					// Name the routine by its title: the key is a generated id, not text for the user.
+					const recoveredName = schemaData?.cycles?.[recoveredActiveCycle]?.title || recoveredActiveCycle;
+					_deps.showNotification?.(getLabel('notify.recoveredRoutine', { vars: { name: recoveredName } }), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
 					await this.runCompleteInitialSetup(recoveredActiveCycle, null, schemaData);
 					return;
 				}
@@ -792,12 +794,6 @@ class AppInit {
 		} else {
 			_deps.removeBodyClass?.('dark-mode');
 			document.documentElement?.classList.remove(DOM_CLASSES.DARK_MODE);
-		}
-
-		if (settings.theme && settings.theme !== 'default') {
-			const allThemes = ['theme-dark-ocean', 'theme-golden-glow'];
-			allThemes.forEach(theme => _deps.removeBodyClass?.(theme));
-			_deps.addBodyClass?.(`theme-${settings.theme}`);
 		}
 
 		_deps.updateThemeColor?.();

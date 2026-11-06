@@ -48,17 +48,13 @@
 
     data: {
         routine: {
-            // KEYS — the code in this tree does two things:
-            //  • The 2.5 → 2.6 boot migration re-keys every existing routine
-            //    under a generated id (GlobalUtils.generateId('routine')), so
-            //    key === id, as below.
-            //  • Routines created, imported, duplicated or renamed from the UI
-            //    (routineManager.js, cycleImportManager.js,
-            //    routineSwitcherActions.js, menuManager.js, titleManager.js) are
-            //    still filed under their TITLE, and a rename moves the entry to
-            //    the new title. Their `id` is set separately (e.g.
-            //    `cycle_<timestamp>`, `imported_<timestamp>`).
-            // So never assume key === id or key === title: look routines up with
+            // KEYS — every routine is filed under its own generated id
+            // (GlobalUtils.generateId('routine')), key === id, as below.
+            // Create, import and duplicate write a new id; a rename changes only
+            // `title`. Until Nov 2026 those paths still wrote TITLE keys; boot
+            // re-keys any routine whose key is not its id, once
+            // (repairRoutineKeys in routine/schemaMigration26.js, from
+            // AppState._repairRoutineKeys). Look routines up with
             // getRoutine(state, key) and getActiveRoutineId(state).
             // `title` is the display name (there is no `name` field).
             "routine-1789760998636-bqphapbbc": {

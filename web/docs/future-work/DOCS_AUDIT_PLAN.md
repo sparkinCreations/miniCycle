@@ -206,8 +206,8 @@ routine creation still keys new routines by **title**, not a generated id
 
 **Audited:** all 16 docs (three readers, disjoint files). Heaviest corrections:
 `API_REFERENCE` (most documented calls did not exist; rewritten to the DI / appContext
-names — every call in its examples now exists except the Theme Manager section, left
-for PR #116), `ACCESSIBILITY` (claimed the skip link, reduced motion and keyboard
+names — every call in its examples now exists; the Theme Manager section came from
+PR #116), `ACCESSIBILITY` (claimed the skip link, reduced motion and keyboard
 shortcuts were missing, and contrast unverified — all exist, contrast is CI-gated),
 `BROWSER_COMPATIBILITY` (real floor from the feature gate: Chrome 80 / Firefox 74 /
 Safari 13.1), `FEATURE_LIST` and `DATA_SCHEMA_GUIDE` (~15 wrong rows each), `ROADMAP`

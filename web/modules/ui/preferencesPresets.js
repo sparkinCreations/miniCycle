@@ -12,6 +12,7 @@
 import { DOM_IDS, DOM_SELECTORS, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex } from '../utils/styleValidators.js';
+import { PRESET_COLOR_KEYS, QUICK_PRESET_DATA } from './quickPresetData.js';
 
 // ============================================================================
 // PRESET VALIDATION
@@ -21,16 +22,9 @@ import { isValidHex } from '../utils/styleValidators.js';
 const PRESET_VERSION = 2;
 
 /**
- * Keys allowed in a preset's colors object, grouped by type.
- * Only keys listed here are accepted during import — unknown keys are stripped.
+ * Keys allowed in a preset beside the colour keys (PRESET_COLOR_KEYS, in
+ * quickPresetData.js). Only allow-listed keys survive an import.
  */
-const PRESET_COLOR_KEYS = [
-    'appBg', 'taskListBg', 'taskBg', 'taskText', 'titleBg', 'titleText',
-    'checkboxBg', 'checkboxIncompleteBg', 'checkmark', 'completeBtn',
-    'clearBtn', 'progressBar', 'cornerBtn', 'statsBg', 'statsText', 'statsProgress',
-    'statsDoughnut', 'panelText', 'patternColor'
-];
-
 const PRESET_BOOLEAN_KEYS = [
     'showCheckboxFill', 'showCheckboxIncomplete', 'showBgPattern',
     'showBgImage', 'solidListBg', 'solidStatsBg', 'solidActionButtons',
@@ -100,6 +94,9 @@ function sanitizePresetColors(raw) {
  * never wired to anything — this module rendered its own hardcoded copies of
  * the same strings, free to drift from them.
  *
+ * The colours live in quickPresetData.js (the boot repair reads them too);
+ * this adds the labels.
+ *
  * @returns {Object} preset key -> { name, shortName, title, swatch, colors }
  */
 const quickPresets = () => ({
@@ -107,210 +104,55 @@ const quickPresets = () => ({
         name: getLabel('preset.defaultFull'),
         shortName: getLabel('preset.default'),
         title: getLabel('preset.defaultDesc'),
-        swatch: ['#4c79ff', '#ffffff'],
-        colors: {}
+        ...QUICK_PRESET_DATA.default
     },
     warm: {
         name: getLabel('preset.warmFull'),
         shortName: getLabel('preset.warm'),
         title: getLabel('preset.warmDesc'),
-        swatch: ['#ff6b6b', '#ffeaa7'],
-        colors: {
-            appBg: '#ff6b6b',
-            taskListBg: '#fff9e6',
-            taskBg: '#ffffff',
-            taskText: '#5c4033',
-            titleBg: '#ffeaa7',
-            titleText: '#a85a32',
-            checkboxBg: '#e17055',
-            checkboxIncompleteBg: '#e8d5c4',
-            checkmark: '#ffffff',
-            completeBtn: '#fd79a8',
-            clearBtn: '#fdcb6e',
-            progressBar: '#f8b739',
-            statsBg: '#fff9e6',
-            statsText: '#5c4033',
-            statsProgress: '#e17055',
-            statsDoughnut: '#fd79a8',
-            panelText: '#ffffff'
-        }
+        ...QUICK_PRESET_DATA.warm
     },
     cool: {
         name: getLabel('preset.coolFull'),
         shortName: getLabel('preset.cool'),
         title: getLabel('preset.coolDesc'),
-        swatch: ['#74b9ff', '#e8f8f5'],
-        colors: {
-            appBg: '#74b9ff',
-            taskListBg: '#e8f8f5',
-            taskBg: '#ffffff',
-            taskText: '#2c3e50',
-            titleBg: '#dfe6e9',
-            titleText: '#2980b9',
-            checkboxBg: '#0984e3',
-            checkboxIncompleteBg: '#b8d4e3',
-            checkmark: '#ffffff',
-            completeBtn: '#00cec9',
-            clearBtn: '#6c5ce7',
-            progressBar: '#81ecec',
-            statsBg: '#e8f8f5',
-            statsText: '#2c3e50',
-            statsProgress: '#0984e3',
-            statsDoughnut: '#00cec9',
-            panelText: '#1a3a5c'
-        }
+        ...QUICK_PRESET_DATA.cool
     },
     forest: {
         name: getLabel('preset.forestFull'),
         shortName: getLabel('preset.forest'),
         title: getLabel('preset.forestDesc'),
-        swatch: ['#2d5016', '#d4edda'],
-        colors: {
-            appBg: '#2d5016',
-            taskListBg: '#d4edda',
-            taskBg: '#e8f5e9',
-            taskText: '#1b4332',
-            titleBg: '#a8d5ba',
-            titleText: '#1b4332',
-            checkboxBg: '#2e7d32',
-            checkboxIncompleteBg: '#a8c5a8',
-            checkmark: '#ffffff',
-            completeBtn: '#388e3c',
-            clearBtn: '#558b2f',
-            progressBar: '#66bb6a',
-            statsBg: '#d4edda',
-            statsText: '#1b4332',
-            statsProgress: '#2e7d32',
-            statsDoughnut: '#388e3c',
-            panelText: '#ffffff'
-        }
+        ...QUICK_PRESET_DATA.forest
     },
     monochrome: {
         name: getLabel('preset.monoFull'),
         shortName: getLabel('preset.mono'),
         title: getLabel('preset.monoDesc'),
-        swatch: ['#2d3436', '#dfe6e9'],
-        colors: {
-            appBg: '#2d3436',
-            taskListBg: '#dfe6e9',
-            taskBg: '#ffffff',
-            taskText: '#2d3436',
-            titleBg: '#b2bec3',
-            titleText: '#2d3436',
-            checkboxBg: '#636e72',
-            checkboxIncompleteBg: '#b2bec3',
-            checkmark: '#ffffff',
-            completeBtn: '#2d3436',
-            clearBtn: '#636e72',
-            progressBar: '#95a5a6',
-            statsBg: '#dfe6e9',
-            statsText: '#2d3436',
-            statsProgress: '#636e72',
-            statsDoughnut: '#636e72',
-            panelText: '#ffffff'
-        }
+        ...QUICK_PRESET_DATA.monochrome
     },
     professional: {
         name: getLabel('preset.proFull'),
         shortName: getLabel('preset.pro'),
         title: getLabel('preset.proDesc'),
-        swatch: ['#007aff', '#b7c3d1'],
-        colors: {
-            appBg: '#b7c3d1',
-            taskListBg: '#ffffff',
-            taskBg: '#d3dbe4',
-            taskText: '#1d1d1f',
-            titleBg: '#f0f2f5',
-            titleText: '#1d1d1f',
-            checkboxBg: '#007aff',
-            checkboxIncompleteBg: '#c7c7cc',
-            checkmark: '#ffffff',
-            completeBtn: '#34c759',
-            clearBtn: '#007aff',
-            progressBar: '#007aff',
-            statsBg: '#ffffff',
-            statsText: '#1d1d1f',
-            statsProgress: '#007aff',
-            statsDoughnut: '#34c759',
-            panelText: '#2c2c2e',
-            celebrationBg: '#4c76ae',
-            resetFlash: '#405f87'
-        }
+        ...QUICK_PRESET_DATA.professional
     },
     goldenGlow: {
         name: getLabel('preset.goldenFull'),
         shortName: getLabel('preset.golden'),
         title: getLabel('preset.goldenDesc'),
-        swatch: ['#d4a017', '#fffef5'],
-        colors: {
-            appBg: '#d4a017',
-            taskListBg: '#fffef5',
-            taskBg: '#fffff8',
-            taskText: '#5c4a1f',
-            titleBg: '#ffeeba',
-            titleText: '#8b6914',
-            checkboxBg: '#daa520',
-            checkboxIncompleteBg: '#ead9a8',
-            checkmark: '#ffffff',
-            completeBtn: '#c9a227',
-            clearBtn: '#e6b800',
-            progressBar: '#ffd700',
-            statsBg: '#fffef5',
-            statsText: '#5c4a1f',
-            statsProgress: '#daa520',
-            statsDoughnut: '#c9a227',
-            panelText: '#4a3810'
-        }
+        ...QUICK_PRESET_DATA.goldenGlow
     },
     darkOcean: {
         name: getLabel('preset.oceanFull'),
         shortName: getLabel('preset.ocean'),
         title: getLabel('preset.oceanDesc'),
-        swatch: ['#0a2540', '#1a3a5c'],
-        colors: {
-            appBg: '#0a2540',
-            taskListBg: '#1a3a5c',
-            taskBg: '#1e4263',
-            taskText: '#e0f0ff',
-            titleBg: '#0d3156',
-            titleText: '#7dd3fc',
-            checkboxBg: '#0ea5e9',
-            checkboxIncompleteBg: '#2a4a6a',
-            checkmark: '#ffffff',
-            completeBtn: '#06b6d4',
-            clearBtn: '#38bdf8',
-            progressBar: '#22d3ee',
-            statsBg: '#1a3a5c',
-            statsText: '#e0f0ff',
-            statsProgress: '#0ea5e9',
-            statsDoughnut: '#06b6d4',
-            panelText: '#e0f0ff'
-        }
+        ...QUICK_PRESET_DATA.darkOcean
     },
     berry: {
         name: getLabel('preset.berryFull'),
         shortName: getLabel('preset.berry'),
         title: getLabel('preset.berryDesc'),
-        swatch: ['#7c3aed', '#faf5ff'],
-        colors: {
-            appBg: '#7c3aed',
-            taskListBg: '#faf5ff',
-            taskBg: '#ffffff',
-            taskText: '#4c1d95',
-            titleBg: '#ede9fe',
-            titleText: '#6d28d9',
-            checkboxBg: '#8b5cf6',
-            checkboxIncompleteBg: '#c4b5fd',
-            checkmark: '#ffffff',
-            completeBtn: '#a855f7',
-            clearBtn: '#7c3aed',
-            progressBar: '#c084fc',
-            statsBg: '#faf5ff',
-            statsText: '#4c1d95',
-            statsProgress: '#8b5cf6',
-            statsDoughnut: '#a855f7',
-            panelText: '#ffffff'
-        }
+        ...QUICK_PRESET_DATA.berry
     }
 });
 

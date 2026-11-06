@@ -63,6 +63,10 @@ body.high-contrast:not(.dark-mode) .task.completed {
     opacity: 1;
 }
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
+
 /* Checkboxes */
 /* The selector carries the same three theme :not()s as task-list.css's
    incomplete-checkbox rule, which otherwise outranked this one and kept the
@@ -702,9 +706,12 @@ body.high-contrast:not(.dark-mode) .menu-section-header.collapsible:hover {
 
 /* =============================================================================
    DARK MODE HIGH CONTRAST — Variable Overrides
+   `html` lifts this block past dark-mode.css's body.dark-mode:not([data-theme])
+   palette, which ties it on classes and loads later; until Nov 2026 that tie
+   quietly replaced every value here with the ordinary dark-mode one.
    ============================================================================= */
 
-body.high-contrast.dark-mode {
+html body.high-contrast.dark-mode {
     /* Text — boost muted/secondary for dark backgrounds */
     --theme-text-muted: #cccccc;
     --theme-text-secondary: #e0e0e0;
@@ -738,6 +745,10 @@ body.high-contrast.dark-mode {
     --dark-border-subtle: #888888;
     --dark-button-border: rgba(255, 255, 255, 0.3);
     --dark-chip-bg: rgba(255, 255, 255, 0.15);
+
+    /* Unchecked task checkbox ring: brighter than plain dark mode's #a0a0a0
+       (10:1 on the #2e2e2e task card) */
+    --dark-checkbox-incomplete-border: #e0e0e0;
 }
 
 /* =============================================================================
@@ -764,7 +775,8 @@ body.high-contrast.dark-mode .pref-checkbox-incomplete {
 }
 
 /* Settings */
-body.high-contrast.dark-mode .settings-section.collapsible {
+body.high-contrast.dark-mode .settings-section.collapsible,
+body.high-contrast.dark-mode .settings-section.collapsible.collapsed {
     border: 2px solid #aaaaaa;
 }
 
@@ -782,8 +794,10 @@ body.high-contrast.dark-mode .stats-panel {
     background: rgba(42, 42, 42, 0.95);
 }
 
-/* Task option buttons */
-body.high-contrast.dark-mode .task-btn {
+/* Task option buttons (the .task-options form matches dark-mode.css's base
+   rule, which otherwise outranks this one; its hover/active states still win) */
+body.high-contrast.dark-mode .task-btn,
+body.high-contrast.dark-mode .task-options .task-btn {
     border: 1px solid #777777;
 }
 
@@ -834,7 +848,7 @@ body.high-contrast.dark-mode .about-tagline {
     opacity: 0.85;
 }
 
-body.high-contrast.dark-mode .about-version-badge {
+body.high-contrast.dark-mode #about-modal .about-version-badge {
     background: rgba(255, 255, 255, 0.15);
     border: 1px solid rgba(255, 255, 255, 0.3);
 }
@@ -843,7 +857,7 @@ body.high-contrast.dark-mode .about-description {
     opacity: 1;
 }
 
-body.high-contrast.dark-mode .about-links {
+body.high-contrast.dark-mode #about-modal .about-links {
     background: rgba(255, 255, 255, 0.1);
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -1122,7 +1136,8 @@ body.high-contrast.dark-mode .modal-panel {
 }
 
 /* --- Mini Modal Box (generic small modals) --- */
-body.high-contrast.dark-mode .mini-modal-box {
+body.high-contrast.dark-mode .mini-modal-box,
+body.high-contrast.dark-mode #storage-viewer-overlay .mini-modal-box.wide {
     border: 2px solid #aaaaaa;
 }
 
@@ -1705,7 +1720,8 @@ body.high-contrast.dark-mode .quick-actions-picker-item {
     border: 2px solid #aaa;
 }
 
-body.high-contrast.dark-mode .quick-actions-slot.empty {
+body.high-contrast.dark-mode .quick-actions-slot.empty,
+body.high-contrast.dark-mode .quick-actions-menu-row .quick-actions-slot.empty {
     border: 2px dashed #aaa;
     opacity: 0.7;
 }

@@ -136,13 +136,12 @@ web/
 │   │   ├── testing.css                  # Testing modal
 │   │   ├── themes-modal.css             # Themes modal
 │   │   └── title-screen.css             # Welcome Screen (titleScreen.js)
-│   ├── utilities/                       # Utility styles
-│   │   ├── dark-mode.css                # Dark mode overrides
-│   │   ├── helpers.css                  # Helper classes & navigation dots
-│   │   └── responsive.css               # Media queries
-│   └── themes/                          # Theme system
-│       └── themes.css                   # Legacy [data-theme] colour themes (presets replaced the picker);
-│                                        # the old JSON theme system is in docs/archive/JSON_THEME_SYSTEM.md
+│   └── utilities/                       # Utility styles (no themes/ folder since Nov 2026:
+│       │                                # colour lives in Personalization presets; the old JSON
+│       │                                # theme system is in docs/archive/JSON_THEME_SYSTEM.md)
+│       ├── dark-mode.css                # Dark mode overrides
+│       ├── helpers.css                  # Helper classes & navigation dots
+│       └── responsive.css               # Media queries
 ├── 📄 version.js                        # Single source of truth for versions
 ├── 📄 manifest.json                     # PWA manifest (full version)
 ├── 📄 manifest-lite.json                # PWA manifest (lite version)

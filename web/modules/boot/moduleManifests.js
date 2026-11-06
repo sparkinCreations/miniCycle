@@ -146,7 +146,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'getModal'],
         optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'refreshFocusActionButton', 'refreshTaskPriorityColors', 'applyCustomColors', 'logHistoryEvent', 'hideMainMenu'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel', 'renderVocabThemes'],
+        provides: ['updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'setupThemesPanel', 'renderVocabThemes'],
         provideInstance: 'themeManager',
         api: 'features',
         after: ['notifications']
@@ -427,7 +427,7 @@ export const MODULE_MANIFESTS = {
         // checkCompleteAllButton + updateStatsPanel removed Aug 2026: the module
         // declared them and never called them. The post-switch refresh runs in
         // routineLoader.updateDependentComponents(), reached via loadMiniCycle().
-        optionalDeps: ['onCycleRenamed', 'onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'showRoutineBrowserTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
+        optionalDeps: ['onCycleDeleted', 'onCycleSwitched', 'vocabThemeManager', 'updateMainMenuHeader', 'refreshThemeLabels', 'logHistoryEvent', 'exportMiniCycleData', 'hideMainMenu', 'showRoutineSwitcherTourNotification', 'showRoutineBrowserTourNotification', 'hasActiveNotifications', 'isTouchDevice', 'loadMiniCycle', 'showConfirmationModal', 'updateReminderButtons'],
         provides: ['switchMiniCycle', 'stepRecentRoutine', 'renameMiniCycle', 'deleteMiniCycle'],
         api: 'cycle',
         after: ['routineManager', 'onboardingManager']
@@ -532,10 +532,10 @@ export const MODULE_MANIFESTS = {
     titleManager: {
         path: '../ui/titleManager.js',
         phase: PHASES.UI_MANAGERS,
-        requires: ['appInit', 'GlobalUtils', 'AppState', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons', 'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction', 'onCycleRenamed'],
+        requires: ['appInit', 'GlobalUtils', 'AppState', 'showNotification', 'updateMainMenuHeader', 'updateUndoRedoButtons', 'captureStateSnapshot', 'enableUndoSystemOnFirstInteraction'],
         provides: ['setupMiniCycleTitleListener', 'handleMiniCycleTitleBlur'],
         api: 'ui',
-        after: ['undoRedoManager']  // undoRedoManager provides updateUndoRedoButtons, captureStateSnapshot, onCycleRenamed
+        after: ['undoRedoManager']  // undoRedoManager provides updateUndoRedoButtons, captureStateSnapshot
     },
 
     completedTasksManager: {

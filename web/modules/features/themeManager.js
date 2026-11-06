@@ -2,13 +2,16 @@
  * Theme Manager Module (DI-Pure)
  *
  * Self-contained theme and dark mode management.
- * Handles theme unlocking (gamification), dark mode toggle, and PWA theme colors.
+ * Handles the Themes modal (vocabulary themes), dark mode toggle, and PWA theme colors.
  *
  * Features:
- * - Theme application (dark-ocean, golden-glow)
  * - Dark mode toggle
- * - Theme unlocking based on milestones
+ * - Vocabulary theme labels and the Themes modal
  * - PWA theme-color meta tag management
+ *
+ * The colour themes (dark-ocean, golden-glow, dark) were retired in Nov 2026: the
+ * Personalization presets replaced them, and boot moves a stored one to its preset
+ * (retireLegacyColorTheme in routine/schemaMigration26.js).
  * - Graceful degradation without dependencies
  *
  * @module features/themeManager
@@ -20,18 +23,10 @@
  * @typedef {import('../core/types.js').MiniCycleState} MiniCycleState
  */
 
-/**
- * @typedef {Object} ThemeConfig
- * @property {string} id - Theme identifier (e.g., "DarkOcean")
- * @property {string} class - CSS class name (e.g., "dark-ocean")
- * @property {string} label - Display label with emoji
- * @property {string} unlockKey - Key used for unlock tracking
- */
-
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTONES } from '../core/constants.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
-import { getLabel, getIcon } from '../labels/labelResolver.js';
+import { getLabel } from '../labels/labelResolver.js';
 import { createIconElement } from '../utils/icons.js';
 import { renderCompleteAllButton } from '../ui/completeAllButton.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -396,35 +391,6 @@ export function _setMenuButtonLabel(elementId, textKey, titleKey) {
 
 export class ThemeManager {
     constructor() {
-
-        this.themes = [
-            {
-                id: "DarkOcean",
-                class: "dark-ocean", 
-                label: `Dark Ocean Theme ${getIcon('themeOcean')}`,
-                unlockKey: "dark-ocean"
-            },
-            {
-                id: "GoldenGlow",
-                class: "golden-glow",
-                label: `Golden Glow Theme ${getIcon('themeStar')}`,
-                unlockKey: "golden-glow"
-            }
-        ];
-        
-        this.themeColors = {
-            light: {
-                default: '#5680ff',
-                'dark-ocean': '#0e1d2f',
-                'golden-glow': '#ffe066'
-            },
-            dark: {
-                default: '#1c1c1c',
-                'dark-ocean': '#0e1d2f', 
-                'golden-glow': '#4a3d00'
-            }
-        };
-        
         // Initialize immediately
         this.init();
     }
@@ -439,49 +405,6 @@ export class ThemeManager {
     }
     
     // ===== CORE THEME FUNCTIONS =====
-    
-    /**
-     * Apply a theme to the document
-     * @param {string} themeName - Theme name ('default', 'dark-ocean', 'golden-glow')
-     * @param {boolean} shouldSave - Whether to save to storage (false during initial load)
-     * @returns {Promise<void>}
-     */
-    async applyTheme(themeName, shouldSave = true) {
-        try {
-
-            // Step 1: Remove all theme classes
-            const allThemes = [DOM_CLASSES.THEME_DARK_OCEAN, DOM_CLASSES.THEME_GOLDEN_GLOW, 'theme-dark'];
-            const body = _deps.getBody();
-            allThemes.forEach(theme => body?.classList.remove(theme));
-
-            // Step 2: Add selected theme class if it's not 'default'
-            if (themeName && themeName !== 'default') {
-                body?.classList.add(`theme-${themeName}`);
-            }
-
-            // Step 3: Apply theme via CSS [data-theme] attribute (CSS-native, instant)
-            const root = _deps.getRootElement();
-            if (themeName && themeName !== 'default') {
-                root.dataset.theme = themeName;
-            } else {
-                delete root.dataset.theme;
-            }
-
-            // Step 4: Update theme color after applying theme
-            this.updateThemeColor();
-
-            // Step 5: Save to state only (skip during initial load)
-            if (shouldSave) {
-                this.saveThemeToStorage(themeName);
-            }
-
-            // Step 6: Update UI checkboxes
-            this.updateThemeToggles(themeName);
-
-        } catch (error) {
-            console.warn('⚠️ Theme application failed:', error.message, '- using defaults');
-        }
-    }
     
     /**
      * Update theme color meta tags for PWA
@@ -506,14 +429,6 @@ export class ThemeManager {
 
             let themeColor;
             let statusBarStyle;
-
-            // Determine current theme
-            let currentTheme = 'default';
-            if (body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN)) {
-                currentTheme = 'dark-ocean';
-            } else if (body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW)) {
-                currentTheme = 'golden-glow';
-            }
 
             // Use black-translucent to show body background-color
             statusBarStyle = 'black-translucent';
@@ -737,132 +652,6 @@ export class ThemeManager {
             }
         } catch (error) {
             console.warn('⚠️ Quick toggle icon update failed:', error.message);
-        }
-    }
-    
-    // ===== THEME UNLOCK FUNCTIONS (removed — now handled by VocabThemeManager) =====
-
-    /**
-     * @deprecated Dark Ocean and Golden Glow are no longer unlock-gated.
-     * Kept as no-ops temporarily so any stale DI wiring doesn't throw.
-     */
-    async unlockDarkOceanTheme() {
-        // No-op — Dark Ocean is now freely available in Quick Colors
-    }
-
-    async unlockGoldenGlowTheme() {
-        // No-op — Golden Glow is now freely available in Quick Colors
-    }
-    
-    /**
-     * REMOVED: unlockThemeFallback()
-     *
-     * Orphaned when theme unlocking moved to VocabThemeManager and the only two
-     * callers (unlockDarkOceanTheme / unlockGoldenGlowTheme above) became
-     * no-ops. It had zero references anywhere in the tree, and carried a latent
-     * throw of its own — `schemaData.settings.unlockedThemes.includes(...)`
-     * with no optional chaining, swallowed by its catch — so it would have
-     * failed silently had anything called it.
-     *
-     * It was also the third live-state mutator in this file; the other two,
-     * saveThemeToStorage and saveDarkModeToStorage, are now producers.
-     */
-
-    // ===== THEME PANEL FUNCTIONS =====
-    
-    /**
-     * Initialize themes panel
-     * @deprecated #theme-options-section was removed — color themes live in Personalization.
-     * Kept as a no-op so stale call sites in featureBoot/uiBoot don't throw.
-     */
-    initThemesPanel() {
-        // No-op: #theme-options-section no longer exists in the DOM.
-        // Vocabulary themes are rendered by renderVocabThemes() on modal open.
-    }
-    
-    /**
-     * Refresh theme toggles based on unlocked themes
-     */
-    refreshThemeToggles() {
-        try {
-            
-            const container = _deps.getElementById(DOM_IDS.THEME_OPTION_CONTAINER);
-            if (!container) {
-                // Settings panel not open - skip UI refresh (theme is still unlocked in state)
-                return;
-            }
-            
-            container.innerHTML = ""; // Clear current options
-
-            const schemaData = this.loadSchemaData();
-            if (!schemaData) {
-                return;
-            }
-
-            const unlockedThemes = schemaData.settings?.unlockedThemes || [];
-            const currentTheme = schemaData.settings?.theme || 'default';
-            
-
-            // Add default theme option
-            this.addThemeToggle(container, {
-                id: "Default",
-                class: "default",
-                label: `Default Theme ${getIcon('themeDefault')}`,
-                unlockKey: "default"
-            }, currentTheme, true); // Always unlocked
-            
-            // Add unlocked themes
-            this.themes.forEach(theme => {
-                const isUnlocked = unlockedThemes.includes(theme.unlockKey);
-                if (isUnlocked) {
-                    this.addThemeToggle(container, theme, currentTheme, true);
-                }
-            });
-            
-        } catch (error) {
-            console.warn('⚠️ Theme toggles refresh failed:', error.message);
-        }
-    }
-    
-    /**
-     * Add a theme toggle to the container (radio button style)
-     */
-    addThemeToggle(container, theme, currentTheme, isUnlocked) {
-        try {
-            if (!isUnlocked) return;
-
-            const toggleDiv = document.createElement('label');
-            toggleDiv.className = 'theme-radio-option';
-            toggleDiv.setAttribute('for', `toggle${theme.id}Theme`);
-
-            const isChecked = currentTheme === theme.class || (currentTheme === 'default' && theme.class === 'default');
-
-            toggleDiv.innerHTML = `
-                <input
-                    type="radio"
-                    class="theme-toggle"
-                    id="toggle${theme.id}Theme"
-                    name="theme-selection"
-                    value="${theme.class}"
-                    ${isChecked ? 'checked' : ''}
-                />
-                <span class="theme-radio-label">${theme.label}</span>
-            `;
-
-            const radio = toggleDiv.querySelector('input');
-            if (radio) {
-                const safeAdd = _deps.safeAddEventListener;
-                radio._themeChangeHandler = (e) => {
-                    if (e.target.checked) {
-                        this.applyTheme(theme.class === 'default' ? 'default' : theme.class);
-                    }
-                };
-                safeAdd(radio, 'change', radio._themeChangeHandler);
-            }
-
-            container.appendChild(toggleDiv);
-        } catch (error) {
-            console.warn('⚠️ Theme toggle creation failed:', error.message);
         }
     }
     
@@ -1127,29 +916,6 @@ export class ThemeManager {
         }
     }
     
-    /**
-     * Update theme checkboxes
-     */
-    updateThemeToggles(themeName) {
-        try {
-            _deps.querySelectorAll(DOM_SELECTORS.THEME_TOGGLE).forEach(cb => {
-                const expectedId = `toggle${this.capitalize(themeName || 'default')}Theme`;
-                cb.checked = cb.id === expectedId;
-            });
-        } catch (error) {
-            console.warn('⚠️ Theme toggles update failed:', error.message);
-        }
-    }
-    
-    /**
-     * Capitalize theme name for checkbox IDs
-     */
-    capitalize(str) {
-        return str
-            ? str.charAt(0).toUpperCase() + str.slice(1).replace(/-./g, s => s.charAt(1).toUpperCase())
-            : '';
-    }
-    
     // ===== STORAGE FUNCTIONS =====
     
     /**
@@ -1179,9 +945,9 @@ export class ThemeManager {
      * A whole-state writer — it did Object.assign(state, data) inside the
      * producer, replacing every top-level key from whatever object it was
      * handed. Its last three callers either write single keys through their
-     * own AppState.update() producer now (saveThemeToStorage,
-     * saveDarkModeToStorage) or were deleted outright (unlockThemeFallback),
-     * leaving it with none.
+     * own AppState.update() producer now (saveDarkModeToStorage; the colour
+     * theme's writer went with the colour themes in Nov 2026) or were deleted
+     * outright (unlockThemeFallback), leaving it with none.
      *
      * Deleted rather than left @deprecated because the deprecation notice had
      * not stopped anything: the hazard is that a caller pairs it with
@@ -1194,12 +960,9 @@ export class ThemeManager {
 
 
     /**
-     * Save theme to storage
-     */
-    /**
-     * Both this and saveDarkModeToStorage below write through the AppState
-     * producer, replacing the old load-mutate-save shim (loadSchemaData →
-     * mutate the returned object → saveSchemaData). Two things were wrong
+     * Save dark mode to storage. Writes through the AppState producer,
+     * replacing the old load-mutate-save shim (loadSchemaData → mutate the
+     * returned object → saveSchemaData). Two things were wrong
      * with that shim:
      *
      * 1. loadSchemaData returns AppState.get() — a LIVE reference — so the
@@ -1210,34 +973,16 @@ export class ThemeManager {
      *    DETACHED localStorage parse. saveSchemaData then awaited
      *    waitForCore() — which can run migration — before writing, so a stale
      *    pre-migration whole-state copy could be assigned over freshly
-     *    migrated state. A narrow window (the live caller, applyTheme, passes
-     *    save=false during boot), but a schema downgrade if hit.
+     *    migrated state. A narrow window (the colour theme's writer, replaced
+     *    the same way, ran during boot), but a schema downgrade if hit.
      *
      * AppState.update awaits init() itself, so there is no not-ready branch to
      * handle here and nothing is lost if the write lands early.
      *
-     * Note these are global settings and deliberately NOT in the undo
+     * Note this is a global setting and deliberately NOT in the undo
      * snapshot — undoRedoManager captures state.settings.taskViewLayout only,
      * and its `theme` field is the per-cycle VOCAB theme, a different concept.
-     * Changing the colour theme or dark mode has never been undoable.
-     */
-    async saveThemeToStorage(themeName) {
-        try {
-            if (!_deps.AppState?.update) {
-                console.warn('⚠️ AppState not injected for theme save');
-                return;
-            }
-            await _deps.AppState.update(state => {
-                if (!state.settings) state.settings = {};
-                state.settings.theme = themeName || 'default';
-            }, true);
-        } catch (error) {
-            console.warn('⚠️ Theme save failed:', error.message);
-        }
-    }
-
-    /**
-     * Save dark mode to storage (see saveThemeToStorage for the rationale)
+     * Changing dark mode has never been undoable.
      */
     async saveDarkModeToStorage(enabled) {
         try {
@@ -1278,34 +1023,15 @@ export async function initThemeManager(dependencies = {}) {
     // Set dependencies
     setThemeManagerDependencies(dependencies);
 
-    // Initialize theme panel (creates containers and populates theme toggles)
-    themeManager.initThemesPanel();
     themeManager.setupThemesPanel?.();
 
-    // ✅ Load and apply saved theme from storage on startup
-    const schemaData = themeManager.loadSchemaData();
-    const savedTheme = schemaData?.settings?.theme;
-    if (savedTheme && savedTheme !== 'default') {
-        await themeManager.applyTheme(savedTheme, false); // false = don't save again
-    } else {
-        // For default theme, still update the theme color (status bar)
-        themeManager.updateThemeColor();
-    }
+    // Status bar colour for the look the settings just applied
+    themeManager.updateThemeColor();
 
     return themeManager;
 }
 
 // ===== GLOBAL API FUNCTIONS =====
-
-/**
- * Apply a theme
- * @param {string} themeName - Theme to apply
- * @param {boolean} shouldSave - Whether to save (default true)
- * @returns {Promise<void>}
- */
-async function applyTheme(themeName, shouldSave = true) {
-    return themeManager.applyTheme(themeName, shouldSave);
-}
 
 /**
  * Update theme color meta tags
@@ -1329,20 +1055,6 @@ function setupDarkModeToggle(toggleId, allToggleIds = []) {
  */
 function setupQuickDarkToggle() {
     return themeManager.setupQuickDarkToggle();
-}
-
-/**
- * Initialize themes panel
- */
-function initThemesPanel() {
-    return themeManager.initThemesPanel();
-}
-
-/**
- * Refresh theme toggles
- */
-function refreshThemeToggles() {
-    return themeManager.refreshThemeToggles();
 }
 
 /**
@@ -1375,12 +1087,9 @@ function renderVocabThemes(...args) {
 // Note: ThemeManager class and initThemeManager are already exported at declaration
 export {
     themeManager,
-    applyTheme,
     updateThemeColor,
     setupDarkModeToggle,
     setupQuickDarkToggle,
-    initThemesPanel,
-    refreshThemeToggles,
     setupThemesPanel,
     setupThemesPanelWithData,
     renderVocabThemes

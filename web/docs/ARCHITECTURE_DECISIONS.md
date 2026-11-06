@@ -146,11 +146,12 @@ their **display name** until Schema 2.6 (Sep 2026) rekeyed them by a generated i
 clear-on-complete flags into one `autoClear` map; `routine/schemaMigration26.js`
 performs that rewrite once at boot.
 
-*(Current state, Nov 6 2026: the 2.6 migration re-keys existing routines by id, but
-the write paths in this tree — create and import in `routineManager.js` /
-`cycleImportManager.js`, duplicate and rename in `routineSwitcherActions.js` — still
-file a routine under its **title**, so the name-key duality in Consequences below
-still applies to any routine created or renamed after migration.)*
+*(Current state, Nov 6 2026: every write path now files a routine under its generated
+id — create and import in `routineManager.js` / `cycleImportManager.js`, duplicate in
+`routineSwitcherActions.js` — and a rename changes only `title`. Until then those paths
+still wrote **title** keys after the migration, the name-key duality in Consequences
+below; boot re-keys any such routine once (`repairRoutineKeys`, called by
+`AppState._repairRoutineKeys`).)*
 
 **Why.**
 - The app has **no server**, so users hold data in whatever shape was current when

@@ -21,6 +21,7 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 const { startStaticServer } = require('./_static-server.cjs');
+const { instrumentBrowser } = require('./_di-warnings.cjs');
 
 const colors = {
     reset: '\x1b[0m', green: '\x1b[32m', red: '\x1b[31m',
@@ -150,6 +151,9 @@ async function run() {
     console.log(`${colors.gray}   server on ${baseURL} (web/, real service worker enabled)${colors.reset}`);
 
     const browser = await chromium.launch({ headless: true });
+    // A dependency that never arrived does not throw: the app degrades on purpose
+    // (ADR-006) and only logs. Collect those lines on every page; any one fails the run.
+    const di = instrumentBrowser(browser);
     const context = await browser.newContext();
     const page = await context.newPage();
     watchConsole(page);
@@ -196,6 +200,25 @@ async function run() {
         await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
         await page.waitForFunction(() => navigator.serviceWorker.controller !== null, { timeout: 10000 });
         console.log(`${colors.gray}   SW active + controlling, cache warm${colors.reset}`);
+
+        // ── Test 0b: the install check's offline fetch of start_url ─────────
+        // Right after the first install the browser fetches the manifest's
+        // start_url (./app) as a plain request, offline, to see whether the app
+        // works offline. /app is not cached yet (this harness only ever opened
+        // miniCycle.html); until Nov 2026 that request fell through to the
+        // catch-all and came back 504 in the console. Offline = the server is
+        // DOWN: context.setOffline does not reach the worker's own fetches.
+        console.log(`\n${colors.cyan}▸ install check: offline fetch of start_url before it is cached${colors.reset}`);
+        await srv.close();
+        const startUrl = await page.evaluate(async () => {
+            try {
+                const res = await fetch('/app');
+                const text = await res.text();
+                return { status: res.status, shell: text.includes('id="app-root"') };
+            } catch (e) { return { status: 'threw ' + e.message }; }
+        });
+        srv = await startStaticServer(WEB_ROOT, PORT);
+        record('start_url (/app) answers offline with the app shell', startUrl.status === 200 && startUrl.shell, JSON.stringify(startUrl));
 
         // ── Test 1: online, SW-controlled boot ──────────────────────────────
         console.log(`\n${colors.cyan}▸ online (SW-controlled)${colors.reset}`);
@@ -414,6 +437,7 @@ async function run() {
         await browser.close();
         if (srv3) await srv3.close();
     }
+    failures.push(...di.failures());
 
     console.log(`\n${colors.blue}${'='.repeat(64)}${colors.reset}`);
     if (failures.length === 0) {

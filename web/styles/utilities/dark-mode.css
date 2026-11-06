@@ -39,10 +39,10 @@ body.dark-mode {
 }
 
 /* =============================================================================
-   DARK MODE VARIABLE OVERRIDES (Only when no custom theme is active)
-   When a CSS theme is applied via [data-theme] on <html>, the theme variables
-   in themes.css take precedence. Dark-mode overrides only apply when no theme
-   is selected (default blue theme + dark mode toggle).
+   DARK MODE VARIABLE OVERRIDES
+   :not([data-theme]) filters nothing since the colour themes were retired
+   (Nov 2026) but it is part of this block's weight, which other rules were
+   written against. Leave it in place.
    ============================================================================= */
 
 html.dark-mode:not([data-theme]),
@@ -90,6 +90,10 @@ body.dark-mode:not([data-theme]) {
     --dark-notification-bg: #6b6b6b;  /* 5.33:1 */
     --dark-checkbox-checked: #5db567;
     --dark-checkbox-border: #40af4d;
+    /* Unchecked: a hollow ring, not a solid white dot. #a0a0a0 on the task
+       card (#3d3d40) is 4.2:1, past the 3:1 a control's outline needs. */
+    --dark-checkbox-incomplete-border: #a0a0a0;
+    --dark-checkbox-incomplete-bg: rgba(255, 255, 255, 0.06);
     --dark-priority-border: #ff6b6b;
     --dark-priority-bg: #1e1e1e;
     --dark-selected-bg: #70c570;
@@ -167,8 +171,8 @@ body.dark-mode:not([data-theme]) {
     --theme-text-primary: #f0f0f0;
     --theme-text-secondary: #cccccc;
     --theme-text-muted: #999999;
-    /* Matches [data-theme] dark (themes.css). Consumers on static light
-       surfaces must pin a static dark color instead (see .mode-description). */
+    /* Consumers on static light surfaces must pin a static dark color
+       instead (see .mode-description). */
     --theme-text-on-surface: #e0e0e0;
     --theme-bg-surface: #3a3a3a;
     --theme-bg-surface-elevated: #4a4a4a;
@@ -201,10 +205,10 @@ body.dark-mode .task:hover {
     background: var(--theme-bg-surface-elevated);
 }
 
-/* Circular checkbox - solid white when unchecked in dark mode */
+/* Circular checkbox - a light ring when unchecked in dark mode */
 body.dark-mode .task input[type="checkbox"]:not(:checked) {
-    border-color: var(--color-white);
-    background-color: var(--color-white);
+    border-color: var(--dark-checkbox-incomplete-border);
+    background-color: var(--dark-checkbox-incomplete-bg);
 }
 
 body.dark-mode .task input[type="checkbox"]:not(:checked):hover {
@@ -1734,8 +1738,8 @@ body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
 }
 
 /* Auto-uncheck banner uses --theme-text-on-surface, which the dark-mode
-   variable block does not remap (only [data-theme] themes do) — override
-   here, falling back to the theme token when a data-theme is active. */
+   variable block does not remap — override here, falling back to the
+   theme token. */
 body.dark-mode .auto-uncheck-banner {
     color: var(--dark-text-dim, var(--theme-text-on-surface));
 }

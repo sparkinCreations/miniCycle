@@ -1346,6 +1346,9 @@ body.tasks-sorted #taskList .move-down {
    not using a theme or dark mode.
    ============================================================================= */
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
 /* Task list container - uses custom pref color when set, maintains transparency */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-container {
     background: var(--pref-task-list-bg, var(--task-list-panel-bg));

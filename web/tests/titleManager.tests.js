@@ -44,10 +44,21 @@ export async function runTitleManagerTests(resultsDiv) {
 
     // Build an in-memory AppState over one object, so the handler's read + update
     // operate on consistent data.
-    function makeEnv(cycles, activeRoutineId) {
+    // Fixtures are given by NAME for readability, and stored the way 2.6 stores
+    // them: keyed by a generated id that is also the routine's `id`. A rename
+    // must change only the title (Nov 2026 fix: it used to re-key the routine
+    // under the new title).
+    function makeEnv(cyclesByName, activeName) {
+        const routine = {};
+        const keyOf = {};
+        Object.entries(cyclesByName).forEach(([name, cycle], i) => {
+            const key = `routine-${i + 1}`;
+            keyOf[name] = key;
+            routine[key] = { id: key, ...cycle };
+        });
         const state = {
-            data: { routine: cycles },
-            appState: { activeRoutineId },
+            data: { routine },
+            appState: { activeRoutineId: keyOf[activeName] },
             metadata: { lastModified: 0 }
         };
         const AppState = {
@@ -56,8 +67,12 @@ export async function runTitleManagerTests(resultsDiv) {
             update: async (fn) => { fn(state); return state; },
             forceSave: () => {}
         };
-        return { state, AppState };
+        return { state, AppState, keyOf };
     }
+
+    /** The routine with this title, whatever its key. */
+    const titled = (env, title) => Object.values(env.state.data.routine).find(r => r?.title === title);
+    const titles = (env) => Object.values(env.state.data.routine).map(r => r.title).join(',');
 
     async function wire(overrides = {}) {
         // initTitleManager loads nameUtils (sets internal getUniqueCycleName) AND sets deps.
@@ -142,16 +157,17 @@ export async function runTitleManagerTests(resultsDiv) {
         el.textContent = 'Brand New';
         el.dispatchEvent(new Event('blur'));
         await new Promise(r => setTimeout(r, 30));
-        if (!env.state.data.routine['Brand New']) throw new Error('new key not created via blur listener');
-        if (env.state.data.routine['Old']) throw new Error('old key not removed');
-        if (env.state.appState.activeRoutineId !== 'Brand New') throw new Error('activeRoutineId not updated');
+        if (!titled(env, 'Brand New')) throw new Error('rename not applied via blur listener');
+        if (titled(env, 'Old')) throw new Error('old title still present');
+        if (env.state.data.routine[env.keyOf.Old]?.title !== 'Brand New') throw new Error('the routine was re-keyed instead of renamed in place');
+        if (env.state.appState.activeRoutineId !== env.keyOf.Old) throw new Error('activeRoutineId must not change on rename');
         removeTitleEl();
     });
 
     // ── handleMiniCycleTitleBlur: direct behavioral coverage ─────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">✏️ rename behavior</h4>';
 
-    await test('renames cycle: new title becomes the key + activeRoutineId', async () => {
+    await test('renames in place: only the title changes; the key and activeRoutineId stay', async () => {
         removeTitleEl();
         const env = makeEnv({ Morning: { title: 'Morning', tasks: [{ id: 't1' }] } }, 'Morning');
         const notify = makeNotifSpy();
@@ -159,11 +175,12 @@ export async function runTitleManagerTests(resultsDiv) {
         const el = makeTitleEl('Evening Routine');
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (!env.state.data.routine['Evening Routine']) throw new Error('renamed cycle key missing');
-            if (env.state.data.routine['Morning']) throw new Error('old key should be deleted');
-            if (env.state.appState.activeRoutineId !== 'Evening Routine') throw new Error('activeRoutineId not updated');
+            if (!titled(env, 'Evening Routine')) throw new Error('renamed routine missing');
+            if (titled(env, 'Morning')) throw new Error('old title should be gone');
+            if (Object.keys(env.state.data.routine).join(',') !== env.keyOf.Morning) throw new Error(`keys changed: ${Object.keys(env.state.data.routine).join(',')}`);
+            if (env.state.appState.activeRoutineId !== env.keyOf.Morning) throw new Error('activeRoutineId must not change on rename');
             // task data preserved
-            if (env.state.data.routine['Evening Routine'].tasks.length !== 1) throw new Error('tasks lost on rename');
+            if (titled(env, 'Evening Routine').tasks.length !== 1) throw new Error('tasks lost on rename');
             const successCall = notify.calls.find(c => c.type === 'success');
             if (!successCall) throw new Error('expected a success notification on rename');
         } finally { removeTitleEl(); }
@@ -178,7 +195,7 @@ export async function runTitleManagerTests(resultsDiv) {
         try {
             await mod.handleMiniCycleTitleBlur();
             if (el.textContent !== 'Keep') throw new Error('did not revert to old title, got: ' + el.textContent);
-            if (!env.state.data.routine['Keep']) throw new Error('cycle should be untouched');
+            if (!titled(env, 'Keep')) throw new Error('cycle should be untouched');
             if (notify.calls.length === 0) throw new Error('expected an empty-title notification');
         } finally { removeTitleEl(); }
     });
@@ -191,7 +208,7 @@ export async function runTitleManagerTests(resultsDiv) {
         makeTitleEl('Same');
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (!env.state.data.routine['Same']) throw new Error('cycle disappeared on no-op');
+            if (!titled(env, 'Same')) throw new Error('cycle disappeared on no-op');
             if (notify.calls.length !== 0) throw new Error('no notification expected for unchanged title');
         } finally { removeTitleEl(); }
     });
@@ -207,7 +224,7 @@ export async function runTitleManagerTests(resultsDiv) {
         const el = makeTitleEl('B'); // rename A -> B, but B exists
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (!env.state.data.routine['B (2)']) throw new Error('expected auto-increment to "B (2)"');
+            if (!titled(env, 'B (2)')) throw new Error('expected auto-increment to "B (2)"');
             if (el.textContent !== 'B (2)') throw new Error('UI not updated to deduped name');
             const warn = notify.calls.find(c => c.type === 'warning');
             if (!warn) throw new Error('expected a warning about existing name');
@@ -224,14 +241,14 @@ export async function runTitleManagerTests(resultsDiv) {
         const el = makeTitleEl(longName);
         try {
             await mod.handleMiniCycleTitleBlur();
-            // Stored under the clamped key (the un-truncated one must not exist).
+            // Stored as the clamped title (the un-truncated one must not exist).
             const truncatedKey = 'X'.repeat(limit);
-            if (!env.state.data.routine[truncatedKey]) {
-                throw new Error('over-limit title not clamped for storage; key lengths: '
-                    + Object.keys(env.state.data.routine).map(k => k.length).join(','));
+            if (!titled(env, truncatedKey)) {
+                throw new Error('over-limit title not clamped for storage; title lengths: '
+                    + Object.values(env.state.data.routine).map(r => r.title.length).join(','));
             }
-            if (env.state.data.routine[longName]) {
-                throw new Error('the un-truncated title must not be used as a stored key');
+            if (titled(env, longName)) {
+                throw new Error('the un-truncated title must not be stored');
             }
             // The visible <h1> is synced to the clamped title — no stale over-long text.
             // (This is the DOM-sync path that was dead before the raw-length fix.)
@@ -252,7 +269,7 @@ export async function runTitleManagerTests(resultsDiv) {
         removeTitleEl(); // remove again — handler should bail early
         // no element → returns immediately; state intact
         await mod.handleMiniCycleTitleBlur();
-        if (!env.state.data.routine['Z']) throw new Error('state should be untouched with no title element');
+        if (!titled(env, 'Z')) throw new Error('state should be untouched with no title element');
     });
 
     await test('aborts when state is not ready (no throw)', async () => {
@@ -262,7 +279,7 @@ export async function runTitleManagerTests(resultsDiv) {
         const el = makeTitleEl('Renamed Q');
         try {
             await mod.handleMiniCycleTitleBlur(); // state not ready → early return
-            if (env.state.data.routine['Renamed Q']) throw new Error('should not rename when state is not ready');
+            if (titled(env, 'Renamed Q')) throw new Error('should not rename when state is not ready');
         } finally { removeTitleEl(); }
     });
 
@@ -276,8 +293,8 @@ export async function runTitleManagerTests(resultsDiv) {
             // normalizeText trims but does NOT strip HTML — the literal text is kept.
             // (The previous version of this test asserted HTML stripping, a property
             // titleManager never actually had; the sanitizer was a no-op.)
-            if (!env.state.data.routine['<b>Bold</b>Name']) {
-                throw new Error('title should be trimmed and kept literal; keys: ' + Object.keys(env.state.data.routine).join(','));
+            if (!titled(env, '<b>Bold</b>Name')) {
+                throw new Error('title should be trimmed and kept literal; titles: ' + titles(env));
             }
             // XSS safety lives at the render sink: the title is applied via
             // textContent, so "<b>" is literal text, never a parsed element.
@@ -296,7 +313,7 @@ export async function runTitleManagerTests(resultsDiv) {
         const el = makeTitleEl('Attempted');
         try {
             await mod.handleMiniCycleTitleBlur();
-            if (env.state.data.routine['Attempted']) throw new Error('should not rename when AppState not ready');
+            if (titled(env, 'Attempted')) throw new Error('should not rename when AppState not ready');
             const err = notify.calls.find(c => c.type === 'error');
             if (!err) throw new Error('expected an error notification');
         } finally { removeTitleEl(); }

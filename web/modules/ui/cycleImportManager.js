@@ -25,6 +25,7 @@ import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
 import { fitText, stripDirectionControls } from '../utils/nameUtils.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { GlobalUtils } from '../utils/globalUtils.js';
 import { isPriorityLevel, getLegacyPriorityLevel, getLevelForColor, collectSwatchSets } from '../utils/priorityLevel.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 
@@ -668,7 +669,10 @@ export async function processImportedData(fileContent) {
         }
     }
 
-    const cycleId = `imported_${Date.now()}`;
+    // The imported routine's key and id: a generated id, never its title (until
+    // Nov 2026 import filed it under the title; AppState._repairRoutineKeys
+    // re-keys those). Same id maker as creation and the 2.6 migration.
+    const cycleId = GlobalUtils.generateId('routine');
 
     // Validate and sanitize all task data
     const importTimestamp = Date.now();
@@ -1053,7 +1057,7 @@ export async function processImportedData(fileContent) {
 
     // ✅ Create imported cycle via AppState.update() - use title as storage key (consistent with app)
     appState.update(state => {
-        getRoutines(state)[finalCycleTitle] = {
+        getRoutines(state)[cycleId] = {
             id: cycleId,
             title: finalCycleTitle,
             tasks: mappedTasks,
@@ -1070,7 +1074,7 @@ export async function processImportedData(fileContent) {
             clearedTasks: safeClearedTasks
         };
 
-        setActiveRoutineId(state, finalCycleTitle);
+        setActiveRoutineId(state, cycleId);
         state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
     }, true); // immediate save
 
@@ -1083,7 +1087,7 @@ export async function processImportedData(fileContent) {
         // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
         // call, so it yields undefined when the hook is unwired and `.catch` on
         // undefined throws here — inside a UI flow, after state already changed.
-        Promise.resolve(_deps.onCycleCreated(finalCycleTitle)).catch(err => {
+        Promise.resolve(_deps.onCycleCreated(cycleId)).catch(err => {
             console.warn('Failed to initialize undo stack for imported cycle:', err);
         });
     }

@@ -223,7 +223,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
         const hadDark = body.classList.contains('dark-mode');
         const prevVocab = root.dataset.vocabTheme;
         // Force the default-theme path so applyCustomColors applies vars (source:1509).
-        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow');
+        body.classList.remove('dark-mode');
         delete root.dataset.vocabTheme;
         mod.setPreferencesManagerDependencies({
             AppState: { get: () => ({ settings: { customColors: { appBg: '#123456' } } }), update: () => {} }
@@ -246,7 +246,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
         const root = document.documentElement;
         const hadDark = body.classList.contains('dark-mode');
         const prevVocab = root.dataset.vocabTheme;
-        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow');
+        body.classList.remove('dark-mode');
         delete root.dataset.vocabTheme;
         const vars = ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-app-bg'];
         const read = () => Object.fromEntries(vars.map(v => [v, root.style.getPropertyValue(v)]));
@@ -283,7 +283,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
         const root = document.documentElement;
         const hadDark = body.classList.contains('dark-mode');
         const prevVocab = root.dataset.vocabTheme;
-        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow', 'custom-app-bg');
+        body.classList.remove('dark-mode', 'custom-app-bg');
         delete root.dataset.vocabTheme;
         const withColors = (customColors) => {
             mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: { customColors } }), update: () => {} } });
@@ -320,7 +320,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
         const body = document.body;
         const hadDark = body.classList.contains('dark-mode');
         const prevVocab = document.documentElement.dataset.vocabTheme;
-        body.classList.remove('dark-mode', 'theme-dark-ocean', 'theme-golden-glow');
+        body.classList.remove('dark-mode');
         delete document.documentElement.dataset.vocabTheme;
         mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: {} }), update: () => {} } });
         try {

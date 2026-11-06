@@ -845,7 +845,8 @@ export const STORAGE_KEYS = Object.freeze({
  * to a newer schema: `<DATA>_pre-migration_<timestamp>` (appState._migrateIfOlder),
  * beside the `<DATA>_corrupted_<ts>` copies dataRecovery keeps. Settings → Data
  * Management lets the user download, restore or delete it (backupRestoreManager).
- * Not a STORAGE_KEYS entry: the key is dynamic, and the factory reset sweeps it by
+ * Only the newest copy is kept: writing one removes the older ones
+ * (appState._removeOlderPreMigrationCopies). Not a STORAGE_KEYS entry: the key is dynamic, and the factory reset sweeps it by
  * the name-matching rule.
  * @constant {string}
  */
@@ -1049,10 +1050,6 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Theme ----
     DARK_MODE: 'dark-mode',
-    DARK_OCEAN: 'dark-ocean',
-    GOLDEN_GLOW: 'golden-glow',
-    THEME_DARK_OCEAN: 'theme-dark-ocean',
-    THEME_GOLDEN_GLOW: 'theme-golden-glow',
 
     // ---- Boot / Loader ----
     APP_LOADING: 'app-loading',
@@ -1335,8 +1332,6 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Achievements / Badges ----
     UNLOCKED: 'unlocked',
     UNLOCKED_MESSAGE: 'unlocked-message',
-    OCEAN_THEME: 'ocean-theme',
-    GOLDEN_THEME: 'golden-theme',
     GAME_UNLOCKED: 'game-unlocked',
     HAS_CONTENT: 'has-content',
     INFO_BTN: 'info-btn',                 // the shared ⓘ toggle (buttons.css): Stats panel, recurring popup
@@ -1726,8 +1721,6 @@ export const DOM_IDS = Object.freeze({
     QUICK_DARK_TOGGLE: 'quick-dark-toggle',
     THEME_COLOR_META: 'theme-color-meta',
     STATUS_BAR_STYLE_META: 'status-bar-style-meta',
-    THEME_OPTIONS_SECTION: 'theme-options-section',
-    THEME_OPTION_CONTAINER: 'theme-option-container',
     VOCAB_THEME_SECTION: 'vocab-theme-section',
 
     // ---- Recurring Panel ----
@@ -1923,6 +1916,7 @@ export const DOM_IDS = Object.freeze({
     CLOSE_TESTING_MODAL: 'close-testing-modal',
     AUTOMATED_TEST_OUTPUT: 'automated-test-output',
     TESTING_OUTPUT: 'testing-output',
+    SHOW_ROUTINE_KEYS: 'show-routine-keys', // Diagnostics: each routine's key -> title -> task count
     TEST_PROGRESS_BAR: 'test-progress-bar',
     TEST_STATUS_TEXT: 'test-status-text',
     TEST_TIME_ESTIMATE: 'test-time-estimate',
@@ -2097,7 +2091,6 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Themes ----
     THEME_CONTAINER: '.theme-container',
-    THEME_TOGGLE: '.theme-toggle',
     THEMES_MODAL_CONTENT: '.themes-modal-content',
 
     // ---- Completed Tasks ----
