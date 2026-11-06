@@ -63,6 +63,10 @@ body.high-contrast:not(.dark-mode) .task.completed {
     opacity: 1;
 }
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
+
 /* Checkboxes */
 /* The selector carries the same three theme :not()s as task-list.css's
    incomplete-checkbox rule, which otherwise outranked this one and kept the

@@ -47,16 +47,10 @@ body {
     --modal-header-bg-effective:  var(--pref-modal-bg, var(--theme-header-bg, var(--color-gray-100)));
 }
 
-/* Drop the preset layer entirely and use the dark-aware tokens wherever the
-   modal surface is dark. That is dark mode, but ALSO the two dark colour themes
-   — they paint the modal from their own dark palette while --pref-modal-text
-   keeps supplying a colour drawn for a light modal, which measured 1.15:1 (dark)
-   and 1.36:1 (dark-ocean) in LIGHT mode. A new dark theme has to be added here;
-   the theme-contrast gate in run-layout-overlap-tests.cjs enumerates [data-theme]
-   blocks straight from the stylesheets, so it fails the day one is missed. */
-body.dark-mode,
-:root[data-theme="dark"] body,
-:root[data-theme="dark-ocean"] body {
+/* Dark mode drops the preset layer entirely and uses the dark-aware tokens:
+   --pref-modal-text is drawn for a light modal, so keeping it on a dark surface
+   measured as low as 1.15:1 (with the dark colour themes retired in Nov 2026). */
+body.dark-mode {
     --modal-text-effective:      var(--theme-modal-text, var(--color-gray-700));
     --modal-text-muted-effective: var(--theme-modal-text, var(--color-gray-600));
     --modal-border-effective:    var(--theme-modal-border, var(--overlay-light));
@@ -144,17 +138,6 @@ body.dark-mode,
 .theme-radio-option:has(input:checked) {
     background: var(--color-blue-pale-mid);
     border-color: var(--border-blue-subtle-hover);
-}
-
-/* The fill above is a fixed light blue, so on a dark colour theme it put that
-   theme's light --theme-modal-text on #c0d4ed: 1.15:1 for dark, 1.36:1 for
-   dark-ocean. Keep the row's own opaque surface — which already pairs with the
-   label — and let the accent ring plus the filled radio carry the selected
-   state. Scoped to the dark themes so the default selection is untouched. */
-:root[data-theme="dark"] .theme-radio-option:has(input:checked),
-:root[data-theme="dark-ocean"] .theme-radio-option:has(input:checked) {
-    background: var(--theme-input-bg, var(--overlay-faint));
-    border-color: var(--theme-accent, var(--border-blue-subtle-hover));
 }
 
 .theme-radio-option input[type="radio"] {

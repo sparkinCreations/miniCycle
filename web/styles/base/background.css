@@ -51,6 +51,9 @@ html[data-vocab-theme="cleaning"] body::before {
     background-image: url("../../assets/images/pattern-cleaning.svg");
 }
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
 /* Custom app background color (Preferences - Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
@@ -163,48 +166,23 @@ body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme
 }
 
 /* Dark mode overlay for custom background images */
-body.dark-mode.has-bg-image.bg-mode-cover,
-body.theme-dark-ocean.has-bg-image.bg-mode-cover {
+body.dark-mode.has-bg-image.bg-mode-cover {
     background:
         linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) center/cover no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
-body.dark-mode.has-bg-image.bg-mode-center,
-body.theme-dark-ocean.has-bg-image.bg-mode-center {
+body.dark-mode.has-bg-image.bg-mode-center {
     background:
         linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
         var(--custom-bg-image) center/auto no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
-body.dark-mode.has-bg-image.bg-mode-tile,
-body.theme-dark-ocean.has-bg-image.bg-mode-tile {
+body.dark-mode.has-bg-image.bg-mode-tile {
     background:
         linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
-        var(--custom-bg-image) top left/auto repeat;
-    background-color: var(--theme-bg-solid);
-}
-
-/* Golden Glow theme - lighter overlay to preserve warm tones */
-body.theme-golden-glow.has-bg-image.bg-mode-cover {
-    background:
-        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
-        var(--custom-bg-image) center/cover no-repeat;
-    background-color: var(--theme-bg-solid);
-}
-
-body.theme-golden-glow.has-bg-image.bg-mode-center {
-    background:
-        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
-        var(--custom-bg-image) center/auto no-repeat;
-    background-color: var(--theme-bg-solid);
-}
-
-body.theme-golden-glow.has-bg-image.bg-mode-tile {
-    background:
-        linear-gradient(rgba(30, 20, 0, 0.4), rgba(30, 20, 0, 0.4)),
         var(--custom-bg-image) top left/auto repeat;
     background-color: var(--theme-bg-solid);
 }

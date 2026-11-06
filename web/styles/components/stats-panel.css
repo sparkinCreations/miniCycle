@@ -869,6 +869,9 @@ body.focus-mode #stats-panel {
    CUSTOM PREFERENCE COLORS (Default Theme Only)
    ============================================================================= */
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .stats-panel {
     background: var(--pref-stats-bg, var(--theme-stats-bg));
     color: var(--pref-stats-text, var(--theme-stats-text));
@@ -908,8 +911,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-pr
    DARK MODE ADJUSTMENTS
    ============================================================================= */
 
-body.dark-mode .stats-panel,
-body.theme-dark-ocean .stats-panel {
+body.dark-mode .stats-panel {
     border-color: rgba(255, 255, 255, 0.15);
     box-shadow:
         0 8px 32px rgba(0, 0, 0, 0.3),
@@ -918,43 +920,32 @@ body.theme-dark-ocean .stats-panel {
 }
 
 body.dark-mode .current-routine-status:has(.visible),
-body.dark-mode .theme-unlock-status:has(.visible),
-body.theme-dark-ocean .current-routine-status:has(.visible),
-body.theme-dark-ocean .theme-unlock-status:has(.visible) {
+body.dark-mode .theme-unlock-status:has(.visible) {
     background: rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode .current-routine-status .clickable,
-body.dark-mode .theme-unlock-status .clickable,
-body.theme-dark-ocean .current-routine-status .clickable,
-body.theme-dark-ocean .theme-unlock-status .clickable {
+body.dark-mode .theme-unlock-status .clickable {
     background: rgba(255, 255, 255, 0.08);
 }
 
 body.dark-mode .current-routine-status .clickable:hover,
-body.dark-mode .theme-unlock-status .clickable:hover,
-body.theme-dark-ocean .current-routine-status .clickable:hover,
-body.theme-dark-ocean .theme-unlock-status .clickable:hover {
+body.dark-mode .theme-unlock-status .clickable:hover {
     background: rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .achievement-badges-btn,
-body.dark-mode .history-btn,
-body.theme-dark-ocean .achievement-badges-btn,
-body.theme-dark-ocean .history-btn {
+body.dark-mode .history-btn {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .achievement-badges-btn:hover,
-body.dark-mode .history-btn:hover,
-body.theme-dark-ocean .achievement-badges-btn:hover,
-body.theme-dark-ocean .history-btn:hover {
+body.dark-mode .history-btn:hover {
     background: rgba(255, 255, 255, 0.15);
 }
 
-body.dark-mode .badge-container,
-body.theme-dark-ocean .badge-container {
+body.dark-mode .badge-container {
     background: rgba(255, 255, 255, 0.08);
 }
 

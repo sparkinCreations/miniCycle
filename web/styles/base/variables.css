@@ -2,7 +2,7 @@
  * CSS Variables Foundation
  *
  * Single source of truth for all design tokens.
- * Theme variables (--theme-*) are overridden per [data-theme] in styles/themes/themes.css;
+ * Theme variables (--theme-*) are overridden by dark mode in utilities/dark-mode.css;
  * Personalization presets set their own --pref-* colours at runtime (preferencesManager).
  * The JSON theme system once meant to override these is archived:
  * docs/archive/JSON_THEME_SYSTEM.md
@@ -163,7 +163,7 @@
 
   /* ═══════════════════════════════════════════════════════════════════════════
      THEME VARIABLES - Backgrounds
-     Overridden per [data-theme] in styles/themes/themes.css
+     Overridden by dark mode in utilities/dark-mode.css
      ═══════════════════════════════════════════════════════════════════════════ */
   --theme-bg-gradient: linear-gradient(135deg, #4c79ff, #74c0fc);
   /* Footer links: plain white over the page gradient, no strip, every width.
@@ -370,7 +370,7 @@
 
   /* ═══════════════════════════════════════════════════════════════════════════
      COMPONENT VARIABLES - Menu (default / light theme values)
-     Per-theme overrides live in body.dark-mode / body.theme-* blocks in menu.css
+     Dark-mode overrides live in the body.dark-mode block in menu.css
      ═══════════════════════════════════════════════════════════════════════════ */
   --menu-bg:              linear-gradient(180deg, #e3f2fd 0%, #4a90c2 100%);
   --menu-shadow:          0 4px 6px rgba(0, 0, 0, 0.1);

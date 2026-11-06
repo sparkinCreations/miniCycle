@@ -1778,6 +1778,9 @@ input.routine-search-input:focus {
     overflow: hidden;
 }
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-card {
     background: var(--pref-app-bg, var(--theme-bg-gradient));
 }
