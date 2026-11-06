@@ -1,3 +1,5 @@
+> Archived Nov 6 2026 (docs audit round 2): a one-off review from Dec 19 2025 (was the repo-root `CODE_REVIEW_REPORT.md`); all seven recommendations are closed or superseded (see its Status line); no successor.
+
 # Comprehensive Code Review Report - miniCycle Repository
 
 > **Historical snapshot (December 2025).** Nothing below is maintained: module counts, line counts and the test figure were true on the review date and have drifted since. "Test Coverage: 958 browser tests (100% pass rate)" is a pass rate on a run of that day, not code coverage — coverage is not measured. Live numbers are in `web/docs/PROJECT_STATS.md`.

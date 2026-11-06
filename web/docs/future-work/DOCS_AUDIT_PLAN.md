@@ -213,8 +213,11 @@ shortcuts were missing, and contrast unverified — all exist, contrast is CI-ga
 Safari 13.1), `FEATURE_LIST` and `DATA_SCHEMA_GUIDE` (~15 wrong rows each), `ROADMAP`
 ("open source" → source-available, per `LICENSE`). Gates: volatile counts 39 → 33;
 Schema 2.5 names 10 (none in this round); docs code references 125 (only noise left
-in this round). Check 4: every sidebar title is its H1's short form. Nothing archived
-yet: `CODE_REVIEW_REPORT.md` (Dec 2025, all 7 recommendations closed) is proposed.
+in this round). Check 4: every sidebar title is its H1's short form. **Archived** (MJ:
+"archive as you see fit"): the repo-root `CODE_REVIEW_REPORT.md` →
+`archive/CODE_REVIEW_REPORT_DEC_2025.md` — a one-off review from Dec 19 2025 whose seven
+recommendations are all closed or superseded; nothing linked to it but this plan. No other
+doc in the round met the bar: the rest were fixed in place.
 
 **App code in this round — so it ships with a release.** Reading the Lite routing
 for `BROWSER_COMPATIBILITY` led to a change MJ asked for in this PR:
@@ -239,7 +242,7 @@ loads; a hardcoded string in `preferencesBgImage.js`; the milestone levels are a
 literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.js`,
 `guidedTourDefinitions.js` ("thirteen" tours; there are 14), `appContext.js`.
 
-**Open questions (MJ):** archive `CODE_REVIEW_REPORT.md`; the privacy policy vs
+**Open questions (MJ):** the privacy policy vs
 the tracking on the `.mcyc` format page and the 50 raw timestamps the tracker keeps;
 `PRIVACY.md`'s COPPA heading and competitor table; WCAG 2.2 as the target; the
 copyright statement's name placeholder; the roadmap's tiers, prices and dates; the
