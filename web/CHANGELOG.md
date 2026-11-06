@@ -1,3 +1,8 @@
+## [2.670] - 2026-11-06
+- fix(styles): High Contrast + Dark Mode colours; hollow unchecked checkboxes in dark mode
+- fix(sw): answer the install check's offline fetch of /app with the app shell
+
+
 ## [2.669] - 2026-11-06
 - chore(styles): remove rules that only targeted the retired colour themes
 
