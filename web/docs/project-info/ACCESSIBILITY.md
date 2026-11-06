@@ -4,74 +4,111 @@
 >
 > **For current app version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Last Updated:** January 18, 2026
-**WCAG Target:** 2.1 Level AA (In Progress)
-**Current Status:** Partial Implementation
+**Last verified:** November 6, 2026
+**WCAG target:** 2.2 Level AA — the goal stated in the user-facing
+[accessibility statement](../../legal/accessibility.html), which is not a claim of
+full conformance.
+
+> **Status:** Developer reference. The user-facing statement is
+> `web/legal/accessibility.html`; where the two disagree, check the code and fix
+> whichever is wrong.
 
 ---
 
 ## Current Accessibility Status
 
-miniCycle has **partial accessibility implementation** with strong ARIA support and focus management, but several features are still in development.
+### Enforced by CI (both run on pushes and PRs to `main` in `.github/workflows/test.yml`)
 
-### ✅ Well Implemented (90%+)
-- ARIA attributes and semantic HTML
-- Focus indicators with 2px outlines
-- Screen reader live regions
-- High contrast mode support
-- Touch interaction optimization
-- Form input accessibility (id + name attributes on all form elements)
+- **`npm run test:a11y`** (`tests/automated/run-a11y-tests.cjs`) — drives the real
+  app's main surfaces (main menu, settings, personalization, routine switcher,
+  recurring panel, themes, reminders, task options, stats panel) and fails when a
+  focusable custom control is not keyboard-operable (no interactive role or no key
+  handler) or an interactive element has no accessible name.
+- **`CONTRAST_GATE=1 npm run test:contrast`** (`tests/automated/run-contrast-tests.cjs`)
+  — axe-core's `color-contrast` rule per theme state (default, dark, the
+  Personalization presets, a user-picked colour, High Contrast light and dark) and
+  per view (Home, Focus View, focus task panel), plus hand-measured checks axe
+  cannot make. Gated at zero serious/critical violations on solid backgrounds;
+  text over the photographic/gradient backgrounds is reported, not judged.
 
-### ⚠️ Partially Implemented (40-70%)
-- Some focus management (good indicators, partial trapping)
-- Basic screen reader announcements (infrastructure exists)
-- Color contrast (not formally verified)
+### Implemented, not gated
 
-### ❌ Not Yet Implemented (0-20%)
-- Most keyboard shortcuts (only Undo/Redo work)
-- Reduced motion support
-- Skip navigation links
-- Consistent 44px touch targets
+- ARIA labels from `getLabel()`, semantic landmarks, live regions (below)
+- Skip-to-content link (`.skip-to-content` → `#app-container`)
+- Reduced motion — the OS `prefers-reduced-motion` query **and** the app's own
+  Settings → Reduced Motion toggle (`settings.reducedMotion`)
+- High Contrast mode (Settings toggle, `settings.highContrast` → `body.high-contrast`,
+  `styles/base/accessibility.css`) and `prefers-contrast` rules for the footer and
+  stats arrows
+- Font size presets (Settings: 14 / 16 / 18 / 20 px, `settings.fontSize`)
+- App keyboard shortcuts (Alt+Shift+key, plus opt-in single keys) and keyboard task
+  reordering (Alt+↑/↓)
+- Native `<dialog>` modals opened with `showModal()` (focus containment and Escape
+  from the platform)
+
+### Open / not verified (as of Nov 2026)
+
+- Screen-reader testing with VoiceOver, NVDA, JAWS and TalkBack has not been
+  formally performed and documented
+- Browser zoom at 200% / 400% not formally verified
+- No gate measures touch-target size (44×44px is met on some controls only)
+- Incomplete-task checkbox ring is about 1.5:1 against the task row (reported, not
+  gated — a design choice; High Contrast strengthens it)
 
 ---
 
 ## Keyboard Navigation
 
-### Implemented Shortcuts ✅
+### Undo / Redo ✅
 
-| Action | Windows/Linux | Mac | Status |
-|--------|--------------|-----|--------|
-| **Undo** | Ctrl + Z | ⌘ + Z | ✅ Working |
-| **Redo** | Ctrl + Y | ⌘ + Y | ✅ Working |
+| Action | Windows/Linux | Mac |
+|--------|--------------|-----|
+| **Undo** | Ctrl + Z | ⌘ + Z |
+| **Redo** | Ctrl + Y or Ctrl + Shift + Z | ⌘ + Y or ⌘ + Shift + Z |
 
-### Planned Shortcuts 🚧
+Ignored while typing in a text field, so the field's own text undo still works
+(`undoRedoShortcut()` in `modules/utils/keyboardNav.js`).
 
-| Action | Windows/Linux | Mac | Status |
-|--------|--------------|-----|--------|
-| **Focus task input** | Alt + N | ⌥ + N | 🚧 Planned |
-| **Open menu** | Alt + M | ⌥ + M | 🚧 Planned |
-| **Open settings** | Alt + S | ⌥ + S | 🚧 Planned |
-| **Switch cycle** | Alt + C | ⌥ + C | 🚧 Planned |
+### App shortcuts ✅
 
-### Task Management (Planned) 🚧
+Alt+Shift+<key> (Option+Shift on a Mac), defined in `KEYBOARD_SHORTCUTS`
+(`modules/core/constants.js`) and handled in `modules/boot/uiBoot.js`. Each one
+clicks the same button a user would, and the target buttons carry
+`aria-keyshortcuts` written from the same constant. They are off while typing, while
+a dialog or the menu is open, and on the first-run screen.
 
-| Action | Shortcut | Status |
-|--------|----------|--------|
-| **Add task** | Enter (in input field) | ✅ Working |
-| **Navigate tasks** | Tab / Shift+Tab | ✅ Working |
-| **Toggle task** | Space (when focused) | 🚧 Planned |
-| **Edit task** | Enter (when focused) | 🚧 Planned |
-| **Delete task** | Delete (when focused) | 🚧 Planned |
-| **Move up** | Ctrl/⌘ + ↑ | 🚧 Planned |
-| **Move down** | Ctrl/⌘ + ↓ | 🚧 Planned |
+| Key (with Alt+Shift) | Action |
+|---|---|
+| N | New routine |
+| O | Open the routine switcher |
+| M | Next mode (Auto Cycle → Manual Cycle → To-Do) |
+| F | Focus View on / off |
+| I | Show / hide the add-task input bar |
+| U | User manual |
+| [ / ] | Previous / next routine |
+| S | Settings |
+| . | The view's menu (☰ in Home View, ⋯ in Focus View) |
+| ? | The Keyboard Shortcuts list |
+
+Settings → Behavior → **Single-key shortcuts** (`settings.singleKeyShortcuts`, off by
+default) adds plain M, S, [, ] and ? for some of them (`SINGLE_KEY_SHORTCUTS`).
+
+### Tasks ✅
+
+| Action | Keys |
+|--------|------|
+| **Add task** | Enter (in the input field) |
+| **Move between tasks** | Tab / Shift+Tab; ↑ / ↓ between task checkboxes or names (roving tabindex) |
+| **Toggle task** | Space or Enter on the checkbox or the task name |
+| **Reorder** | Alt + ↑ / ↓ (Option on a Mac) on a task's checkbox or name (`dragDropManager.handleReorderKeydown`) |
 
 ### Modal Dialogs ✅
 
-| Action | Shortcut | Status |
-|--------|----------|--------|
-| **Confirm** | Enter | ✅ Working |
-| **Cancel** | Escape | ✅ Working |
-| **Navigate options** | Tab | ✅ Working |
+| Action | Shortcut |
+|--------|----------|
+| **Confirm** | Enter |
+| **Cancel / close** | Escape |
+| **Navigate options** | Tab |
 
 ---
 
@@ -79,31 +116,27 @@ miniCycle has **partial accessibility implementation** with strong ARIA support 
 
 ### ARIA Labels ✅
 
-All major interactive elements include appropriate ARIA labels:
+Interactive elements carry ARIA labels, resolved through `getLabel()` so they follow
+the vocabulary theme. `npm run test:a11y` fails on any unnamed interactive element
+on the surfaces it opens.
 
 **Task System:**
 ```javascript
-// Checkboxes (modules/task/taskDOM.js:668-670)
-checkbox.setAttribute("aria-label", `Mark task "${taskText}" as complete`);
-checkbox.setAttribute("aria-role", "checkbox");
-checkbox.setAttribute("aria-checked", checkbox.checked);
+// Checkbox (TaskDOMManager.createTaskCheckbox, modules/task/taskDOM.js)
+checkbox.setAttribute("aria-label", getLabel('action.markTaskComplete', { vars: { name: taskTextTrimmed } }));
+// No aria-checked: a native checkbox already exposes its state, and aria-checked
+// would override it. Custom role="checkbox" divs (recurring weekday boxes,
+// onboarding demo) do set aria-checked.
 ```
 
 **Example Implementation:**
 ```html
 <!-- Task checkbox -->
-<input type="checkbox"
-       role="checkbox"
-       aria-label="Mark task 'Morning Exercise' as complete"
-       aria-checked="false">
+<input type="checkbox" aria-label='Mark task "Morning Exercise" as complete'>
 
-<!-- Buttons with labels -->
-<button aria-label="Edit task">✏️</button>
-<button aria-label="Delete task">🗑️</button>
-
-<!-- Quick Access Buttons (v1.811+) -->
-<button id="personalization-btn" aria-label="Personalization" title="Personalize colors">🖌️</button>
-<button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">🌓</button>
+<!-- Quick Access Buttons (miniCycle.html) -->
+<button id="personalization-btn" aria-label="Personalization" title="Personalize colors">…</button>
+<button id="quick-dark-toggle" aria-label="Toggle dark mode" title="Toggle dark mode">…</button>
 ```
 
 ### Semantic HTML ✅
@@ -115,9 +148,10 @@ miniCycle uses proper semantic structure:
 - `<section role="region" aria-labelledby="...">` for logical groupings — **except the
   three carousel panels**, see below
 - `<footer role="contentinfo">` for footer
-- `<button>` for all clickable actions
-- `<label>` for all form inputs
-- `<input>` elements with both `id` and `name` attributes for proper form accessibility
+- `<button>` for clickable actions; the few custom controls (`role="checkbox"` day
+  boxes, list rows) must pass `npm run test:a11y`
+- `<label>` (or an `aria-label`) for form inputs
+- `<input>` elements with both `id` and `name` attributes
 
 #### Exception: the three carousel panels are `tabpanel`, not `region`
 
@@ -161,35 +195,41 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
 
 **Implementation:**
 ```html
-<!-- Notification container (miniCycle.html:697) -->
-<div id="notification-container" aria-live="polite"></div>
+<!-- Notification container (miniCycle.html) -->
+<div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div>
 
-<!-- Hidden screen reader announcements (miniCycle.html:1851) -->
+<!-- Hidden screen reader announcements (miniCycle.html) -->
 <div id="live-region" aria-live="polite"
      style="position: absolute; left: -9999px; top: auto;
             width: 1px; height: 1px; overflow: hidden;">
 </div>
 
-<!-- Mode description (miniCycle.html:811) -->
+<!-- Mode description (miniCycle.html) -->
 <div id="mode-description" class="mode-description" aria-live="polite"></div>
 ```
 
-**Note:** Infrastructure is in place, but specific announcements for task completion, cycle completion, and errors may need enhancement.
+**Note:** No test asserts what is announced for task completion, cycle completion or errors; that is part of the screen-reader testing that has not been done (see *Open / not verified*).
 
 ---
 
 ## Visual Accessibility
 
-### Color Contrast ⚠️
+### Color Contrast ✅
 
-**Target:** WCAG 2.1 AA Compliant
+**Target:** WCAG AA
 - Text: Minimum 4.5:1 contrast ratio
 - Large text: Minimum 3:1 contrast ratio
 - UI components: Minimum 3:1 contrast ratio
 
-**Status:** Formally measured on the two photographic surfaces (below).
-Everything else is still "colors chosen for visibility" — chrome over solid theme
-backgrounds has not been swept.
+**Status:** Text on solid backgrounds is gated in CI by
+`CONTRAST_GATE=1 npm run test:contrast` (axe `color-contrast`, every theme state
+and view the runner lists in `THEMES` / `VIEWS`, zero serious/critical violations).
+The same runner adds hand-measured checks for what axe cannot judge — the footer
+over every gradient stop (gated in High Contrast, under the OS "more contrast"
+setting and for a user-picked colour; reported otherwise), the Focus View "Complete task" button, and the task checkbox
+edge (reported only, a design choice). Text over the photographic backgrounds is
+reported as "incomplete", never failed; the two branded screens over the desk
+photo were measured by hand (below).
 
 #### Measured: the branded screens over the desk photo (Sep 2026)
 
@@ -235,14 +275,23 @@ this work and cost two rounds of chasing a non-existent regression.
 
 ### High Contrast Mode ✅
 
-Automatically detected and supported:
+Two sources:
+
+- **The app's High Contrast setting** (Settings → Accessibility,
+  `settings.highContrast`) adds `body.high-contrast`; `styles/base/accessibility.css`
+  overrides text, border and surface tokens in light and dark mode and gives
+  focus a 3px `:focus-visible` outline.
+- **The OS setting** (`prefers-contrast`) is honoured in a few places, e.g.
+  `styles/components/footer.css` (footer links get a backing strip) and
+  `styles/components/menu.css`:
+
 ```css
-/* miniCycle-styles.css:224-232 */
+/* styles/components/menu.css */
 @media (prefers-contrast: high) {
     .slide-arrow {
         border: 2px solid currentColor;
     }
-    .slide-arrow:focus {
+    .slide-arrow:focus-visible {
         outline: 3px solid #007BFF;
     }
 }
@@ -251,9 +300,10 @@ Automatically detected and supported:
 ### Text Sizing ✅
 
 - **Default:** 16px base font size
-- **Scales with:** Browser zoom (100%-200%)
-- **Responsive:** Adapts to viewport
-- **No fixed widths:** Text reflows naturally
+- **Font size setting:** Small / Default / Large / Extra Large (14 / 16 / 18 / 20px,
+  `settings.fontSize`)
+- **Browser zoom:** not formally verified at 200% / 400%
+- **Responsive:** `npm run test:layout` checks panel overlap across app viewports
 
 ### Color Blindness Considerations ✅
 
@@ -261,7 +311,8 @@ Automatically detected and supported:
 - ✅ Checkmarks for completion (not just green)
 - ⚠️ Warning icons for alerts (not just yellow)
 - ❌ Delete icons (not just red)
-- Icons + text for priority tasks
+- Priority is shown as the theme's colour on the task; the priority button also
+  exposes set / unset through `aria-pressed`
 
 ---
 
@@ -271,34 +322,24 @@ Automatically detected and supported:
 
 **Target:** Minimum 44x44px for all interactive elements
 
-**Current Status:** Only partially implemented
-- ✅ Popup close button: 44x44px minimum
-- ⚠️ Task checkboxes: Size not verified
-- ⚠️ Action buttons: Size not verified
-- ⚠️ Navigation controls: Size not verified
+**Current Status:** Partial, and not measured by any gate. Several stylesheets set
+44px minimums (e.g. `modals.css`, `task-options.css`, `header.css`); task
+checkboxes, action buttons and navigation controls have not been swept.
 
-**Touch Optimization:** ✅
-```css
-/* Touch interaction optimized (miniCycle-styles.css:355, 5177) */
-touch-action: manipulation;
-
-/* Touch-specific media query (line 3746) */
-@media (hover: none) and (pointer: coarse) {
-    /* Touch-optimized styles */
-}
-```
+**Touch Optimization:** ✅ `touch-action: manipulation` and
+`@media (hover: none) and (pointer: coarse)` rules in the component stylesheets.
 
 ### Drag & Drop Alternatives ✅
 
 **Can't drag?** Use alternatives:
-- **Arrow buttons** (⬆️⬇️) to reorder tasks
-- **Three-dot menu** for task options
-- **Keyboard navigation** (standard Tab/Shift+Tab)
+- **Alt + ↑ / ↓** on a focused task moves it one place (no setting needed)
+- **Arrow buttons** (▲▼) to reorder tasks — Settings → Show Move Arrows, off by default
+- **Three-dot menu** for task options — Settings → Show Three Dots Menu
 
 ### Long Press Support ✅
 
 **Mobile:**
-- 500ms long-press activates drag mode
+- Long-press (`UI_TIMEOUTS.TASK_DRAG_LONG_PRESS`) lifts a task for reordering
 - Visual feedback during press
 - Alternative: Three-dot menu
 
@@ -348,80 +389,63 @@ touch-action: manipulation;
 
 ### Visible Focus Indicators ✅
 
-All interactive elements show clear 2px focus outlines:
+Interactive elements show `:focus-visible` outlines (2px by default, 3px in High
+Contrast mode):
 
 **Examples:**
 ```css
-/* Slide arrows (miniCycle-styles.css:163-166) */
-.slide-arrow:focus {
-    outline: 2px solid #007BFF;
+/* Navigation dots (styles/utilities/helpers.css) */
+.dot:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -4px;
+}
+
+/* Title field (styles/components/task-list.css) */
+#mini-cycle-title:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
     outline-offset: 2px;
-    background-color: rgba(255, 255, 255, 0.9);
 }
 
-/* Task buttons (line 3623-3625) */
-.task-btn:focus {
-    outline: 2px solid var(--focus-color, #2195f3);
+/* High Contrast mode (styles/base/accessibility.css) */
+body.high-contrast *:focus-visible {
+    outline: 3px solid currentColor;
     outline-offset: 2px;
-}
-
-/* Navigation dots (line 5863-5864) */
-.dot:focus {
-    outline: 2px solid #007BFF;
-}
-
-/* Title field (line 447) */
-#mini-cycle-title:focus {
-    background: rgba(255, 255, 255, 0.2);
-    color: #f8f8f8;
-    border-bottom: 2px solid #ffffff;
 }
 ```
 
-### Focus Trapping ⚠️
+### Focus Trapping ✅
 
-**Modal dialogs:** Partial implementation
-- Focus moves to modal on open
-- Some programmatic focus management
-- Tab key cycling not fully implemented
-- Escape closes and should return focus
+**Modal dialogs** are native `<dialog>` elements opened with `showModal()`
+(`modules/ui/modalManager.js`), so the browser keeps focus inside the dialog, makes
+the page behind it inert, and closes it on Escape. Modules that open dialogs restore
+focus to the opener on close. The Guided Tour, which is not a `<dialog>`, traps Tab
+itself (`GuidedTourManager._trapFocus`).
 
-**Status:** Basic focus management exists, but comprehensive Tab cycling within modals needs completion.
+### Skip Links ✅
 
-### Skip Links ❌
-
-**Status:** Not yet implemented
-
-**Planned:** "Skip to main content" link
-- Should be visible on focus
-- Should jump past navigation
-- Improves keyboard navigation efficiency
+`<a href="#app-container" class="skip-to-content">` is the first focusable element in
+`miniCycle.html`; it is hidden until focused (`styles/base/reset.css`) and jumps to
+`<main id="app-container" tabindex="-1">`.
 
 ---
 
 ## Animation & Motion
 
-### Reduced Motion ❌
+### Reduced Motion ✅
 
-**Status:** Not yet implemented
+Two sources, both honoured:
 
-**Planned Implementation:**
-```css
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-```
+- the OS `prefers-reduced-motion: reduce` query, and
+- the app's **Settings → Reduced Motion** toggle (`settings.reducedMotion`), which
+  adds the `reduced-motion` class to `<html>` and `<body>`.
 
-**Would affect:**
-- Task completion animations
-- Progress bar transitions
-- Modal slide-ins
-- Page transitions
-
-**Note:** This is a high-priority accessibility feature that respects user preferences for reduced motion.
+`styles/base/variables.css` zeroes every `--transition-*` / `--animation-*` token
+under either, so CSS that uses the tokens stops animating on its own; components
+with their own keyframes add `prefers-reduced-motion` blocks. JavaScript-driven
+motion (progress bar, achievements, splash, smooth scrolls) asks
+`prefersReducedMotion()` / `scrollBehavior()` in `modules/utils/motionPreference.js`,
+which checks both sources (fixed Oct 2026 — before that the app's own switch did not
+stop them).
 
 ---
 
@@ -429,7 +453,7 @@ All interactive elements show clear 2px focus outlines:
 
 ### Screen Readers
 
-**Testing Status:** Limited
+**Testing Status:** Not formally performed and documented (Nov 2026)
 
 **Planned testing with:**
 - NVDA (Windows)
@@ -437,29 +461,22 @@ All interactive elements show clear 2px focus outlines:
 - VoiceOver (Mac/iOS)
 - TalkBack (Android)
 
-**Current test coverage:**
-- ✅ ARIA structure verified
-- ✅ Live regions tested
-- ⚠️ Full workflow testing needed
+**Automated coverage instead:** `npm run test:a11y` checks accessible names and
+keyboard operability from the accessibility tree; it does not drive a screen reader.
 
 ### Keyboard-Only Testing
 
-**Verified functionality:**
-- ✅ Tab navigation works
-- ✅ Modal dialogs accessible
-- ✅ Form inputs accessible
-- ✅ Undo/Redo shortcuts work
-- ⚠️ Task-specific shortcuts not implemented
+- `npm run test:a11y` — custom controls on the audited surfaces are keyboard-operable
+- Keyboard shortcuts and Alt+arrow reordering are covered by `npm run test:journey`;
+  undo/redo key handling by `tests/keyboardNav.tests.js`
+- No test walks the whole app keyboard-only
 
 ### Browser Zoom
 
-**Tested at:**
-- ✅ 100% (default)
-- ✅ 150%
-- ✅ 200%
-- ✅ Text reflows properly
-- ✅ No horizontal scrolling
-- ✅ No overlapping elements
+Not formally verified at 200% / 400% (the accessibility statement says the same).
+The built-in font size presets are tested. `npm run test:layout` checks the app for
+panel overlap at a set of viewports and `pages/product.html` for horizontal overflow
+across a range of widths.
 
 ---
 
@@ -467,49 +484,27 @@ All interactive elements show clear 2px focus outlines:
 
 ### Current Gaps
 
-1. **Keyboard Shortcuts** (18% complete)
-   - Only Undo/Redo implemented
-   - **Mitigation:** Mouse/touch alternatives available
+1. **Screen-reader testing** — not formally performed with VoiceOver, NVDA, JAWS or
+   TalkBack.
+2. **Browser zoom** — 200% / 400% not formally verified.
+3. **Touch targets** — not consistently 44x44px, and no gate measures them.
+   **Mitigation:** touch-action optimisation, three-dot menu and move arrows.
+4. **Task checkbox ring** — the empty ring is about 1.5:1 against the task row (by
+   design; reported, not gated). **Mitigation:** High Contrast mode.
+5. **Footer links over the gradient** — fall below 4.5:1 over the light end of the
+   gradient unless High Contrast, the OS "increase contrast" setting, or a
+   personalised colour is in use (see the accessibility statement).
+6. **Custom colour combinations** — vocabulary theme and Personalization colours a
+   user picks may not meet WCAG ratios in every combination.
 
-2. **Reduced Motion** (0% complete)
-   - Not yet implemented
-   - **Impact:** Users with motion sensitivity may experience discomfort
+### Open Improvements
 
-3. **Skip Links** (0% complete)
-   - No keyboard navigation aids
-   - **Impact:** Keyboard users must tab through all elements
-
-4. **Touch Targets** (10% complete)
-   - Not consistently 44x44px minimum
-   - **Mitigation:** Touch interaction optimization in place
-
-5. **Focus Trapping** (40% complete)
-   - Modals have basic focus management
-   - **Mitigation:** Escape key closes modals
-
-6. **Color Contrast** (50% complete)
-   - Not formally verified against WCAG standards
-   - **Mitigation:** High contrast mode available
-
-### Planned Improvements (v1.360+)
-
-**High Priority:**
-- [ ] Implement reduced motion support
-- [ ] Add skip-to-content link
-- [ ] Complete keyboard shortcuts (Alt+N/M/S/C)
-- [ ] Verify and document color contrast ratios
+- [ ] Screen reader testing (NVDA, JAWS, VoiceOver, TalkBack), documented
+- [ ] Verify browser zoom at 200% and 400%
 - [ ] Enforce 44x44px minimum touch targets
-
-**Medium Priority:**
-- [ ] Complete focus trapping in modals
-- [ ] Add Tab cycling within modals
-- [ ] Comprehensive screen reader testing
-- [ ] Specific announcements for all actions
-
-**Low Priority:**
-- [ ] Task-specific keyboard shortcuts (Space, Delete, Arrows)
-- [ ] WCAG AAA compliance (beyond AA)
-- [ ] Screen reader mode toggle
+- [ ] Assert announcements for task completion, cycle completion and errors
+- [ ] User testing with assistive technology users
+- [ ] Third-party accessibility audit
 
 ---
 
@@ -517,32 +512,24 @@ All interactive elements show clear 2px focus outlines:
 
 ### Before Release
 
-**Essential:**
-- [x] Semantic HTML structure
-- [x] ARIA labels on interactive elements
-- [x] Basic keyboard navigation (Tab/Shift+Tab)
-- [x] Focus indicators visible
-- [x] Forms have labels
-- [x] Form inputs have id and name attributes
-- [ ] Color contrast verified (WCAG AA)
-- [ ] Reduced motion support
-- [ ] Skip links present
+**Gated in CI:**
+- [x] Accessible names and keyboard operability of custom controls (`npm run test:a11y`)
+- [x] Color contrast on solid backgrounds, every theme state and view (`CONTRAST_GATE=1 npm run test:contrast`)
 
-**Recommended:**
-- [x] High contrast mode support
-- [ ] Screen reader tested (NVDA/JAWS/VoiceOver)
-- [x] Zoom tested to 200%
-- [x] Touch targets reviewed
-- [ ] Keyboard shortcuts documented and working
-- [x] Error messages clear
-- [x] Headings in logical order
-- [x] ARIA landmarks present
+**In place, not gated:**
+- [x] Semantic HTML structure and ARIA landmarks
+- [x] Focus indicators visible (`:focus-visible`)
+- [x] Reduced motion (OS setting and app setting)
+- [x] Skip link present
+- [x] High contrast mode
+- [x] Undo/redo, app shortcuts and keyboard reordering (journey tests)
 
-**Nice-to-Have:**
-- [ ] WCAG AAA compliance
-- [ ] Multiple screen reader testing
-- [ ] Automated accessibility audits
+**Not yet done:**
+- [ ] Screen reader tested (NVDA/JAWS/VoiceOver/TalkBack)
+- [ ] Zoom verified at 200% / 400%
+- [ ] Touch targets measured
 - [ ] User testing with disabled users
+- [ ] WCAG AAA compliance
 
 ---
 
@@ -584,7 +571,9 @@ All interactive elements show clear 2px focus outlines:
 
 If you encounter accessibility barriers:
 
-1. **GitHub Issues** with "accessibility" label
+1. **Email** admin@sparkinCreations.com, or **GitHub Issues**
+   (`github.com/sparkinCreations/miniCycle/issues`) — the two channels the
+   accessibility statement lists
 2. Include:
    - Your assistive technology (screen reader, etc.)
    - Browser and version
@@ -593,9 +582,8 @@ If you encounter accessibility barriers:
 
 ### Response Time
 
-- **Critical barriers:** 7 days
-- **Major issues:** 14 days
-- **Minor issues:** Next release
+The accessibility statement (`web/legal/accessibility.html`) says: "We aim to
+respond to accessibility feedback within 5 business days."
 
 ---
 
@@ -603,75 +591,36 @@ If you encounter accessibility barriers:
 
 ### Current Target
 
-**WCAG 2.1 Level AA** (Partial Compliance)
+**WCAG 2.2 Level AA** — the goal the accessibility statement names; it is explicitly
+not a claim of complete conformance.
 
-**Status by Guideline:**
-- **Perceivable:** Partial (ARIA complete, contrast not verified)
-- **Operable:** Partial (keyboard shortcuts incomplete, focus management partial)
-- **Understandable:** Good (clear language, consistent UI)
-- **Robust:** Good (semantic HTML, ARIA landmarks)
+**What is checked against it (Nov 2026):**
+- **Perceivable:** contrast on solid backgrounds gated (`test:contrast`); text over
+  photos measured by hand; screen-reader output not tested
+- **Operable:** custom controls gated for keyboard operability (`test:a11y`);
+  shortcuts and reordering journey-tested; touch targets not measured
+- **Understandable / Robust:** accessible names gated (`test:a11y`); W3C validity
+  checked by `npm run validate:html`
 
 ### Standards References
 
-- [WCAG 2.1](https://www.w3.org/WAI/WCAG21/quickref/)
+- [WCAG 2.2](https://www.w3.org/WAI/WCAG22/quickref/)
 - [ARIA Authoring Practices](https://www.w3.org/WAI/ARIA/apg/)
 - [MDN Accessibility](https://developer.mozilla.org/en-US/docs/Web/Accessibility)
 
 ---
 
-## Accessibility Roadmap
-
-### v1.360 (Q1 2026) - High Priority Fixes
-
-- [ ] Add reduced motion support (`prefers-reduced-motion`)
-- [ ] Implement skip-to-content link
-- [ ] Complete keyboard shortcuts (Alt+N/M/S/C)
-- [ ] Verify color contrast ratios (WCAG AA)
-- [ ] Enforce 44x44px touch targets consistently
-- [ ] Complete focus trapping in modals
-
-### v1.400 (Q2 2026) - Enhanced Support
-
-- [ ] Full screen reader testing (NVDA, JAWS, VoiceOver)
-- [ ] Task-specific keyboard shortcuts (Space, Delete, Arrows)
-- [ ] Enhanced live region announcements
-- [ ] User testing with assistive technology users
-
-### v2.0 (Q4 2026) - WCAG AA Compliance
-
-- [ ] Full WCAG 2.1 Level AA compliance
-- [ ] Documented contrast ratios
-- [ ] Complete keyboard access to all features
-- [ ] Comprehensive accessibility documentation
-- [ ] Third-party accessibility audit
-
----
-
 ## Summary
 
-**miniCycle has strong accessibility foundations** with excellent ARIA implementation and focus management, but several features are still in development.
+Names, keyboard operability of custom controls, and contrast on solid backgrounds
+are enforced in CI (`npm run test:a11y`, `CONTRAST_GATE=1 npm run test:contrast`).
+Reduced motion, High Contrast, font size, a skip link, keyboard shortcuts and
+keyboard reordering are implemented. The open items are the ones no gate can see:
+screen-reader testing, zoom, touch-target size and user testing — see
+*Known Accessibility Limitations*.
 
-### Current Strengths ✅
-1. **ARIA attributes** - Comprehensive and well-structured (90%+)
-2. **Focus indicators** - Clear 2px outlines throughout (95%)
-3. **Semantic HTML** - Proper landmarks and structure (100%)
-4. **High contrast mode** - Media query support (100%)
-5. **Touch optimization** - Device detection and touch-action (100%)
-6. **Form accessibility** - All inputs have id and name attributes (100%)
-
-### Priority Improvements Needed ⚠️
-1. **Keyboard shortcuts** - Most not implemented (18%)
-2. **Reduced motion** - Not implemented (0%)
-3. **Skip links** - Not implemented (0%)
-4. **Touch targets** - Inconsistent sizing (10%)
-5. **Color contrast** - Not formally verified (50%)
-
-**Questions?** See the FAQ or open a GitHub Issue with the "accessibility" label.
+**Questions?** Open a GitHub Issue or email admin@sparkinCreations.com.
 
 ---
 
-**Accessibility Documentation Version:** 2.2 (Quick Access Buttons)
-**Last Updated:** January 18, 2026
-**WCAG Compliance:** Partial (In Progress)
-
-*We're committed to making miniCycle accessible to all users. This document honestly reflects our current progress and roadmap.*
+*We're committed to making miniCycle accessible to all users. This document honestly reflects our current progress.*

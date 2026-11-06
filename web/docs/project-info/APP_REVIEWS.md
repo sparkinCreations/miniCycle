@@ -2,6 +2,18 @@
 
 > Reviews conducted February 2026 against version 1.1015.
 
+**Last verified:** November 6, 2026
+
+> **Status:** Historical snapshot. Every count, score and weakness below is the
+> reviewer's measurement **in February 2026** and is kept as written; none of it is
+> a current figure (see [PROJECT_STATS.md](../PROJECT_STATS.md) for those). Several
+> of the review's structural points no longer hold — the most visible: the full app
+> has shipped an esbuild release bundle since v2.301, so "no build step" now
+> describes development only, not production (`docs/deployment/BUILD_PROCESS.md`),
+> and `modulepreload` hints are injected again (after `version.js`, per the
+> `miniCycle.html` head contract). The Lite review still describes the frozen
+> `lite/` app.
+
 ---
 
 ## Table of Contents
@@ -223,14 +235,14 @@ The main gaps are architectural (monolithic globals, DOM-as-state) and UX polish
 
 ## Overview
 
-miniCycle is a **routine manager** built as a PWA with 108 ES6 modules, strict dependency injection, a custom state management system, and deep gamification. It ships with zero npm runtime dependencies, no framework, and no build step — pure vanilla JS/CSS/HTML serving ~10,400 lines of CSS across 36 files and thousands of lines of modular JavaScript.
+miniCycle is a **routine manager** built as a PWA with 108 ES6 modules (at review time), strict dependency injection, a custom state management system, and deep gamification. It ships with zero npm runtime dependencies, no framework, and no build step — pure vanilla JS/CSS/HTML serving ~10,400 lines of CSS across 36 files and thousands of lines of modular JavaScript.
 
 ---
 
 ## Architecture & Code Quality — **9/10**
 
 **Strengths:**
-- 108 ES6 modules with strict DI via a custom `diBase.js` framework — `required()`, `optional()`, lazy getter preservation, cached resolution
+- 108 ES6 modules (Feb 2026) with strict DI via a custom `diBase.js` framework — `required()`, `optional()`, lazy getter preservation, cached resolution
 - Single mutation entry point (`AppState.update(producer)`) with 600ms debounced persistence, multi-tab sync, and concurrent modification detection
 - 3-phase boot sequence (core -> features -> UI) with timeout guards, retry logic, cache recovery, and boot failure failsafe that redirects to Lite after 2 consecutive failures
 - `appContext.js` provides 9 grouped APIs eliminating all `window.*` globals
@@ -245,7 +257,7 @@ miniCycle is a **routine manager** built as a PWA with 108 ES6 modules, strict d
 - 4 modules still have event listener leaks (gamesManager, onboardingManager, statsPanel, helpWindowManager)
 - 2 modules use non-standard DI patterns (gamesManager: Proxy-based, taskSearch: default fallbacks)
 - `migrationManager.js` is 1,722 lines (though working and stable)
-- ~54% test module coverage at review time — 50 modules were then untested (since resolved: 100% of production modules are now tested; see [PROJECT_STATS.md](../PROJECT_STATS.md) for current coverage)
+- ~54% test module coverage at review time — 50 modules were then untested (since largely closed: a name check on Nov 6 2026 found a handful of modules — the platform bridges and some small utilities — that no test file imports; no gate measures this, and current test counts are in [PROJECT_STATS.md](../PROJECT_STATS.md))
 - No build step means 36 CSS `@import` statements and manual version string updates
 
 ---
@@ -437,7 +449,7 @@ miniCycle is a **routine manager** built as a PWA with 108 ES6 modules, strict d
 - Automated test runner in the testing modal (runs 1,600+ checks)
 
 **Weaknesses:**
-- ~54% module coverage at review time — 50 modules were then untested (since resolved: 100% of production modules are now tested; see [PROJECT_STATS.md](../PROJECT_STATS.md) for current coverage)
+- ~54% module coverage at review time (Feb 2026) — 50 modules were then untested (since largely closed — see the note under *Architecture & Code Quality* above)
 - Tests require a running local server (`npm start`)
 - No CI/CD integration mentioned
 - No unit tests (all integration/browser tests)
@@ -464,7 +476,7 @@ miniCycle is a **routine manager** built as a PWA with 108 ES6 modules, strict d
 
 ## Full Version Summary
 
-miniCycle's full version is a remarkably ambitious vanilla JS application. The architecture — 108 modules with strict DI, centralized state management, a custom UI orchestrator, and a 3-phase boot sequence with multiple fallback layers — rivals framework-based apps in sophistication while maintaining zero runtime dependencies.
+miniCycle's full version is a remarkably ambitious vanilla JS application. The architecture — 108 modules (Feb 2026) with strict DI, centralized state management, a custom UI orchestrator, and a 3-phase boot sequence with multiple fallback layers — rivals framework-based apps in sophistication while maintaining zero runtime dependencies.
 
 The feature depth is the standout: a 15-module recurring task system, 20-level persistent undo/redo with transaction diffs, 17-color live-preview customization, drag-and-drop with both desktop and mobile paths, task search with filter/sort chips, and a full plugin system. The three cycle modes deliver on the "routine manager, not a todo app" identity — tasks persist and reset, which is the entire point.
 
@@ -615,4 +627,4 @@ Evaluated against its own stated identity — offline, no-build, vanilla, no-fra
 
 The four remaining criteria all score 9.5. The offline implementation is comprehensive, multi-layered, and resilient. The vanilla standards usage is exemplary — every feature maps to a native browser API with no abstraction tax. The framework-free architecture is genuinely zero-dependency at runtime while still delivering DI, state management, and UI orchestration. And the routine manager identity is the clearest of the five: the cycle mechanic, persistence model, and gamification are all in service of the same idea.
 
-For developers evaluating modern vanilla web capabilities, miniCycle is a strong existence proof: you can build a sophisticated, accessible, offline-first PWA with 108 modules, full gamification, recurring scheduling, and deep customization — without React, without a bundler, without a cloud backend.
+For developers evaluating modern vanilla web capabilities, miniCycle is a strong existence proof: you can build a sophisticated, accessible, offline-first PWA with 108 modules (Feb 2026), full gamification, recurring scheduling, and deep customization — without React, without a bundler, without a cloud backend.
