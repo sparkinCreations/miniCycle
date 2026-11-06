@@ -1,5 +1,5 @@
 {
-  "$schema": "../theme-schema.json",
+  "$schema": "./JSON_THEME_SYSTEM_theme-schema.json",
   "id": "default",
   "name": "Default Blue",
   "description": "The classic miniCycle blue gradient theme",

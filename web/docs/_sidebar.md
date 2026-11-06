@@ -196,6 +196,7 @@
     * [Notification Standardization](archive/NOTIFICATION_STANDARDIZATION_PLAN.md)
     * [Menu Settings Extraction](archive/MENU_SETTINGS_EXTRACTION_PLAN.md)
     * [Recurring Integration Guide](archive/recurring-integration-guide.md)
+    * [JSON Theme System (superseded by presets)](archive/JSON_THEME_SYSTEM.md)
 
   * **Testing & Undo/Redo (Complete)**
     * [Undo/Redo Phase 1 Complete](archive/PHASE1_COMPLETE_undoRedoManager.md)
