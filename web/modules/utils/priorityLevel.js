@@ -8,7 +8,7 @@
  * high / medium / low. Schema 2.5 stored a raw, theme-tinted hex instead, which
  * did not follow a theme switch, travelled as-is in shared .mcyc files, and left
  * search's "Priority First" sort seeing only on/off
- * (docs/future-work/SCHEMA_2_6_PLAN.md, "Priority levels"). The colour a task
+ * (docs/archive/SCHEMA_2_6_PLAN.md, "Priority levels"). The colour a task
  * SHOWS is always the current theme's swatch for its level.
  *
  * The 2.5 readers (`getLegacyPriorityLevel`, the hex and colour-family rules)

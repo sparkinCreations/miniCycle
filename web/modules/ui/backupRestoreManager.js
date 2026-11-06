@@ -1123,7 +1123,7 @@ async function processRestoreData(fileContent, options = {}) {
 
                 // A pre-2.5 ("legacy") backup is not a format this app reads any more:
                 // pre-2.5 predates the public launch, so the migration that converted it
-                // was retired Sep 2026 (docs/future-work/SCHEMA_2_6_PLAN.md). It gets the
+                // was retired Sep 2026 (docs/archive/SCHEMA_2_6_PLAN.md). It gets the
                 // same message as any file the app cannot read, and nothing is written.
                 console.error('Unrecognized backup format');
                 _deps.showNotification(getLabel('notify.invalidFormat'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);

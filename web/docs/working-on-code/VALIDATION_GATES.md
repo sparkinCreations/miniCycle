@@ -15,7 +15,7 @@
 |------|---------|--------------------|-----------|
 | **CSP coverage** | `npm run validate:csp` | `update-version.sh` (pre-push) | 🔴 **Blocks the release** |
 | **HTML validity** | `npm run validate:html` | CI — `performance.yml` | 🔴 Fails CI |
-| **Docs links + nav** | `npm run validate:docs` | CI — `performance.yml` | 🔴 Fails CI |
+| **Docs links + nav** | `npm run validate:docs` | CI — `performance.yml` | 🔴 Fails CI — plus two ⚠️ warning-only docs-audit checks (volatile counts, Schema 2.5 names) that fail nothing until docs-audit round 10 |
 | **Lint** | `npm run lint` | CI — `test.yml` | 🔴 Fails CI on any error, or on warnings above the `--max-warnings` ratchet in `package.json` (lower it after cleanup; never raise it) |
 | **Module tests** | `npm test` | CI — `test.yml` | 🔴 Fails CI — stalled modules retry once (see below); assertion failures never do |
 | **Real-app gates** | `npm run test:layout` · `test:sw` · `test:meta` · `test:journey` | CI — `test.yml` | 🔴 Fails CI |
@@ -61,6 +61,16 @@ landmark roles).
 artifacts instead of source.
 
 ## 🔴 `validate:docs` — links, nav, and AI routing
+
+> **Docs-audit warnings (Nov 2026, warning-only until round 10 of
+> [DOCS_AUDIT_PLAN.md](../future-work/DOCS_AUDIT_PLAN.md)):** after the gated checks
+> below, it also reports **volatile counts** (`N tests` / `N modules` / … with N ≥ 20,
+> outside `PROJECT_STATS.md`, skipping dated lines and code fences) and **Schema 2.5
+> stored names** read or described as live fields —
+> the 2.5 names `.activeCycleId`, `data.cycles`, task `.highPriority`, `.priorityColor`, `deleteWhenCompleteSettings`
+> (local variables, option ids, DOM contracts and undo snapshots are exempt). Both print a
+> count and add 0 errors; `-- --list` prints every hit. They are candidates for the
+> audit to read, not findings.
 
 **Checks three things** ([scripts/validate-docs.py](../../scripts/validate-docs.py)):
 
@@ -135,6 +145,13 @@ and after proved the new dependency was declared correctly at every layer.
 **Checks:** every identifier a comment names — `` `backticked` ``, `_underscored`, or
 `camelCase()` followed by a call paren — exists somewhere in real code
 (`modules/`, `tests/`, `scripts/`, root JS). Gated at 0 from introduction.
+
+> **Docs pass (Nov 2026, warning-only until docs-audit round 10):** it also checks
+> backticked code references in live docs (dotted and called forms too, every segment
+> must resolve), against a wider table that adds Lite's scripts, the Python
+> validators, `miniCycle.html` and every doc's name. Skips fenced blocks,
+> historical lines, `future-work/` (plans name what is not built yet) and
+> `incidents/`. Never changes the exit code; `-- --docs-list` prints every hit.
 
 **Why it exists:** docs have `validate:docs`; inline comments had nothing, and they are
 the layer that degrades fastest because they sit next to code that changes. Every instance

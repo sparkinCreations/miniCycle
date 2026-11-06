@@ -6,7 +6,7 @@
  * `guidedTourManager.js` owns every decision made ABOUT this data.
  *
  * Split out of guidedTourManager in v2.504 (Priority 9 move 2, see
- * docs/future-work/LARGE_MODULE_SPLITS_PLAN.md). This is NOT a Pattern 1 facade
+ * docs/archive/LARGE_MODULE_SPLITS_PLAN.md). This is NOT a Pattern 1 facade
  * sub-module: it is statically imported, so it must NOT be added to
  * moduleManifests.js — but it IS therefore boot-critical, and has its own entry
  * in service-worker.js BOOT_CRITICAL. Run `npm run test:sw` if you touch it.

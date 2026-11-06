@@ -682,7 +682,7 @@ return` (permanent, harmless), `if (!state.settings)` *inside handler bodies*
 (runs on interaction, cannot abort wiring), and guards misattributed across
 `export async function` boundaries. A shape-matching scan yields **candidates,
 not findings** — treat the count as an upper bound until each one is executed.
-Full write-up: [SETTINGS_TOGGLE_LATCH_GAP.md](../future-work/SETTINGS_TOGGLE_LATCH_GAP.md).
+Full write-up: [SETTINGS_TOGGLE_LATCH_GAP.md](../archive/SETTINGS_TOGGLE_LATCH_GAP.md).
 
 **Check:** order the latch below every guard that can fire. A missing *element*
 is usually permanent, so latching past it is harmless; a missing *state* is always

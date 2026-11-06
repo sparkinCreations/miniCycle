@@ -2,7 +2,7 @@
 
 **Date:** August 21, 2026
 **Status:** Proposed — inventory measured, nothing built
-**Related:** [AUTO_GENERATED_DEPMAPPINGS_PLAN.md](AUTO_GENERATED_DEPMAPPINGS_PLAN.md) (the deepest existing treatment of one entry below), [VALIDATION_GATES.md](../working-on-code/VALIDATION_GATES.md), [LARGE_MODULE_SPLITS_PLAN.md](LARGE_MODULE_SPLITS_PLAN.md)
+**Related:** [AUTO_GENERATED_DEPMAPPINGS_PLAN.md](AUTO_GENERATED_DEPMAPPINGS_PLAN.md) (the deepest existing treatment of one entry below), [VALIDATION_GATES.md](../working-on-code/VALIDATION_GATES.md), [LARGE_MODULE_SPLITS_PLAN.md](../archive/LARGE_MODULE_SPLITS_PLAN.md)
 
 ---
 

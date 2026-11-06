@@ -38,7 +38,7 @@
  * so it moves unchanged; worth a follow-up.
  *
  * @module routine/routineSwitcherPreview
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';

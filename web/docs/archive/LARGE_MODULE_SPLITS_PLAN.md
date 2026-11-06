@@ -1,3 +1,5 @@
+> Archived Nov 5 2026 (docs audit round 0): plan closed Aug 28 2026, all nine priorities resolved; no successor — the splits themselves are the record.
+
 # Large Module Splits Plan — ✅ CLOSED
 
 **Date:** March 15, 2026

@@ -36,7 +36,7 @@
  * itself boot-critical.
  *
  * @module routine/routineSwitcherActions
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  * @see {@link module:features/statsPanelRewards} - the pattern this follows
  */
 

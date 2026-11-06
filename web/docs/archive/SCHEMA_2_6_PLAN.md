@@ -1,3 +1,5 @@
+> Archived Nov 5 2026 (docs audit round 0): Schema 2.6 shipped in v2.573 (Sep 19 2026; every success criterion below is checked — the *Status* line was never updated). Current shape: [reference/SCHEMA_2_6.md](../reference/SCHEMA_2_6.md); the one unshipped item moved to [future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md](../future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md).
+
 # Schema 2.6 Plan
 
 **Status:** Planned — **rewritten Aug 2026 against v2.517 by measurement.** The previous
@@ -910,11 +912,9 @@ as the small part and the audit of the surfaces above as the real work.
 
 ## Future considerations
 
-**Dev-build `validateTask()` enforcement** *(carried from the archived
-HIGH_PRIORITY_NULL_DEFAULT_FIX postmortem)* — route task creation through `validateTask()` in
-dev builds so field-default drift is caught where objects are born. Precedent: the
-`highPriority: null` bug (fixed v2.398) shipped because a creation path defaulted a field
-differently from the schema.
+**Dev-build `validateTask()` enforcement** — moved to
+[`future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md`](../future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md)
+(Nov 5 2026, when this plan was archived): it is the one item here that did not ship.
 
 **Superseded in September 2026 for `highPriority` / `priorityColor`.** This section used to say
 the plan deliberately leaves them alone, because they are a flag plus an optional per-task colour

@@ -142,19 +142,16 @@
   * [Audit Residuals (Aug 2026)](future-work/AUDIT_RESIDUALS_2026_08.md)
   * [Auto-Generated depMappings](future-work/AUTO_GENERATED_DEPMAPPINGS_PLAN.md)
   * [Boot Performance Roadmap](future-work/BOOT_PERF_ROADMAP.md)
-  * [Docs Audit Plan (10 rounds)](future-work/DOCS_AUDIT_PLAN.md)
+  * [Dev-build validateTask() Enforcement](future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md)
+  * [Docs Audit Plan (round 0 + 12 rounds)](future-work/DOCS_AUDIT_PLAN.md)
   * [Error Handling — Phases 3–5](future-work/ERROR_HANDLING_PHASES_3_5.md)
   * [Feedback TODO (Jul 2026)](future-work/FEEDBACK_TODO_2026_07.md)
   * [HTML Bootstrap Responsibility Reduction](future-work/HTML_BOOTSTRAP_RESPONSIBILITY_REDUCTION_PLAN.md)
-  * [Welcome Screen + Tip Archive ✅ closed](future-work/WELCOME_SCREEN_PLAN.md)
   * [i18n Language Packs](future-work/I18N_LANGUAGE_PACK_PLAN.md)
-  * [Large Module Splits ✅ closed](future-work/LARGE_MODULE_SPLITS_PLAN.md)
   * [Lite ↔ Full: .mcyc Import + Adopt Lite Data](future-work/LITE_MCYC_IMPORT_AND_ADOPT_PLAN.md)
   * [Module Deferral Audit](future-work/MODULE_DEFERRAL_AUDIT.md)
   * [Prompt Modal Theme Token Gap](future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md)
-  * [Settings Toggle Latch Gap ✅ closed](future-work/SETTINGS_TOGGLE_LATCH_GAP.md)
   * [Recurring Tasks — P3 Follow-ups](future-work/RECURRING_TASKS_P3_FOLLOWUP.md)
-  * [Schema 2.6 Migration](future-work/SCHEMA_2_6_PLAN.md)
   * [Single-Source Consolidation](future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md)
   * [State-as-Truth Migration](future-work/STATE_TRUTH_MIGRATION.md)
   * [Task Ordering System](future-work/TASK_ORDERING_SYSTEM_PLAN.md)
@@ -209,6 +206,12 @@
 
   * **Audits & Analysis (Complete)**
     * [Event Listener Audit](archive/EVENT_LISTENER_AUDIT.md)
+
+  * **Plans Completed (2026)** _(archived Nov 5 2026, docs audit round 0)_
+    * [Large Module Splits](archive/LARGE_MODULE_SPLITS_PLAN.md)
+    * [Schema 2.6 Plan](archive/SCHEMA_2_6_PLAN.md)
+    * [Settings Toggle Latch Gap](archive/SETTINGS_TOGGLE_LATCH_GAP.md)
+    * [Welcome Screen + Tip Archive](archive/WELCOME_SCREEN_PLAN.md)
 
   * **Historical Updates**
     * [October 2025 Improvements](archive/OCTOBER_2025_IMPROVEMENTS.md)

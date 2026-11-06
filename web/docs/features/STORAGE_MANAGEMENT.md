@@ -124,7 +124,7 @@ saved, each with its own Restore that runs the same pipeline as Restore All Rout
 same way (`restoreBackupFolderFile`). Before that the only way to see or restore one was the Testing modal under Advanced.
 
 The pre-2.5 migration's backups (`pre_migration_backup_`, `migration_backup_`, `auto_migration_backup_`) are no
-longer written: that migration was retired Sep 2026 (`docs/future-work/SCHEMA_2_6_PLAN.md`). The factory reset still
+longer written: that migration was retired Sep 2026 (`docs/archive/SCHEMA_2_6_PLAN.md`). The factory reset still
 clears any a pre-launch browser has left behind.
 
 ## User-Facing Features
