@@ -1812,7 +1812,8 @@ export const DEFAULT_LABELS = deepFreeze({
         personalizationHint: 'Personalize colors and layout',
         // Captions under those two buttons (desktop only — settings.css)
         personalizationCaption: 'Personalization',
-        darkModeCaption: 'Dark mode',
+        darkModeCaption: 'Dark mode',   // shown while the app is light: the mode a press turns on
+        lightModeCaption: 'Light mode', // shown while the app is dark
         darkModeHintOn:  'Switch to dark mode',
         darkModeHintOff: 'Switch to light mode',
         appSubtitle:    'ROUTINE MANAGER',

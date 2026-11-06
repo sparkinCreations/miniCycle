@@ -581,7 +581,9 @@ export class ThemeManager {
             // button does no longer toggles dark mode (Oct 2026). The words name
             // the mode a press switches TO, read from the live state each time.
             newQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
-            newQuickToggle.dataset.label = getLabel('nav.darkModeCaption');
+            // The desktop caption follows the same rule: it said "Dark mode" in
+            // dark mode too, under a sun icon (until Nov 2026).
+            newQuickToggle.dataset.label = getLabel(isDark ? 'nav.lightModeCaption' : 'nav.darkModeCaption');
             attachLongPressHint(newQuickToggle, {
                 getText: () => getLabel(newQuickToggle.getAttribute('aria-pressed') === 'true'
                     ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn')
@@ -632,6 +634,7 @@ export class ThemeManager {
 
             currentQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
             currentQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
+            currentQuickToggle.dataset.label = getLabel(isDark ? 'nav.lightModeCaption' : 'nav.darkModeCaption');
 
             // The emoji was the ONLY state cue, and it is invisible to assistive
             // tech twice over: it is decorative content, and the button's

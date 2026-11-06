@@ -112,7 +112,7 @@ project and what a failure means.
 
 ## 4. Module Patterns
 
-Some module headers declare one of these patterns with `@pattern` (only a handful do today; most rely on the `createDIModule()` header shown in §6):
+The codebase uses these patterns (a few older headers still name one with `@pattern`; it is not required, and new modules use the `createDIModule()` header shown in §6):
 
 | Pattern | Meaning |
 |----------|----------|
@@ -120,16 +120,19 @@ Some module headers declare one of these patterns with `@pattern` (only a handfu
 | **Simple Instance** | Stateless class for handling events or rendering (e.g. `TaskRenderer`, `TaskEvents`) |
 | **Strict Injection** | Pure functions that must receive dependencies explicitly (e.g. `undoRedoManager`, `routineLoader`) |
 
-When creating a new file, include this in the header:
+When creating a new file, start it with a short header:
 
 ```js
 /**
- * @module utilities/yourModuleName
- * @version 1.0
- * @pattern Resilient Constructor
- * @description Brief summary of purpose
+ * One or two lines on what the module is for.
+ *
+ * @module utils/yourModuleName
  */
 ```
+
+No `@version`: the app version (`version.js`) and git history are the record. (Until
+Nov 2026 the checklist asked for `@version` and `@pattern`; few modules ever had them
+and nothing checked them.)
 
 ---
 
@@ -139,7 +142,6 @@ When creating a new file, include this in the header:
 |-----------|-------------|
 | **Formatting** | Match the file you are in (indentation varies between 2 and 4 spaces); statements end with semicolons; ES6 imports/exports. `npm run lint` is the gate. |
 | **Logging** | Use emoji-coded logs for clarity. Keep them developer-friendly, not verbose. |
-| **Versioning** | Increment `@version` in each module when you make meaningful internal changes. |
 | **Dependency Checks** | Guard `optional()` dependencies: `if (_deps.someOptionalDep) { ... }`. Read `required()` deps **unguarded** — `CLAUDE.md` rule #19, gated by `npm run validate:chains`. |
 | **Schema Access** | Never manipulate `localStorage` directly — always through `AppState` or helper functions. |
 | **Initialization Safety** | Wrap DOM-dependent logic in `await _deps.appInit.waitForCore()`. |
@@ -255,7 +257,6 @@ open http://localhost:8080/tests/module-test-suite.html
 - Always handle **missing DOM gracefully** (`if (!element) return`).
 - Keep UI logic isolated from data logic.
 - Use **`AppState.update()`** to modify data, not direct object mutation.
-- Add `@pattern` and `@version` in module headers.
 - See [DEPENDENCY_MAP.md](../architecture/DEPENDENCY_MAP.md) to understand actual module dependencies.
 - Check [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md) for DI best practices.
 
@@ -299,7 +300,7 @@ Remember: miniCycle is a **routine manager**, not a todo app. Features should su
 - [ ] All tests pass (`npm test`, plus the CI suites `CLAUDE.md` lists — `test:sw`, `test:layout`, `test:journey`, …)
 - [ ] New or changed behavior has test coverage
 - [ ] Code follows existing DI patterns (no `window.*` globals)
-- [ ] Module headers include `@version`, `@pattern`, `@description`
+- [ ] New modules start with a short header comment (purpose + `@module`)
 - [ ] You've tested in a browser (and on mobile if touch/gesture related)
 
 ### PR Format

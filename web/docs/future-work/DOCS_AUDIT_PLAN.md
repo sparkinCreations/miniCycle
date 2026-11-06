@@ -242,9 +242,7 @@ loads; a hardcoded string in `preferencesBgImage.js`; the milestone levels are a
 literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.js`,
 `guidedTourDefinitions.js` ("thirteen" tours; there are 14), `appContext.js`.
 
-**Open questions (MJ):** the
-roadmap's tiers, prices and dates; the PR checklist's `@version` / `@pattern` requirement; system-aware dark mode in the
-README; merging `DATA_SCHEMA_GUIDE` into `SCHEMA_2_6` (round 3a) and trimming
+**Open questions (MJ):** merging `DATA_SCHEMA_GUIDE` into `SCHEMA_2_6` (round 3a) and trimming
 `ACCESSIBILITY` to its developer parts. *Decided (MJ, Nov 6 2026):* the privacy policy (`legal/privacy.html`, a shipped page,
 and `PRIVACY.md`; version 2.9) now names the .mcyc format page among the counted pages
 and discloses the 50 most recent event times kept for the owner-only dashboard
@@ -255,7 +253,14 @@ heading becomes plain "Children's Privacy" in the public page's words (a complia
 claim it did not need, beside bullets that said "no tracking" without the counter).
 **WCAG:** 2.2 Level AA stays the stated *goal*, never a conformance claim — as the
 public statement already words it; the two "WCAG AAA" items (`ROADMAP`,
-`ACCESSIBILITY`'s not-done list) are removed, AAA was never a realistic target. The copyright
+`ACCESSIBILITY`'s not-done list) are removed, AAA was never a realistic target. `ROADMAP`: tiers, prices and dates stand; its
+"habit building" positioning becomes routine language (the *Habit Tracker* theme keeps
+its name). `CONTRIBUTING` (project-info): the `@version` / `@pattern` header requirement
+is dropped (few modules had them, nothing checked them). `README`: dark mode is a manual
+toggle and does not follow the system; the `prefers-color-scheme` rule only paints the
+pre-load background. Found on the way, fixed (app code): the desktop caption under the
+dark-mode corner button said "Dark mode" in dark mode too, under a sun icon — it now
+names the mode a press switches to, like its icon and tooltip. The copyright
 statement's author name stays out of the repo — the placeholder now says it is filled
 in on the signed copy only.
 

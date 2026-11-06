@@ -17,13 +17,13 @@
 
 ## Vision
 
-**miniCycle** is the **forever-free gateway** to the cycling methodology. It introduces users to task cycling, habit formation, and systematic progress - establishing the foundation for upgrading to professional tiers when needed.
+**miniCycle** is the **forever-free gateway** to the cycling methodology. It introduces users to task cycling, repeatable routines, and systematic progress - establishing the foundation for upgrading to professional tiers when needed.
 
 ### Three-Tier Ecosystem
 
 miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
-1. **miniCycle** (Free) - Personal habit building & cycling introduction
+1. **miniCycle** (Free) - Personal routines & cycling introduction
 2. **Task Cycle** ($25 one-time) - Professional workflows & advanced features
 3. **Task Cycle Pro** ($10-15/month) - Team collaboration & cloud sync
 
@@ -40,7 +40,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 ✅ **No Accounts** - No registration, no authentication
 ✅ **Privacy-First** - All data stored locally
 ✅ **Source-available** - Code is public to view and audit (the repo `LICENSE` is proprietary, view-only — not an open-source licence)
-✅ **Personal Use** - Focused on individual habit building
+✅ **Personal Use** - Focused on individual routines
 
 **miniCycle's role:** Introduce cycling methodology to broad audience and serve as gateway to professional tiers.
 
@@ -84,7 +84,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 - ✅ Quick Access Buttons (personalization 🖌️, dark mode 🌓)
 - ✅ Comprehensive Documentation
 
-**miniCycle is feature-complete for personal habit building.**
+**miniCycle is feature-complete as a personal routine manager.**
 
 ---
 
@@ -171,7 +171,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 - [ ] Keyboard shortcuts expansion
 - [ ] Print-friendly view
 - [ ] CSV export (basic)
-- [ ] Habit tracking charts (local only)
+- [ ] Routine progress charts (local only)
 - [ ] Widget support (PWA)
 
 ### Medium Priority (Maybe)
@@ -192,7 +192,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 - [ ] Calendar view
 - [x] Browser extension — ✅ Chrome extension, lite popup + full app in the side panel (repo-root `chrome/`; side panel since v2.244)
 
-**Note:** These are being considered but not guaranteed. miniCycle remains focused on core habit-building features.
+**Note:** These are being considered but not guaranteed. miniCycle remains focused on its core routine features.
 
 ---
 
@@ -215,7 +215,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 - Need cloud sync? → **Task Cycle Pro**
 - Need team features? → **Task Cycle Pro**
 - Need professional workflows? → **Task Cycle** ($25 one-time)
-- Just building habits? → **Stay on miniCycle** (free forever)
+- Just running your own routines? → **Stay on miniCycle** (free forever)
 
 ---
 
@@ -225,7 +225,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 **Principles:**
 
-1. **Keep it simple** - Core habit-building features only
+1. **Keep it simple** - Core routine features only
 2. **Keep it free** - No paywalls or premium features
 3. **Keep it offline** - No server dependencies
 4. **Keep it private** - No data collection
@@ -320,7 +320,7 @@ miniCycle serves as:
 
 **What we'll consider:**
 
-- Features that serve personal habit building
+- Features that serve personal routines
 - Improvements to core experience
 - Accessibility enhancements
 - Performance optimizations
@@ -476,11 +476,11 @@ Want to support continued development?
 
 ### "Why not just make everything free?"
 
-Professional features require ongoing development, support, and potentially infrastructure (cloud sync). Paid tiers ensure sustainable development while keeping core habit-building free.
+Professional features require ongoing development, support, and potentially infrastructure (cloud sync). Paid tiers ensure sustainable development while keeping the core routine manager free.
 
 ---
 
 **Roadmap Version:** 2.1
 **Next Review:** March 2026
 
-*miniCycle: Forever free, forever focused on personal habit building.*
+*miniCycle: Forever free, forever focused on personal routines.*
