@@ -3,9 +3,9 @@
 > **How miniCycle handles your data**
 
 **Effective Date:** October 2, 2025
-**Policy last updated:** October 16, 2026
-**Version:** 2.8
-**miniCycle version at that update:** 2.618
+**Policy last updated:** November 6, 2026
+**Version:** 2.9 (2.9: the .mcyc format page's counter, and the 50 most recent event times)
+**miniCycle version at that update:** the first release after 2.670
 **Last verified:** Nov 6 2026 (against `web/legal/privacy.html` and the code)
 
 > This file mirrors the published policy. The canonical text is `web/legal/privacy.html` (minicycle.app/legal/privacy); when the two differ, the HTML wins.
@@ -16,7 +16,7 @@
 
 **The miniCycle app collects ZERO data.** All your task data, settings, and history stay on your device. The app makes no analytics, telemetry, or tracking calls.
 
-**The miniCycle marketing pages** (product page and learn-more page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no stored IP addresses, no personal data, no third-party analytics, and no advertising trackers. See "Analytics & Tracking" below for the full disclosure.
+**The miniCycle marketing pages** (product page, learn-more page and .mcyc format page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no stored IP addresses, no personal data, no third-party analytics, and no advertising trackers. See "Analytics & Tracking" below for the full disclosure.
 
 - ✅ The app: 100% local, zero data collection
 - ✅ No accounts, no authentication, no registration
@@ -79,7 +79,7 @@ The miniCycle app makes **zero network requests** for:
 
 ### Network Activity (Marketing Pages)
 
-The product and learn-more pages POST anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure. See "Analytics & Tracking" below for what is and isn't included in those events.
+The product, learn-more and .mcyc format pages POST anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure. See "Analytics & Tracking" below for what is and isn't included in those events.
 
 **No data from inside the app is ever transmitted.**
 
@@ -119,7 +119,7 @@ miniCycle uses **zero cookies** — neither the app nor the marketing pages set 
 **localStorage and sessionStorage are not cookies:**
 
 - localStorage stores your task data (in the app) — never transmitted
-- sessionStorage stores a single per-tab flag on the marketing pages (`pv-product` / `pv-learn-more`) to deduplicate page views; never transmitted, automatically discarded when the tab closes
+- sessionStorage stores a single per-tab flag on the marketing pages (`pv-product` / `pv-learn-more` / `pv-mcyc-format`) to deduplicate page views; never transmitted, automatically discarded when the tab closes
 - Both are isolated to the originating site by your browser and cannot be read by other websites
 
 ---
@@ -381,13 +381,14 @@ We do not track anything inside the miniCycle app:
 
 ### On the Marketing Pages: Anonymous Click & Page-View Counting
 
-The product page and learn-more page run a small self-hosted counter to help us understand which content engages visitors and gauge overall traffic. This is **the only place** any tracking happens.
+The product page, learn-more page and .mcyc format page run a small self-hosted counter to help us understand which content engages visitors and gauge overall traffic. This is **the only place** any tracking happens.
 
 **What is collected:**
 
 - The visible label of any clicked button or link (e.g., "Get Started", "View on GitHub", "FAQ: Is miniCycle free?")
 - A page-view event when a marketing page is loaded
-- An ISO 8601 timestamp for each event, used only for aggregate trend charts (clicks per day, by hour of day) on our internal admin dashboard
+- The time of each event, folded into counts per day, per hour of day and per weekday for trend charts on our private admin dashboard
+- The times of the 50 most recent events (ISO 8601), for a "recent activity" list on that dashboard, which only the site owner can open; older ones are dropped as new ones arrive, and none is linked to a visitor (`MAX_RECENT` in `netlify/functions/track.js`)
 - A running total count for each named event
 
 **What is NOT collected:**
@@ -485,8 +486,8 @@ miniCycle's source code is publicly viewable for verification and educational pu
 
 ---
 
-**Privacy Policy Version:** 2.8
+**Privacy Policy Version:** 2.9
 **Effective Date:** October 2, 2025
-**Policy last updated:** October 16, 2026
+**Policy last updated:** November 6, 2026
 
 *Your privacy is our priority. Always has been, always will be.*
