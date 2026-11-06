@@ -701,15 +701,15 @@ export class MenuManager {
                     this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
+                // ✅ The same fresh copy the routine switcher's Duplicate makes —
+                // new task ids, no inherited cycle count or History (routineCopy.js).
+                // Filed under its own generated id: the key is identity, the title is text.
+                const copy = buildRoutineCopy(currentCycle, finalCycleName);
+
                 // ✅ Update through state system
                 AppState.update(state => {
-
-                    // ✅ The same fresh copy the routine switcher's Duplicate makes —
-                    // new task ids, no inherited cycle count or History (routineCopy.js).
-                    getRoutines(state)[finalCycleName] = buildRoutineCopy(currentCycle, finalCycleName);
-
-                    // ✅ Set as active cycle using the title as key
-                    setActiveRoutineId(state, finalCycleName);
+                    getRoutines(state)[copy.id] = copy;
+                    setActiveRoutineId(state, copy.id);
                     state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
 
                 }, true); // immediate save
@@ -719,7 +719,7 @@ export class MenuManager {
                 // repaired that, and dropped the change it was recording — so the
                 // first edit in a fresh copy could not be undone.
                 if (typeof this.deps.onCycleCreated === 'function') {
-                    Promise.resolve(this.deps.onCycleCreated(finalCycleName)).catch(err => {
+                    Promise.resolve(this.deps.onCycleCreated(copy.id)).catch(err => {
                         console.warn('⚠️ Undo system cycle creation notification failed:', err);
                     });
                 }

@@ -4736,6 +4736,96 @@ async function journeyPriorityLevelsFollowTheme(browser, baseURL) {
 // history cleared, and NOTHING left to migrate (and no second copy) on the next
 // boot. The migration function's unit tests own each rule; this owns "boot runs
 // it, once, and the app renders the result".
+// Routines are keyed by a generated id, never their title. Until Nov 2026
+// creation, import, duplicate and rename still wrote title keys into 2.6 data;
+// boot re-keys those once (AppState._repairRoutineKeys), keeping the raw
+// document first, WITHOUT a schema bump. A rename afterwards changes only the
+// title.
+async function journeyBootRepairsTitleKeyedRoutines(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const task = (id, text) => ({ id, text, completed: false, priority: null, autoClear: { cycle: false, todo: true }, schemaVersion: 2 });
+    const doc = {
+        schemaVersion: '2.6',
+        metadata: { createdAt: 1, lastModified: 2, schemaVersion: '2.6', totalRoutinesCreated: 2 },
+        settings: { theme: 'default', darkMode: false, onboardingCompleted: true, defaultPriority: 'medium' },
+        data: { routine: {
+            'routine-1-a': { id: 'routine-1-a', title: 'Evening', cycleCount: 0, autoReset: true, deleteCheckedTasks: false,
+                recurringTemplates: {}, tasks: [task('e1', 'Read')] },
+            'Morning Routine': { id: 'cycle_100', title: 'Morning Routine', cycleCount: 2, autoReset: true, deleteCheckedTasks: false,
+                recurringTemplates: {}, tasks: [task('m1', 'Stretch'), task('m2', 'Coffee')] }
+        } },
+        appState: { activeRoutineId: 'Morning Routine' },
+        userProgress: { cyclesCompleted: 2 }
+    };
+    const raw = JSON.stringify(doc);
+    const { context, page } = await openFresh(browser, baseURL, {
+        noNavigate: true,
+        initScript: (d) => { if (!localStorage.getItem('__seeded')) { localStorage.setItem('miniCycleData', d); localStorage.setItem('__seeded', '1'); } },
+        initArg: raw
+    });
+    const read = () => page.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData'));
+        const map = (d.data && d.data.routine) || {};
+        return {
+            version: d.schemaVersion,
+            keys: Object.keys(map),
+            allById: Object.entries(map).every(([k, r]) => r.id === k),
+            titles: Object.values(map).map(r => r.title),
+            active: d.appState && d.appState.activeRoutineId,
+            activeTitle: map[d.appState && d.appState.activeRoutineId] && map[d.appState.activeRoutineId].title,
+            copies: Object.keys(localStorage).filter(k => k.startsWith('miniCycleData_pre-migration_')),
+            rows: document.querySelectorAll('#taskList .task').length
+        };
+    });
+    try {
+        await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(1500);
+        const after = await read();
+        record('the title-keyed routine is filed under its own id; the id-keyed one is untouched',
+            after.keys.join(',') === 'routine-1-a,cycle_100' && after.allById, JSON.stringify(after.keys));
+        record('titles survive and the active routine follows its key',
+            after.titles.join(',') === 'Evening,Morning Routine' && after.active === 'cycle_100' && after.activeTitle === 'Morning Routine',
+            JSON.stringify({ titles: after.titles, active: after.active }));
+        record('the schema stays 2.6 (a repair is not a version bump)', after.version === '2.6', after.version);
+        record('a copy of the raw document was kept first', after.copies.length === 1, `copies: ${after.copies.join(',')}`);
+        const copy = await page.evaluate((k) => localStorage.getItem(k), after.copies[0] || '');
+        record('the copy is the byte-identical stored document', copy === raw, 'copy differs from what was stored');
+        record('the repaired active routine rendered', after.rows === 2, `${after.rows} task rows`);
+
+        // Rename from the title bar: only the title may change.
+        const renamed = await page.evaluate(async () => {
+            const el = document.getElementById('mini-cycle-title');
+            if (!el) return { error: 'no title element' };
+            el.focus();
+            el.textContent = 'Morning Renamed';
+            el.dispatchEvent(new Event('blur'));
+            await new Promise(r => setTimeout(r, 1200));
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const map = d.data.routine;
+            return { keys: Object.keys(map), active: d.appState.activeRoutineId, title: map.cycle_100 && map.cycle_100.title };
+        });
+        record('a title-bar rename changes only the title — the key and active id stay',
+            !renamed.error && renamed.keys.join(',') === 'routine-1-a,cycle_100' && renamed.active === 'cycle_100' && renamed.title === 'Morning Renamed',
+            JSON.stringify(renamed));
+
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForTimeout(800);
+        const again = await read();
+        record('a second boot repairs nothing: same keys, still ONE copy',
+            again.keys.join(',') === 'routine-1-a,cycle_100' && again.copies.length === 1 && again.allById,
+            JSON.stringify({ keys: again.keys, copies: again.copies.length }));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'title-keyed routines are re-keyed by id at boot; rename keeps the key', failures };
+}
+
 async function journeyBootMigratesSchema25(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const legacyDoc = {
@@ -5475,8 +5565,9 @@ async function journeyRecurringPanelAfterInPlaceReset(browser, baseURL) {
 }
 
 // ── Renaming the routine can be undone ──────────────────────────────────────
-// A rename re-keys the routine and relabels the undo stacks to the new key. The
-// relabel also overwrote every snapshot's TITLE with the new name, so the
+// A rename used to re-key the routine and relabel the undo stacks to the new
+// key (since Nov 2026 it changes only the title). The relabel also overwrote
+// every snapshot's TITLE with the new name, so the
 // snapshot taken just before the rename matched the current state, Undo skipped
 // it, and pressing Undo after a rename undid the step BEFORE it instead
 // (Oct 2026 audit). Undo must put the old name back — in state and on the
@@ -6750,6 +6841,7 @@ async function journeySwitcherManyRoutines(browser, baseURL) {
                 r.deleteCheckedTasks = i % 3 === 2;
                 r.tasks = Array.from({ length: 2 + (i % 6) }, (_, k) => ({ ...base.tasks[0], id: `m${i}t${k}`, text: `${n} step ${k + 1}`, completed: false }));
                 r.history = { events: [], maxEvents: 100 };
+                r.id = 'm' + i; // 2.6 contract: key === id (see journeyBrowseRoutines)
                 out['m' + i] = r;
             });
             d.data.routine = out;
@@ -6935,6 +7027,10 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 r.history = { events: [], maxEvents: 100 };
                 // Recent order = r0, r1, r2, … (r0 used most recently).
                 r.lastAccessedAt = Date.now() - i * HOUR;
+                // 2.6 contract: a routine's key IS its id. Cloning `base` copied
+                // base's id onto every routine, which boot now (correctly) re-keys
+                // as title-keyed data (AppState._repairRoutineKeys, Nov 2026).
+                r.id = 'r' + i;
                 out['r' + i] = r;
             });
             d.data.routine = out;
@@ -7601,6 +7697,7 @@ const JOURNEYS = [
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },
     { name: 'a 2.5 document is migrated at boot', fn: journeyBootMigratesSchema25 },
+    { name: 'title-keyed routines are re-keyed by id at boot; rename keeps the key', fn: journeyBootRepairsTitleKeyedRoutines },
     { name: 'the pre-migration copy is usable from Settings', fn: journeyPreMigrationCopyFromSettings },
     { name: 'a backup made before 2.6 restores from Settings', fn: journeySettingsRestoreAcceptsOlderBackup },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },

@@ -398,6 +398,12 @@ Two routines with the same name collided and a rename had to rekey every referen
 Since 2.6 routines are keyed by a generated id (`activeRoutineId: "routine-…"`) and
 `title` holds the name; `routine/schemaMigration26.js` rekeys older documents once at boot.
 
+**Not fully resolved until Nov 2026.** The migration re-keyed existing routines, but
+creation, import, duplicate and both rename paths kept writing title keys, so 2.6 data
+mixed the two. Those writes now use generated ids (a rename edits only `title`), and boot
+re-keys what was left behind (`AppState._repairRoutineKeys`). Name clashes are checked
+against titles, not keys (`nameUtils.isNameTaken`).
+
 ---
 
 ### 5.4 Recurring Templates Are Stored Separately

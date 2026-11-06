@@ -34,7 +34,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { recoverCorruptedData, saveTextAsFile } from '../utils/dataRecovery.js';
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import { getRoutines, getActiveRoutine, getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
-import { migrateSchema_2_5_to_2_6 } from '../routine/schemaMigration26.js';
+import { migrateSchema_2_5_to_2_6, repairRoutineKeys, isRoutineKeyedById } from '../routine/schemaMigration26.js';
 import { GlobalUtils } from '../utils/globalUtils.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { collectSwatchSets } from '../utils/priorityLevel.js';
@@ -264,7 +264,7 @@ class MiniCycleState {
                     this.data = this._ensureMetadata(parsed);
                     this.isInitialized = true;
                     this._registerPersistenceListeners();
-                    if (this.migratedThisBoot) this._persistRepairedData(this.data);
+                    if (this.migratedThisBoot || this.repairedRoutineKeysThisBoot) this._persistRepairedData(this.data);
                     return this.data;
                 }
             }
@@ -345,7 +345,7 @@ class MiniCycleState {
                     // debounced save: a tab closed before its first edit would
                     // otherwise re-migrate on every boot (and keep a new
                     // pre-migration copy each time).
-                    if (existingData && this.migratedThisBoot) this._persistRepairedData(existingData);
+                    if (existingData && (this.migratedThisBoot || this.repairedRoutineKeysThisBoot)) this._persistRepairedData(existingData);
                 }
             } catch (parseError) {
                 console.warn('⚠️ Could not parse existing data — attempting recovery:', parseError);
@@ -666,7 +666,8 @@ class MiniCycleState {
      * Bring an OLDER stored document up to SCHEMA.CURRENT before it is adopted.
      * Today that is one step, 2.5 -> 2.6 (routine/schemaMigration26.js — the
      * same function the testing modal's dry run exercises on real data). A
-     * current or newer document passes through untouched.
+     * current document goes through the routine-key repair instead
+     * (_repairRoutineKeys); a newer one passes through untouched.
      *
      * The raw pre-migration document is kept first under
      * `<DATA>_pre-migration_<timestamp>`, the way corruption recovery keeps the
@@ -681,7 +682,7 @@ class MiniCycleState {
      * @private
      */
     _migrateIfOlder(doc, rawStored) {
-        if (classifyStoredVersion(doc) !== 'older') return doc;
+        if (classifyStoredVersion(doc) !== 'older') return this._repairRoutineKeys(doc, rawStored);
         try {
             this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
         } catch (error) {
@@ -694,6 +695,46 @@ class MiniCycleState {
         this.migratedThisBoot = { from: String(doc.schemaVersion), to: SCHEMA.CURRENT };
         console.warn(`✅ Migrated stored data ${this.migratedThisBoot.from} -> ${this.migratedThisBoot.to}`);
         return migrated;
+    }
+
+    /**
+     * Re-key title-keyed routines on a CURRENT (2.6) document before it is adopted.
+     *
+     * Until Nov 2026 routine creation, import and rename wrote routines under their
+     * title even though 2.6 keys them by id, so stored data can mix the two. Each
+     * routine whose key is not its own `id` is re-keyed once (repairRoutineKeys in
+     * routine/schemaMigration26.js — the same function the testing modal's dry run
+     * reports on). The schema stays 2.6: the shape already promises id keys, and a
+     * bump would make older platform builds refuse the data.
+     *
+     * Same safety net as the migration: the raw document is kept first under
+     * `<DATA>_pre-migration_<timestamp>`. `repairedRoutineKeysThisBoot` holds the
+     * [oldKey, newKey] pairs so later boot steps can act on them: the callers persist
+     * the repaired document at once, and the undo system clears the persisted history
+     * of the re-keyed routines only (it is filed under their old keys).
+     *
+     * @param {Object} doc - Parsed stored document
+     * @param {string|null} rawStored - The raw storage string, when available
+     * @returns {Object} The document to adopt (a repaired copy, or `doc` untouched)
+     * @private
+     */
+    _repairRoutineKeys(doc, rawStored) {
+        if (classifyStoredVersion(doc) !== 'current') return doc;
+        const routines = doc?.data?.routine;
+        if (!routines || typeof routines !== 'object') return doc;
+        const needsRepair = Object.entries(routines).some(([key, routine]) =>
+            routine && typeof routine === 'object' && !isRoutineKeyedById(key, routine));
+        if (!needsRepair) return doc;
+        try {
+            this.deps.storage.setItem(`${PRE_MIGRATION_BACKUP_PREFIX}${Date.now()}`, rawStored ?? JSON.stringify(doc));
+        } catch (error) {
+            console.warn('⚠️ Could not keep a copy before repairing routine keys:', error);
+        }
+        const repaired = structuredClone(doc);
+        const keyMap = repairRoutineKeys(repaired, () => GlobalUtils.generateId('routine'));
+        this.repairedRoutineKeysThisBoot = keyMap;
+        console.warn(`✅ Re-keyed ${keyMap.length} title-keyed routine(s) by id`);
+        return repaired;
     }
 
     /**

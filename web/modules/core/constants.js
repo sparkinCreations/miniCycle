@@ -1918,6 +1918,7 @@ export const DOM_IDS = Object.freeze({
     CLOSE_TESTING_MODAL: 'close-testing-modal',
     AUTOMATED_TEST_OUTPUT: 'automated-test-output',
     TESTING_OUTPUT: 'testing-output',
+    SHOW_ROUTINE_KEYS: 'show-routine-keys', // Diagnostics: each routine's key -> title -> task count
     TEST_PROGRESS_BAR: 'test-progress-bar',
     TEST_STATUS_TEXT: 'test-status-text',
     TEST_TIME_ESTIMATE: 'test-time-estimate',

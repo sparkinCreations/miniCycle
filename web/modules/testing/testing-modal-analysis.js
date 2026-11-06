@@ -226,12 +226,16 @@ const TEST_DATA_PATTERNS = {
 };
 
 /**
- * Check if a cycle appears to be test data
- * @param {string} cycleId - Cycle ID
+ * Check if a cycle appears to be test data. Matches the key OR the title: test
+ * fixtures used to be keyed by name ("test-cycle"), and since routines are keyed
+ * by generated id the name only survives in `title`.
+ * @param {string} cycleId - Cycle ID (the routine's key)
+ * @param {Object} [routine] - The routine, for its title
  * @returns {boolean} True if cycle appears to be test data
  */
-function isTestDataCycle(cycleId) {
-    return TEST_DATA_PATTERNS.cycleIds.includes(cycleId);
+function isTestDataCycle(cycleId, routine) {
+    return TEST_DATA_PATTERNS.cycleIds.includes(cycleId)
+        || (typeof routine?.title === 'string' && TEST_DATA_PATTERNS.cycleIds.includes(routine.title));
 }
 
 /**
@@ -243,8 +247,8 @@ function isTestDataCycle(cycleId) {
 export function scanTestDataCycles(data) {
     const found = [];
     for (const cycleId of Object.keys(data?.routine || {})) {
-        if (!isTestDataCycle(cycleId)) continue;
         const cycle = data.routine[cycleId];
+        if (!isTestDataCycle(cycleId, cycle)) continue;
         found.push({ id: cycleId, label: cycle?.title || cycle?.name || cycleId });
     }
     return found;
@@ -313,7 +317,7 @@ export function repairData() {
             const allCycleIds = Object.keys(data.routine || {});
             for (const cycleId of allCycleIds) {
                 const cycle = data.routine[cycleId];
-                if (isTestDataCycle(cycleId)) {
+                if (isTestDataCycle(cycleId, cycle)) {
                     testDataFound.push(`"${cycle.title || cycle.name || cycleId}" (id: ${cycleId})`);
                     delete data.routine[cycleId];
                     repairs.push(`Removed test data cycle: "${cycle.title || cycleId}"`);

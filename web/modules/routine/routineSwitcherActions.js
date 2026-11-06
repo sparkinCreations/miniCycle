@@ -360,12 +360,14 @@ export class RoutineSwitcherActions {
         const baseName = `${originalCycle.title} Copy`;
         const { name: uniqueName } = this.m.getUniqueCycleName(baseName, cycles);
 
-        // ✅ A fresh copy: new ids, no inherited cycles or history (routineCopy.js)
+        // ✅ A fresh copy: new ids, no inherited cycles or history (routineCopy.js).
+        // Filed under its own generated id — the key is identity, the title is text.
         const copiedCycle = buildRoutineCopy(originalCycle, uniqueName);
+        const copyKey = copiedCycle.id;
 
         // ✅ Update through state system
         this.m.deps.AppState.update(state => {
-            getRoutines(state)[uniqueName] = copiedCycle;
+            getRoutines(state)[copyKey] = copiedCycle;
             state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
         }, true); // immediate save
 
@@ -384,7 +386,7 @@ export class RoutineSwitcherActions {
         // Wait for list to render, then find and edit the new item
         setTimeout(() => {
             const newItem = [...this.m.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
-                .find(item => item.dataset.cycleKey === uniqueName);
+                .find(item => item.dataset.cycleKey === copyKey);
 
             if (newItem) {
                 // Select the new item
@@ -399,10 +401,10 @@ export class RoutineSwitcherActions {
                 }
 
                 // Update preview
-                this.m.updatePreview(uniqueName);
+                this.m.updatePreview(copyKey);
 
                 // ✅ Put the item in inline edit mode
-                this._startInlineEdit(newItem, uniqueName);
+                this._startInlineEdit(newItem, copyKey);
 
             }
         }, 100);
@@ -654,36 +656,21 @@ export class RoutineSwitcherActions {
             this.m.deps.showNotification(getLabel('notify.nameExists', { vars: { name: uniqueName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
         }
 
-        // Update through state system
+        // Rename in place: only `title` changes. The key is the routine's id and
+        // never follows its name (until Nov 2026 this re-keyed the routine under
+        // the new title and asked the undo system to move its history, which made
+        // the title the identity; see AppState._repairRoutineKeys).
         this.m.deps.AppState.update(state => {
             const cycleData = getRoutine(state, oldKey);
             if (!cycleData) return;
-
-            const updatedCycle = { ...cycleData, title: uniqueName };
-            getRoutines(state)[uniqueName] = updatedCycle;
-            delete getRoutines(state)[oldKey];
-
-            if (getActiveRoutineId(state) === oldKey) {
-                setActiveRoutineId(state, uniqueName);
-            }
-
+            cycleData.title = uniqueName;
         }, true);
-
-        // Notify undo system of cycle rename
-        if (typeof this.m.deps.onCycleRenamed === 'function') {
-            // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
-            // call, so it yields undefined when the hook is unwired and `.catch` on
-            // undefined throws here — inside a UI flow, after state already changed.
-            Promise.resolve(this.m.deps.onCycleRenamed(oldKey, uniqueName)).catch(err => {
-                console.warn('⚠️ Undo system cycle rename notification failed:', err);
-            });
-        }
 
         // Refresh the list and re-select
         this.m.loadMiniCycleList();
         setTimeout(() => {
             const renamedItem = [...this.m.deps.querySelectorAll(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM)]
-                .find(item => item.dataset.cycleKey === uniqueName);
+                .find(item => item.dataset.cycleKey === oldKey);
             if (renamedItem) {
                 renamedItem.classList.add(DOM_CLASSES.SELECTED);
                 renamedItem.click();

@@ -204,6 +204,19 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         cleanupDom();
     });
 
+    await test('the duplicate is keyed by its own generated id, never by its title', async () => {
+        const { instance, state, cycleKeys } = setup({ cycles: { a: { id: 'a', title: 'Alpha', tasks: [] } }, selectedKey: 'a' });
+        instance.duplicateMiniCycle();
+        await settle(600);
+        const copyKey = cycleKeys().find(k => k !== 'a');
+        if (!copyKey) throw new Error('no copy');
+        const copy = state.data.routine[copyKey];
+        if (copyKey === copy.title) throw new Error(`the copy is keyed by its title "${copyKey}"`);
+        if (copy.id !== copyKey) throw new Error(`key ${copyKey} is not the copy's id ${copy.id}`);
+        if (!/^routine-/.test(copyKey)) throw new Error(`key ${copyKey} is not a generated routine id`);
+        cleanupDom();
+    });
+
     await test('the duplicate gets a distinct name', async () => {
         const { instance, state } = setup({ cycles: { a: { title: 'Alpha', tasks: [] } }, selectedKey: 'a' });
         instance.duplicateMiniCycle();
@@ -245,41 +258,42 @@ export async function runRoutineSwitcherActionsTests(resultsDiv) {
         cleanupDom();
     });
 
-    await test('_commitRename RE-KEYS the routine under its new name', async () => {
-        // Signature is (oldKey, rawNewName, oldName) — three args. The producer
-        // writes cycles[newName] and deletes cycles[oldKey], so the storage key
-        // and the title move together.
+    await test('_commitRename renames IN PLACE: only the title changes, the key stays', async () => {
+        // Signature is (oldKey, rawNewName, oldName) — three args. Since Nov 2026
+        // the key is the routine's identity and never follows its name (it used to
+        // be re-keyed under the new title, which made the title the identity).
         const { instance, state, cycleKeys } = setup({ cycles: TWO, selectedKey: 'b', activeRoutineId: 'a' });
+        const keysBefore = cycleKeys().join(',');
         instance._commitRename('b', 'Renamed Beta', 'Beta');
         await settle(400);
-        if (cycleKeys().includes('b')) throw new Error('the old key should be gone');
-        if (!cycleKeys().includes('Renamed Beta')) throw new Error(`re-key failed: ${cycleKeys()}`);
-        if (state.data.routine['Renamed Beta'].title !== 'Renamed Beta') throw new Error('title not updated');
+        if (cycleKeys().join(',') !== keysBefore) throw new Error(`keys changed: ${cycleKeys()}`);
+        if (state.data.routine.b.title !== 'Renamed Beta') throw new Error('title not updated');
         if (state.data.routine.a.title !== 'Alpha') throw new Error('the wrong routine was renamed');
         cleanupDom();
     });
 
-    await test('renaming the ACTIVE routine follows it to the new key', async () => {
+    await test('renaming the ACTIVE routine leaves activeRoutineId pointing at it', async () => {
         const { instance, state } = setup({ cycles: TWO, selectedKey: 'a', activeRoutineId: 'a' });
         instance._commitRename('a', 'Alpha Renamed', 'Alpha');
         await settle(400);
-        if (state.appState.activeRoutineId !== 'Alpha Renamed') {
-            throw new Error(`activeRoutineId is "${state.appState.activeRoutineId}" — it would now point at nothing`);
+        if (state.appState.activeRoutineId !== 'a') {
+            throw new Error(`activeRoutineId is "${state.appState.activeRoutineId}" — it must not move on a rename`);
         }
+        if (state.data.routine.a.title !== 'Alpha Renamed') throw new Error('title not updated');
         cleanupDom();
     });
 
-    await test('a colliding rename keeps both routines, uniquifying the KEY', async () => {
-        // Uniqueness is enforced on the storage KEY, not the display title:
-        // getUniqueCycleName is given the cycles map (minus the routine being
-        // renamed). Two routines may therefore end up showing the same title
-        // when their keys differ — surprising, but not data loss, and not
-        // something to change inside an extraction.
-        const { instance, cycleKeys } = setup({ cycles: { Alpha: { title: 'Alpha', tasks: [] }, b: { title: 'Beta', tasks: [] } }, selectedKey: 'b' });
+    await test('a colliding rename keeps both routines and uniquifies the TITLE', async () => {
+        // Uniqueness is enforced on display titles (nameUtils compares titles,
+        // since keys are generated ids): renaming Beta to "Alpha" while Alpha
+        // exists makes it "Alpha (2)". Before Nov 2026 the KEY was uniquified and
+        // two routines could end up showing the same title.
+        const { instance, state, cycleKeys } = setup({ cycles: { a: { title: 'Alpha', tasks: [] }, b: { title: 'Beta', tasks: [] } }, selectedKey: 'b' });
         instance._commitRename('b', 'Alpha', 'Beta');
         await settle(400);
         if (cycleKeys().length !== 2) throw new Error(`a colliding rename lost a routine: ${cycleKeys()}`);
-        if (new Set(cycleKeys()).size !== 2) throw new Error('keys collided');
+        if (state.data.routine.b.title !== 'Alpha (2)') throw new Error(`expected "Alpha (2)", got ${state.data.routine.b.title}`);
+        if (state.data.routine.a.title !== 'Alpha') throw new Error('the other routine changed');
         cleanupDom();
     });
 

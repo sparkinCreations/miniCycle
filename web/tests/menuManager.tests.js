@@ -540,6 +540,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
 
     test('saveMiniCycleAsNew creates new cycle (DI)', () => {
         let newCycleName = null;
+        let copied = null;
         let stateUpdated = false;
         const mockFullSchema = {
             metadata: { totalRoutinesCreated: 1, lastModified: Date.now() },
@@ -558,6 +559,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
                     const stateCopy = JSON.parse(JSON.stringify(mockFullSchema));
                     updateFn(stateCopy);
                     newCycleName = Object.keys(stateCopy.data.routine).find(k => k !== 'cycle-1');
+                    copied = { key: newCycleName, routine: stateCopy.data.routine[newCycleName], active: stateCopy.appState.activeRoutineId };
                     stateUpdated = true;
                 }
             }),
@@ -577,6 +579,12 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         if (!newCycleName) {
             throw new Error('New cycle should be created');
         }
+        // Keyed by its own generated id, named by the title (Nov 2026: Duplicate
+        // used to file the copy under its title).
+        if (copied.key === 'New Cycle Name') throw new Error('the copy is keyed by its title');
+        if (copied.routine.id !== copied.key) throw new Error(`key ${copied.key} is not the copy's id ${copied.routine.id}`);
+        if (copied.routine.title !== 'New Cycle Name') throw new Error(`title ${copied.routine.title}`);
+        if (copied.active !== copied.key) throw new Error('the copy should become the active routine, by key');
     });
 
     test('REGRESSION: the menu\'s Duplicate makes a fresh copy, like the routine switcher\'s (DI)', () => {
@@ -691,7 +699,9 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
                 update: (updateFn) => {
                     const stateCopy = JSON.parse(JSON.stringify(mockFullSchema));
                     updateFn(stateCopy);
-                    newCycleName = Object.keys(stateCopy.data.routine).find(k => k !== 'cycle-1');
+                    // The copy is keyed by a generated id (Nov 2026); its NAME is the title.
+                    const copyKey = Object.keys(stateCopy.data.routine).find(k => k !== 'cycle-1');
+                    newCycleName = copyKey && stateCopy.data.routine[copyKey].title;
                 }
             }),
             showPromptModal: (opts) => opts.callback('d'.repeat(limit + 40)),
@@ -707,7 +717,7 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
         if (!warned) throw new Error(`expected a truncation warning, got: ${JSON.stringify(notifications.map(n => n.msg))}`);
         if (warned.type !== 'warning') throw new Error(`expected type "warning", got "${warned.type}"`);
         if (!newCycleName || newCycleName.length !== limit) {
-            throw new Error(`copy should be stored under a ${limit}-char name, got ${newCycleName ? newCycleName.length : 'none'}`);
+            throw new Error(`copy should be titled with a ${limit}-char name, got ${newCycleName ? newCycleName.length : 'none'}`);
         }
     });
 

@@ -44,6 +44,20 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
     resultsDiv.innerHTML = '<h2>🔄 RoutineManager Tests</h2><h3>Running tests...</h3>';
     let passed = { count: 0 }, total = { count: 0 };
 
+    // Routines are keyed by a generated id, never by their title (Nov 2026 fix:
+    // creation used to file them under the title). Tests find them by title and
+    // check the key is the routine's own id.
+    const keyOfTitle = (data, title) => Object.keys(data?.routine || {}).find(k => data.routine[k]?.title === title);
+    const routineByTitle = (data, title) => { const k = keyOfTitle(data, title); return k === undefined ? undefined : data.routine[k]; };
+    const assertKeyedById = (data, title) => {
+        const key = keyOfTitle(data, title);
+        if (key === undefined) throw new Error(`no routine titled "${title}"`);
+        if (key === title) throw new Error(`"${title}" is keyed by its title`);
+        if (data.routine[key].id !== key) throw new Error(`"${title}": key ${key} is not its id ${data.routine[key].id}`);
+        if (!/^routine-/.test(key)) throw new Error(`"${title}": key ${key} is not a generated routine id`);
+        return key;
+    };
+
     // 🔒 SAVE REAL APP DATA ONCE before all tests run (only when running individually)
     let savedRealData = {};
     if (!isPartOfSuite) {
@@ -440,13 +454,14 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('completeInitialSetup should be called');
         }
 
-        // Check the cycle was created - uses title as key, not cycle_ prefix
+        // Check the cycle was created - keyed by a generated id, titled by the input
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        const newCycle = stored.data.routine['My New Cycle'];
+        const newCycle = routineByTitle(stored.data, 'My New Cycle');
 
         if (!newCycle) {
-            throw new Error('New cycle should be created with title as key');
+            throw new Error('New cycle should be created');
         }
+        assertKeyedById(stored.data, 'My New Cycle');
 
         if (newCycle.title !== 'My New Cycle') {
             throw new Error(`Cycle title should be "My New Cycle", got "${newCycle.title}"`);
@@ -579,12 +594,12 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('completeInitialSetup should be called');
         }
 
-        // Check the cycle was created - uses title as key
+        // Check the cycle was created - keyed by a generated id
         const stored = JSON.parse(localStorage.getItem('miniCycleData'));
-        const fallbackCycle = stored.data.routine['Getting Started'];
+        const fallbackCycle = routineByTitle(stored.data, 'Getting Started');
 
         if (!fallbackCycle) {
-            throw new Error('Fallback cycle should be created with title as key');
+            throw new Error('Fallback cycle should be created');
         }
 
         if (fallbackCycle.title !== 'Getting Started') {
@@ -637,7 +652,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('AppState.update should be called');
         }
         // Verify the cycle was created in the data
-        if (!mockSchemaData.data.routine['Getting Started']) {
+        if (!routineByTitle(mockSchemaData.data, 'Getting Started')) {
             throw new Error('Fallback cycle should be created in AppState data');
         }
     });
@@ -747,8 +762,8 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         }
 
         // Check the cycle was created
-        if (!mockData.data.routine['Brand New Cycle']) {
-            throw new Error('Cycle should be created with title as key');
+        if (!routineByTitle(mockData.data, 'Brand New Cycle')) {
+            throw new Error('Cycle should be created');
         }
     });
 
@@ -762,7 +777,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             });
             new RoutineManager(deps).createNewMiniCycle();
             await fillAndConfirmCreationDialog(name, 300);
-            return mockData.data.routine[name];
+            return routineByTitle(mockData.data, name);
         };
         const focus = await create(true, 'Focus Created');
         if (!focus) throw new Error('routine not created in Focus View');
@@ -804,7 +819,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         await fillAndConfirmCreationDialog('Duplicate Name', 300);
 
         // Should create "Duplicate Name (2)"
-        if (!mockData.data.routine['Duplicate Name (2)']) {
+        if (!routineByTitle(mockData.data, 'Duplicate Name (2)')) {
             throw new Error('Should create numbered variation for duplicate');
         }
         // Note: a duplicate-warning notification is optional behavior and intentionally
@@ -844,8 +859,8 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         await fillAndConfirmCreationDialog('Many Dupes', 300);
 
         // Fallback appends timestamp to the name (e.g., "Many Dupes (1735822342415)")
-        const cycleKeys = Object.keys(mockData.data.routine);
-        // Look for a key that starts with "Many Dupes (" and ends with a timestamp
+        const cycleKeys = Object.values(mockData.data.routine).map(r => r.title);
+        // Look for a title that starts with "Many Dupes (" and ends with a timestamp
         const timestampKey = cycleKeys.find(k => {
             if (!k.startsWith('Many Dupes (')) return false;
             // Check if it's a timestamp (not a simple number)
@@ -967,8 +982,8 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         if (!undoNotified) {
             throw new Error('onCycleCreated should be called');
         }
-        if (undoCycleKey !== 'Undo Test Cycle') {
-            throw new Error(`Undo should receive cycle key, got ${undoCycleKey}`);
+        if (undoCycleKey !== keyOfTitle(mockData.data, 'Undo Test Cycle')) {
+            throw new Error(`Undo should receive the routine's key, got ${undoCycleKey}`);
         }
     });
 
@@ -996,15 +1011,18 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Fill and confirm the dialog
         await fillAndConfirmCreationDialog('Schema Test', 300);
 
-        const newCycle = mockData.data.routine['Schema Test'];
+        const newCycle = routineByTitle(mockData.data, 'Schema Test');
 
         if (!newCycle) {
             throw new Error('Cycle should be created');
         }
 
         // Check required properties
-        if (!newCycle.id || !newCycle.id.startsWith('cycle_')) {
-            throw new Error('Cycle should have id starting with cycle_');
+        if (!newCycle.id || !newCycle.id.startsWith('routine-')) {
+            throw new Error(`Cycle should have a generated routine id, got ${newCycle.id}`);
+        }
+        if (keyOfTitle(mockData.data, 'Schema Test') !== newCycle.id) {
+            throw new Error('Cycle should be stored under its own id');
         }
         if (newCycle.title !== 'Schema Test') {
             throw new Error('Cycle should have correct title');
@@ -1107,7 +1125,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
         // Fill and confirm the dialog
         await fillAndConfirmCreationDialog('Active Test', 300);
 
-        if (mockData.appState.activeRoutineId !== 'Active Test') {
+        if (mockData.appState.activeRoutineId !== keyOfTitle(mockData.data, 'Active Test')) {
             throw new Error('activeRoutineId should be set to new cycle');
         }
     });
@@ -1224,7 +1242,7 @@ export async function runRoutineManagerTests(resultsDiv, isPartOfSuite = false) 
             throw new Error('AppState.update should be called');
         }
         // Verify the cycle was created
-        if (!mockData.data.routine['Sync Test']) {
+        if (!routineByTitle(mockData.data, 'Sync Test')) {
             throw new Error('Cycle should be created in AppState data');
         }
     });

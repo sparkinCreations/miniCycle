@@ -7,12 +7,13 @@
  * @module testing-modal-diagnostics
  */
 
-import { UI_TIMEOUTS, SCHEMA, PRIORITY_LEVELS } from '../core/constants.js';
+import { UI_TIMEOUTS, SCHEMA, PRIORITY_LEVELS, DOM_IDS } from '../core/constants.js';
 import { getLocalStorageQuota, getLocalStorageUsedBytes, formatBytes } from '../utils/storageUtils.js';
 import { GlobalUtils } from '../utils/globalUtils.js';
 import { THEME_DEFINITIONS } from '../labels/themes.js';
 import { collectSwatchSets } from '../utils/priorityLevel.js';
-import { migrateSchema_2_5_to_2_6, SCHEMA_2_6 } from '../routine/schemaMigration26.js';
+import { migrateSchema_2_5_to_2_6, SCHEMA_2_6, repairRoutineKeys, isRoutineKeyedById } from '../routine/schemaMigration26.js';
+import { getRoutines, getActiveRoutineId } from '../utils/cycleMode.js';
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import {
     getDeps,
@@ -44,6 +45,10 @@ export function setupDiagnosticsButtons() {
 
     safeAddEventListenerById("dry-run-schema-26", "click", () => {
         dryRunSchema26Migration();
+    });
+
+    safeAddEventListenerById(DOM_IDS.SHOW_ROUTINE_KEYS, "click", () => {
+        showRoutineKeys();
     });
 
     safeAddEventListenerById("show-app-info", "click", () => {
@@ -294,8 +299,24 @@ export function dryRunSchema26Migration() {
     const liveBefore = JSON.stringify(live);
     const kind = classifyStoredVersion(live, SCHEMA_2_6);
     if (kind !== 'older') {
-        appendToTestResults(`- Stored schema is ${live.schemaVersion ?? live.metadata?.schemaVersion} (${kind} for ${SCHEMA_2_6}) - nothing to migrate\n\n`);
-        return { kind, migrated: false };
+        appendToTestResults(`- Stored schema is ${live.schemaVersion ?? live.metadata?.schemaVersion} (${kind} for ${SCHEMA_2_6}) - nothing to migrate\n`);
+        // A 2.6 document can still hold title-keyed routines (creation, import and
+        // rename wrote them until Nov 2026). Boot re-keys them; report what it would do.
+        let repaired = [];
+        if (kind === 'current') {
+            const clone = structuredClone(live);
+            repaired = repairRoutineKeys(clone, () => GlobalUtils.generateId('routine'));
+            if (repaired.length === 0) {
+                appendToTestResults('- Routine keys: every routine is keyed by its id - nothing to repair\n');
+            } else {
+                appendToTestResults(`- Routine keys: ${repaired.length} title-keyed routine(s) would be re-keyed at next launch:\n`);
+                repaired.slice(0, 5).forEach(([oldKey, newKey]) => appendToTestResults(`    "${oldKey}" -> ${newKey}\n`));
+                if (repaired.length > 5) appendToTestResults(`    ... ${repaired.length - 5} more\n`);
+            }
+            if (JSON.stringify(live) !== liveBefore) appendToTestResults('- PROBLEM: the LIVE state was modified\n');
+        }
+        appendToTestResults('\n');
+        return { kind, migrated: false, repaired: repaired.length };
     }
 
     const options = {
@@ -366,6 +387,44 @@ export function dryRunSchema26Migration() {
 // ==========================================
 // INFO DISPLAY FUNCTIONS
 // ==========================================
+
+/**
+ * List every routine's storage key, title and task count — the readable map a
+ * developer needs now that keys are generated ids, not names. Flags any routine
+ * whose key is not its own id (boot re-keys those: AppState._repairRoutineKeys).
+ * Output goes through appendToTestResults (textContent), so titles stay inert text.
+ * @returns {{rows: Array<Object>, notKeyedById: number}|null}
+ */
+export function showRoutineKeys() {
+    const deps = getDeps();
+    appendToTestResults("Routine keys (key -> title, task count; * = active):\n");
+    const state = deps.AppState?.isReady?.() ? deps.AppState.get() : null;
+    if (!state) {
+        appendToTestResults("AppState not ready\n\n");
+        showNotification(getLabel('notify.diagNoAppState'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+        return null;
+    }
+    const routines = getRoutines(state) || {};
+    const activeKey = getActiveRoutineId(state);
+    const rows = Object.entries(routines).map(([key, routine]) => ({
+        key,
+        title: typeof routine?.title === 'string' ? routine.title : '(no title)',
+        tasks: Array.isArray(routine?.tasks) ? routine.tasks.length : 0,
+        keyedById: isRoutineKeyedById(key, routine),
+        active: key === activeKey
+    }));
+    rows.forEach(row => appendToTestResults(
+        `${row.active ? '*' : ' '} ${row.key} -> "${row.title}" (${row.tasks} task${row.tasks === 1 ? '' : 's'})${row.keyedById ? '' : '  [key is not its id]'}\n`
+    ));
+    const notKeyedById = rows.filter(row => !row.keyedById).length;
+    appendToTestResults(`- ${rows.length} routine(s), ${notKeyedById} not keyed by id\n\n`);
+    if (notKeyedById > 0) {
+        showNotification(getLabel('notify.diagRoutineKeysMismatch', { vars: { count: notKeyedById } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+    } else {
+        showNotification(getLabel('notify.diagRoutineKeysOk'), "success", UI_TIMEOUTS.NOTIFICATION_SHORT);
+    }
+    return { rows, notKeyedById };
+}
 
 /**
  * Display application information

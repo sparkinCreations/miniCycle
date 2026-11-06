@@ -347,6 +347,14 @@ document is kept under `miniCycleData_pre-migration_<ts>`; persisted undo histor
 on that boot. Testing modal → Diagnostics → *Dry-Run 2.6 Migration* runs the same function
 on a clone of the live state and reports what it would do.
 
+**A routine's key is its generated id — never its title.** Every write path (create, import,
+duplicate) files a new routine under `GlobalUtils.generateId('routine')` with `id === key`, and
+a rename changes only `title`. Until Nov 2026 those paths still wrote title keys into 2.6 data;
+boot re-keys any routine whose key is not its `id` (`repairRoutineKeys`, from
+`AppState._repairRoutineKeys`, after the same pre-migration copy, schema stays 2.6, undo cleared
+for the re-keyed routines only). The dry run reports that repair too, and *Show Routine Keys*
+(same Diagnostics tab) lists each routine's key → title → task count.
+
 ### Naming — routine vs cycle, and "clearing" not "deleting"
 
 Since Schema 2.6 (Sep 2026) the stored names ARE the product's words. **Renaming a stored key is never a drive-by** — it needs a migration step in `routine/schemaMigration26.js`, a version bump, and the dry-run tool run on real data (`web/docs/archive/SCHEMA_2_6_PLAN.md`).

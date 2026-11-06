@@ -75,6 +75,15 @@ The migration (`migrateSchema_2_5_to_2_6`) keeps the raw 2.5 document under
 cleared on that boot. Testing modal → Diagnostics → *Dry-Run 2.6 Migration* runs the
 same function on a clone of the live state and reports what it would do.
 
+**Keys are ids.** Every routine is stored under its own generated id (`id === key`); `title`
+is only the name, and a rename changes only `title`. Creation, import, duplicate and rename
+still wrote title keys until Nov 2026, so a 2.6 document can carry some. Boot re-keys them once
+(`repairRoutineKeys` in `routine/schemaMigration26.js`, called by `AppState._repairRoutineKeys`):
+a routine is filed under its existing `id` when that is usable, otherwise under a fresh one;
+the raw document is kept first as above; the schema version does not change; persisted undo
+history is cleared for the re-keyed routines only. The dry run reports what the repair would
+do, and *Show Routine Keys* lists every routine's key, title and task count.
+
 ## Complete Schema Structure
 
 ```javascript
