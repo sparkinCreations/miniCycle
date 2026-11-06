@@ -1,16 +1,34 @@
 # API Reference
 
-**Last Updated**: January 7, 2026
+**Last verified:** Nov 6 2026
 
 > **For current version, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
+>
+> **Nothing here is a global.** Module code reaches every function below in one
+> of two ways:
+>
+> 1. **Through DI** (feature modules): declare the DI name in the module's entry in
+>    `modules/boot/moduleManifests.js` (`requires` / `optionalDeps` / `lazyRequires`)
+>    and read it from `this.deps`. The name must be one some manifest `provides`.
+>    See [MAKING_CODE_CHANGES.md](../working-on-code/MAKING_CODE_CHANGES.md) and
+>    [DI_PATTERNS.md](../working-on-code/DI_PATTERNS.md).
+> 2. **Through appContext's grouped APIs** (mostly boot code): `getTaskApi()`,
+>    `getCycleApi()`, `getUiApi()`, `getUndoApi()`, … from `modules/core/appContext.js`.
+>    These objects are hand-written allow-lists in `registerGroupedApisFromLoader()`
+>    (`modules/boot/featureBoot.js`) — a method not named there is not on the API
+>    (`validate:api` gates reads of them).
+>
+> The `import` lines in the module sections below show where a class lives; a
+> feature module does not import another manager — the loader constructs it and
+> hands it out by DI.
 
 ---
 
 ## Table of Contents
 
-1. [Global Functions](#global-functions-available-everywhere)
+1. [App-wide APIs (DI names and appContext)](#app-wide-apis-di-names-and-appcontext)
    - [Task Management](#task-management)
-   - [Cycle Management](#cycle-management)
+   - [Routine Management](#routine-management)
    - [State Management](#state-management)
    - [UI Functions](#ui-functions)
    - [Undo/Redo](#undoredo)
@@ -18,110 +36,137 @@
 
 ---
 
-## Global Functions (Available Everywhere)
+## App-wide APIs (DI names and appContext)
 
 ### Task Management
 
+Provided by `taskCore` (`modules/task/taskCore.js`, a facade over `taskCRUD.js`,
+`taskCompletion.js`, `taskCycleReset.js`); appContext: `getTaskApi()`.
+
 ```javascript
-// Add task
-addTask(text, completed, shouldSave, dueDate, highPriority, isLoading, remindersEnabled, recurring, taskId, recurringSettings)
-→ Creates and adds task to current cycle
+// DI: addTask        appContext: getTaskApi().add
+await addTask(taskText, options)
+→ Creates a task in the active routine; resolves to the task, or undefined on failure
+// options (all optional): completed, shouldSave, dueDate, dueTime,
+//   priority ('high'|'medium'|'low'|null), remindersEnabled, recurring,
+//   recurringSettings, taskId, autoClear, isLoading, deferAppend, targetContainer.
+//   (addTaskImpl in task/taskCRUD.js still also accepts the 2.5 option names
+//   from older callers.)
 
 // Example:
-addTask("Buy milk", false, true, null, false, false, false, false);
+await addTask('Buy milk', { priority: 'high' });
 
-// Toggle task completion
-function toggleTaskCompletion(taskId)
-→ Marks task as done/undone, checks for auto-reset
+// DI: editTask / deleteTask / toggleTaskPriority — each takes the task's DOM element
+await editTask(taskItem)        → opens the rename prompt
+await deleteTask(taskItem)      → asks for confirmation, then removes it
+await toggleTaskPriority(taskItem)
 
-// Delete task
-function deleteTask(taskId)
-→ Removes task from cycle
-
-// Edit task text
-function editTaskText(taskId, newText)
-→ Updates task text and saves
+// DI: handleTaskCompletionChange   appContext: getTaskApi().handleCompletionChange
+await handleTaskCompletionChange(checkbox)
+→ Takes the task's checkbox element; updates state, then the cycle check runs
 ```
 
-### Cycle Management
+### Routine Management
+
+Routines are switched, renamed and deleted by `routineSwitcher`
+(`modules/routine/routineSwitcher.js`) and created by `routineManager`
+(`modules/routine/routineManager.js`); appContext: `getCycleApi()`. The DI names
+keep their pre-2.6 "MiniCycle"/"Cycle" spelling (renaming a DI name is a dedicated
+change, see the repo-root `CLAUDE.md`).
 
 ```javascript
-// Create new cycle
-function createNewCycle(cycleName)
-→ Creates empty cycle and switches to it
+// DI: showCycleCreationModal   appContext: getCycleApi().create
+showCycleCreationModal(options)
+→ Opens the create-routine modal (blank or from a sample)
 
-// Switch cycles
-function switchActiveCycle(cycleId)
-→ Changes active cycle, updates UI
+// DI: switchMiniCycle          appContext: getCycleApi().switch
+switchMiniCycle({ view, returnFocus })
+→ Opens the routine switcher (List or Browse view) — the user picks the routine;
+  it does not take a routine id
 
-// Get current cycle
-function getCurrentCycle()
-→ Returns: { name, tasks, cycleCount, autoReset, ... }
+// DI: stepRecentRoutine        appContext: getCycleApi().stepRecent
+stepRecentRoutine(direction)    → Alt+Shift+[ / ] through recent routines
 
-// Export cycle
-function exportCurrentCycle()
-→ Downloads .mcyc file
+// DI: renameMiniCycle / deleteMiniCycle — act on the routine selected in the switcher
+renameMiniCycle()
+deleteMiniCycle()
 
-// Import cycle
-function importCycleFile(file)
-→ Loads .mcyc file and adds to cycles
+// Current routine: read state, don't ask a module (utils/cycleMode.js)
+const routine = getActiveRoutine(AppState.get());
+→ { id, title, tasks, cycleCount, autoReset, deleteCheckedTasks, ... }
 ```
+
+Export and import of `.mcyc` files live in the `settingsManager` facade's
+sub-modules (`modules/ui/cycleExportManager.js`, `modules/ui/cycleImportManager.js`);
+see [MCYC_FILE_FORMAT.md](MCYC_FILE_FORMAT.md).
 
 ### State Management
 
+`AppState` (`modules/core/appState.js`) is injected by DI (`this.deps.AppState`);
+appContext: `getStateApi().AppState`. Read through the `utils/cycleMode.js` helpers.
+
 ```javascript
-// Get current state
-const state = window.AppState.get();
+import { getActiveRoutineId, setActiveRoutineId } from '../utils/cycleMode.js';
 
-// Update state
-window.AppState.update((state) => {
-    // Modify state directly
-    state.appState.activeRoutineId = newId;
-}, immediate);  // immediate = true/false
+// Get current state (a live reference — never mutate it outside update())
+const state = this.deps.AppState.get();
 
-// Check if ready
-if (window.AppState?.isReady()) {
-    // Safe to use
+// Update state (producer pattern)
+await this.deps.AppState.update((state) => {
+    setActiveRoutineId(state, newId);
+}, immediate);  // immediate = true saves now; default false debounces (DEBOUNCE.STATE_SAVE)
+
+// Check if ready (false on a first run until a routine exists)
+if (this.deps.AppState.isReady()) {
+    // Safe to read
 }
+
+// Subscribe to a key
+this.deps.AppState.subscribe(key, callback);
+this.deps.AppState.unsubscribe(key, callback);
 ```
 
 ### UI Functions
 
 ```javascript
-// Show notification
-showNotification(message, type, duration)
-→ Types: 'success', 'error', 'info', 'warning'
+// DI: showNotification (notifications.js)   appContext: getUiApi().showNotification
+showNotification(message, type, duration, options)
+→ Types: 'success', 'error', 'info', 'warning' (and 'default')
 
-// Example:
-showNotification('Task completed!', 'success', 3000);
+// Example (strings come from getLabel; durations from UI_TIMEOUTS):
+showNotification(getLabel('notify.taskRenamed', { vars: { name } }), 'success', UI_TIMEOUTS.NOTIFICATION_SHORT);
 
-// Refresh UI from state
-refreshUIFromState()
-→ Rebuilds entire UI from AppState
+// DI: showConfirmationModal / showPromptModal — one options object
+showConfirmationModal({ title, message, confirmText, cancelText, callback, destructive, checkbox })
+showPromptModal({ title, message, placeholder, defaultValue, confirmText, cancelText, required, callback })
 
-// Update progress bar
+// DI: refreshUIFromState (taskDOM)
+await refreshUIFromState(state?)
+→ Re-renders the active routine's task list from AppState
+
+// DI: updateProgressBar (progress/cycleCompletion.js)   appContext: getCycleApi().updateProgress
 updateProgressBar()
 → Recalculates and updates completion percentage
 
-// Update stats panel
+// DI: updateStatsPanel (features/statsPanel.js)
 updateStatsPanel()
 → Refreshes statistics and achievements
 ```
 
 ### Undo/Redo
 
+Provided by `modules/ui/undoRedoManager.js`; appContext: `getUndoApi()`.
+
 ```javascript
-// Undo last action
-performUndo()
-→ Returns to previous state
+// DI: performStateBasedUndo   appContext: getUndoApi().undo
+await performStateBasedUndo()
 
-// Redo undone action
-performRedo()
-→ Restores undone state
+// DI: performStateBasedRedo   appContext: getUndoApi().redo
+await performStateBasedRedo()
 
-// Check if can undo/redo
-canUndo()  → boolean
-canRedo()  → boolean
+// DI: updateUndoRedoButtons   appContext: getUndoApi().updateButtons
+updateUndoRedoButtons()
+→ Enables/disables the buttons from the per-routine undo/redo stacks
 ```
 
 ---
@@ -131,59 +176,63 @@ canRedo()  → boolean
 ### Notifications Module
 
 ```javascript
-import { MiniCycleNotifications } from './modules/notifications.js';
+// modules/utils/notifications.js — the instance is built by featureBoot;
+// modules get showNotification / showNotificationWithTip by DI.
+import { MiniCycleNotifications } from '../utils/notifications.js';
 
 const notif = new MiniCycleNotifications();
 
 // Show notification
-notif.show(message, type, duration);
+notif.show(message, type, duration, options);
 
 // Show with educational tip
-notif.showWithTip(content, type, duration, tipId);
+notif.showWithTip(content, type, duration, tipId, options);
 
-// Reset position
-notif.resetPosition();
+// Reset position (async)
+await notif.resetPosition();
 ```
 
 ### Stats Panel Module
 
 ```javascript
-import { StatsPanelManager } from './modules/statsPanel.js';
+// modules/features/statsPanel.js — a facade (sub-modules statsPanelGestures,
+// statsPanelRewards); DI: showStatsPanel, showTaskView, navigatePanels, updateStatsPanel
+import { StatsPanelManager } from '../features/statsPanel.js';
 
-const stats = new StatsPanelManager({
-    showNotification,
-    loadData,
-    updateThemeColor
-});
+const stats = new StatsPanelManager(dependencies);
 
-// Update stats
-stats.updateStatsPanel();
+// Update stats (async)
+await stats.updateStatsPanel();
 
 // Show/hide
 stats.showStatsPanel();
 stats.showTaskView();
+stats.navigatePanels(direction);
 
-// Get stats
-stats.getStatistics();
+// Visibility
+stats.isStatsVisible();
 ```
 
 ### Recurring Core Module
 
-```javascript
-import * as recurringCore from './modules/recurringCore.js';
+`recurringCore` is not a manifest entry: `modules/recurring/recurringIntegration.js`
+wires it, and its functions stay `null` until that call has loaded the sub-modules.
 
-// Set dependencies
-recurringCore.setRecurringCoreDependencies({
-    updateAppState,
+```javascript
+import * as recurringCore from '../recurring/recurringCore.js';
+
+// Set dependencies — async; loads the sub-modules and resolves to their functions
+const recurring = await recurringCore.setRecurringCoreDependencies({
+    AppState,
     showNotification,
-    refreshUI
+    // ...
 });
 
-// Check if task is due
-const isDue = recurringCore.isRecurringTaskDue(template, new Date());
+// Should a task with these settings recur now? (recurringMatcher.js)
+const due = recurring.shouldTaskRecurNow(recurringSettings, new Date());
 
-// Generate task from template
-const task = recurringCore.generateRecurringTask(template);
+// Next occurrence (recurringCalculators.js)
+const next = recurring.calculateNextOccurrence(recurringSettings, Date.now());
 ```
 
 ### Theme Manager Module
@@ -204,111 +253,114 @@ const themes = ThemeManager.getAvailableThemes();
 ### Mode Manager Module
 
 ```javascript
-import { ModeManager } from './modules/routine/modeManager.js';
+// modules/routine/modeManager.js — instance methods; DI: setupModeSelector,
+// refreshTaskButtonsForModeChange, updateCycleModeDescription, syncModeFromToggles
+import { ModeManager } from '../routine/modeManager.js';
 
-// Switch mode
-ModeManager.switchMode('auto-cycle');  // or 'manual-cycle', 'todo-mode'
+// The mode is not stored: it is derived from the routine's autoReset /
+// deleteCheckedTasks flags (utils/cycleMode.js)
+const mode = getCycleMode(routine);   // 'auto' | 'manual' | 'todo'
 
-// Get current mode
-const mode = ModeManager.getCurrentMode();
+// Apply the toggles' state to the active routine (and sync tasks to it)
+await modeManager.syncModeFromToggles();
 
-// Sync toggles from mode
-ModeManager.syncTogglesFromMode(mode);
+// Label for a mode — note modeManager's own mode ids ('auto-cycle' |
+// 'manual-cycle' | 'todo-mode'), not getCycleMode()'s
+modeManager.getModeName('manual-cycle');   // 'Manual Cycle'
 ```
 
 ### Achievements Manager Module
 
 ```javascript
-import { AchievementsManager, initAchievementsManager } from './modules/features/achievementsManager.js';
+import { AchievementsManager, initAchievementsManager } from '../features/achievementsManager.js';
 
-// Initialize (called by boot)
-const manager = initAchievementsManager({
+// Initialize (called by boot; async)
+const manager = await initAchievementsManager({
     AppState, showNotification, safeAddEventListener
 });
 
-// Update achievements based on current state
-manager.refreshAchievements();
+// Check and unlock milestones (DI: checkAchievements)
+manager.checkAchievements(cyclesCompleted, tasksCleared);
 
-// Get all achievements
+// Get all achievements (DI: getAchievements)
 const achievements = manager.getAchievements();
+manager.isUnlocked(milestoneId);       // DI: isAchievementUnlocked
 
 // Badge UI methods (extracted from statsPanel in v1.729)
 manager.initBadgeTooltips();           // Initialize badge click handlers
-manager.updateBadges(cyclesCompleted); // Update badge display
+manager.updateBadges(globalCyclesCompleted, globalTasksCleared); // Update badge display
 manager.showBadgeDetail(milestone);    // Show badge popup
 manager.hideBadgeDetail();             // Hide badge popup
 
-// Open achievements modal
-manager.showAchievementsModal();
+// Open achievements modal (DI: openAchievementsModal)
+manager.openModal();
 ```
 
 ### Gesture Panel Manager Module
 
 ```javascript
-import { GesturePanelManager, initGesturePanelManager } from './modules/ui/gesturePanelManager.js';
+import { GesturePanelManager, initGesturePanelManager } from '../ui/gesturePanelManager.js';
 
-// Initialize with callbacks
+// Initialize with callbacks (a singleton: later calls return the first instance)
 const gestures = initGesturePanelManager({
     safeAddEventListener,
     showNotification,
     isOverlayActive: () => false,
     isDraggingNotification: () => false,
+    onNavigate: (direction) => statsPanel.navigatePanels(direction), // +1 / -1
+    // Legacy two-panel fallbacks, used when onNavigate is not wired:
     onShowStatsPanel: () => statsPanel.showStatsPanel(),
     onShowTaskView: () => statsPanel.showTaskView()
 });
 
-// Handles: touch swipes, mouse swipes, wheel scrolls, pointer events, keyboard (Tab)
+// Handles: touch swipes, mouse swipes, wheel scrolls, pointer events, keyboard
 // Automatically triggers callbacks when gestures detected
 ```
 
 ### History Manager Module
 
 ```javascript
-import { HistoryManager, initHistoryManager } from './modules/features/historyManager.js';
+import { HistoryManager, initHistoryManager } from '../features/historyManager.js';
 
 // Initialize
 const history = initHistoryManager({ AppState, showNotification });
 
-// Add entry to history
-history.addHistoryEntry(cycleId, {
-    type: 'task_completed',
-    taskId: 'task-123',
-    taskText: 'Morning workout',
-    timestamp: Date.now()
-});
+// Log an event to the ACTIVE routine (DI: logHistoryEvent)
+history.logEvent('task_added', { /* event-specific details */ });
 
-// Get history for cycle
-const entries = history.getHistory(cycleId);
+// Get history for a routine (defaults to the active one) (DI: getHistory)
+const entries = history.getHistory(routineId);
 
-// Open history modal
-history.showHistoryModal();
+// Open history modal (DI: openHistoryModal)
+history.openModal();
 
-// Clear history for cycle
-history.clearHistory(cycleId);
+// Clear history for a routine (DI: clearHistory)
+history.clearHistory(routineId);
 ```
+
+Every event type passed to `logEvent` must be mapped in the history registry —
+`validate:labels` gates it.
 
 ### Cleared Tasks Manager Module
 
 ```javascript
-import { ClearedTasksManager, initClearedTasksManager } from './modules/features/clearedTasksManager.js';
+import { ClearedTasksManager, initClearedTasksManager } from '../features/clearedTasksManager.js';
 
 // Initialize
 const clearedTasks = initClearedTasksManager({ AppState, showNotification });
 
-// Track cleared task (To-Do mode)
-clearedTasks.addClearedTask(cycleId, taskText);
+// Record a cleared task (takes the task object) (DI: recordClearedTask)
+clearedTasks.recordClearedTask(task);
+clearedTasks.recordMultipleClearedTasks(tasks);
 
-// Get cleared count for cycle
-const count = clearedTasks.getClearedCount(cycleId);
+// Get cleared entries for a routine (defaults to the active one) (DI: getClearedTasks)
+const items = clearedTasks.getClearedTasks(routineId);
 
-// Get all cleared items
-const items = clearedTasks.getClearedItems(cycleId);
+// Open cleared tasks modal (DI: openClearedTasksModal)
+clearedTasks.openModal();
 
-// Open cleared tasks modal
-clearedTasks.showClearedTasksModal();
-
-// Reset cleared tasks for cycle
-clearedTasks.resetClearedTasks(cycleId);
+// Clear all entries for a routine (DI: clearClearedTasks)
+clearedTasks.clearAll(routineId);
 ```
 
 ---
