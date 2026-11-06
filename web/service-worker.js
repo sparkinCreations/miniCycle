@@ -31,9 +31,9 @@
 // §1 VERSION IDENTITY (update-version.sh rewrites the three vars below — keep
 //    their exact `var NAME = …` shapes) + the build-injected module map.
 // ═══════════════════════════════════════════════════════════════════════════
-var APP_VERSION = '2.666';
-var CACHE_VERSION = 'v1509';
-var CACHE_VERSION_NUMBER = 1509; // Numeric version matching version.js (for synthetic fallback)
+var APP_VERSION = '2.667';
+var CACHE_VERSION = 'v1510';
+var CACHE_VERSION_NUMBER = 1510; // Numeric version matching version.js (for synthetic fallback)
 var STATIC_CACHE = 'miniCycle-static-' + CACHE_VERSION;
 var DYNAMIC_CACHE = 'miniCycle-dynamic-' + CACHE_VERSION;
 // Unlocked mini-games, filled only on the page's CACHE_UNLOCKED_GAMES message

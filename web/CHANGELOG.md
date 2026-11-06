@@ -1,3 +1,32 @@
+## [2.667] - 2026-11-06
+- test: refresh the test-count manifest after a full run (4189)
+- docs(future-work): plugin system and Task Timer plan
+- docs: drop styles/themes/ and applyTheme from the Start Here docs (follow-up to #116)
+- fix(appState): keep only the newest pre-migration copy
+- test: refresh the test-count manifest after a full run (4183)
+- docs(themes): describe the retired colour themes and where colour lives now
+- chore(themes): remove the legacy colour themes' stylesheet and selectors
+- feat(themes): retire the legacy colour themes; boot moves them to their presets
+- docs(archive): record why the JSON theme plan changed
+- docs(audit): FOLDER_STRUCTURE lists themes/ as it is after the JSON theme archive
+- chore(themes): archive the JSON theme system, with what it was meant for
+- test(journeys): seeded routines keep id === key
+- test: refresh the test-count manifest after a full run (4183)
+- docs(audit): HOW_MINICYCLE_WORKS describes id keys as fixed
+- fix(routines): key every routine by its generated id; rename changes only the title
+- docs(audit): round 1 follow-ups from MJ's review
+- docs(audit): round 1, part 3 — archive DEVELOPER_DOCUMENTATION.md, last two Start Here docs
+- docs(audit): round 1 — FOLDER_STRUCTURE.md audited
+- docs(audit): round 1, part 1 — front door, small Start Here docs, user manual
+- docs(audit-plan): record round 0 sign-off and the front-door decision
+- docs(audit): round 0 — archive four shipped plans, add three warning-only doc gates
+- docs(audit-plan): fold in the plan review — round 0, two gates, line budgets
+- test: refresh the test-count manifest after a full run (4169)
+- fix(recurring): hold the watcher's boot-time UI refresh until app-ready
+- test: allow-list the boot-time recurring UI refresh, with the fix it needs
+- test: fail every real-app suite on starved-dependency warnings
+
+
 ## [2.666] - 2026-11-03
 - perf(boot): preload every file boot imports, staged after the boot chain
 - perf(recurring): load recurringCore and recurringSettingsApplicator in parallel at boot
