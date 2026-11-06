@@ -245,10 +245,11 @@ literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.j
 **Open questions (MJ):** the privacy policy vs
 the tracking on the `.mcyc` format page and the 50 raw timestamps the tracker keeps;
 `PRIVACY.md`'s COPPA heading and competitor table; WCAG 2.2 as the target; the
-copyright statement's name placeholder; the roadmap's tiers, prices and dates; the
-PR checklist's `@version` / `@pattern` requirement; system-aware dark mode in the
+roadmap's tiers, prices and dates; the PR checklist's `@version` / `@pattern` requirement; system-aware dark mode in the
 README; merging `DATA_SCHEMA_GUIDE` into `SCHEMA_2_6` (round 3a) and trimming
-`ACCESSIBILITY` to its developer parts.
+`ACCESSIBILITY` to its developer parts. *Decided (MJ, Nov 6 2026):* the copyright
+statement's author name stays out of the repo — the placeholder now says it is filled
+in on the signed copy only.
 
 ## How a round runs
 

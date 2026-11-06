@@ -20,7 +20,7 @@
 
 ## 2. Human Author Information
 
-- **Author:** [Your Full Legal Name]
+- **Author:** [Author's legal name — filled in on the signed copy only, not stored in this repo]
 - **Business/DBA:** sparkinCreations
 - **Role:** Sole Creator, Designer, Developer, and Creative Director
 
