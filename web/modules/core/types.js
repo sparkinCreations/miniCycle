@@ -496,7 +496,7 @@
  * @property {'cycles'|'tasks'} type - What triggers this milestone
  * @property {number} threshold - Number required to unlock
  * @property {string} [reward] - Reward unlocked (theme name, game name, etc.)
- * @property {string} [rewardType] - Type of reward ('theme', 'game', 'badge')
+ * @property {string} [rewardType] - Type of reward ('vocab-theme', 'game')
  * @example
  * const milestone = {
  *     id: "cycles-50",
@@ -504,8 +504,8 @@
  *     description: "Complete 50 cycles",
  *     type: "cycles",
  *     threshold: 50,
- *     reward: "golden-glow",
- *     rewardType: "theme"
+ *     reward: "scholar",
+ *     rewardType: "vocab-theme"
  * };
  */
 

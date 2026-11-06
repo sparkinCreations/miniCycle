@@ -146,7 +146,7 @@ export const MODULE_MANIFESTS = {
         phase: PHASES.THEME_VISUAL,
         requires: ['appInit', 'showNotification', 'getModal'],
         optionalDeps: ['vocabThemeManager', 'checkCompleteAllButton', 'updateStatsPanel', 'updateMainMenuHeader', 'updateHelpWindow', 'refreshFocusActionButton', 'refreshTaskPriorityColors', 'applyCustomColors', 'logHistoryEvent', 'hideMainMenu'],
-        provides: ['applyTheme', 'updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'initThemesPanel', 'refreshThemeToggles', 'setupThemesPanel', 'renderVocabThemes'],
+        provides: ['updateThemeColor', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'setupThemesPanel', 'renderVocabThemes'],
         provideInstance: 'themeManager',
         api: 'features',
         after: ['notifications']

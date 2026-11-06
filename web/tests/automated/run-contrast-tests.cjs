@@ -36,10 +36,10 @@ const colors = { reset: '\x1b[0m', red: '\x1b[31m', green: '\x1b[32m', yellow: '
 // (Golden, Ocean, Berry, …) — applied here by CLICKING the real preset button in
 // Preferences, so the page is painted exactly as the app paints it (the
 // --pref-* variables on <html>) — plus dark mode and High Contrast, which are
-// body classes. The old `data-theme` colour themes (Dark Ocean, Golden Glow) no
-// longer have a picker; until Oct 2026 this runner applied them by body class,
-// which never reached their tokens, so every "theme" measured the default
-// gradient and reported one number. Presets only apply in the default (light)
+// body classes. The old `data-theme` colour themes (Dark Ocean, Golden Glow) were
+// retired in Nov 2026 (boot moves a stored one to its preset); until Oct 2026 this
+// runner applied them by body class, which never reached their tokens, so every
+// "theme" measured the default gradient and reported one number. Presets only apply in the default (light)
 // state — preferencesManager.applyCustomColors is a no-op in dark mode.
 const THEMES = [
     { name: 'default', classes: [], preset: 'default' },
@@ -54,16 +54,15 @@ const THEMES = [
     { name: 'high contrast', classes: ['high-contrast'], preset: 'default' },
     { name: 'high contrast + dark', classes: ['high-contrast', 'dark-mode'], preset: 'default' }
 ];
-const MODE_CLASSES = ['dark-mode', 'high-contrast', 'theme-dark-ocean', 'theme-golden-glow'];
+const MODE_CLASSES = ['dark-mode', 'high-contrast'];
 
 // Put the page in one THEMES state the way a user would: clear every mode
-// class and the legacy data-theme attribute, pick the preset through the real
+// class, pick the preset through the real
 // Preferences UI (the 'default' preset is the app's own Reset All), close the
 // dialog and the menu, then add the mode classes.
 async function applyThemeState(page, theme) {
     await page.evaluate((modes) => {
         document.body.classList.remove(...modes);
-        delete document.documentElement.dataset.theme;
     }, MODE_CLASSES);
     await page.evaluate(() => document.querySelector('.menu-button')?.click());
     await page.waitForTimeout(300);

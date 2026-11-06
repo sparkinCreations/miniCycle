@@ -11,9 +11,6 @@
 /* Design tokens and CSS custom properties */
 @import './base/variables.css?v=2.666';
 
-/* Theme overrides — CSS-native [data-theme] attribute selectors */
-@import './themes/themes.css?v=2.666';
-
 /* CSS reset and normalization */
 @import './base/reset.css?v=2.666';
 
@@ -331,12 +328,12 @@ body.onboarding-active {
    is position: fixed) shows the same color at the same viewport
    y-position. Otherwise the body gradient scrolls with content and
    creates a visible color band where the fade ends. Matches the
-   :not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow)
-   chain used by the user-prefs color rule, plus our own class, to
+   :not(.dark-mode) chain used by the user-prefs color rule, plus our
+   own class, to
    win on specificity (the prefs rule's background shorthand
    otherwise resets background-attachment to scroll). */
-body.first-run-welcome-active:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow),
-body.onboarding-active:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {
+body.first-run-welcome-active:not(.dark-mode),
+body.onboarding-active:not(.dark-mode) {
     background-attachment: fixed;
 }
 

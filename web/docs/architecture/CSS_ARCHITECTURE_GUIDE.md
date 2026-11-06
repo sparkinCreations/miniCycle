@@ -75,8 +75,6 @@ styles/
 │   ├── app-container.css    # Main app grid/flex layout
 │   ├── header.css           # Header bar
 │   └── safe-areas.css       # PWA safe area insets
-├── themes/
-│   └── themes.css           # Color theme class overrides
 ├── utilities/
 │   ├── dark-mode.css        # Dark mode overrides
 │   ├── helpers.css          # Utility classes
@@ -463,30 +461,24 @@ avoid. Full derivation, the failure modes, and the guard:
 
 ## Theming System
 
-### Color Themes (Quick Colors)
+### Colours (Quick Colors presets)
 
-Color themes are CSS classes on `<body>` managed by `themeManager.js`. Each theme overrides `--theme-*` variables.
+Colour choice is the Personalization modal's presets, not stylesheets. A preset is a set
+of `--pref-*` colours (`ui/quickPresetData.js`; labels and UI in `ui/preferencesPresets.js`)
+that `preferencesManager.applyCustomColors()` sets at runtime. Components read
+`var(--pref-x, var(--theme-x))`, so the `--theme-*` default from `base/variables.css`
+applies wherever no preset colour is set. Users can save, rename, export and import
+their own presets.
 
-Location: `styles/themes/themes.css`
+### Adding a built-in preset
 
-### How themes are applied
+1. Add its colours to `QUICK_PRESET_DATA` in `modules/ui/quickPresetData.js`
+2. Add its entry, with literal `getLabel()` keys, to `quickPresets()` in
+   `modules/ui/preferencesPresets.js`, and the labels to `defaultLabels.js`
+3. Run `npm run test:contrast`: it measures every preset
 
-1. User selects a theme in the personalization modal
-2. `themeManager.js` sets a class on `<body>` (e.g., `body.theme-sunset`)
-3. CSS rules in `themes.css` override the `--theme-*` variables
-4. All components using those variables automatically update
-
-### Creating a new color theme
-
-1. Add a CSS block in `themes.css`:
-   ```css
-   body.theme-my-theme {
-       --theme-bg-gradient: linear-gradient(135deg, #myColor1, #myColor2);
-       --theme-task-bg: rgba(...);
-       /* Override any --theme-* variables */
-   }
-   ```
-2. Register it in the theme picker JS
+The `[data-theme]` colour themes (Dark Ocean, Golden Glow, dark) and `themes.css` were
+retired in Nov 2026; boot moves a stored one to its preset.
 
 ---
 

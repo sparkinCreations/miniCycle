@@ -1347,34 +1347,34 @@ body.tasks-sorted #taskList .move-down {
    ============================================================================= */
 
 /* Task list container - uses custom pref color when set, maintains transparency */
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-container {
+body:not(.dark-mode) .task-list-container {
     background: var(--pref-task-list-bg, var(--task-list-panel-bg));
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
 }
 
 /* Task items - uses custom pref colors when set */
-html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task,
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task {
+html:not(.dark-mode) body:not(.dark-mode) .task,
+body:not(.dark-mode) .task {
     background: var(--pref-task-bg, var(--theme-task-bg, var(--task-list-task-bg)));
     color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
 /* Task text element */
-html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text,
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
+html:not(.dark-mode) body:not(.dark-mode) .task-text,
+body:not(.dark-mode) .task-text {
     color: var(--pref-task-text, var(--theme-text-on-surface));
 }
 
 /* Overdue tasks must override custom pref colors — match html:not() prefix for specificity */
-html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task,
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task {
+html:not(.dark-mode) body:not(.dark-mode) .task.overdue-task,
+body:not(.dark-mode) .task.overdue-task {
     background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
     color: var(--overdue-task-text, var(--color-red));
 }
 
 /* Title bar - uses custom pref colors when set */
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-title {
+body:not(.dark-mode) .mini-cycle-title {
     background-color: var(--pref-title-bg, var(--task-list-title-bg));
     color: var(--pref-title-text, var(--task-list-title-text));
 }
@@ -1382,19 +1382,19 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .mini-cycle-
 /* Title bar - keep glassy background on mobile (same as desktop) */
 
 /* Checkbox incomplete background - uses custom pref color when set */
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
+body:not(.dark-mode) .task input[type="checkbox"]:not(:checked) {
     background-color: var(--pref-checkbox-incomplete-bg, var(--task-checkbox-incomplete-bg));
     border-color: var(--pref-checkbox-incomplete-bg, var(--task-checkbox-incomplete-border));
 }
 
 /* Checkbox checked background - uses custom pref color when set */
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked {
+body:not(.dark-mode) .task input[type="checkbox"]:checked {
     background-color: var(--pref-checkbox-bg, var(--task-checkbox-checked-bg));
     border-color: var(--pref-checkbox-bg, var(--task-checkbox-checked-border));
 }
 
 /* Checkmark color - uses custom pref color when set */
-body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:checked::after {
+body:not(.dark-mode) .task input[type="checkbox"]:checked::after {
     color: var(--pref-checkmark, var(--task-checkmark));
 }
 

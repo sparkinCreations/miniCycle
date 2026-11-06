@@ -1044,10 +1044,6 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Theme ----
     DARK_MODE: 'dark-mode',
-    DARK_OCEAN: 'dark-ocean',
-    GOLDEN_GLOW: 'golden-glow',
-    THEME_DARK_OCEAN: 'theme-dark-ocean',
-    THEME_GOLDEN_GLOW: 'theme-golden-glow',
 
     // ---- Boot / Loader ----
     APP_LOADING: 'app-loading',
@@ -1330,8 +1326,6 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Achievements / Badges ----
     UNLOCKED: 'unlocked',
     UNLOCKED_MESSAGE: 'unlocked-message',
-    OCEAN_THEME: 'ocean-theme',
-    GOLDEN_THEME: 'golden-theme',
     GAME_UNLOCKED: 'game-unlocked',
     HAS_CONTENT: 'has-content',
     INFO_BTN: 'info-btn',                 // the shared ⓘ toggle (buttons.css): Stats panel, recurring popup
@@ -1721,8 +1715,6 @@ export const DOM_IDS = Object.freeze({
     QUICK_DARK_TOGGLE: 'quick-dark-toggle',
     THEME_COLOR_META: 'theme-color-meta',
     STATUS_BAR_STYLE_META: 'status-bar-style-meta',
-    THEME_OPTIONS_SECTION: 'theme-options-section',
-    THEME_OPTION_CONTAINER: 'theme-option-container',
     VOCAB_THEME_SECTION: 'vocab-theme-section',
 
     // ---- Recurring Panel ----
@@ -2093,7 +2085,6 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Themes ----
     THEME_CONTAINER: '.theme-container',
-    THEME_TOGGLE: '.theme-toggle',
     THEMES_MODAL_CONTENT: '.themes-modal-content',
 
     // ---- Completed Tasks ----

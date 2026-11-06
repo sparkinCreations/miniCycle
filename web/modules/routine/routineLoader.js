@@ -469,13 +469,6 @@ function applyThemeSettings(settings) {
   document.body.classList.toggle(DOM_CLASSES.DARK_MODE, !!settings.darkMode);
   document.documentElement.classList.toggle(DOM_CLASSES.DARK_MODE, !!settings.darkMode);
 
-  const allThemes = [DOM_CLASSES.THEME_DARK_OCEAN, DOM_CLASSES.THEME_GOLDEN_GLOW];
-  allThemes.forEach(t => document.body.classList.remove(t));
-
-  if (settings.theme && settings.theme !== 'default') {
-    document.body.classList.add(`theme-${settings.theme}`);
-  }
-
   _deps.updateThemeColor?.();
 
   // Accessibility settings

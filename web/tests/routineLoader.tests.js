@@ -462,9 +462,17 @@ export async function runRoutineLoaderTests(resultsDiv, isPartOfSuite = false) {
         if (!themeColorCalled) {
             throw new Error('updateThemeColor dependency not called');
         }
+        // golden-glow was retired in Nov 2026: no class for it any more
+        if (document.body.classList.contains('theme-golden-glow')) {
+            throw new Error('a retired colour theme was applied');
+        }
+        if (!document.body.classList.contains('dark-mode')) {
+            throw new Error('dark mode not applied');
+        }
 
         // Cleanup
-        document.body.classList.remove('dark-mode', 'theme-golden-glow');
+        document.body.classList.remove('dark-mode');
+        document.documentElement.classList.remove('dark-mode');
     });
 
     // === DATA PERSISTENCE TESTS ===

@@ -30,12 +30,16 @@
  * routines next to id-keyed ones. The repair re-keys those once at boot (same backup, same
  * dry run) without a schema bump: the 2.6 shape already promises id keys.
  *
+ * And retireLegacyColorTheme: the three colour themes `settings.theme` could hold before
+ * Nov 2026 move to the Personalization preset made from them (or dark mode), once at boot.
+ *
  * @module routine/schemaMigration26
  */
 
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import { getLegacyPriorityLevel } from '../utils/priorityLevel.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { PRESET_COLOR_KEYS, QUICK_PRESET_DATA } from '../ui/quickPresetData.js';
 
 export const SCHEMA_2_6 = '2.6';
 const SCHEMA_2_5 = '2.5';
@@ -333,6 +337,85 @@ export function repairRoutineKeys(doc, makeId) {
         if (moved) doc.appState.activeRoutineId = moved[1];
     }
     return keyMap;
+}
+
+// ── 2.6 maintenance: retiring the legacy colour themes (Nov 2026) ─────────────
+
+/**
+ * The stored colour themes (`settings.theme`) that have a Personalization preset
+ * made from them. `dark` has none: dark mode is its replacement.
+ */
+export const LEGACY_THEME_PRESETS = Object.freeze({
+    'golden-glow': 'goldenGlow',
+    'dark-ocean': 'darkOcean'
+});
+
+/**
+ * Whether a stored `settings.theme` value is one of the retired colour themes.
+ * @param {*} value
+ * @returns {boolean}
+ */
+export function isLegacyColorTheme(value) {
+    return value === 'dark' || (typeof value === 'string' && hasOwn(LEGACY_THEME_PRESETS, value));
+}
+
+/**
+ * Whether settings hold any colour of the user's own (a hand-picked colour or an
+ * applied preset). Toggles such as `showBgPattern` do not count.
+ * @param {Object} settings
+ * @returns {boolean}
+ */
+export function hasCustomColors(settings) {
+    const colors = settings?.customColors;
+    if (!isObject(colors)) return false;
+    return PRESET_COLOR_KEYS.some(key => typeof colors[key] === 'string' && colors[key] !== '');
+}
+
+/**
+ * Retire a legacy colour theme. Until Nov 2026 `settings.theme` could hold
+ * `golden-glow`, `dark-ocean` or `dark`, applied at every boot as a body class
+ * and a `[data-theme]` stylesheet. None has had a picker since the
+ * Personalization presets replaced them, and the stylesheet is gone, so the
+ * look moves to what replaced it:
+ *
+ *   - `golden-glow` / `dark-ocean` with no colours of the user's own: the Golden
+ *     or Ocean preset is applied, the way Personalization applies it
+ *     (`customColors` gets the preset's colours and `preset`).
+ *   - the same with colours of their own: those are kept as they are. (The
+ *     legacy theme hid them; they were the user's choice, so they win.)
+ *   - `dark`: dark mode is turned on.
+ *
+ * Then `settings.theme` becomes `'default'`. Any other value is left alone: it
+ * was never a theme this app shipped, and nothing reads the field any more.
+ * Running it twice changes nothing.
+ *
+ * @param {Object} doc - A 2.6 document (mutated in place — call on a clone)
+ * @returns {{from: string, preset: string|null, darkMode: boolean, keptCustomColors: boolean}|null}
+ *   What was done, or null when there was no legacy theme
+ */
+export function retireLegacyColorTheme(doc) {
+    const settings = doc?.settings;
+    if (!isObject(settings)) return null;
+    const from = settings.theme;
+    if (!isLegacyColorTheme(from)) return null;
+
+    const report = { from, preset: null, darkMode: false, keptCustomColors: false };
+    const presetKey = from === 'dark' ? null : LEGACY_THEME_PRESETS[from];
+    if (presetKey && hasCustomColors(settings)) {
+        report.keptCustomColors = true;
+    } else if (presetKey) {
+        settings.customColors = {
+            ...(isObject(settings.customColors) ? settings.customColors : {}),
+            ...QUICK_PRESET_DATA[presetKey].colors,
+            preset: presetKey
+        };
+        report.preset = presetKey;
+    } else if (settings.darkMode !== true) {
+        settings.darkMode = true;
+        report.darkMode = true;
+    }
+    settings.theme = 'default';
+    return report;
 }
 
 /**

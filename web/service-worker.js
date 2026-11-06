@@ -189,6 +189,7 @@ var BOOT_CRITICAL = [
   './modules/utils/dueDateUtils.js',
   './modules/utils/schemaVersion.js',
   './modules/routine/schemaMigration26.js',
+  './modules/ui/quickPresetData.js',          // static import of schemaMigration26 (legacy theme retirement)
   // Task modules - ALL task functionality
   './modules/task/taskCore.js',
   './modules/task/taskDOM.js',
@@ -333,7 +334,6 @@ var BOOT_CRITICAL = [
 var CSS_FILES = [
   './styles/base/critical.css?v=' + APP_VERSION,
   './styles/base/variables.css?v=' + APP_VERSION,
-  './styles/themes/themes.css?v=' + APP_VERSION,
   './styles/base/reset.css?v=' + APP_VERSION,
   './styles/base/background.css?v=' + APP_VERSION,
   './styles/base/typography.css?v=' + APP_VERSION,
