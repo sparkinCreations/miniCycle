@@ -1,3 +1,7 @@
+## [2.669] - 2026-11-06
+- chore(styles): remove rules that only targeted the retired colour themes
+
+
 ## [2.668] - 2026-11-06
 - test(journeys): device in dark mode, app in light mode keeps the app's colours
 - fix(styles): restore the pre-2.667 stylesheets; the retired themes' selectors carried rule weight
