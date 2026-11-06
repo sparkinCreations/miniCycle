@@ -224,7 +224,13 @@ user-agent regexes, ≤2 cores or a `3g` connection. It times each boot and, aft
 (`BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER`; one on ≤2 cores), **asks** once, saying Lite
 keeps its own separate list — it does (`miniCycleLite*` storage keys), so the old
 silent redirect landed users with routines on an empty Lite list. The answer is kept;
-Lite's *Try Full Version* counts as no.
+Lite's *Try Full Version* counts as no. **Found while testing it in the real app:**
+the boot-time device check had never run in production — `featureBoot` built the `ui`
+API's `deviceDetectionManager` from `deps.ui`, but the manifest delivers it on
+`deps.utils`, so `uiBoot` always got `undefined` (`validate:api` passes: the name is
+allow-listed, only its source is wrong). Fixed in the same commit; the old post-boot
+redirect was therefore dead code, and the Lite routing users actually got came from
+the `miniCycle.html` feature gate and boot-failure fallbacks.
 
 **Found in code or shipped pages, not fixed:** `legal/accessibility.html` says
 keyboard reordering needs *Show Move Arrows* (Alt+↑/↓ works without it);

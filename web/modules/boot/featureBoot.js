@@ -442,7 +442,10 @@ function registerGroupedApisFromLoader(deps, appContextMod, coreResult) {
     syncCurrentSettingsToStorage: deps.ui?.syncCurrentSettingsToStorage,
     // Additional UI functions
     onboardingManager: deps.ui?.onboardingManager,
-    deviceDetectionManager: deps.ui?.deviceDetectionManager,
+    // From deps.utils: the deviceDetection manifest is api: 'utils'. Read from
+    // deps.ui (until Nov 2026) it was always undefined, so uiBoot's boot-time
+    // device check never ran.
+    deviceDetectionManager: deps.utils?.deviceDetectionManager,
     updateDueDateVisibility: deps.features?.updateDueDateVisibility,
     organizeCompletedTasks: deps.features?.organizeCompletedTasks,
     updateThemeColor: deps.features?.updateThemeColor,
