@@ -1,6 +1,13 @@
+> Archived Nov 6 2026 (docs audit round 2): a one-off review from Dec 19 2025 (was the repo-root `CODE_REVIEW_REPORT.md`); all seven recommendations are closed or superseded (see its Status line); no successor.
+
 # Comprehensive Code Review Report - miniCycle Repository
 
 > **Historical snapshot (December 2025).** Nothing below is maintained: module counts, line counts and the test figure were true on the review date and have drifted since. "Test Coverage: 958 browser tests (100% pass rate)" is a pass rate on a run of that day, not code coverage — coverage is not measured. Live numbers are in `web/docs/PROJECT_STATS.md`.
+
+**Last verified:** Nov 6 2026
+
+> **Status (checked against the code, Nov 6 2026): the recommendations in §7 are closed or superseded; nothing here is an open work item.**
+> (1) Console logging — output is gated by `modules/utils/debugMode.js`; few `console.log` calls remain in `modules/`. (2) Magic numbers — centralized in `core/constants.js` (`UI_TIMEOUTS`, `LIMITS`, `INTERVALS`, …) as a `CLAUDE.md` rule, not a gate. (3) Testing module — split into `modules/testing/testing-modal-*.js` and loaded on demand (`deferred: true` in `moduleManifests.js`); it still ships in the release bundle, not a dev-only build. (4) Deep nesting — never measured again; no gate. (5) Import patterns — superseded by content-hashed release builds (since v2.301); dynamic sub-module imports keep `?v=${APP_VERSION}`. (6) Configuration — `version.js` and `core/constants.js`. (7) Module splitting — `taskCore` and `settingsManager` are now facades over sub-modules (`archive/LARGE_MODULE_SPLITS_PLAN.md`, closed Aug 2026). Module paths in the body (`cycle/`, `testing-modal.js` at 3,394 lines, 500ms autosave) describe the December 2025 tree.
 
 **Review Date:** December 19, 2025  
 **Repository:** sparkinCreations/miniCycle  

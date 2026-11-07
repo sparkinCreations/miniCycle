@@ -59,7 +59,8 @@ const FALLBACK_BOOT_TIMEOUTS = Object.freeze({
   SW_READY_WAIT: 8000,
   IDB_OPERATION: 3000,
   LOADER_FADE: 300,
-  VERSION_GATE: 1500
+  VERSION_GATE: 1500,
+  SLOW_BOOT_LITE_OFFER: 6000
 });
 
 // ✅ FIX: Shared deps container that persists across boot retries

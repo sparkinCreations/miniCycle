@@ -809,6 +809,8 @@ export const DEFAULT_LABELS = deepFreeze({
         deviceStatusVersion:     'Version: {version}',
         deviceStatusSchema:      'Schema: {schema}',
         deviceStatusLastCheck:   'Last Check: {lastCheck}',
+        deviceStatusSlowBoots:   'Slow starts in a row: {count}',
+        deviceNeverChecked:      'Never',
 
         // Milestone/unlock notifications
         milestoneAchieved:       'You\'ve completed {count} cycles for "{name}"! Keep going!',
@@ -825,8 +827,6 @@ export const DEFAULT_LABELS = deepFreeze({
         // Migration notifications
 
         // Device detection notifications
-        deviceDetectionComplete: 'Device detection complete - using full version by user choice',
-        redirectingToLite:       'Redirecting to optimized lite version...',
         reportRequiresSchema:    'Cannot generate report - state data required',
         deviceConfiguredLite:    'Device configured for lite version',
         deviceConfiguredFull:    'Device configured for full version',
@@ -1037,6 +1037,9 @@ export const DEFAULT_LABELS = deepFreeze({
         removeRecurringTitle: 'Remove Recurring Task',
         removeRecurringConfirm: 'Remove',
         liteVersionTitle:   'Switch to Lite Version',
+        liteOfferTitle:     'This device seems slow',
+        liteOfferMessage:   'miniCycle took about {seconds} seconds to open on this device. The Lite version is lighter and opens faster on older devices.\n\nLite keeps its own separate list: nothing here moves over, and nothing here is lost. You can come back any time from the Lite menu → Try Full Version.',
+        liteOfferKeepFull:  'Keep Full Version',
         liteVersionConfirm: 'Try Lite Version',
         // Start-up screen for saved data that could not be read at all (appInit).
         corruptionTitle:        'Your saved data could not be read',
@@ -1809,7 +1812,8 @@ export const DEFAULT_LABELS = deepFreeze({
         personalizationHint: 'Personalize colors and layout',
         // Captions under those two buttons (desktop only — settings.css)
         personalizationCaption: 'Personalization',
-        darkModeCaption: 'Dark mode',
+        darkModeCaption: 'Dark mode',   // shown while the app is light: the mode a press turns on
+        lightModeCaption: 'Light mode', // shown while the app is dark
         darkModeHintOn:  'Switch to dark mode',
         darkModeHintOff: 'Switch to light mode',
         appSubtitle:    'ROUTINE MANAGER',

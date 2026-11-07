@@ -143,6 +143,24 @@ export async function runThemeManagerTests(resultsDiv) {
         }
     });
 
+    await test('quick dark toggle: the desktop caption names the mode a press switches to', async () => {
+        const { getLabel } = await import('../modules/labels/labelResolver.js');
+        const quick = document.createElement('button');
+        quick.id = 'quick-dark-toggle';
+        document.body.appendChild(quick);
+        setThemeManagerDependencies({ getElementById: (id) => document.getElementById(id) });
+        try {
+            const tm = new ThemeManager();
+            tm.updateQuickToggleIcon(true);
+            if (quick.dataset.label !== getLabel('nav.lightModeCaption')) throw new Error(`in dark mode the caption should read "Light mode", got ${JSON.stringify(quick.dataset.label)}`);
+            tm.updateQuickToggleIcon(false);
+            if (quick.dataset.label !== getLabel('nav.darkModeCaption')) throw new Error(`in light mode the caption should read "Dark mode", got ${JSON.stringify(quick.dataset.label)}`);
+        } finally {
+            quick.remove();
+            setThemeManagerDependencies({ getElementById: (id) => document.getElementById(id) });
+        }
+    });
+
     await test('quick dark toggle: a long press shows its label on touch and does not toggle', async () => {
         const { UI_TIMEOUTS, DOM_CLASSES } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
         const { resetLongPressHints } = await import(`../modules/utils/longPressHint.js?v=${cacheBuster}`);

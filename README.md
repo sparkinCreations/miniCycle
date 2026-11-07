@@ -2,6 +2,8 @@
 
 **Turn Your Routine Into Progress**
 
+**Last verified:** Nov 6 2026
+
 A free, privacy-first routine manager with automatic task cycling, gamification, and offline support. Repeatable checklists that reset on completion — not one-and-done to-dos, not a daily habit tracker. Complete your routine, watch it reset, and track your cycles over time.
 
 <p align="center">
@@ -96,8 +98,8 @@ Customize colors, backgrounds, and display preferences to make miniCycle yours.
 - Quick color themes and custom color picker
 - Save, import, and export color presets
 - Custom background images
-- Dark mode (manual toggle or system-aware)
-- Checkmark style options (fitted, minimal, circle)
+- Dark mode toggle
+- Checkmark style options (fitted, minimal, larger, or none)
 
 <p align="center">
   <img src="web/assets/images/screenshots/Example/user-manual/v3/personalization.jpg" alt="Personalization" width="200"/>
@@ -118,17 +120,16 @@ Set per-task reminders with flexible scheduling — minutes, hours, or days — 
 - Reduced motion support (respects OS preference + manual toggle)
 - High contrast mode
 - Adjustable font sizes (Small, Default, Large, Extra Large)
-- Full keyboard navigation and ARIA labels
+- Keyboard navigation and ARIA labels
 - Focus management and focus trapping in modals
-- 4.5:1 contrast targets across themes
-- What is verified automatically: accessible names and keyboard operability of custom controls on the real app surfaces (`npm run test:a11y`). Contrast across themes, zoom, reduced motion and screen-reader behaviour are checked by hand, not by CI.
+- What is verified automatically, in CI: accessible names and keyboard operability of custom controls on the real app surfaces (`npm run test:a11y`), and axe colour contrast per theme and view, gated at zero serious violations (`npm run test:contrast`; text over background images is reported, not judged). Zoom, reduced motion and screen-reader behaviour are checked by hand.
 
 ### More
 - **Search & Filter** — filter by name, status, priority, due date, or recurring; sort by A-Z, priority, or due date
 - **Drag & Drop** — reorder tasks by dragging or arrow buttons (custom Safari ghost)
 - **Undo/Redo** — full undo history for task and cycle actions (Ctrl+Z / Cmd+Z)
 - **Focus Mode** — distraction-free view hiding all navigation chrome
-- **Guided Tours** — interactive walkthroughs for every major feature (13 tours total)
+- **Guided Tours** — interactive walkthroughs for the major features
 - **Quick Actions** — customizable fast-access toolbar in the hamburger menu
 - **Sample Routines** — prebuilt routines (Daily Routine, Cardio, QA Inspection, etc.) to get started quickly
 - **Offline Support** — works fully offline as a Progressive Web App
@@ -165,9 +166,9 @@ miniCycle is built entirely with vanilla JavaScript — no React, no Vue, no fra
 
 **A full label system instead of hardcoded strings.** Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. This started as a way to keep text consistent and evolved into the foundation for the vocabulary theme system — where the entire app's language changes based on your routine's context.
 
-**A 4-phase boot sequence.** `orchestrator → coreBoot → featureBoot → uiBoot` controls startup order so that state is ready before modules wire, modules wire before instances create, and instances create before the UI renders. This prevents an entire class of race conditions that plague large vanilla JS apps.
+**A three-phase boot sequence under an orchestrator.** `orchestrator → coreBoot → featureBoot → uiBoot` controls startup order so that state is ready before modules wire, modules wire before instances create, and instances create before the UI renders. This prevents an entire class of race conditions that plague large vanilla JS apps.
 
-**Zero `window.*` globals.** Every dependency is explicitly injected. If a module needs `document.body`, it receives a `getBody()` helper through DI. This makes every module testable in isolation and makes the dependency graph fully visible.
+**No `window.*` fallbacks for dependencies.** Dependencies are explicitly injected. If a module needs `document.body`, it receives a `getBody()` helper through DI. This makes modules testable in isolation and the dependency graph visible. (No gate counts globals: `miniCycle.html` exposes a few window-scoped helpers, and module code has one known custom global — see [PROJECT_STATS.md](web/docs/PROJECT_STATS.md).)
 
 The result is an app that solves the same problems frameworks solve — but with full visibility into every layer. The understanding paid off in both directions: miniCycle later gained an esbuild release pipeline (content-hashed bundles) without touching its architecture, and the studio's second app, [MasterMath](https://mastermath.app), ships on React + Vite — framework fluency and from-scratch depth, by way of the same codebase lessons.
 
@@ -175,20 +176,22 @@ The result is an app that solves the same problems frameworks solve — but with
 
 ## By the Numbers
 
-All counts are floors — live numbers in [PROJECT_STATS.md](web/docs/PROJECT_STATS.md).
+Module, test, CSS and doc counts change with every release, so they live in one
+generated place: [PROJECT_STATS.md](web/docs/PROJECT_STATS.md) (also published as
+JSON at <https://minicycle.app/stats.json>).
 
-| Metric | Count |
-|--------|-------|
-| JavaScript | 90,000+ lines across 135+ modules |
-| CSS | 22,000+ lines across 40+ token-based files |
-| Automated Tests | 3,500+ browser tests in 125+ files, all passing on every release — a pass rate, not code coverage, which is not measured — plus offline-boot, layout, meta, journey and accessibility suites |
-| Validation Gates | 9 — CSP hashes, HTML, docs links, DI declarations, legacy-read ratchet, inline-script contracts, comment references, ES built-in floor, label registries |
-| DI-Manifested Modules | 55+ with 8 load phases |
-| Label Keys | 1,600+ across 58 categories with theme-aware resolution |
-| DOM Constants | 200+ (IDs, selectors, classes, z-index) |
-| CSP Hashes | 20 SHA-256 inline script hashes |
-| Guided Tours | 13 interactive walkthroughs |
-| `window.*` Globals | 0 (strict DI enforcement) |
+What the numbers cover:
+
+- **Automated tests** — the browser suite (`npm test`) plus offline-boot, layout,
+  meta, journey, accessibility and contrast suites. A pass rate, not code coverage,
+  which is not measured.
+- **Validation gates** — static checks that run in CI or before release (CSP hashes,
+  HTML, docs links, DI declarations, appContext API surface, manifest `provides`,
+  inline-script contracts, comment references, ES built-in floor, label registries,
+  duplicate keys, required-dep chaining, factory-reset coverage, cache headers);
+  full list in [VALIDATION_GATES.md](web/docs/working-on-code/VALIDATION_GATES.md).
+- **DI-manifested modules** load across 8 phases (`PHASES` in
+  `modules/boot/moduleManifests.js`).
 
 ---
 
@@ -222,22 +225,25 @@ miniCycle/
 │   ├── miniCycle.html              # Main entry point (PWA)
 │   ├── service-worker.js           # Cache-first SW with version verification
 │   ├── version.js                  # APP_VERSION + CACHE_VERSION (single source of truth)
-│   ├── modules/                    # ES6 modules (strict DI, zero window.* globals)
+│   ├── modules/                    # ES6 modules (strict DI, no window.* fallbacks)
 │   │   ├── boot/                   # orchestrator → coreBoot → featureBoot → uiBoot
 │   │   ├── core/                   # appState, appContext, diBase, constants
-│   │   ├── task/                   # Task CRUD, rendering, drag-drop, search
-│   │   ├── ui/                     # Modals, menus, settings, gestures, guided tours
+│   │   ├── task/                   # Task CRUD, rendering, drag-drop
+│   │   ├── ui/                     # Modals, menus, settings, search, import/export, gestures, guided tours
 │   │   ├── recurring/              # Scheduling, matching, panel, settings
 │   │   ├── features/               # Themes, stats, achievements, history, reminders
-│   │   ├── routine/                # Routine lifecycle, switching, import/export
+│   │   ├── routine/                # Routine lifecycle, switching, migration
 │   │   ├── labels/                 # Label system + vocabulary theme overrides
 │   │   ├── utils/                  # Notifications, device detection, validation
 │   │   ├── storage/                # backupManager (IndexedDB)
 │   │   ├── progress/               # Cycle completion tracking
+│   │   ├── platform/               # capacitorBridge (iOS/Android) + desktopBridge (Electron); no-op on web
+│   │   ├── testing/                # In-app testing modal (deferred, loaded on demand)
 │   │   └── other/                  # Plugin system
 │   ├── styles/                     # Token-based CSS (variables.css foundation)
-│   ├── tests/                      # Playwright browser tests (55 files)
-│   ├── scripts/                    # build-chrome-full.cjs, build-android-www.cjs, tooling
+│   ├── tests/                      # Playwright browser tests
+│   ├── scripts/                    # build-web.cjs, update-version.sh, validators, tooling
+│   ├── lite/                       # Frozen ES5 fallback for old devices
 │   └── docs/                       # Developer guides & architecture docs
 ├── chrome/                         # Chrome extension (MV3) — generated from web/ + hand-built lite popup
 ├── mobile/                         # Native mobile builds
@@ -255,41 +261,41 @@ miniCycle/
 Every module declares its dependencies through `createDIModule()` from `diBase.js` with `required()` and `optional()` declarations. Dependencies are wired via manifest-based resolution in `featureBoot.js` — no circular imports, no global state, no `window.*` fallbacks. Lazy getter resolution ensures dependencies aren't evaluated until first access.
 
 #### Boot Sequence
-A 4-phase boot controls startup order with timeout protection:
+An orchestrator runs three phases, each with its own timeout (`BOOT_TIMEOUTS.PHASE_1` / `PHASE_2` / `PHASE_3` in `core/constants.js`):
 
 ```
 orchestrator.js (sequence control + boot UI)
-  → Phase 1: coreBoot.js     — AppState, GlobalUtils, migration (15s timeout)
-  → Phase 2: featureBoot.js  — moduleLoader loads 51 manifests, wires ALL DI (20s timeout)
+  → Phase 1: coreBoot.js     — AppState, GlobalUtils, migration
+  → Phase 2: featureBoot.js  — moduleLoader loads the manifests, wires ALL DI
   → Phase 3: uiBoot.js       — event listeners, UI finalization
 ```
 
 Modules load across 8 phases: Core Utils → Theme/Visual → Task Management → Recurring → Cycle → UI Managers → Features → Testing. Each module can declare `requires`, `optionalDeps`, and `lazyRequires` to control wiring order.
 
 #### State Management
-Centralized `AppState.update(producer)` is the single mutation entry point for all state changes. Schema 2.6 organizes data into `routine`, `appState`, `settings`, `userProgress`, and `achievements`. Saves are debounced at 600ms by default, with immediate save option for critical operations. A full undo/redo system captures snapshots with deduplication and signature tracking.
+Centralized `AppState.update(producer)` is the single mutation entry point for all state changes. Schema 2.6 organizes data into `routine`, `appState`, `settings`, `userProgress`, and `achievements`. Saves are debounced (`DEBOUNCE.STATE_SAVE`, 600ms) by default, with immediate save option for critical operations. A full undo/redo system captures snapshots with deduplication and signature tracking.
 
 #### Label System
-Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. The vocabulary theme system layers theme-specific overrides on top of the 53-category default label set. Themes are resolved per-routine, so different routines can display entirely different vocabulary simultaneously.
+Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. The vocabulary theme system layers theme-specific overrides on top of the default label set (`modules/labels/defaultLabels.js`). Themes are resolved per-routine, so different routines can display entirely different vocabulary simultaneously.
 
 #### CSS Architecture
-Token-based design system built on `variables.css` with semantic color palette, spacing scale, typography scale, and z-index layers. Dark mode uses CSS custom property overrides with a `prefers-color-scheme` media query fallback. Reduced motion support auto-disables transitions via `prefers-reduced-motion`. Vocabulary themes apply color presets as `--pref-*` CSS variables at runtime.
+Token-based design system built on `variables.css` with semantic color palette, spacing scale, typography scale, and z-index layers. Dark mode is a manual toggle (`body.dark-mode` overrides the tokens); it does not follow the system setting. A `prefers-color-scheme` media query only paints a dark page background before the app has loaded, so a device in dark mode does not flash white. Reduced motion support auto-disables transitions via `prefers-reduced-motion`. Vocabulary themes apply color presets as `--pref-*` CSS variables at runtime.
 
 #### Service Worker
-Cache-first navigation with a `verifyVersionFresh()` safety net that checks version.js after serving cached content. Handles Safari's `redirected: true` response rejection with a `cleanResponse()` helper. Release builds are fully content-hashed (`/build/[name]-[hash].js`, immutable caching) — the filename is the version, so stale-cache bugs are structurally impossible; `?v=` query versioning survives only in dev.
+Cache-first navigation with a `verifyVersionFresh()` safety net that checks version.js after serving cached content. Handles Safari's `redirected: true` response rejection with a `cleanResponse()` helper. Release builds content-hash JS and CSS (`/build/[name]-[hash].js`, immutable caching), so a changed file always gets a new name. `?v=` versioning is still live in production for `version.js` (the file that publishes `APP_VERSION`) and for dynamic sub-module imports (`?v=${APP_VERSION}`); HTML routes must never be long-cached (`npm run validate:cache`).
 
 #### Security
-- **CSP**: Strict Content Security Policy with 15+ SHA-256 hashes for inline scripts (no `'unsafe-inline'`)
+- **CSP**: Strict Content Security Policy with SHA-256 hashes for the app's inline scripts (no `'unsafe-inline'` for scripts; `npm run validate:csp` blocks a release with an unhashed one)
 - **XSS Prevention**: `textContent` for all user data, `innerHTML` only for trusted static content (icons, labels)
-- **Headers**: HSTS (1 year), X-Frame-Options (SAMEORIGIN), X-Content-Type-Options (nosniff)
+- **Headers**: HSTS (1 year), X-Content-Type-Options (nosniff); clickjacking protection via CSP `frame-ancestors` (X-Frame-Options is deliberately not set — see `web/netlify.toml`)
 - **Permissions Policy**: Geolocation, microphone, camera, and payment APIs blocked
 - **DOM Isolation**: All DOM access through DI helpers (`getElementById`, `querySelector`, `getBody`, etc.)
 
 ### CI/CD
 GitHub Actions runs on every push and PR to main/develop:
 
-- **Test Pipeline** (`test.yml`): Node.js 18.x + 20.x matrix — 3,100+ Playwright browser tests against Chromium, plus offline-boot/precache-drift, layout regression, test-suite meta guards, and end-to-end journey suites
-- **Validation Gates** (`test.yml` + `performance.yml`): DI declarations, legacy-read ratchet, inline-script contracts, comment references, ES built-in floor, label registries, W3C HTML, docs links — all gated at zero; CSP hash coverage gates every release before push
+- **Test Pipeline** (`test.yml`): Node.js 18.x + 20.x matrix — the Playwright browser suite against Chromium, plus offline-boot/precache-drift, layout regression, test-suite meta guards, end-to-end journey and Lite suites; accessibility semantics and colour contrast in their own job; the browser suite on WebKit (non-blocking)
+- **Validation Gates** (`test.yml` + `performance.yml`): DI declarations, legacy-read ratchet, required-dep chaining, inline-script contracts, comment references, ES built-in floor, appContext API surface, manifest `provides`, factory-reset coverage, label registries, duplicate keys, cache headers, changelog range, CSP hash sync, restore-script generation, W3C HTML, docs links — most gated at zero, the rest one-way ratchets; CSP hash coverage gates every release before push
 - **Performance Pipeline** (`performance.yml`): Lighthouse CI audit + performance benchmarks
 - **Linting**: ESLint with `eslint-plugin-security` and `eslint-plugin-sonarjs` under a one-way `--max-warnings` ratchet
 
@@ -301,9 +307,9 @@ GitHub Actions runs on every push and PR to main/develop:
 - **Install prompts**: Automatic detection for iOS Safari, Chrome, Edge
 
 ### Browser Compatibility
-- **Full app**: any browser with `globalThis` — Chrome 71+, Safari 12.1+, Firefox 65+, Edge (es2020 build target; a CI gate blocks newer built-ins from sneaking in)
+- **Full app**: any browser that parses optional chaining / nullish coalescing and has `globalThis` — Chrome 80+, Safari 13.1+, Firefox 74+, Edge (es2020 build target; the feature gate in `miniCycle.html` checks both, and a CI gate blocks newer built-ins from sneaking in)
 - **Mobile**: iOS Safari, Android Chrome (full PWA support)
-- **Legacy**: automatic feature-gate redirect to a static ES5 fallback in `lite/` for older devices
+- **Legacy**: automatic feature-gate redirect to a static ES5 fallback in `web/lite/` for older devices
 
 ---
 

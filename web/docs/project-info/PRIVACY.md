@@ -3,9 +3,10 @@
 > **How miniCycle handles your data**
 
 **Effective Date:** October 2, 2025
-**Last Updated:** October 16, 2026
-**Version:** 2.8
-**miniCycle Version:** 2.618
+**Policy last updated:** November 6, 2026
+**Version:** 2.9 (2.9: the .mcyc format page's counter, and the 50 most recent event times)
+**miniCycle version at that update:** the first release after 2.670
+**Last verified:** Nov 6 2026 (against `web/legal/privacy.html` and the code)
 
 > This file mirrors the published policy. The canonical text is `web/legal/privacy.html` (minicycle.app/legal/privacy); when the two differ, the HTML wins.
 
@@ -15,11 +16,12 @@
 
 **The miniCycle app collects ZERO data.** All your task data, settings, and history stay on your device. The app makes no analytics, telemetry, or tracking calls.
 
-**The miniCycle marketing pages** (product page and learn-more page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no stored IP addresses, no personal data, no third-party analytics, and no advertising trackers. See "Analytics & Tracking" below for the full disclosure.
+**The miniCycle marketing pages** (product page, learn-more page and .mcyc format page) use a small self-hosted counter to record button clicks and page views in aggregate — no cookies, no stored IP addresses, no personal data, no third-party analytics, and no advertising trackers. See "Analytics & Tracking" below for the full disclosure.
 
 - ✅ The app: 100% local, zero data collection
 - ✅ No accounts, no authentication, no registration
 - ✅ No cookies anywhere
+- ℹ️ Optional: feedback you choose to send goes through a form service (Web3Forms); no task or routine data is included
 - ⚠️ Marketing pages only: anonymous click & page-view counts (no PII, no cookies, no IPs stored, no third-party analytics or ad trackers)
 
 ---
@@ -41,10 +43,12 @@ All data is stored **in your browser** using:
 - App settings and preferences
 - Theme selections
 - Onboarding state
+- A recent-undo cache
 
 **IndexedDB:**
-- Undo/redo history (per-cycle)
-- Temporary state snapshots
+- Undo/redo history (per routine)
+- Automatic backups of your routines
+- A custom background image, if you upload one
 
 **This data never leaves your device.**
 
@@ -64,15 +68,18 @@ The miniCycle app makes **zero network requests** for:
 - ❌ No telemetry
 - ❌ No tracking pixels
 - ❌ No third-party scripts
-- ❌ No API calls
+- ❌ No API calls that carry your data
 
 **The only network activity in the app:**
 - Initial page load (downloading app files)
-- Service Worker updates (checking for new versions)
+- Service Worker updates and version checks (reading `version.js` from minicycle.app)
+- Files fetched from the same site on demand (sample routines, loading tips)
+- The feedback form, **only when you submit it** — your message and any contact
+  details you type are sent to Web3Forms to be delivered to us (see *Optional Features*)
 
 ### Network Activity (Marketing Pages)
 
-The product and learn-more pages POST anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure. See "Analytics & Tracking" below for what is and isn't included in those events.
+The product, learn-more and .mcyc format pages POST anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure. See "Analytics & Tracking" below for what is and isn't included in those events.
 
 **No data from inside the app is ever transmitted.**
 
@@ -82,7 +89,7 @@ The product and learn-more pages POST anonymous click and page-view events to a 
 
 ### What We Use
 
-**For the app: none.** The application has no third-party integrations.
+**For the app: none, except the feedback form.** The application has no third-party integrations; the one external service it can contact is the feedback form provider (Web3Forms), and only when you submit feedback.
 
 **For the marketing pages:** anonymous event counts are stored using Netlify Blobs (our own hosting infrastructure). No third-party analytics, advertising, or tracking services are involved.
 
@@ -112,7 +119,7 @@ miniCycle uses **zero cookies** — neither the app nor the marketing pages set 
 **localStorage and sessionStorage are not cookies:**
 
 - localStorage stores your task data (in the app) — never transmitted
-- sessionStorage stores a single per-tab flag on the marketing pages (`pv-product` / `pv-learn-more`) to deduplicate page views; never transmitted, automatically discarded when the tab closes
+- sessionStorage stores a single per-tab flag on the marketing pages (`pv-product` / `pv-learn-more` / `pv-mcyc-format`) to deduplicate page views; never transmitted, automatically discarded when the tab closes
 - Both are isolated to the originating site by your browser and cannot be read by other websites
 
 ---
@@ -125,8 +132,8 @@ miniCycle uses **zero cookies** — neither the app nor the marketing pages set 
 
 - miniCycle developers: ❌ No access
 - Third parties: ❌ No access
-- Servers: ❌ Don't exist
-- Cloud providers: ❌ Not used
+- Servers holding your data: ❌ Don't exist
+- Cloud providers: ❌ Not used for your data
 
 **Exception:** Anyone with physical access to your unlocked device can see your data (this is a browser security model limitation, not a miniCycle limitation).
 
@@ -141,8 +148,8 @@ miniCycle uses **zero cookies** — neither the app nor the marketing pages set 
 ```
 Your Device
   └── Browser
-      ├── localStorage (routine data)
-      └── IndexedDB (undo history)
+      ├── localStorage (routine data, settings)
+      └── IndexedDB (undo history, automatic backups, background image)
 ```
 
 **Your task data is not stored:**
@@ -177,10 +184,10 @@ You have **complete control** over your data:
 **Delete:**
 - Clear individual tasks
 - Delete entire routines
-- Factory reset (Settings → Clear All Data)
+- Factory reset (Settings → Advanced → Factory Reset)
 
 **Modify:**
-- Edit any task or cycle
+- Edit any task or routine
 - Change any setting
 - No restrictions
 
@@ -204,6 +211,21 @@ miniCycle stores data in your browser until:
 - You factory reset your device
 
 **We don't have a copy to retain.**
+
+---
+
+## Optional Features
+
+Mirrors the "Optional Features" section of `web/legal/privacy.html`:
+
+- **Browser notifications** — if you enable reminders or due-date notifications, task
+  names appear in your device's notification center (managed by your operating
+  system), where others with access to your device may see them. You can turn this
+  off at any time in the Reminders settings.
+- **Submitting feedback or bug reports** — your comments and any optional contact
+  information are sent through a third-party form service (Web3Forms) solely to
+  deliver your message to us. No task or routine data is included.
+- **Exporting routines** — you control where exported `.mcyc` files are saved.
 
 ---
 
@@ -249,17 +271,15 @@ See [SECURITY.md](../security/SECURITY.md) for details.
 
 ## Children's Privacy
 
-### COPPA Compliance
+miniCycle does not knowingly collect personal data from anyone, including children
+under 13. App data stays local on the device; since we have no access to it, we cannot
+determine the age of our users. Parents and guardians should supervise children's use
+of any web application.
 
-miniCycle is safe for all ages:
-
-- No data collection
-- No account creation
-- No social features
-- No advertising
-- No tracking
-
-**Parents:** miniCycle is as safe as an offline notebook app.
+The app has no accounts, no social features, no advertising and no analytics. The only
+things that leave a device are the optional feedback form (only when someone submits
+it) and, on the marketing pages, the anonymous counter described in "Analytics &
+Tracking" below.
 
 ---
 
@@ -359,13 +379,14 @@ We do not track anything inside the miniCycle app:
 
 ### On the Marketing Pages: Anonymous Click & Page-View Counting
 
-The product page and learn-more page run a small self-hosted counter to help us understand which content engages visitors and gauge overall traffic. This is **the only place** any tracking happens.
+The product page, learn-more page and .mcyc format page run a small self-hosted counter to help us understand which content engages visitors and gauge overall traffic. This is **the only place** any tracking happens.
 
 **What is collected:**
 
 - The visible label of any clicked button or link (e.g., "Get Started", "View on GitHub", "FAQ: Is miniCycle free?")
 - A page-view event when a marketing page is loaded
-- An ISO 8601 timestamp for each event, used only for aggregate trend charts (clicks per day, by hour of day) on our internal admin dashboard
+- The time of each event, folded into counts per day, per hour of day and per weekday for trend charts on our private admin dashboard
+- The times of the 50 most recent events (ISO 8601), for a "recent activity" list on that dashboard, which only the site owner can open; older ones are dropped as new ones arrive, and none is linked to a visitor (`MAX_RECENT` in `netlify/functions/track.js`)
 - A running total count for each named event
 
 **What is NOT collected:**
@@ -432,22 +453,6 @@ miniCycle's source code is publicly viewable for verification and educational pu
 
 ---
 
-## Privacy Comparison
-
-### vs. Other Task Apps
-
-| Feature | miniCycle | Todoist | Asana | Trello |
-|---------|-----------|---------|-------|--------|
-| **Data Collection** | None | Yes | Yes | Yes |
-| **Cloud Required** | No | Yes | Yes | Yes |
-| **Account Required** | No | Yes | Yes | Yes |
-| **Analytics** | No | Yes | Yes | Yes |
-| **Third-party Scripts** | No | Yes | Yes | Yes |
-| **Ad Tracking** | No | Free tier: Yes | No | No |
-| **Data Portability** | Yes | Limited | Limited | Limited |
-
----
-
 ## Summary
 
 **miniCycle is private by design:**
@@ -463,9 +468,8 @@ miniCycle's source code is publicly viewable for verification and educational pu
 
 ---
 
-**Privacy Policy Version:** 2.5
+**Privacy Policy Version:** 2.9
 **Effective Date:** October 2, 2025
-**Last Updated:** May 2, 2026
-**miniCycle Version:** 2.216
+**Policy last updated:** November 6, 2026
 
 *Your privacy is our priority. Always has been, always will be.*

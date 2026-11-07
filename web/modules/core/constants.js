@@ -111,10 +111,14 @@ export const BOOT_TIMEOUTS = Object.freeze({
     IDB_OPERATION: 3000,   // 3s timeout for IndexedDB ops during boot recovery; raised from
                            // 1s — old/slow devices were timing out test-mode/backup checks
     LOADER_FADE: 300,      // The boot splash's fade-out before it is removed and appLoaded flips — the same 300ms as --transition-normal, which paints the fade; it was a flat 500ms, 200ms of which was dead time on every open (Oct 2026)
-    VERSION_GATE: 1500     // 1.5s cap on the pre-boot server-version check (orchestrator
+    VERSION_GATE: 1500,    // 1.5s cap on the pre-boot server-version check (orchestrator
                            // gateOnServerVersion). Kicked off early so it overlaps Phase 1
                            // (≈free on a healthy network); fails open on timeout/offline so a
                            // slow/absent network never blocks boot.
+    SLOW_BOOT_LITE_OFFER: 6000 // A boot that reaches the end of UI boot this long after
+                           // navigation counts as slow for the Lite offer
+                           // (deviceDetection.assessBootPerformance). Boots right after an
+                           // update or in a hidden tab are not counted at all.
 });
 
 /**
@@ -405,6 +409,7 @@ export const LAYOUT_CHANGES = Object.freeze({
 export const LIMITS = Object.freeze({
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
+    SLOW_BOOTS_BEFORE_LITE_OFFER: 2, // Slow boots in a row (BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER) before the Lite version is offered; one is enough on a device with 2 or fewer cores. Asked once, the answer is kept (deviceDetection)
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
     ROUTINE_BROWSER_TILE_TASKS: 4, // Browse Routines grid: tasks a tile shows before "+N more"
