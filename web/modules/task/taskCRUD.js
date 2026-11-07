@@ -592,22 +592,28 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
     dialog.className = 'miniCycle-prompt-dialog';
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
+    // Named by its heading, and the instruction labels the field (Nov 2026:
+    // the dialog announced only "dialog" and the field only its placeholder).
+    dialog.setAttribute('aria-labelledby', DOM_IDS.EDIT_TASK_TITLE);
 
     const box = document.createElement('div');
-    box.className = 'miniCycle-prompt-box';
+    box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
-    const titleEl = document.createElement('div');
+    const titleEl = document.createElement('h2');
+    titleEl.id = DOM_IDS.EDIT_TASK_TITLE;
     titleEl.className = 'miniCycle-prompt-title';
     titleEl.textContent = getLabel('action.editTaskTitle');
     box.appendChild(titleEl);
 
-    const messageEl = document.createElement('div');
+    const messageEl = document.createElement('label');
     messageEl.className = 'miniCycle-prompt-message';
+    messageEl.htmlFor = DOM_IDS.EDIT_TASK_INPUT;
     messageEl.textContent = getLabel('action.editTaskMessage');
     box.appendChild(messageEl);
 
     const input = document.createElement('input');
     input.type = 'text';
+    input.id = DOM_IDS.EDIT_TASK_INPUT;
     input.className = 'miniCycle-prompt-input';
     input.value = oldText;
     input.placeholder = getLabel('action.editTaskPlaceholder');

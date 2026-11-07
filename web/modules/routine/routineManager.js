@@ -780,7 +780,7 @@ export class RoutineManager {
         dialog._previousFocus = document.activeElement;
 
         const box = document.createElement('div');
-        box.className = 'miniCycle-prompt-box';
+        box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
         // =====================================================================
         // VIEW 1: Name input view

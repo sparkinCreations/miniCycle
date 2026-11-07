@@ -1944,7 +1944,16 @@ export const DOM_IDS = Object.freeze({
     SAMPLE_CREATION_INPUT: 'sample-creation-input',
     ROUTINE_CREATION_TITLE: 'routine-creation-title',   // <h2> naming the creation dialog's name view (aria-labelledby)
     SAMPLE_CREATION_TITLE: 'sample-creation-title',     // <h2> naming the sample-picker view; the dialog's label follows the active view
-    SAMPLE_CREATION_GRID: 'sample-creation-grid'
+    SAMPLE_CREATION_GRID: 'sample-creation-grid',
+
+    // ---- Dialog titles (each dialog's aria-labelledby; Nov 2026 audit found
+    //      these dialogs announced only as "dialog") ----
+    PROMPT_TITLE: 'miniCycle-prompt-title',             // showPromptModal's <h2>
+    MINI_MODAL_TITLE: 'mini-modal-title',               // prefix: showConfirmationModal / showChoiceModal add a per-dialog number
+    EDIT_TASK_TITLE: 'edit-task-title',                 // Rename Task prompt (taskCRUD)
+    EDIT_TASK_INPUT: 'edit-task-input',
+    RENAME_ROUTINE_TITLE: 'rename-routine-title',       // Rename Routine prompt (routineSwitcherActions)
+    AUTO_UNCHECK_TIME_TITLE: 'auto-uncheck-time-title'  // auto-uncheck time prompt (dailyResetManager)
 });
 
 // ============================================================================
@@ -2199,6 +2208,8 @@ export const DOM_SELECTORS = Object.freeze({
     BTN_CONFIRM: '.btn-confirm',
     BTN_CANCEL: '.btn-cancel',
     MINI_MODAL_CHECKBOX_INPUT: '.mini-modal-checkbox-input',  // optional checkbox row in showConfirmationModal
+    MINI_MODAL_HEADER: '.mini-modal-header',
+    MINI_MODAL_BODY: '.mini-modal-body',
     MINI_CYCLE_PROMPT_INPUT: '.miniCycle-prompt-input',
     MINI_CYCLE_BTN_CANCEL: '.miniCycle-btn-cancel',
     MINI_CYCLE_BTN_CONFIRM: '.miniCycle-btn-confirm',

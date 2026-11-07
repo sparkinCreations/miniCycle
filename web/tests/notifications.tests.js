@@ -688,6 +688,40 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Nov 2026 audit: these dialogs were announced only as "dialog" (no name),
+    // and the box inside the native <dialog> was a second role="dialog".
+    await test('confirmation, choice and prompt dialogs are named by their title', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const last = (sel) => Array.from(document.querySelectorAll(sel)).pop();
+        const nameOf = (dialog) => {
+            const id = dialog.getAttribute('aria-labelledby');
+            const el = id && document.getElementById(id);
+            return el ? el.textContent.trim() : null;
+        };
+
+        notifications.showConfirmationModal({ title: 'Delete this?', message: 'Gone for good.', callback: () => {} });
+        const confirm = last('.mini-modal-dialog');
+        if (nameOf(confirm) !== 'Delete this?') throw new Error(`confirm dialog name: ${nameOf(confirm)}`);
+        const descId = confirm.getAttribute('aria-describedby');
+        if (!descId || document.getElementById(descId)?.textContent.trim() !== 'Gone for good.') {
+            throw new Error('confirm dialog must be described by its message');
+        }
+        if (confirm.querySelector('[role="dialog"]')) throw new Error('confirm dialog nests a second role="dialog"');
+        confirm.querySelector('.btn-cancel').click();
+
+        notifications.showChoiceModal({ title: 'Pick one', choices: [{ text: 'A', value: 'a' }], callback: () => {} });
+        const choice = last('.mini-modal-dialog');
+        if (nameOf(choice) !== 'Pick one') throw new Error(`choice dialog name: ${nameOf(choice)}`);
+        if (choice.querySelector('[role="dialog"]')) throw new Error('choice dialog nests a second role="dialog"');
+        choice.querySelector('.btn-cancel').click();
+
+        notifications.showPromptModal({ title: 'Name it', callback: () => {} });
+        const prompt = last('.miniCycle-prompt-dialog');
+        if (nameOf(prompt) !== 'Name it') throw new Error(`prompt dialog name: ${nameOf(prompt)}`);
+        prompt.querySelector('.miniCycle-btn-cancel').click();
+    });
+
     await test('showConfirmationModal() confirm button triggers callback', (done) => {
         setupMockGlobals();
         const notifications = new window.MiniCycleNotifications();

@@ -504,11 +504,13 @@ export class RoutineSwitcherActions {
         editDialog.className = 'miniCycle-prompt-dialog';
         editDialog.setAttribute('role', 'dialog');
         editDialog.setAttribute('aria-modal', 'true');
+        editDialog.setAttribute('aria-labelledby', DOM_IDS.RENAME_ROUTINE_TITLE);
 
         const box = document.createElement('div');
-        box.className = 'miniCycle-prompt-box';
+        box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
-        const titleEl = document.createElement('div');
+        const titleEl = document.createElement('h2');
+        titleEl.id = DOM_IDS.RENAME_ROUTINE_TITLE;
         titleEl.className = 'miniCycle-prompt-title';
         titleEl.textContent = getLabel('switcher.renameRoutine');
         box.appendChild(titleEl);

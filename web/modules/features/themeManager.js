@@ -834,8 +834,11 @@ export class ThemeManager {
                 themeButton._clickHandler = () => {
                     if (themesModal && !themesModal.open) {
                         themesModal._previousFocus = _deps.getActiveElement();
-                        themesModal.showModal();
+                        // Build the theme list BEFORE opening: showModal() focuses the
+                        // first control, and rendering afterwards replaced that control,
+                        // leaving keyboard focus behind the modal (Nov 2026 audit).
                         this.renderVocabThemes();
+                        themesModal.showModal();
                         _deps.hideMainMenu?.();
                     }
                 };

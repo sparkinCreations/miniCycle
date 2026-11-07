@@ -814,13 +814,24 @@ dialog.miniCycle-prompt-dialog::backdrop {
     background: rgba(0, 0, 0, 0.4);
 }
 
+/* The same panel as the confirmation dialog (.mini-modal-box in modals.css), so
+   it follows light mode, Personalization and the glass setting. Until Nov 2026
+   it was charcoal with white text in every mode — the one black box in a light
+   app (Create / Rename Routine, Rename Task, the auto-uncheck time). Dark mode
+   restyles it in dark-mode.css. The border is transparent here so dark mode,
+   which only sets border-color, still draws one. */
 .miniCycle-prompt-box {
-    background: var(--color-charcoal);
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-6-25);
     border-radius: var(--radius-xl);
-    border: 1px solid var(--color-black);
+    border: 1px solid transparent;
     text-align: center;
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    box-shadow:
+        var(--shadow-modal-compound),
+        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
     /* Clamp against the viewport directly, matching the .focus-* idiom. The
        dialog reset in modals.css now caps every dialog at 100vw, so a percentage
        here would resolve correctly too — but this keeps a real gutter instead of
@@ -834,7 +845,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
     font-size: 1.4rem;
     font-weight: bold;
     margin-bottom: var(--space-2-5);
-    color: var(--color-white);
+    color: inherit;
     padding-left: var(--space-7);
 }
 
@@ -843,7 +854,8 @@ dialog.miniCycle-prompt-dialog::backdrop {
     display: block;
     font-size: 1rem;
     margin-bottom: var(--space-3-75);
-    color: var(--theme-input-border);
+    color: inherit;
+    opacity: 0.85;
 }
 
 .miniCycle-prompt-input {
@@ -899,12 +911,12 @@ dialog.miniCycle-prompt-dialog::backdrop {
 .miniCycle-sample-option {
     margin-top: var(--space-3-75);
     padding: var(--space-2-5);
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     border-radius: var(--radius-md);
 }
 
 .miniCycle-sample-option label {
-    color: var(--theme-border);
+    color: inherit;
     font-size: 0.9rem;
     cursor: pointer;
     display: flex;
@@ -929,24 +941,27 @@ dialog.miniCycle-prompt-dialog::backdrop {
     display: block;
 }
 
+/* Everything below sits on the prompt panel, which is light outside dark mode
+   since Nov 2026; these are its light-panel colours and dark-mode.css restores
+   the white-on-charcoal ones they were written with. */
+
 /* "Load Sample" button on the name-input view */
 .load-sample-btn {
     display: block;
     margin: var(--space-3) auto 0;
     padding: 5px 20px;
     border-radius: var(--radius-6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.04);
+    color: inherit;
     font-size: var(--font-size-sm);
     cursor: pointer;
     transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .load-sample-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: rgba(255, 255, 255, 0.9);
+    background: rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.25);
 }
 
 /* Sample list view — title + back button header */
@@ -955,21 +970,23 @@ dialog.miniCycle-prompt-dialog::backdrop {
     align-items: center;
     gap: var(--space-2);
     margin-bottom: var(--space-3-75);
+    /* Clear the corner logo, as .miniCycle-prompt-title does. */
+    padding-left: var(--space-7);
 }
 
 .sample-back-btn {
     padding: 4px 10px;
     border-radius: var(--radius-6);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: rgba(0, 0, 0, 0.04);
+    color: inherit;
     font-size: var(--font-size-xs);
     cursor: pointer;
     transition: background var(--transition-fast);
 }
 
 .sample-back-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(0, 0, 0, 0.08);
 }
 
 .sample-list-title {
@@ -977,7 +994,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
     margin: 0;
     font-size: var(--font-size-lg);
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: inherit;
 }
 
 /* Sample list items */
@@ -998,15 +1015,15 @@ dialog.miniCycle-prompt-dialog::backdrop {
     gap: 10px;
     padding: 12px 14px;
     border-radius: var(--radius-6);
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.55);
     cursor: pointer;
     transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 
 .sample-item:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: rgba(255, 255, 255, 0.85);
+    border-color: rgba(0, 0, 0, 0.2);
 }
 
 .sample-item:focus-visible {
@@ -1021,5 +1038,5 @@ dialog.miniCycle-prompt-dialog::backdrop {
 .sample-item-name {
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: rgba(255, 255, 255, 0.85);
+    color: inherit;
 }

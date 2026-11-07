@@ -1636,6 +1636,7 @@ body.dark-mode .footer-item a {
 body.dark-mode .miniCycle-prompt-box {
     background: var(--dark-surface-primary);
     border-color: var(--dark-button-hover-bg);
+    box-shadow: var(--shadow-modal-compound);
 }
 
 body.dark-mode .miniCycle-prompt-title {
@@ -1644,12 +1645,58 @@ body.dark-mode .miniCycle-prompt-title {
 
 body.dark-mode .miniCycle-prompt-message {
     color: var(--theme-text-secondary);
+    opacity: 1;
 }
 
 body.dark-mode .miniCycle-prompt-input {
     background: var(--theme-input-bg);
     color: var(--theme-text-primary);
     border-color: var(--dark-button-hover-bg);
+}
+
+/* The routine-creation sample picker inside the prompt: its original
+   white-on-charcoal colours (onboarding.css now holds the light-panel ones). */
+body.dark-mode .miniCycle-sample-option {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .miniCycle-sample-option label {
+    color: var(--theme-border);
+}
+
+body.dark-mode .load-sample-btn,
+body.dark-mode .sample-back-btn {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .load-sample-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .sample-back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .sample-list-title {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .sample-item {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark-mode .sample-item:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .sample-item-name {
+    color: rgba(255, 255, 255, 0.85);
 }
 
 /* =============================================================================

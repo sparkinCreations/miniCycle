@@ -540,7 +540,8 @@ body.high-contrast:not(.dark-mode) .modal-panel {
 }
 
 /* --- Mini Modal Box (generic small modals) --- */
-body.high-contrast:not(.dark-mode) .mini-modal-box {
+body.high-contrast:not(.dark-mode) .mini-modal-box,
+body.high-contrast:not(.dark-mode) .miniCycle-prompt-box {
     border: 2px solid #333333;
 }
 
@@ -1137,6 +1138,7 @@ body.high-contrast.dark-mode .modal-panel {
 
 /* --- Mini Modal Box (generic small modals) --- */
 body.high-contrast.dark-mode .mini-modal-box,
+body.high-contrast.dark-mode .miniCycle-prompt-box,
 body.high-contrast.dark-mode #storage-viewer-overlay .mini-modal-box.wide {
     border: 2px solid #aaaaaa;
 }
@@ -1760,6 +1762,15 @@ body.high-contrast:not(.dark-mode) .miniCycle-prompt-input {
     border: 2px solid #333;
 }
 
+/* The prompt's Cancel fills with --theme-input-border, which High Contrast
+   turns into #333 here: dark text on a near-black button (found Nov 2026).
+   Give it a light fill and the high-contrast outline instead. */
+body.high-contrast:not(.dark-mode) .miniCycle-btn-cancel {
+    background-color: #e0e0e0;
+    color: #111111;
+    border: 2px solid #333;
+}
+
 /* =============================================================================
    HIGH CONTRAST — ONBOARDING (Dark Mode)
    ============================================================================= */
@@ -1786,6 +1797,13 @@ body.high-contrast.dark-mode .onboarding-dot.active {
 }
 
 body.high-contrast.dark-mode .miniCycle-prompt-input {
+    border: 2px solid #aaa;
+}
+
+/* Same Cancel, dark side: --theme-input-border is #999 here, under #f0f0f0 text. */
+body.high-contrast.dark-mode .miniCycle-btn-cancel {
+    background-color: #3a3a3a;
+    color: #f0f0f0;
     border: 2px solid #aaa;
 }
 

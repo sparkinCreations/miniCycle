@@ -157,6 +157,25 @@ function getEscapeHtml(deps) {
     || ((s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#x27;').replace(/\//g, '&#x2F;'));
 }
 
+let _miniModalSeq = 0;
+
+/**
+ * Name a confirmation / choice dialog by its header and describe it by its body.
+ * The native <dialog> is the dialog: until Nov 2026 the box inside it ALSO
+ * carried role="dialog" and neither had a name, so screen readers announced
+ * "dialog" twice and never the question. Ids are numbered because one of these
+ * can open over another (a choice, then its confirmation).
+ * @param {HTMLDialogElement} overlay
+ * @param {HTMLElement} modal - the .mini-modal-box inside it
+ */
+function nameMiniModal(overlay, modal) {
+  const id = `${DOM_IDS.MINI_MODAL_TITLE}-${++_miniModalSeq}`;
+  const header = modal.querySelector(DOM_SELECTORS.MINI_MODAL_HEADER);
+  const body = modal.querySelector(DOM_SELECTORS.MINI_MODAL_BODY);
+  if (header) { header.id = id; overlay.setAttribute('aria-labelledby', id); }
+  if (body && body.textContent.trim()) { body.id = `${id}-body`; overlay.setAttribute('aria-describedby', body.id); }
+}
+
 /**
  * 🔔 Main MiniCycle Notifications Class
  */
@@ -1808,8 +1827,6 @@ async setDefaultPosition(notificationContainer) {
 
     const modal = document.createElement("div");
     modal.className = "mini-modal-box has-corner-logo";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
     modal.setAttribute("tabindex", "-1");
 
     modal.innerHTML = `
@@ -1823,6 +1840,7 @@ async setDefaultPosition(notificationContainer) {
     `;
 
     overlay.appendChild(modal);
+    nameMiniModal(overlay, modal);
     document.body.appendChild(overlay);
     overlay.showModal();
 
@@ -1897,8 +1915,6 @@ async setDefaultPosition(notificationContainer) {
 
     const modal = document.createElement("div");
     modal.className = "mini-modal-box has-corner-logo";
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
     modal.setAttribute("tabindex", "-1");
 
     // Build choice buttons HTML
@@ -1921,6 +1937,7 @@ async setDefaultPosition(notificationContainer) {
     `;
 
     overlay.appendChild(modal);
+    nameMiniModal(overlay, modal);
     document.body.appendChild(overlay);
     overlay.showModal();
 
@@ -1984,12 +2001,13 @@ async setDefaultPosition(notificationContainer) {
 
     const overlay = document.createElement("dialog");
     overlay.className = "miniCycle-prompt-dialog";
+    overlay.setAttribute("aria-labelledby", DOM_IDS.PROMPT_TITLE);
 
     overlay.innerHTML = `
       <div class="miniCycle-prompt-box has-corner-logo">
-        <h2 id="miniCycle-prompt-title" class="miniCycle-prompt-title">${safeTitle}</h2>
+        <h2 id="${DOM_IDS.PROMPT_TITLE}" class="miniCycle-prompt-title">${safeTitle}</h2>
         <p class="miniCycle-prompt-message">${safeMessage}</p>
-        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" aria-labelledby="miniCycle-prompt-title" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
+        <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" aria-labelledby="${DOM_IDS.PROMPT_TITLE}" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
         <div class="miniCycle-prompt-buttons">
           <button type="button" class="miniCycle-btn-cancel">${safeCancelText}</button>
           <button type="button" class="miniCycle-btn-confirm">${safeConfirmText}</button>
