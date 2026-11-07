@@ -118,7 +118,7 @@ below.
 | 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | ✅ done Nov 5 2026 — see *Round 0 result* |
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
 | 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | ✅ audited Nov 6 2026 — see *Round 2 result* (questions open) |
-| 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE` | pending |
+| 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`. **First job (MJ, Nov 7 2026):** `SCHEMA_2_6` becomes the only description of the stored shape — audit it against the code, carry in round 2's `DATA_SCHEMA_GUIDE` corrections (`showTaskInput` per routine, not in settings; `dueTime`; the recurring-template shape; `frequencyUnit`), then cut the guide's ~185-line copy of the shape and keep it as the short data-flow walkthrough + worked example, linking to `SCHEMA_2_6` (it stays a file: eight `modules/` comments cite it) | pending |
 | 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | pending |
 | 4 | 13 | ~5,000 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
 | 5 | 13 | ~5,700 | **Working on Code** rest (5): `MAKING_CODE_CHANGES`, `MESSAGING_SURFACES`, `SECURITY_GUIDE`, `TESTING_GUIDE`, `VALIDATION_GATES`; **Security** (6 incl. `audits/`); **Deployment**: `BUILD_PROCESS`, `DEPLOYMENT` | pending |
@@ -242,8 +242,11 @@ loads; a hardcoded string in `preferencesBgImage.js`; the milestone levels are a
 literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.js`,
 `guidedTourDefinitions.js` ("thirteen" tours; there are 14), `appContext.js`.
 
-**Open questions (MJ):** merging `DATA_SCHEMA_GUIDE` into `SCHEMA_2_6` (round 3a) and trimming
-`ACCESSIBILITY` to its developer parts. *Decided (MJ, Nov 6 2026):* the privacy policy (`legal/privacy.html`, a shipped page,
+**Open questions (MJ):** none left. *Decided (MJ, Nov 7 2026), the two overlaps:*
+`ACCESSIBILITY` keeps its developer content and now points to `legal/accessibility.html`
+for what the public statement already says (how to report, response time, the WCAG
+target wording) instead of restating it; and `DATA_SCHEMA_GUIDE` / `SCHEMA_2_6` are
+merged in round 3a (see its row). *Decided (MJ, Nov 6 2026):* the privacy policy (`legal/privacy.html`, a shipped page,
 and `PRIVACY.md`; version 2.9) now names the .mcyc format page among the counted pages
 and discloses the 50 most recent event times kept for the owner-only dashboard
 (`MAX_RECENT`, `netlify/functions/track.js`); `PRIVACY.md`'s comparison table of

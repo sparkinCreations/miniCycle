@@ -566,23 +566,15 @@ across a range of widths.
 
 ## Reporting Accessibility Issues
 
-### How to Report
+Users report barriers through the channels in the public accessibility statement
+(`web/legal/accessibility.html`, *Feedback*), which also states the response time —
+it is the single source for both, so they are not repeated here.
 
-If you encounter accessibility barriers:
-
-1. **Email** admin@sparkinCreations.com, or **GitHub Issues**
-   (`github.com/sparkinCreations/miniCycle/issues`) — the two channels the
-   accessibility statement lists
-2. Include:
-   - Your assistive technology (screen reader, etc.)
-   - Browser and version
-   - Steps to reproduce
-   - Expected vs actual behavior
-
-### Response Time
-
-The accessibility statement (`web/legal/accessibility.html`) says: "We aim to
-respond to accessibility feedback within 5 business days."
+A report is easiest to act on when it names:
+- the assistive technology (screen reader, switch access, zoom level, …)
+- browser and version
+- steps to reproduce
+- expected vs actual behavior
 
 ---
 
@@ -590,8 +582,8 @@ respond to accessibility feedback within 5 business days."
 
 ### Current Target
 
-**WCAG 2.2 Level AA** — the goal the accessibility statement names; it is explicitly
-not a claim of complete conformance.
+The target is the one the public accessibility statement names (WCAG 2.2 Level AA, as
+a goal, not a conformance claim); the statement is the source of truth for that wording.
 
 **What is checked against it (Nov 2026):**
 - **Perceivable:** contrast on solid backgrounds gated (`test:contrast`); text over
@@ -618,7 +610,7 @@ keyboard reordering are implemented. The open items are the ones no gate can see
 screen-reader testing, zoom, touch-target size and user testing — see
 *Known Accessibility Limitations*.
 
-**Questions?** Open a GitHub Issue or email admin@sparkinCreations.com.
+**Questions or reports:** see the *Feedback* section of `web/legal/accessibility.html`.
 
 ---
 
