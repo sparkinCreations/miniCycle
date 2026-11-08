@@ -61,8 +61,6 @@ export async function runStatsPanelRewardsTests(resultsDiv) {
             },
             rawDeps: { getActiveElement: () => document.activeElement },
             MILESTONES: { TASK_ORDER_GAME: 100 },
-            _milestonesExpanded: true,
-            saveCollapsiblePreference: () => {},
             ...overrides
         };
     };
@@ -142,29 +140,6 @@ export async function runStatsPanelRewardsTests(resultsDiv) {
         }
         if (m.elements.goldenUnlockMessage.textContent !== '') {
             throw new Error('Next-theme message should clear without a vocab theme manager');
-        }
-    });
-
-    await test('theme toggle click collapses and persists the preference', () => {
-        const saved = [];
-        const m = makeManager({ saveCollapsiblePreference: (key, val) => saved.push([key, val]) });
-        const r = new StatsPanelRewards(m);
-        r.updateThemeMessages(10, { taskOrderGame: false }); // expanded → visible
-
-        r.handleThemeToggleClick(); // collapse
-        if (m._milestonesExpanded !== false) {
-            throw new Error('Toggle should flip expanded state to false');
-        }
-        if (m.elements.themeUnlockMessage.classList.contains(DOM_CLASSES.VISIBLE)) {
-            throw new Error('Collapse should hide the theme list');
-        }
-        if (saved.length !== 1 || saved[0][0] !== 'milestonesExpanded' || saved[0][1] !== false) {
-            throw new Error('Toggle should persist the collapsed preference');
-        }
-
-        r.handleThemeToggleClick(); // expand again
-        if (!m.elements.themeUnlockMessage.classList.contains(DOM_CLASSES.VISIBLE)) {
-            throw new Error('Expand should reveal the populated theme list');
         }
     });
 

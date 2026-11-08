@@ -517,8 +517,6 @@
     justify-content: center;
     padding: 0;
     background: var(--pref-corner-glass, var(--overlay-white-light));
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
     box-shadow: var(--chrome-shadow);
     /* The soft white rim Focus View's round button and the glass Complete /
        Clear buttons wear (1px, 40%). */
@@ -530,6 +528,30 @@
     height: 48px;
     font-size: 22px;
     cursor: pointer;
+}
+
+/* The frost is on ::before, NOT the button. A backdrop-filter on the button
+   made it a backdrop root, so the desktop caption (::after, inside it) could
+   blur nothing but the button: over a photo background its navy text sat on
+   the bare picture, unreadable, while the Recently Used panel beside it read
+   fine (Nov 2026). A layer of its own at z-index -1 blurs the page behind the
+   circle and leaves the caption free to blur the page behind itself — the
+   header row's pattern (layout/header.css). The flex centring is for the
+   Emoji style, which draws its emoji in this same layer. 12px until Nov 2026,
+   a thinner frost than the Recently Used panel's. */
+#quick-dark-toggle::before,
+#personalization-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    -webkit-backdrop-filter: var(--chrome-blur);
+    backdrop-filter: var(--chrome-blur);
+    pointer-events: none;
 }
 
 /* Quick dark toggle */
@@ -580,8 +602,9 @@
         white-space: nowrap;
         color: var(--pref-corner-btn, var(--color-navy));
         background: var(--pref-corner-glass, var(--overlay-white-light));
-        -webkit-backdrop-filter: blur(12px) saturate(140%);
-        backdrop-filter: blur(12px) saturate(140%);
+        /* The small radius: the pill is ~20px tall (see --chrome-blur-small). */
+        -webkit-backdrop-filter: var(--chrome-blur-small);
+        backdrop-filter: var(--chrome-blur-small);
         border: 1px solid var(--overlay-white-medium);
         pointer-events: none;
     }
@@ -609,14 +632,19 @@
 body.corner-btns-solid:not(.high-contrast) #quick-dark-toggle,
 body.corner-btns-solid:not(.high-contrast) #personalization-btn {
     background: var(--pref-corner-btn, var(--color-navy));
-    -webkit-backdrop-filter: none;
-    backdrop-filter: none;
     border-color: var(--overlay-white-medium);
     color: var(--pref-corner-ink, var(--color-white));
 }
 
+body.corner-btns-solid:not(.high-contrast) #quick-dark-toggle::before,
+body.corner-btns-solid:not(.high-contrast) #personalization-btn::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
 /* Emoji: the original 🎨 / 🌙 (☀️ in dark mode) on the frosted circle, in
-   place of the SVG. ::before is free (::after is the desktop caption). */
+   place of the SVG, drawn in the frost layer (::before above; ::after is the
+   desktop caption). */
 body.corner-btns-emoji #quick-dark-toggle > *,
 body.corner-btns-emoji #personalization-btn > * {
     display: none;

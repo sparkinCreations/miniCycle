@@ -87,7 +87,9 @@ body.high-contrast:not(.dark-mode) .settings-section.collapsible {
 }
 
 body.high-contrast:not(.dark-mode) .toggle-slider {
-    border: 2px solid #555555;
+    /* Drawn inside the track, not as a border: a border moves the knob's
+       positioning box, which sat it 2px high and against the right edge. */
+    box-shadow: inset 0 0 0 2px #555555;
 }
 
 /* Stats panel */
@@ -324,17 +326,7 @@ body.high-contrast:not(.dark-mode) .routine-search-input:focus {
     box-shadow: var(--shadow-focus-ring);
 }
 
-body.high-contrast:not(.dark-mode) .routine-sort-btn {
-    border: 1px solid #999999;
-    color: #333333;
-}
-
 body.high-contrast:not(.dark-mode) .routine-sort-label {
-    color: #333333;
-}
-
-body.high-contrast:not(.dark-mode) .routine-filter-select {
-    border: 1px solid #999999;
     color: #333333;
 }
 
@@ -359,11 +351,35 @@ body.high-contrast:not(.dark-mode) .mini-cycle-switch-btn {
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
+body.high-contrast:not(.dark-mode) .quick-actions-btn,
 body.high-contrast:not(.dark-mode) .routine-switcher-btn,
 body.high-contrast:not(.dark-mode) #personalization-btn,
 body.high-contrast:not(.dark-mode) #quick-dark-toggle {
     border: 2px solid rgba(0, 0, 0, 0.4);
     background: rgba(255, 255, 255, 0.4);
+}
+
+/* The dark frost on a dark preset, as the toolbar group below: white on the
+   white frost was unreadable. */
+body.high-contrast:not(.dark-mode) #menu-button {
+    border: 2px solid rgba(0, 0, 0, 0.4);
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+}
+
+/* The header's joined group (mode-selector.css): the mode picker's border is
+   the divider, so the ends drop the side that meets it. On a dark preset the
+   ends take the dark frost with their white text (utils/readableText.js):
+   this white one put white text at 2.7:1 on Berry. */
+body.high-contrast:not(.dark-mode) .mode-selector-wrapper .quick-actions-btn {
+    border-right-width: 0;
+    border-top-width: 0;
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+}
+
+body.high-contrast:not(.dark-mode) .mode-selector-wrapper .routine-switcher-btn {
+    border-left-width: 0;
+    border-top-width: 0;
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
 }
 
 /* --- Themes Modal --- */
@@ -572,6 +588,11 @@ body.high-contrast:not(.dark-mode) .mode-selector {
     border: 2px solid rgba(0, 0, 0, 0.4);
 }
 
+/* The header's toolbar hangs from the hairline: no top edge (mode-selector.css). */
+body.high-contrast:not(.dark-mode) .mode-selector-wrapper .mode-selector {
+    border-top-width: 0;
+}
+
 /* Footer note in task options modal */
 body.high-contrast:not(.dark-mode) .modal-footer-note {
     color: #333333;
@@ -759,7 +780,9 @@ body.high-contrast.dark-mode .settings-section.collapsible.collapsed {
 }
 
 body.high-contrast.dark-mode .toggle-slider {
-    border: 2px solid #888888;
+    /* Drawn inside the track, not as a border: a border moves the knob's
+       positioning box, which sat it 2px high and against the right edge. */
+    box-shadow: inset 0 0 0 2px #888888;
 }
 
 /* Stats panel */
@@ -893,20 +916,8 @@ body.high-contrast.dark-mode .routine-search-input:focus {
     box-shadow: var(--shadow-focus-ring);
 }
 
-body.high-contrast.dark-mode .routine-sort-btn {
-    border: 1px solid #777777;
-    color: #cccccc;
-    background: #333333;
-}
-
 body.high-contrast.dark-mode .routine-sort-label {
     color: #cccccc;
-}
-
-body.high-contrast.dark-mode .routine-filter-select {
-    border: 1px solid #777777;
-    color: #cccccc;
-    background: #333333;
 }
 
 body.high-contrast.dark-mode .cycle-item-size {
@@ -932,12 +943,25 @@ body.high-contrast.dark-mode .mini-cycle-switch-btn {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+body.high-contrast.dark-mode .quick-actions-btn,
 body.high-contrast.dark-mode .routine-switcher-btn,
+body.high-contrast.dark-mode #menu-button,
 body.high-contrast.dark-mode #personalization-btn,
 body.high-contrast.dark-mode #quick-dark-toggle {
     border: 2px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.15);
     color: #e0e0e0;
+}
+
+/* The header's joined group: one divider (see the light rule above). */
+body.high-contrast.dark-mode .mode-selector-wrapper .quick-actions-btn {
+    border-right-width: 0;
+    border-top-width: 0;
+}
+
+body.high-contrast.dark-mode .mode-selector-wrapper .routine-switcher-btn {
+    border-left-width: 0;
+    border-top-width: 0;
 }
 
 /* --- Themes Modal --- */
@@ -1144,6 +1168,11 @@ body.high-contrast.dark-mode textarea::placeholder {
 /* Menu/mode selector */
 body.high-contrast.dark-mode .mode-selector {
     border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+/* The header's toolbar hangs from the hairline: no top edge (mode-selector.css). */
+body.high-contrast.dark-mode .mode-selector-wrapper .mode-selector {
+    border-top-width: 0;
 }
 
 /* Footer note in task options modal */
@@ -1756,14 +1785,18 @@ body.high-contrast:not(.dark-mode) .chip-group-icon {
 }
 
 body.high-contrast:not(.dark-mode) .filter-chip,
-body.high-contrast:not(.dark-mode) .sort-chip {
+body.high-contrast:not(.dark-mode) .sort-chip,
+body.high-contrast:not(.dark-mode) .routine-sort-btn,
+body.high-contrast:not(.dark-mode) .routine-filter-select {
     border: 1px solid var(--theme-text-muted);
     color: var(--theme-text-on-surface);
 }
 
 body.high-contrast:not(.dark-mode) .filter-chip.active,
-body.high-contrast:not(.dark-mode) .sort-chip.active {
+body.high-contrast:not(.dark-mode) .sort-chip.active,
+body.high-contrast:not(.dark-mode) .routine-sort-btn.active {
     border: 2px solid var(--theme-text-on-surface);
+    color: var(--btn-primary-text);   /* near-black on the steel fill is 3.6:1 */
 }
 
 body.high-contrast:not(.dark-mode) .filter-sort-divider {
@@ -1783,14 +1816,17 @@ body.high-contrast.dark-mode .chip-group-icon {
 }
 
 body.high-contrast.dark-mode .filter-chip,
-body.high-contrast.dark-mode .sort-chip {
+body.high-contrast.dark-mode .sort-chip,
+body.high-contrast.dark-mode .routine-sort-btn,
+body.high-contrast.dark-mode .routine-filter-select {
     border: 1px solid var(--theme-task-border);
     background: var(--dark-chip-bg);
     color: var(--theme-text-secondary);
 }
 
 body.high-contrast.dark-mode .filter-chip.active,
-body.high-contrast.dark-mode .sort-chip.active {
+body.high-contrast.dark-mode .sort-chip.active,
+body.high-contrast.dark-mode .routine-sort-btn.active {
     border: 2px solid var(--theme-text-primary);
 }
 

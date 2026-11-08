@@ -1036,8 +1036,8 @@ async function journeyTodoStatsSync(browser, baseURL) {
         const result = await page.evaluate(() => {
             const panelText = (document.getElementById('stats-panel')?.innerText || '')
                 .replace(/\s+/g, ' ').trim();
-            // Case-insensitive: 2.665 put the stats labels in sentence case ("tasks completed").
-            const m = panelText.match(/(\d+) of (\d+) tasks? completed/i);
+            // Case-insensitive; the line reads "3 of 5 tasks this cycle" since Nov 2026.
+            const m = panelText.match(/(\d+) of (\d+) tasks? this cycle/i);
             const p = JSON.parse(localStorage.getItem('miniCycleData') || 'null');
             const id = p.appState.activeRoutineId;
             const tasks = (p.data.routine[id] || {}).tasks || [];
@@ -1055,7 +1055,7 @@ async function journeyTodoStatsSync(browser, baseURL) {
             `${result.stateTotal} task(s) left in state, expected ${expectedRemaining} ` +
             `(${pre.total} total minus ${pre.completed} completed)`);
         record('stats panel reports a task count', result.panelTotal !== null,
-            `could not parse "N of M tasks completed" from: ${result.panelText.slice(0, 120)}`);
+            `could not parse "N of M tasks this cycle" from: ${result.panelText.slice(0, 120)}`);
         record('stats panel total matches state after clearing',
             result.panelTotal === result.stateTotal,
             `panel says ${result.panelTotal}, state has ${result.stateTotal} ` +
@@ -5921,6 +5921,75 @@ async function journeySettingsDescribedAndTourToggle(browser, baseURL) {
     return { name: 'Settings explain themselves; the tour-prompts button turns prompts on and off', failures };
 }
 
+// Home and Focus centre the card with different transforms, so leaving the card's
+// transitions on during the switch threw it ~340px off its position and slid it
+// back (found Nov 2026 by watching it). Every frame of the switch must stay between
+// where the card was and where it ends up; the three carousel panels must share a
+// single slide duration.
+async function journeyViewSwitchKeepsCardInPlace(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await page.waitForTimeout(600);
+        await page.evaluate(() => {
+            document.getElementById('first-run-welcome-dismiss')?.click();
+            document.getElementById('first-run-welcome')?.remove();
+            document.body.classList.remove('first-run-welcome-active');
+            if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click();
+        });
+        await page.waitForTimeout(900);
+        const switchAndTrace = (buttonId) => page.evaluate((buttonId) => new Promise(resolve => {
+            const taskView = document.getElementById('task-view');
+            const start = Math.round(taskView.getBoundingClientRect().top);
+            const tops = [];
+            const started = performance.now();
+            document.getElementById(buttonId).click();
+            const tick = () => {
+                tops.push(Math.round(taskView.getBoundingClientRect().top));
+                if (performance.now() - started < 700) requestAnimationFrame(tick);
+                else resolve({ start, end: tops[tops.length - 1], min: Math.min(...tops), max: Math.max(...tops) });
+            };
+            requestAnimationFrame(tick);
+        }), buttonId);
+        const staysBetween = (t) => t.min >= Math.min(t.start, t.end) - 2 && t.max <= Math.max(t.start, t.end) + 2;
+
+        const entering = await switchAndTrace('focus-mode-btn');
+        record('entering Focus View: the routine card never leaves the path to its new spot', staysBetween(entering), JSON.stringify(entering));
+        await page.waitForTimeout(500);
+        const slides = await page.evaluate(() => ['focus-task-panel', 'stats-panel'].map(id => {
+            const c = getComputedStyle(document.getElementById(id));
+            return [c.transitionDuration.split(',')[0], c.transitionTimingFunction.split(',')[0]].join(' ');
+        }));
+        record('Focus View: the Task and Stats panels slide at the same speed', slides[0] === slides[1], JSON.stringify(slides));
+        await page.evaluate(() => { for (const id of ['undo-btn', 'redo-btn']) document.getElementById(id).hidden = false; });
+        const collisions = [];
+        for (const [width, height] of [[240, 300], [240, 500], [280, 568], [320, 300], [320, 568], [360, 640], [400, 250], [430, 932], [471, 480], [472, 480], [568, 320], [600, 800], [667, 375], [768, 1024], [769, 800], [844, 390], [1024, 768], [1100, 420], [1309, 684], [1920, 1080]]) {
+            await page.setViewportSize({ width, height });
+            await page.waitForTimeout(150);
+            const hit = await page.evaluate(() => {
+                const tabs = [...document.querySelectorAll('#nav-dots .dot')].filter(d => d.getClientRects().length).map(d => d.getBoundingClientRect());
+                const row = { left: Math.min(...tabs.map(t => t.left)), right: Math.max(...tabs.map(t => t.right)), top: Math.min(...tabs.map(t => t.top)), bottom: Math.max(...tabs.map(t => t.bottom)) };
+                return ['undo-btn', 'redo-btn'].filter(id => {
+                    const r = document.getElementById(id).getBoundingClientRect();
+                    return r.left < row.right && r.right > row.left && r.top < row.bottom && r.bottom > row.top;
+                });
+            });
+            if (hit.length) collisions.push(`${width}x${height}: ${hit.join(', ')}`);
+        }
+        record('undo and redo stay clear of the Task | Routine | Stats tabs at every window size', collisions.length === 0, collisions.join('; '));
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await page.waitForTimeout(300);
+        const leaving = await switchAndTrace('focus-mode-exit-btn');
+        record('leaving Focus View: the routine card never leaves the path to its new spot', staysBetween(leaving), JSON.stringify(leaving));
+    } catch (e) {
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'switching between Home and Focus View keeps the routine card in place', failures };
+}
+
 async function journeyFocusTabFollowsSort(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const { context, page } = await openFresh(browser, baseURL);
@@ -7118,10 +7187,13 @@ async function journeyBrowseRoutines(browser, baseURL) {
             });
             const btnView = listButtons.view;
             record('an existing user (no setting) keeps the list', btnView === 'list', `button shows ${btnView}`);
-            const pairList = await page.evaluate(() => ['quick-actions-btn', 'routine-switcher-btn'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().width)));
-            record('…the + and the routine button are the same width', pairList[0] === pairList[1], JSON.stringify(pairList));
-            record('…the Home View button is the folder alone, the menu button reads "Switch"',
-                listButtons.homeText === '' && listButtons.menuText === 'Switch' && listButtons.menuTitle === 'Switch routines', JSON.stringify(listButtons));
+            // The +, the mode picker and the routine button are one joined group (Nov 2026):
+            // touching, one height, in that order.
+            const groupList = await page.evaluate(() => ['quick-actions-btn', 'mode-picker-btn', 'routine-switcher-btn'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.height)]; }));
+            const joined = (g) => g[0][1] === g[1][0] && g[1][1] === g[2][0] && g.every(b => b[2] === g[0][2] && b[3] === g[0][3]);
+            record('…the +, the mode picker and the routine button are one joined group', joined(groupList), JSON.stringify(groupList));
+            record('…the Home View button is the folder and "Routines", the menu button reads "Switch"',
+                listButtons.homeText === 'Routines' && listButtons.menuText === 'Switch' && listButtons.menuTitle === 'Switch routines', JSON.stringify(listButtons));
 
             await page.click('#routine-switcher-btn');
             await page.waitForFunction(() => document.getElementById('routine-switcher-modal').open, null, { timeout: 5000 });
@@ -7270,8 +7342,8 @@ async function journeyBrowseRoutines(browser, baseURL) {
             });
             record('Settings → Browse: the routine button switches to the Browse icon', after.btn === 'browse', JSON.stringify(after));
             record('…and says "Routines" beside it', after.homeText === 'Routines', JSON.stringify(after));
-            const pairBrowse = await page.evaluate(() => ['quick-actions-btn', 'routine-switcher-btn'].map(id => Math.round(document.getElementById(id).getBoundingClientRect().width)));
-            record('…and the + widens with it', pairBrowse[0] === pairBrowse[1], JSON.stringify(pairBrowse));
+            const groupBrowse = await page.evaluate(() => ['quick-actions-btn', 'mode-picker-btn', 'routine-switcher-btn'].map(id => { const r = document.getElementById(id).getBoundingClientRect(); return [Math.round(r.left), Math.round(r.right), Math.round(r.top), Math.round(r.height)]; }));
+            record('…and the header group stays joined', groupBrowse[0][1] === groupBrowse[1][0] && groupBrowse[1][1] === groupBrowse[2][0], JSON.stringify(groupBrowse));
             record('…and the menu button reads "Browse"', after.menuText === 'Browse' && after.menuTitle === 'Browse routines', JSON.stringify(after));
             record('…and is saved', after.saved === 'browse', JSON.stringify(after));
             record('…and the Quick Action is renamed when pinned', after.qa.every(l => l === 'Browse Routines'), JSON.stringify(after.qa));
@@ -7399,18 +7471,19 @@ async function journeyBrowseRoutines(browser, baseURL) {
                 const mode = document.getElementById('mode-picker-btn').getBoundingClientRect();
                 const plus = document.getElementById('quick-actions-btn').getBoundingClientRect();
                 return {
-                    plusW: Math.round(plus.width), btnW: Math.round(r.width), plusClear: plus.right <= mode.left,
+                    joined: Math.round(plus.right) === Math.round(mode.left) && Math.round(mode.right) === Math.round(r.left),
+                    plusInView: plus.left >= 0,
                     word: !!label && label.getBoundingClientRect().width > 0,
                     fits: !!label && label.scrollWidth <= label.clientWidth + 1,
-                    clear: r.left >= mode.right - 1, inView: r.right <= innerWidth,   // 1px: the list's folder already meets it at 320
+                    inView: r.right <= innerWidth,
                     name: btn.getAttribute('aria-label')
                 };
             });
-            // "Routines" only where it fits beside the mode selector (≥375px); the name is there either way.
-            record(`${width}px: the Browse routine button ${width >= 375 ? 'says "Routines"' : 'is the cards alone'}, clear of the mode selector`,
-                header.word === (width >= 375) && header.fits && header.clear && header.inView && header.name === 'Browse routines', JSON.stringify(header));
-            record(`${width}px: the + is the same width as the Browse routine button, and clear of the mode selector`,
-                header.plusW === header.btnW && header.plusClear, JSON.stringify(header));
+            // "Routines" only where the header group has room for it (≥375px); the name is there either way.
+            record(`${width}px: the Browse routine button ${width >= 375 ? 'says "Routines"' : 'is the cards alone'}, on screen`,
+                header.word === (width >= 375) && header.inView && header.name === 'Browse routines' && (!header.word || header.fits), JSON.stringify(header));
+            record(`${width}px: the +, the mode picker and the routine button are one joined group, on screen`,
+                header.joined && header.plusInView, JSON.stringify(header));
             await page.tap('#routine-switcher-btn');
             await page.waitForTimeout(800);
             const openedInGrid = await page.evaluate(() => !!document.querySelector('#routine-browser .rb-tile'));
@@ -7739,6 +7812,7 @@ const JOURNEYS = [
     { name: 'adding a quick action from the menu keeps the menu open', fn: journeyQuickActionPickerKeepsMenuOpen },
     { name: 'recreating a cleared task lands in the routine list', fn: journeyRecreateLandsInList },
     { name: 'the Task tab browses the order the sort chip chose', fn: journeyFocusTabFollowsSort },
+    { name: 'switching between Home and Focus View keeps the routine card in place', fn: journeyViewSwitchKeepsCardInPlace },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },

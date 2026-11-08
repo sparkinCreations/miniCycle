@@ -757,25 +757,47 @@ restoreNotificationPosition(notificationContainer) {
 }
 
 /**
- * Keep at least UI_TIMEOUTS.NOTIFICATION_MIN_VISIBLE px of the panel inside the
- * viewport on both axes, so whatever was dragged or restored can be grabbed
- * again. Used on every drag move, on restore, and on resize.
+ * Keep the whole panel inside the window, NOTIFICATION_EDGE_MARGIN from its
+ * edges. Used on every drag move, on restore, and on resize. Until Nov 2026 only
+ * a 40px strip had to stay inside, so a toast could sit almost entirely off
+ * screen after a resize. A panel taller or wider than the window pins to the
+ * top left, where its start is readable.
  * @param {number} x
  * @param {number} y
  * @param {HTMLElement} container
  * @returns {{x: number, y: number}}
  */
 clampNotificationPosition(x, y, container) {
-    const minVisible = UI_TIMEOUTS.NOTIFICATION_MIN_VISIBLE;
+    const margin = UI_TIMEOUTS.NOTIFICATION_EDGE_MARGIN;
     const width = container?.offsetWidth || 0;
     const height = container?.offsetHeight || 0;
-    const maxX = Math.max(0, window.innerWidth - Math.min(width, minVisible));
-    const maxY = Math.max(0, window.innerHeight - Math.min(height, minVisible));
-    const minX = Math.min(0, minVisible - width);
+    const maxX = Math.max(margin, window.innerWidth - width - margin);
+    const maxY = Math.max(margin, window.innerHeight - height - margin);
     return {
-        x: Math.min(Math.max(x, minX), maxX),
-        y: Math.min(Math.max(y, 0), maxY)
+        x: Math.min(Math.max(x, margin), maxX),
+        y: Math.min(Math.max(y, margin), maxY)
     };
+}
+
+/**
+ * Put the panel as close as the current window allows to where it belongs.
+ * Where it belongs is the spot the user last dragged it to, read from state
+ * each time and never written here: what a small window forces is temporary, so
+ * widening it again brings the panel back. Without a dragged spot, the panel
+ * stays near where it is. Runs on resize and when the panel changes size.
+ * @param {HTMLElement} container
+ */
+fitNotificationOnScreen(container) {
+    if (this.isDraggingNotification || !container.isConnected) return;
+    const settings = this.deps.AppState?.get?.()?.settings;
+    const saved = settings?.notificationPositionModified === true ? settings.notificationPosition : null;
+    const hasSaved = Number.isFinite(saved?.x) && Number.isFinite(saved?.y);
+    const x = hasSaved ? saved.x : parseFloat(container.style.left);
+    const y = hasSaved ? saved.y : parseFloat(container.style.top);
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+    const fitted = this.clampNotificationPosition(x, y, container);
+    if (container.style.left !== `${fitted.x}px`) container.style.left = `${fitted.x}px`;
+    if (container.style.top !== `${fitted.y}px`) container.style.top = `${fitted.y}px`;
 }
 
 /**
@@ -1130,20 +1152,16 @@ async setDefaultPosition(notificationContainer) {
     // cleanupFunctions — every tap on the panel leaked two closures that way.
     let activeGestureCleanup = null;
 
-    // A resize (or rotation) can leave a once-valid position off-screen.
-    const onViewportResize = () => {
-      if (this.isDraggingNotification || !notificationContainer.isConnected) return;
-      const left = parseFloat(notificationContainer.style.left);
-      const top = parseFloat(notificationContainer.style.top);
-      if (!Number.isFinite(left) || !Number.isFinite(top)) return;
-      const clamped = this.clampNotificationPosition(left, top, notificationContainer);
-      if (clamped.x !== left || clamped.y !== top) {
-        notificationContainer.style.left = `${clamped.x}px`;
-        notificationContainer.style.top = `${clamped.y}px`;
-      }
-    };
+    // A resize or rotation can leave the panel off screen, and so can the panel
+    // itself growing (a taller toast near the bottom edge).
+    const onViewportResize = () => this.fitNotificationOnScreen(notificationContainer);
     window.addEventListener('resize', onViewportResize);
     cleanupFunctions.push(() => window.removeEventListener('resize', onViewportResize));
+    if (typeof ResizeObserver === 'function') {
+      const panelSizeObserver = new ResizeObserver(onViewportResize);
+      panelSizeObserver.observe(notificationContainer);
+      cleanupFunctions.push(() => panelSizeObserver.disconnect());
+    }
 
     // Unified pointer-based drag (mouse + touch + pen).
     //

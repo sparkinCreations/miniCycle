@@ -140,6 +140,37 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
     // === INITIALIZATION TESTS ===
     resultsDiv.innerHTML += '<h4 class="test-section">🔧 Initialization Tests</h4>';
 
+    // Nov 2026: the header's mode menu dims the page through this callback, so
+    // every way of closing it has to report back or the dim would stay on.
+    await test('ModePicker reports opening and closing by every route', async () => {
+        const { ModePicker } = await import(`../modules/routine/modePicker.js?v=${window.testCacheBuster || Date.now()}`);
+        const select = document.createElement('select');
+        ['auto-cycle', 'manual-cycle'].forEach(v => select.add(new Option(v, v)));
+        const button = document.createElement('button');
+        const menu = document.createElement('div');
+        menu.hidden = true;
+        document.body.append(select, button, menu);
+        const seen = [];
+        const picker = new ModePicker({ select, button, menu, getModeLabel: m => m, getModeIcon: () => null, onOpenChange: open => seen.push(open) });
+        try {
+            picker.open();
+            picker.open();   // already open: no second report
+            if (seen.join() !== 'true') throw new Error(`open reported ${seen.join()}`);
+            picker.close();
+            picker.close();  // already closed: no second report
+            if (seen.join() !== 'true,false') throw new Error(`close reported ${seen.join()}`);
+            picker.open();
+            document.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true }));
+            if (seen.join() !== 'true,false,true,false') throw new Error(`outside press reported ${seen.join()}`);
+            picker.open();
+            picker.destroy();
+            if (seen[seen.length - 1] !== false) throw new Error('destroy while open left it reported open');
+        } finally {
+            picker.destroy();
+            select.remove(); button.remove(); menu.remove();
+        }
+    });
+
     await test('ModeManager class exists', async () => {
         if (typeof ModeManager === 'undefined') {
             throw new Error('ModeManager class not found');

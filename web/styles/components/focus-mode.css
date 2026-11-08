@@ -70,18 +70,35 @@ body.focus-mode.dark-mode::before {
     opacity: 0;
 }
 
-/* When the three-dots menu is open, blur EVERYTHING except the menu itself
-   and the three-dots trigger. Lift the body::after backdrop above all the
-   fixed-position UI (nav-dots, undo/redo, focus-mode-btn, etc. all sit at
-   z-notification = 100000), then promote the menu and trigger above the
-   backdrop. Using the project's existing notification z-index ladder so
-   the layering matches conventions: backdrop = z-notification-active,
-   menu/trigger = z-notification-btn. */
-body.focus-mode.focus-mode-menu-open::after {
-    background: rgba(0, 0, 0, 0.45);
-    -webkit-backdrop-filter: blur(2px);
-    backdrop-filter: blur(2px);
-    z-index: var(--z-notification-active);
+/* No frost across the top in Focus View: the page behind is already dimmed
+   and blurred (body::after above), so the header row's own blur strip only
+   showed where the card reaches under it, as a smeared band across the card's
+   top on short screens (Nov 2026). */
+body.focus-mode .mini-cycle-header-row::before {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+}
+
+/* The three-dots menu dims and blurs what sits behind it, like the app's other
+   menus, but only Focus View's own content: the page behind that is already
+   dimmed and blurred (body::after), and a full-screen backdrop darkened it twice.
+   The menu and its trigger rise above the fixed UI (nav-dots, undo/redo and the
+   rest sit at z-notification), on the project's notification z-index ladder. */
+body.focus-mode.focus-mode-menu-open #task-view,
+body.focus-mode.focus-mode-menu-open #focus-task-panel,
+body.focus-mode.focus-mode-menu-open #stats-panel,
+body.focus-mode.focus-mode-menu-open #nav-dots,
+body.focus-mode.focus-mode-menu-open #undo-redo-buttons,
+body.focus-mode.focus-mode-menu-open #focus-action-btn,
+body.focus-mode.focus-mode-menu-open .header-branding {
+    filter: var(--menu-dim-filter);
+    animation: focus-menu-dim var(--transition-fast) ease;
+}
+
+@keyframes focus-menu-dim {
+    from {
+        filter: none;
+    }
 }
 
 body.focus-mode.focus-mode-menu-open #focus-mode-menu-btn,
@@ -105,6 +122,16 @@ body.focus-mode.focus-mode-menu-open #focus-mode-menu {
 .task-card,
 .task-list-container {
     transition: max-height var(--transition-normal) ease;
+}
+
+/* Switching between Home and Focus View: the layout changes at once and
+   focusMode._switchLayout glides the card the short distance. Left on, these
+   transitions threw the card ~340px off its position first, because Home and
+   Focus centre it with different transforms. */
+body.view-switching #task-view,
+body.view-switching .task-card,
+body.view-switching .task-list-container {
+    transition: none;
 }
 
 /* FOCUS VIEW IS BAND-ANCHORED — AT EVERY WIDTH. See FOCUS_VIEW_LAYOUT.md.
@@ -312,7 +339,7 @@ body.focus-mode .app-name-group {
    `width: auto` is explicit because a narrow-viewport rule in header.css pins
    width to 28px; without it the taller mark would be squashed. */
 body.focus-mode .header-logo {
-    --focus-logo-height: 36px;
+    --focus-logo-height: var(--corner-logo-height);
     height: var(--focus-logo-height);
     width: auto;
 }
@@ -344,6 +371,39 @@ body.focus-mode .header-logo {
 body.focus-mode .header-branding {
     --focus-logo-rise: 4px;
     margin-top: calc(-1 * var(--focus-logo-rise));
+}
+
+/* Desktop: the mark moves to the corner, level with the ⋯ button, so the header
+   row needs only the buttons' height and the band gives the rest to the routine
+   (--focus-chrome-bottom measures this row: 80px becomes 50px).
+   Not during the first-run tour, which sizes its banner from the header. */
+@media (min-width: 1024px) {
+    html:not(.ios-pwa) body.focus-mode:not(.first-run-welcome-active) .mini-cycle-header-row {
+        box-sizing: border-box;
+        height: var(--focus-top-chrome-fallback);
+        min-height: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+    }
+
+    html:not(.ios-pwa) body.focus-mode:not(.first-run-welcome-active) .header-branding {
+        top: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top) + var(--focus-btn-height) / 2);
+        left: calc(env(safe-area-inset-left, 0px) + var(--space-4));
+        margin-top: 0;
+        transform: translateY(-50%);
+    }
+}
+
+/* With the logo in the corner the middle of the top row is free. The input bar
+   joins it when open, centred on the logo and ⋯ line, and the routine starts
+   right under the row; when closed, the routine itself starts in the row. The
+   band's bottom edge is untouched. Set on body, not #task-view, because the Task
+   and Stats panels centre on the same band and must not shift between tabs. */
+@media (min-width: 1024px) and (min-height: 481px) {
+    html:not(.ios-pwa) body.focus-mode:not(.first-run-welcome-active) {
+        --focus-band-top: calc(env(safe-area-inset-top, 0px) + var(--focus-btn-top)
+                               + (var(--focus-btn-height) - var(--task-input-row-height)) / 2);
+    }
 }
 
 /* Transition lives on the base selector so the resize eases BOTH ways — a rule
@@ -448,6 +508,21 @@ body.focus-mode #undo-redo-buttons {
 }
 
 
+/* Beside the tabs, anchored to the window's centre where the tabs are, so they
+   keep the same gap at every width. They were placed by percentage of the width,
+   which ran them into the tabs at 1024px and left a wide gap at 1920px. */
+@media (min-width: 769px) and (min-height: 481px) {
+    body.focus-mode #undo-btn {
+        right: calc(50% + var(--focus-tabs-half) + var(--space-3));
+        left: auto;
+    }
+
+    body.focus-mode #redo-btn {
+        right: auto;
+        left: calc(50% + var(--focus-tabs-half) + var(--space-3));
+    }
+}
+
 /* Low-key undo/redo styling — reachable but not distracting.
    Brightens on hover / keyboard focus so it's still discoverable. */
 body.focus-mode .undo-redo-btn {
@@ -550,6 +625,12 @@ body.focus-mode.first-run-welcome-active #focus-mode-exit-btn {
     display: none;
 }
 
+body.focus-mode #focus-mode-menu-btn svg {
+    display: block;
+    width: 22px;
+    height: 22px;
+}
+
 body.focus-mode #focus-mode-menu-btn:focus-visible,
 body.focus-mode #focus-mode-exit-btn:focus-visible {
     background: rgba(255, 255, 255, 0.22);
@@ -582,15 +663,49 @@ body.focus-mode #focus-mode-menu {
     top: 68px;
     right: 16px;
     min-width: 180px;
-    background: rgba(15, 25, 45, 0.92);
-    border: 1px solid rgba(255, 255, 255, 0.15);
+    /* The header dropdowns' look (.quick-actions-menu): it was a fixed dark
+       navy until Nov 2026, in light mode too. Dark mode restyles it with them
+       (dark-mode.css). */
+    background: linear-gradient(135deg, var(--menu-light-blue-start) 0%, var(--menu-light-blue-end) 100%);
+    border: 1px solid var(--menu-light-blue-rim);
     border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
+    box-shadow: var(--shadow-dropdown);
     z-index: var(--z-notification);
-    overflow: hidden;
+    /* Never taller than the window, so every item can be reached. It was
+       overflow: hidden, and 597px tall on a 375px landscape phone. vh first:
+       dvh is unsupported on Safari < 15.4, and an unsupported value is dropped. */
+    box-sizing: border-box;
+    max-height: calc(100vh - 84px);
+    max-height: calc(100dvh - 84px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     padding: 4px;
+}
+
+body.focus-mode #focus-mode-menu::-webkit-scrollbar {
+    width: 8px;
+}
+
+body.focus-mode #focus-mode-menu::-webkit-scrollbar-thumb {
+    background: var(--menu-light-blue-rim);
+    border-radius: var(--radius-sm);
+}
+
+/* Too short to hang under the ⋯: centred in the window, and it scrolls. The
+   heights are where the whole menu stops fitting below the button, with the
+   taller touch rows below 1024px wide (609px of menu) and the compact desktop
+   ones above it (510px). */
+@media (max-height: 740px) and (max-width: 1023px), (max-height: 600px) {
+    /* :not([hidden]) for weight: the <1024px rule further down sets top too. */
+    body.focus-mode #focus-mode-menu:not([hidden]) {
+        top: 50%;
+        left: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+        max-height: calc(100vh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 24px);
+        max-height: calc(100dvh - var(--safe-area-top, 0px) - var(--safe-area-bottom, 0px) - 24px);
+    }
 }
 
 body.focus-mode .focus-mode-menu-item {
@@ -599,18 +714,25 @@ body.focus-mode .focus-mode-menu-item {
     padding: 10px 14px;
     border: none;
     background: transparent;
-    color: var(--color-white);
+    color: var(--color-navy);
     font-size: var(--font-size-sm);
     text-align: left;
     cursor: pointer;
     border-radius: var(--radius-sm);
     transition: background var(--transition-fast) ease;
+    flex-shrink: 0;   /* the menu scrolls; its rows do not squash */
 }
 
 body.focus-mode .focus-mode-menu-item:hover,
 body.focus-mode .focus-mode-menu-item:focus-visible {
-    background: rgba(255, 255, 255, 0.12);
-    outline: none;
+    background: var(--menu-light-blue-hover);
+}
+
+/* The header mode menu's ring. It was outline: none, with only the hover
+   tint to show keyboard focus. */
+body.focus-mode .focus-mode-menu-item:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.6));
+    outline-offset: -2px;
 }
 
 /* Group separator — thin line between semantic groups (routine / view /
@@ -618,22 +740,23 @@ body.focus-mode .focus-mode-menu-item:focus-visible {
 body.focus-mode .focus-mode-menu-separator {
     height: 1px;
     margin: 4px 6px;
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--menu-light-blue-rim);
     border: none;
     pointer-events: none;
+    flex-shrink: 0;
 }
 
 /* Destructive item modifier — Delete all gets red treatment to match
    iOS/macOS destructive-action convention. The action itself is still
    confirmed via menuManager.deleteAllTasks (showConfirmationModal). */
 body.focus-mode .focus-mode-menu-item--destructive {
-    color: var(--color-red-light, #ef5350);
+    color: var(--color-danger-on-light);
 }
 
 body.focus-mode .focus-mode-menu-item--destructive:hover,
 body.focus-mode .focus-mode-menu-item--destructive:focus-visible {
     background: rgba(244, 67, 54, 0.18);
-    color: var(--color-red, #f44336);
+    color: var(--color-danger-on-light);
 }
 
 /* Mode-switch menu item: trailing "▸" arrow rendered via pseudo so we
@@ -1331,5 +1454,157 @@ body.focus-mode #complete-all-and-help-window-container {
 
     body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
         margin: 0 6px;
+    }
+}
+
+/* =============================================================================
+   FOCUS MODE — VERY SHORT WINDOWS (a phone on its side)
+   At 480px tall or less the logo row and the raised tabs took 212px of the
+   window: at 667x375 the logo sat on the task card, the tabs ran across its
+   arrows and the Routine list got 120px; at 320px the card started above the
+   screen. So the logo row goes, the tabs drop to the bottom edge, and Undo /
+   Redo move to the corner beside them.
+
+   All of this feeds the measured band (docs/architecture/FOCUS_VIEW_LAYOUT.md):
+   without the row, --focus-chrome-bottom measures the ⋯ button, and the lower
+   tabs shrink --nav-dots-clearance. The two gaps are the band's own knobs, and
+   are set on :root because --focus-band-top resolves them there.
+   ============================================================================= */
+@media (max-height: 480px) {
+    :root {
+        --focus-card-chrome-gap: var(--space-2-5);
+        --focus-band-bottom-gap: var(--space-2);
+    }
+
+    /* Not during the first-run tour: it scrolls the page under its banner,
+       and sizes that from the header (first-run-welcome.css). */
+    body.focus-mode:not(.first-run-welcome-active) .mini-cycle-header-row {
+        display: none;
+    }
+
+    body.focus-mode #nav-dots {
+        bottom: max(2px, env(safe-area-inset-bottom, 0px));
+    }
+
+    /* On the tabs' row: its 0px-tall container sits at the row's middle, and
+       the buttons are centred on that edge. */
+    body.focus-mode #undo-redo-buttons {
+        bottom: calc(max(2px, env(safe-area-inset-bottom, 0px)) + 25px);
+    }
+
+    body.focus-mode .undo-redo-btn {
+        top: 0;
+        bottom: auto;
+        right: auto;
+        transform: translateY(-50%);
+    }
+
+    body.focus-mode #undo-btn {
+        left: calc(env(safe-area-inset-left, 0px) + 12px);
+    }
+
+    body.focus-mode #redo-btn {
+        right: auto;
+        left: calc(env(safe-area-inset-left, 0px) + 70px);
+    }
+
+    body.focus-mode .stats-panel {
+        box-sizing: border-box;
+        width: calc(100vw - 2 * var(--space-4));
+        max-width: 760px;
+    }
+
+    /* The status pill would leave the Routine list a sliver at these heights. */
+    body.focus-mode #help-window {
+        display: none;
+    }
+
+    /* A shorter card: the arrows go either side of Complete task, on one row. */
+    body.focus-mode .focus-task-card {
+        min-height: 0;
+        display: grid;
+        grid-template-columns: 44px 1fr 44px;
+        align-items: center;
+        justify-items: center;
+        gap: var(--space-1-5) var(--space-3);
+        padding: var(--space-2-5) var(--space-4);
+    }
+
+    body.focus-mode .focus-task-card > * {
+        grid-column: 1 / -1;
+    }
+
+    body.focus-mode .focus-task-card > .focus-task-nav:not(.hidden) {
+        display: contents;
+    }
+
+    body.focus-mode .focus-task-text {
+        font-size: var(--font-size-lg);
+    }
+
+    body.focus-mode .focus-task-card > .focus-task-complete-btn {
+        grid-column: 2;
+        grid-row: 4;
+        padding: var(--space-2) var(--space-6);
+    }
+
+    body.focus-mode #focus-task-prev-btn {
+        grid-column: 1;
+        grid-row: 4;
+    }
+
+    body.focus-mode #focus-task-next-btn {
+        grid-column: 3;
+        grid-row: 4;
+    }
+}
+
+/* Short AND narrow: both rows' worth has to fit on one line, so the tabs tighten
+   and Undo / Redo become arrows (still named by their labels and aria text). */
+@media (max-height: 480px) and (max-width: 471px) {
+    body.focus-mode #nav-dots .dot {
+        padding-right: 3px;
+        padding-left: 3px;
+        font-size: var(--font-size-xs);
+    }
+
+    body.focus-mode .undo-redo-btn {
+        width: 24px;
+        height: 28px;
+        min-width: 0;
+        padding: 0;
+        font-size: 0;
+    }
+
+    body.focus-mode .undo-redo-btn::before {
+        font-size: var(--font-size-base);
+        line-height: 26px;
+    }
+
+    /* The second value keeps the arrow out of the button's accessible name. */
+    body.focus-mode #undo-btn::before {
+        content: "\21B6";
+        content: "\21B6" / "";
+    }
+
+    body.focus-mode #redo-btn::before {
+        content: "\21B7";
+        content: "\21B7" / "";
+    }
+
+    body.focus-mode #undo-btn {
+        left: calc(env(safe-area-inset-left, 0px) + 2px);
+    }
+
+    body.focus-mode #redo-btn {
+        left: calc(env(safe-area-inset-left, 0px) + 28px);
+    }
+}
+
+@media (max-height: 480px) and (max-width: 319px) {
+    body.focus-mode #nav-dots .dot {
+        padding-right: 1px;
+        padding-left: 1px;
+        font-size: calc(var(--font-size-xs) - 2px);
     }
 }

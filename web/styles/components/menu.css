@@ -76,8 +76,9 @@ body.dark-mode {
 
 /* =============================================================================
    MAIN MENU BACKDROP
-   Subtle dim + blur behind the menu (and the +-button dropdown) when either
-   is open. Driven by body classes (.main-menu-open / .quick-actions-open) for
+   Subtle dim + blur behind the menu (and the header's + and mode dropdowns)
+   when one is open. Driven by body classes (.main-menu-open /
+   .quick-actions-open / .mode-picker-open) for
    PWA reliability (as body.tasks-empty is, from taskRenderer).
    Uses opacity/visibility so the transition fades cleanly both ways.
    ============================================================================= */
@@ -98,9 +99,11 @@ body.dark-mode {
 
 /* Body-class triggers — JS-managed for PWA reliability (rather than
    :has()). uiBoot.js
-   toggles .main-menu-open; modeManager.js toggles .quick-actions-open. */
+   toggles .main-menu-open; modeManager.js toggles .quick-actions-open and,
+   through the picker's onOpenChange, .mode-picker-open. */
 body.main-menu-open .main-menu-backdrop,
-body.quick-actions-open .main-menu-backdrop {
+body.quick-actions-open .main-menu-backdrop,
+body.mode-picker-open .main-menu-backdrop {
     opacity: 1;
     visibility: visible;
 }
@@ -121,7 +124,8 @@ body.main-menu-open .menu-button {
    add `position: relative` to the dropdown itself, because it's natively
    `position: absolute` (top: 100%; left: 0) and overriding that pulls it
    into normal flow, which expands the header row and shifts the task list. */
-body.quick-actions-open .fixed-header-container {
+body.quick-actions-open .fixed-header-container,
+body.mode-picker-open .fixed-header-container {
     z-index: var(--z-menu);
 }
 
@@ -497,6 +501,9 @@ body.quick-actions-open #quick-actions-window {
     font-size: 22px;
     width: 22px;
     height: 22px;
+    /* A long label ("Personalization") squeezed the icon to 14px wide, and the
+       drawing shrinks with its box. The label is what gives way. */
+    flex-shrink: 0;
 }
 
 /* Info icon (About button) - smaller */
@@ -1201,7 +1208,7 @@ body.dark-mode {
     --menu-button-bg: rgba(255, 255, 255, 0.08);
     --menu-button-text: #e2e8f0;
     --menu-button-hover-bg: rgba(255, 255, 255, 0.15);
-    --menu-close-bg: #3d7ab5;
+    --menu-close-bg: #376fa4;
     --menu-close-text: white;
     --menu-close-hover-bg: #326a9e;
 }
@@ -1331,4 +1338,146 @@ body.dark-mode .menu-section-grid #menu-task-options .icon-text {
 .ios-pwa .menu-container {
     /* Ensure menu clears Dynamic Island/notch on iOS PWA */
     top: 104px;
+}
+
+/* =============================================================================
+   MAIN MENU ON A VERY SHORT WINDOW (a phone on its side)
+   Stacked, the pinned rows took 225px and left the sections, which are the menu,
+   a 5px strip at 568x320 and 49px at 667x375 (Nov 2026). So it becomes a two-pane
+   sheet: who and what you're on, Recently Used and Close on the left; every
+   other section, scrolling in the window's full height, on the right.
+   ============================================================================= */
+@media (max-height: 480px) {
+    #main-menu.menu-container {
+        top: calc(env(safe-area-inset-top, 0px) + var(--space-1));
+        right: max(var(--space-2), env(safe-area-inset-right, 0px));
+        bottom: calc(env(safe-area-inset-bottom, 0px) + var(--space-1));
+        left: auto;
+        box-sizing: border-box;
+        width: min(calc(100vw - 2 * max(var(--space-2), env(safe-area-inset-left, 0px))), 820px);
+        min-width: 0;
+        max-width: none;
+        max-height: none;
+        overflow-y: auto;   /* the left pane can outgrow the very shortest windows */
+    }
+
+    #main-menu.menu-container.visible {
+        display: grid;
+        grid-template-columns: minmax(220px, 40%) minmax(0, 1fr);
+        /* max-content on the last: Close can never ride up over the row above. */
+        grid-template-rows: auto auto auto auto minmax(max-content, 1fr);
+        column-gap: var(--space-3);
+    }
+
+    #main-menu > .main-menu-header-row {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    /* Moved out of the section list while the window is short (menuManager). */
+    #main-menu > .quick-actions-menu-row {
+        grid-column: 1;
+        grid-row: 2;
+    }
+
+    #main-menu > .main-menu-controls-container {
+        grid-column: 1;
+        grid-row: 3;
+    }
+
+    #main-menu > .main-menu-primary-action-row {
+        grid-column: 1;
+        grid-row: 4;
+    }
+
+    /* Still bled to the sheet's left and bottom edges, but it stops at its
+       own pane: the stacked width would run into the gap beside it. */
+    #main-menu > #close-main-menu {
+        grid-column: 1;
+        grid-row: 5;
+        align-self: end;
+        width: calc(100% + var(--space-2-5));
+        margin-right: 0;
+        border-top-right-radius: var(--radius-md);
+    }
+
+    #main-menu > .menu-sections {
+        grid-column: 2;
+        grid-row: 1 / -1;
+        /* height 0 + min-height 100%: fills the pane but adds nothing to the
+           grid's size, so opening a section scrolls here and cannot stretch
+           the sheet and push Close off the bottom. */
+        height: 0;
+        min-height: 100%;
+        overflow-y: auto;
+    }
+}
+
+/* The narrowest phones: Welcome Screen and Focus View as icons side by side, or
+   their labels run together. A hold shows the name (menuManager, longPressHint);
+   the buttons keep their accessible names. */
+@media (max-height: 480px) and (max-width: 700px) {
+    #main-menu .main-menu-primary-action-row .menu-primary-action > span:last-child {
+        display: none;
+    }
+
+    #main-menu .main-menu-primary-action-row .menu-primary-action {
+        justify-content: center;
+    }
+
+    /* A slimmer left pane, so everything fits without scrolling the sheet. */
+    #main-menu.menu-container.visible {
+        row-gap: var(--space-1-5);
+    }
+
+    #main-menu .main-menu-primary-action-row .menu-primary-action {
+        padding-top: var(--space-1);
+        padding-bottom: var(--space-1);
+    }
+
+    #main-menu > #close-main-menu {
+        padding: var(--space-2) var(--space-3);
+        margin-top: 0;
+    }
+
+    #main-menu #main-menu-header {
+        min-width: 0;
+    }
+
+    #main-menu #main-menu-mini-cycle-title {
+        display: block;
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+    }
+
+    #main-menu .mode-description-toggle .mode-badge {
+        white-space: nowrap;
+    }
+
+    /* The mode's own name says what this row is. Its scroll icon goes, and the
+       words "Mode Info" stay for screen readers only: they are the button's
+       only accessible name (the badge is aria-hidden). */
+    #main-menu .mode-description-toggle > :first-child {
+        display: none;
+    }
+
+    #main-menu .mode-description-toggle .toggle-label {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+    }
+}
+
+/* "Personalization" is one long word, so beside a full-size icon it no longer
+   fits half of the narrowest menus. These two take a row each there. */
+@media (max-width: 374px) {
+    #open-preferences,
+    #open-settings {
+        grid-column: 1 / -1;
+    }
 }

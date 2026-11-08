@@ -173,7 +173,7 @@ export const UI_TIMEOUTS = Object.freeze({
     LAYOUT_HANDLE_LEAVE_GRACE: 250, // 250ms - Task View Layout: how long a draggable stays "hovered" after the cursor leaves it, so a handle floating outside its edge can be reached across the gap (a hidden handle is not hit-testable, so without this the cursor could never arrive on it)
     MODE_SYNC_SECOND_PASS: 100,    // 100ms - after a mode switch, modeManager re-syncs task rows once more to catch rows rendered late
     FACTORY_RESET_SETTLE: 3000,    // 3s - factory reset: pause between the wipe and "Reset Complete" / the re-init and reload. A reload in the first moments after a reset was reported to bring the old routines back (Oct 2026; not reproduced in Chromium, suspected storage write-back timing elsewhere), so the reset only says it is done once the storage has had time to settle
-    NOTIFICATION_MIN_VISIBLE: 40,  // px - the strip of the notification panel that must stay inside the viewport when it is dragged or restored, so it can always be grabbed again
+    NOTIFICATION_EDGE_MARGIN: 8,   // px - the least gap between the notification panel and the window's edge: the whole panel stays on screen, when dragged, restored or resized
     NOTIFICATION_INPUT_GAP: 8,     // px - when a notification at its DEFAULT spot would cover the task input bar, it drops this far below the bar instead (notifications.setDefaultPosition)
     SW_VERSION_QUERY: 1500,        // 1500ms - give up asking a service worker for its version; the message may never be answered, and the caller falls back to a version-less notice
     LAYOUT_COALESCE_WINDOW: 500,   // 500ms - Task View Layout: merge position writes from rapid successive drags into ONE AppState.update (one undo entry per burst, not per drag)
@@ -481,7 +481,8 @@ export const LAYOUT_DOCK_ZONES = Object.freeze({
     ADD_TASK_INPUT:      Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 }),
     QUICK_ACTIONS_PANEL: Object.freeze({ tolerancePx: 90,  widthFraction: 0.8 }),
     STATUS_BUBBLE:       Object.freeze({ tolerancePx: 90,  widthFraction: 0.8 }),
-    COMPLETE_CYCLE_BTN:  Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 })
+    COMPLETE_BELOW_CARD: Object.freeze({ tolerancePx: 90,  widthFraction: 0.6 }),   // the optional second dock, under the card
+    COMPLETE_CYCLE_BTN:  Object.freeze({ tolerancePx: 80,  widthFraction: 0.7 })   // self-homing since Nov 2026: its zone is its spot under the status bubble
 });
 
 /**
@@ -509,6 +510,8 @@ export const LAYOUT_PLAY_AREA_INSETS = Object.freeze({
 export const BREAKPOINTS = Object.freeze({
     MOBILE_MAX: 768,    // ≤ 768px → mobile layout
     DESKTOP_MIN: 1024,  // ≥ 1024px → desktop layout
+    SHORT_WINDOW_MAX_HEIGHT: 480, // ≤ 480px tall (a phone on its side) → the compact layouts: same height as the max-height: 480px rules in menu.css, focus-mode.css and task-view-layout.css
+    SHORT_WINDOW_ICON_ACTIONS_MAX_WIDTH: 700, // ≤ 700px wide on a short window → the main menu's Welcome Screen / Focus View go icon-only; same width as menu.css
     BROWSE_PHONE_MAX: 600 // ≤ 600px → Browse Routines' phone layout; same width as routine-switcher.css §BROWSE ROUTINES' `max-width: 600px`
 });
 
@@ -921,6 +924,16 @@ export const EVENTS = Object.freeze({
  * @constant {Object}
  */
 export const DOM_CLASSES = Object.freeze({
+    // Routine switcher: a routine is selected, so a phone trades the storage bar for its actions and preview
+    ROUTINE_HAS_SELECTION: 'has-routine-selection',
+    // Focus View: Home <-> Focus layout change in progress; the card's own transitions are off
+    VIEW_SWITCHING: 'view-switching',
+    // Routine switcher: the theme picker is open, and takes the desktop preview's place
+    THEME_PICKER_OPEN: 'theme-picker-open',
+
+    // Stats panel: the second half of the progress line ("this cycle"), its own line when narrow
+    STATS_PROGRESS_ROUND: 'stats-progress-round',
+
     // Full-screen start-up notices (appInit) — styles in components/modals.css
     CRITICAL_NOTICE: 'critical-notice',
     CRITICAL_NOTICE_PANEL: 'critical-notice-panel',
@@ -935,7 +948,7 @@ export const DOM_CLASSES = Object.freeze({
     // .task / .task-text: app code queries those page-wide (clearTransientTaskState,
     // drag, counts) and would sweep up the read-only preview's copies.
     KEYBOARD_ONLY: 'keyboard-only',   // hidden on phones, which have no keyboard (modals.css, with the Keyboard Shortcuts items)
-    ROUTINE_SWITCHER_BTN_LABEL: 'routine-switcher-btn-label',   // "Routines" beside the Home View routine button's icon when it opens Browse
+    ROUTINE_SWITCHER_BTN_LABEL: 'routine-switcher-btn-label',   // "Routines" beside the Home View routine button's icon (folder or cards)
     ROUTINE_LIST_EXPANDED: 'routine-list-expanded',   // on .mini-cycle-switch-modal-content: the routine list has the window
     RB_TOP: 'rb-top',
     RB_CORNER_BTN: 'rb-corner-btn',
@@ -1067,6 +1080,7 @@ export const DOM_CLASSES = Object.freeze({
     TVL_HANDLE_HOST: 'tvl-handle-host',      // Task View Layout: child element that visually hosts the handle (positioned ancestor for the handle)
     TVL_HOVERED: 'tvl-hovered',              // Task View Layout: JS-tracked hover state on a draggable (replaces :hover so reveal is deterministic)
     TVL_DRAGGING: 'tvl-dragging',            // Task View Layout: applied to element while drag is in progress
+    COMPLETE_BELOW_CARD: 'complete-below-card',  // Desktop Home: the user docked Complete Cycle under the routine card (body)
     TVL_CUSTOMIZED: 'tvl-customized',        // Task View Layout: element has been moved from its default position
     TVL_SNAP_HOVER: 'tvl-snap-hover',        // Task View Layout: dragged element is inside its snap-back zone
     TVL_SNAP_TARGET: 'tvl-snap-target',      // Task View Layout: visual indicator showing the snap-back zone
@@ -1233,6 +1247,7 @@ export const DOM_CLASSES = Object.freeze({
     // ---- Body-level open-state flags (PWA-reliable alternative to :has()) ----
     MAIN_MENU_OPEN: 'main-menu-open',
     QUICK_ACTIONS_OPEN: 'quick-actions-open',
+    MODE_PICKER_OPEN: 'mode-picker-open',   /* the header's mode menu is open: same dim and blur as the + menu */
     FOCUS_MODE_MENU_OPEN: 'focus-mode-menu-open',
 
     // ---- Focus Mode (component classes used in JS for createElement.className) ----
@@ -1428,6 +1443,8 @@ export const DOM_IDS = Object.freeze({
     ROUTINE_BROWSER_HEADING: 'routine-browser-heading',
     ROUTINE_BROWSER_GRID: 'routine-browser-grid',
     ROUTINE_BROWSER_SEARCH: 'routine-browser-search',
+    ROUTINE_PREVIEW_EXPAND_BTN: 'routine-preview-expand-btn', // Open Routine: the desktop preview heading's Expand
+    SWITCH_PREVIEW_EXPAND_BTN: 'switch-preview-expand-btn',   // the same button on the phone's inline preview
     ROUTINE_LIST_EXPAND_BTN: 'routine-list-expand-btn', // Open Routine: the list heading's Expand / Collapse
     SWITCH_BROWSE_BTN: 'switch-browse-btn',          // Open Routine's top-right corner → Browse Routines
     ROUTINE_OPEN_VIEW_GROUP: 'routine-open-view-group', // Settings → When you open routines, show: List / Browse (radios)
@@ -1484,6 +1501,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_SCROLL_TO_NEW_TASK: 'toggle-scroll-to-new-task',
     TOGGLE_SCROLL_ON_LOAD: 'toggle-scroll-on-load',
     TOGGLE_SINGLE_KEY_SHORTCUTS: 'toggle-single-key-shortcuts',   // Settings → Behavior → Single-key shortcuts
+    TOGGLE_CONFIRM_UNCHECKED_CYCLE: 'toggle-confirm-unchecked-cycle',   // Settings → Behavior → Ask before completing with unchecked tasks
     TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
@@ -1844,6 +1862,7 @@ export const DOM_IDS = Object.freeze({
     REDO_BTN: 'redo-btn',
     UNDO_REDO_BUTTONS: 'undo-redo-buttons',
     MENU_TOGGLE_INPUT_BAR: 'menu-toggle-input-bar',
+    MENU_TOGGLE_INPUT_BAR_TEXT: 'menu-toggle-input-bar-text',
     MODE_RADIO_GROUP: 'mode-radio-group',
 
     // ---- Quick Actions ----
@@ -2056,6 +2075,7 @@ export const DOM_SELECTORS = Object.freeze({
     MENU_LINK_BUTTON: '.menu-link-button',
     MENU_SECTION: '.menu-section',
     MENU_SECTIONS: '.menu-sections',
+    MENU_PRIMARY_ACTION_TEXT: ':scope > span:last-child',   // a main-menu primary action's label: last, because a Font Awesome <i> becomes a <span class="icon"> before it
     MENU_CONTAINER: '.menu-container',
     MENU_CONTAINER_VISIBLE: '.menu-container.visible',
     MENU_BUTTON: '.menu-button',
@@ -2101,6 +2121,8 @@ export const DOM_SELECTORS = Object.freeze({
 
     // ---- Stats ----
     STATS_PANEL: '.stats-panel',
+    STATS_TAB: '.stats-tab',
+    STATS_TABS: '.stats-tabs',                       // the Stats panel's Badges / Milestones tab row
     CLICKABLE: '.clickable',
     TASK_INPUT_CHECKED: '.task input:checked',
     DOT: '.dot',

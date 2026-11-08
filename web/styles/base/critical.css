@@ -391,9 +391,15 @@ html:not(.mc-first-run) .first-run-choice,
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
 }
 
+/* The lift is every button's; the solid white is the primary's alone. Until
+   Nov 2026 this whole rule was .first-run-btn:hover, which came after the
+   secondary's hover at the same specificity and filled the ghost buttons
+   solid white under their white text: hovered, they washed out. */
 .first-run-btn:hover {
-  background: #ffffff;
   transform: translateY(-1px);
+}
+.first-run-btn-primary:hover {
+  background: #ffffff;
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
 }
 .first-run-btn:active {
@@ -700,6 +706,33 @@ html.mc-first-run #app-loader .first-run-status {
   gap: 4px;
 }
 
+/* Desktop Home view: logo in the corner, name centred. Mirrors layout/header.css. */
+@media (min-width: 1024px) and (min-height: 481px) {
+  html:not(.ios-pwa) body:not(.focus-mode):not(.first-run-welcome-active) .mini-cycle-header-row {
+    box-sizing: border-box;
+    height: calc(env(safe-area-inset-top, 0px) + 56px);
+    min-height: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: 0;
+  }
+  html:not(.ios-pwa) body:not(.focus-mode):not(.first-run-welcome-active) .header-branding {
+    top: env(safe-area-inset-top, 0px);
+    right: 0;
+    left: 0;
+    height: 56px;
+    justify-content: center;
+    transform: none;
+    pointer-events: none;
+  }
+  html:not(.ios-pwa) body:not(.focus-mode):not(.first-run-welcome-active) .header-logo {
+    position: absolute;
+    top: 13px;
+    left: calc(env(safe-area-inset-left, 0px) + 16px);
+    height: 36px;
+    pointer-events: auto;
+  }
+}
+
 /* iOS PWA standalone mode - blur extends to top, content pushed with padding */
 /* Requires .ios-pwa class added by JavaScript detection. Real inset + 34px
    (47px floor for a web app that reports a zero inset), and the branding
@@ -742,13 +775,15 @@ html.mc-first-run #app-loader .first-run-status {
      keep the two in sync. */
   opacity: var(--pref-subtitle-opacity, 0.8);
 }
+/* No background or edge here: the hairline above the toolbar is in
+   layout/header.css (--toolbar-divider), which this sheet would out-rank.
+   stretch keeps the toolbar's three buttons one height (mode-selector.css). */
 .mode-selector-wrapper {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   min-height: 31px;
-  padding: 3px 0;
-  background: linear-gradient(135deg, #f1f1f172, #ffffff10);
+  padding: 0 0 3px;   /* the toolbar hangs from the hairline (layout/header.css) */
 }
 
 /* Reserve space for task list to prevent CLS when data loads from IndexedDB */

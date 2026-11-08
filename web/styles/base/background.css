@@ -146,6 +146,76 @@ body.has-bg-image #help-window h4 {
     text-shadow: var(--text-shadow-photo);
 }
 
+/* The glass controls on a photo — the toolbar group, ☰ and the corner buttons
+   with their desktop captions: white on a dark frost, the look a dark preset
+   gives them (utils/readableText.js sets the same two vars there). Their navy
+   on a light frost was unreadable wherever the photo is dark beneath them,
+   while the Recently Used panel's white text read fine (Nov 2026). Declared on body, so it wins over a preset's vars on <html>.
+   Dark mode and High Contrast keep their own looks (later or stronger rules);
+   a corner colour the user picked is kept. */
+body.has-bg-image {
+    --pref-chrome-ink: var(--color-white);
+    --pref-chrome-glass: var(--photo-glass);
+    /* The glass panels beside the routine — Recently Used and the help window
+       ("3 tasks remaining") — on the same dark frost: their white text on the
+       light frost vanished on a light photo (Nov 2026). The text colour stays
+       the Personalization one (white by default). */
+    --pref-panel-bg: var(--pref-chrome-glass);
+}
+
+body.has-bg-image #quick-dark-toggle,
+body.has-bg-image #personalization-btn {
+    background: var(--pref-chrome-glass);
+    color: var(--pref-corner-btn, var(--pref-chrome-ink));
+}
+
+/* The routine card in the same glass, so the toolbar, the side panels and the
+   card read as one set (the user's call, Nov 2026: a light card between dark
+   panels looked disconnected, and on a light photo it all but vanished). Its
+   frame and title bar go dark with a white title; the task rows stay as they
+   are. Redefined as the card's DEFAULTS, so a list or title colour picked in
+   Personalization (--pref-task-list-bg, --pref-title-*) still wins. The routine
+   browser's cards read the same vars and match. Light mode only: dark mode has
+   its own card. */
+body.has-bg-image:not(.dark-mode) {
+    --task-list-panel-bg: var(--pref-chrome-glass);
+    --task-list-title-bg: var(--photo-title-glass);
+    --task-list-title-text: var(--color-white);
+}
+
+/* High Contrast makes the title near-black for its light bar
+   (accessibility.css); on this dark one it is white, full strength. The search
+   icon beside it follows the title (task-list.css) — restated here over High
+   Contrast's own icon colour and the hover greys. */
+body.high-contrast.has-bg-image:not(.dark-mode) #mini-cycle-title {
+    color: var(--pref-title-text, var(--color-white));
+}
+
+body.has-bg-image:not(.dark-mode) .task-search-container .task-search-btn,
+body.has-bg-image:not(.dark-mode) .task-search-container .task-search-btn:hover,
+body.has-bg-image:not(.dark-mode) .task-search-container .task-search-btn.active {
+    color: var(--pref-title-text, var(--task-list-title-text));
+}
+
+/* The title bar's light sheen (task-list.css) would wash the dark glass out;
+   the frame takes a stronger blur so the photo behind the card goes soft. The
+   :not() chain outranks the card's custom-colour rule (task-list.css). */
+body.has-bg-image:not(.dark-mode) .mini-cycle-title {
+    background-image: none;
+}
+
+body.has-bg-image:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-list-container {
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+/* :not() to outrank the caption's own rule (components/settings.css). */
+body.has-bg-image:not(.corner-btns-no-labels) #quick-dark-toggle::after,
+body.has-bg-image:not(.corner-btns-no-labels) #personalization-btn::after {
+    background: var(--pref-chrome-glass);
+    color: var(--pref-corner-btn, var(--pref-chrome-ink));
+}
+
 /* Background image display modes - specificity (0,4,1) to override pattern rules */
 body.has-bg-image.bg-mode-cover,
 body.has-bg-image.bg-mode-cover:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) {

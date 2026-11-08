@@ -472,9 +472,9 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         // hold identical values by design (90/0.8 and 80/0.7) — the spread makes
         // them indistinguishable by value. Structural coverage only.
         const zoneCount = Object.keys(LAYOUT_DOCK_ZONES).length;
-        const docked = DRAGGABLES.filter(d => d.dock);
-        assertEq(docked.length, zoneCount,
-            `every LAYOUT_DOCK_ZONES entry should back one docked draggable`);
+        const docked = DRAGGABLES.filter(d => d.dock).length + DRAGGABLES.filter(d => d.belowCard).length;
+        assertEq(docked, zoneCount,
+            `every LAYOUT_DOCK_ZONES entry should back one dock`);
     });
 
     await test('every dock config carries usable snap geometry', () => {
@@ -683,6 +683,55 @@ export async function runTaskViewLayoutManagerTests(resultsDiv) {
         mgr._saveElementPosition(el, { key: 'status-bubble' });
         mgr._flushPositionWrites();
         assertEq(AppState.state.settings.taskViewLayout.frame, LAYOUT_FRAME_VERSION, 'frame not stamped');
+    });
+
+    // Nov 2026: Complete Cycle stopped following the card (home = under the status bubble).
+    await test('Complete Cycle homes itself, and a leftover follower position for it is ignored', () => {
+        const config = DRAGGABLES.find(d => d.key === 'complete-cycle-btn');
+        assertEq(config.dock.self, true, 'Complete Cycle should snap back to its own home');
+        assertEq(config.dock.relativeToId, undefined, 'Complete Cycle should not follow the card');
+
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState: makeAppState() }));
+        const mgr = new TaskViewLayoutManager();
+        const entry = seedEntry(mgr, 'complete-cycle-btn');
+        entry.config.dock = config.dock;
+
+        mgr._applySavedPosition('complete-cycle-btn', { left: 10, top: 590, width: 100, customized: false });
+        assertEq(entry.element.style.position, '', 'a leftover follower spot must not be restored');
+        assertEq(entry.customized, false, 'it stays at home');
+
+        mgr._applySavedPosition('complete-cycle-btn', { left: 10, top: 590, width: 100, customized: true });
+        assertEq(entry.element.style.position, 'absolute', 'a spot the user dragged it to is kept');
+        assertEq(entry.customized, true, 'and it counts as placed');
+    });
+
+    await test('Complete Cycle can dock under the card: saved, restored and kept when the card moves', () => {
+        const config = DRAGGABLES.find(d => d.key === 'complete-cycle-btn');
+        const AppState = makeAppState();
+        setTaskViewLayoutManagerDependencies(makeDeps({ AppState }));
+        const mgr = new TaskViewLayoutManager();
+        const entry = seedEntry(mgr, 'complete-cycle-btn');
+        entry.config.dock = config.dock;
+        entry.config.belowCard = config.belowCard;
+        try {
+            mgr._syncBelowCard({ 'complete-cycle-btn': { belowCard: true } });
+            assertEq(document.body.classList.contains('complete-below-card'), true, 'a saved dock should apply');
+            assertEq(mgr._getDependentsOf(config.belowCard.anchorId).includes(entry), true, 'it should ride along with the card');
+            assertEq(mgr._isStaleFollower(entry, { left: 1, top: 2, customized: false, belowCard: true }), false,
+                'its spot under a moved card must not be dropped as a leftover');
+
+            const el = entry.element;
+            el.style.left = '10px';
+            el.style.top = '20px';
+            mgr._saveElementPosition(el, entry.config, false);
+            assertEq(mgr._pendingWrites.get('complete-cycle-btn').belowCard, true, 'a follower save must keep the dock');
+
+            mgr._syncBelowCard(null);
+            assertEq(document.body.classList.contains('complete-below-card'), false, 'reset should undock it');
+        } finally {
+            mgr._discardPendingWrites();
+            document.body.classList.remove('complete-below-card');
+        }
     });
 
     await test('_loadAndApplyPositions discards positions saved in an older frame, once, with a notice', async () => {

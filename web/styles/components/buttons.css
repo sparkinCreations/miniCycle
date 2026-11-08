@@ -73,8 +73,8 @@ button:disabled {
    actions came in green and four blues, Cancel had six looks, and the system
    defined here sat unused. One accent, --close-btn-effective, now fills both
    the main action and the Close bar. It was already every Close bar's fill: the
-   steel blue (white on it is 4.52:1 — a floor, see variables.css), the active
-   vocab theme's accent outside dark mode. Green is left for completing things
+   steel blue (white on it is 5.29:1, see variables.css), the active vocab
+   theme's accent outside dark mode. Focus View's Complete task uses it too. Green is left for completing things
    (the Complete Cycle button); it carries white at only 3.13:1.
 
    Declared on BODY, like --close-btn-effective in modals.css, so a theme's
@@ -360,13 +360,11 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
    GLASS COMPLETE / CLEAR (default, Nov 2026)
    The same glass as Focus View's round action button (focus-mode.css): 25%
    white, a light 2px blur, its thin 1px white rim (brighter here, 65%, on
-   the larger button), and like it a white cycle icon. The mode's colour moves from the fill
-   to the words — --action-color is the user's Complete Cycle / Clear colour
-   (Personalization) or the default — darkened, because on near-clear glass
-   the words sit on the page's blue: the colour kept at 40% (color-mix; the
-   plain colour is the fallback where color-mix is unsupported) measured
-   ≥ 3.6:1 across the default blue gradient for green and blue, above the 3:1
-   large bold text needs. Dark mode: the colour lightened, ≥ 4:1.
+   the larger button), and like it a white cycle icon. Complete Cycle's words are
+   navy, like the header's glass buttons; To-Do's Clear keeps its colour, darkened
+   to 40% (≥ 3.6:1 across the default blue gradient). A colour picked in
+   Personalization comes through --pref-complete-text / --pref-clear-text
+   (utils/readableText.js). Dark mode: white, and Clear's colour lightened, ≥ 4:1.
    Where it applies: Classic and the vocabulary themes, light or dark. The
    themes' backgrounds are dark gradients, so there the words go light (see
    the vocab-theme rule below). The legacy colour themes and High Contrast
@@ -375,19 +373,24 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
    (body.solid-action-buttons).
    ============================================================================= */
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn {
-    --action-color: var(--pref-complete-btn, var(--color-complete-btn));
     background: var(--glass-btn-bg);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     border: 1px solid var(--glass-btn-rim);   /* Focus View's thin rim, a little brighter on this larger button */
-    color: var(--action-color);
-    color: color-mix(in srgb, var(--action-color) 40%, var(--color-black));
+    color: var(--pref-complete-text, var(--color-navy));
     text-shadow: none;
     box-shadow: var(--shadow-button);
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
-    --action-color: var(--pref-clear-btn, var(--color-todo-btn));
+    --action-default: var(--color-todo-btn);
+    color: var(--pref-clear-text, var(--action-default));
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+    body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
+        --action-default: color-mix(in srgb, var(--color-todo-btn) 40%, var(--color-black));
+    }
 }
 
 /* The cycle arrows are white, as on Focus View's round button; the words keep
@@ -401,14 +404,14 @@ body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn {
-    --action-color: var(--color-complete-btn);
     background: var(--glass-btn-bg-dark);
     border-color: var(--glass-btn-rim-dark);
-    color: color-mix(in srgb, var(--action-color) 60%, var(--color-white));
+    color: var(--color-white);
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn.todo-mode-btn {
-    --action-color: var(--color-todo-btn);
+    color: var(--color-todo-btn);
+    color: color-mix(in srgb, var(--color-todo-btn) 60%, var(--color-white));
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn:hover {
@@ -440,16 +443,15 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
     background: var(--glass-btn-bg);
     border: 1px solid var(--glass-btn-rim);
-    color: var(--preview-action-color);
-    color: color-mix(in srgb, var(--preview-action-color) 40%, var(--color-black));
+    color: var(--preview-action-text);
 }
 
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-complete-btn {
-    --preview-action-color: var(--preview-complete-btn, var(--color-complete-btn));
+    --preview-action-text: var(--preview-complete-text, var(--color-navy));
 }
 
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
-    --preview-action-color: var(--preview-clear-btn, var(--color-todo-btn));
+    --preview-action-text: var(--preview-clear-text, var(--color-todo-btn));
 }
 
 /* Complete All and Help Window Container */
@@ -613,6 +615,100 @@ body.hide-help-window .help-window {
        time — the layout suite's home-*-long rows saw a long routine stop 5px
        short of the band at every desktop size. The FLOATING card (drag-
        customized) gets its own band-relative cap in task-view-layout.css. */
+}
+
+/* The side columns of the Home View on desktop (Nov 2026).
+   --side-col is the room actually beside the card, capped at 400px: the
+   bubble's old fixed widths ran 5px off the window at 1280 and left 1px at 1024.
+   --side-nudge lines the columns up with the routine card: 50% is the middle
+   of #task-view, which also holds the Add-task row (60px with its gap) above
+   the card and 20px of space below it, so the card's own middle is half the
+   difference lower (20px). Hide the row and that part goes. On a tall window
+   the columns sit lower still (--side-nudge-tall): nothing below 800px high,
+   up to 40px more from 1200px.
+   Saved drag positions are inline styles, so they beat all of this. */
+@media (min-width: 1024px) {
+    #task-view {
+        --side-gap: var(--space-6-25);
+        --side-col: min(400px, calc((100vw - 100%) / 2 - var(--side-gap) - var(--space-5)));
+        --side-nudge-tall: clamp(0px, 10vh - 80px, 40px);
+        --side-nudge: var(--side-nudge-tall);
+    }
+
+    body.input-bar-visible:not(.focus-mode) #task-view {
+        --side-nudge: calc(var(--space-5) + var(--side-nudge-tall));
+    }
+
+    body:not(.focus-mode) .help-window {
+        left: calc(100% + var(--side-gap));
+        top: calc(50% + var(--side-nudge));
+        box-sizing: border-box;
+        width: var(--side-col);
+        min-width: 0;
+        max-width: none;
+    }
+
+    /* Complete Cycle (and To-Do's Clear) sits under the status bubble: what is
+       left, then the button that finishes it, and the list gets the height the
+       button took below it. The two meet at a fixed line, with the bubble
+       anchored by its BOTTOM, so a longer message grows upward and cannot run
+       into the button. Phones and tablets keep it below the card. It is
+       draggable like the bubble (ui/taskViewLayoutManager.js). */
+    body:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) .help-window {
+        top: auto;
+        bottom: calc(50% - var(--space-5) - var(--side-nudge));
+        transform: none;
+    }
+
+    body:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) #complete-all-and-help-window-container {
+        position: absolute;
+        left: calc(100% + var(--side-gap));
+        top: calc(50% + var(--space-8) + var(--side-nudge));
+        width: var(--side-col);
+        margin: 0;
+    }
+
+    /* The space the button's slot kept under the card, as in Auto mode, where
+       the empty slot still does: without it a long routine reached the nav
+       dots and the focus button overhung them (run-layout-overlap-tests). */
+    body:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) #task-card-group {
+        margin-bottom: var(--space-5);
+    }
+
+    /* Docked under the routine by the user (taskViewLayoutManager): back in the
+       flow, where the card's shrink chain gives it the room. Same width as in
+       the side column, so picking it up does not resize it. */
+    body.complete-below-card:not(.focus-mode):not(.auto-cycle-mode) #complete-all-and-help-window-container {
+        align-self: center;
+        width: var(--side-col);
+        margin-top: var(--space-3);
+    }
+
+    body:not(.focus-mode):not(.auto-cycle-mode) #completeAll {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 0;
+        padding-left: var(--space-3);
+        padding-right: var(--space-3);
+    }
+
+    /* Status bubble turned off: the button alone, centred in the column. */
+    body.hide-help-window:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) #complete-all-and-help-window-container {
+        top: calc(50% + var(--side-nudge));
+        transform: translateY(-50%);
+    }
+}
+
+@media (min-width: 1280px) {
+    #task-view {
+        --side-gap: var(--space-7-5);
+    }
+}
+
+@media (min-width: 1800px) {
+    #task-view {
+        --side-gap: var(--space-10);
+    }
 }
 
 /* Wider screens */

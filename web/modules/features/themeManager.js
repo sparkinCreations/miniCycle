@@ -27,6 +27,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTO
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { themeWordVars, inputBarToggleLabel } from '../labels/themeWords.js';
 import { createIconElement } from '../utils/icons.js';
 import { renderCompleteAllButton } from '../ui/completeAllButton.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -239,7 +240,9 @@ function _refreshLiveLensLabels() {
     if (addTaskText) {
         const taskInputContainer = _deps.querySelector(DOM_SELECTORS.TASK_INPUT);
         const isTaskInputVisible = taskInputContainer && !taskInputContainer.classList.contains(DOM_CLASSES.HIDDEN);
-        addTaskText.textContent = isTaskInputVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
+        addTaskText.textContent = inputBarToggleLabel(!!isTaskInputVisible);
+        const menuInputBar = _deps.getElementById(DOM_IDS.MENU_TOGGLE_INPUT_BAR_TEXT);
+        if (menuInputBar) menuInputBar.textContent = inputBarToggleLabel(!!isTaskInputVisible);
     }
 
     // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
@@ -279,7 +282,7 @@ function _refreshLiveLensLabels() {
             emptyHintFocus.textContent = getLabel('empty.noTasksHintFocus', {
                 vars: {
                     menuIcon: '⋯',
-                    showHide: getLabel('focusMode.toggleInputBar')
+                    showHide: inputBarToggleLabel(false)
                 }
             });
         }
@@ -295,7 +298,7 @@ function _refreshLiveLensLabels() {
     _setMenuButtonLabel(DOM_IDS.CLEAR_MINI_CYCLE_TASKS, 'action.clearAllMenu', 'action.clearAllTitle');
     _setMenuButtonLabel(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS, 'action.deleteAllMenu', 'action.deleteAllTitle');
     _setMenuButtonLabel(DOM_IDS.OPEN_REMINDERS_MODAL, 'menu.reminders', 'menu.remindersTitle');
-    _setMenuButtonLabel(DOM_IDS.MENU_TOGGLE_INPUT_BAR, 'menu.inputBar', 'menu.inputBarTitle');
+    _setMenuButtonLabel(DOM_IDS.MENU_TOGGLE_INPUT_BAR, null, 'menu.inputBarTitle');
     _setMenuButtonLabel(DOM_IDS.MENU_TASK_OPTIONS, 'menu.taskOptions', 'menu.taskOptionsTitle');
     _setMenuButtonLabel(DOM_IDS.OPEN_RECURRING_PANEL, 'menu.recurring', 'menu.recurringTitle');
 
@@ -387,6 +390,7 @@ export function _setMenuButtonLabel(elementId, textKey, titleKey) {
     const btn = _deps.getElementById(elementId);
     if (!btn) return;
     if (titleKey) btn.title = getLabel(titleKey);
+    if (!textKey) return;   // the button's text is set elsewhere; only its title is static
     const textNode = Array.from(btn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
     if (textNode) {
         textNode.textContent = getLabel(textKey);

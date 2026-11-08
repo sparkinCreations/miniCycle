@@ -206,7 +206,22 @@ function measureFocus() {
         px(document.getElementById('mini-cycle-title')),
         card,
     ].filter(Boolean).map(c => c.top);
-    const contentTop = contentTops.length ? Math.min(...contentTops) : null;
+    // Desktop: the top row's middle is free, so the open input bar, or the card
+    // when the bar is closed, sits IN it. It is held to not touching the logo or ⋯,
+    // and what sits below the row keeps the usual clearance.
+    const rectOf = (el) => (el && el.getClientRects().length ? el.getBoundingClientRect() : null);
+    const inputRect = rectOf(document.getElementById('task-input-row'));
+    const cardRect = rectOf(document.querySelector('#task-view .task-card'));
+    const rowNeighbours = ['.header-logo', '#focus-mode-menu-btn']
+        .map(s => rectOf(document.querySelector(s))).filter(Boolean);
+    const firstRect = inputRect || cardRect;
+    const contentInTopRow = !!firstRect && window.innerWidth >= 1024 && rowNeighbours.some(r => firstRect.top < r.bottom);
+    const contentTouchesRow = [inputRect, cardRect].filter(Boolean).some(a => rowNeighbours.some(r =>
+        r.left < a.right && r.right > a.left && r.top < a.bottom && r.bottom > a.top));
+    const belowRowTop = contentInTopRow && inputRect && cardRect ? Math.round(cardRect.top) : null;
+    const contentTop = contentInTopRow
+        ? belowRowTop
+        : (contentTops.length ? Math.min(...contentTops) : null);
     const chromeFloor = parseFloat(
         getComputedStyle(document.documentElement).getPropertyValue('--focus-chrome-floor')) || 5;
     const chrome = [
@@ -235,8 +250,8 @@ function measureFocus() {
     return {
         undo, viewportHeight: window.innerHeight,
         navHeight: navRect ? Math.round(navRect.height) : 0,
-        cardTop: card ? card.top : null,
-        contentTop, chromeFloor,
+        cardTop: card && !(contentInTopRow && !inputRect) ? card.top : null,
+        contentTop, chromeFloor, contentInTopRow, contentTouchesRow,
         liveChromeBottom, publishedVar,
         taskViewBottom: tvBottom,
         // In focus mode #task-view deliberately extends BELOW the nav line —
@@ -260,7 +275,7 @@ function measureFocus() {
 }
 
 /**
- * First-run tour ("Learn How Cycles Work") geometry. While the welcome banner
+ * First-run tour ("Show How Cycles Work") geometry. While the welcome banner
  * is up, main.css un-fixes #task-view so the PAGE scrolls under a fixed banner;
  * Skip hands back the locked focus view. That override has to reset every
  * offset the focus layout sets — v2.474 added `bottom` to the focus band, the
@@ -525,7 +540,21 @@ async function run() {
             // it. Asserting the task-view clears the nav dots covers the help window
             // too — and avoids the help window's own (unclipped) rect giving a false
             // reading when it's clipped beyond the task-view edge.
-            if (r.taskViewBottom !== null) {
+            // A window 480px tall or less, below desktop width, puts the nav dots
+            // in a column beside the routine (task-view-layout.css), so "above the
+            // dots" stops being the right question: nothing may OVERLAP them.
+            const sideDots = vp.height <= 480 && vp.width <= 1023;
+            if (sideDots) {
+                const hits = await page.evaluate(() => {
+                    const box = (el) => { if (!el) return null; const c = getComputedStyle(el); if (c.display === 'none' || c.visibility === 'hidden') return null; const r = el.getBoundingClientRect(); return r.width && r.height ? r : null; };
+                    const dots = box(document.getElementById('nav-dots'));
+                    if (!dots) return [];   // hidden in this state (the test's tasks-hidden setup): nothing to overlap
+                    return [['routine card', document.getElementById('task-card-group')], ['status bubble', document.getElementById('help-window')], ['Complete button', document.getElementById('completeAll')], ['Add task', document.getElementById('task-input-row')]]
+                        .filter(([, el]) => { const r = box(el); return r && r.left < dots.right - 1 && r.right > dots.left + 1 && r.top < dots.bottom - 1 && r.bottom > dots.top + 1; })
+                        .map(([name]) => name);
+                });
+                record(vp, 'nothing overlaps the nav dots in the side column', hits.length === 0, `overlapping: ${hits.join(', ')}`);
+            } else if (r.taskViewBottom !== null) {
                 record(vp, 'task-view (and its help window) clears nav dots',
                     r.taskViewBottom <= r.navLine + TOL,
                     `task-view.bottom ${r.taskViewBottom} > navLine ${r.navLine} (maxH=${r.taskViewMaxH})`);
@@ -579,6 +608,10 @@ async function run() {
                 record(vp, 'focus card clears the painted chrome',
                     f.cardTop >= f.liveChromeBottom - TOL,
                     `card.top ${f.cardTop} < chrome.bottom ${f.liveChromeBottom}`);
+            }
+            if (f.contentInTopRow) {
+                record(vp, 'focus content in the top row stays clear of the logo and ⋯', !f.contentTouchesRow,
+                    'the input bar or routine card overlaps the logo or the ⋯ button');
             }
             if (f.contentTop !== null && f.liveChromeBottom !== null) {
                 record(vp, `focus content keeps ${f.chromeFloor}px from the painted chrome`,
@@ -807,13 +840,16 @@ async function run() {
                     list.innerHTML = Array.from({ length: 40 }, (_, i) =>
                         `<div class="mini-cycle-switch-item" role="option">Routine ${i + 1}</div>`).join('');
 
+                    const floorEl = getComputedStyle(body).display === 'contents'
+                        ? d.querySelector('.routine-switcher-left') : body;
                     const cr = content.getBoundingClientRect();
                     const br = close.getBoundingClientRect();
                     const out = {
                         missing: false,
                         shellScrolls: content.scrollHeight > content.clientHeight + 1,
-                        bodyH: Math.round(body.getBoundingClientRect().height),
-                        bodyFloor: Math.round(parseFloat(getComputedStyle(body).minHeight) || 0),
+                        // On a phone the body is display: contents and the floor is on the list's panel.
+                        bodyH: Math.round(floorEl.getBoundingClientRect().height),
+                        bodyFloor: Math.round(parseFloat(getComputedStyle(floorEl).minHeight) || 0),
                         listScrolls: list.scrollHeight > list.clientHeight + 1,
                         closeTop: Math.round(br.top),
                         closeBottom: Math.round(br.bottom),
@@ -904,8 +940,10 @@ async function run() {
                             `<button class="theme-chip" role="radio"><span class="theme-chip-name">Theme ${i + 1}</span></button>`).join('')
                         + '</div>';
                     picker.classList.remove('hidden');
+                    body.classList.add('theme-picker-open');
 
                     const R = el => el.getBoundingClientRect();
+                    const rowInColumn = getComputedStyle(row.parentElement).display !== 'contents';
                     const btnTops = [...row.querySelectorAll('.switch-buttons')]
                         .filter(b => b.getClientRects().length)
                         .map(b => R(b).top)
@@ -917,10 +955,14 @@ async function run() {
                     const out = {
                         missing: false,
                         listH: Math.round(R(list).height),
-                        bodyBottom: Math.round(R(body).bottom),
+                        // Tablet and desktop keep the actions in the preview's column, so
+                        // what they must clear there is the preview; on a phone it is the list.
+                        bodyBottom: Math.round(R(rowInColumn ? d.querySelector('.desktop-preview-window') : list).bottom),
                         rowTop: Math.round(R(row).top),
                         rowBottom: Math.round(R(row).bottom),
                         pickerTop: Math.round(R(picker).top),
+                        pickerBottom: Math.round(R(picker).bottom),
+                        rowInColumn,
                         previewShown: preview.getClientRects().length > 0,
                         btnLines,
                         closeTop: Math.round(R(close).top),
@@ -935,6 +977,7 @@ async function run() {
                     themeBtn.setAttribute('aria-expanded', saved.expanded);
                     picker.innerHTML = saved.picker;
                     picker.classList.add('hidden');
+                    body.classList.remove('theme-picker-open');
                     preview.innerHTML = saved.preview;
                     if (!wasOpen) d.close();
                     return out;
@@ -949,9 +992,10 @@ async function run() {
                         sw.rowTop >= sw.bodyBottom - TOL,
                         `action row top ${sw.rowTop}px vs routine panel bottom ${sw.bodyBottom}px — drawn over the list`);
 
-                    record(vp, 'routine switcher + theme picker: the picker starts below the action row',
-                        sw.pickerTop >= sw.rowBottom - TOL,
-                        `picker top ${sw.pickerTop}px vs action row bottom ${sw.rowBottom}px`);
+                    // Tablet and desktop: the picker has the preview's place, above the actions.
+                    record(vp, 'routine switcher + theme picker: the picker and the action row do not overlap',
+                        sw.rowInColumn ? sw.pickerBottom <= sw.rowTop + TOL : sw.pickerTop >= sw.rowBottom - TOL,
+                        `picker ${sw.pickerTop}-${sw.pickerBottom}px vs action row ${sw.rowTop}-${sw.rowBottom}px`);
 
                     record(vp, 'routine switcher + theme picker: Close is on screen and flush with the shell',
                         sw.closeTop >= 0 && sw.closeBottom <= sw.vh + TOL

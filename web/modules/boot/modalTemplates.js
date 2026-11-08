@@ -988,6 +988,13 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span class="settings-option-text"><span data-label-key="settings.scrollToLast">${getLabel('settings.scrollToLast')}</span><span class="settings-desc" id="toggle-scroll-on-load-desc">${getLabel('settings.scrollToLastDesc')}</span></span>
                         </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="${DOM_IDS.TOGGLE_CONFIRM_UNCHECKED_CYCLE}" name="${DOM_IDS.TOGGLE_CONFIRM_UNCHECKED_CYCLE}" aria-describedby="${DOM_IDS.TOGGLE_CONFIRM_UNCHECKED_CYCLE}-desc">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span class="settings-option-text"><span>${getLabel('settings.confirmUncheckedCycle')}</span><span class="settings-desc" id="${DOM_IDS.TOGGLE_CONFIRM_UNCHECKED_CYCLE}-desc">${getLabel('settings.confirmUncheckedCycleDesc')}</span></span>
+                        </label>
                         <label class="settings-option ${DOM_CLASSES.KEYBOARD_ONLY}">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" name="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" aria-describedby="toggle-single-key-shortcuts-desc">

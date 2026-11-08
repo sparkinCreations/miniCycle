@@ -372,3 +372,204 @@
         transition: none;
     }
 }
+
+/* -----------------------------------------------------------------------------
+   HOME VIEW ON A VERY SHORT WINDOW (a phone on its side)
+   At 480px tall or less the logo row, toolbar, raised nav dots and footer took
+   about 240px of the window, and the routine card measured 0px tall at 667x375
+   with the status bubble and Complete Cycle stacked over the list (Nov 2026).
+   The toolbar becomes the top row with ☰ beside it, the footer text goes (its
+   links are in the menu), the nav dots drop to the bottom edge. Everything still
+   feeds the measured band: --header-total-height and --nav-dots-clearance.
+   ----------------------------------------------------------------------------- */
+@media (max-height: 480px) {
+    body:not(.focus-mode) .mini-cycle-header-row {
+        position: absolute;
+        top: env(safe-area-inset-top, 0px);
+        right: max(var(--space-3), env(safe-area-inset-right, 0px));
+        width: auto;
+        min-height: 0;
+        padding: 0;
+        background: none;
+        z-index: var(--z-content);
+    }
+
+    body:not(.focus-mode) .mini-cycle-header-row::before,
+    body:not(.focus-mode) .header-branding {
+        display: none;
+    }
+
+    /* Level with the toolbar, so it clears what sits below the top row. */
+    body:not(.focus-mode) .menu-button {
+        display: flex;
+        align-items: center;
+        height: var(--space-7-5);   /* the toolbar's height */
+        padding: 0 var(--space-2);
+    }
+
+    /* No logo row above it, so no hairline: it hangs from the window's top. */
+    body:not(.focus-mode) .mode-selector-wrapper {
+        box-shadow: none;
+        padding-top: env(safe-area-inset-top, 0px);
+    }
+
+    /* The footer's text only: the nav dots and Undo live inside it. */
+    body:not(.focus-mode) #footer-container {
+        bottom: 0;
+    }
+
+    body:not(.focus-mode) #footer-container > :not(#undo-redo-buttons):not(#nav-dots) {
+        display: none;
+    }
+
+    body:not(.focus-mode) #nav-dots {
+        bottom: max(2px, env(safe-area-inset-bottom, 0px));
+    }
+
+    body:not(.focus-mode) .task-list-container {
+        min-height: 0;
+    }
+
+    /* Over the page rather than holding a 22px strip of the header open. */
+    body:not(.focus-mode) #saving-indicator {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+    }
+
+    /* Either side of the nav dots, on their row, clear of the card. */
+    body:not(.focus-mode) #undo-redo-buttons {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        margin: 0;
+    }
+
+    body:not(.focus-mode) #undo-redo-buttons .undo-redo-btn#undo-btn,
+    body:not(.focus-mode) #undo-redo-buttons .undo-redo-btn#redo-btn {
+        top: auto;
+        right: auto;
+        bottom: 12px;
+        transform: none;
+    }
+
+    body:not(.focus-mode) #undo-redo-buttons .undo-redo-btn#undo-btn {
+        left: calc(50% - 90px);
+    }
+
+    body:not(.focus-mode) #undo-redo-buttons .undo-redo-btn#redo-btn {
+        left: calc(50% + 40px);
+    }
+}
+
+/* Below desktop width: the routine takes the whole left side at full height,
+   and everything else stacks in a column on the right: Add task, the status
+   bubble, Complete Cycle, then the nav dots with Undo and Redo. The round
+   Personalization and Dark mode buttons go: both are in the ☰ menu. The
+   gutter clears the notch and, once the side arrows appear at 769px, those. */
+@media (max-height: 480px) and (max-width: 1023px) {
+    body:not(.focus-mode) {
+        --land-gutter: max(var(--space-4), env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+        --land-col: max(200px, 30vw);
+    }
+
+    body:not(.focus-mode) #quick-dark-toggle,
+    body:not(.focus-mode) #personalization-btn {
+        display: none;
+    }
+
+    body:not(.focus-mode) #task-view {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) var(--land-col);
+        grid-template-rows: auto auto minmax(0, 1fr);
+        gap: var(--space-2) var(--space-4);
+        width: calc(100vw - 2 * var(--land-gutter));
+        max-width: none;
+        max-height: none;   /* the phone cap below 769px was built for portrait */
+        /* The nav dots moved into the column, so the band runs to the bottom,
+           less the 14px the focus button overhangs the progress row by. */
+        height: calc(100vh - var(--header-total-height, var(--header-height-fallback)) - 2 * var(--space-2) - 14px);
+        height: calc(100dvh - var(--header-total-height, var(--header-height-fallback)) - 2 * var(--space-2) - 14px);
+        top: calc(var(--header-total-height, var(--header-height-fallback)) + var(--space-2));
+        transform: translateX(-50%);
+    }
+
+    body:not(.focus-mode) #task-card-group.task-card-group {
+        grid-column: 1;
+        grid-row: 1 / -1;
+        min-height: 0;
+        height: 100%;
+        transform: none;
+    }
+
+    body:not(.focus-mode) #task-input-row {
+        grid-column: 2;
+        grid-row: 1;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        transform: none;
+    }
+
+    body:not(.focus-mode) #help-window {
+        grid-column: 2;
+        grid-row: 2;
+        box-sizing: border-box;
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: var(--space-1-5) var(--space-2);
+        font-size: var(--font-size-xs);
+        transform: none;
+    }
+
+    /* Above the dots and Undo on the column's bottom row. */
+    body:not(.focus-mode) #complete-all-and-help-window-container {
+        grid-column: 2;
+        grid-row: 3;
+        align-self: end;
+        width: 100%;
+        margin: 0 0 44px;
+        transform: none;
+    }
+
+    body:not(.focus-mode) #completeAll {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 0;
+        padding-left: var(--space-2);
+        padding-right: var(--space-2);
+    }
+
+    /* Centred under the column, Undo and Redo either side. */
+    body:not(.focus-mode) #nav-dots {
+        left: auto;
+        right: calc(var(--land-gutter) + var(--land-col) / 2 - 24px);
+        transform: none;
+    }
+
+    body:not(.focus-mode) #undo-redo-buttons .undo-redo-btn#undo-btn {
+        left: auto;
+        right: calc(var(--land-gutter) + var(--land-col) / 2 + 34px);
+    }
+
+    body:not(.focus-mode) #undo-redo-buttons .undo-redo-btn#redo-btn {
+        left: auto;
+        right: calc(var(--land-gutter) + var(--land-col) / 2 - 84px);
+    }
+
+    /* Full width. The band rule (stats-panel.css) still sets its height. */
+    body:not(.focus-mode) .stats-panel {
+        box-sizing: border-box;
+        width: calc(100vw - 2 * var(--land-gutter));
+        max-width: 760px;
+    }
+}
+
+@media (max-height: 480px) and (min-width: 769px) and (max-width: 1023px) {
+    body:not(.focus-mode) {
+        --land-gutter: max(72px, env(safe-area-inset-left, 0px), env(safe-area-inset-right, 0px));
+    }
+}

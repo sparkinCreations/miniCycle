@@ -793,7 +793,7 @@
                someone who declines the explainer wants to SEE it working, and a
                blank routine is the weakest second impression.
                Handlers key off data-choice, never position. -->
-          <button type="button" class="first-run-btn first-run-btn-primary" data-choice="learn" data-busy="Starting the tour…" data-label="Learn How Cycles Work">Learn How Cycles Work</button>
+          <button type="button" class="first-run-btn first-run-btn-primary" data-choice="learn" data-busy="Starting the tour…" data-label="Show How Cycles Work">Show How Cycles Work</button>
           <button type="button" class="first-run-btn first-run-btn-secondary" data-choice="sample" data-busy="Loading samples…" data-label="Load a Sample">Load a Sample</button>
           <button type="button" class="first-run-btn first-run-btn-secondary" data-choice="create" data-busy="Setting up your routine…" data-label="Create My First Routine">Create My First Routine</button>
         </div>
@@ -1273,7 +1273,7 @@
       </div>
     </div>
 
-    <button id="menu-button" class="menu-button" aria-label="Menu" aria-expanded="false" aria-controls="main-menu" title="Open menu" data-label-aria-key="menu.aria" data-label-title-key="menu.openTitle">☰</button>
+    <button id="menu-button" class="menu-button" aria-label="Menu" aria-expanded="false" aria-controls="main-menu" title="Open menu" data-label-aria-key="menu.aria" data-label-title-key="menu.openTitle"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"></path></svg></button>
   </header>
 
   <div class="mode-selector-wrapper">
@@ -1282,6 +1282,7 @@
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
       </svg>
+      <span class="quick-actions-btn-label" data-label-key="nav.quickActionsShort">Actions</span>
     </button>
     <div id="quick-actions-menu" class="quick-actions-menu">
       <button id="toggle-task-input-btn" class="quick-action-item">
@@ -1307,10 +1308,11 @@
     <button type="button" id="mode-picker-btn" class="mode-selector mode-picker-btn" aria-haspopup="menu" aria-expanded="false" aria-controls="mode-picker-menu" title="Switch mode">Auto Cycle</button>
     <div id="mode-picker-menu" class="quick-actions-menu mode-picker-menu" role="menu" aria-label="Mode" hidden></div>
   </div>
-  <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routine" title="Switch routine">
+  <button id="routine-switcher-btn" class="routine-switcher-btn" aria-label="Switch routines" title="Switch routines">
     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
       <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
     </svg>
+    <span class="routine-switcher-btn-label" data-label-key="routine.browseShort">Routines</span>
   </button>
   </div>
 
@@ -1417,7 +1419,7 @@
                     <button id="clear-mini-cycle-tasks" title="Uncheck all tasks in this routine"><i class="fas fa-eraser"></i>Uncheck All</button>
                     <button id="delete-all-mini-cycle-tasks" title="Delete all tasks in this routine"><i class="fas fa-trash"></i>Delete All</button>
                     <button id="open-reminders-modal" title="Configure reminders and notifications"><i class="fas fa-bell"></i>Reminders</button>
-                    <button id="menu-toggle-input-bar" title="Show or hide the task input bar"><i class="fas fa-edit"></i>Input Bar</button>
+                    <button id="menu-toggle-input-bar" title="Show or hide the task input bar"><i class="fas fa-edit"></i><span id="menu-toggle-input-bar-text">Add Tasks</span></button>
                     <button id="menu-task-options" title="Customize task option buttons"><span class="icon-text">+/-</span>Task Options</button>
                     <button id="open-recurring-panel" title="Manage recurring tasks"><i class="fas fa-repeat"></i>Recurring</button>
                 </div>
@@ -1825,9 +1827,8 @@
     <div class="mini-cycle-switch-modal-content has-corner-logo" autofocus tabindex="-1">
         <!-- Top-right corner: Browse Routines (icon + label set by routineSwitcher._wireBrowseCorner) -->
         <button type="button" id="switch-browse-btn" class="switch-browse-btn" aria-label="Browse routines one at a time" title="Browse routines one at a time">Browse</button>
-        <div class="mini-cycle-switch-title" id="routine-switcher-title"><i class="fas fa-folder"></i> Open Routine</div>
+        <div class="mini-cycle-switch-title" id="routine-switcher-title"><i class="fas fa-folder"></i> Switch Routine</div>
 
-        <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         <div class="routine-sort-filter-row">
             <div class="routine-filter-controls">
                 <!-- Source of truth, hidden; the visible control is the menu
@@ -1850,6 +1851,7 @@
                 <button id="sort-recent" class="routine-sort-btn" title="Sort by recently used" aria-pressed="false" data-label-key="switcher.sortRecent" data-label-title-key="switcher.sortRecentTitle">Recent</button>
                 <button id="sort-size" class="routine-sort-btn" title="Sort by file size" aria-pressed="false" data-label-key="switcher.sortSize" data-label-title-key="switcher.sortSizeTitle">Size</button>
             </div>
+            <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
         </div>
 
         <div class="routine-switcher-body">
@@ -1861,26 +1863,27 @@
             </div>
 
             <div class="routine-switcher-right">
-                <div id="desktop-preview-title" class="routine-panel-title">Preview</div>
+                <div class="routine-panel-title routine-preview-title"><span id="desktop-preview-title">Preview</span><button type="button" id="routine-preview-expand-btn" class="routine-list-expand-btn" aria-label="Expand the preview" title="Expand the preview" data-label-aria-key="routine.expandPreview" data-label-title-key="routine.expandPreview" hidden></button></div>
                 <div id="desktop-preview-window" class="desktop-preview-window">
                     Select a routine to preview
                 </div>
                 <div id="desktop-preview-hint" class="desktop-preview-hint"></div>
+                <div id="switch-items-row" class="switch-items-row">
+                    <div class="switch-items-row-title">Routine Actions</div>
+                    <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine" data-label-title-key="switcher.duplicateRoutine"><i class="fas fa-copy"></i><span class="switch-btn-label" data-label-key="routine.duplicate">Duplicate</span></button>
+                    <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine" data-label-title-key="switcher.renameRoutine"><i class="fas fa-edit"></i><span class="switch-btn-label" data-label-key="switcher.rename">Rename</span></button>
+                    <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine" data-label-title-key="switcher.deleteRoutine"><i class="fas fa-trash"></i><span class="switch-btn-label" data-label-key="button.delete">Delete</span></button>
+                    <button id="switch-download" class="switch-download switch-buttons" title="Download routine" data-label-title-key="switcher.downloadRoutine"><i class="fas fa-file-download"></i><span class="switch-btn-label" data-label-key="routine.download">Download</span></button>
+                    <button id="switch-theme" class="switch-theme switch-buttons" title="Change routine theme" aria-label="Change theme" aria-expanded="false" aria-controls="theme-picker-row" data-label-aria-key="switcher.changeThemeAria" data-label-title-key="switcher.changeRoutineTheme">🎨<span class="switch-btn-label" data-label-key="switcher.themeButton">Theme</span></button>
+                    <div class="switch-preview-title"><span data-label-key="switcher.preview">Preview</span><button type="button" id="switch-preview-expand-btn" class="routine-list-expand-btn" aria-label="Expand the preview" title="Expand the preview" data-label-aria-key="routine.expandPreview" data-label-title-key="routine.expandPreview" hidden></button></div>
+                    <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
+                </div>
+                <div id="theme-picker-row" class="theme-picker-row hidden" role="radiogroup" aria-label="Select theme for this routine"></div>
             </div>
         </div>
 
-        <div id="switch-items-row" class="switch-items-row">
-            <div class="switch-items-row-title">Routine Actions</div>
-            <button id="switch-duplicate" class="switch-duplicate switch-buttons" title="Duplicate routine" data-label-title-key="switcher.duplicateRoutine"><i class="fas fa-copy"></i><span class="switch-btn-label" data-label-key="routine.duplicate">Duplicate</span></button>
-            <button id="switch-rename" class="switch-rename switch-buttons" title="Rename routine" data-label-title-key="switcher.renameRoutine"><i class="fas fa-edit"></i><span class="switch-btn-label" data-label-key="switcher.rename">Rename</span></button>
-            <button id="switch-delete" class="switch-delete switch-buttons" title="Delete routine" data-label-title-key="switcher.deleteRoutine"><i class="fas fa-trash"></i><span class="switch-btn-label" data-label-key="button.delete">Delete</span></button>
-            <button id="switch-download" class="switch-download switch-buttons" title="Download routine" data-label-title-key="switcher.downloadRoutine"><i class="fas fa-file-download"></i><span class="switch-btn-label" data-label-key="routine.download">Download</span></button>
-            <button id="switch-theme" class="switch-theme switch-buttons" title="Change routine theme" aria-label="Change theme" aria-expanded="false" aria-controls="theme-picker-row" data-label-aria-key="switcher.changeThemeAria" data-label-title-key="switcher.changeRoutineTheme">🎨<span class="switch-btn-label" data-label-key="switcher.themeButton">Theme</span></button>
-            <div id="switch-preview-window" class="switch-preview-window"><br>Preview</div>
-        </div>
-        <div id="theme-picker-row" class="theme-picker-row hidden" role="radiogroup" aria-label="Select theme for this routine"></div>
         <div class="switch-action-row">
-            <button id="miniCycleUpload" class="mini-cycle-upload-btn" title="Import a routine from a file" aria-label="Import a routine from a file"><i class="fas fa-file-upload"></i> <span data-label-key="switcher.importExternal">Import Routine</span></button>
+            <button id="miniCycleUpload" class="mini-cycle-upload-btn" title="Import a routine from a file" aria-label="Import a routine from a file"><i class="fas fa-file-upload"></i> <span data-label-key="switcher.importExternal">Import</span></button>
             <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn" data-label-key="button.open">Open</button>
         </div>
 
@@ -2015,8 +2018,8 @@
         </div>
         <button type="button" id="focus-task-complete-btn" class="focus-task-complete-btn">Complete task</button>
         <div class="focus-task-nav">
-            <button type="button" id="focus-task-prev-btn" class="focus-task-nav-btn"><span aria-hidden="true">‹</span></button>
-            <button type="button" id="focus-task-next-btn" class="focus-task-nav-btn"><span aria-hidden="true">›</span></button>
+            <button type="button" id="focus-task-prev-btn" class="focus-task-nav-btn"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"></path></svg></button>
+            <button type="button" id="focus-task-next-btn" class="focus-task-nav-btn"><svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg></button>
         </div>
         <div id="focus-task-alldone" class="focus-task-alldone hidden">
             <div id="focus-task-alldone-text" class="focus-task-alldone-text"></div>
@@ -2043,7 +2046,7 @@
             <div id="mini-cycle-title" class="mini-cycle-title" contenteditable="true" role="textbox" aria-label="Routine name"></div>
             <!-- Task Search Icon (hidden until 3+ tasks) -->
             <div id="task-search-container" class="task-search-container" style="display: none;">
-                <button id="task-search-btn" class="task-search-btn" aria-label="Search tasks" title="Search tasks" data-label-aria-key="action.searchTasks" data-label-title-key="action.searchTasks">
+                <button id="task-search-btn" class="task-search-btn" aria-expanded="false" aria-controls="task-search-input-row" aria-label="Search tasks" title="Search tasks" data-label-aria-key="action.searchTasks" data-label-title-key="action.searchTasks">
                     <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="11" cy="11" r="8"></circle>
                         <path d="m21 21-4.35-4.35"></path>
@@ -2155,11 +2158,10 @@
              needed), and this wrapper's top mask fades content out before it
              reaches the title — see .stats-panel-content in stats-panel.css. -->
         <div class="stats-panel-content" id="stats-panel-content">
-        <div class="current-routine-status" id="current-routine-status">
-            <h3 class="clickable" tabindex="0" aria-expanded="true" aria-label="Toggle current routine details">
-                <i class="fas fa-list"></i> Current Routine <span class="toggle-icon" aria-hidden="true">▼</span>
-            </h3>
+        <div class="stats-cards">
+        <div class="current-routine-status" id="current-routine-status" role="group" aria-label="Current Routine" data-label-aria-key="stats.currentRoutine">
             <p id="current-routine-name" class="current-routine-name"></p>
+            <div class="stats-routine-body">
             <div id="current-cycle-doughnut-container" class="current-cycle-doughnut-container">
                 <svg class="current-cycle-doughnut" viewBox="0 0 100 100" role="img" aria-label="Current cycle task completion">
                     <!-- Background circle (gray) -->
@@ -2177,38 +2179,47 @@
                     <text id="current-cycle-doughnut-text" x="50" y="55" text-anchor="middle" class="doughnut-text">0%</text>
                 </svg>
             </div>
+            <div class="stats-routine-numbers">
             <p id="current-cycle-progress-text">0 of 0 Tasks Completed</p>
             <p id="current-routine-cycle-count"><span id="per-cycle-count">0 Cycles Completed</span></p>
             <p id="current-routine-cleared-count"><span id="per-routine-cleared">0 Cleared Tasks</span></p>
+            </div>
+            </div>
         </div>
-                  <div class="theme-unlock-status" id="theme-unlock-status">
-            <h3 class="clickable" tabindex="0" aria-expanded="false" aria-label="Toggle milestone rewards">
-                <i class="fas fa-route"></i> Milestone Rewards <span class="toggle-icon" aria-hidden="true">▼</span>
-              </h3>
-            <p id="theme-unlock-message">Loading...</p>
-            <p id="golden-unlock-message">Loading...</p>
-            <p id="game-unlock-message">Loading game unlock info...</p>
-          </div>
-        <div class="badge-container">
-            <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn">
-                <i class="fas fa-trophy"></i> <span data-label-key="stats.achievementBadges">Achievement Badges</span> <span id="achievement-count-badge" class="achievement-count-badge">0</span>
-            </button>
-            <!-- Badge tooltips set dynamically from MILESTONES constant in statsPanel.js -->
-            <div class="badges">
+                  <div class="stats-tabs-card">
+            <div class="stats-tabs" role="tablist" aria-label="Rewards" data-label-aria-key="stats.rewardsTabsAria">
+                <button type="button" id="stats-tab-badges" class="stats-tab" role="tab" aria-selected="true" aria-controls="stats-tabpanel-badges" data-tab="badges" data-label-key="stats.tabBadges">Badges</button>
+                <button type="button" id="stats-tab-milestones" class="stats-tab" role="tab" aria-selected="false" aria-controls="stats-tabpanel-milestones" data-tab="milestones" tabindex="-1" data-label-key="stats.tabMilestones">Milestones</button>
+            </div>
+            <div class="stats-tabpanels">
+                <div id="stats-tabpanel-badges" class="stats-tabpanel" role="tabpanel" aria-labelledby="stats-tab-badges">
+                    <div class="badge-container">
+                        <div class="badges">
                 <div class="badge" data-milestone="5" tabindex="0" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="5 cycles milestone" data-label-aria-key="stats.milestoneBadgeAria" data-label-count="5">🔥</div>
                 <div class="badge" data-milestone="25" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="25 cycles milestone" data-label-aria-key="stats.milestoneBadgeAria" data-label-count="25">💪</div>
                 <div class="badge" data-milestone="50" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="50 cycles milestone" data-label-aria-key="stats.milestoneBadgeAria" data-label-count="50">📚</div>
                 <div class="badge" data-milestone="75" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="75 cycles milestone" data-label-aria-key="stats.milestoneBadgeAria" data-label-count="75">🧹</div>
                 <div class="badge" data-milestone="100" tabindex="-1" role="button" aria-haspopup="dialog" aria-expanded="false" aria-label="100 cycles milestone" data-label-aria-key="stats.milestoneBadgeAria" data-label-count="100">👑</div>
             </div>
-          </div>
-
-        <div class="global-stats-container">
+                        <button id="achievement-badges-btn" class="stats-feature-btn achievement-badges-btn" aria-label="View all achievements" data-label-aria-key="stats.viewAllAchievements"><span data-label-key="stats.viewAll">View all</span> <span id="achievement-count-badge" class="achievement-count-badge">0</span></button>
+                    </div>
+                    <div class="global-stats-container">
             <p id="all-routines-count">All Routines: <span id="mini-cycle-count">0 Cycles</span></p>
             <p id="milestone-progress-text">Loading...</p>
             <div class="progress-container">
                 <div id="stats-progress-bar" class="progress-bar" role="progressbar" aria-label="Progress to next milestone" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
             </div>
+                    </div>
+                </div>
+                <div id="stats-tabpanel-milestones" class="stats-tabpanel" role="tabpanel" aria-labelledby="stats-tab-milestones" data-inactive>
+                    <div class="theme-unlock-status" id="theme-unlock-status">
+                        <p id="theme-unlock-message">Loading...</p>
+                        <p id="golden-unlock-message">Loading...</p>
+                        <p id="game-unlock-message">Loading game unlock info...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
         </div>
         </div>
     </section>

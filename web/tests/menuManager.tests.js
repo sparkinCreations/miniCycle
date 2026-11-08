@@ -385,6 +385,33 @@ export async function runMenuManagerTests(resultsDiv, isPartOfSuite = false) {
     // === CRITICAL OPERATIONS TESTS ===
     resultsDiv.innerHTML += '<h4>🔴 Critical Operations (DI)</h4>';
 
+    // Nov 2026: Recently Used joins the left pane of the short-window menu.
+    await test('Recently Used moves out of the section list on a short window, and back', async () => {
+        const menu = document.createElement('nav');
+        menu.innerHTML = '<div class="menu-sections"><div class="menu-section quick-actions-menu-row"></div><div class="menu-section"></div></div>';
+        const sections = menu.querySelector('.menu-sections');
+        const row = menu.querySelector('.quick-actions-menu-row');
+        const realMatchMedia = window.matchMedia;
+        const listeners = new Set();
+        const query = { matches: true, addEventListener: (_t, fn) => listeners.add(fn), removeEventListener: (_t, fn) => listeners.delete(fn) };
+        window.matchMedia = () => query;
+        try {
+            const manager = new MenuManager();
+            manager.elements = { menu };
+            manager._wireRecentlyUsedPlacement();
+            if (row.parentElement !== menu || row.nextElementSibling !== sections) throw new Error('should sit just before the list while short');
+            query.matches = false;
+            listeners.forEach(fn => fn());
+            if (row.parentElement !== sections || sections.firstElementChild !== row) throw new Error('should return to the top of the list');
+            manager._wireRecentlyUsedPlacement();   // re-wiring must not stack listeners
+            if (listeners.size !== 2) throw new Error(`${listeners.size} listeners after re-wiring`);   // placement + hints
+            manager.destroy();
+            if (listeners.size !== 0) throw new Error('destroy left the listener');
+        } finally {
+            window.matchMedia = realMatchMedia;
+        }
+    });
+
     await test('clearAllTasks unchecks all tasks (DI)', async () => {
         let updatedCycle = null;
         const mockFlattenedData = {

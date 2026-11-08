@@ -98,6 +98,8 @@ body.dark-mode:not([data-theme]) {
     --chrome-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
     --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.5);
     --shadow-glass-panel: none;
+    --toolbar-divider: rgba(255, 255, 255, 0.2);
+    --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.08);
     --dark-checkbox-incomplete-bg: rgba(255, 255, 255, 0.06);
     --dark-priority-border: #ff6b6b;
     --dark-priority-bg: #1e1e1e;
@@ -310,33 +312,8 @@ body.dark-mode .mini-cycle-switch-item:focus-visible {
 }
 
 /* --- Sort / filter controls --- */
-body.dark-mode .routine-sort-btn {
-    background: var(--dark-surface-secondary);
-    color: var(--theme-text-secondary);
-    border-color: var(--dark-button-hover-bg);
-}
-
-body.dark-mode .routine-sort-btn:hover {
-    background: var(--dark-button-bg);
-    border-color: var(--dark-border-subtle);
-}
-
-body.dark-mode .routine-sort-btn.active {
-    border-color: transparent;
-}
-
 body.dark-mode .routine-sort-label {
     color: var(--theme-text-muted);
-}
-
-body.dark-mode .routine-filter-select {
-    background: var(--dark-surface-secondary);
-    color: var(--theme-text-secondary);
-    border-color: var(--dark-button-hover-bg);
-}
-
-body.dark-mode .routine-filter-select:hover {
-    border-color: var(--dark-border-subtle);
 }
 
 /* --- Preview panels (mobile + desktop) --- */
@@ -563,19 +540,6 @@ body.dark-mode #achievement-badges-btn:hover {
    DARK MODE ROUTINE STATUS
    ============================================================================= */
 
-body.dark-mode .current-routine-status .clickable {
-    background-color: var(--theme-bg-surface);
-    color: var(--theme-text-primary);
-    border: 1px solid var(--dark-button-hover-bg);
-}
-
-body.dark-mode .current-routine-status .clickable:hover,
-body.dark-mode .current-routine-status .clickable:focus-visible {
-    background-color: var(--theme-bg-surface-elevated);
-    transform: scale(1.02);
-    color: var(--dark-accent-green);
-}
-
 body.dark-mode #current-cycle-progress-text,
 body.dark-mode #current-routine-cycle-count,
 body.dark-mode #current-routine-cleared-count {
@@ -593,19 +557,6 @@ body.dark-mode .doughnut-bg {
 /* =============================================================================
    DARK MODE THEME UNLOCK
    ============================================================================= */
-
-body.dark-mode .theme-unlock-status .clickable {
-    background-color: var(--theme-bg-surface);
-    color: var(--theme-text-primary);
-    border: 1px solid var(--dark-button-hover-bg);
-}
-
-body.dark-mode .theme-unlock-status .clickable:hover,
-body.dark-mode .theme-unlock-status .clickable:focus-visible {
-    background-color: var(--theme-bg-surface-elevated);
-    transform: scale(1.02);
-    color: var(--dark-accent-green);
-}
 
 body.dark-mode #theme-unlock-message,
 body.dark-mode #golden-unlock-message {
@@ -1220,6 +1171,32 @@ body.dark-mode .quick-action-item {
     color: var(--theme-text-primary);
 }
 
+/* Focus View's ⋯ menu wears the header dropdowns' dark look too. */
+body.focus-mode.dark-mode #focus-mode-menu {
+    background: linear-gradient(135deg, var(--dark-surface-primary) 0%, var(--dark-surface-secondary) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.focus-mode.dark-mode #focus-mode-menu::-webkit-scrollbar-thumb,
+body.focus-mode.dark-mode .focus-mode-menu-separator {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.focus-mode.dark-mode .focus-mode-menu-item {
+    color: var(--theme-text-primary);
+}
+
+body.focus-mode.dark-mode .focus-mode-menu-item:hover,
+body.focus-mode.dark-mode .focus-mode-menu-item:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.focus-mode.dark-mode .focus-mode-menu-item--destructive,
+body.focus-mode.dark-mode .focus-mode-menu-item--destructive:hover,
+body.focus-mode.dark-mode .focus-mode-menu-item--destructive:focus-visible {
+    color: var(--color-red-light, #ef5350);
+}
+
 body.dark-mode .quick-action-item:hover {
     background: rgba(255, 255, 255, 0.1);
 }
@@ -1713,12 +1690,10 @@ body.dark-mode .task-list-container {
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.06);
 }
 
-body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
+body.dark-mode .task-list-container::-webkit-scrollbar-thumb,
+body.dark-mode .stats-panel-content::-webkit-scrollbar-thumb {
     background-color: rgba(150, 150, 150, 0.5);
 }
 
@@ -1769,15 +1744,28 @@ body.dark-mode .task-search-input {
 }
 
 body.dark-mode .filter-chip,
-body.dark-mode .sort-chip {
+body.dark-mode .sort-chip,
+body.dark-mode .routine-sort-btn,
+body.dark-mode .routine-filter-select {
     background: rgba(255, 255, 255, 0.1);
     color: var(--theme-text-secondary);
 }
 
 body.dark-mode .filter-chip:hover,
-body.dark-mode .sort-chip:hover {
+body.dark-mode .sort-chip:hover,
+body.dark-mode .routine-sort-btn:hover,
+body.dark-mode .routine-filter-select:hover {
     background: rgba(255, 255, 255, 0.18);
     color: var(--theme-text-primary);
+}
+
+/* The rules above outrank the plain .active rule, which left the selected chip
+   looking exactly like the others in dark mode. */
+body.dark-mode .filter-chip.active,
+body.dark-mode .sort-chip.active,
+body.dark-mode .routine-sort-btn.active {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
 }
 
 body.dark-mode .filter-sort-divider {

@@ -210,6 +210,9 @@ export class RoutineManager {
                 message: 'modal.createRoutineMessage',
                 placeholder: 'modal.createRoutinePlaceholder',
                 isOnboarding: true,
+                // First-run "Create My First Routine": a name is already there,
+                // so the first step can be just pressing Enter.
+                defaultName: options.firstRoutine === true ? getLabel('modal.firstRoutineName') : '',
                 // First-run "Load a Sample" choice opens straight to the picker.
                 startInSampleView: options.startInSampleView === true,
                 onCreateBlank: async (inputValue) => {
@@ -808,6 +811,7 @@ export class RoutineManager {
         input.id = DOM_IDS.SAMPLE_CREATION_INPUT;
         input.className = 'miniCycle-prompt-input';
         input.placeholder = getLabel(placeholder);
+        input.value = config.defaultName || '';
         nameView.appendChild(input);
 
         // "Load Sample" button (hidden if no samples available)
@@ -1037,6 +1041,8 @@ export class RoutineManager {
             showSampleView();
         } else {
             input.focus();
+            // Selected, so typing replaces a suggested name outright.
+            input.select();
         }
     }
 }

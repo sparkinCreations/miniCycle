@@ -176,7 +176,7 @@ body.hide-quick-actions .quick-actions-menu-row {
         display: block;
         position: absolute;
         right: calc(100% + 25px);
-        top: 50%;
+        top: calc(50% + var(--side-nudge, 0px));   /* on the card's centre (buttons.css) */
         transform: translateY(-50%);
         background: var(--pref-panel-bg);
         border-radius: var(--radius-2xl);
