@@ -7,7 +7,9 @@
  * against that colour, a near-black otherwise. Used for the footer links (and
  * their phone contrast-mode text and the desktop strip's tint) and the header
  * subtitle, which goes white at full opacity on a dark background — black at
- * 0.8 measured 1.3:1 on the Ocean preset (Oct 2026). The default blue gradient
+ * 0.8 measured 1.3:1 on the Ocean preset (Oct 2026) — and the header's glass
+ * buttons (the toolbar group and ☰), whose navy was near-unreadable on the
+ * Dark Ocean and Forest presets until Nov 2026. The default blue gradient
  * is not a solid colour and keeps the stylesheets' fixed colours.
  *
  * Pure: no DI, no state. preferencesManager sets these on <html> beside the
@@ -20,12 +22,21 @@
 /** The custom properties this module owns on an element's inline style. */
 export const READABLE_TEXT_VARS = Object.freeze([
     '--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border',
-    '--pref-subtitle-color', '--pref-subtitle-opacity'
+    '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass'
 ]);
+
+/** The corner buttons' derived colours (applyCornerButtonColors). */
+export const CORNER_BUTTON_VARS = Object.freeze(['--pref-corner-ink', '--pref-corner-glass']);
 
 const LIGHT_TEXT = '#ffffff';
 const DARK_TEXT = '#111111';
 const AA_NORMAL_TEXT = 4.5;
+const AA_NON_TEXT = 3;   // WCAG 1.4.11: icons and other graphics
+const NAVY_GLASS = 'rgba(10, 25, 60, 0.43)';
+// The header buttons' frost under white text. Their usual frost is white, and
+// white over the page lowers white text's contrast: on Berry it fell to 4:1,
+// and to 2.7:1 under High Contrast's stronger frost. A dark frost can only raise it.
+const CHROME_DARK_GLASS = 'rgba(10, 25, 60, 0.25)';
 
 /**
  * WCAG relative luminance of a 6-digit hex colour, or null when unreadable.
@@ -76,14 +87,80 @@ export function applyReadableTextColors(el, appBgHex) {
     el.style.setProperty('--footer-text-contrast', whiteReads ? LIGHT_TEXT : DARK_TEXT);
     // The backing strip (prefers-contrast, High Contrast, a user-picked colour):
     // navy glass under white text, light glass under dark text.
-    el.style.setProperty('--footer-strip-bg', whiteReads ? 'rgba(10, 25, 60, 0.43)' : 'rgba(255, 255, 255, 0.72)');
+    el.style.setProperty('--footer-strip-bg', whiteReads ? NAVY_GLASS : 'rgba(255, 255, 255, 0.72)');
     el.style.setProperty('--footer-strip-border', whiteReads ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.3)');
+    // The header's glass buttons keep their navy on a light frost unless the
+    // background is dark enough for white; then white on a dark frost.
     if (whiteReads) {
         el.style.setProperty('--pref-subtitle-color', LIGHT_TEXT);
         el.style.setProperty('--pref-subtitle-opacity', '1');
+        el.style.setProperty('--pref-chrome-ink', LIGHT_TEXT);
+        el.style.setProperty('--pref-chrome-glass', CHROME_DARK_GLASS);
     } else {
         el.style.removeProperty('--pref-subtitle-color');
         el.style.removeProperty('--pref-subtitle-opacity');
+        el.style.removeProperty('--pref-chrome-ink');
+        el.style.removeProperty('--pref-chrome-glass');
     }
     return whiteReads;
+}
+
+/**
+ * Keep the corner buttons' icons readable in whatever colour the user picked
+ * for them (Personalization → Corner Button Colour). Solid style fills the
+ * circle with that colour, so its icon is white or near-black, whichever
+ * clears 3:1 on it. Frosted style draws the icon IN that colour on white
+ * glass; a colour too light for that gets the footer strip's navy glass
+ * instead, so the colour the user chose still shows. Until Nov 2026 a pale
+ * pick left a white icon on a pale circle in either style.
+ * @param {HTMLElement} el - <html> (preferences)
+ * @param {string|null} cornerHex - the chosen colour, or null to clear
+ */
+export function applyCornerButtonColors(el, cornerHex) {
+    if (!el?.style) return;
+    const onWhite = cornerHex ? contrastRatio(LIGHT_TEXT, cornerHex) : null;
+    if (onWhite === null) {
+        CORNER_BUTTON_VARS.forEach((v) => el.style.removeProperty(v));
+        return;
+    }
+    const readsOnWhite = onWhite >= AA_NON_TEXT;
+    el.style.setProperty('--pref-corner-ink', readsOnWhite ? LIGHT_TEXT : DARK_TEXT);
+    if (readsOnWhite) el.style.removeProperty('--pref-corner-glass');
+    else el.style.setProperty('--pref-corner-glass', NAVY_GLASS);
+}
+
+/** A colour at least this light is shown as picked on the glass Complete / Clear button. */
+const LIGHT_ACTION_TEXT = 0.5;
+
+/**
+ * The glass Complete Cycle / Clear button's words in a colour the user picked.
+ * A mid or dark colour is darkened for legibility on near-clear glass. A light
+ * one is shown exactly: darkening has no hue to preserve there, and until Nov
+ * 2026 it turned a white pick gray.
+ * @param {string|null} hex
+ * @returns {string|null} a CSS colour, or null when there is no usable pick
+ */
+export function actionTextColor(hex) {
+    const luminance = relativeLuminance(hex);
+    if (luminance === null) return null;
+    if (luminance >= LIGHT_ACTION_TEXT) return hex;
+    return globalThis.CSS?.supports?.('color', 'color-mix(in srgb, red, blue)')
+        ? `color-mix(in srgb, ${hex} 40%, var(--color-black))`
+        : hex;
+}
+
+/**
+ * Set or clear `<prefix>-complete-text` and `<prefix>-clear-text` on `el`.
+ * @param {HTMLElement} el - <html> (live) or the Personalization preview
+ * @param {string} prefix - '--pref' or '--preview'
+ * @param {{complete: (string|null), clear: (string|null)}} picks
+ */
+export function applyActionTextColors(el, prefix, { complete, clear }) {
+    if (!el?.style) return;
+    for (const [name, hex] of [['complete', complete], ['clear', clear]]) {
+        const color = actionTextColor(hex);
+        const cssVar = `${prefix}-${name}-text`;
+        if (color) el.style.setProperty(cssVar, color);
+        else el.style.removeProperty(cssVar);
+    }
 }

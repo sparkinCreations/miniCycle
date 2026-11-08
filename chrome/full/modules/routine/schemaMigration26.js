@@ -1,7 +1,7 @@
 /**
  * Schema 2.5 → 2.6 migration
  *
- * ONE migration, ONE version bump (docs/future-work/SCHEMA_2_6_PLAN.md, "Ordering" step 7),
+ * ONE migration, ONE version bump (docs/archive/SCHEMA_2_6_PLAN.md, "Ordering" step 7),
  * built from ordered steps that are exported so each is tested on its own:
  *
  *   1. rekeyRoutines        — STATE_TRUTH_MIGRATION #20: routines keyed by a stable generated
@@ -21,9 +21,17 @@
  * Everything it needs from the outside (an id maker, a clock, the theme swatch sets that map a
  * stored colour to its level) is passed in, so it can run in a test, a dry-run tool or boot.
  *
- * NOT WIRED YET. Nothing calls migrateSchema_2_5_to_2_6 at runtime; SCHEMA.CURRENT is still
- * "2.5". Wiring it (the gate, the boot entry, the helpers' internals, the .mcyc schemas) is
- * the release step and waits for the platform builds to carry the forward-compatibility guard.
+ * Wired since v2.573 (Sep 2026): AppState._migrateIfOlder runs migrateSchema_2_5_to_2_6 once at
+ * boot on a 2.5 document, after keeping the raw copy; SCHEMA.CURRENT is "2.6". The testing
+ * modal's dry run calls the same function on a clone.
+ *
+ * Also here, for 2.6 documents: repairRoutineKeys. Until Nov 2026 routine creation, import and
+ * rename still wrote routines under their TITLE, so a 2.6 document can hold title-keyed
+ * routines next to id-keyed ones. The repair re-keys those once at boot (same backup, same
+ * dry run) without a schema bump: the 2.6 shape already promises id keys.
+ *
+ * And retireLegacyColorTheme: the three colour themes `settings.theme` could hold before
+ * Nov 2026 move to the Personalization preset made from them (or dark mode), once at boot.
  *
  * @module routine/schemaMigration26
  */
@@ -31,6 +39,7 @@
 import { classifyStoredVersion } from '../utils/schemaVersion.js';
 import { getLegacyPriorityLevel } from '../utils/priorityLevel.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { PRESET_COLOR_KEYS, QUICK_PRESET_DATA } from '../ui/quickPresetData.js';
 
 export const SCHEMA_2_6 = '2.6';
 const SCHEMA_2_5 = '2.5';
@@ -261,6 +270,152 @@ export function migrateSchema_2_5_to_2_6(doc, { makeId, now = Date.now, swatchSe
     renameRoutineKeys(out);
     stampVersion(out, now);
     return out;
+}
+
+// ── 2.6 maintenance: routine key repair (Nov 2026) ────────────────────────────
+
+/** Ids are machine-made (`routine-<ts>-<rand>`, older `cycle_<ts>`): never spaces or user text. */
+const ID_SHAPE = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Whether a 2.6 routine entry is keyed the way 2.6 promises: by its own `id`.
+ * A title-keyed routine (written by creation, import or rename before Nov 2026)
+ * has key "Morning Routine" and id "cycle_<ts>", so the two differ.
+ * @param {string} key - The routine's key in `data.routine`
+ * @param {Object} routine
+ * @returns {boolean}
+ */
+export function isRoutineKeyedById(key, routine) {
+    return isObject(routine) && typeof routine.id === 'string' && routine.id !== '' && routine.id === key;
+}
+
+/**
+ * Re-key every routine whose key is not its id, on a 2.6 document. A repaired
+ * routine is filed under its OWN `id` when that id is usable — a non-empty
+ * id-shaped string that no other routine holds — so a routine renamed after the
+ * 2.6 migration gets its original key back and anything that stored `routine.id`
+ * stays valid. Otherwise it gets a fresh key from `makeId` (retried on any
+ * collision, so two routines can never merge). Either way `id` becomes the key,
+ * and a missing title falls back to the old key so no name is lost. Routines already keyed by id are
+ * untouched, the map keeps its order, and `appState.activeRoutineId` follows the
+ * active routine. Running it twice changes nothing.
+ *
+ * @param {Object} doc - A 2.6 document (mutated in place — call on a clone)
+ * @param {() => string} makeId
+ * @returns {Array<[string, string]>} [oldKey, newKey] for every re-keyed routine, in map order
+ */
+export function repairRoutineKeys(doc, makeId) {
+    const routines = doc?.data?.routine;
+    if (!isObject(routines)) return [];
+    if (typeof makeId !== 'function') throw new Error('repairRoutineKeys: makeId is required');
+    const entries = Object.entries(routines);
+    if (entries.every(([key, routine]) => !isObject(routine) || isRoutineKeyedById(key, routine))) return [];
+
+    const repaired = {};
+    const keyMap = [];
+    for (const [oldKey, routine] of entries) {
+        if (!isObject(routine) || isRoutineKeyedById(oldKey, routine)) {
+            repaired[oldKey] = routine;
+            continue;
+        }
+        const taken = (key) => hasOwn(repaired, key) || hasOwn(routines, key) || key in Object.prototype;
+        let newKey = typeof routine.id === 'string' && ID_SHAPE.test(routine.id) && !taken(routine.id)
+            ? routine.id
+            : makeId();
+        while (taken(newKey)) newKey = makeId();
+        keyMap.push([oldKey, newKey]);
+        repaired[newKey] = {
+            ...routine,
+            id: newKey,
+            title: typeof routine.title === 'string' && routine.title.trim() ? routine.title : String(oldKey)
+        };
+    }
+    doc.data.routine = repaired;
+    if (isObject(doc.appState)) {
+        const active = doc.appState.activeRoutineId;
+        const moved = keyMap.find(([oldKey]) => oldKey === active);
+        if (moved) doc.appState.activeRoutineId = moved[1];
+    }
+    return keyMap;
+}
+
+// ── 2.6 maintenance: retiring the legacy colour themes (Nov 2026) ─────────────
+
+/**
+ * The stored colour themes (`settings.theme`) that have a Personalization preset
+ * made from them. `dark` has none: dark mode is its replacement.
+ */
+export const LEGACY_THEME_PRESETS = Object.freeze({
+    'golden-glow': 'goldenGlow',
+    'dark-ocean': 'darkOcean'
+});
+
+/**
+ * Whether a stored `settings.theme` value is one of the retired colour themes.
+ * @param {*} value
+ * @returns {boolean}
+ */
+export function isLegacyColorTheme(value) {
+    return value === 'dark' || (typeof value === 'string' && hasOwn(LEGACY_THEME_PRESETS, value));
+}
+
+/**
+ * Whether settings hold any colour of the user's own (a hand-picked colour or an
+ * applied preset). Toggles such as `showBgPattern` do not count.
+ * @param {Object} settings
+ * @returns {boolean}
+ */
+export function hasCustomColors(settings) {
+    const colors = settings?.customColors;
+    if (!isObject(colors)) return false;
+    return PRESET_COLOR_KEYS.some(key => typeof colors[key] === 'string' && colors[key] !== '');
+}
+
+/**
+ * Retire a legacy colour theme. Until Nov 2026 `settings.theme` could hold
+ * `golden-glow`, `dark-ocean` or `dark`, applied at every boot as a body class
+ * and a `[data-theme]` stylesheet. None has had a picker since the
+ * Personalization presets replaced them, and the stylesheet is gone, so the
+ * look moves to what replaced it:
+ *
+ *   - `golden-glow` / `dark-ocean` with no colours of the user's own: the Golden
+ *     or Ocean preset is applied, the way Personalization applies it
+ *     (`customColors` gets the preset's colours and `preset`).
+ *   - the same with colours of their own: those are kept as they are. (The
+ *     legacy theme hid them; they were the user's choice, so they win.)
+ *   - `dark`: dark mode is turned on.
+ *
+ * Then `settings.theme` becomes `'default'`. Any other value is left alone: it
+ * was never a theme this app shipped, and nothing reads the field any more.
+ * Running it twice changes nothing.
+ *
+ * @param {Object} doc - A 2.6 document (mutated in place — call on a clone)
+ * @returns {{from: string, preset: string|null, darkMode: boolean, keptCustomColors: boolean}|null}
+ *   What was done, or null when there was no legacy theme
+ */
+export function retireLegacyColorTheme(doc) {
+    const settings = doc?.settings;
+    if (!isObject(settings)) return null;
+    const from = settings.theme;
+    if (!isLegacyColorTheme(from)) return null;
+
+    const report = { from, preset: null, darkMode: false, keptCustomColors: false };
+    const presetKey = from === 'dark' ? null : LEGACY_THEME_PRESETS[from];
+    if (presetKey && hasCustomColors(settings)) {
+        report.keptCustomColors = true;
+    } else if (presetKey) {
+        settings.customColors = {
+            ...(isObject(settings.customColors) ? settings.customColors : {}),
+            ...QUICK_PRESET_DATA[presetKey].colors,
+            preset: presetKey
+        };
+        report.preset = presetKey;
+    } else if (settings.darkMode !== true) {
+        settings.darkMode = true;
+        report.darkMode = true;
+    }
+    settings.theme = 'default';
+    return report;
 }
 
 /**

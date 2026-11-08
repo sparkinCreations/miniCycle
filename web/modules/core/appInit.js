@@ -449,7 +449,7 @@ class AppInit {
 				try { sessionStorage.setItem('miniCycle_firstRunCreate', '1'); } catch (e) { /* private mode */ }
 				if (_deps.showCycleCreationModal) {
 					landInFocusViewWhenRoutineReady({ showInputBar: true, choice: 'create' });
-					openAfterWelcomeSplash(() => _deps.showCycleCreationModal());
+					openAfterWelcomeSplash(() => _deps.showCycleCreationModal({ firstRoutine: true }));
 				} else {
 					console.warn('⚠️ showCycleCreationModal unavailable — legacy flow');
 					runLegacyFocusFlow();

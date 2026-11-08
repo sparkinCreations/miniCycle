@@ -45,8 +45,7 @@
    Removed in v2.640 while chasing a soft logo in the iOS home-screen web app,
    restored in v2.644: that softness was position — the content sat inside
    iOS 26's status-bar glass — and the .ios-pwa clearance below fixed it. */
-.mini-cycle-header-row::before,
-.mode-selector-wrapper::before {
+.mini-cycle-header-row::before {
     content: '';
     position: absolute;
     inset: 0;
@@ -157,18 +156,27 @@
 
 .menu-button {
     justify-self: end;
-    background: rgba(0, 0, 0, 0.787);
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: var(--radius-5);
-    color: var(--color-white);
+    background: var(--pref-chrome-glass, var(--overlay-white-light));
+    border: 1px solid var(--chrome-border-color);
+    border-radius: var(--chrome-radius);
+    color: var(--pref-chrome-ink, var(--color-navy));   /* white on a dark preset (mode-selector.css) */
     padding: 5px var(--space-2);
     font-size: var(--font-size-sm);
     cursor: pointer;
     z-index: var(--z-content);
+    box-shadow: var(--chrome-shadow);
+}
+
+/* Drawn, not the ☰ character, whose size and weight came from whatever font
+   the device fell back to. In em so it follows the Font Size setting. */
+.menu-button svg {
+    display: block;
+    width: 1.1em;
+    height: 1.5em;
 }
 
 .menu-button:hover {
-    background: rgba(0, 0, 0, 0.9);
+    background: var(--overlay-white-medium);
 }
 
 .menu-button:active {
@@ -193,59 +201,27 @@
     width: 100%;
     display: flex;
     justify-content: center;
-    align-items: center;
-    padding: var(--space-0-75) 0;
+    /* stretch, not center: the +, the mode picker and the routine button are
+       one joined group (mode-selector.css) and must be one height. */
+    align-items: stretch;
+    /* No top padding: the toolbar group hangs from the hairline on this
+       edge (mode-selector.css). It sat 3px below it until Nov 2026. */
+    padding: 0 0 var(--space-0-75);
+    /* No band: a hairline on the top edge sets the toolbar apart from the logo
+       row. Until Nov 2026 a gradient band (critical.css) did that; it faded out
+       to the right, and in dark mode it was a grey smear. */
     background: transparent;
+    box-shadow: inset 0 1px 0 var(--toolbar-divider);
     border-bottom: none;
     min-height: 31px;
-    isolation: isolate; /* frost on ::before — see .mini-cycle-header-row::before */
+    /* No frost across the row: the toolbar's buttons carry their own
+       (mode-selector.css). A full-width blur band sat here until Nov 2026. */
     overflow: visible; /* Allow quick-actions menu to overflow */
 }
 
-/* Mode selector dropdown */
-.mode-selector-wrapper .mode-selector {
-    position: relative;
-    background: rgba(255,255,255,0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: var(--radius-5);
-    padding: 3px var(--space-5) 4px var(--space-2);
-    font-size: 12px;
-    font-weight: 500;
-    max-width: 140px;
-    /* min-height (not height) so larger accessibility font sizes don't clip the text. */
-    min-height: var(--space-6-25);
-    appearance: none;
-    cursor: pointer;
-    box-sizing: border-box;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    transition: all var(--transition-normal) ease;
-    /* Dropdown arrow */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%232c3270' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
-    background-size: 10px;
-}
-
-/* =============================================================================
-   LAYOUT POSITIONING FOR MODE SELECTOR BUTTONS
-   Component styles are in mode-selector.css and routine-switcher.css
-   ============================================================================= */
-
-/* Desktop: Move buttons closer to center */
-@media (min-width: 769px) {
-    .quick-actions-container {
-        left: calc(50% - 280px);
-    }
-
-    .routine-switcher-btn {
-        right: calc(50% - 280px);
-    }
-}
+/* The mode picker's look is in mode-selector.css ("MODE SELECTOR (in
+   wrapper)"). A second copy here lost to it on every property but one, a
+   shadow the joined button group must not have (removed Nov 2026). */
 
 /* =============================================================================
    APP NAME
@@ -286,15 +262,6 @@ body.dark-mode .app-subtitle {
     color: var(--color-gray-300);
 }
 
-/* The dark colour themes: black at 0.8 vanishes on their navy headers
-   (Dark Ocean measured 1.65:1 once the themes actually painted, Oct 2026 —
-   see background.css). Keyed by the root attribute the theme tokens use, so
-   this outranks critical.css's plain .app-subtitle too. */
-:root[data-theme="dark-ocean"] .app-subtitle,
-:root[data-theme="dark"] .app-subtitle {
-    color: var(--theme-header-text, var(--color-gray-300));
-}
-
 /* =============================================================================
    MOBILE HEADER ADJUSTMENTS
    ============================================================================= */
@@ -321,9 +288,6 @@ body.dark-mode .app-subtitle {
     }
 
     .menu-button {
-        background-color: rgba(0, 0, 0, 0.8);
-        border: 1px solid rgba(0, 0, 0, 0.475);
-        color: var(--color-white);
         font-size: 20px;
     }
 }
@@ -394,4 +358,40 @@ body.dark-mode .app-subtitle {
     /* Centre below the inset plus 12px. Centred below the inset alone, the
        logo moves only half as far as the padding above grows. */
     top: calc(50% + (max(env(safe-area-inset-top, 0px), 47px) + 12px) / 2);
+}
+
+/* Desktop Home view: the logo in the corner, at the spot and size it has in
+   Focus View so it does not move between the two; the name stays centred. The
+   row needs only the name's height and the routine gets the rest.
+   The branding spans the row so the name centres in it and the logo can anchor
+   to its corner; a transform would be overwritten by the logo's coin flip. It
+   passes clicks through to ☰. Mirrored in critical.css for the first paint.
+   Not in the installed iOS app (its status bar sets the header's height), on a
+   window too short for this row, or during the first-run tour. */
+@media (min-width: 1024px) and (min-height: 481px) {
+    html:not(.ios-pwa) body:not(.focus-mode):not(.first-run-welcome-active) .mini-cycle-header-row {
+        box-sizing: border-box;
+        height: calc(env(safe-area-inset-top, 0px) + var(--header-row-compact));
+        min-height: 0;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: 0;
+    }
+
+    html:not(.ios-pwa) body:not(.focus-mode):not(.first-run-welcome-active) .header-branding {
+        top: env(safe-area-inset-top, 0px);
+        right: 0;
+        left: 0;
+        height: var(--header-row-compact);
+        justify-content: center;
+        transform: none;
+        pointer-events: none;
+    }
+
+    html:not(.ios-pwa) body:not(.focus-mode):not(.first-run-welcome-active) .header-logo {
+        position: absolute;
+        top: calc((var(--focus-btn-height) - var(--corner-logo-height)) / 2 + var(--focus-btn-top));
+        left: calc(env(safe-area-inset-left, 0px) + var(--space-4));
+        height: var(--corner-logo-height);
+        pointer-events: auto;
+    }
 }

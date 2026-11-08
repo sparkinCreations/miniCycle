@@ -208,7 +208,9 @@ function repairAndCleanTasks(currentCycle, cycleKey = 'unknown', { quiet = false
 
   // Ensure title exists
   if (!currentCycle.title || typeof currentCycle.title !== 'string') {
-    currentCycle.title = cycleKey !== 'unknown' ? cycleKey : 'Untitled Routine';
+    // An id-keyed routine's key is a generated id, never a name; only a legacy
+    // title-keyed routine (its key is not its id) has a name to fall back on.
+    currentCycle.title = cycleKey !== 'unknown' && currentCycle.id !== cycleKey ? cycleKey : getLabel('routine.untitled');
     tasksModified = true;
     warn(`⚠️ Repaired missing cycle title: "${currentCycle.title}"`);
   }
@@ -466,13 +468,6 @@ function updateCycleUIState(currentCycle, settings, titleBeforeLoad = null) {
 function applyThemeSettings(settings) {
   document.body.classList.toggle(DOM_CLASSES.DARK_MODE, !!settings.darkMode);
   document.documentElement.classList.toggle(DOM_CLASSES.DARK_MODE, !!settings.darkMode);
-
-  const allThemes = [DOM_CLASSES.THEME_DARK_OCEAN, DOM_CLASSES.THEME_GOLDEN_GLOW];
-  allThemes.forEach(t => document.body.classList.remove(t));
-
-  if (settings.theme && settings.theme !== 'default') {
-    document.body.classList.add(`theme-${settings.theme}`);
-  }
 
   _deps.updateThemeColor?.();
 

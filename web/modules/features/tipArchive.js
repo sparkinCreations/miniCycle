@@ -363,10 +363,9 @@ class TipArchive {
         closeBtn.type = 'button';
         closeBtn.id = DOM_IDS.TIP_ARCHIVE_CLOSE;
         closeBtn.textContent = getLabel('tipArchive.close');
-        // .settings-btn is the house modal action (full-width, --color-primary) —
-        // the same treatment the reminders/settings/preferences modals use. It
-        // sits OUTSIDE the padded body so it spans edge to edge like theirs.
-        closeBtn.className = DOM_CLASSES.SETTINGS_BTN;
+        // The house Close bar (buttons.css), as the reminders/settings/preferences
+        // modals have. It sits OUTSIDE the padded body so it spans edge to edge.
+        closeBtn.className = DOM_CLASSES.CLOSE_BAR;
         content.appendChild(body);
         content.appendChild(closeBtn);
 

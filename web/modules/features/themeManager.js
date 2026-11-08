@@ -27,6 +27,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTO
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { themeWordVars, inputBarToggleLabel } from '../labels/themeWords.js';
 import { createIconElement } from '../utils/icons.js';
 import { renderCompleteAllButton } from '../ui/completeAllButton.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -239,7 +240,9 @@ function _refreshLiveLensLabels() {
     if (addTaskText) {
         const taskInputContainer = _deps.querySelector(DOM_SELECTORS.TASK_INPUT);
         const isTaskInputVisible = taskInputContainer && !taskInputContainer.classList.contains(DOM_CLASSES.HIDDEN);
-        addTaskText.textContent = isTaskInputVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
+        addTaskText.textContent = inputBarToggleLabel(!!isTaskInputVisible);
+        const menuInputBar = _deps.getElementById(DOM_IDS.MENU_TOGGLE_INPUT_BAR_TEXT);
+        if (menuInputBar) menuInputBar.textContent = inputBarToggleLabel(!!isTaskInputVisible);
     }
 
     // Complete-all button text ("Complete Cycle" → "Complete Habits" etc.)
@@ -279,7 +282,7 @@ function _refreshLiveLensLabels() {
             emptyHintFocus.textContent = getLabel('empty.noTasksHintFocus', {
                 vars: {
                     menuIcon: '⋯',
-                    showHide: getLabel('focusMode.toggleInputBar')
+                    showHide: inputBarToggleLabel(false)
                 }
             });
         }
@@ -295,7 +298,7 @@ function _refreshLiveLensLabels() {
     _setMenuButtonLabel(DOM_IDS.CLEAR_MINI_CYCLE_TASKS, 'action.clearAllMenu', 'action.clearAllTitle');
     _setMenuButtonLabel(DOM_IDS.DELETE_ALL_MINI_CYCLE_TASKS, 'action.deleteAllMenu', 'action.deleteAllTitle');
     _setMenuButtonLabel(DOM_IDS.OPEN_REMINDERS_MODAL, 'menu.reminders', 'menu.remindersTitle');
-    _setMenuButtonLabel(DOM_IDS.MENU_TOGGLE_INPUT_BAR, 'menu.inputBar', 'menu.inputBarTitle');
+    _setMenuButtonLabel(DOM_IDS.MENU_TOGGLE_INPUT_BAR, null, 'menu.inputBarTitle');
     _setMenuButtonLabel(DOM_IDS.MENU_TASK_OPTIONS, 'menu.taskOptions', 'menu.taskOptionsTitle');
     _setMenuButtonLabel(DOM_IDS.OPEN_RECURRING_PANEL, 'menu.recurring', 'menu.recurringTitle');
 
@@ -339,9 +342,16 @@ function _refreshLiveLensLabels() {
     // text is a PURE getLabel() value (no interpolation/counts) is re-resolved
     // here, on every routine/theme change AND on the boot-time refreshThemeLabels()
     // call in finalizeUI(). Keep the tag off interpolated/dynamic text.
-    _deps.querySelectorAll('[data-label-key]').forEach(el => {
-        const key = el.dataset.labelKey;
-        if (key) el.textContent = getLabel(key);
+    // miniCycle.html's static buttons use it too (Nov 2026), with two more
+    // attributes for the strings that are not text: data-label-aria-key and
+    // data-label-title-key. data-label-count passes a fixed number as {count}
+    // (the milestone badges); it is markup, never state.
+    _deps.querySelectorAll('[data-label-key], [data-label-aria-key], [data-label-title-key]').forEach(el => {
+        const { labelKey, labelAriaKey, labelTitleKey, labelCount } = el.dataset;
+        const opts = labelCount ? { vars: { count: labelCount } } : undefined;
+        if (labelKey) el.textContent = getLabel(labelKey, opts);
+        if (labelAriaKey) el.setAttribute('aria-label', getLabel(labelAriaKey, opts));
+        if (labelTitleKey) el.title = getLabel(labelTitleKey, opts);
     });
 
     // Focus-view pill tabs — the visible text is CSS `content: attr(data-tab-label)`
@@ -380,6 +390,7 @@ export function _setMenuButtonLabel(elementId, textKey, titleKey) {
     const btn = _deps.getElementById(elementId);
     if (!btn) return;
     if (titleKey) btn.title = getLabel(titleKey);
+    if (!textKey) return;   // the button's text is set elsewhere; only its title is static
     const textNode = Array.from(btn.childNodes).find(n => n.nodeType === Node.TEXT_NODE);
     if (textNode) {
         textNode.textContent = getLabel(textKey);
@@ -581,8 +592,6 @@ export class ThemeManager {
             // button does no longer toggles dark mode (Oct 2026). The words name
             // the mode a press switches TO, read from the live state each time.
             newQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
-            // The desktop caption follows the same rule: it said "Dark mode" in
-            // dark mode too, under a sun icon (until Nov 2026).
             newQuickToggle.dataset.label = getLabel(isDark ? 'nav.lightModeCaption' : 'nav.darkModeCaption');
             attachLongPressHint(newQuickToggle, {
                 getText: () => getLabel(newQuickToggle.getAttribute('aria-pressed') === 'true'
@@ -634,6 +643,9 @@ export class ThemeManager {
 
             currentQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
             currentQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
+            // The desktop caption names the mode a press switches TO, like the
+            // icon and the title; it was set once to "Dark mode" and never
+            // followed the state (Nov 2026).
             currentQuickToggle.dataset.label = getLabel(isDark ? 'nav.lightModeCaption' : 'nav.darkModeCaption');
 
             // The emoji was the ONLY state cue, and it is invisible to assistive
@@ -837,8 +849,11 @@ export class ThemeManager {
                 themeButton._clickHandler = () => {
                     if (themesModal && !themesModal.open) {
                         themesModal._previousFocus = _deps.getActiveElement();
-                        themesModal.showModal();
+                        // Build the theme list BEFORE opening: showModal() focuses the
+                        // first control, and rendering afterwards replaced that control,
+                        // leaving keyboard focus behind the modal (Nov 2026 audit).
                         this.renderVocabThemes();
+                        themesModal.showModal();
                         _deps.hideMainMenu?.();
                     }
                 };

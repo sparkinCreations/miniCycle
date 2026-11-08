@@ -1575,6 +1575,21 @@ export async function initUndoSystemForApp() {
       console.warn('🧹 Undo history cleared after the stored-data migration');
     }
 
+    // A routine-key repair this boot (title-keyed routines re-keyed by id,
+    // AppState._repairRoutineKeys) moved only SOME routines: their persisted
+    // stacks are filed under the old key and would never be found again. Clear
+    // just those; every other routine keeps its undo history (decided Nov 2026).
+    const repairedKeys = _deps.AppState.repairedRoutineKeysThisBoot;
+    if (Array.isArray(repairedKeys) && repairedKeys.length > 0) {
+      await dbReady;
+      for (const [oldKey] of repairedKeys) {
+        cancelPendingDbWrite(oldKey);
+        await deleteUndoStackFromIndexedDB(oldKey);
+      }
+      if (repairedKeys.some(([oldKey]) => loadFromUndoCache(oldKey))) clearUndoCache();
+      console.warn(`🧹 Undo history cleared for ${repairedKeys.length} re-keyed routine(s)`);
+    }
+
     // Before the first-run return below: a first-run tab can still adopt
     // another tab's save once it has data.
     subscribeToOtherTabChanges();

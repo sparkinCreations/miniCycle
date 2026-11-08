@@ -248,7 +248,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
         const prevVocab = root.dataset.vocabTheme;
         body.classList.remove('dark-mode');
         delete root.dataset.vocabTheme;
-        const vars = ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-app-bg'];
+        const vars = ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass', '--pref-app-bg'];
         const read = () => Object.fromEntries(vars.map(v => [v, root.style.getPropertyValue(v)]));
         const withBg = (appBg) => {
             mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: { customColors: { appBg } } }), update: () => {} } });
@@ -261,11 +261,14 @@ export async function runPreferencesManagerTests(resultsDiv) {
             if (gold['--footer-text'] !== '#111111' || gold['--footer-text-contrast'] !== '#111111') throw new Error('Golden: footer text should be near-black, got ' + JSON.stringify(gold));
             if (!/255, 255, 255/.test(gold['--footer-strip-bg'])) throw new Error('Golden: the on-request strip should be light, got ' + gold['--footer-strip-bg']);
             if (gold['--pref-subtitle-color'] !== '' || gold['--pref-subtitle-opacity'] !== '') throw new Error('Golden: the subtitle should keep its black default, got ' + JSON.stringify(gold));
+            if (gold['--pref-chrome-ink'] !== '' || gold['--pref-chrome-glass'] !== '') throw new Error('Golden: the header buttons should keep their navy on white frost, got ' + JSON.stringify(gold));
             // Ocean preset: white is 15:1 on #0a2540 → white links, navy strip, white subtitle at full opacity.
             const ocean = withBg('#0a2540');
             if (ocean['--footer-text'] !== '#ffffff' || ocean['--footer-text-contrast'] !== '#ffffff') throw new Error('Ocean: footer text should be white, got ' + JSON.stringify(ocean));
             if (!/10, 25, 60/.test(ocean['--footer-strip-bg'])) throw new Error('Ocean: the on-request strip should be navy, got ' + ocean['--footer-strip-bg']);
             if (ocean['--pref-subtitle-color'] !== '#ffffff' || ocean['--pref-subtitle-opacity'] !== '1') throw new Error('Ocean: the subtitle should be white at full opacity, got ' + JSON.stringify(ocean));
+            // Nov 2026: the header's glass buttons were navy on navy here.
+            if (ocean['--pref-chrome-ink'] !== '#ffffff' || !/10, 25, 60/.test(ocean['--pref-chrome-glass'])) throw new Error('Ocean: the header buttons should be white on a dark frost, got ' + JSON.stringify(ocean));
             // Reset clears every one of them with the --pref-* vars.
             new mod.PreferencesManager().removeCustomColors();
             const cleared = read();
@@ -299,7 +302,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
             if (body.classList.contains('custom-app-bg')) throw new Error('removeCustomColors left the strip class');
         } finally {
             body.classList.remove('custom-app-bg');
-            ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-app-bg'].forEach(v => root.style.removeProperty(v));
+            ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass', '--pref-app-bg'].forEach(v => root.style.removeProperty(v));
             if (hadDark) body.classList.add('dark-mode');
             if (prevVocab !== undefined) root.dataset.vocabTheme = prevVocab;
         }
@@ -314,6 +317,34 @@ export async function runPreferencesManagerTests(resultsDiv) {
         if (rt.applyReadableTextColors(el, '#8a8a8a') !== false || el.style.getPropertyValue('--footer-text') !== '#111111' || el.style.getPropertyValue('--pref-subtitle-color') !== '') throw new Error('mid grey (white 3.5:1) should pick near-black: ' + el.style.cssText);
         rt.applyReadableTextColors(el, null);
         if (el.style.cssText !== '') throw new Error('null should clear every var, left: ' + el.style.cssText);
+    });
+
+    // Nov 2026: a pale corner-button colour left a white icon on a pale circle.
+    await test('a white Complete Cycle color stays white on the glass button', async () => {
+        const rt = await import(`../modules/utils/readableText.js?v=${window.testCacheBuster || Date.now()}`);
+        if (rt.actionTextColor('#ffffff') !== '#ffffff') throw new Error('white must not be darkened to gray');
+        if (rt.actionTextColor('#8b0000') === '#8b0000' && CSS.supports('color', 'color-mix(in srgb, red, blue)')) {
+            throw new Error('a dark color should still be darkened for legibility');
+        }
+        const el = document.createElement('div');
+        rt.applyActionTextColors(el, '--pref', { complete: '#ffffff', clear: null });
+        if (el.style.getPropertyValue('--pref-complete-text') !== '#ffffff') throw new Error('the pick was not applied');
+        if (el.style.getPropertyValue('--pref-clear-text') !== '') throw new Error('no pick should leave no value');
+        rt.applyActionTextColors(el, '--pref', { complete: null, clear: null });
+        if (el.style.getPropertyValue('--pref-complete-text') !== '') throw new Error('clearing should remove it');
+    });
+
+    await test('readableText: corner buttons keep a readable icon for any colour', async () => {
+        const rt = await import(`../modules/utils/readableText.js?v=${cacheBuster}`);
+        const el = document.createElement('div');
+        rt.applyCornerButtonColors(el, '#e6efff');
+        if (el.style.getPropertyValue('--pref-corner-ink') !== '#111111') throw new Error('pale fill should get a near-black icon: ' + el.style.cssText);
+        if (!el.style.getPropertyValue('--pref-corner-glass')) throw new Error('pale colour should get the navy glass for the frosted style: ' + el.style.cssText);
+        rt.applyCornerButtonColors(el, '#1b5e20');
+        if (el.style.getPropertyValue('--pref-corner-ink') !== '#ffffff') throw new Error('dark fill should get a white icon: ' + el.style.cssText);
+        if (el.style.getPropertyValue('--pref-corner-glass') !== '') throw new Error('a colour that reads on white glass keeps the default glass: ' + el.style.cssText);
+        rt.applyCornerButtonColors(el, null);
+        if (el.style.cssText !== '') throw new Error('null should clear both vars, left: ' + el.style.cssText);
     });
 
     await test('isDefaultTheme returns true on a clean body and false under a theme class', () => {

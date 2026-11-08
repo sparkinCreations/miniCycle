@@ -16,18 +16,23 @@
 
 .mode-selector-wrapper .mode-selector {
     position: relative;
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: var(--radius-5);
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.2));
+    -webkit-backdrop-filter: var(--chrome-blur-small);
+    backdrop-filter: var(--chrome-blur-small);
+    border: 1px solid var(--chrome-border-color);
+    border-top-width: 0;   /* hangs from the hairline (QUICK ACTIONS below) */
+    /* --pref-chrome-ink / --pref-chrome-glass: white on a dark frost over a
+       dark preset or theme background (utils/readableText.js); the header's
+       other glass buttons read them too. */
+    color: var(--pref-chrome-ink, rgb(44, 50, 112));
+    border-radius: 0;   /* the middle of the header's button group (QUICK ACTIONS below) */
     padding: 3px var(--space-5) 4px var(--space-2);
-    font-size: var(--font-size-xs);
+    font-size: var(--chrome-font-size);
     font-weight: 500;
     max-width: 200px;
     /* min-height (not height) so the box grows when the accessibility Font Size
        enlarges --font-size-xs — a fixed height clipped the enlarged text. */
-    min-height: var(--space-6-25);
+    min-height: var(--chrome-group-height);
     appearance: none;
     -webkit-appearance: none;
     cursor: pointer;
@@ -37,11 +42,14 @@
     justify-content: center;
     text-align: center;
     transition: all var(--transition-normal) ease;
-    /* Dropdown arrow */
-    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='%232c3270' viewBox='0 0 16 16'%3e%3cpath d='M7.247 11.14 2.451 5.658C1.885 5.013 2.345 4 3.204 4h9.592a1 1 0 0 1 .753 1.659l-4.796 5.48a1 1 0 0 1-1.506 0z'/%3e%3c/svg%3e");
-    background-repeat: no-repeat;
-    background-position: right 6px center;
-    background-size: 10px;
+    /* The arrow is the ::after triangle below, in the text colour. Until Nov
+       2026 a navy SVG arrow was drawn here as well, under the white triangle,
+       and a fixed navy could not follow the text to white on a dark preset. */
+    background-image: none;
+}
+
+.mode-selector-wrapper .mode-selector::after {
+    border-top-color: currentColor;
 }
 
 /* =============================================================================
@@ -102,6 +110,16 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
+/* No lift in the header's joined group: it would step out of line with the
+   two ends it is joined to. */
+.mode-selector-wrapper .mode-selector:hover {
+    transform: none;
+}
+
+.mode-selector-wrapper .mode-selector:hover:not(:focus-visible) {
+    box-shadow: none;
+}
+
 .mode-selector:focus-visible {
     background: rgba(255, 255, 255, 0.5);
     border-color: var(--color-primary-dark);
@@ -131,43 +149,20 @@
 }
 
 /* =============================================================================
-   MODE INDICATOR ACCENT
-   Colored bottom border on the mode selector dropdown — always visible so
-   users can tell at a glance which mode they're in.
-   Colors: blue (Auto), amber (Manual), green (To-Do)
+   MODE INDICATOR
+   None in the picker's styling: its icon and name say the mode, in the
+   label's own colour like the + and Routines beside it. Manual mode's
+   distinct cues are the persistent status message and the Complete Cycle
+   button, which shows only in the modes that need it (usability report,
+   Mar 2026). A coloured bottom border did this job until Nov 2026; it was
+   faint on the blue header and near-invisible in dark mode.
    ============================================================================= */
-
-body.auto-cycle-mode .mode-selector-wrapper .mode-selector {
-    border-bottom: 2.5px solid var(--color-gray-700);
-}
-
-body.manual-cycle-mode .mode-selector-wrapper .mode-selector {
-    border-bottom: 2.5px solid var(--color-green-dark);
-}
-
-body.todo-mode-mode .mode-selector-wrapper .mode-selector {
-    border-bottom: 2.5px solid var(--color-todo-btn);
-}
-
-/* Dark mode: re-assert accent color (4-class specificity beats dark-mode.css's
-   3-class border-color override) */
-body.dark-mode.auto-cycle-mode .mode-selector-wrapper .mode-selector {
-    border-bottom-color: var(--color-gray-700);
-}
-
-body.dark-mode.manual-cycle-mode .mode-selector-wrapper .mode-selector {
-    border-bottom-color: var(--color-green-dark);
-}
-
-body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
-    border-bottom-color: var(--color-todo-btn);
-}
 
 /* =============================================================================
    MODE PICKER (Nov 2026)
    The visible mode control is a menu button (.mode-picker-btn) that carries
    the .mode-selector class, so every rule above — header sizing, dark mode,
-   High Contrast, the per-mode accent border — styles it unchanged. The native
+   and High Contrast — styles it unchanged. The native
    #mode-selector stays the source of truth, hidden here (not display:none:
    tests and modules still set and select it).
    ============================================================================= */
@@ -259,73 +254,43 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
    QUICK ACTIONS
    ============================================================================= */
 
-/* The + (left) and the routine button (right) are one width, always — the pair
-   frames the mode selector (the user's call, Oct 2026). Both read this, so
-   neither can drift: before it the + was 60px to the routine button's 70 at
-   ≤480px, and 70 to its 88 at exactly 768. In Browse the routine button carries
-   "Routines" beside its cards (routineSwitcher.syncEntryPoints puts the view on
-   this wrapper), so the pair widens to fit the word; below 375px the word is
-   dropped (routine-switcher.css) and they are back to 70.
-   The word's room is in --font-size-xs units, so a larger Font Size widens the
-   pair rather than clipping it. */
+/* The header toolbar (Nov 2026): the +, the mode picker and the routine
+   button are ONE joined button group, "+ Actions | Auto Cycle | Routines",
+   centred in the frosted header like the command row of a desktop app. Until
+   Nov 2026 the + and the routine button floated at the two edges as same-width
+   pills, absolutely placed, with the picker between them on a
+   tinted band, and the row did not read as one set of actions.
+   Joins: the two ends keep their outer corners and drop the border that meets
+   the picker, which keeps its sides, so each divider is one line. The group
+   hangs from the hairline on the wrapper's top edge (header.css): no top
+   border, square top corners, no gap above it (the user's call, Nov 2026). The wrapper
+   stretches its items (header.css), so all three are as tall as the tallest
+   and a larger Font Size grows them together.
+   Below 22em of header (374px at the default Font Size) the two words go and
+   the ends are icons alone; the names stay in aria-label and title. The
+   container query needs Safari 16; the 374px media query is the floor. */
 .mode-selector-wrapper {
-    --header-side-btn-width: 88px;
-    --header-side-btn-browse-width: calc(var(--font-size-xs) * 4.6 + 34px);   /* "Routines" + icon, gap, padding, border */
-}
-
-.mode-selector-wrapper[data-routine-view="browse"] {
-    --header-side-btn-width: max(88px, var(--header-side-btn-browse-width));
-}
-
-@media (max-width: 767px) {
-    .mode-selector-wrapper {
-        --header-side-btn-width: 70px;
-    }
-
-    .mode-selector-wrapper[data-routine-view="browse"] {
-        --header-side-btn-width: max(70px, var(--header-side-btn-browse-width));
-    }
-}
-
-/* Too narrow for the word: back to 70. Measured in em of the header row, so a
-   larger Font Size drops the word sooner (at 20px it met the mode selector at
-   any phone width) — 22em is 374px at the default size. The container query
-   needs Safari 16; the 374px media query is the floor for older browsers. The
-   word itself is dropped at the same two points (routine-switcher.css). */
-.mode-selector-wrapper {
+    --chrome-group-height: var(--space-7-5);
     container-type: inline-size;
 }
 
-@container (max-width: 22em) {
-    .quick-actions-btn,
-    .routine-switcher-btn {
-        --header-side-btn-width: 70px;
-    }
-}
-
-@media (max-width: 374px) {
-    .mode-selector-wrapper[data-routine-view="browse"] {
-        --header-side-btn-width: 70px;
-    }
-}
-
 .quick-actions-container {
-    position: absolute;
-    left: 15px;
+    position: relative;   /* anchors the menu */
+    display: flex;
 }
 
 .quick-actions-btn {
-    background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
-    color: rgb(44, 50, 112);
-    border-radius: var(--radius-5);
-    width: var(--header-side-btn-width);   /* = the routine button's (above) */
-    /* Match the mode selector's height. The selector is a native <select> whose
-       height stays ~25px (browsers don't reliably scale a closed select's box
-       with font-size), so a fixed height on the same token keeps all three
-       header controls level. Was a mismatched 22px. */
-    height: var(--space-6-25);
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.2));
+    -webkit-backdrop-filter: var(--chrome-blur-small);
+    backdrop-filter: var(--chrome-blur-small);
+    border: 1px solid var(--chrome-border-color);
+    border-right-width: 0;   /* the picker's border is the divider */
+    border-top-width: 0;     /* hangs from the hairline */
+    color: var(--pref-chrome-ink, rgb(44, 50, 112));   /* see the mode picker above */
+    border-radius: 0 0 0 var(--chrome-radius);
+    min-height: var(--chrome-group-height);
+    padding: 0 var(--space-3);
+    gap: var(--space-1-5);
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -333,12 +298,36 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     transition: all var(--transition-normal) ease;
     /* Anchors the tap-target pseudo-element below. */
     position: relative;
+    font-size: var(--chrome-font-size);
+    font-family: inherit;
+}
+
+/* The words beside the + and the routine button's icon. */
+.quick-actions-btn-label,
+.routine-switcher-btn-label {
+    font-size: var(--chrome-font-size);
+    font-weight: 600;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+@container (max-width: 22em) {
+    .quick-actions-btn-label,
+    .routine-switcher-btn-label {
+        display: none;
+    }
+}
+
+@media (max-width: 374px) {
+    .quick-actions-btn-label,
+    .routine-switcher-btn-label {
+        display: none;
+    }
 }
 
 /* WCAG 2.5.8 tap target via pseudo-element — same approach as
-   .toggle-switch::after in settings.css. The 25px height above is load-bearing
-   (it keeps this level with the native <select>), so the hit area is grown
-   without touching the visual box: 25 + 10 + 10 = 45px tall. */
+   .toggle-switch::after in settings.css: the hit area grows above and below
+   without touching the visual box, 30 + 10 + 10 = 50px tall. */
 .quick-actions-btn::after {
     content: '';
     position: absolute;
@@ -350,16 +339,19 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     border-color: var(--color-primary-dark);
 }
 
+/* Pressed: darker in place. A scale (until Nov 2026) pulled the end away from
+   the picker it is joined to. */
 .quick-actions-btn:active {
-    transform: scale(0.95);
+    filter: brightness(0.9);
 }
 
 .quick-actions-btn svg {
-    fill: rgb(44, 50, 112);
+    fill: currentColor;
     width: 20px;
     height: 20px;
-    stroke: rgb(44, 50, 112);
+    stroke: currentColor;
     stroke-width: 1px;
+    flex-shrink: 0;
 }
 
 /* Shimmer for first-time users — persists until they press the + button
@@ -459,20 +451,9 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     }
 
     .mode-selector-wrapper .mode-selector {
-        font-size: var(--font-size-xs);
-        min-height: var(--space-6-25);
+        min-height: var(--chrome-group-height);
         padding: 3px var(--space-5) 4px var(--space-2);
         max-width: 200px;
     }
 
-}
-
-@media (max-width: 480px) {
-    .quick-actions-container {
-        left: 10px;
-    }
-
-    .quick-actions-btn {
-        font-size: var(--font-size-xs);
-    }
 }

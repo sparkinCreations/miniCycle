@@ -287,12 +287,12 @@ export class AchievementsManager {
         this.modalOverlay.style.transition = 'opacity 0.2s ease';
 
         this.modalOverlay.innerHTML = `
-            <div class="achievements-modal">
+            <div class="achievements-modal has-corner-logo">
                 <header class="achievements-header">
-                    <button class="achievements-back-btn" aria-label="${getLabel('button.close')}">&larr;</button>
                     <h2 class="achievements-title"><span class="icon" aria-hidden="true">${getIcon('trophy')}</span> ${getLabel('achievement.title')}</h2>
                 </header>
                 <div class="achievements-modal-content"></div>
+                <button class="${DOM_CLASSES.CLOSE_BAR} ${DOM_CLASSES.MODAL_CLOSE_BAR} ${DOM_CLASSES.ACHIEVEMENTS_BACK_BTN}">${getLabel('button.close')}</button>
             </div>
         `;
 
@@ -1096,19 +1096,8 @@ export class AchievementsManager {
 
             badge.classList.toggle(DOM_CLASSES.UNLOCKED, isUnlocked);
 
-            // Reset theme badge classes
-            badge.classList.remove(DOM_CLASSES.OCEAN_THEME, DOM_CLASSES.GOLDEN_THEME, DOM_CLASSES.GAME_UNLOCKED);
-
-            // Assign custom theme class based on reward type from constant
-            if (isUnlocked && tierConfig) {
-                if (tierConfig.reward === 'dark-ocean') {
-                    badge.classList.add(DOM_CLASSES.OCEAN_THEME);
-                } else if (tierConfig.reward === 'golden-glow') {
-                    badge.classList.add(DOM_CLASSES.GOLDEN_THEME);
-                } else if (tierConfig.reward === 'whack-a-order') {
-                    badge.classList.add(DOM_CLASSES.GAME_UNLOCKED);
-                }
-            }
+            // The game reward's badge has its own look
+            badge.classList.toggle(DOM_CLASSES.GAME_UNLOCKED, !!(isUnlocked && tierConfig?.reward === 'whack-a-order'));
         });
     }
 }

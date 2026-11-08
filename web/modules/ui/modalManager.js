@@ -418,7 +418,7 @@ export class ModalManager {
         }
 
         const safeAdd = _deps.safeAddEventListener;
-        const closeAboutBtn = aboutModal.querySelector(DOM_SELECTORS.CLOSE_MODAL);
+        const closeAboutBtn = document.getElementById(DOM_IDS.CLOSE_ABOUT_BTN);
 
         // Open Modal
         openAboutBtn._clickHandler = () => {
@@ -505,7 +505,7 @@ export class ModalManager {
         }
 
         const safeAdd = _deps.safeAddEventListener;
-        const closeBtn = modal.querySelector(DOM_SELECTORS.CLOSE_MODAL);
+        const closeBtn = document.getElementById(DOM_IDS.CLOSE_SHORTCUTS_BTN);
 
         const label = openBtn.querySelector(`.${DOM_CLASSES.MENU_ITEM_LABEL}`);
         if (label) label.textContent = getLabel('shortcuts.menuItem');

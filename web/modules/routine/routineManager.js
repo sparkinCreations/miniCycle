@@ -210,6 +210,9 @@ export class RoutineManager {
                 message: 'modal.createRoutineMessage',
                 placeholder: 'modal.createRoutinePlaceholder',
                 isOnboarding: true,
+                // First-run "Create My First Routine": a name is already there,
+                // so the first step can be just pressing Enter.
+                defaultName: options.firstRoutine === true ? getLabel('modal.firstRoutineName') : '',
                 // First-run "Load a Sample" choice opens straight to the picker.
                 startInSampleView: options.startInSampleView === true,
                 onCreateBlank: async (inputValue) => {
@@ -780,7 +783,7 @@ export class RoutineManager {
         dialog._previousFocus = document.activeElement;
 
         const box = document.createElement('div');
-        box.className = 'miniCycle-prompt-box';
+        box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
         // =====================================================================
         // VIEW 1: Name input view
@@ -808,6 +811,7 @@ export class RoutineManager {
         input.id = DOM_IDS.SAMPLE_CREATION_INPUT;
         input.className = 'miniCycle-prompt-input';
         input.placeholder = getLabel(placeholder);
+        input.value = config.defaultName || '';
         nameView.appendChild(input);
 
         // "Load Sample" button (hidden if no samples available)
@@ -825,12 +829,12 @@ export class RoutineManager {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_SECONDARY, DOM_CLASSES.MINI_CYCLE_BTN_CANCEL].join(' ');
         cancelBtn.textContent = getLabel('button.cancel');
 
         const confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
-        confirmBtn.className = 'miniCycle-btn-confirm';
+        confirmBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_PRIMARY, DOM_CLASSES.MINI_CYCLE_BTN_CONFIRM].join(' ');
         confirmBtn.textContent = getLabel('button.create');
 
         buttons.appendChild(cancelBtn);
@@ -1037,6 +1041,8 @@ export class RoutineManager {
             showSampleView();
         } else {
             input.focus();
+            // Selected, so typing replaces a suggested name outright.
+            input.select();
         }
     }
 }

@@ -21,7 +21,7 @@ import { getIcon, setIconText } from '../utils/icons.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutineOpenView } from '../utils/cycleMode.js';
 import { isTextEntryTarget } from '../utils/keyboardNav.js';
 import { replayAnimationClass } from '../utils/motionPreference.js';
-import { themeWordVars } from '../labels/themeWords.js';
+import { themeWordVars, inputBarToggleLabel } from '../labels/themeWords.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -236,7 +236,7 @@ export class FocusMode {
         this._menuBtn.setAttribute('aria-haspopup', 'menu');
         this._menuBtn.setAttribute('aria-expanded', 'false');
         this._menuBtn.setAttribute('aria-controls', DOM_IDS.FOCUS_MODE_MENU);
-        this._menuBtn.textContent = '⋯'; // horizontal ellipsis (meatball menu — global/overflow actions)
+        this._menuBtn.innerHTML = getIcon('ellipsis'); // meatball menu — global/overflow actions
         body.appendChild(this._menuBtn);
 
         // Dropdown menu
@@ -270,7 +270,7 @@ export class FocusMode {
             { action: 'switch-mode',     group: 'routine', label: '' /* set dynamically in _refreshModeItemLabel */ },
             { action: 'switch-routines', group: 'routine', label: getLabel('focusMode.switchRoutines') },
             { action: 'create-routine',  group: 'routine', label: getLabel('focusMode.createRoutine') },
-            { action: 'toggle-input-bar', group: 'view',    label: getLabel('focusMode.toggleInputBar') },
+            { action: 'toggle-input-bar', group: 'view',    label: '' /* set in _refreshInputBarItemLabel */ },
             { action: 'toggle-dark-mode', group: 'view',    label: getLabel('focusMode.toggleDarkMode') },
             { action: 'uncheck-all',     group: 'bulk',    label: getLabel('focusMode.uncheckAll') },
             { action: 'delete-all',      group: 'bulk',    label: getLabel('focusMode.deleteAll'), destructive: true },
@@ -303,6 +303,7 @@ export class FocusMode {
                 this._modeItem = item;
             }
             if (action === 'switch-routines') this._routinesItem = item;
+            if (action === 'toggle-input-bar') this._inputBarItem = item;
             this._menu.appendChild(item);
         }
 
@@ -310,6 +311,7 @@ export class FocusMode {
         // Named from the start, not only when the menu first opens: until then
         // the item was an empty button (accessibility audits flag it).
         this._refreshModeItemLabel();
+        this._refreshInputBarItemLabel();
 
         // Build the mode-switch modal (hidden until opened)
         this._createModeModal();
@@ -413,13 +415,13 @@ export class FocusMode {
         // CSS picks between them on body.input-bar-visible.
         this._emptyStateHint = document.createElement('div');
         this._emptyStateHint.className = DOM_CLASSES.EMPTY_STATE_HINT_FOCUS;
-        // Cross-reference focusMode.toggleInputBar so the hint stays in sync
-        // if that label is renamed or themed; menu glyph passed as a var so
+        // Cross-reference the menu item's name (this hint only shows while the bar
+        // is hidden) so it stays in sync with the menu; menu glyph passed as a var so
         // we don't bake visual decoration into translatable text.
         this._emptyStateHint.textContent = getLabel('empty.noTasksHintFocus', {
             vars: {
                 menuIcon: '⋯',
-                showHide: getLabel('focusMode.toggleInputBar')
+                showHide: inputBarToggleLabel(false)
             }
         });
         emptyState.appendChild(this._emptyStateHint);
@@ -760,6 +762,16 @@ export class FocusMode {
     /**
      * Refresh the "Mode: <name> ▸" menu item label to match the current mode.
      */
+    /**
+     * Name the input bar's menu item for what it will do next.
+     * @private
+     */
+    _refreshInputBarItemLabel() {
+        if (!this._inputBarItem) return;
+        const isShown = this.deps.getBody().classList.contains(DOM_CLASSES.INPUT_BAR_VISIBLE);
+        this._inputBarItem.textContent = inputBarToggleLabel(isShown);
+    }
+
     _refreshModeItemLabel() {
         if (!this._modeItem) return;
         const mode = this._getCurrentMode();
@@ -798,6 +810,7 @@ export class FocusMode {
         if (!this._menu || !this._menuBtn || this._menuOpen) return;
         // Refresh the mode label so it reflects current state every time
         this._refreshModeItemLabel();
+        this._refreshInputBarItemLabel();
         this._refreshRoutinesItemLabel();
         this._menu.hidden = false;
         this._menuBtn.setAttribute('aria-expanded', 'true');
@@ -1324,12 +1337,47 @@ export class FocusMode {
         return true;
     }
 
+    /**
+     * Apply a Home <-> Focus layout change with the routine card staying put:
+     * the new layout lands at once and the card glides the short distance from
+     * where it was. The card's own transitions stay off until the measured
+     * header and nav-dot sizes have settled.
+     * @param {Function} applyChange - toggles the body class
+     * @param {boolean} [glide=true] - false when restoring at boot
+     * @private
+     */
+    _switchLayout(applyChange, glide = true) {
+        const body = this.deps.getBody();
+        const taskView = this.deps.getElementById(DOM_IDS.TASK_VIEW);
+        const before = taskView?.getBoundingClientRect();
+
+        body.classList.add(DOM_CLASSES.VIEW_SWITCHING);
+        applyChange();
+
+        clearTimeout(this._viewSwitchTimer);
+        this._viewSwitchTimer = setTimeout(() => {
+            body.classList.remove(DOM_CLASSES.VIEW_SWITCHING);
+        }, UI_TIMEOUTS.TRANSITION_FALLBACK);
+
+        if (!glide || !before || typeof taskView.animate !== 'function') return;
+        const duration = parseFloat(getComputedStyle(document.documentElement)
+            .getPropertyValue('--view-switch-glide')) || 0;
+        const distance = before.top - taskView.getBoundingClientRect().top;
+        // A card parked off-screen on another tab has nowhere to glide from.
+        const wasOnScreen = before.right > 0 && before.left < globalThis.innerWidth;
+        if (!duration || !distance || !wasOnScreen) return;
+        taskView.animate(
+            [{ translate: `0 ${distance}px` }, { translate: '0 0' }],
+            { duration, easing: 'ease-out' }
+        );
+    }
+
     activate(silent = false, restoring = false) {
         if (this._active) return;
         this._active = true;
 
         const body = this.deps.getBody();
-        body.classList.add(DOM_CLASSES.FOCUS_MODE);
+        this._switchLayout(() => body.classList.add(DOM_CLASSES.FOCUS_MODE), !silent);
 
         // Load the deferred focus task panel so the Task tab is functional by
         // the time the user swipes to it. Fire-and-forget: the carousel's
@@ -1415,9 +1463,8 @@ export class FocusMode {
     }
 
     /**
-     * Deactivate focus mode — animate out, then restore chrome.
-     * Pins task-view height so the CSS transition can animate the collapse,
-     * then reparents button back to #task-view after the animation.
+     * Deactivate focus mode: restore the chrome and glide the card back, then
+     * reparent the button to #task-view once the chrome has faded in.
      */
     deactivate() {
         this._removeLayoutDebug();
@@ -1436,26 +1483,12 @@ export class FocusMode {
             this.deps.showTaskView?.();
         }
 
-        const taskView = this.deps.getElementById(DOM_IDS.TASK_VIEW);
-
-        // Pin current height so CSS can transition to the smaller max-height
-        if (taskView) {
-            taskView.style.height = `${taskView.offsetHeight}px`;
-        }
-
         // Restore chrome to the tab order / accessibility tree.
         for (const el of this._getInertChromeElements()) {
             el.inert = false;
         }
 
-        this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE);
-
-        // After a frame, remove the pinned height so it collapses with transition
-        if (taskView) {
-            requestAnimationFrame(() => {
-                taskView.style.height = '';
-            });
-        }
+        this._switchLayout(() => this.deps.getBody().classList.remove(DOM_CLASSES.FOCUS_MODE));
 
         // After the animation completes:
         setTimeout(() => {
@@ -1556,6 +1589,8 @@ export class FocusMode {
             document.removeEventListener(EVENTS.PANEL_CAROUSEL_CHANGED, this._panelChangeHandler);
             this._panelChangeHandler = null;
         }
+        clearTimeout(this._viewSwitchTimer);
+        this.deps.getBody?.()?.classList.remove(DOM_CLASSES.VIEW_SWITCHING);
         if (this._layoutDebugTimer) {
             clearTimeout(this._layoutDebugTimer);
             this._layoutDebugTimer = null;

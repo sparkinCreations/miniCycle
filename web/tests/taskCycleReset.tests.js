@@ -20,6 +20,49 @@ export async function runTaskCycleResetTests(resultsDiv) {
     // ============================================
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
+
+    // Nov 2026: Settings → Behavior → "Ask before completing with unchecked tasks".
+    {
+        const mod = await import(`../modules/task/taskCycleReset.js?v=${window.testCacheBuster || Date.now()}`);
+        const run = async ({ tasks, routine = {}, setting }) => {
+            const asked = [];
+            const state = { appState: { activeRoutineId: 'r1' }, settings: { confirmUncheckedCycle: setting }, data: { routine: { r1: { id: 'r1', title: 'R', autoReset: false, deleteCheckedTasks: false, tasks, ...routine } } } };
+            await mod.handleCompleteAllTasksImpl(() => {}, {
+                AppState: { isReady: () => true, get: () => state, update: () => {} },
+                querySelector: () => null,
+                showConfirmationModal: (config) => asked.push(config)
+            });
+            return asked;
+        };
+        const open = { completed: false }, done = { completed: true };
+
+        await test('unchecked warning: asks in Manual Cycle when the setting is on, with the count', async () => {
+            const asked = await run({ tasks: [open, done, open], setting: true });
+            if (asked.length !== 1) throw new Error(`asked ${asked.length} times`);
+            if (!asked[0].message.includes('2 of 3')) throw new Error(`message: ${asked[0].message}`);
+        });
+        await test('unchecked warning: silent when the setting is off, its default', async () => {
+            if ((await run({ tasks: [open, done], setting: undefined })).length) throw new Error('asked with the setting unset');
+            if ((await run({ tasks: [open, done], setting: false })).length) throw new Error('asked with the setting off');
+        });
+        await test('unchecked warning: silent when every task is checked', async () => {
+            if ((await run({ tasks: [done, done], setting: true })).length) throw new Error('asked with everything checked');
+        });
+        await test('unchecked warning: Manual Cycle only, not Auto Cycle or To-Do', async () => {
+            if ((await run({ tasks: [open], routine: { autoReset: true }, setting: true })).length) throw new Error('asked in Auto Cycle');
+            if ((await run({ tasks: [open], routine: { deleteCheckedTasks: true }, setting: true })).length) throw new Error('asked in To-Do');
+        });
+        await test('unchecked warning and due dates share one dialog that mentions both', async () => {
+            const asked = await run({ tasks: [{ completed: false, dueDate: '2026-11-20' }, done], setting: true });
+            if (asked.length !== 1) throw new Error(`asked ${asked.length} times`);
+            if (!asked[0].message.includes('1 of 2') || !/due dates/i.test(asked[0].message)) throw new Error(`message: ${asked[0].message}`);
+        });
+        await test('with the setting off, due dates still get their own dialog', async () => {
+            const asked = await run({ tasks: [{ completed: false, dueDate: '2026-11-20' }], setting: false });
+            if (asked.length !== 1 || !/due dates/i.test(asked[0].message)) throw new Error(`asked: ${JSON.stringify(asked.map(a => a.message))}`);
+        });
+    }
+
     await test('setTaskCycleResetDependencies is exported as a function', () => {
         if (typeof mod.setTaskCycleResetDependencies !== 'function') throw new Error('Missing export');
     });

@@ -458,6 +458,19 @@ export async function runTaskOptionsCustomizerTests(resultsDiv, isPartOfSuite = 
         }
     });
 
+    await test('Reset to Default sets the three dots by device: on for touch, off for mouse', async () => {
+        const { isTouchCapable } = await import(`../modules/utils/deviceDetection.js?v=${window.testCacheBuster || Date.now()}`);
+        const instance = new TaskOptionsCustomizer();
+        const threeDots = document.createElement('input');
+        threeDots.type = 'checkbox';
+        threeDots.dataset.option = 'threeDots';
+        threeDots.checked = !isTouchCapable();
+        instance.resetToDefaults([threeDots]);
+        if (threeDots.checked !== isTouchCapable()) {
+            throw new Error(`three dots reset to ${threeDots.checked}, device touch-capable is ${isTouchCapable()}`);
+        }
+    });
+
     // === MODAL CLOSE TESTS ===
     resultsDiv.innerHTML += '<h4>❌ Modal Close Tests</h4>';
 

@@ -422,24 +422,8 @@ export class ClearedTasksManager {
                     border-top: 1px solid var(--border-color, #e0e0e0);
                     gap: 12px;
                 ">
-                    <button class="cleared-cancel-btn" style="
-                        flex: 1;
-                        padding: 10px;
-                        border: 1px solid var(--border-color, #e0e0e0);
-                        border-radius: 6px;
-                        background: none;
-                        cursor: pointer;
-                        color: var(--text-primary, #333);
-                    ">${getLabel('button.cancel')}</button>
-                    <button class="cleared-confirm-btn" style="
-                        flex: 1;
-                        padding: 10px;
-                        border: none;
-                        border-radius: 6px;
-                        background: var(--primary-color, #4c79ff);
-                        cursor: pointer;
-                        color: white;
-                    ">${getLabel('history.recreateTasks')}</button>
+                    <button class="btn btn-secondary cleared-cancel-btn" style="flex: 1;">${getLabel('button.cancel')}</button>
+                    <button class="btn btn-primary cleared-confirm-btn" style="flex: 1;">${getLabel('history.recreateTasks')}</button>
                 </footer>
             </div>
         `;

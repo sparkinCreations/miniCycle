@@ -111,8 +111,11 @@ export async function initRecurringModules(options = {}) {
         if (!options.AppMeta?.version) {
             console.warn('⚠️ recurringIntegration: AppMeta.version not provided, using globalThis fallback');
         }
-        const recurringCore = await import(`./recurringCore.js?v=${version}`);
-        const settingsApplicator = await import(`./recurringSettingsApplicator.js?v=${version}`);
+        // Independent of each other — fetch both at once instead of one after the other.
+        const [recurringCore, settingsApplicator] = await Promise.all([
+            import(`./recurringCore.js?v=${version}`),
+            import(`./recurringSettingsApplicator.js?v=${version}`)
+        ]);
 
         // ============================================================================
         // DEFERRED PANEL (perf): recurringPanel.js + sub-modules (~3.6k lines) are the
@@ -194,6 +197,13 @@ export async function initRecurringModules(options = {}) {
         const coreFunctions = await recurringCore.setRecurringCoreDependencies({
             // Version for cache-busting sub-module imports
             AppMeta: options.AppMeta,
+
+            // Boot lifecycle. recurringCore forwards this to the watcher, which
+            // reads it to wait for core and to hold a boot-time UI refresh until
+            // app-ready. It was never passed before Nov 2026: the watcher's
+            // `appInit?.waitForCore()` calls were no-ops, and its refresh ran
+            // before the phase-6 providers existed.
+            appInit: deps.appInit,
 
             // State management (required) - DI-pure (pass AppState directly)
             AppState: deps.AppState,

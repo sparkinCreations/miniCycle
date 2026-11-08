@@ -592,22 +592,28 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
     dialog.className = 'miniCycle-prompt-dialog';
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
+    // Named by its heading, and the instruction labels the field (Nov 2026:
+    // the dialog announced only "dialog" and the field only its placeholder).
+    dialog.setAttribute('aria-labelledby', DOM_IDS.EDIT_TASK_TITLE);
 
     const box = document.createElement('div');
-    box.className = 'miniCycle-prompt-box';
+    box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
-    const titleEl = document.createElement('div');
+    const titleEl = document.createElement('h2');
+    titleEl.id = DOM_IDS.EDIT_TASK_TITLE;
     titleEl.className = 'miniCycle-prompt-title';
     titleEl.textContent = getLabel('action.editTaskTitle');
     box.appendChild(titleEl);
 
-    const messageEl = document.createElement('div');
+    const messageEl = document.createElement('label');
     messageEl.className = 'miniCycle-prompt-message';
+    messageEl.htmlFor = DOM_IDS.EDIT_TASK_INPUT;
     messageEl.textContent = getLabel('action.editTaskMessage');
     box.appendChild(messageEl);
 
     const input = document.createElement('input');
     input.type = 'text';
+    input.id = DOM_IDS.EDIT_TASK_INPUT;
     input.className = 'miniCycle-prompt-input';
     input.value = oldText;
     input.placeholder = getLabel('action.editTaskPlaceholder');
@@ -618,12 +624,12 @@ function _editTaskModal(taskItem, taskLabel, oldText, ctx) {
 
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
-    cancelBtn.className = 'miniCycle-btn-cancel';
+    cancelBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_SECONDARY, DOM_CLASSES.MINI_CYCLE_BTN_CANCEL].join(' ');
     cancelBtn.textContent = getLabel('button.cancel');
 
     const saveBtn = document.createElement('button');
     saveBtn.type = 'button';
-    saveBtn.className = 'miniCycle-btn-confirm';
+    saveBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_PRIMARY, DOM_CLASSES.MINI_CYCLE_BTN_CONFIRM].join(' ');
     saveBtn.textContent = getLabel('button.save');
 
     buttons.appendChild(cancelBtn);

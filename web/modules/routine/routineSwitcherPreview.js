@@ -44,6 +44,9 @@
 import { DOM_IDS, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getRoutine, getRoutines } from '../utils/cycleMode.js';
+import { getIcon } from '../utils/icons.js';
+
+const PREVIEW_EXPAND_BTN_IDS = [DOM_IDS.ROUTINE_PREVIEW_EXPAND_BTN, DOM_IDS.SWITCH_PREVIEW_EXPAND_BTN];
 
 /**
  * Render the selected routine into both preview panels.
@@ -144,12 +147,15 @@ export function updatePreview(deps, cycleName) {
         previewTitle.textContent = cycleData?.title || cycleName || getLabel('switcher.preview');
     }
 
+    setPreviewExpandAvailable(deps, true);
+
     // Desktop preview hint
     const hint = deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
     if (hint) {
         const isMobile = window.matchMedia('(max-width: 767px)').matches;
         hint.textContent = getLabel(isMobile ? 'switcher.doubleTapEnlarge' : 'switcher.doubleClickEnlarge');
-        hint.style.display = 'block';
+        // Cleared, not 'block': the stylesheet keeps this hidden on a phone.
+        hint.style.display = '';
     }
 }
 
@@ -179,10 +185,25 @@ export function resetPreview(deps) {
     if (previewTitle) {
         previewTitle.textContent = getLabel('switcher.preview');
     }
+    setPreviewExpandAvailable(deps, false);
     const hint = deps.getElementById(DOM_IDS.DESKTOP_PREVIEW_HINT);
     if (hint) {
         hint.style.display = 'none';
     }
+}
+
+/**
+ * Show or hide the preview headings' Expand: with nothing selected there is
+ * nothing to open.
+ * @param {Object} deps - The parent's live deps
+ * @param {boolean} available
+ * @returns {void}
+ */
+function setPreviewExpandAvailable(deps, available) {
+    PREVIEW_EXPAND_BTN_IDS.forEach(id => {
+        const btn = deps.getElementById(id);
+        if (btn) btn.hidden = !available;
+    });
 }
 
 /**
@@ -227,6 +248,18 @@ export function setupPreviewPopout(deps, callbacks) {
         safeAdd(desktopPreview, "click", desktopPreview._clickHandler);
         safeAdd(desktopPreview, "dblclick", () => openPreviewReviewModal(deps, callbacks));
     }
+
+    // The heading's Expand: the same dialog for anyone who would not guess a
+    // double-click. It stops the click so the heading's panel does not deselect.
+    PREVIEW_EXPAND_BTN_IDS.forEach(id => {
+        const btn = deps.getElementById(id);
+        if (!btn) return;
+        btn.innerHTML = getIcon('expand');   // ICONS registry: trusted static markup
+        safeAdd(btn, 'click', (e) => {
+            e.stopPropagation();
+            openPreviewReviewModal(deps, callbacks);
+        });
+    });
 }
 
 /**

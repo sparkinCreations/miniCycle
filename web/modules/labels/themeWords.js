@@ -19,18 +19,31 @@ import { getLabel } from './labelResolver.js';
  *   tasks — the plural task noun capitalised to open a sentence ("Habits");
  *   taskWord / cycleWord — the plural nouns mid-sentence ("habits", "check-ins");
  *   taskOne / cycleOne — the singular nouns ("habit", "check-in");
+ *   taskTitle — the singular task noun capitalised for a menu item ("Habit");
  *   completeButton / clearButton — Home View's button names.
  */
 export function themeWordVars(overrides = {}) {
     const taskWord = getLabel('noun.task', { count: 2 });
+    const taskOne = getLabel('noun.task', { count: 1 });
     return {
         tasks: taskWord.charAt(0).toUpperCase() + taskWord.slice(1),
         taskWord,
-        taskOne: getLabel('noun.task', { count: 1 }),
+        taskOne,
+        taskTitle: taskOne.charAt(0).toUpperCase() + taskOne.slice(1),
         cycleWord: getLabel('noun.cycle', { count: 2 }),
         cycleOne: getLabel('noun.cycle', { count: 1 }),
         completeButton: getLabel('action.completeCycle'),
         clearButton: getLabel('action.clearCompletedTasks'),
         ...overrides
     };
+}
+
+/**
+ * What the input bar's toggle does next. The one name for it in all three menus
+ * (+ Actions, ☰ and Focus View's ⋯), in the active theme's words.
+ * @param {boolean} isVisible - whether the bar is showing now
+ * @returns {string}
+ */
+export function inputBarToggleLabel(isVisible) {
+    return getLabel(isVisible ? 'nav.hideAddTaskBar' : 'nav.addTasks', { vars: themeWordVars() });
 }

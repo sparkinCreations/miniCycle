@@ -93,6 +93,13 @@ body.dark-mode:not([data-theme]) {
     /* Unchecked: a hollow ring, not a solid white dot. #a0a0a0 on the task
        card (#3d3d40) is 4.2:1, past the 3:1 a control's outline needs. */
     --dark-checkbox-incomplete-border: #a0a0a0;
+    /* Home-screen chrome and surfaces (variables.css) */
+    --chrome-border-color: var(--dark-overlay-strong);
+    --chrome-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-glass-panel: none;
+    --toolbar-divider: rgba(255, 255, 255, 0.2);
+    --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.08);
     --dark-checkbox-incomplete-bg: rgba(255, 255, 255, 0.06);
     --dark-priority-border: #ff6b6b;
     --dark-priority-bg: #1e1e1e;
@@ -104,7 +111,6 @@ body.dark-mode:not([data-theme]) {
     --dark-todo-bg: #1e3a5f;
     --dark-todo-hover: #1a3352;
     --dark-mini-modal-bg: #23272e;
-    --dark-mini-modal-cancel: #444950;
     --dark-mini-modal-text: #e2e8f0;
     --dark-next-occurrence-bg: rgba(76, 175, 80, 0.2);
     --dark-next-occurrence-text: #81c784;
@@ -306,33 +312,8 @@ body.dark-mode .mini-cycle-switch-item:focus-visible {
 }
 
 /* --- Sort / filter controls --- */
-body.dark-mode .routine-sort-btn {
-    background: var(--dark-surface-secondary);
-    color: var(--theme-text-secondary);
-    border-color: var(--dark-button-hover-bg);
-}
-
-body.dark-mode .routine-sort-btn:hover {
-    background: var(--dark-button-bg);
-    border-color: var(--dark-border-subtle);
-}
-
-body.dark-mode .routine-sort-btn.active {
-    border-color: transparent;
-}
-
 body.dark-mode .routine-sort-label {
     color: var(--theme-text-muted);
-}
-
-body.dark-mode .routine-filter-select {
-    background: var(--dark-surface-secondary);
-    color: var(--theme-text-secondary);
-    border-color: var(--dark-button-hover-bg);
-}
-
-body.dark-mode .routine-filter-select:hover {
-    border-color: var(--dark-border-subtle);
 }
 
 /* --- Preview panels (mobile + desktop) --- */
@@ -440,7 +421,7 @@ body.dark-mode .task-options .task-btn,
 body.dark-mode .task-options .move-btn {
     background: var(--dark-button-hover-bg);
     border: 1px solid var(--dark-border-subtle);
-    box-shadow: var(--shadow-md);
+    box-shadow: none;
 }
 
 body.dark-mode .complete-all-btn.todo-mode-btn {
@@ -559,19 +540,6 @@ body.dark-mode #achievement-badges-btn:hover {
    DARK MODE ROUTINE STATUS
    ============================================================================= */
 
-body.dark-mode .current-routine-status .clickable {
-    background-color: var(--theme-bg-surface);
-    color: var(--theme-text-primary);
-    border: 1px solid var(--dark-button-hover-bg);
-}
-
-body.dark-mode .current-routine-status .clickable:hover,
-body.dark-mode .current-routine-status .clickable:focus-visible {
-    background-color: var(--theme-bg-surface-elevated);
-    transform: scale(1.02);
-    color: var(--dark-accent-green);
-}
-
 body.dark-mode #current-cycle-progress-text,
 body.dark-mode #current-routine-cycle-count,
 body.dark-mode #current-routine-cleared-count {
@@ -589,19 +557,6 @@ body.dark-mode .doughnut-bg {
 /* =============================================================================
    DARK MODE THEME UNLOCK
    ============================================================================= */
-
-body.dark-mode .theme-unlock-status .clickable {
-    background-color: var(--theme-bg-surface);
-    color: var(--theme-text-primary);
-    border: 1px solid var(--dark-button-hover-bg);
-}
-
-body.dark-mode .theme-unlock-status .clickable:hover,
-body.dark-mode .theme-unlock-status .clickable:focus-visible {
-    background-color: var(--theme-bg-surface-elevated);
-    transform: scale(1.02);
-    color: var(--dark-accent-green);
-}
 
 body.dark-mode #theme-unlock-message,
 body.dark-mode #golden-unlock-message {
@@ -685,14 +640,7 @@ body.dark-mode #about-modal a:hover {
     color: var(--dark-link-hover);
 }
 
-body.dark-mode #about-modal .close-modal {
-    color: var(--theme-text-secondary);
-}
 
-body.dark-mode #about-modal .close-modal:hover {
-    color: var(--color-white);
-    cursor: pointer;
-}
 
 /* =============================================================================
    DARK MODE STORAGE
@@ -826,7 +774,6 @@ body.dark-mode .task-options-list {
 body.dark-mode .undo-redo-btn {
     background: rgba(255, 255, 255, 0.1);
     color: var(--theme-progress-text);
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 body.dark-mode .undo-redo-btn:hover {
@@ -893,16 +840,6 @@ body.dark-mode .available-tasks-list {
     border-color: var(--dark-button-hover-bg);
 }
 
-body.dark-mode #cancel-recurring-settings {
-    color: var(--dark-text-light);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-body.dark-mode #cancel-recurring-settings:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
 body.dark-mode .recurring-remove-btn {
     color: var(--dark-text-light);
 }
@@ -953,11 +890,6 @@ body.dark-mode .recurring-empty-state {
     color: var(--dark-text-dim);
 }
 
-body.dark-mode .confirm-add-recurring-btn:disabled {
-    background: var(--dark-button-bg);
-    color: var(--dark-text-dim);
-}
-
 /* =============================================================================
    DARK MODE MINI-MODAL
    ============================================================================= */
@@ -973,11 +905,6 @@ body.dark-mode .mini-modal-header {
 }
 
 body.dark-mode .mini-modal-body {
-    color: var(--dark-mini-modal-text);
-}
-
-body.dark-mode .mini-modal-buttons .btn-cancel {
-    background-color: var(--dark-mini-modal-cancel);
     color: var(--dark-mini-modal-text);
 }
 
@@ -1216,11 +1143,12 @@ body.dark-mode .storage-value-raw {
 body.dark-mode .mode-selector-wrapper .mode-selector {
     background: rgba(30, 30, 30, 0.8);
     color: var(--theme-text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--chrome-border-color);
 }
 
 body.dark-mode .routine-switcher-btn,
 body.dark-mode .quick-actions-btn,
+body.dark-mode .menu-button,
 body.dark-mode #personalization-btn,
 body.dark-mode #quick-dark-toggle {
     background: var(--dark-overlay-heavy);
@@ -1241,6 +1169,32 @@ body.dark-mode .quick-actions-menu {
 
 body.dark-mode .quick-action-item {
     color: var(--theme-text-primary);
+}
+
+/* Focus View's ⋯ menu wears the header dropdowns' dark look too. */
+body.focus-mode.dark-mode #focus-mode-menu {
+    background: linear-gradient(135deg, var(--dark-surface-primary) 0%, var(--dark-surface-secondary) 100%);
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+body.focus-mode.dark-mode #focus-mode-menu::-webkit-scrollbar-thumb,
+body.focus-mode.dark-mode .focus-mode-menu-separator {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.focus-mode.dark-mode .focus-mode-menu-item {
+    color: var(--theme-text-primary);
+}
+
+body.focus-mode.dark-mode .focus-mode-menu-item:hover,
+body.focus-mode.dark-mode .focus-mode-menu-item:focus-visible {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.focus-mode.dark-mode .focus-mode-menu-item--destructive,
+body.focus-mode.dark-mode .focus-mode-menu-item--destructive:hover,
+body.focus-mode.dark-mode .focus-mode-menu-item--destructive:focus-visible {
+    color: var(--color-red-light, #ef5350);
 }
 
 body.dark-mode .quick-action-item:hover {
@@ -1388,18 +1342,6 @@ body.dark-mode .preferences-section-toggle {
     color: var(--dark-text-dim);
 }
 
-/* Reset All button */
-body.dark-mode .preferences-reset-all-btn {
-    background: color-mix(in srgb, var(--color-error) 15%, transparent);
-    color: var(--dark-text-light);
-    border-color: var(--color-error);
-}
-
-body.dark-mode .preferences-footer button.preferences-reset-all-btn:hover {
-    background: var(--color-error);
-    color: var(--color-white);
-}
-
 /* =============================================================================
    DARK MODE ACHIEVEMENTS MODAL
    ============================================================================= */
@@ -1412,7 +1354,6 @@ body.dark-mode .achievements-header {
     border-bottom-color: var(--dark-overlay-light);
 }
 
-body.dark-mode .achievements-back-btn,
 body.dark-mode .achievements-title {
     color: var(--dark-text-light);
 }
@@ -1469,7 +1410,6 @@ body.dark-mode .history-header {
     border-bottom-color: var(--dark-overlay-light);
 }
 
-body.dark-mode .history-back-btn,
 body.dark-mode .history-title {
     color: var(--dark-text-light);
 }
@@ -1544,15 +1484,6 @@ body.dark-mode .history-footer {
     border-top-color: var(--dark-overlay-light);
 }
 
-body.dark-mode .history-cancel-btn {
-    color: var(--dark-text-light);
-    border-color: var(--dark-border-subtle);
-}
-
-body.dark-mode .history-confirm-btn {
-    background: var(--color-primary);
-}
-
 /* =============================================================================
    DARK MODE THEMES MODAL
    ============================================================================= */
@@ -1561,15 +1492,6 @@ body.dark-mode .themes-modal-content h2,
 body.dark-mode .themes-modal-content p,
 body.dark-mode .themes-modal-content label {
     color: var(--theme-text-primary);
-}
-
-body.dark-mode .themes-modal .close-btn {
-    background: var(--dark-button-hover-bg);
-    color: var(--theme-text-primary);
-}
-
-body.dark-mode .themes-modal .close-btn:hover {
-    background: var(--dark-border-subtle);
 }
 
 body.dark-mode .themes-modal-content input[type="checkbox"] {
@@ -1636,6 +1558,7 @@ body.dark-mode .footer-item a {
 body.dark-mode .miniCycle-prompt-box {
     background: var(--dark-surface-primary);
     border-color: var(--dark-button-hover-bg);
+    box-shadow: var(--shadow-modal-compound);
 }
 
 body.dark-mode .miniCycle-prompt-title {
@@ -1644,12 +1567,58 @@ body.dark-mode .miniCycle-prompt-title {
 
 body.dark-mode .miniCycle-prompt-message {
     color: var(--theme-text-secondary);
+    opacity: 1;
 }
 
 body.dark-mode .miniCycle-prompt-input {
     background: var(--theme-input-bg);
     color: var(--theme-text-primary);
     border-color: var(--dark-button-hover-bg);
+}
+
+/* The routine-creation sample picker inside the prompt: its original
+   white-on-charcoal colours (onboarding.css now holds the light-panel ones). */
+body.dark-mode .miniCycle-sample-option {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+body.dark-mode .miniCycle-sample-option label {
+    color: var(--theme-border);
+}
+
+body.dark-mode .load-sample-btn,
+body.dark-mode .sample-back-btn {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.7);
+}
+
+body.dark-mode .load-sample-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .sample-back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+body.dark-mode .sample-list-title {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+body.dark-mode .sample-item {
+    border-color: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.06);
+}
+
+body.dark-mode .sample-item:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+body.dark-mode .sample-item-name {
+    color: rgba(255, 255, 255, 0.85);
 }
 
 /* =============================================================================
@@ -1659,7 +1628,7 @@ body.dark-mode .miniCycle-prompt-input {
 body.dark-mode .task-input {
     background: var(--color-slate-800);
     border: 1px solid var(--color-slate-700);
-    box-shadow: var(--shadow-input);
+    box-shadow: var(--shadow-card);
 }
 
 body.dark-mode #taskInput {
@@ -1675,14 +1644,7 @@ body.dark-mode .task-input:focus-within {
     box-shadow: var(--shadow-input), var(--shadow-focus-ring);
 }
 
-body.dark-mode #addTaskBtn {
-    background: var(--color-slate-600);
-    color: var(--color-slate-100);
-}
 
-body.dark-mode #addTaskBtn:hover {
-    background: var(--color-slate-500);
-}
 
 /* =============================================================================
    DARK MODE TITLE ROW
@@ -1711,7 +1673,7 @@ body.dark-mode .mini-cycle-title {
     color: var(--dark-text-light);
     border-color: rgba(255, 255, 255, 0.12);
     border-bottom-color: rgba(255, 255, 255, 0.08);
-    box-shadow: none;
+    box-shadow: var(--shadow-glass-panel);
 }
 
 body.dark-mode #mini-cycle-title:focus {
@@ -1728,12 +1690,10 @@ body.dark-mode .task-list-container {
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     border-color: rgba(255, 255, 255, 0.08);
-    box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.06);
 }
 
-body.dark-mode .task-list-container::-webkit-scrollbar-thumb {
+body.dark-mode .task-list-container::-webkit-scrollbar-thumb,
+body.dark-mode .stats-panel-content::-webkit-scrollbar-thumb {
     background-color: rgba(150, 150, 150, 0.5);
 }
 
@@ -1750,7 +1710,6 @@ body.dark-mode .auto-uncheck-banner {
 
 body.dark-mode .navigation-dots::before {
     background-color: rgba(60, 70, 90, 0.6);
-    border-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .dot::after {
@@ -1785,15 +1744,28 @@ body.dark-mode .task-search-input {
 }
 
 body.dark-mode .filter-chip,
-body.dark-mode .sort-chip {
+body.dark-mode .sort-chip,
+body.dark-mode .routine-sort-btn,
+body.dark-mode .routine-filter-select {
     background: rgba(255, 255, 255, 0.1);
     color: var(--theme-text-secondary);
 }
 
 body.dark-mode .filter-chip:hover,
-body.dark-mode .sort-chip:hover {
+body.dark-mode .sort-chip:hover,
+body.dark-mode .routine-sort-btn:hover,
+body.dark-mode .routine-filter-select:hover {
     background: rgba(255, 255, 255, 0.18);
     color: var(--theme-text-primary);
+}
+
+/* The rules above outrank the plain .active rule, which left the selected chip
+   looking exactly like the others in dark mode. */
+body.dark-mode .filter-chip.active,
+body.dark-mode .sort-chip.active,
+body.dark-mode .routine-sort-btn.active {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
 }
 
 body.dark-mode .filter-sort-divider {

@@ -202,8 +202,8 @@ export class RoutineSwitcher {
     /**
      * Give the routine buttons the icon and name of the view they open, so the
      * two are never confused: folder for the list, cards for Browse.
-     *   Home View button — List: the folder alone. Browse: the cards and
-     *     "Routines" (CSS drops the word where the header has no room).
+     *   Home View button — the folder (List) or the cards (Browse), and
+     *     "Routines" either way (CSS drops the word where the header has no room).
      *   Menu → Routine Actions — List: folder, "Switch". Browse: cards, "Browse".
      * @param {'list'|'browse'} [view] - a ROUTINE_OPEN_VIEW value; defaults to the setting
      */
@@ -214,19 +214,14 @@ export class RoutineSwitcher {
         const btn = this.deps.getElementById(DOM_IDS.ROUTINE_SWITCHER_BTN);
         if (btn) {
             btn.innerHTML = getIcon(browse ? 'cards' : 'folder');
-            if (browse) {
-                const text = document.createElement('span');
-                text.className = DOM_CLASSES.ROUTINE_SWITCHER_BTN_LABEL;
-                text.textContent = getLabel('routine.browseShort');
-                btn.appendChild(text);
-            }
+            const text = document.createElement('span');
+            text.className = DOM_CLASSES.ROUTINE_SWITCHER_BTN_LABEL;
+            text.textContent = getLabel('routine.browseShort');
+            btn.appendChild(text);
             const name = getLabel(browse ? 'routine.browseAria' : 'routine.switchAria');
             btn.setAttribute('aria-label', name);
             btn.title = name;
             btn.dataset.routineView = view;
-            // The + across the header matches this button's width (CSS reads it here).
-            const wrapper = btn.closest(DOM_SELECTORS.MODE_SELECTOR_WRAPPER);
-            if (wrapper) wrapper.dataset.routineView = view;
         }
 
         const menuBtn = this.deps.getElementById(DOM_IDS.OPEN_MINI_CYCLE);
@@ -389,6 +384,7 @@ export class RoutineSwitcher {
 
         // Reset desktop preview to placeholder
         this._resetPreview();
+        this._setSelectionLayout(false);
 
         // Populate routine list hint
         const listHint = this.deps.getElementById(DOM_IDS.ROUTINE_LIST_HINT);
@@ -1080,11 +1076,23 @@ export class RoutineSwitcher {
     }
 
     /**
+     * Marks the panels as showing a selection, which is what lets a phone give
+     * the storage bar's height to the list while the actions and preview are up.
+     * @param {boolean} hasSelection
+     * @private
+     */
+    _setSelectionLayout(hasSelection) {
+        this.deps.querySelector(DOM_SELECTORS.ROUTINE_SWITCHER_BODY)
+            ?.classList.toggle(DOM_CLASSES.ROUTINE_HAS_SELECTION, hasSelection);
+    }
+
+    /**
      * The half of a selection that moves the layout: the action row and the
      * preview make the centred card taller, which shifts every row.
      * @param {string} cycleKey
      */
     _revealRoutineSelection(cycleKey) {
+        this._setSelectionLayout(true);
         // Show action buttons
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         // Not while the list is expanded: it has the window. setListExpanded(false)
@@ -1130,6 +1138,7 @@ export class RoutineSwitcher {
         // Hide actions row
         const switchItemsRow = this.deps.getElementById(DOM_IDS.SWITCH_ITEMS_ROW);
         if (switchItemsRow) switchItemsRow.style.display = 'none';
+        this._setSelectionLayout(false);
         // Close theme picker
         this.closeThemePicker();
         // Reset preview

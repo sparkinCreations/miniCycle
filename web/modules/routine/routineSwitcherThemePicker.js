@@ -41,7 +41,7 @@
  * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, DOM_SELECTORS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { getRoutine } from '../utils/cycleMode.js';
 
@@ -85,6 +85,7 @@ export function openThemePicker(deps, cycleKey) {
     // Update theme button active state
     const themeBtn = deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
     themeBtn?.setAttribute('aria-expanded', 'true');
+    picker.closest(DOM_SELECTORS.ROUTINE_SWITCHER_BODY)?.classList.add(DOM_CLASSES.THEME_PICKER_OPEN);
 
     const state = deps.AppState?.get();
     const cycle = getRoutine(state, cycleKey);
@@ -189,6 +190,7 @@ export function closeThemePicker(deps) {
     const themeBtn = deps.getElementById(DOM_IDS.SWITCH_THEME_BTN);
     if (picker) {
         picker.classList.add(DOM_CLASSES.HIDDEN);
+        picker.closest(DOM_SELECTORS.ROUTINE_SWITCHER_BODY)?.classList.remove(DOM_CLASSES.THEME_PICKER_OPEN);
         // Clean up chip listeners
         if (picker._clickHandlers) {
             picker._clickHandlers.forEach(({ el, fn }) => el.removeEventListener('click', fn));

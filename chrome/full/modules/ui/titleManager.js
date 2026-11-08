@@ -11,7 +11,7 @@ import { createDIModule, optional } from '../core/diBase.js';
 import { LIMITS, DOM_IDS, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
-import { getActiveRoutineId, getRoutine, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
+import { getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 
 // ============================================================================
 // DYNAMIC IMPORTS (loaded at init time with version cache-busting)
@@ -32,12 +32,11 @@ const di = createDIModule('TitleManager', {
     updateUndoRedoButtons: optional(null),
     // Undo integration
     captureStateSnapshot: optional(null),
-    enableUndoSystemOnFirstInteraction: optional(null),
-    onCycleRenamed: optional(null)
+    enableUndoSystemOnFirstInteraction: optional(null)
 });
 
 // Late-binding deps via Proxy (standard: _deps with underscore prefix)
-/** @type {{GlobalUtils: Object|null, AppState: Object|null, showNotification: Function|null, updateMainMenuHeader: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, enableUndoSystemOnFirstInteraction: Function|null, onCycleRenamed: Function|null}} */
+/** @type {{GlobalUtils: Object|null, AppState: Object|null, showNotification: Function|null, updateMainMenuHeader: Function|null, updateUndoRedoButtons: Function|null, captureStateSnapshot: Function|null, enableUndoSystemOnFirstInteraction: Function|null}} */
 const _deps = new Proxy({}, {
     get(_, prop) {
         return di.resolve()[prop];
@@ -155,9 +154,8 @@ async function handleMiniCycleTitleBlur() {
 
     // ✅ Get unique name (auto-increment if duplicate)
     const currentState = AppState.get();
-    // The routine's OWN key is no collision. After an undone rename the routine
-    // keeps its new key under its old title, and renaming it back to that key
-    // came out as "Name (2)".
+    // The routine's own entry is no collision: its current title would
+    // otherwise count against itself (names are compared by title, not key).
     const otherRoutines = { ...(getRoutines(currentState) || {}) };
     delete otherRoutines[activeCycle];
     const { name: finalTitle, wasModified } = getUniqueCycleName(newTitle, otherRoutines);
@@ -171,40 +169,23 @@ async function handleMiniCycleTitleBlur() {
     _deps.enableUndoSystemOnFirstInteraction?.();
     _deps.captureStateSnapshot?.(currentState);
 
-    // ✅ Update storage key to match new title (like routineSwitcher does)
+    // ✅ Rename in place: only `title` changes. The key is the routine's id and
+    // never follows its name (until Nov 2026 this re-keyed the routine under its
+    // new title and asked the undo system to move its history — onCycleRenamed —
+    // which made the title the identity; see AppState._repairRoutineKeys).
     await AppState.update(state => {
-        const oldKey = getActiveRoutineId(state);
-        const cycle = getRoutine(state, oldKey);
+        const cycle = getRoutine(state, getActiveRoutineId(state));
 
         if (!cycle) {
             console.error('Cycle not found for title update');
             return;
         }
 
-        // Create new entry with new title as key
-        const updatedCycle = { ...cycle, title: finalTitle };
-        getRoutines(state)[finalTitle] = updatedCycle;
-
-        // Remove old entry (if key changed)
-        if (finalTitle !== oldKey) {
-            delete getRoutines(state)[oldKey];
-            setActiveRoutineId(state, finalTitle);
-        }
-
+        cycle.title = finalTitle;
     }, false); // deferred save - don't block UI
 
     // ✅ Schedule idle-time save for durability
     scheduleIdleSave();
-
-    // ✅ Notify undo system of rename (if key changed)
-    if (finalTitle !== activeCycle && typeof _deps.onCycleRenamed === 'function') {
-        // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
-        // call, so it yields undefined when the hook is unwired and `.catch` on
-        // undefined throws here — inside a UI flow, after state already changed.
-        Promise.resolve(_deps.onCycleRenamed(activeCycle, finalTitle)).catch(err => {
-            console.warn('⚠️ Undo system rename notification failed:', err);
-        });
-    }
 
     // Refresh UI
     _deps.updateMainMenuHeader?.();
@@ -275,8 +256,7 @@ export async function initTitleManager(dependencies = {}) {
         updateUndoRedoButtons: dependencies.updateUndoRedoButtons,
         // Undo integration
         captureStateSnapshot: dependencies.captureStateSnapshot,
-        enableUndoSystemOnFirstInteraction: dependencies.enableUndoSystemOnFirstInteraction,
-        onCycleRenamed: dependencies.onCycleRenamed
+        enableUndoSystemOnFirstInteraction: dependencies.enableUndoSystemOnFirstInteraction
     };
 
     setTitleManagerDependencies(adaptedDeps);

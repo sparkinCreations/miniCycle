@@ -82,7 +82,6 @@ export class StatsPanelRewards {
 
         // All unlocked vocabulary theme rewards (excludes 'classic' — always available by default)
         // Updates immediately after checkThemeUnlocks() writes to state before updateStatsPanel() runs
-        const expanded = this.m._milestonesExpanded;
 
         if (themeUnlockMessage) {
             if (vtm) {
@@ -97,7 +96,7 @@ export class StatsPanelRewards {
                         return `${icon} ${def.name}`;
                     }).join('\n');
                     themeUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
-                    themeUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
+                    themeUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
                 } else {
                     themeUnlockMessage.textContent = "";
                     themeUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE, DOM_CLASSES.VISIBLE);
@@ -118,11 +117,11 @@ export class StatsPanelRewards {
                     const themeUnlockText = getLabel('unlock.nextThemeUnlock', { vars: { name: nextVocabTheme.name, count: cyclesNeeded, cycleWord } });
                     goldenUnlockMessage.textContent = nextIcon ? `${nextIcon} ${themeUnlockText}` : themeUnlockText;
                     goldenUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE);
-                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
+                    goldenUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
                 } else {
                     goldenUnlockMessage.textContent = getLabel('unlock.allThemesUnlocked');
                     goldenUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
-                    goldenUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
+                    goldenUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
                 }
             } else {
                 goldenUnlockMessage.textContent = "";
@@ -141,7 +140,7 @@ export class StatsPanelRewards {
                 // reads as still-locked (drift-review B-02).
                 gameUnlockMessage.textContent = `${getIcon('game')} ${getLabel('unlock.gameUnlocked')}`;
                 gameUnlockMessage.classList.toggle(DOM_CLASSES.UNLOCKED_MESSAGE, true);
-                gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
+                gameUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
             } else {
                 if (isToDoMode) {
                     const tasksNeeded = Math.max(0, 500 - totalTasksCleared);
@@ -153,7 +152,7 @@ export class StatsPanelRewards {
                     gameUnlockMessage.textContent = `${getIcon('locked')} ${getLabel('unlock.gameCycles', { vars: { count: cyclesNeeded, cycleWord } })}`;
                 }
                 gameUnlockMessage.classList.remove(DOM_CLASSES.UNLOCKED_MESSAGE);
-                gameUnlockMessage.classList.toggle(DOM_CLASSES.VISIBLE, expanded);
+                gameUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
             }
         }
     }
@@ -192,41 +191,6 @@ export class StatsPanelRewards {
             }
         }, true); // Fix #35: needsUpdate evaluated before callback - always save immediately
 
-    }
-
-    /**
-     * Handle theme toggle click
-     */
-    handleThemeToggleClick() {
-        const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus } = this.m.elements;
-        if (!themeUnlockMessage) return;
-
-        // Flip expanded state — use _milestonesExpanded as single source of truth
-        const newExpanded = !this.m._milestonesExpanded;
-        this.m._milestonesExpanded = newExpanded;
-
-        // Show only elements that have content; always hide when collapsing
-        const applyVisible = (el) => {
-            if (!el) return;
-            if (newExpanded && el.textContent) {
-                el.classList.add(DOM_CLASSES.VISIBLE);
-            } else {
-                el.classList.remove(DOM_CLASSES.VISIBLE);
-            }
-        };
-
-        applyVisible(themeUnlockMessage);
-        applyVisible(goldenUnlockMessage);
-        applyVisible(gameUnlockMessage);
-
-        // Update toggle arrow and ARIA
-        const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
-        if (toggleIcon) toggleIcon.textContent = newExpanded ? "▲" : "▼";
-
-        const clickableHeader = themeUnlockStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
-        if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(newExpanded));
-
-        this.m.saveCollapsiblePreference('milestonesExpanded', newExpanded);
     }
 
     // openThemesPanel() / closeThemesPanel() were removed in the Aug 2026 seam audit.

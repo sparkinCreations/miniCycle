@@ -328,6 +328,35 @@ export async function runStatsPanelTests(resultsDiv) {
         }
     });
 
+    // Nov 2026: the Badges / Milestones tabs replaced the dropdowns.
+    await test('the rewards tabs switch panels, move by arrow key and save the choice', async () => {
+        const host = document.createElement('div');
+        host.innerHTML = `<div class="stats-tabs">
+            <button class="stats-tab" role="tab" id="t-b" data-tab="badges" aria-controls="p-b"></button>
+            <button class="stats-tab" role="tab" id="t-m" data-tab="milestones" aria-controls="p-m"></button>
+        </div><div id="p-b"></div><div id="p-m"></div>`;
+        document.body.appendChild(host);
+        const saved = [];
+        const statsPanel = new StatsPanelManager();
+        statsPanel.saveStatsPanelPreference = (k, v) => saved.push([k, v]);
+        try {
+            statsPanel.setupStatsTabs();
+            const [b, m] = [document.getElementById('t-b'), document.getElementById('t-m')];
+            const [pb, pm] = [document.getElementById('p-b'), document.getElementById('p-m')];
+            if (b.getAttribute('aria-selected') !== 'true' || !pm.hasAttribute('data-inactive')) throw new Error('Badges should start selected');
+            if (m.tabIndex !== -1 || b.tabIndex !== 0) throw new Error('only the selected tab is in the tab order');
+            m.click();
+            if (m.getAttribute('aria-selected') !== 'true' || !pb.hasAttribute('data-inactive') || pm.hasAttribute('data-inactive')) throw new Error('click did not switch');
+            if (saved[0]?.[1] !== 'milestones') throw new Error('choice not saved');
+            m.focus();
+            m.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+            if (b.getAttribute('aria-selected') !== 'true' || document.activeElement !== b) throw new Error('ArrowRight should wrap to Badges and move focus');
+        } finally {
+            statsPanel._statsTabsCleanup?.();
+            host.remove();
+        }
+    });
+
     await test('the ⓘ after All Routines toggles its note and reports expanded', async () => {
         const panel = document.getElementById('stats-panel');
         const line = document.createElement('p');

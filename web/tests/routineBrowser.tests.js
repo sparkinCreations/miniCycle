@@ -720,7 +720,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
         cleanup();
     });
 
-    await test('in Browse the routine button says "Routines"; for the list it is the folder alone', () => {
+    await test('the routine button says "Routines" beside the cards (Browse) or the folder (list)', () => {
         const { instance, btn } = setup();
         instance.syncEntryPoints('browse');
         const word = btn.querySelector('.routine-switcher-btn-label');
@@ -728,7 +728,9 @@ export async function runRoutineBrowserTests(resultsDiv) {
         // The visible word must be part of the accessible name (WCAG 2.5.3).
         if (!btn.getAttribute('aria-label').toLowerCase().includes(word.textContent.toLowerCase())) throw new Error('name does not contain the visible word');
         instance.syncEntryPoints('list');
-        if (btn.textContent.trim() !== '') throw new Error(`list button has text "${btn.textContent.trim()}"`);
+        const listWord = btn.querySelector('.routine-switcher-btn-label');
+        if (listWord?.textContent !== getLabel('routine.browseShort')) throw new Error(`list button text "${listWord?.textContent}"`);
+        if (!btn.getAttribute('aria-label').toLowerCase().includes(listWord.textContent.toLowerCase())) throw new Error('list name does not contain the visible word');
         if (!btn.querySelector('svg')) throw new Error('no folder');
         cleanup();
     });

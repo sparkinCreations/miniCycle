@@ -1441,8 +1441,6 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         setupDarkModeToggle: (...args) => deps.features?.setupDarkModeToggle?.(...args),
         setupQuickDarkToggle: (...args) => deps.features?.setupQuickDarkToggle?.(...args),
         updateThemeColor: (...args) => deps.features?.updateThemeColor?.(...args),
-        initThemesPanel: (...args) => deps.features?.initThemesPanel?.(...args),
-        refreshThemeToggles: (...args) => deps.features?.refreshThemeToggles?.(...args),
         setupThemesPanel: (...args) => deps.features?.setupThemesPanel?.(...args),
         renderVocabThemes: (...args) => deps.features?.renderVocabThemes?.(...args),
         refreshThemeLabels: (...args) => deps.features?.themeManager?.refreshThemeLabels?.(...args),

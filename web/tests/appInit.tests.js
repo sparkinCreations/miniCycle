@@ -1041,10 +1041,11 @@ export async function runAppInitTests(resultsDiv, isPartOfSuite = false) {
         return captured;
     }
 
-    await test('choice "create" → opens creation modal (no args) + marks onboarding complete + sets first-run flag', () => {
+    await test('choice "create" → opens creation modal (first routine name) + marks onboarding complete + sets first-run flag', () => {
         const r = routeWith('create');
         if (!r.createCalled) throw new Error('showCycleCreationModal should be called for create');
-        if (r.createArgs.length !== 0) throw new Error('create should open the modal with NO args (blank routine)');
+        if (r.createArgs[0]?.firstRoutine !== true) throw new Error('create should ask for the suggested first routine name');
+        if (r.createArgs[0]?.startInSampleView) throw new Error('create should open the name view, not the sample picker');
         if (r.state.settings.onboardingCompleted !== true) throw new Error('create must mark onboardingCompleted (stops Home View tour on refresh)');
         if (r.firstRunCreateFlag !== '1') throw new Error('create must set the miniCycle_firstRunCreate one-shot flag');
         if (r.firstRunFlowCalled) throw new Error('create must NOT run the focus-view first-run flow');

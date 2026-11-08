@@ -19,15 +19,30 @@ button {
     font-family: inherit;
 }
 
-/* Hover only where a pointer can hover. This rule outranks any one-class
-   button colour (two pseudo-classes beat one class), so it is the one iOS
-   leaves stuck after a tap: touch has no hover, WebKit emulates it on tap and
-   keeps it until the next tap elsewhere — Focus View's Complete Task button
-   stayed recoloured after every press on the iPhone / PWA even after its own
-   hover rule was guarded (Oct 2026). Same guard task-options.css uses;
-   :active and :focus-visible are untouched. */
+/* Hover only where a pointer can hover. Same guard task-options.css uses;
+   :active and :focus-visible are untouched.
+
+   WRAPPED IN :where() SO IT HAS ZERO SPECIFICITY (Nov 2026). As
+   `button:not(.dot):hover` this was (0,2,1) and outranked every one-class
+   button colour, so hovering ANY button whose background comes from a single
+   class replaced that background with the SECONDARY hover grey while the
+   class's own `color` stayed — Focus View's Complete Task button went from
+   #3a5fc7 with white text to #d0d0d0 with white text, a measured 1.54:1, i.e.
+   the label vanished exactly while you pointed at it. `.btn-primary:hover`
+   (0,2,0) lost to it too, so no primary button ever showed
+   --theme-button-primary-hover-bg. The Oct 2026 pass found the same rule from
+   the iOS end (WebKit emulates hover on tap and leaves it stuck) and guarded
+   it by media query, which fixed the stuck state but left the desktop
+   recolouring in place. :where() makes this what it was always meant to be: a
+   DEFAULT for buttons that bring no colour of their own, which any component
+   rule beats. A button that sets its own background now keeps it on hover and
+   supplies its own hover treatment (the Complete Task button's is
+   `filter: brightness(1.08)` in focus-task-panel.css).
+
+   Not reachable by npm run test:contrast — axe only evaluates the resting
+   state, never :hover. */
 @media (hover: hover) and (pointer: fine) {
-    button:not(.dot):hover {
+    :where(button:not(.dot):hover) {
         background: var(--theme-button-secondary-hover-bg);
     }
 }
@@ -43,85 +58,164 @@ button:disabled {
 }
 
 /* =============================================================================
-   PRIMARY BUTTONS
+   THE BUTTON SYSTEM (Nov 2026)
+   =============================================================================
+   Every action button in a modal, panel or dialog is one of four things. Use
+   these classes for any new one and give it no colours or sizing of its own —
+   a feature's stylesheet may only place it (width, flex, margin, order).
+
+     .btn.btn-primary    the action the dialog is for: Save, Apply, Create, OK
+     .btn.btn-secondary  everything beside it: Cancel, Back, Undo, settings rows
+     .btn.btn-danger     destroys or resets something: Delete, Factory Reset
+     .close-bar          the full-width Close along a modal's bottom edge
+
+   Before this, each feature styled its own (about 105 *-btn classes): main
+   actions came in green and four blues, Cancel had six looks, and the system
+   defined here sat unused. One accent, --close-btn-effective, now fills both
+   the main action and the Close bar. It was already every Close bar's fill: the
+   steel blue (white on it is 5.29:1, see variables.css), the active vocab
+   theme's accent outside dark mode. Focus View's Complete task uses it too. Green is left for completing things
+   (the Complete Cycle button); it carries white at only 3.13:1.
+
+   Declared on BODY, like --close-btn-effective in modals.css, so a theme's
+   inline --pref-* values on <body> reach them. High Contrast: accessibility.css.
+   The Testing modal's own button.primary / .secondary / … are below. */
+
+body {
+    --btn-primary-bg: var(--close-btn-effective);
+    --btn-primary-text: var(--menu-close-text, var(--color-white));
+    --btn-danger-bg: var(--theme-error, var(--color-error));
+    --btn-danger-text: var(--color-white);
+    /* Secondary is a tint of whatever surface it sits on, so it works on every
+       modal colour a theme can set; its text is that surface's own text. */
+    --btn-secondary-bg: rgba(0, 0, 0, 0.05);
+    --btn-secondary-hover-bg: rgba(0, 0, 0, 0.1);
+    --btn-secondary-border: rgba(0, 0, 0, 0.22);
+}
+
+body.dark-mode {
+    --btn-secondary-bg: rgba(255, 255, 255, 0.08);
+    --btn-secondary-hover-bg: rgba(255, 255, 255, 0.14);
+    --btn-secondary-border: rgba(255, 255, 255, 0.28);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2-5) var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition: filter var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn.btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+}
+
+.btn.btn-secondary {
+    background: var(--btn-secondary-bg);
+    color: inherit;
+    border-color: var(--btn-secondary-border);
+}
+
+.btn.btn-danger {
+    background: var(--btn-danger-bg);
+    color: var(--btn-danger-text);
+}
+
+.close-bar {
+    display: block;
+    width: 100%;
+    padding: var(--space-3-5);
+    border: none;
+    background: var(--close-btn-effective);
+    color: var(--menu-close-text, var(--color-white));
+    font-family: inherit;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+
+/* A filter rather than a hover colour, so the hover follows whatever accent a
+   theme sets. Same pointer guard as the base button hover above. */
+@media (hover: hover) and (pointer: fine) {
+    .btn.btn-primary:hover:not(:disabled),
+    .btn.btn-danger:hover:not(:disabled),
+    .close-bar:hover {
+        filter: brightness(0.9);
+    }
+
+    .btn.btn-secondary:hover:not(:disabled) {
+        background: var(--btn-secondary-hover-bg);
+    }
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================================
+   TESTING MODAL BUTTONS (testing-modal-ui.js: button.primary / .secondary / …)
    ============================================================================= */
 
-.btn-primary,
 button.primary {
     background: var(--theme-button-primary-bg, var(--color-primary));
     color: var(--theme-button-primary-text, var(--color-white));
 }
 
-.btn-primary:hover,
 button.primary:hover {
     background: var(--theme-button-primary-hover-bg, #5a87ff);
 }
 
-/* =============================================================================
-   SECONDARY BUTTONS
-   ============================================================================= */
-
-.btn-secondary,
 button.secondary {
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
 }
 
-.btn-secondary:hover,
 button.secondary:hover {
     background: var(--theme-button-secondary-hover-bg);
 }
 
-/* =============================================================================
-   DANGER BUTTONS
-   ============================================================================= */
-
-.btn-danger,
 button.danger {
     background: var(--theme-error, var(--color-error));
     color: var(--color-white);
 }
 
-.btn-danger:hover,
 button.danger:hover {
     background: var(--theme-error-light, #e55353);
 }
 
-/* =============================================================================
-   SUCCESS BUTTONS
-   ============================================================================= */
-
-.btn-success,
 button.success {
     background: var(--theme-success, var(--color-success));
     color: var(--color-white);
 }
 
-.btn-success:hover,
 button.success:hover {
     background: var(--theme-success-light, var(--color-success-light));
 }
 
-/* =============================================================================
-   GHOST/OUTLINE BUTTONS
-   ============================================================================= */
-
-.btn-ghost,
 button.ghost {
     background: transparent;
     border: 1px solid currentColor;
 }
 
-.btn-ghost:hover,
 button.ghost:hover {
     background: rgba(0, 0, 0, 0.05);
 }
 
-/* =============================================================================
-   ICON BUTTONS
-   ============================================================================= */
-
-.btn-icon,
 button.icon-only {
     padding: var(--space-2);
     width: 36px;
@@ -132,7 +226,6 @@ button.icon-only {
     border-radius: var(--radius-full);
 }
 
-.btn-icon i,
 button.icon-only i {
     font-size: var(--font-size-base);
 }
@@ -249,6 +342,9 @@ button.icon-only i {
     box-shadow: var(--shadow-button-hover);
 }
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
 /* Custom preference colors (Default theme only) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn:not(.todo-mode-btn) {
     background: var(--pref-complete-btn, var(--color-complete-btn));
@@ -264,13 +360,11 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
    GLASS COMPLETE / CLEAR (default, Nov 2026)
    The same glass as Focus View's round action button (focus-mode.css): 25%
    white, a light 2px blur, its thin 1px white rim (brighter here, 65%, on
-   the larger button), and like it a white cycle icon. The mode's colour moves from the fill
-   to the words — --action-color is the user's Complete Cycle / Clear colour
-   (Personalization) or the default — darkened, because on near-clear glass
-   the words sit on the page's blue: the colour kept at 40% (color-mix; the
-   plain colour is the fallback where color-mix is unsupported) measured
-   ≥ 3.6:1 across the default blue gradient for green and blue, above the 3:1
-   large bold text needs. Dark mode: the colour lightened, ≥ 4:1.
+   the larger button), and like it a white cycle icon. Complete Cycle's words are
+   navy, like the header's glass buttons; To-Do's Clear keeps its colour, darkened
+   to 40% (≥ 3.6:1 across the default blue gradient). A colour picked in
+   Personalization comes through --pref-complete-text / --pref-clear-text
+   (utils/readableText.js). Dark mode: white, and Clear's colour lightened, ≥ 4:1.
    Where it applies: Classic and the vocabulary themes, light or dark. The
    themes' backgrounds are dark gradients, so there the words go light (see
    the vocab-theme rule below). The legacy colour themes and High Contrast
@@ -279,19 +373,24 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-al
    (body.solid-action-buttons).
    ============================================================================= */
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn {
-    --action-color: var(--pref-complete-btn, var(--color-complete-btn));
     background: var(--glass-btn-bg);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     border: 1px solid var(--glass-btn-rim);   /* Focus View's thin rim, a little brighter on this larger button */
-    color: var(--action-color);
-    color: color-mix(in srgb, var(--action-color) 40%, var(--color-black));
+    color: var(--pref-complete-text, var(--color-navy));
     text-shadow: none;
     box-shadow: var(--shadow-button);
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
-    --action-color: var(--pref-clear-btn, var(--color-todo-btn));
+    --action-default: var(--color-todo-btn);
+    color: var(--pref-clear-text, var(--action-default));
+}
+
+@supports (color: color-mix(in srgb, red, blue)) {
+    body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow) .complete-all-btn.todo-mode-btn {
+        --action-default: color-mix(in srgb, var(--color-todo-btn) 40%, var(--color-black));
+    }
 }
 
 /* The cycle arrows are white, as on Focus View's round button; the words keep
@@ -305,14 +404,14 @@ body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn {
-    --action-color: var(--color-complete-btn);
     background: var(--glass-btn-bg-dark);
     border-color: var(--glass-btn-rim-dark);
-    color: color-mix(in srgb, var(--action-color) 60%, var(--color-white));
+    color: var(--color-white);
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn.todo-mode-btn {
-    --action-color: var(--color-todo-btn);
+    color: var(--color-todo-btn);
+    color: color-mix(in srgb, var(--color-todo-btn) 60%, var(--color-white));
 }
 
 body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow).dark-mode .complete-all-btn:hover {
@@ -344,16 +443,15 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
     background: var(--glass-btn-bg);
     border: 1px solid var(--glass-btn-rim);
-    color: var(--preview-action-color);
-    color: color-mix(in srgb, var(--preview-action-color) 40%, var(--color-black));
+    color: var(--preview-action-text);
 }
 
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-complete-btn {
-    --preview-action-color: var(--preview-complete-btn, var(--color-complete-btn));
+    --preview-action-text: var(--preview-complete-text, var(--color-navy));
 }
 
 html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast):not(.theme-dark-ocean):not(.theme-golden-glow):not(.dark-mode) .preview-clear-btn {
-    --preview-action-color: var(--preview-clear-btn, var(--color-todo-btn));
+    --preview-action-text: var(--preview-clear-text, var(--color-todo-btn));
 }
 
 /* Complete All and Help Window Container */
@@ -376,9 +474,7 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
     background: var(--pref-panel-bg);
     border-radius: var(--radius-2xl);
     border: 1px solid var(--pref-panel-border);
-    box-shadow:
-        0 4px 15px rgba(0, 0, 0, 0.08),
-        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    box-shadow: var(--shadow-glass-panel);
     max-width: 450px;
     width: 100%;
     padding: var(--space-2-5) var(--space-2-5);
@@ -521,6 +617,100 @@ body.hide-help-window .help-window {
        customized) gets its own band-relative cap in task-view-layout.css. */
 }
 
+/* The side columns of the Home View on desktop (Nov 2026).
+   --side-col is the room actually beside the card, capped at 400px: the
+   bubble's old fixed widths ran 5px off the window at 1280 and left 1px at 1024.
+   --side-nudge lines the columns up with the routine card: 50% is the middle
+   of #task-view, which also holds the Add-task row (60px with its gap) above
+   the card and 20px of space below it, so the card's own middle is half the
+   difference lower (20px). Hide the row and that part goes. On a tall window
+   the columns sit lower still (--side-nudge-tall): nothing below 800px high,
+   up to 40px more from 1200px.
+   Saved drag positions are inline styles, so they beat all of this. */
+@media (min-width: 1024px) {
+    #task-view {
+        --side-gap: var(--space-6-25);
+        --side-col: min(400px, calc((100vw - 100%) / 2 - var(--side-gap) - var(--space-5)));
+        --side-nudge-tall: clamp(0px, 10vh - 80px, 40px);
+        --side-nudge: var(--side-nudge-tall);
+    }
+
+    body.input-bar-visible:not(.focus-mode) #task-view {
+        --side-nudge: calc(var(--space-5) + var(--side-nudge-tall));
+    }
+
+    body:not(.focus-mode) .help-window {
+        left: calc(100% + var(--side-gap));
+        top: calc(50% + var(--side-nudge));
+        box-sizing: border-box;
+        width: var(--side-col);
+        min-width: 0;
+        max-width: none;
+    }
+
+    /* Complete Cycle (and To-Do's Clear) sits under the status bubble: what is
+       left, then the button that finishes it, and the list gets the height the
+       button took below it. The two meet at a fixed line, with the bubble
+       anchored by its BOTTOM, so a longer message grows upward and cannot run
+       into the button. Phones and tablets keep it below the card. It is
+       draggable like the bubble (ui/taskViewLayoutManager.js). */
+    body:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) .help-window {
+        top: auto;
+        bottom: calc(50% - var(--space-5) - var(--side-nudge));
+        transform: none;
+    }
+
+    body:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) #complete-all-and-help-window-container {
+        position: absolute;
+        left: calc(100% + var(--side-gap));
+        top: calc(50% + var(--space-8) + var(--side-nudge));
+        width: var(--side-col);
+        margin: 0;
+    }
+
+    /* The space the button's slot kept under the card, as in Auto mode, where
+       the empty slot still does: without it a long routine reached the nav
+       dots and the focus button overhung them (run-layout-overlap-tests). */
+    body:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) #task-card-group {
+        margin-bottom: var(--space-5);
+    }
+
+    /* Docked under the routine by the user (taskViewLayoutManager): back in the
+       flow, where the card's shrink chain gives it the room. Same width as in
+       the side column, so picking it up does not resize it. */
+    body.complete-below-card:not(.focus-mode):not(.auto-cycle-mode) #complete-all-and-help-window-container {
+        align-self: center;
+        width: var(--side-col);
+        margin-top: var(--space-3);
+    }
+
+    body:not(.focus-mode):not(.auto-cycle-mode) #completeAll {
+        box-sizing: border-box;
+        width: 100%;
+        margin-top: 0;
+        padding-left: var(--space-3);
+        padding-right: var(--space-3);
+    }
+
+    /* Status bubble turned off: the button alone, centred in the column. */
+    body.hide-help-window:not(.focus-mode):not(.auto-cycle-mode):not(.complete-below-card) #complete-all-and-help-window-container {
+        top: calc(50% + var(--side-nudge));
+        transform: translateY(-50%);
+    }
+}
+
+@media (min-width: 1280px) {
+    #task-view {
+        --side-gap: var(--space-7-5);
+    }
+}
+
+@media (min-width: 1800px) {
+    #task-view {
+        --side-gap: var(--space-10);
+    }
+}
+
 /* Wider screens */
 @media (min-width: 1280px) {
     .help-window {
@@ -575,18 +765,19 @@ body.hide-help-window .help-window {
 }
 
 .undo-redo-btn {
-    font-size: 0.85em;
+    font-size: var(--chrome-font-size);
     font-weight: 600;
     color: var(--color-white);
     background: rgba(0, 0, 0, 0.4);
-    border: none;
-    border-radius: var(--radius-6);
+    border: 1px solid var(--chrome-border-color);
+    border-radius: var(--chrome-radius);
     cursor: pointer;
     padding: var(--space-1) var(--space-2);
     opacity: .8;
     transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
     min-width: 50px;
     position: absolute;
+    box-shadow: var(--chrome-shadow);
 }
 
 .undo-redo-btn#undo-btn {
@@ -625,22 +816,6 @@ body.hide-help-window .help-window {
 .close-modal:hover {
     opacity: 1;
     background: transparent;
-}
-
-/* Full-width close button */
-.close-button-fullwidth {
-    width: 100%;
-    padding: var(--space-3);
-    background: var(--theme-button-secondary-bg);
-    color: var(--theme-button-secondary-text);
-    border: 1px solid var(--theme-button-secondary-border, rgba(0, 0, 0, 0.1));
-    border-radius: var(--radius-md);
-    font-weight: 500;
-    transition: background var(--transition-normal);
-}
-
-.close-button-fullwidth:hover {
-    background: var(--theme-button-secondary-hover-bg);
 }
 
 /* =============================================================================

@@ -19,6 +19,7 @@ import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, BREAKPOINTS } from '.
 import { getLabel } from '../labels/labelResolver.js';
 import { getIcon } from '../utils/icons.js';
 import { isClickOnNotification } from './modalUtils.js';
+import { isTouchCapable } from '../utils/deviceDetection.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -403,7 +404,7 @@ export class TaskOptionsCustomizer {
                             <span class="icon" aria-hidden="true">${getIcon('redo')}</span> ${getLabel('taskOptions.resetDefault')}
                         </button>
                     </div>
-                    <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-button-fullwidth">
+                    <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-bar close-button-fullwidth">
                         ${getLabel('button.close')}
                     </button>
                 </div>
@@ -880,7 +881,11 @@ export class TaskOptionsCustomizer {
     resetToDefaults(checkboxes) {
         const defaultButtons = this.deps.DEFAULT_TASK_OPTION_BUTTONS;
         checkboxes.forEach(cb => {
-            const defaultValue = defaultButtons[cb.dataset.option];
+            // The three-dots default depends on the device, as it does for a new
+            // user (migrationManager): touch has no hover to reveal the options.
+            const defaultValue = cb.dataset.option === 'threeDots'
+                ? isTouchCapable()
+                : defaultButtons[cb.dataset.option];
             cb.checked = defaultValue ?? false;
         });
 

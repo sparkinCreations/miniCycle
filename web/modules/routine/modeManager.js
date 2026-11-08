@@ -19,7 +19,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../cor
 import { getLabel } from '../labels/labelResolver.js';
 import { createIconElement } from '../utils/icons.js';
 import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
-import { themeWordVars } from '../labels/themeWords.js';
+import { themeWordVars, inputBarToggleLabel } from '../labels/themeWords.js';
 import { getActiveRoutine, getActiveRoutineId, getRoutine, getRoutines, syncTaskAutoClear } from '../utils/cycleMode.js';
 
 const MODE_LABEL_KEYS = Object.freeze({ 'auto-cycle': 'mode.auto', 'manual-cycle': 'mode.manual', 'todo-mode': 'mode.todo' });
@@ -654,7 +654,9 @@ export class ModeManager {
                 button: pickerBtn,
                 menu: pickerMenu,
                 getModeLabel: (mode) => this.getModeLabel(mode),
-                getItemTitle: (mode) => getLabel(MODE_HELP_KEYS[mode] || MODE_HELP_KEYS['auto-cycle'], { vars: themeWordVars() })
+                getItemTitle: (mode) => getLabel(MODE_HELP_KEYS[mode] || MODE_HELP_KEYS['auto-cycle'], { vars: themeWordVars() }),
+                // The page dims and blurs behind it, as behind the + menu beside it.
+                onOpenChange: (open) => document.body.classList.toggle(DOM_CLASSES.MODE_PICKER_OPEN, open)
             });
             pickerBtn.title = getLabel('mode.pickerTitle');
         }
@@ -960,7 +962,7 @@ export class ModeManager {
      * belief that Focus View had no other way in. Measured Sep 2026, that was
      * wrong: with the bar hidden, an empty routine in Focus View renders
      * `.empty-state-hint-focus` — "Open the ⋯ menu at the top and tap
-     * Show/hide input bar" — and the ⋯ button is on screen. Guidance existed;
+     * Add tasks" — and the ⋯ button is on screen. Guidance existed;
      * the override only defeated the default the guidance was teaching. It is
      * gone. Home view needs even less help: `+` toggles the bar, which is the
      * gesture users already expect for adding a task.
@@ -1127,11 +1129,9 @@ export class ModeManager {
             // Update button text and visibility based on state
             // Use CSS class toggle (visibility:hidden) instead of display:none to prevent CLS
             this._updateTaskInputVisibility = (isVisible) => {
-                if (toggleText) {
-                    // Use 'action.addTask' (not 'nav.addTaskToggle') so vocab themes
-                    // ("Add habit", "Add exercise", etc.) are reflected here too.
-                    toggleText.textContent = isVisible ? getLabel('nav.hideTaskInput') : getLabel('action.addTask');
-                }
+                if (toggleText) toggleText.textContent = inputBarToggleLabel(isVisible);
+                const menuText = this.deps.getElementById(DOM_IDS.MENU_TOGGLE_INPUT_BAR_TEXT);
+                if (menuText) menuText.textContent = inputBarToggleLabel(isVisible);
                 // Remove inline display style if present (from initial HTML)
                 if (taskInput.style.display) {
                     taskInput.style.display = '';

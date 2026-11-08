@@ -305,6 +305,21 @@ padding: 16px;
 
 All tokens are in `styles/base/variables.css`. Timing variables auto-disable under `prefers-reduced-motion`.
 
+**Buttons in modals, panels and dialogs use the button system** in `styles/components/buttons.css`:
+`.btn.btn-primary` (the dialog's action), `.btn.btn-secondary` (Cancel, Back, settings rows),
+`.btn.btn-danger` (destroys or resets), `.close-bar` (the full-width Close). A feature's CSS may
+only *place* them (width, flex, margin); it never sets their colours, padding or type. Until
+Nov 2026 each feature styled its own (~105 `*-btn` classes, five blues and a green for "OK").
+Watch for broad container rules such as `.menu-container button`: they out-rank `.btn` on
+classes, which is why `#close-main-menu` restates the bar's look.
+
+**Modals use the modal frame** (top of `styles/components/modals.css`): the box reads
+`--modal-radius` and one of `--modal-width-sm` / `-md` / `-lg`, the title reads
+`--modal-title-size` / `--modal-title-weight` and is centred, the box has `.has-corner-logo`,
+and an information modal ends in a `.close-bar` (`.close-bar.modal-close-bar` when the box is
+padded — the box sets `--modal-pad`). A question dialog keeps its Cancel / OK pair instead.
+The dimming is the one `dialog::backdrop` rule; don't add per-dialog backdrops.
+
 ---
 
 ## STATE MANAGEMENT

@@ -1267,7 +1267,7 @@ export class RecurringPanelManager {
 
         const changeBtn = document.createElement('button');
         changeBtn.id = DOM_IDS.CHANGE_RECURRING_SETTINGS;
-        changeBtn.className = 'change-recurring-btn';
+        changeBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_SECONDARY, DOM_CLASSES.CHANGE_RECURRING_BTN].join(' ');
         changeBtn.textContent = getLabel('recurring.changeSettings');
 
         // Attach click listener to button (guard for tests)

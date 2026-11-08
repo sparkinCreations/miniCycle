@@ -314,8 +314,8 @@
     width: 47px;
     height: 17px;
     background-color: rgba(130, 177, 250, 0.4);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(220, 231, 252, 0.2);
+    box-shadow: var(--chrome-shadow);
+    border: 1px solid var(--chrome-border-color);
     border-radius: var(--radius-2xl);
     transition: background-color var(--transition-fast) ease;
     pointer-events: none;

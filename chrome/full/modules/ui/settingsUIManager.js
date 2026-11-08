@@ -116,6 +116,7 @@ export function _resetForTesting() {
     _initialized.fontSizeSelect = false;
     _initialized.routineOpenViewRadios = false;
     _initialized.singleKeyShortcutsToggle = false;
+    _initialized.confirmUncheckedCycleToggle = false;
     _initialized.oneSectionAtATimeToggle = false;
     _initialized.scrollToNewTaskToggle = false;
     _initialized.scrollOnLoadToggle = false;
@@ -143,6 +144,7 @@ const _initialized = {
     fontSizeSelect: false,
     routineOpenViewRadios: false,
     singleKeyShortcutsToggle: false,
+    confirmUncheckedCycleToggle: false,
     oneSectionAtATimeToggle: false,
     scrollToNewTaskToggle: false,
     scrollOnLoadToggle: false,
@@ -967,6 +969,44 @@ export function setupSingleKeyShortcutsToggle() {
 }
 
 /**
+ * Settings → Behavior → "Ask before completing with unchecked tasks"
+ * (`settings.confirmUncheckedCycle`, off unless turned on).
+ * handleCompleteAllTasksImpl reads the stored value on every press. Re-synced on
+ * every call, wired once: same shape as setupSingleKeyShortcutsToggle above.
+ */
+export function setupConfirmUncheckedCycleToggle() {
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_CONFIRM_UNCHECKED_CYCLE);
+    if (!toggle) return;
+
+    const AppState = _deps.AppState();
+    toggle.checked = AppState?.isReady?.() ? AppState.get()?.settings?.confirmUncheckedCycle === true : false;
+
+    if (_initialized.confirmUncheckedCycleToggle) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.confirmUncheckedCycleToggle = true;
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.confirmUncheckedCycle = enabled;
+        }, true);
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+}
+
+/**
  * Setup debug mode toggle
  */
 export function setupDebugModeToggle() {
@@ -1614,6 +1654,7 @@ export function initAllToggles() {
     setupFontSizeSelect();
     setupRoutineOpenViewRadios();
     setupSingleKeyShortcutsToggle();
+    setupConfirmUncheckedCycleToggle();
     setupNotificationsToggle();
     applyPriorityColor();
 }

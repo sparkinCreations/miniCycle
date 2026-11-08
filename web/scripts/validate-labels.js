@@ -11,6 +11,9 @@
  *      returns the raw key as the user-facing string.
  *      Same for every literal labelResolver `getIcon('key')`, which resolves
  *      `icons.key` and renders "icons.key" on a miss.
+ *      And every `data-label-key` / `data-label-aria-key` / `data-label-title-key`
+ *      in miniCycle.html and modalTemplates.js: themeManager's label sweep
+ *      writes them over the static text at boot, so a typo ships the raw key.
  *   2. Every event type passed to `logHistoryEvent('type', ...)` must have an
  *      entry in BOTH the icons and labels maps in historyManager.js — a miss
  *      renders 📌 + the raw type string in the history modal.
@@ -144,6 +147,18 @@ for (const file of files) {
 // Bonus: theme-overridable keys must exist in the base table
 const badLensKeys = [...LENS_SENSITIVE_KEYS].filter(k => !resolveKey(k));
 
+// data-label-*-key attributes in static markup (themeManager's label sweep)
+const unresolvedMarkup = [];
+for (const rel of ['miniCycle.html', path.join('modules', 'boot', 'modalTemplates.js')]) {
+    const text = fs.readFileSync(path.join(WEB_ROOT, rel), 'utf8');
+    for (const m of text.matchAll(/data-label-(?:aria-|title-)?key="([^"$]+)"/g)) {
+        if (!resolveKey(m[1])) {
+            const line = text.slice(0, m.index).split('\n').length;
+            unresolvedMarkup.push({ file: rel, line, key: m[1] });
+        }
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Diff 2: logged history event types vs historyManager's icon/label maps
 // ---------------------------------------------------------------------------
@@ -196,10 +211,10 @@ if (iconKeys && labelKeys) {
 // Report
 // ---------------------------------------------------------------------------
 
-const failures = unresolved.length + unresolvedIcons.length + unmappedTypes.length + badLensKeys.length;
+const failures = unresolved.length + unresolvedIcons.length + unresolvedMarkup.length + unmappedTypes.length + badLensKeys.length;
 
 if (process.argv.includes('--json')) {
-    console.log(JSON.stringify({ failures, unresolved, unresolvedIcons, unmappedTypes, badLensKeys, deadMapEntries, literalCount, iconCount, dynamicCount }, null, 2));
+    console.log(JSON.stringify({ failures, unresolved, unresolvedIcons, unresolvedMarkup, unmappedTypes, badLensKeys, deadMapEntries, literalCount, iconCount, dynamicCount }, null, 2));
     process.exit(failures > 0 ? 1 : 0);
 }
 
@@ -214,6 +229,7 @@ if (failures === 0) {
     console.log(`❌ ${failures} registry mismatch(es) — GATED, must be 0\n`);
     for (const u of unresolved) console.log(`   ${u.file}:${u.line}\n      getLabel('${u.key}') — key does not resolve in DEFAULT_LABELS (renders the raw key)`);
     for (const u of unresolvedIcons) console.log(`   ${u.file}:${u.line}\n      getIcon('${u.key}') — no icons.${u.key} in DEFAULT_LABELS (renders "icons.${u.key}")`);
+    for (const u of unresolvedMarkup) console.log(`   ${u.file}:${u.line}\n      data-label key '${u.key}' — does not resolve in DEFAULT_LABELS (the sweep writes the raw key)`);
     for (const t of unmappedTypes) console.log(`   ${t.site}\n      logHistoryEvent('${t.type}') — missing from ${t.missing} map(s) in historyManager.js (renders 📌 + raw type)`);
     for (const k of badLensKeys) console.log(`   LENS_SENSITIVE_KEYS: '${k}' — theme-overridable key missing from DEFAULT_LABELS`);
 }

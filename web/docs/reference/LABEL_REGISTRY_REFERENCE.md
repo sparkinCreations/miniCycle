@@ -178,7 +178,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 
 | Key | Current Value | Source(s) | Lens-Sensitive | Notes |
 |-----|--------------|-----------|----------------|-------|
-| `switcher.title` | Open Routine | miniCycle.html:2468 | Yes | Modal title |
+| `switcher.title` | Switch Routine | miniCycle.html:2468 | Yes | Modal title |
 | `switcher.search` | Search routines... | miniCycle.html:2470 | Yes | Search placeholder |
 | `switcher.filterAll` | All Modes | miniCycle.html:2476 | No | Filter option |
 | `switcher.filterAuto` | Auto Cycle | miniCycle.html:2477 | Yes | Filter option |
@@ -195,7 +195,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | `switcher.renameRoutine` | Rename routine | miniCycle.html:2494 (title) | Yes | Action tooltip |
 | `switcher.deleteRoutine` | Delete routine | miniCycle.html:2495 (title) | Yes | Action tooltip |
 | `switcher.preview` | Preview | miniCycle.html:2496 | No | Preview label |
-| `switcher.importExternal` | Import Routine | miniCycle.html:2504 | No | Import button |
+| `switcher.importExternal` | Import | miniCycle.html:2504 | No | Import button |
 | `switcher.storage` | Storage | miniCycle.html:2510 | No | Storage label |
 | `switcher.calculating` | Calculating... | miniCycle.html:2518 | No | Storage status |
 | `switcher.deleteTitle` | Delete miniCycle | routineSwitcher.js:306 | Yes | Delete modal title |
@@ -210,7 +210,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 |-----|--------------|-----------|----------------|-------|
 | `stats.title` | Stats | miniCycle.html:2663 | No | Panel title |
 | `stats.currentRoutine` | Current Routine | miniCycle.html:2666 | Yes | Section header |
-| `stats.completion` | {completed} of {total} Tasks Completed | statsPanel.js:952, miniCycle.html:2686 | Yes | Progress text |
+| `stats.completion` | {completed} of {total} {taskWord} (followed by `stats.completionRound`: this {cycleWord}) | statsPanel.js:952, miniCycle.html:2686 | Yes | Progress text |
 | `stats.cyclesCompleted` | {count} Cycles Completed | miniCycle.html:2687 | Yes | Cycle count |
 | `stats.clearedTasks` | {count} Cleared Tasks | miniCycle.html:2688 | Yes | Cleared count |
 | `stats.milestoneRewards` | Milestone Rewards | miniCycle.html:2692 | No | Section header |
@@ -493,12 +493,13 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | `nav.showTasks` | Show Tasks | miniCycle.html:2586 (title) | Yes | Arrow tooltip |
 | `nav.quickActions` | Quick Actions | miniCycle.html:2650 | No | Panel title |
 | `nav.quickActions.aria` | Quick actions | miniCycle.html:1168 (aria) | No | Button ARIA |
+| `nav.quickActionsShort` | Actions | miniCycle.html (header toolbar) | No | Word beside the + |
 | `nav.previousView` | Previous view | miniCycle.html:2649 (title) | No | Arrow tooltip |
 | `nav.nextView` | Next view | miniCycle.html:2651 (title) | No | Arrow tooltip |
 | `nav.completed` | Completed | miniCycle.html:2633 | No | Collapsible header |
 | `nav.saving` | Saving... | miniCycle.html:1197 | No | Save indicator |
-| `nav.hideTaskInput` | Hide Task Input | modeManager.js | Yes | Toggle button text |
-| `nav.addTaskToggle` | Add Task | modeManager.js | Yes | Toggle button text |
+| `nav.addTasks` | Add {tasks} | themeWords.js | Yes | Input bar toggle, all three menus, while hidden |
+| `nav.hideAddTaskBar` | Hide Add {taskTitle} Bar | themeWords.js | Yes | Input bar toggle, all three menus, while shown |
 
 ---
 
@@ -507,7 +508,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | Key | Current Value | Source(s) | Lens-Sensitive | Notes |
 |-----|--------------|-----------|----------------|-------|
 | `quickAction.stats` | Stats | quickActionsManager.js | No | Action label |
-| `quickAction.openRoutine` | Open Routine | quickActionsManager.js | Yes | Action label |
+| `quickAction.openRoutine` | Switch Routine | quickActionsManager.js | Yes | Action label |
 | `quickAction.recurring` | Recurring | quickActionsManager.js | No | Action label |
 | `quickAction.reminders` | Reminders | quickActionsManager.js | No | Action label |
 | `quickAction.settings` | Settings | quickActionsManager.js | No | Action label |

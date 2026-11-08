@@ -263,7 +263,8 @@ is dropped (few modules had them, nothing checked them). `README`: dark mode is 
 toggle and does not follow the system; the `prefers-color-scheme` rule only paints the
 pre-load background. Found on the way, fixed (app code): the desktop caption under the
 dark-mode corner button said "Dark mode" in dark mode too, under a sun icon — it now
-names the mode a press switches to, like its icon and tooltip. The copyright
+names the mode a press switches to, like its icon and tooltip (fixed the same way on
+`main` in v2.671, `4b046ac2`; the merge keeps main's code and this branch's test). The copyright
 statement's author name stays out of the repo — the placeholder now says it is filled
 in on the signed copy only.
 

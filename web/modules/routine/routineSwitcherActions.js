@@ -504,11 +504,13 @@ export class RoutineSwitcherActions {
         editDialog.className = 'miniCycle-prompt-dialog';
         editDialog.setAttribute('role', 'dialog');
         editDialog.setAttribute('aria-modal', 'true');
+        editDialog.setAttribute('aria-labelledby', DOM_IDS.RENAME_ROUTINE_TITLE);
 
         const box = document.createElement('div');
-        box.className = 'miniCycle-prompt-box';
+        box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
-        const titleEl = document.createElement('div');
+        const titleEl = document.createElement('h2');
+        titleEl.id = DOM_IDS.RENAME_ROUTINE_TITLE;
         titleEl.className = 'miniCycle-prompt-title';
         titleEl.textContent = getLabel('switcher.renameRoutine');
         box.appendChild(titleEl);
@@ -530,12 +532,12 @@ export class RoutineSwitcherActions {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_SECONDARY, DOM_CLASSES.MINI_CYCLE_BTN_CANCEL].join(' ');
         cancelBtn.textContent = getLabel('button.cancel');
 
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
-        saveBtn.className = 'miniCycle-btn-confirm';
+        saveBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_PRIMARY, DOM_CLASSES.MINI_CYCLE_BTN_CONFIRM].join(' ');
         saveBtn.textContent = getLabel('button.save');
 
         buttons.appendChild(cancelBtn);

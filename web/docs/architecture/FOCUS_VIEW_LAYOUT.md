@@ -55,6 +55,13 @@ pattern the other views already use.
 Both edges are set by construction, so neither can drift. There is no doubling
 term, no derived help-window clearance, and no circular dependency between them.
 
+On desktop (1024px and wider) the logo sits in the top-left corner, level with
+the ⋯ button, and the header row is only as tall as the buttons, so the band
+starts 30px higher. The model is unchanged: the row is still what gets measured.
+The middle of that row is free, so `--focus-band-top` is overridden on `body` (all
+three carousel panels share it): the input bar sits in the row when open, and the
+routine starts in it when the bar is closed.
+
 ### The two knobs
 
 | Token | Effect |
@@ -150,6 +157,17 @@ Measured before the change: followers restored *inside* the card after a reload
 and the Add-task row docked 30px high. A fixed box is a stable frame; saved
 positions carry `taskViewLayout.frame` (`LAYOUT_FRAME_VERSION`) and positions
 from the hugging box are discarded once, with a notice.
+
+At ≥1024px Complete Cycle (Manual and To-Do) is not in that flow at all: it sits
+under the status bubble in the right-hand column (`buttons.css`, `--side-col`) and
+homes there when dragged, so it no longer follows the card.
+
+At 480px tall or less (a phone on its side) both views compact: Focus View drops
+its logo row and lowers the tabs (end of `focus-mode.css`), Home View makes the
+toolbar the top row and, below 1024px wide, gives the routine the left side and
+stacks Add task, the status bubble, Complete Cycle and the nav dots in a right-hand
+column (end of `task-view-layout.css`). The band is
+still measured; only what it measures has moved.
 
 Two consequences:
 

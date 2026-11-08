@@ -19,12 +19,13 @@
  * and naming it makes the transaction boundary obvious at the call site.
  *
  * @module routine/routineSwitcherRepair
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
 import { getRoutine, getRoutines, getAutoClearSettings, setAutoClearSettings } from '../utils/cycleMode.js';
 import { isPriorityLevel } from '../utils/priorityLevel.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
+import { getLabel } from '../labels/labelResolver.js';
 
 /**
  * Validate and repair a cycle in place (through AppState), returning whether
@@ -130,7 +131,9 @@ export function validateAndRepairCycleData(AppState, cycleKey) {
 
     // Ensure cycle has required fields
     if (!cycle.title || typeof cycle.title !== 'string') {
-        cycle.title = cycleKey; // Use key as fallback title
+        // An id-keyed routine's key is a generated id, never a name; only a legacy
+        // title-keyed routine (its key is not its id) has a name to fall back on.
+        cycle.title = cycle.id === cycleKey ? getLabel('routine.untitled') : cycleKey;
         repaired = true;
     }
     if (typeof cycle.cycleCount !== 'number' || cycle.cycleCount < 0) {

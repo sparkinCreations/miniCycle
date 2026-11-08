@@ -616,6 +616,31 @@ export async function runFocusModeTests(resultsDiv) {
         if (!called) throw new Error('deleteAllTasks dep should have been called');
     });
 
+    await test('the input bar menu item names what it will do', () => {
+        setupDOMScaffold();
+        mod.setFocusModeDependencies({
+            AppState: createMockAppState(),
+            getElementById: (id) => document.getElementById(id),
+            querySelector: (sel) => document.querySelector(sel),
+            getBody: () => document.body,
+            safeAddEventListener: (el, evt, fn) => el.addEventListener(evt, fn)
+        });
+        const instance = new mod.FocusMode();
+        document.body.classList.remove('input-bar-visible');
+        instance.init();
+        const item = () => document.querySelector('[data-action="toggle-input-bar"]');
+        try {
+            if (item().textContent !== 'Add Tasks') throw new Error(`hidden bar: got "${item().textContent}"`);
+            document.body.classList.add('input-bar-visible');
+            instance._refreshInputBarItemLabel();
+            if (item().textContent !== 'Hide Add Task Bar') throw new Error(`shown bar: got "${item().textContent}"`);
+        } finally {
+            document.body.classList.remove('input-bar-visible');
+            instance.destroy();
+            teardownDOMScaffold();
+        }
+    });
+
     await test('toggle-input-bar action clicks the existing toggle button', () => {
         let clicked = false;
         setupDOMScaffold();

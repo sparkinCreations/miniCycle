@@ -53,6 +53,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 import { applyTaskStatusLabel } from './taskUtils.js';
 import { TASK_TIMEOUTS, UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, MILESTONES, LIMITS, DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { themeWordVars } from '../labels/themeWords.js';
 import { autoClearFields, clearsCountTowardAchievements, getActiveRoutine, getActiveRoutineId, getAutoClear, getAutoClearMode, getAutoClearSettings, getCycleMode, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import { replayAnimationClass } from '../utils/motionPreference.js';
 import { priorityFields } from '../utils/priorityLevel.js';
@@ -1162,14 +1163,24 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
 
         const { activeCycle, cycleData, taskList } = context;
 
-        // Step 2: Check if confirmation modal is needed (due dates in cycle mode)
+        // Step 2: Ask first if needed. Cycle modes only; Manual Cycle's unchecked
+        // warning is opt-in (Settings → Behavior) and folds the due-date notice
+        // into its one dialog, so a press never meets two in a row. Every route
+        // to Complete Cycle (Home button, Focus View, Quick Actions) comes here.
         if (!cycleData.deleteCheckedTasks) {
-            const hasDueDates = (cycleData.tasks ?? []).some(task => task.dueDate);
+            const tasks = cycleData.tasks ?? [];
+            const hasDueDates = tasks.some(task => task.dueDate);
+            const settings = mergedDeps.AppState.get()?.settings;
+            const unchecked = !cycleData.autoReset && settings?.confirmUncheckedCycle === true
+                ? tasks.filter(task => !task.completed).length
+                : 0;
 
-            if (hasDueDates) {
+            if (hasDueDates || unchecked > 0) {
+                const messageVars = { ...themeWordVars(), count: unchecked, total: tasks.length };
+                const uncheckedKey = hasDueDates ? 'modal.uncheckedCycleMessageDue' : 'modal.uncheckedCycleMessage';
                 mergedDeps.showConfirmationModal({
-                    title: getLabel('modal.resetTasksTitle'),
-                    message: getLabel('modal.resetTasksMessage'),
+                    title: getLabel(unchecked > 0 ? 'modal.uncheckedCycleTitle' : 'modal.resetTasksTitle'),
+                    message: unchecked > 0 ? getLabel(uncheckedKey, { vars: messageVars }) : getLabel('modal.resetTasksMessage'),
                     confirmText: getLabel('modal.resetTasksConfirm'),
                     cancelText: getLabel('button.cancel'),
                     callback: async (confirmed) => {

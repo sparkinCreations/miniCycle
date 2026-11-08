@@ -87,11 +87,9 @@ body.high-contrast:not(.dark-mode) .settings-section.collapsible {
 }
 
 body.high-contrast:not(.dark-mode) .toggle-slider {
-    border: 2px solid #555555;
-}
-
-body.high-contrast:not(.dark-mode) .settings-btn {
-    border: 1px solid #333333;
+    /* Drawn inside the track, not as a border: a border moves the knob's
+       positioning box, which sat it 2px high and against the right edge. */
+    box-shadow: inset 0 0 0 2px #555555;
 }
 
 /* Stats panel */
@@ -328,17 +326,7 @@ body.high-contrast:not(.dark-mode) .routine-search-input:focus {
     box-shadow: var(--shadow-focus-ring);
 }
 
-body.high-contrast:not(.dark-mode) .routine-sort-btn {
-    border: 1px solid #999999;
-    color: #333333;
-}
-
 body.high-contrast:not(.dark-mode) .routine-sort-label {
-    color: #333333;
-}
-
-body.high-contrast:not(.dark-mode) .routine-filter-select {
-    border: 1px solid #999999;
     color: #333333;
 }
 
@@ -363,11 +351,35 @@ body.high-contrast:not(.dark-mode) .mini-cycle-switch-btn {
     border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
+body.high-contrast:not(.dark-mode) .quick-actions-btn,
 body.high-contrast:not(.dark-mode) .routine-switcher-btn,
 body.high-contrast:not(.dark-mode) #personalization-btn,
 body.high-contrast:not(.dark-mode) #quick-dark-toggle {
     border: 2px solid rgba(0, 0, 0, 0.4);
     background: rgba(255, 255, 255, 0.4);
+}
+
+/* The dark frost on a dark preset, as the toolbar group below: white on the
+   white frost was unreadable. */
+body.high-contrast:not(.dark-mode) #menu-button {
+    border: 2px solid rgba(0, 0, 0, 0.4);
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+}
+
+/* The header's joined group (mode-selector.css): the mode picker's border is
+   the divider, so the ends drop the side that meets it. On a dark preset the
+   ends take the dark frost with their white text (utils/readableText.js):
+   this white one put white text at 2.7:1 on Berry. */
+body.high-contrast:not(.dark-mode) .mode-selector-wrapper .quick-actions-btn {
+    border-right-width: 0;
+    border-top-width: 0;
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+}
+
+body.high-contrast:not(.dark-mode) .mode-selector-wrapper .routine-switcher-btn {
+    border-left-width: 0;
+    border-top-width: 0;
+    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
 }
 
 /* --- Themes Modal --- */
@@ -444,18 +456,6 @@ body.high-contrast:not(.dark-mode) .preferences-footer {
     border-top: 2px solid #cccccc;
 }
 
-body.high-contrast:not(.dark-mode) .preferences-undo-btn {
-    border: 2px solid #999999;
-}
-
-body.high-contrast:not(.dark-mode) .preferences-undo-btn:disabled {
-    opacity: 0.6;
-}
-
-body.high-contrast:not(.dark-mode) .preferences-reset-all-btn {
-    border: 2px solid var(--theme-error, #dc3545);
-}
-
 body.high-contrast:not(.dark-mode) .preferences-preview-label {
     color: rgba(255, 255, 255, 1);
 }
@@ -525,10 +525,6 @@ body.high-contrast:not(.dark-mode) .storage-modal-buttons {
     border-top: 2px solid #999999;
 }
 
-body.high-contrast:not(.dark-mode) .storage-modal-buttons .btn-confirm {
-    border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
 /* --- Settings Modal --- */
 body.high-contrast:not(.dark-mode) .settings-modal-content {
     border: 2px solid #333333;
@@ -540,7 +536,8 @@ body.high-contrast:not(.dark-mode) .modal-panel {
 }
 
 /* --- Mini Modal Box (generic small modals) --- */
-body.high-contrast:not(.dark-mode) .mini-modal-box {
+body.high-contrast:not(.dark-mode) .mini-modal-box,
+body.high-contrast:not(.dark-mode) .miniCycle-prompt-box {
     border: 2px solid #333333;
 }
 
@@ -589,6 +586,11 @@ body.high-contrast:not(.dark-mode) textarea::placeholder {
 /* Menu/mode selector */
 body.high-contrast:not(.dark-mode) .mode-selector {
     border: 2px solid rgba(0, 0, 0, 0.4);
+}
+
+/* The header's toolbar hangs from the hairline: no top edge (mode-selector.css). */
+body.high-contrast:not(.dark-mode) .mode-selector-wrapper .mode-selector {
+    border-top-width: 0;
 }
 
 /* Footer note in task options modal */
@@ -679,9 +681,6 @@ body.high-contrast:not(.dark-mode) .mode-description {
 }
 
 /* Main menu — close button */
-body.high-contrast:not(.dark-mode) #close-main-menu {
-    border-top: 2px solid rgba(0, 0, 0, 0.2);
-}
 
 /* Main menu — legacy list buttons */
 body.high-contrast:not(.dark-mode) .menu-container ul li button {
@@ -781,11 +780,9 @@ body.high-contrast.dark-mode .settings-section.collapsible.collapsed {
 }
 
 body.high-contrast.dark-mode .toggle-slider {
-    border: 2px solid #888888;
-}
-
-body.high-contrast.dark-mode .settings-btn {
-    border: 1px solid #888888;
+    /* Drawn inside the track, not as a border: a border moves the knob's
+       positioning box, which sat it 2px high and against the right edge. */
+    box-shadow: inset 0 0 0 2px #888888;
 }
 
 /* Stats panel */
@@ -919,20 +916,8 @@ body.high-contrast.dark-mode .routine-search-input:focus {
     box-shadow: var(--shadow-focus-ring);
 }
 
-body.high-contrast.dark-mode .routine-sort-btn {
-    border: 1px solid #777777;
-    color: #cccccc;
-    background: #333333;
-}
-
 body.high-contrast.dark-mode .routine-sort-label {
     color: #cccccc;
-}
-
-body.high-contrast.dark-mode .routine-filter-select {
-    border: 1px solid #777777;
-    color: #cccccc;
-    background: #333333;
 }
 
 body.high-contrast.dark-mode .cycle-item-size {
@@ -958,12 +943,25 @@ body.high-contrast.dark-mode .mini-cycle-switch-btn {
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
+body.high-contrast.dark-mode .quick-actions-btn,
 body.high-contrast.dark-mode .routine-switcher-btn,
+body.high-contrast.dark-mode #menu-button,
 body.high-contrast.dark-mode #personalization-btn,
 body.high-contrast.dark-mode #quick-dark-toggle {
     border: 2px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.15);
     color: #e0e0e0;
+}
+
+/* The header's joined group: one divider (see the light rule above). */
+body.high-contrast.dark-mode .mode-selector-wrapper .quick-actions-btn {
+    border-right-width: 0;
+    border-top-width: 0;
+}
+
+body.high-contrast.dark-mode .mode-selector-wrapper .routine-switcher-btn {
+    border-left-width: 0;
+    border-top-width: 0;
 }
 
 /* --- Themes Modal --- */
@@ -1040,18 +1038,6 @@ body.high-contrast.dark-mode .preferences-footer {
     border-top: 2px solid #666666;
 }
 
-body.high-contrast.dark-mode .preferences-undo-btn {
-    border: 2px solid #777777;
-}
-
-body.high-contrast.dark-mode .preferences-undo-btn:disabled {
-    opacity: 0.6;
-}
-
-body.high-contrast.dark-mode .preferences-reset-all-btn {
-    border: 2px solid var(--theme-error, #dc3545);
-}
-
 body.high-contrast.dark-mode .preferences-preview-label {
     color: rgba(255, 255, 255, 1);
 }
@@ -1121,10 +1107,6 @@ body.high-contrast.dark-mode .storage-modal-buttons {
     border-top: 2px solid #777777;
 }
 
-body.high-contrast.dark-mode .storage-modal-buttons .btn-confirm {
-    border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
 /* --- Settings Modal --- */
 body.high-contrast.dark-mode .settings-modal-content {
     border: 2px solid #aaaaaa;
@@ -1137,6 +1119,7 @@ body.high-contrast.dark-mode .modal-panel {
 
 /* --- Mini Modal Box (generic small modals) --- */
 body.high-contrast.dark-mode .mini-modal-box,
+body.high-contrast.dark-mode .miniCycle-prompt-box,
 body.high-contrast.dark-mode #storage-viewer-overlay .mini-modal-box.wide {
     border: 2px solid #aaaaaa;
 }
@@ -1185,6 +1168,11 @@ body.high-contrast.dark-mode textarea::placeholder {
 /* Menu/mode selector */
 body.high-contrast.dark-mode .mode-selector {
     border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+/* The header's toolbar hangs from the hairline: no top edge (mode-selector.css). */
+body.high-contrast.dark-mode .mode-selector-wrapper .mode-selector {
+    border-top-width: 0;
 }
 
 /* Footer note in task options modal */
@@ -1276,9 +1264,6 @@ body.high-contrast.dark-mode .mode-description {
 }
 
 /* Main menu — close button */
-body.high-contrast.dark-mode #close-main-menu {
-    border-top: 2px solid rgba(255, 255, 255, 0.2);
-}
 
 /* Main menu — legacy list buttons */
 body.high-contrast.dark-mode .menu-container ul li button {
@@ -1294,6 +1279,53 @@ body.high-contrast.dark-mode .menu-grid button {
 /* Main menu — collapsible header hover */
 body.high-contrast.dark-mode .menu-section-header.collapsible:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   BUTTON SYSTEM (buttons.css: .btn-primary / -secondary / -danger, .close-bar)
+   =============================================================================
+   Secondary is a translucent tint everywhere else; here it is solid, with the
+   high-contrast outline. Filled buttons and the Close bar get an edge. These
+   out-weigh buttons.css's rules on classes, whatever the load order. */
+
+body.high-contrast:not(.dark-mode) .btn.btn-secondary {
+    background: #f0f0f0;
+    color: #111111;
+    border: 2px solid #333333;
+}
+
+body.high-contrast.dark-mode .btn.btn-secondary {
+    background: #3a3a3a;
+    color: #f0f0f0;
+    border: 2px solid #aaaaaa;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    body.high-contrast:not(.dark-mode) .btn.btn-secondary:hover:not(:disabled) {
+        background: #e0e0e0;
+    }
+
+    body.high-contrast.dark-mode .btn.btn-secondary:hover:not(:disabled) {
+        background: #4a4a4a;
+    }
+}
+
+body.high-contrast:not(.dark-mode) .btn.btn-primary,
+body.high-contrast:not(.dark-mode) .btn.btn-danger {
+    border: 2px solid #1a1a1a;
+}
+
+body.high-contrast.dark-mode .btn.btn-primary,
+body.high-contrast.dark-mode .btn.btn-danger {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast:not(.dark-mode) .close-bar {
+    border-top: 2px solid #333333;
+}
+
+body.high-contrast.dark-mode .close-bar {
+    border-top: 2px solid #aaaaaa;
 }
 
 /* =============================================================================
@@ -1441,31 +1473,6 @@ body.high-contrast:not(.dark-mode) .recurring-empty-state {
     color: #333;
 }
 
-body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn:disabled {
-    background: #999;
-    color: #333;
-}
-
-body.high-contrast:not(.dark-mode) .change-recurring-btn {
-    border: 2px solid #333;
-    background: #e0e0e0;
-    color: #000;
-}
-
-body.high-contrast:not(.dark-mode) #apply-recurring-settings {
-    border: 2px solid #006600;
-    color: #fff;
-}
-
-body.high-contrast:not(.dark-mode) #cancel-recurring-settings {
-    border: 2px solid #333;
-    color: #fff;
-}
-
-body.high-contrast:not(.dark-mode) .close-recurring-panel {
-    border-top: 2px solid #333;
-}
-
 body.high-contrast:not(.dark-mode) .add-recurring-task-btn {
     border: 2px dashed #333;
     color: #000;
@@ -1476,16 +1483,8 @@ body.high-contrast:not(.dark-mode) .select-all-add-recurring-btn {
     text-decoration: underline;
 }
 
-body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn {
-    border: 2px solid #006600;
-}
-
 body.high-contrast:not(.dark-mode) .recurring-remove-btn {
     color: #cc0000;
-}
-
-body.high-contrast:not(.dark-mode) .toggle-advanced-btn {
-    border: 1px solid #333;
 }
 
 body.high-contrast:not(.dark-mode) #toggle-check-all {
@@ -1567,31 +1566,6 @@ body.high-contrast.dark-mode .recurring-empty-state {
     color: #ccc;
 }
 
-body.high-contrast.dark-mode .confirm-add-recurring-btn:disabled {
-    background: #555;
-    color: #ccc;
-}
-
-body.high-contrast.dark-mode .change-recurring-btn {
-    border: 2px solid #aaa;
-    background: #3a3a3a;
-    color: #fff;
-}
-
-body.high-contrast.dark-mode #apply-recurring-settings {
-    border: 2px solid #00aa00;
-    color: #fff;
-}
-
-body.high-contrast.dark-mode #cancel-recurring-settings {
-    border: 2px solid #aaa;
-    color: #fff;
-}
-
-body.high-contrast.dark-mode .close-recurring-panel {
-    border-top: 2px solid #aaa;
-}
-
 body.high-contrast.dark-mode .add-recurring-task-btn {
     border: 2px dashed #aaa;
     color: #fff;
@@ -1602,16 +1576,8 @@ body.high-contrast.dark-mode .select-all-add-recurring-btn {
     text-decoration: underline;
 }
 
-body.high-contrast.dark-mode .confirm-add-recurring-btn {
-    border: 2px solid #00aa00;
-}
-
 body.high-contrast.dark-mode .recurring-remove-btn {
     color: #ff4444;
-}
-
-body.high-contrast.dark-mode .toggle-advanced-btn {
-    border: 1px solid #aaa;
 }
 
 body.high-contrast.dark-mode #toggle-check-all {
@@ -1819,14 +1785,18 @@ body.high-contrast:not(.dark-mode) .chip-group-icon {
 }
 
 body.high-contrast:not(.dark-mode) .filter-chip,
-body.high-contrast:not(.dark-mode) .sort-chip {
+body.high-contrast:not(.dark-mode) .sort-chip,
+body.high-contrast:not(.dark-mode) .routine-sort-btn,
+body.high-contrast:not(.dark-mode) .routine-filter-select {
     border: 1px solid var(--theme-text-muted);
     color: var(--theme-text-on-surface);
 }
 
 body.high-contrast:not(.dark-mode) .filter-chip.active,
-body.high-contrast:not(.dark-mode) .sort-chip.active {
+body.high-contrast:not(.dark-mode) .sort-chip.active,
+body.high-contrast:not(.dark-mode) .routine-sort-btn.active {
     border: 2px solid var(--theme-text-on-surface);
+    color: var(--btn-primary-text);   /* near-black on the steel fill is 3.6:1 */
 }
 
 body.high-contrast:not(.dark-mode) .filter-sort-divider {
@@ -1846,14 +1816,17 @@ body.high-contrast.dark-mode .chip-group-icon {
 }
 
 body.high-contrast.dark-mode .filter-chip,
-body.high-contrast.dark-mode .sort-chip {
+body.high-contrast.dark-mode .sort-chip,
+body.high-contrast.dark-mode .routine-sort-btn,
+body.high-contrast.dark-mode .routine-filter-select {
     border: 1px solid var(--theme-task-border);
     background: var(--dark-chip-bg);
     color: var(--theme-text-secondary);
 }
 
 body.high-contrast.dark-mode .filter-chip.active,
-body.high-contrast.dark-mode .sort-chip.active {
+body.high-contrast.dark-mode .sort-chip.active,
+body.high-contrast.dark-mode .routine-sort-btn.active {
     border: 2px solid var(--theme-text-primary);
 }
 

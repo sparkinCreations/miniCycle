@@ -43,8 +43,10 @@ export class ModePicker {
      *   accessible name for the current label (default: the label itself)
      * @param {(mode: string) => string} [opts.getItemTitle] - an option's
      *   tooltip (what picking it does); none when omitted
+     * @param {(open: boolean) => void} [opts.onOpenChange] - told each time the
+     *   menu opens or closes, by any route
      */
-    constructor({ select, button, menu, getModeLabel, getModeIcon, getButtonAria, getItemTitle }) {
+    constructor({ select, button, menu, getModeLabel, getModeIcon, getButtonAria, getItemTitle, onOpenChange }) {
         this.select = select;
         this.button = button;
         this.menu = menu;
@@ -52,6 +54,7 @@ export class ModePicker {
         this.getModeIcon = getModeIcon || ((mode) => MODE_PICKER_ICONS[mode] || MODE_PICKER_ICONS['auto-cycle']);
         this.getButtonAria = getButtonAria || ((label) => label);
         this.getItemTitle = getItemTitle || null;
+        this.onOpenChange = onOpenChange || null;
         this._listeners = [];
         this._restoreValue = null;
 
@@ -80,6 +83,7 @@ export class ModePicker {
         this._relabelItems();
         this.menu.hidden = false;
         this.button.setAttribute('aria-expanded', 'true');
+        this.onOpenChange?.(true);
         const items = this._items();
         (items.find(i => i.getAttribute('aria-checked') === 'true') || items[0])?.focus();
     }
@@ -89,10 +93,12 @@ export class ModePicker {
         if (this.menu.hidden) return;
         this.menu.hidden = true;
         this.button.setAttribute('aria-expanded', 'false');
+        this.onOpenChange?.(false);
         if (returnFocus) this.button.focus();
     }
 
     destroy() {
+        if (!this.menu.hidden) this.onOpenChange?.(false);
         this._listeners.forEach(([el, type, fn, capture]) => el.removeEventListener(type, fn, capture));
         this._listeners = [];
         if (this._restoreValue) this._restoreValue();

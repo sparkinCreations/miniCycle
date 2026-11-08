@@ -1310,6 +1310,36 @@ export async function runOnboardingManagerTests(resultsDiv) {
     // button. The "we start you in Focus View" toast has no options arg.
     const isMergedWelcome = (args) => !!(args[3] && args[3].actionButton && args[3].secondaryActionButton);
 
+    await test('the first Focus View exit removes the "started you in Focus View" notice at once', async () => {
+        const state = { settings: {}, data: { routine: {} } };
+        const notice = document.createElement('div');
+        const close = document.createElement('button');
+        close.className = 'close-btn';
+        let closed = 0;
+        close.addEventListener('click', () => { closed++; });
+        notice.appendChild(close);
+        document.body.appendChild(notice);
+
+        setOnboardingManagerDependencies(createMockDeps({
+            AppState: { isReady: () => true, get: () => state, update: (fn) => { fn(state); return state; } },
+            appInit: { isAppReady: () => true },
+            activateFocusMode: () => {},
+            showNotification: () => notice,
+            markTourWelcomeShown: () => {},
+            createNewMiniCycle: () => {},
+            startGuidedTour: () => {}
+        }));
+        const om = new OnboardingManager();
+        await om.startFocusViewForNewRoutine('sample');
+        document.dispatchEvent(new CustomEvent('focusMode:deactivated'));
+
+        const stillThere = notice.isConnected;
+        notice.remove();
+        om.destroy();
+        if (stillThere) throw new Error('the notice should leave the page the moment Focus View is exited');
+        if (closed !== 1) throw new Error('the notice should close through its own button, so its timers stop');
+    });
+
     await test('startFocusViewForNewRoutine("sample") shows merged Home View welcome on first focus exit', async () => {
         const state = { settings: {}, data: { routine: {} } };
         const notifications = [];

@@ -7,30 +7,33 @@
    ROUTINE SWITCHER BUTTON
    ============================================================================= */
 
+/* The right end of the header's joined button group — the joins and the
+   word's rules are with the + in mode-selector.css (QUICK ACTIONS). */
 .routine-switcher-btn {
-    position: absolute;
-    right: var(--space-3-75);
-    background: var(--overlay-white-light);
-    box-shadow: var(--shadow-button);
-    border: 1px solid var(--border-blue-subtle-hover);
-    color: var(--color-navy);
-    border-radius: var(--radius-5);
-    width: var(--header-side-btn-width);   /* shared with the + (mode-selector.css) */
-    /* Match the mode selector's height (see .quick-actions-btn in
-       mode-selector.css). The selector is a native <select> that stays ~25px,
-       so a fixed height on the same token keeps the header controls level.
-       Was a mismatched 22px. */
-    height: var(--space-6-25);
+    /* Anchors the tap-target pseudo-element below. */
+    position: relative;
+    background: var(--pref-chrome-glass, var(--overlay-white-light));
+    -webkit-backdrop-filter: var(--chrome-blur-small);
+    backdrop-filter: var(--chrome-blur-small);
+    border: 1px solid var(--chrome-border-color);
+    border-left-width: 0;   /* the mode picker's border is the divider */
+    border-top-width: 0;    /* hangs from the hairline */
+    color: var(--pref-chrome-ink, var(--color-navy));   /* white on a dark preset (mode-selector.css) */
+    border-radius: 0 0 var(--chrome-radius) 0;
+    min-height: var(--chrome-group-height);
+    padding: 0 var(--space-3);
+    gap: var(--space-1-5);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all var(--transition-normal) ease;
+    font-size: var(--chrome-font-size);
+    font-family: inherit;
 }
 
-/* WCAG 2.5.8 tap target via pseudo-element — matches .quick-actions-btn::after.
-   The 25px height is locked to the mode selector, so grow the hit area only:
-   25 + 10 + 10 = 45px tall. Already position:absolute, so it anchors ::after. */
+/* WCAG 2.5.8 tap target via pseudo-element — matches .quick-actions-btn::after:
+   30 + 10 + 10 = 50px tall. */
 .routine-switcher-btn::after {
     content: '';
     position: absolute;
@@ -42,35 +45,18 @@
     border-color: var(--color-navy-dark);
 }
 
+/* Pressed: darker in place, as the + (a scale pulled it off the picker). */
 .routine-switcher-btn:active {
-    transform: scale(0.95);
+    filter: brightness(0.9);
 }
 
+/* The folder (List) or the cards (Browse): the icon says which view the
+   button opens (routineSwitcher.syncEntryPoints); "Routines" is beside both. */
 .routine-switcher-btn svg {
-    fill: var(--color-navy);
+    fill: currentColor;
     width: 16px;
     height: 16px;
     flex-shrink: 0;
-}
-
-/* Opening Browse, the button says so: the cards and "Routines" (the folder
-   alone opens the list). Its width — and the +'s, which matches it — comes from
-   --header-side-btn-width (mode-selector.css). It keeps its right edge, so the
-   extra width grows toward the mode selector; below 375px there is no room and
-   the word goes (the name is still in aria-label and title). */
-.routine-switcher-btn[data-routine-view="browse"] {
-    gap: var(--space-1);
-    padding: 0 var(--space-1-5);
-}
-
-.routine-switcher-btn-label {
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: var(--font-size-xs);
-    font-weight: 600;
-    line-height: 1;
-    white-space: nowrap;
 }
 
 /* =============================================================================
@@ -111,10 +97,6 @@ dialog.mini-cycle-switch-modal[open] {
     display: flex;
 }
 
-dialog.mini-cycle-switch-modal::backdrop {
-    background: var(--overlay-heavy);
-}
-
 /* =============================================================================
    MODAL CONTENT
    ============================================================================= */
@@ -124,7 +106,7 @@ dialog.mini-cycle-switch-modal::backdrop {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246))));
     color: var(--pref-modal-text, var(--theme-modal-text, #333));
     padding: var(--space-3-75) var(--space-3-75) 0;
-    border-radius: var(--radius-10);
+    border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-dropdown),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
@@ -262,66 +244,25 @@ input.routine-search-input:focus {
     font-weight: 500;
 }
 
-.routine-sort-btn {
-    /* "A-Z" broke onto two lines on a phone (Oct 2026) — a label this short
-       should never wrap. */
-    white-space: nowrap;
-    padding: var(--space-1) var(--space-2-5);
-    font-size: var(--font-size-xs);
-    border: 1px solid var(--border-blue-subtle-hover);
-    background: var(--color-blue-pale);
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    transition: all var(--transition-fast) ease;
-    color: var(--color-primary-dark);
-    font-weight: 500;
-}
-
-.routine-sort-btn:hover {
-    background: var(--color-blue-pale);
-    border-color: var(--border-blue-subtle-hover);
-}
-
-.routine-sort-btn.active {
-    background: var(--color-primary-dark);
-    color: var(--color-white);
-    border-color: var(--color-primary-dark);
-}
-
 .routine-filter-controls {
     display: flex;
     align-items: center;
 }
 
+/* The filter and the sort buttons are the routine list's chips: their look is
+   the .filter-chip / .sort-chip rule in task-list.css. Only sizing is here, and
+   the text colour: the chips' softer grey is under 4.5:1 on this card's glass. */
 .routine-filter-select {
-    padding: var(--space-1) var(--space-2);
-    font-size: var(--font-size-xs);
-    border: 1px solid var(--border-blue-subtle-hover);
-    background: var(--color-blue-pale);
-    border-radius: var(--radius-pill);
-    cursor: pointer;
-    color: var(--color-primary-dark);
-    font-weight: 500;
-    outline: none;
     max-width: 100px;
+    color: var(--theme-text-on-surface);
 }
 
-.routine-filter-select:focus-visible {
-    box-shadow: var(--shadow-focus-ring);
+.routine-sort-btn:not(.active) {
+    color: var(--theme-text-on-surface);
 }
 
-.routine-filter-select:hover {
-    background: var(--color-blue-pale);
-    border-color: var(--border-blue-subtle-hover);
-}
-
-.routine-filter-select:focus {
-    border-color: var(--theme-button-primary-bg, #4c79ff);
-    box-shadow: var(--shadow-focus-ring-subtle);
-}
-
-/* The filter is a menu button (routine/modePicker.js) carrying the pill
-   class above, so dark mode and High Contrast style it unchanged. The caret
+/* The filter is a menu button (routine/modePicker.js) carrying the chip look
+   above, so dark mode and High Contrast style it unchanged. The caret
    is drawn in currentColor, not a background image — those rules reset the
    background shorthand. */
 .routine-filter-select.mode-picker-btn {
@@ -330,8 +271,7 @@ input.routine-search-input:focus {
     gap: var(--space-1);
     max-width: 140px;
     font-family: inherit;
-    line-height: 1.2;
-    white-space: nowrap;
+    line-height: 1.4;
 }
 
 .routine-filter-select.mode-picker-btn .mode-picker-icon {
@@ -438,6 +378,7 @@ input.routine-search-input:focus {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-1-5);
+    justify-content: center;
 }
 
 .recent-routine-chip {
@@ -578,6 +519,14 @@ input.routine-search-input:focus {
 
 /* On mobile, ensure buttons distribute evenly and preview takes full width */
 @media (max-width: 767px) {
+    /* A selection needs the height: the list keeps its rows instead of giving
+       them to the actions and preview. The storage bar returns on deselect. */
+    .has-routine-selection .routine-list-hint,
+    .has-routine-selection ~ .storage-bar-container,
+    .switch-items-row-title {
+        display: none;
+    }
+
     /* Show routine list header on mobile */
     .routine-switcher-left .routine-panel-title {
         display: block;
@@ -606,6 +555,7 @@ input.routine-search-input:focus {
     /* While the theme picker is open, it takes the preview's place. Both did
        not fit on a phone, and it is the preview that can wait: it comes back
        the moment the picker closes. */
+    .switch-theme[aria-expanded="true"] ~ .switch-preview-title,
     .switch-theme[aria-expanded="true"] ~ .switch-preview-window,
     .switch-theme[aria-expanded="true"] ~ .switch-preview-date,
     .switch-theme[aria-expanded="true"] ~ .switch-preview-hint {
@@ -635,21 +585,20 @@ input.routine-search-input:focus {
         display: none;
     }
 
-    /* Preview title bar on mobile — sticky so it doesn't scroll with content */
-    .switch-items-row .switch-preview-window::before {
-        content: 'Preview';
-        display: block;
-        position: sticky;
-        top: calc(-1 * var(--space-2-5));
-        z-index: 1;
+    /* Preview heading, a sibling above the scroller so its Expand stays put. */
+    .switch-preview-title {
+        position: relative;
+        flex: 0 0 100%;
+        order: 98;
+        box-sizing: border-box;
+        margin-top: var(--space-1-5);
+        padding: var(--space-2) var(--space-2-5);
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        background: var(--color-primary);
+        color: var(--color-white);
         font-size: var(--font-size-sm);
         font-weight: 600;
-        color: var(--color-white);
-        background: var(--color-primary);
         opacity: 0.85;
-        padding: var(--space-2) var(--space-2-5);
-        margin: calc(-1 * var(--space-2-5)) calc(-1 * var(--space-2-5)) var(--space-2);
-        border-radius: var(--radius-md) var(--radius-md) 0 0;
         text-align: center;
     }
 
@@ -657,28 +606,32 @@ input.routine-search-input:focus {
     .switch-items-row .switch-preview-window {
         flex: 0 0 100%;
         max-width: none;
-        min-height: 150px;
-        margin: var(--space-1-5) auto 0;
+        /* Tall phones get a roomier preview; short ones keep the height for the
+           list, which is what the user came here to choose from. */
+        height: clamp(72px, calc(100vh - 660px), 146px);
+        min-height: 0;
+        max-height: none;
+        /* Cancels the row gap so the heading sits on the window. */
+        margin: calc(-1 * var(--space-0-75)) auto 0;
         border: 1px solid var(--border-blue-subtle-hover);
         order: 99;
     }
 
-    /* Date and hint below preview, on separate lines */
+    /* Date and hint share one line under the preview. */
     .switch-preview-date {
         order: 100;
-        flex: 0 0 100%;
     }
 
     .switch-preview-hint {
         order: 101;
-        flex: 0 0 100%;
+        margin-left: var(--space-2);
     }
 
-    /* Date and hint on separate lines */
     .switch-preview-date,
     .switch-preview-hint {
         display: block;
-        width: 100%;
+        flex: 0 1 auto;
+        margin-top: var(--space-0-75);
     }
 }
 
@@ -795,16 +748,10 @@ input.routine-search-input:focus {
 }
 
 /* =============================================================================
-   CLOSE BUTTON — matches recurring panel / settings close bar
+   CLOSE BUTTON — a .close-bar (buttons.css); this only places it
    ============================================================================= */
 
 .close-routine-switcher {
-    background: var(--close-btn-effective);
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
-    border: none;
     border-radius: 0 0 var(--radius-15) var(--radius-15);
     /* Horizontal -25px against 15px padding is DELIBERATE: the extra 10px per
        side is clipped by the shell's overflow, which is how this button goes
@@ -820,14 +767,6 @@ input.routine-search-input:focus {
     position: sticky;
     bottom: 0;
     z-index: 1;
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    display: block;
-    text-align: center;
-}
-
-.close-routine-switcher:hover {
-    background: var(--menu-close-hover-bg, var(--color-steel-blue));
 }
 
 /* =============================================================================
@@ -1070,9 +1009,10 @@ input.routine-search-input:focus {
     display: none;
 }
 
-/* Right panel — hidden on mobile, visible on desktop */
+/* Right panel: the desktop preview column. On a phone its preview parts are
+   hidden (below) and only the actions row inside it shows, in the page flow. */
 .routine-switcher-right {
-    display: none;
+    display: contents;
 }
 
 .desktop-preview-window {
@@ -1141,9 +1081,19 @@ input.routine-search-input:focus {
         max-height: min(95vh, 900px);
     }
 
-    /* Sort controls next to filter on desktop */
+    /* Filter, sort, then search filling the rest of the row: one row of
+       controls instead of two, and the height goes to the list. */
     .routine-sort-filter-row {
         justify-content: flex-start;
+    }
+
+    /* Exactly the preview column below it: its share of the body after the gap
+       (the 6 / 5 split on .routine-switcher-left and -right). */
+    input.routine-search-input {
+        flex: 0 0 auto;
+        width: calc((100% - var(--space-4)) * 5 / 11);
+        margin-bottom: 0;
+        margin-left: auto;
     }
 
     .routine-switcher-body {
@@ -1160,7 +1110,7 @@ input.routine-search-input:focus {
     }
 
     .routine-switcher-left {
-        flex: 2;
+        flex: 6;
         min-width: 0;
         display: flex;
         flex-direction: column;
@@ -1172,7 +1122,7 @@ input.routine-search-input:focus {
            shrink past — the max-height on the shell would have been overruled by
            it. Now 240px is the PREFERRED size (flex-basis) and it can shrink on
            short screens and grow on tall ones. */
-        flex: 1 1 240px;
+        flex: 1 1 clamp(240px, 38vh, 360px);
         min-height: 0;
         max-height: none;
     }
@@ -1180,7 +1130,7 @@ input.routine-search-input:focus {
     .routine-switcher-right {
         display: flex;
         flex-direction: column;
-        flex: 1;
+        flex: 5;
         flex-shrink: 0;
         min-height: 0;
     }
@@ -1198,16 +1148,17 @@ input.routine-search-input:focus {
         text-align: center;
     }
 
-    /* Preview matches the list height — same flex basis, so the two panels stay
-       level while both remain free to shrink. A fixed `height: 240px` here would
-       reintroduce the floor removed from the list above. */
+    /* The list sets the height of the row and the preview fills what its column
+       has left, so the actions appearing under it never change the list. A
+       basis here would make the column taller than the list and grow the card. */
     .routine-switcher-right .desktop-preview-window {
-        flex: 1 1 240px;
+        flex: 1 1 0;
         min-height: 0;
         overflow-y: auto;
     }
 
     /* Hide the inline mobile preview on desktop — right panel handles it */
+    .switch-preview-title,
     .switch-preview-window,
     .switch-preview-date,
     .switch-preview-hint {
@@ -1255,9 +1206,36 @@ input.routine-search-input:focus {
    ============================================================================= */
 
 @media (max-width: 767px) {
+    /* The search keeps its own line above the filter and sort. */
+    .routine-sort-filter-row {
+        flex-wrap: wrap;
+    }
+
+    input.routine-search-input {
+        flex: 0 0 100%;
+        order: -1;
+        margin-bottom: 0;
+    }
+
     .mini-cycle-switch-modal-content {
         min-width: 280px;
         max-width: 95%;
+    }
+
+    /* The list and the actions are direct rows of the card here, so the list is
+       the one thing that shrinks and the floor below is the list's own. A floor
+       on a body holding both would be met by the actions alone. These sit after
+       the base .routine-switcher-* rules or they would lose to them. */
+    .routine-switcher-body {
+        display: contents;
+    }
+
+    .routine-switcher-left {
+        min-height: var(--switch-body-min-height);
+    }
+
+    .routine-switcher-right > :not(.switch-items-row):not(.theme-picker-row) {
+        display: none;
     }
 
     /* The five icon buttons share the row instead of wrapping: at 375px their
@@ -1275,24 +1253,6 @@ input.routine-search-input:focus {
        an aria-label. Labels were tried in Oct 2026 and dropped: with the 🎨
        Theme button unlocked there are five, "Download" was cut to "Downlo…"
        even at 390px, and the taller emoji knocked the row out of line. */
-}
-
-/* Too narrow for "Routines" beside the mode selector: the cards alone. At
-   375px (iPhone SE / mini) and the default Font Size the word and the selector
-   are 2px apart. The container query is the header row's width in em, so a
-   larger Font Size drops the word sooner; the media query is its floor for
-   browsers without container queries (mode-selector.css sets the widths at the
-   same two points). */
-@container (max-width: 22em) {
-    .routine-switcher-btn-label {
-        display: none;
-    }
-}
-
-@media (max-width: 374px) {
-    .routine-switcher-btn-label {
-        display: none;
-    }
 }
 
 @media (max-width: 480px) {
@@ -1331,6 +1291,11 @@ input.routine-search-input:focus {
         display: none;
     }
 
+    /* Without its label the chip would be shorter than the sort chips. */
+    .routine-filter-select.mode-picker-btn {
+        min-height: 24px;
+    }
+
     /* The filter + "Sort:" + three buttons need ~312px and a phone card
        gives 256-308px. Tighter spacing fits them from ~360px up; below that
        the sort group drops onto its own line as a unit, instead of running
@@ -1348,10 +1313,10 @@ input.routine-search-input:focus {
         margin-right: 0;
     }
     .routine-sort-btn {
-        padding: var(--space-1) var(--space-1-5);
+        padding-right: var(--space-1-5);
+        padding-left: var(--space-1-5);
     }
 }
-
 
 /* =============================================================================
    OPEN ROUTINE — THE LIST'S HEADING AND EXPAND / COLLAPSE (routineSwitcher.setListExpanded)
@@ -1421,10 +1386,12 @@ input.routine-search-input:focus {
 
 /* The actions row is not in this list: it is shown by an inline style, so
    setListExpanded() hides it in JS rather than outranking that here. */
-.routine-list-expanded :is(.routine-sort-filter-row, .recent-routines-section, .routine-switcher-right, .theme-picker-row, .switch-action-row, .storage-bar-container, .routine-list-hint) {
+.routine-list-expanded .routine-sort-filter-row > :not(.routine-search-input),
+.routine-list-expanded :is(.recent-routines-section, .routine-switcher-right, .theme-picker-row, .switch-action-row, .storage-bar-container, .routine-list-hint) {
     display: none;
 }
 
+.routine-list-expand-btn[hidden],
 .routine-list-expand-btn [hidden] {
     display: none;
 }
@@ -1488,7 +1455,6 @@ input.routine-search-input:focus {
         display: none;
     }
 }
-
 
 /* =============================================================================
    BROWSE ROUTINES (routine/routineBrowser.js, routineBrowserRender.js)
@@ -2228,5 +2194,118 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
         overflow: hidden;
         clip: rect(0 0 0 0);
         white-space: nowrap;
+    }
+}
+
+/* A short window spends its height on the list, and the Recent sort reaches the
+   same routines. A phone gets there sooner: a laptop browser is often under
+   700px tall and has the rows to spare. */
+@media (max-width: 767px) and (max-height: 700px), (max-height: 560px) {
+    .recent-routines-section {
+        display: none;
+    }
+}
+
+/* The smallest screens: the routine's actions stay, its preview goes. The list
+   is what a person is choosing from, and Open is one tap away. */
+@media (max-width: 767px) and (max-height: 700px) {
+    .switch-preview-title,
+    .switch-preview-window,
+    .switch-preview-date,
+    .switch-preview-hint {
+        display: none;
+    }
+}
+
+/* =============================================================================
+   THE ACTIONS UNDER THE PREVIEW (TABLET AND DESKTOP)
+   =============================================================================
+   They used to be a full-width row below both panels, which came out of the
+   list's height the moment a routine was selected: 2.9 rows at 1366x650. In the
+   preview's column they cost the list nothing and the card does not change size. */
+@media (min-width: 768px) {
+    .routine-switcher-right .switch-items-row {
+        flex-shrink: 0;
+        gap: var(--space-0-75);
+        margin-top: var(--space-2);
+        padding: 0;
+    }
+
+    .routine-switcher-right .switch-items-row-title {
+        margin-bottom: 0;
+    }
+
+    /* Sized by their labels: equal shares put "Duplicate" into "Rename". */
+    .routine-switcher-right .switch-buttons {
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: var(--space-1) 0;
+        font-size: var(--font-size-xs);
+    }
+}
+
+@media (min-width: 1024px) {
+    .mini-cycle-switch-modal-content {
+        width: 760px;
+    }
+}
+
+/* A phone on its side at tablet width: the preview needs what little there is. */
+@media (min-width: 768px) and (max-height: 480px) {
+    .routine-switcher-right .switch-items-row-title,
+    .routine-switcher-right .switch-btn-label,
+    .desktop-preview-hint,
+    .has-routine-selection ~ .storage-bar-container {
+        display: none;
+    }
+
+    .routine-switcher-right .switch-buttons {
+        min-height: 32px;
+    }
+}
+
+/* The preview's heading matches the list's and has the same Expand button. */
+@media (min-width: 768px) {
+    .routine-switcher-right .routine-preview-title {
+        position: relative;
+        padding: var(--space-1-5) var(--space-2-5);
+    }
+
+    /* A long routine name stops short of the button. */
+    .routine-preview-title span {
+        display: block;
+        overflow: hidden;
+        padding: 0 var(--space-7);
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+}
+
+/* The theme picker takes the preview's place in its column, so the card stays
+   the same size and the list keeps its rows. The actions stay below it, which
+   leaves the Theme button where it was clicked. */
+@media (min-width: 768px) {
+    .routine-switcher-right .switch-items-row {
+        order: 2;
+    }
+
+    .routine-switcher-right .theme-picker-row {
+        flex: 1 1 0;
+        order: 1;
+        align-content: flex-start;
+        box-sizing: border-box;
+        width: 100%;
+        min-height: 0;
+        margin: 0;
+        padding: var(--space-2);
+        overflow-y: auto;
+        border: 1px solid var(--border-blue-subtle-hover);
+        border-top: none;
+        border-radius: 0 0 var(--radius-5) var(--radius-5);
+    }
+
+    .theme-picker-open .desktop-preview-window,
+    .theme-picker-open .desktop-preview-hint {
+        display: none;
     }
 }

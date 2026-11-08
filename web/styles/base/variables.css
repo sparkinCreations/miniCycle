@@ -68,7 +68,7 @@
   --color-orange-light: #ffb74d;      /* orange gradient secondary */
   --color-orange-icon: #e67e22;       /* high-priority task option icon */
   --color-amber: #f39c12;             /* high-priority icon on dark bg */
-  --color-green-dark: #388E3C;         /* manual cycle mode indicator */
+  --color-green-dark: #388E3C;
   --color-purple: #7B1FA2;            /* to-do mode indicator */
   --color-red: #f44336;               /* storage critical / pure red */
   --color-red-light: #ef5350;         /* storage critical gradient secondary */
@@ -80,7 +80,7 @@
   /* Extended blue palette */
   --color-blue-medium: #3498db;       /* recurring / reminder option icons */
   --color-blue-light: #5dade2;        /* reminder icons on dark bg */
-  --color-steel-blue: #3d7ab5;        /* modal close button */
+  --color-steel-blue: #376fa4;        /* the app's steel blue (= --menu-action-bg) */
   --color-blue-pale: #d6e4f7;         /* modal background */
   --color-blue-pale-mid: #c0d4ed;     /* summary/detail panels on blue modals */
   --color-blue-pale-light: #f5f8ff;   /* inner panel bg on pale blue modals */
@@ -395,10 +395,12 @@
      --pref-menu-accent; this is the classic/default value.
      Deliberately NOT --theme-button-primary-bg (#4c79ff), which carries its
      white label at only 3.83:1 — below AA, in the theme every user sees.
-     #3d7ab5 is the app's steel blue and clears it at 4.52:1. That is a thin
-     margin, so treat it as a floor: anything lighter fails. Pinned by the
+     #376fa4 is the app's steel blue: every main action, Close bar, Add and
+     Focus View's Complete task read it (buttons.css --btn-primary-bg). White
+     on it is 5.29:1. It was #3d7ab5 at 4.52:1 until Nov 2026, deepened a
+     shade for margin: anything lighter than #3d7ab5 fails AA. Pinned by the
      menu-contrast gate. */
-  --menu-action-bg:       #3d7ab5;
+  --menu-action-bg:       #376fa4;
   --menu-close-bg:        var(--color-steel-blue);
   --menu-close-text:      var(--color-white);
   --menu-close-hover-bg:  #326a9e;
@@ -477,6 +479,7 @@
   --font-size-base: 16px;
   --font-size-xs: calc(var(--font-size-base) - 4px);
   --font-size-sm: calc(var(--font-size-base) - 2px);
+  --font-size-md: var(--font-size-base);
   --font-size-lg: calc(var(--font-size-base) + 2px);
   --font-size-xl: calc(var(--font-size-base) + 4px);
   --font-size-2xl: calc(var(--font-size-base) + 8px);
@@ -502,6 +505,7 @@
   --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Animation-specific timing (longer durations for deliberate visual effects) */
+  --view-switch-glide: 250ms;    /* the routine card moving between Home and Focus View */
   --animation-pop: 400ms;        /* popIn, taskResetFlash, fadeInUp, taskClearOut */
   --animation-slow: 600ms;       /* header coin-flip, SVG stroke transitions */
   --animation-exit: 1500ms;      /* cycle completion fadeOutScale */
@@ -562,6 +566,51 @@
   --shadow-button-hover: 0 3px 6px rgba(0, 0, 0, 0.18);
 
   /* Focus rings */
+  /* Home-screen chrome (Nov 2026): the glass controls that sit on the app
+     background — header buttons, Menu, Undo/Redo, the round corner buttons,
+     Focus View's buttons — share one edge, one lift, one corner and one label
+     size. Controls INSIDE a card (task options, chips, search) get no lift.
+     Two surface shadows: --shadow-card for the input bar and task rows,
+     --shadow-glass-panel for the status bubble and routine title bar. Dark
+     mode redefines them in dark-mode.css. */
+  --chrome-border-color: rgba(255, 255, 255, 0.45);
+  --chrome-shadow: var(--shadow-button);
+  --chrome-radius: var(--radius-md);
+  --chrome-font-size: var(--font-size-xs);
+  /* The frost on the glass controls that sit on the page. Two radii because
+     Chrome's backdrop blur fails on a small box when the radius is large
+     next to its height (measured Nov 2026: 20px left the background sharp
+     behind the 30px toolbar buttons, 5-8px frosted it). The 48px corner
+     buttons take the large one; the toolbar and the corner captions the small. */
+  --chrome-blur: blur(20px) saturate(140%);
+  --chrome-blur-small: blur(6px) saturate(140%);
+  /* The hairline between the logo row and the toolbar row under it (the +,
+     mode picker and routine button), so the toolbar reads as its own row. */
+  --toolbar-divider: rgba(255, 255, 255, 0.55);
+  /* Over a background photo (background.css): the glass controls, the panels
+     and the routine card's frame on one dark frost, its title bar a step
+     darker. 0.5 gave the white title 4.3:1 on a light photo; 0.62 clears 4.5. */
+  --photo-glass: rgba(10, 25, 60, 0.35);
+  /* The add-task bar is glass like the controls around it. Its text has to be
+     read and typed, so its frost is stronger on a photo than --photo-glass. */
+  --input-glass-bg: rgba(255, 255, 255, 0.32);
+  --input-glass-bg-dim: rgba(255, 255, 255, 0.1);   /* Focus View and dark mode */
+  --input-glass-ink: #14205a;
+  --input-glass-text: #0a1033;   /* what the user types: darker than the placeholder */
+  --input-glass-bg-focus: rgba(255, 255, 255, 0.62);   /* more frost behind the text while typing */
+  --input-glass-rim: rgba(255, 255, 255, 0.9);
+  --input-glass-rim-dim: rgba(255, 255, 255, 0.6);
+  --input-add-rim: rgba(255, 255, 255, 0.85);   /* steel Add on a glass bar of nearly the same shade in Focus View (1.03:1 without it) */
+  --photo-input-glass: rgba(10, 25, 60, 0.72);
+  --photo-title-glass: rgba(10, 25, 60, 0.62);
+  --color-danger-on-light: #b71c1c;   /* a destructive menu item on the light-blue dropdowns: 5.5:1 */
+  --shadow-card: 0 2px 5px rgba(0, 0, 0, 0.2);
+  --shadow-glass-panel: 0 4px 15px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+  /* The three main cards a user swipes between — Focus View's task card,
+     the routine card, the Stats panel — share one corner and one lift. */
+  --panel-radius: var(--radius-lg);
+  --shadow-panel: 0 8px 24px rgba(0, 0, 0, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.4);
+
   --shadow-focus-ring: 0 0 0 2px rgba(76, 121, 255, 0.5);
   --shadow-focus-ring-subtle: 0 0 0 2px rgba(76, 121, 255, 0.2);
 
@@ -681,6 +730,10 @@
      the literal budgets that let a long routine overflow the band on iPad
      (Oct 2026). Focus View's equivalents are --focus-card-chrome-gap /
      --focus-band-bottom-gap. */
+  --task-input-row-height: 44px;  /* the add-task bar's height */
+  --corner-logo-height: 36px;   /* the logo in the desktop top-left corner, Home and Focus View */
+  --menu-dim-filter: brightness(0.85) blur(2px);   /* .main-menu-backdrop's dim and blur, for content a backdrop would over-dim */
+  --header-row-compact: 56px;   /* desktop Home: the logo row once the logo is in the corner */
   --home-band-gap: 16px;
   /* Vertical room a drag-customized (floating) routine card leaves itself in
      the Home band. In flow the band bounds the card and a long routine fills
@@ -751,6 +804,7 @@
      own 12px/38px, the focus menu's 64px, and the task-view clearance), which
      is the drift pattern documented in
      docs/future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md. */
+  --focus-tabs-half: 96px;   /* half the Task | Routine | Stats row, for placing undo/redo beside it */
   --focus-btn-top: 12px;
   --focus-btn-height: 38px;
   --focus-btn-gap: 14px;
@@ -863,6 +917,7 @@
     --transition-normal: 0ms;
     --transition-slow: 0ms;
     --animation-pop: 0ms;
+    --view-switch-glide: 0ms;
     --animation-slow: 0ms;
     --animation-exit: 0ms;
     --animation-spin: 0ms;
@@ -891,6 +946,7 @@ html.reduced-motion {
     --transition-normal: 0ms;
     --transition-slow: 0ms;
     --animation-pop: 0ms;
+    --view-switch-glide: 0ms;
     --animation-slow: 0ms;
     --animation-exit: 0ms;
     --animation-spin: 0ms;

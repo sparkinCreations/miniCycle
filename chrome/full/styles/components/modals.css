@@ -22,9 +22,58 @@ dialog {
     overflow: visible;
 }
 
+/* =============================================================================
+   THE MODAL FRAME (Nov 2026)
+   =============================================================================
+   Every modal reads these, so they share one corner, one title style and one
+   of three widths. Each modal's own rule only says WHICH width:
+     sm  short dialogs that ask one thing (confirm, prompts, due date, About)
+     md  standard modals (Settings, Themes, Recurring, History, …)
+     lg  wide ones (Personalization, task options, Storage viewer)
+   On a phone every width becomes the screen less a 16px gutter each side.
+   The rest of the frame: the corner logo (.has-corner-logo), a title that
+   clears it, and a .close-bar along the bottom of any modal that is not a
+   question (those keep their Cancel / OK pair). The dimming is one value,
+   below; it is literal because ::backdrop does not inherit custom
+   properties in the Safari versions the app supports. */
+:root {
+    --modal-radius: var(--radius-xl);
+    --modal-gutter: var(--space-4);
+    --modal-width-sm: min(380px, calc(100vw - 2 * var(--modal-gutter)));
+    --modal-width-md: min(420px, calc(100vw - 2 * var(--modal-gutter)));
+    --modal-width-lg: min(680px, calc(100vw - 2 * var(--modal-gutter)));
+    --modal-title-size: var(--font-size-xl);
+    --modal-title-weight: 700;
+}
+
+/* About lives inside the main menu's markup, where `.menu-container button`
+   (and its dark-mode twin) out-rank .close-bar on classes and would strip it to
+   transparent 14px text. The id restates the bar, as #close-main-menu does. */
+#close-about-btn {
+    background: var(--close-btn-effective);
+    color: var(--menu-close-text, var(--color-white));
+    padding: var(--space-3-5);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    text-align: center;
+}
+
+/* A Close bar as the last child of a padded modal box: it cancels the box's
+   side and bottom padding (the box sets --modal-pad and, when its bottom
+   differs, --modal-pad-bottom) so it runs edge to edge under the rounded
+   corners, and it sticks to the bottom while a tall box scrolls. */
+.close-bar.modal-close-bar {
+    position: sticky;
+    bottom: calc(-1 * var(--modal-pad-bottom, var(--modal-pad, 0px)));
+    z-index: 1;
+    width: calc(100% + 2 * var(--modal-pad, 0px));
+    margin: var(--modal-bar-gap, var(--space-4)) calc(-1 * var(--modal-pad, 0px)) calc(-1 * var(--modal-pad-bottom, var(--modal-pad, 0px)));
+    border-radius: 0 0 var(--modal-radius) var(--modal-radius);
+}
+
 /* Open animation — backdrop fades in */
 dialog::backdrop {
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: rgba(0, 0, 0, 0.4);
     backdrop-filter: blur(4px);
     -webkit-backdrop-filter: blur(4px);
     animation: fadeIn var(--transition-normal) ease;
@@ -140,17 +189,17 @@ dialog.due-date-picker-overlay[open] {
     color: var(--pref-modal-text, var(--theme-modal-text));
     border: 1px solid var(--pref-modal-border, var(--theme-modal-border));
     padding: var(--space-5);
-    border-radius: var(--radius-lg);
+    border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-lg),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
-    width: 420px;
-    max-width: 95%;
+    width: var(--modal-width-md);
     text-align: center;
     position: relative;
     animation: slideUp var(--transition-normal) ease;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
+    --modal-pad: var(--space-5);
 }
 
 .modal-content a {
@@ -171,17 +220,20 @@ dialog.due-date-picker-overlay[open] {
    ============================================================================= */
 
 .shortcuts-modal-content {
-    width: 480px;
+    width: var(--modal-width-md);
     max-height: calc(100vh - var(--modal-viewport-inset));
     max-height: calc(100dvh - var(--modal-viewport-inset));
     overflow-y: auto;
     overscroll-behavior: contain;
     text-align: left;
+    border-radius: var(--modal-radius);
 }
 
 .shortcuts-modal-content h2 {
     margin: 0 0 var(--space-2) 0;
     text-align: center;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
 }
 
 .shortcuts-intro {
@@ -275,7 +327,6 @@ dialog.due-date-picker-overlay[open] {
    ============================================================================= */
 
 .about-modal-content {
-    max-width: 340px;
     padding: 28px var(--space-6);
     background: var(--theme-stats-bg);
     color: var(--theme-stats-text);
@@ -286,6 +337,10 @@ dialog.due-date-picker-overlay[open] {
         inset 0 1px 1px rgba(255, 255, 255, 0.4);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
+    width: var(--modal-width-sm);
+    border-radius: var(--modal-radius);
+    --modal-pad: var(--space-6);
+    --modal-pad-bottom: 28px;
 }
 
 /* Suppress corner logo — the centered about-logo serves as branding */
@@ -309,8 +364,8 @@ dialog.due-date-picker-overlay[open] {
 
 .about-modal-content h2 {
     margin: 0 0 var(--space-1) 0;
-    font-size: 19px;
-    font-weight: 700;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     color: inherit;
     text-align: center;
 }
@@ -416,13 +471,12 @@ dialog.due-date-picker-overlay[open] {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 90%;
-    max-width: 420px;
+    width: var(--modal-width-md);
     max-height: 75vh;
     overflow-y: auto;
     background-color: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-gray-100))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
-    border-radius: var(--radius-15);
+    border-radius: var(--modal-radius);
     padding: var(--space-5) 25px;
     z-index: var(--z-modal);
     box-shadow:
@@ -436,10 +490,11 @@ dialog.due-date-picker-overlay[open] {
 }
 
 .modal-panel h2 {
-    font-size: 1.3rem;
-    font-weight: bold;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     margin-bottom: var(--space-3-75);
     color: inherit;
+    text-align: center;
 }
 
 /* =============================================================================
@@ -522,13 +577,9 @@ body {
     --close-btn-effective: var(--pref-menu-accent, var(--menu-action-bg));
 }
 
-/* Dark surfaces drop the preset layer: --pref-menu-accent is authored against a
-   LIGHT themed surface. Same theme list as themes-modal.css and menu.css — a new
-   dark theme must be added to all three, and the menu-contrast gate in
-   run-layout-overlap-tests.cjs fails the day one is missed. */
-body.dark-mode,
-:root[data-theme="dark"] body,
-:root[data-theme="dark-ocean"] body {
+/* Dark mode drops the preset layer: --pref-menu-accent is authored against a
+   LIGHT surface. Same rule as themes-modal.css and menu.css. */
+body.dark-mode {
     --close-btn-effective: var(--menu-action-bg);
 }
 
@@ -585,17 +636,12 @@ body.dark-mode,
     animation: fadeIn var(--transition-fast) ease;
 }
 
-dialog.mini-modal-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.5);
-}
-
 .mini-modal-box {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     padding: var(--space-7) var(--space-6-25);
-    max-width: 380px;
-    width: 90%;
+    width: var(--modal-width-sm);
     text-align: center;
     box-shadow:
         var(--shadow-modal-compound),
@@ -606,11 +652,12 @@ dialog.mini-modal-dialog::backdrop {
 }
 
 .mini-modal-header {
-    font-size: 1.2rem;
-    font-weight: 700;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     margin-bottom: var(--space-3);
     padding-left: var(--space-7);
     line-height: 1.3;
+    text-align: center;
 }
 
 .mini-modal-body {
@@ -649,53 +696,11 @@ dialog.mini-modal-dialog::backdrop {
     justify-content: center;
 }
 
-.mini-modal-buttons .btn-cancel {
-    background: var(--color-blue-pale);
-    color: var(--theme-button-secondary-text);
-    padding: var(--space-2-5) var(--space-5);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-blue-subtle);
-    cursor: pointer;
+/* Cancel and Confirm are .btn.btn-secondary and .btn.btn-primary (or
+   .btn-danger for a destructive confirm) from buttons.css; the row only
+   shares the width between them. */
+.mini-modal-buttons .btn {
     flex: 1;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
-}
-
-.mini-modal-buttons .btn-confirm {
-    background: var(--theme-color-success);
-    color: var(--color-white);
-    padding: var(--space-2-5) var(--space-5);
-    border-radius: var(--radius-md);
-    border: none;
-    cursor: pointer;
-    flex: 1;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
-}
-
-.mini-modal-buttons .btn-confirm.btn-destructive {
-    background: var(--theme-color-error);
-}
-
-.mini-modal-buttons button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-.mini-modal-buttons button:active {
-    transform: translateY(0);
-}
-
-.mini-modal-buttons .btn-confirm:focus-visible,
-.mini-modal-buttons .btn-cancel:focus-visible {
-    outline: 2px solid var(--theme-color-success);
-    outline-offset: 2px;
-}
-
-.mini-modal-buttons .btn-confirm.btn-destructive:focus-visible {
-    outline-color: var(--theme-color-error);
 }
 
 /* Choice modal (multi-option) */
@@ -754,11 +759,6 @@ body.dark-mode .mini-modal-body {
     color: var(--pref-modal-text, var(--theme-modal-text));
 }
 
-body.dark-mode .mini-modal-buttons .btn-cancel {
-    background-color: var(--theme-button-secondary-bg);
-    color: var(--theme-modal-text);
-}
-
 body.dark-mode .btn-choice {
     background: var(--theme-button-secondary-bg);
     border-color: var(--color-gray-600);
@@ -783,25 +783,27 @@ body.dark-mode .btn-choice:hover {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-6) var(--space-5) 0;
-    border-radius: var(--radius-lg);
+    border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-lg),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
     border: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
-    width: 420px;
-    max-width: 95%;
+    width: var(--modal-width-md);
     text-align: center;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
     position: relative;
     animation: slideUp var(--transition-normal) ease;
+    --modal-pad: var(--space-5);
+    --modal-pad-bottom: 0px;
 }
 
 .feedback-modal-content h2 {
     margin: 0 0 var(--space-2) 0;
-    font-size: 18px;
-    font-weight: 700;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
+    text-align: center;
 }
 
 .feedback-modal-content p {
@@ -810,23 +812,6 @@ body.dark-mode .btn-choice:hover {
     opacity: 0.7;
     margin: 0 0 var(--space-4) 0;
     line-height: 1.5;
-}
-
-.close-feedback-modal {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    font-size: 24px;
-    cursor: pointer;
-    background: none;
-    border: none;
-    padding: 0;
-    color: inherit;
-    line-height: 1;
-}
-
-.close-feedback-modal:hover {
-    opacity: 0.7;
 }
 
 #feedback-text {
@@ -853,32 +838,10 @@ body.dark-mode .btn-choice:hover {
     color: var(--theme-input-text, var(--theme-text-on-surface));
 }
 
+/* Submit is a full-width .btn.btn-primary (buttons.css); Close is the bar below. */
 #submit-feedback {
-    display: block;
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-    font-size: 16px;
-    font-weight: 700;
-    padding: var(--space-3-5);
+    width: 100%;
     margin-top: var(--space-4);
-    margin-left: -20px;
-    margin-right: -20px;
-    margin-bottom: 0;
-    width: calc(100% + 40px);
-    border: none;
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    text-align: center;
-}
-
-#submit-feedback:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
-}
-
-#submit-feedback:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
 }
 
 #thank-you-message {
@@ -1008,11 +971,11 @@ body.dark-mode .btn-choice:hover {
 @media (max-width: 768px) {
     .modal-content {
         padding: var(--space-3-75);
-        width: 95%;
+        --modal-pad: var(--space-3-75);
+        --modal-pad-bottom: var(--space-3-75);
     }
 
     .modal-panel {
-        max-width: 95%;
         padding: 15px var(--space-5);
     }
 }
@@ -1020,11 +983,9 @@ body.dark-mode .btn-choice:hover {
 @media (max-width: 480px) {
     .modal-panel {
         padding: var(--space-3-75);
-        border-radius: var(--radius-lg);
     }
 
     .mini-modal-box {
-        width: 95%;
         padding: var(--space-3-75);
     }
 }
@@ -1048,7 +1009,7 @@ body.dark-mode .btn-choice:hover {
    foreign next to every other dialog in the app. */
 .tip-archive-modal-content {
     padding: 0;
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     background: var(--modal-bg-effective);
     color: var(--modal-text-effective);
     box-shadow:
@@ -1062,10 +1023,11 @@ body.dark-mode .btn-choice:hover {
     padding: var(--space-4-5) var(--space-6);
     background: var(--modal-header-bg-effective);
     color: var(--modal-text-effective);
-    font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     letter-spacing: 0.3px;
     border-bottom: 1px solid var(--modal-border-effective);
+    text-align: center;
 }
 
 /* The header band is edge-to-edge, so the body needs its own inset back. */
@@ -1146,25 +1108,11 @@ body.dark-mode .btn-choice:hover {
     background: var(--overlay-medium, rgba(0, 0, 0, 0.12));
 }
 
-/* Close matches the house modal-close treatment (#close-reminders-btn,
-   #close-main-menu): the theme-aware --menu-close-* tokens, not .settings-btn's
-   --color-primary. .settings-btn supplies the full-width shape; this supplies
-   the colour and seats it flush against the modal's bottom edge. No corner
-   radius is declared — .tip-archive-modal-content has overflow:hidden, so the
-   shell clips the button to its own radius and the two can never disagree. */
+/* Close is a .close-bar (buttons.css). No corner radius:
+   .tip-archive-modal-content has overflow:hidden, so the shell clips the bar
+   to its own radius and the two can never disagree. */
 #tip-archive-close {
     margin: 0;
-    padding: var(--space-3-5);
-    border-radius: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-}
-
-#tip-archive-close:hover {
-    background: var(--menu-close-hover-bg, var(--color-steel-blue));
-    transform: none;
 }
 
 /* Pause is a PLAYBACK control, so it lives with prev/next rather than beside

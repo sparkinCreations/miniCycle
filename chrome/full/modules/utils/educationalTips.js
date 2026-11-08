@@ -16,7 +16,7 @@
  * existing importer keep working through the facade.
  *
  * @module utils/educationalTips
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
 import { DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS } from '../core/constants.js';

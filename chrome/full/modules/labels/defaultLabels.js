@@ -89,6 +89,14 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     action: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        filterAllTitle: 'Show every task',
+        filterIncompleteTitle: 'Only tasks not yet checked',
+        filterCompletedTitle: 'Only checked tasks',
+        filterPriorityTitle: 'Only tasks with a priority',
+        filterDueDateTitle: 'Only tasks with a due date',
+        filterRecurringTitle: 'Only recurring tasks',
+        toggleCompletedAria: 'Toggle completed tasks',
         addTask:              'Add task',
         addTaskButton:        'Add',
         addTaskPlaceholder:   'Enter a task...',
@@ -221,11 +229,12 @@ export const DEFAULT_LABELS = deepFreeze({
         importTitle:     'Import a routine from a file',
         duplicate:       'Duplicate',
         duplicateTitle:  'Duplicate the current routine',
-        switchAria:      'Switch routine',
+        switchAria:      'Switch routines',   // contains the visible word below (WCAG 2.5.3)
         browseAria:      'Browse routines',   // the same button when Settings → routines open in Browse
-        browseShort:     'Routines',          // its visible text in Browse, beside the icon (the name above contains it)
+        browseShort:     'Routines',          // the routine button's visible text in the header group, beside the folder or cards (both names above contain it)
         expandList:      'Expand the routine list',
         collapseList:    'Collapse the routine list',
+        expandPreview:   'Expand the preview',
         untitled:        'Untitled Routine',
         untitledCycle:   'Untitled Cycle',
         noSelected:      'No Routine Selected'
@@ -249,7 +258,11 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     switcher: {
-        title:              'Open Routine',
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        rename: 'Rename',
+        themeButton: 'Theme',
+        changeThemeAria: 'Change theme',
+        title:              'Switch Routine',
         search:             'Search routines...',
         filterAll:          'All Modes',
         filterAuto:         'Auto Cycle',
@@ -281,7 +294,7 @@ export const DEFAULT_LABELS = deepFreeze({
         downloadRoutine:    'Download routine',
         changeRoutineTheme: 'Change routine theme',
         preview:            'Preview',
-        importExternal:     'Import Routine',
+        importExternal:     'Import',
         storage:            'Routine Storage',
         storageHint:        'Space used by your saved routines on this device',
         calculating:        'Calculating...',
@@ -311,10 +324,13 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     stats: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        milestoneBadgeAria: '{count} cycles milestone',
         title:              'Stats',
         currentRoutine:     'Current Routine',
-        completion:         '{completed} of {total} {taskWord} Completed This {cycleWord}',
-        cyclesCompleted:    '{count} {cycleWord} Completed',
+        completion:         '{completed} of {total} {taskWord}',
+        completionRound:    'this {cycleWord}',   // follows stats.completion: on its own line on narrow cards
+        cyclesCompleted:    '{count} {cycleWord} completed',
         clearedTasks:       '{count} Cleared {taskWord}',
         // ── REWARD VOCABULARY — keep these three distinct ──────────────────
         // Measured Aug 2026, because the words had drifted into each other and
@@ -336,6 +352,11 @@ export const DEFAULT_LABELS = deepFreeze({
         // Both systems are correct as implemented; only the wording was wrong.
         milestoneRewards:   'Milestone Rewards',
         achievementBadges:  'Achievement Badges',
+        viewAllAchievements: 'View all achievements',   // the link's accessible name
+        viewAll:            'View all',
+        rewardsTabsAria:    'Rewards',
+        tabBadges:          'Badges',
+        tabMilestones:      'Milestones',
         allRoutines:        'All Routines:',
         allRoutinesValue:   '{count} {cycleWord}',
         progressToNext:     'Progress to next badge',
@@ -376,7 +397,7 @@ export const DEFAULT_LABELS = deepFreeze({
         dragToSpin:      'drag to spin',
         badgeTooltip:    '{name}: {cycles} cycles OR {tasks} cleared tasks',
         badgeUnlocks:    'Unlocks {reward}',
-        badgeTapHint:    { touch: 'Tap a badge or title to see more info', pointer: 'Click a badge or title to see more info' },
+        badgeTapHint:    { touch: 'Tap a badge to see more info', pointer: 'Click a badge to see more info' },
         threshold:       '{cycles} cycles or {tasks} cleared tasks',
         description:     'Complete {cycles} cycles or {tasks} cleared tasks',
         progressNote:    'Only completed cycles and cleared tasks in To-Do mode count towards achievements',
@@ -418,10 +439,10 @@ export const DEFAULT_LABELS = deepFreeze({
         taskInputShownFocus:    'Add tasks using the input bar. Press the ⋯ menu above to hide it when you\'re done.',
         taskInputHiddenFocus:   'Task input hidden. Press the ⋯ menu above to show it again.',
         // Shown once when a first-run user lands in Focus View after choosing
-        // "Create My First Routine" / "Load a Sample". Names the ⋯ menu on
-        // purpose — it is the one place that holds every focus-mode action,
-        // including Exit Focus View.
-        focusViewFirstRun:      'You\'re in Focus View. Everything else is in the ⋯ menu.',
+        // "Create My First Routine" / "Load a Sample". Says what the screen is
+        // and why they are on it; until Nov 2026 it was a bare "You're in Focus
+        // View" that read as abrupt. The ⋯ button is in view beside it.
+        focusViewFirstRun:      'We\'ve started you in Focus View, a simpler screen with fewer distractions.',
         // The second half of that tip, shown under a divider with the drag-handle
         // icon (onboardingManager passes it as the notification's `hint`): toasts
         // are draggable and the position persists. It was one sentence of the
@@ -429,8 +450,8 @@ export const DEFAULT_LABELS = deepFreeze({
         // the drag tip read as an optional extra. Device-variant: the touch
         // gesture starts with a press-and-hold, the pointer gesture is a drag.
         focusViewDragHint:      {
-            touch:   'Press and hold to drag this message anywhere, and the app will remember its location.',
-            pointer: 'Drag this message anywhere and the app will remember its location.'
+            touch:   'Press and hold to move this message.',
+            pointer: 'Drag to move this message.'
         },
         taskSystemLimited:      'Task system initialized with limited functionality',
         taskDisplayLimited:     'Task display may not work properly',
@@ -907,6 +928,8 @@ export const DEFAULT_LABELS = deepFreeze({
         diagMigrationDryRunOk:    'Migration dry run passed every check',
         diagMigrationDryRunProblems: 'Migration dry run found {count} problem(s)',
         diagMigrationDryRunFailed: 'Migration dry run threw - see the results',
+        diagRoutineKeysOk:        'Routine keys displayed - every routine is keyed by its id',
+        diagRoutineKeysMismatch:  '{count} routine(s) not keyed by id - repaired on the next launch',
         diagAppInfo:              'App information displayed',
         diagPerfInfo:             'Performance info displayed',
         diagBootTiming:           'Boot timing displayed',
@@ -1002,7 +1025,7 @@ export const DEFAULT_LABELS = deepFreeze({
         sampleLoaded:            'Loaded "{name}" sample routine',
         checkmarkStyleChanged:   'Checkmark style updated',
         welcomeSampleLoaded:     'Welcome to miniCycle! A sample routine has been loaded to get you started',
-        startBlankRoutine:       'Start with a blank routine',
+        startBlankRoutine:       'Create New Routine',
         failedToCreateCycle:     'Failed to create routine. Please refresh.',
         selectToRename:          'Please select a routine to rename.',
         invalidCycleSelection:   'Invalid routine selection.',
@@ -1028,6 +1051,12 @@ export const DEFAULT_LABELS = deepFreeze({
         resetTasksTitle:    'Complete Cycle with Due Dates',
         resetTasksMessage:  'Completing all tasks will reset them to incomplete status.\n\nAll assigned due dates will be cleared.\n\nProceed?',
         resetTasksConfirm:  'Complete Cycle',
+        // Settings → Behavior → "Ask before completing with unchecked tasks".
+        // A count rather than a sentence about it: "{count} of {total}" reads
+        // correctly for one task or many, and in every theme's words.
+        uncheckedCycleTitle:      'Not Everything Is Checked',
+        uncheckedCycleMessage:    'Still unchecked: {count} of {total}.\n\nComplete this {cycleOne} anyway?',
+        uncheckedCycleMessageDue: 'Still unchecked: {count} of {total}.\n\nAll assigned due dates will be cleared.\n\nComplete this {cycleOne} anyway?',
         resetProgressTitle: 'Reset Routine Progress',
         resetProgressConfirm: 'Reset',
         clearHistoryTitle:  'Clear History',
@@ -1100,6 +1129,7 @@ export const DEFAULT_LABELS = deepFreeze({
         createRoutineTitle:       'Create a Routine',
         createRoutineMessage:     'Enter a name to get started:',
         createRoutinePlaceholder: 'e.g., Morning Routine',
+        firstRoutineName:         'My First Routine',
         newRoutineTitle:          'Create New Routine',
         newRoutineMessage:        'What would you like to name it?',
         newRoutinePlaceholder:    'e.g., Daily Routine',
@@ -1372,7 +1402,7 @@ export const DEFAULT_LABELS = deepFreeze({
     // codebase's word for first-run onboarding (20 FIRST_RUN_WELCOME_* classes,
     // first-run-welcome.css, onboardingCarousel). The user-facing name is
     // "Welcome Screen": to a user this is the branded screen they met on day one
-    // and can return to. See docs/future-work/WELCOME_SCREEN_PLAN.md.
+    // and can return to. See docs/archive/WELCOME_SCREEN_PLAN.md.
     // ========================================================================
 
     titleScreen: {
@@ -1382,11 +1412,11 @@ export const DEFAULT_LABELS = deepFreeze({
         wordmark:        'miniCycle',
         descriptor:      'Routine Checklist Manager',
         createRoutine:   'Create a new routine',
-        openRoutine:     'Open existing routine',
+        openRoutine:     'Switch routine',
         restoreBackup:   'Restore from a backup file',
         // Replays the onboarding of the current view (Focus View banner or Home
         // View modal) for a returning user.
-        // Same idea as the first-run screen's "Learn How Cycles Work", but it
+        // Same idea as the first-run screen's "Show How Cycles Work", but it
         // changes nothing: no routine is created, no setting written.
         howCyclesWork:   'How cycles work',
         userManual:      'User Manual',
@@ -1430,6 +1460,30 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     menu: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        openTitle: 'Open menu',
+        routineActionsAria: 'Toggle Routine Actions section',
+        routineActionsTitle: 'Create, open, import, export, and share routines',
+        taskActionsAria: 'Toggle Task Actions section',
+        taskActionsTitle: 'Manage tasks, reminders, recurring schedules, and task options',
+        rewardsAria: 'Toggle Rewards section',
+        rewardsTitle: 'Unlock themes and mini-games as you complete cycles',
+        helpAria: 'Toggle Help section',
+        helpTitle: 'User manual, feedback, updates, and sharing',
+        legalInfo: 'Legal & Info',
+        legalAria: 'Toggle Legal section',
+        legalTitle: 'Privacy policy, terms of service, accessibility, and security',
+        settingsAria: 'Toggle Settings section',
+        settingsTitle: 'Customize colors, accessibility, and app preferences',
+        autoUncheckTimeTitle: 'Change auto-uncheck time',
+        themesTitle: 'Open Themes Panel',
+        userManualTitle: 'Open the user manual',
+        liteVersion: 'Lite Version',
+        liteVersionTitle: 'Switch to the lightweight version',
+        checkUpdatesTitle: 'Check for app updates',
+        personalizationTitle: 'Customize task list colors',
+        settingsOpenTitle: 'Open settings',
+        enterFocusViewAria: 'Enter Focus View',
         routineActions:          'Routine Actions',
         taskActions:             'Task Actions & Features',
         rewardsExtras:           'Rewards & Extras',
@@ -1441,7 +1495,6 @@ export const DEFAULT_LABELS = deepFreeze({
         taskOptionsTitle:        'Add or remove task option buttons',
         recurring:               'Recurring',
         recurringTitle:          'Manage recurring tasks',
-        inputBar:                'Input Bar',
         inputBarTitle:           'Show or hide the task input bar',
         enterFocusView:          'Focus View',
         enterFocusViewTitle:     'Hide chrome and focus on the task list',
@@ -1534,6 +1587,7 @@ export const DEFAULT_LABELS = deepFreeze({
         addRemoveTaskButtons: 'Add or Remove Task Buttons',
         enableNotifications:  'Enable Notifications',
         singleKeyShortcuts:   'Single-key shortcuts',
+        confirmUncheckedCycle: 'Ask before completing with unchecked tasks',
         clearUndoHistory:     'Clear Undo History',
         // One line under each control in Settings, saying what it does (and, for
         // the resets, whether it can be undone). Oct 2026: there were none.
@@ -1548,6 +1602,7 @@ export const DEFAULT_LABELS = deepFreeze({
         scrollToLastDesc:       'Opening a routine scrolls its list to the last task.',
         enableNotificationsDesc: 'The short messages that confirm what you did. Error messages always show.',
         singleKeyShortcutsDesc: 'When you are not typing: M menu, S Settings, [ ] previous or next routine, ? shortcut list. Off by default because screen readers and voice control use single keys.',
+        confirmUncheckedCycleDesc: 'In Manual Cycle, Complete Cycle asks first if any task is still unchecked.',
         resetOnboardingDesc:    'Shows the welcome screens again the next time you open the app.',
         tourPromptsDesc:        'Offers a short tour the first time you open each feature.',
         resetNotifPositionDesc: 'Moves notifications back to their usual place if you dragged them.',
@@ -1779,6 +1834,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     nav: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        showRoutineView: 'Show Routine View',
+        showStatistics: 'Show Statistics',
         tasksView:      'Tasks view',
         tasksTab:       'Tasks',
         statsView:      'Statistics view',
@@ -1792,14 +1850,15 @@ export const DEFAULT_LABELS = deepFreeze({
         showTasks:      'Show Tasks',
         quickActions:   'Quick Actions',
         quickActionsAria: 'Quick actions',
+        quickActionsShort: 'Actions',   // its visible text beside the + in the header group (the name above contains it)
         previousView:   'Previous view',
         nextView:       'Next view',
         completed:      'Completed',
         notCompleted:   'Not completed',
         overdue:        'Overdue',
         saving:         'Saving...',
-        hideTaskInput:  'Hide Task Input',
-        addTaskToggle:  'Add Task',
+        addTasks:       'Add {tasks}',
+        hideAddTaskBar: 'Hide Add {taskTitle} Bar',
         darkModeAria:   'Toggle dark mode',
         personalizationAria: 'Personalization',
         // The two icon-only corner buttons' hover tooltip AND long-press hint:
@@ -1808,6 +1867,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Captions under those two buttons (desktop only — settings.css)
         personalizationCaption: 'Personalization',
         darkModeCaption: 'Dark mode',
+        lightModeCaption: 'Light mode',
         darkModeHintOn:  'Switch to dark mode',
         darkModeHintOff: 'Switch to light mode',
         appSubtitle:    'ROUTINE MANAGER',
@@ -1875,7 +1935,6 @@ export const DEFAULT_LABELS = deepFreeze({
         switchRoutines: 'Switch routines',
         browseRoutines: 'Browse routines',
         createRoutine:  'Create new routine',
-        toggleInputBar: 'Show/hide input bar',
         toggleDarkMode: 'Toggle dark mode',
         uncheckAll:     'Uncheck all',
         deleteAll:      'Delete all',
@@ -1981,7 +2040,7 @@ export const DEFAULT_LABELS = deepFreeze({
         singleKeysOff: 'Prefer single keys, like M for the menu? Turn them on in Settings → Behavior.',
         showList:      'Show this list',
         newRoutine:    'Create a new routine',
-        openRoutine:   'Open routines (the list or Browse)',
+        openRoutine:   'Switch routines (the list or Browse)',
         focusView:     'Focus View on or off',
         moveBetween:   'Move between tasks',
         toggleTask:    'Check or uncheck the selected task',
@@ -1999,7 +2058,7 @@ export const DEFAULT_LABELS = deepFreeze({
         backToHome:               'Back to Home View',
         backToHomeAria:           'Return to Home View',
         welcomeNotification:      'Welcome to Home View\n\nManage and customize your routines and setup.',
-        startBlankRoutineButton:  'Start with a blank routine',
+        startBlankRoutineButton:  'Create New Routine',   // same words as the + menu's item (routine.create)
         startTourButton:          'Start Tour',
     },
 
@@ -2116,7 +2175,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     quickAction: {
         stats:          'Stats',
-        openRoutine:    'Open Routine',
+        openRoutine:    'Switch Routine',
         browseRoutines: 'Browse Routines',   // the same action when Settings → routines open in Browse
         recurring:      'Recurring',
         reminders:      'Reminders',
@@ -2593,7 +2652,7 @@ export const DEFAULT_LABELS = deepFreeze({
         tagline:     'Repeatable checklists that reset on completion — not one-and-done to-dos.',
         createBtn:   'Create My First Routine',
         sampleBtn:   'Load a Sample',
-        learnBtn:    'Learn How Cycles Work',
+        learnBtn:    'Show How Cycles Work',
         busyCreate:  'Setting up your routine…',
         busySample:  'Loading samples…',
         busyLearn:   'Starting the tour…',
@@ -2614,6 +2673,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     footer: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        feedbackAria: 'Open feedback modal',
+        feedbackTitle: 'Send us feedback',
         privacyPolicy:  'Privacy Policy',
         termsOfService: 'Terms of Service',
         feedback:       'Feedback',
@@ -2784,6 +2846,41 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     test: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        closeModalAria: 'Close testing modal',
+        tabDiagnostics: 'Diagnostics',
+        tabDebug: 'Debug Info',
+        tabAutomated: 'Automated Tests',
+        btnRunHealthCheck: 'Run Full Diagnostic',
+        btnCheckDataIntegrity: 'Check Data Integrity',
+        btnValidateSchema: 'Validate Schema',
+        btnDryRunSchema26: 'Dry-Run 2.6 Migration',
+        btnShowRoutineKeys: 'Show Routine Keys',
+        btnShowAppInfo: 'Show App Details',
+        btnShowStorageInfo: 'Storage Analysis',
+        btnShowPerformanceInfo: 'Performance Info',
+        btnShowBootTiming: 'Boot Timing',
+        btnRunFullAnalysis: 'Run Full Analysis',
+        btnExportDebugData: 'Export Debug Package',
+        btnRepairData: 'Repair Corrupted Data',
+        btnListAvailableBackups: 'List Available Backups',
+        btnCreateManualBackup: 'Create Manual Backup',
+        btnRestoreFromBackup: 'Restore from Backup',
+        btnCleanOldBackups: 'Clean Old Backups',
+        btnGenerateDebugReport: 'Generate Debug Report',
+        btnViewLocalStorage: 'View Local Storage',
+        btnShowServiceWorkerInfo: 'Service Worker Info',
+        btnTestServiceWorkerUpdate: 'Test SW Update',
+        btnShowBrowserInfo: 'Browser Capabilities',
+        btnEnableAutoCapture: 'Enable Auto-Capture Mode',
+        btnShowAllConsoleLogs: 'Show All Captured Logs',
+        btnShowMigrationErrors: 'Show Migration Issues',
+        btnClearAllConsoleLogs: 'Clear All Captured Logs',
+        btnStopConsoleCapture: 'Stop Auto Capture',
+        btnRunAllAutomatedTests: 'Run All Tests',
+        btnClearTestResults: 'Clear',
+        btnExportTestResults: 'Export Results',
+        btnCopyTestResults: 'Copy to Clipboard',
         dragHandle:           ':: Drag to Move ::',
         resultsTitle:         'Test Results - Expanded View',
         resultsGenerated:     'Generated: {timestamp}',
@@ -2944,6 +3041,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     // Stats & progress
     'stats.currentRoutine',
     'stats.completion',
+    'stats.completionRound',
     'stats.cyclesCompleted',
     'stats.clearedTasks',
     'stats.history',
@@ -3108,6 +3206,9 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.resetTasksTitle',
     'modal.resetTasksMessage',
     'modal.resetTasksConfirm',
+    'modal.uncheckedCycleTitle',
+    'modal.uncheckedCycleMessage',
+    'modal.uncheckedCycleMessageDue',
     'modal.resetProgressTitle',
     'modal.removeRecurringTitle',
     'modal.resetAchievementsTitle',
@@ -3125,6 +3226,7 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'modal.createRoutineTitle',
     'modal.createRoutineMessage',
     'modal.createRoutinePlaceholder',
+    'modal.firstRoutineName',
     'modal.newRoutineTitle',
     'modal.newRoutineMessage',
     'modal.newRoutinePlaceholder',
@@ -3245,7 +3347,6 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'menu.recurringTitle',
     'menu.reminders',
     'menu.remindersTitle',
-    'menu.inputBar',
     'menu.inputBarTitle',
     'menu.autoUncheckDaily',
     'menu.autoUncheckDailyTitle',
@@ -3279,8 +3380,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'nav.tasksView',
     'nav.tasksTab',
     'nav.showTasks',
-    'nav.hideTaskInput',
-    'nav.addTaskToggle',
+    'nav.addTasks',
+    'nav.hideAddTaskBar',
     'nav.completed',
     'nav.notCompleted',
     'nav.overdue',

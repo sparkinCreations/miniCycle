@@ -36,7 +36,7 @@ export async function runRoutineSwitcherPreviewTests(resultsDiv) {
 
     const IDS = ['switch-preview-window', 'switch-preview-date', 'desktop-preview-window',
                  'desktop-preview-title', 'desktop-preview-hint', 'preview-review-overlay',
-                 'switch-preview-hint'];
+                 'switch-preview-hint', 'routine-preview-expand-btn'];
 
     function teardown() {
         IDS.forEach(id => document.getElementById(id)?.remove());
@@ -251,6 +251,30 @@ export async function runRoutineSwitcherPreviewTests(resultsDiv) {
         if (document.getElementById('switch-preview-hint')) {
             throw new Error('a dismissed hint must stay dismissed');
         }
+    });
+
+    await test('the heading Expand shows with a selection and opens the dialog', async () => {
+        const { instance } = setup({ cycles: CYCLE, selectedKey: 'r1' });
+        const btn = document.createElement('button');
+        btn.id = 'routine-preview-expand-btn';
+        btn.hidden = true;
+        document.body.appendChild(btn);
+        let reachedPanel = false;
+        const onBodyClick = () => { reachedPanel = true; };
+        document.body.addEventListener('click', onBodyClick);
+
+        instance.setupPreviewPopout();
+        instance.updatePreview('r1');
+        if (btn.hidden) throw new Error('a selected routine has a preview to expand');
+
+        btn.click();
+        document.body.removeEventListener('click', onBodyClick);
+        if (!document.getElementById('preview-review-overlay')) throw new Error('Expand should open the dialog');
+        if (reachedPanel) throw new Error('the click must stop here or the panel deselects the routine');
+
+        document.getElementById('preview-review-overlay').remove();
+        instance._resetPreview();
+        if (!btn.hidden) throw new Error('with nothing selected there is nothing to expand');
     });
 
     await test('nothing selected: the dialog does not open', async () => {

@@ -223,6 +223,7 @@
  * @property {boolean} [showTaskInput=true] - Show task input bar
  * @property {'list'|'browse'} [routineOpenView] - What opening routines shows: the Open Routine list or Browse Routines; absent = list
  * @property {boolean} [singleKeyShortcuts] - Opt-in single-key shortcuts (M, S, [, ], ?) besides the Alt+Shift ones; absent = off
+ * @property {boolean} [confirmUncheckedCycle] - Manual Cycle: Complete Cycle asks first when tasks are unchecked (off unless turned on)
  * @property {'recent'|'alpha'} [routineBrowserSort='recent'] - Browse Routines' order
  * @property {'cards'|'grid'} [routineBrowserLayout='cards'] - Browse Routines' layout
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding

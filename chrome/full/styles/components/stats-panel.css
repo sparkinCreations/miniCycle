@@ -23,12 +23,9 @@
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
     border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.08),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+    box-shadow: var(--shadow-panel);
     padding: var(--space-5) var(--space-6);
-    border-radius: var(--radius-lg);
+    border-radius: var(--panel-radius);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -118,6 +115,25 @@ body.focus-mode #stats-panel {
     text-align: center;
     -webkit-mask-image: linear-gradient(to bottom, transparent 0, black var(--space-5));
     mask-image: linear-gradient(to bottom, transparent 0, black var(--space-5));
+}
+
+/* The routine card's scrollbar (task-list.css), so the two panels a user
+   swipes between scroll alike instead of this one showing the browser's
+   default bar. Only the ::-webkit-scrollbar styles, as there: Chrome ignores
+   them once scrollbar-color is set. */
+.stats-panel-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.stats-panel-content::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(150, 210, 255, 0.4));
+    border-radius: var(--radius-10);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.stats-panel-content::-webkit-scrollbar-track {
+    background: rgba(100, 180, 255, 0.1);
+    border-radius: var(--radius-10);
 }
 
 /* =============================================================================
@@ -265,21 +281,9 @@ body.focus-mode #stats-panel {
         padding: 5px var(--space-2);
     }
 
-    .current-routine-status h3,
-    .theme-unlock-status h3 {
-        font-size: var(--font-size-sm);
-        margin: 0;
-    }
-
     .current-routine-name {
         font-size: var(--font-size-sm);
         margin: var(--space-0-5) 0 0;
-    }
-
-    .current-cycle-doughnut-container {
-        width: 52px;
-        height: 52px;
-        margin: var(--space-0-75) auto;
     }
 
     #current-cycle-progress-text {
@@ -301,23 +305,11 @@ body.focus-mode #stats-panel {
     .history-btn {
         padding: var(--space-1-25) var(--space-2-5);
         font-size: var(--font-size-xs);
-    }
-
-    .badge-container {
-        margin-top: var(--space-0-5);
-        margin-bottom: var(--space-0-5);
-        padding: var(--space-1) var(--space-2);
-    }
-
-    .badge-container h3 {
-        margin-bottom: var(--space-0-5);
-        font-size: var(--font-size-sm);
+        font-weight: 600;
     }
 
     .achievement-badges-btn {
         padding: var(--space-1-25) var(--space-2-5);
-        font-size: var(--font-size-xs);
-        margin-bottom: var(--space-1);
     }
 
     .badges {
@@ -328,11 +320,6 @@ body.focus-mode #stats-panel {
     .badge {
         width: 34px;
         height: 34px;
-    }
-
-    .global-stats-container {
-        margin-top: var(--space-0-5);
-        padding: 2px var(--space-2);
     }
 
     #stats-panel p {
@@ -358,11 +345,6 @@ body.focus-mode #stats-panel {
         padding: 6px var(--space-2);
     }
 
-    .current-cycle-doughnut-container {
-        width: 46px;
-        height: 46px;
-    }
-
     .badge {
         width: 30px;
         height: 30px;
@@ -378,7 +360,6 @@ body.focus-mode #stats-panel {
     margin-bottom: var(--space-3);
     font-size: var(--font-size-sm);
     text-align: center;
-    cursor: pointer;
     width: 100%;
     background: transparent;
     border-radius: var(--radius-lg);
@@ -388,39 +369,6 @@ body.focus-mode #stats-panel {
 
 .current-routine-status:has(.visible) {
     background: rgba(255, 255, 255, 0.45);
-}
-
-.current-routine-status h3 {
-    cursor: pointer;
-    transition: color var(--transition-normal) ease, transform var(--transition-normal) ease;
-    font-size: var(--font-size-lg);
-    color: var(--color-success);
-    font-weight: 600;
-}
-
-.current-routine-status h3:hover {
-    color: var(--theme-color-success, var(--color-success));
-    transform: scale(1.02);
-}
-
-.current-routine-status .clickable {
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.5);
-    padding: var(--space-2-5) var(--space-4-5);
-    border-radius: var(--radius-md);
-    display: inline-block;
-    transition: background var(--transition-normal) ease, transform var(--transition-normal) ease;
-}
-
-.current-routine-status .clickable:hover,
-.current-routine-status .clickable:focus-visible {
-    background: rgba(255, 255, 255, 0.7);
-    transform: scale(1.02);
-}
-
-.current-routine-status .clickable:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
-    outline-offset: 2px;
 }
 
 /* =============================================================================
@@ -441,9 +389,8 @@ body.focus-mode #stats-panel {
 }
 
 .current-cycle-doughnut-container {
-    width: 90px;
-    height: 90px;
-    margin: var(--space-2-5) auto;
+    width: var(--stats-ring-size);
+    height: var(--stats-ring-size);
     display: none;
 }
 
@@ -539,52 +486,9 @@ body.focus-mode #stats-panel {
    ============================================================================= */
 
 .theme-unlock-status {
-    margin-top: var(--space-3);
-    margin-bottom: var(--space-2);
     font-size: var(--font-size-sm);
     text-align: center;
-    cursor: pointer;
     width: 100%;
-    background: transparent;
-    border-radius: var(--radius-lg);
-    padding: var(--space-3);
-    transition: background var(--transition-normal) ease;
-}
-
-.theme-unlock-status:has(.visible) {
-    background: rgba(255, 255, 255, 0.45);
-}
-
-.theme-unlock-status h3 {
-    cursor: pointer;
-    transition: color var(--transition-normal) ease, transform var(--transition-normal) ease;
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-}
-
-.theme-unlock-status h3:hover {
-    color: var(--theme-color-success, var(--color-success));
-    transform: scale(1.02);
-}
-
-.theme-unlock-status .clickable {
-    cursor: pointer;
-    background: rgba(255, 255, 255, 0.5);
-    padding: var(--space-2-5) var(--space-4-5);
-    border-radius: var(--radius-md);
-    display: inline-block;
-    transition: background var(--transition-normal) ease, transform var(--transition-normal) ease;
-}
-
-.theme-unlock-status .clickable:hover,
-.theme-unlock-status .clickable:focus-visible {
-    background: rgba(255, 255, 255, 0.7);
-    transform: scale(1.02);
-}
-
-.theme-unlock-status .clickable:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
-    outline-offset: 2px;
 }
 
 #theme-unlock-message,
@@ -622,18 +526,7 @@ body.focus-mode #stats-panel {
 
 .badge-container {
     text-align: center;
-    margin-top: var(--space-1);
-    margin-bottom: var(--space-2);
     width: 100%;
-    padding: var(--space-2);
-    background: rgba(255, 255, 255, 0.45);
-    border-radius: var(--radius-lg);
-}
-
-.badge-container h3 {
-    font-size: var(--font-size-lg);
-    font-weight: 600;
-    margin-bottom: var(--space-3);
 }
 
 .badges {
@@ -675,12 +568,12 @@ body.focus-mode #stats-panel {
     justify-content: center;
     gap: var(--space-1-5);
     padding: var(--space-1) 10px;
-    margin: 0 auto var(--space-1);
+    margin: var(--space-2) auto 0;
     border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
     border-radius: var(--radius-2xl);
     background: rgba(255, 255, 255, 0.5);
     color: var(--theme-stats-text, var(--theme-text-on-surface));
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     font-weight: 600;
     cursor: pointer;
     transition: background var(--transition-fast) ease, transform var(--transition-fast);
@@ -706,8 +599,10 @@ body.focus-mode #stats-panel {
    ============================================================================= */
 
 .global-stats-container {
-    margin-top: var(--space-3);
-    padding: var(--space-2) var(--space-3);
+    width: 100%;
+    margin-top: var(--space-2-5);
+    padding-top: var(--space-2-5);
+    border-top: 1px solid var(--menu-light-blue-rim);
 }
 
 #milestone-progress-text {
@@ -869,6 +764,9 @@ body.focus-mode #stats-panel {
    CUSTOM PREFERENCE COLORS (Default Theme Only)
    ============================================================================= */
 
+/* The :not(.theme-dark-ocean):not(.theme-golden-glow) chains in this file
+   match every page (those colour themes were retired in Nov 2026) but carry
+   these rules' weight: 2.667 removed them and weaker rules won. Keep them. */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .stats-panel {
     background: var(--pref-stats-bg, var(--theme-stats-bg));
     color: var(--pref-stats-text, var(--theme-stats-text));
@@ -908,53 +806,32 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-pr
    DARK MODE ADJUSTMENTS
    ============================================================================= */
 
-body.dark-mode .stats-panel,
-body.theme-dark-ocean .stats-panel {
+body.dark-mode .stats-panel {
     border-color: rgba(255, 255, 255, 0.15);
-    box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.3),
-        0 2px 8px rgba(0, 0, 0, 0.2),
-        inset 0 1px 1px rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .current-routine-status:has(.visible),
-body.dark-mode .theme-unlock-status:has(.visible),
-body.theme-dark-ocean .current-routine-status:has(.visible),
-body.theme-dark-ocean .theme-unlock-status:has(.visible) {
+body.dark-mode .stats-tabs-card {
     background: rgba(255, 255, 255, 0.08);
 }
 
-body.dark-mode .current-routine-status .clickable,
-body.dark-mode .theme-unlock-status .clickable,
-body.theme-dark-ocean .current-routine-status .clickable,
-body.theme-dark-ocean .theme-unlock-status .clickable {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-body.dark-mode .current-routine-status .clickable:hover,
-body.dark-mode .theme-unlock-status .clickable:hover,
-body.theme-dark-ocean .current-routine-status .clickable:hover,
-body.theme-dark-ocean .theme-unlock-status .clickable:hover {
-    background: rgba(255, 255, 255, 0.15);
+body.dark-mode .stats-tabs,
+body.dark-mode .global-stats-container {
+    border-color: rgba(255, 255, 255, 0.14);
 }
 
 body.dark-mode .achievement-badges-btn,
-body.dark-mode .history-btn,
-body.theme-dark-ocean .achievement-badges-btn,
-body.theme-dark-ocean .history-btn {
+body.dark-mode .history-btn {
     background: rgba(255, 255, 255, 0.08);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
 body.dark-mode .achievement-badges-btn:hover,
-body.dark-mode .history-btn:hover,
-body.theme-dark-ocean .achievement-badges-btn:hover,
-body.theme-dark-ocean .history-btn:hover {
+body.dark-mode .history-btn:hover {
     background: rgba(255, 255, 255, 0.15);
 }
 
-body.dark-mode .badge-container,
-body.theme-dark-ocean .badge-container {
+body.dark-mode .badge-container {
     background: rgba(255, 255, 255, 0.08);
 }
 
@@ -969,30 +846,403 @@ body.theme-dark-ocean .badge-container {
         max-height: 62vh;
     }
 
-    /* Section header h3 — base rule uses font-size-lg, reduce on mobile */
-    .current-routine-status h3,
-    .theme-unlock-status h3 {
+}
+
+/* =============================================================================
+   LAYOUT: THE ROUTINE CARD AND THE REWARDS CARD
+   Two matching cards. Stacked on a phone; side by side wherever there is width
+   for it, or too little height to stack. The routine's numbers sit beside a
+   large ring, and the rewards are one card with Badges and Milestones tabs.
+   Both cards have the same two parts, a header row over a rule and a body that
+   centres what is in it, so spare height reads as even space around the content.
+   Until Nov 2026 this was one centred column of dropdowns: 631px tall in a
+   403px scroll area on desktop, with both sides of the panel empty.
+   ============================================================================= */
+.stats-panel {
+    --stats-ring-size: 104px;
+    --stats-card-head: 44px;
+}
+
+@media (min-width: 375px) and (min-height: 701px) {
+    .stats-panel {
+        --stats-ring-size: 120px;
+    }
+}
+
+@media (max-width: 768px) {
+    .stats-panel {
+        padding: var(--space-3);
+    }
+}
+
+@media (min-width: 1024px) {
+    .stats-panel {
+        --stats-ring-size: 128px;
+        max-width: 820px;
+        padding: var(--space-6);
+    }
+}
+
+#stats-header {
+    margin-bottom: 0;
+}
+
+.stats-panel-content {
+    display: block;
+    /* Clears the fade at the scroller's top edge (the mask above). */
+    padding-top: var(--space-5);
+    box-sizing: border-box;
+}
+
+/* The cards are always equal: 1fr rows in this content-sized grid stack them
+   at the taller one's height, and side by side they share a row. It is a grid
+   inside the scroller, not the scroller itself, because a height-limited grid
+   would squeeze the rows unevenly. */
+.stats-cards {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-auto-rows: 1fr;
+    gap: var(--space-3);
+}
+
+@media (min-width: 1024px) {
+    .stats-cards {
+        gap: var(--space-4);
+    }
+}
+
+.current-routine-status,
+.stats-tabs-card {
+    box-sizing: border-box;
+    width: 100%;
+    margin: 0;
+    border-radius: var(--radius-lg);
+}
+
+.current-routine-status {
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    text-align: left;
+}
+
+/* Reads as the routine card's tab row: same type, padding and rule. */
+#stats-panel .current-routine-name {
+    flex-shrink: 0;
+    box-sizing: border-box;
+    min-height: var(--stats-card-head);
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    border-bottom: 1px solid var(--menu-light-blue-rim);
+    font-size: var(--font-size-sm);
+    text-align: center;
+}
+
+#stats-panel .current-routine-name.visible {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-1);
+}
+
+.stats-routine-body {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-4);
+    padding: var(--space-3) var(--space-4);
+}
+
+.current-cycle-doughnut-container {
+    flex-shrink: 0;
+    margin: 0;
+}
+
+.stats-routine-numbers {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1-5);
+    min-width: 0;
+}
+
+/* Two ids: #stats-panel p would otherwise put 8px margins back on these. */
+#stats-panel .stats-routine-numbers p {
+    margin: 0;
+    padding: 0;
+    line-height: 1.35;
+    text-align: left;
+}
+
+#stats-panel #current-cycle-progress-text {
+    font-size: inherit;
+    font-weight: 600;
+}
+
+/* Too narrow for one line beside the ring. The ring is still the tallest thing
+   in the row, so the extra line does not make the card taller. */
+@media (max-width: 480px), (max-height: 480px) and (max-width: 767px) {
+    .stats-progress-round {
+        display: block;
         font-size: var(--font-size-sm);
+        font-weight: 400;
+    }
+}
+
+.routine-buttons-container {
+    justify-content: flex-start;
+    margin-top: var(--space-1);
+    padding: 0;
+}
+
+.stats-tabs-card {
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.45);
+}
+
+.stats-tabs {
+    display: flex;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--menu-light-blue-rim);
+}
+
+.stats-tab {
+    flex: 1;
+    box-sizing: border-box;
+    min-height: var(--stats-card-head);
+    margin-bottom: -1px;
+    padding: var(--space-1) var(--space-1-5);
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    color: inherit;
+    font: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    opacity: 0.65;
+    cursor: pointer;
+}
+
+.stats-tab[aria-selected="true"] {
+    border-bottom-color: var(--btn-primary-bg);
+    opacity: 1;
+}
+
+.stats-tab:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline-offset: -2px;
+}
+
+/* Both panels share one grid cell, so the card is always the taller panel's
+   height and switching tabs never resizes anything. */
+.stats-tabpanels {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    flex: 1;
+}
+
+.stats-tabpanel {
+    grid-area: 1 / 1;
+    align-self: center;
+    padding: var(--space-3) var(--space-4);
+}
+
+.stats-panel .badges {
+    margin: 0;
+}
+
+.achievement-badges-btn {
+    margin-top: var(--space-2-5);
+}
+
+.global-stats-container {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+}
+
+.stats-tabpanel[data-inactive] {
+    visibility: hidden;
+}
+
+@media (min-width: 1024px), (max-height: 480px) {
+    .stats-cards {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 374px) {
+    .stats-panel {
+        --stats-ring-size: 88px;
+    }
+}
+
+/* A short window or a phone: the same content, closer together. */
+@media (max-height: 700px), (max-width: 480px) {
+    .stats-panel {
+        --stats-card-head: 40px;
+    }
+
+    .stats-tabpanel {
+        padding: var(--space-2) var(--space-3);
+    }
+
+    .stats-panel .badges {
+        margin-top: 0;
+    }
+
+    .achievement-badges-btn {
+        margin-top: var(--space-1);
+    }
+
+    .global-stats-container {
+        margin-top: var(--space-1-5);
+        padding-top: var(--space-1-5);
+    }
+
+    #stats-panel .global-stats-container p {
         margin: 0;
-        padding: 0;
     }
 
-    /* .clickable wrapper inside section headers */
-    .current-routine-status .clickable,
-    .theme-unlock-status .clickable {
-        padding: 6px var(--space-3);
+    .stats-routine-body {
+        padding: var(--space-2) var(--space-3);
+    }
+}
+
+/* A small phone upright has no room for two equal cards: each takes only the
+   height it needs, so there is as little scrolling as possible. */
+@media (max-height: 700px) and (min-height: 481px) and (max-width: 1023px) {
+    .stats-cards {
+        grid-auto-rows: auto;
     }
 
-    /* Doughnut base rule uses 90px — override here */
-    .current-cycle-doughnut-container {
-        width: 55px;
-        height: 55px;
-        margin: var(--space-0-75) auto;
+    .stats-routine-body {
+        gap: var(--space-3);
+    }
+}
+
+/* View All beside the badges wherever height is short, not just sideways. */
+@media (max-height: 700px) and (min-height: 481px) and (max-width: 480px) {
+    .stats-panel .badge-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
     }
 
-    /* Badge container h3 base uses font-size-lg */
-    .badge-container h3 {
-        font-size: var(--font-size-sm);
-        margin-bottom: var(--space-0-75);
+    .stats-panel .achievement-badges-btn {
+        margin: 0;
+        padding: var(--space-1) var(--space-2);
+    }
+
+    .stats-panel .badges {
+        gap: var(--space-1);
+    }
+
+    .stats-panel .badge {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* A phone on its side: height is what is short and width is not. The "Stats"
+   title goes (it still names the panel for screen readers), the fade goes
+   because nothing scrolls under it, and View All sits beside the badges. */
+@media (max-height: 480px) {
+    .stats-panel {
+        --stats-ring-size: 88px;
+        padding: var(--space-2) var(--space-3);
+    }
+
+    #stats-header {
+        display: none;
+    }
+
+    .stats-panel-content {
+        padding-top: var(--space-1);
+        -webkit-mask-image: none;
+        mask-image: none;
+    }
+
+    .stats-panel .badge-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
+    }
+
+    .stats-panel .achievement-badges-btn {
+        margin: 0;
+        padding: var(--space-1) var(--space-2);
+    }
+
+    .stats-panel .badge-container {
+        flex-wrap: wrap;
+    }
+
+    /* The one-time "tap a badge" tip would make the first-session card scroll. */
+    .badge-tap-hint {
+        display: none;
+    }
+
+    .stats-panel .badges {
+        gap: var(--space-1);
+    }
+
+    .stats-panel .badge {
+        width: 30px;
+        height: 30px;
+    }
+}
+
+/* The smallest phones on their side: five badges and View All still share a row. */
+@media (max-height: 480px) and (max-width: 600px) {
+    .stats-panel {
+        --stats-ring-size: 72px;
+    }
+
+    .stats-routine-body {
+        gap: var(--space-3);
+    }
+
+    .stats-panel .badge {
+        width: 24px;
+        height: 24px;
+    }
+
+    .stats-tabpanel {
+        padding-right: var(--space-2);
+        padding-left: var(--space-2);
+    }
+
+    .stats-routine-body {
+        padding-right: var(--space-2);
+        padding-left: var(--space-2);
+    }
+
+    #stats-panel #current-routine-cycle-count {
+        font-size: var(--font-size-xs);
+    }
+
+    .stats-panel .achievement-badges-btn {
+        padding-right: var(--space-1-5);
+        padding-left: var(--space-1-5);
+    }
+}
+
+/* The narrowest phones upright: View All needs these few pixels to stay beside
+   the badges. */
+@media (max-width: 374px) {
+    .stats-tabpanel {
+        padding-right: var(--space-2);
+        padding-left: var(--space-2);
+    }
+}
+
+@media (max-width: 374px) and (max-height: 700px) {
+    .stats-panel .badge {
+        width: 28px;
+        height: 28px;
     }
 }

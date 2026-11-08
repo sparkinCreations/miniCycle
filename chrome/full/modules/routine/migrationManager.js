@@ -8,7 +8,7 @@
  * transform, its backups, rollback, "legacy fallback mode" and the task-repair pass
  * over miniCycleStorage — was retired Sep 2026. Pre-2.5 predates the public launch
  * at minicycle.app, so no public user ever had that data, and the Schema 2.6
- * migration goes 2.5 → 2.6 only (docs/future-work/SCHEMA_2_6_PLAN.md, "Migration
+ * migration goes 2.5 → 2.6 only (docs/archive/SCHEMA_2_6_PLAN.md, "Migration
  * seam"). Legacy keys (miniCycleStorage, lastUsedMiniCycle, miniCycleReminders) are
  * neither read nor deleted: a pre-launch browser that still has them keeps them.
  *

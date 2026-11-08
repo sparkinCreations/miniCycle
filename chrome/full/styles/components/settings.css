@@ -17,7 +17,7 @@
     height: 100%;
     justify-content: center;
     align-items: center;
-    padding: var(--space-5);
+    padding: var(--modal-gutter);
 }
 
 .settings-modal.active,
@@ -34,10 +34,9 @@
 .settings-modal-content {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     padding: 0;
-    width: 420px;
-    max-width: 95%;
+    width: var(--modal-width-md);
     text-align: left;
     box-shadow:
         var(--shadow-modal-heavy),
@@ -62,9 +61,10 @@
     margin: 0;
     padding: var(--space-6) var(--space-5) var(--space-4);
     text-align: center;
-    font-size: var(--font-size-xl);
+    font-size: var(--modal-title-size);
     color: inherit;
     flex-shrink: 0;
+    font-weight: var(--modal-title-weight);
 }
 
 /* =============================================================================
@@ -137,11 +137,6 @@
     outline: 2px solid var(--accent-color, var(--color-primary));
     outline-offset: -2px;
     border-radius: var(--radius-6);
-}
-
-.settings-btn:focus-visible {
-    outline: 2px solid var(--accent-color, var(--color-primary));
-    outline-offset: 2px;
 }
 
 .settings-section-toggle {
@@ -299,53 +294,19 @@
    SETTINGS BUTTONS
    ============================================================================= */
 
+/* A full-width row. Its look is .btn + a role (buttons.css): Backup and
+   Restore are primary, Factory Reset is danger, everything else secondary. */
 .settings-btn {
     width: 100%;
-    padding: var(--space-2-5) var(--space-3-5);
     margin: var(--space-1-5) 0;
-    font-weight: 500;
-    font-size: var(--font-size-sm);
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: var(--color-white);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
 }
 
-.settings-btn:hover {
-    background: var(--color-primary-dark);
-    transform: scale(1.01);
-}
-
 .settings-btn i {
     font-size: var(--font-size-sm);
-}
-
-/* Primary buttons (Backup/Restore) */
-.settings-btn.settings-btn-primary {
-    background: var(--color-success);
-    color: var(--color-white);
-}
-
-.settings-btn.settings-btn-primary:hover {
-    background: var(--color-success);
-}
-
-/* Ghost/Outline buttons (Reset options) */
-.settings-btn.settings-btn-ghost {
-    background: transparent;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
-    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-input-border)));
-}
-
-.settings-btn.settings-btn-ghost:hover {
-    background: var(--theme-input-bg, var(--color-gray-100));
-    border-color: var(--color-gray-500);
 }
 
 /* A secondary group inside a section, with a short note above its buttons
@@ -406,36 +367,15 @@
     padding: var(--space-1-5) var(--space-3);
 }
 
-/* Factory reset button — combined selector wins over .settings-btn alone */
 .settings-btn.factory-reset-btn {
-    background: var(--color-error);
-    color: var(--color-white);
     margin-top: var(--space-2);
 }
 
-.settings-btn.factory-reset-btn:hover {
-    background: var(--color-error);
-}
-
-/* Close button — matches #close-main-menu style */
-button.settings-btn.close-btn {
-    display: block;
-    background: var(--color-steel-blue);
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
+/* Close is a .close-bar (buttons.css); this seats it on the rounded bottom. */
+.settings-close-bar {
     margin: 0;
-    width: 100%;
-    border: none;
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-    text-align: center;
     flex-shrink: 0;
-}
-
-button.settings-btn.close-btn:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
-    transform: none;
 }
 
 /* =============================================================================
@@ -467,16 +407,6 @@ button.settings-btn.close-btn:hover {
 
     .settings-modal-content h2 {
         padding: var(--space-4-5) var(--space-3-5) var(--space-3);
-    }
-
-    .settings-btn {
-        padding: 10px var(--space-3);
-        font-size: var(--font-size-sm);
-    }
-
-    button.settings-btn.close-btn {
-        font-size: var(--font-size-base);
-        padding: var(--space-3);
     }
 
     .settings-section-header {
@@ -538,40 +468,11 @@ button.settings-btn.close-btn:hover {
     display: none;   /* .settings-btn's display: flex would otherwise win over [hidden] */
 }
 
-.settings-btn {
-    background: var(--color-primary);
-    color: var(--color-white);
-    border: none;
-    padding: var(--space-2) var(--space-3);
-    margin-right: var(--space-2-5);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background var(--transition-normal);
-}
-
-.settings-btn:hover {
-    background: var(--color-primary-dark);
-}
-
-/* Reminders close button — matches #close-main-menu style */
+/* Reminders' Close is a .close-bar (buttons.css); this bleeds it to the edges. */
 #close-reminders-btn {
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
-    border: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     margin: var(--space-3) -20px -20px;
     width: calc(100% + 40px);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    display: block;
-    text-align: center;
-}
-
-#close-reminders-btn:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================
@@ -615,13 +516,11 @@ button.settings-btn.close-btn:hover {
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: var(--overlay-white-light);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-    backdrop-filter: blur(12px) saturate(140%);
-    box-shadow: var(--shadow-button);
+    background: var(--pref-corner-glass, var(--overlay-white-light));
+    box-shadow: var(--chrome-shadow);
     /* The soft white rim Focus View's round button and the glass Complete /
        Clear buttons wear (1px, 40%). */
-    border: 1px solid var(--overlay-white-medium);
+    border: 1px solid var(--chrome-border-color);
     /* --pref-corner-btn: Personalization → Buttons & Progress → Corner Button Color */
     color: var(--pref-corner-btn, var(--color-navy));
     border-radius: 50%;
@@ -629,6 +528,30 @@ button.settings-btn.close-btn:hover {
     height: 48px;
     font-size: 22px;
     cursor: pointer;
+}
+
+/* The frost is on ::before, NOT the button. A backdrop-filter on the button
+   made it a backdrop root, so the desktop caption (::after, inside it) could
+   blur nothing but the button: over a photo background its navy text sat on
+   the bare picture, unreadable, while the Recently Used panel beside it read
+   fine (Nov 2026). A layer of its own at z-index -1 blurs the page behind the
+   circle and leaves the caption free to blur the page behind itself — the
+   header row's pattern (layout/header.css). The flex centring is for the
+   Emoji style, which draws its emoji in this same layer. 12px until Nov 2026,
+   a thinner frost than the Recently Used panel's. */
+#quick-dark-toggle::before,
+#personalization-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: inherit;
+    -webkit-backdrop-filter: var(--chrome-blur);
+    backdrop-filter: var(--chrome-blur);
+    pointer-events: none;
 }
 
 /* Quick dark toggle */
@@ -678,9 +601,10 @@ button.settings-btn.close-btn:hover {
         line-height: 1.5;
         white-space: nowrap;
         color: var(--pref-corner-btn, var(--color-navy));
-        background: var(--overlay-white-light);
-        -webkit-backdrop-filter: blur(12px) saturate(140%);
-        backdrop-filter: blur(12px) saturate(140%);
+        background: var(--pref-corner-glass, var(--overlay-white-light));
+        /* The small radius: the pill is ~20px tall (see --chrome-blur-small). */
+        -webkit-backdrop-filter: var(--chrome-blur-small);
+        backdrop-filter: var(--chrome-blur-small);
         border: 1px solid var(--overlay-white-medium);
         pointer-events: none;
     }
@@ -708,14 +632,19 @@ button.settings-btn.close-btn:hover {
 body.corner-btns-solid:not(.high-contrast) #quick-dark-toggle,
 body.corner-btns-solid:not(.high-contrast) #personalization-btn {
     background: var(--pref-corner-btn, var(--color-navy));
+    border-color: var(--overlay-white-medium);
+    color: var(--pref-corner-ink, var(--color-white));
+}
+
+body.corner-btns-solid:not(.high-contrast) #quick-dark-toggle::before,
+body.corner-btns-solid:not(.high-contrast) #personalization-btn::before {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
-    border-color: var(--overlay-white-medium);
-    color: var(--color-white);
 }
 
 /* Emoji: the original 🎨 / 🌙 (☀️ in dark mode) on the frosted circle, in
-   place of the SVG. ::before is free (::after is the desktop caption). */
+   place of the SVG, drawn in the frost layer (::before above; ::after is the
+   desktop caption). */
 body.corner-btns-emoji #quick-dark-toggle > *,
 body.corner-btns-emoji #personalization-btn > * {
     display: none;

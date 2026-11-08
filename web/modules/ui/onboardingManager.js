@@ -223,7 +223,7 @@ export class OnboardingManager {
     /**
      * Put the cursor in Add task once a first-run landing has settled, so the
      * user can type their first task straight away (Nov 2026; "Create My First
-     * Routine" and "Learn How Cycles Work"). Waits for the welcome splash to be
+     * Routine" and "Show How Cycles Work"). Waits for the welcome splash to be
      * gone (when given), for Focus View — entering it focuses its own ⋯ button,
      * and this runs after that — and for the Add task bar to show: the learn
      * path enters Focus View before its starter routine has rendered. Gives up
@@ -354,7 +354,7 @@ export class OnboardingManager {
             state.settings.firstRunFocusExitPending = true;
         }, true);
 
-        this.deps.showNotification?.(
+        this._focusViewFirstRunNotice = this.deps.showNotification?.(
             getLabel('notify.focusViewFirstRun'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
@@ -389,9 +389,24 @@ export class OnboardingManager {
         if (this._sampleFirstExitHandler) return;
         this._sampleFirstExitHandler = () => {
             this._sampleFirstExitHandler = null;
+            this._dismissFocusViewFirstRunNotice();
             this._showHomeViewWelcomeNotification();
         };
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler, { once: true });
+    }
+
+    /**
+     * "We've started you in Focus View" is untrue once the user has left, and it
+     * stays up until dismissed. Closing it through its own button stops its
+     * timers; removing it straight after skips the fade, so it is gone at once.
+     * @private
+     */
+    _dismissFocusViewFirstRunNotice() {
+        const notice = this._focusViewFirstRunNotice;
+        this._focusViewFirstRunNotice = null;
+        if (!notice) return;
+        notice.querySelector(DOM_SELECTORS.CLOSE_BTN)?.click();
+        notice.remove();
     }
 
     /**
@@ -587,7 +602,7 @@ export class OnboardingManager {
                  <text class="cycle-anim-complete" x="80" y="105" font-size="12" text-anchor="middle" font-weight="700">${getLabel('onboarding.step2CycleComplete')}</text>
                </svg>
              </div>
-             <button class="onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>
+             <button class="btn btn-primary onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>
              <p class="onboarding-choice-hint">${getLabel('onboarding.step2Choice')}</p>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <p>${getLabel('onboarding.step3Desc1')}</p>

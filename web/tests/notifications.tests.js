@@ -194,6 +194,44 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Nov 2026: toasts stay fully on screen, and a resize never overwrites the dragged spot.
+    await test('the whole panel stays inside the window', () => {
+        const notifications = new window.MiniCycleNotifications();
+        const panel = { offsetWidth: 280, offsetHeight: 120 };
+        const far = notifications.clampNotificationPosition(99999, 99999, panel);
+        if (far.x + 280 > window.innerWidth || far.y + 120 > window.innerHeight) throw new Error(`past the far edge: ${JSON.stringify(far)}`);
+        const near = notifications.clampNotificationPosition(-500, -500, panel);
+        if (near.x < 0 || near.y < 0) throw new Error(`past the near edge: ${JSON.stringify(near)}`);
+    });
+
+    await test('a resize moves the panel to fit, and widening again returns it to the dragged spot', () => {
+        const notifications = new window.MiniCycleNotifications();
+        const state = { settings: { notificationPosition: { x: 900, y: 500 }, notificationPositionModified: true } };
+        Object.defineProperty(notifications, 'deps', { value: { AppState: { get: () => state } } });
+        const panel = document.createElement('div');
+        panel.style.cssText = 'position:fixed;width:280px;height:100px';
+        document.body.appendChild(panel);
+        const widthDesc = Object.getOwnPropertyDescriptor(window, 'innerWidth');
+        const heightDesc = Object.getOwnPropertyDescriptor(window, 'innerHeight');
+        const setWindow = (w, h) => {
+            Object.defineProperty(window, 'innerWidth', { configurable: true, value: w });
+            Object.defineProperty(window, 'innerHeight', { configurable: true, value: h });
+        };
+        try {
+            setWindow(600, 400);
+            notifications.fitNotificationOnScreen(panel);
+            if (parseFloat(panel.style.left) + 280 > 600 || parseFloat(panel.style.top) + 100 > 400) throw new Error(`off screen: ${panel.style.left}, ${panel.style.top}`);
+            if (state.settings.notificationPosition.x !== 900 || state.settings.notificationPosition.y !== 500) throw new Error('the dragged spot was overwritten');
+            setWindow(1600, 1000);
+            notifications.fitNotificationOnScreen(panel);
+            if (panel.style.left !== '900px' || panel.style.top !== '500px') throw new Error(`did not return: ${panel.style.left}, ${panel.style.top}`);
+        } finally {
+            Object.defineProperty(window, 'innerWidth', widthDesc);
+            Object.defineProperty(window, 'innerHeight', heightDesc);
+            panel.remove();
+        }
+    });
+
     await test('has dragging state tracking', () => {
         const notifications = new window.MiniCycleNotifications();
         if (typeof notifications.isDraggingNotification !== 'boolean') {
@@ -686,6 +724,40 @@ export async function runNotificationsTests(resultsDiv) {
         if (!cancelBtn || cancelBtn.textContent !== 'No') {
             throw new Error('Cancel button not correct');
         }
+    });
+
+    // Nov 2026 audit: these dialogs were announced only as "dialog" (no name),
+    // and the box inside the native <dialog> was a second role="dialog".
+    await test('confirmation, choice and prompt dialogs are named by their title', () => {
+        setupMockGlobals();
+        const notifications = new window.MiniCycleNotifications();
+        const last = (sel) => Array.from(document.querySelectorAll(sel)).pop();
+        const nameOf = (dialog) => {
+            const id = dialog.getAttribute('aria-labelledby');
+            const el = id && document.getElementById(id);
+            return el ? el.textContent.trim() : null;
+        };
+
+        notifications.showConfirmationModal({ title: 'Delete this?', message: 'Gone for good.', callback: () => {} });
+        const confirm = last('.mini-modal-dialog');
+        if (nameOf(confirm) !== 'Delete this?') throw new Error(`confirm dialog name: ${nameOf(confirm)}`);
+        const descId = confirm.getAttribute('aria-describedby');
+        if (!descId || document.getElementById(descId)?.textContent.trim() !== 'Gone for good.') {
+            throw new Error('confirm dialog must be described by its message');
+        }
+        if (confirm.querySelector('[role="dialog"]')) throw new Error('confirm dialog nests a second role="dialog"');
+        confirm.querySelector('.btn-cancel').click();
+
+        notifications.showChoiceModal({ title: 'Pick one', choices: [{ text: 'A', value: 'a' }], callback: () => {} });
+        const choice = last('.mini-modal-dialog');
+        if (nameOf(choice) !== 'Pick one') throw new Error(`choice dialog name: ${nameOf(choice)}`);
+        if (choice.querySelector('[role="dialog"]')) throw new Error('choice dialog nests a second role="dialog"');
+        choice.querySelector('.btn-cancel').click();
+
+        notifications.showPromptModal({ title: 'Name it', callback: () => {} });
+        const prompt = last('.miniCycle-prompt-dialog');
+        if (nameOf(prompt) !== 'Name it') throw new Error(`prompt dialog name: ${nameOf(prompt)}`);
+        prompt.querySelector('.miniCycle-btn-cancel').click();
     });
 
     await test('showConfirmationModal() confirm button triggers callback', (done) => {

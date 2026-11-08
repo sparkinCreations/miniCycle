@@ -32,7 +32,8 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     opacity: 0;
     pointer-events: none;
     z-index: var(--z-content); /* same layer as #task-view / #stats-panel */
-    transition: transform var(--transition-normal) ease, opacity var(--transition-normal) ease;
+    /* The same slide as #task-view and #stats-panel: all three move together. */
+    transition: transform var(--animation-pop) ease-in-out, opacity var(--animation-pop) ease-in-out;
 }
 
 #focus-task-panel.show {
@@ -56,14 +57,20 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     align-items: center;
     gap: var(--space-4);
     padding: var(--space-6) var(--space-5);
-    background: var(--pref-task-bg, var(--theme-card-bg, var(--color-white)));
-    color: var(--pref-task-text, var(--theme-text-on-surface));
+    /* The modals' surface: a panel floating on its own over the backdrop, as a
+       modal is, not a row inside a frame like the routine's tasks (the user's
+       call, Nov 2026: plain white beside the pale-blue glass of every dialog). A task
+       colour picked in Personalization still wins, then a modal colour. */
+    background: var(--pref-task-bg, var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white)))));
+    -webkit-backdrop-filter: blur(var(--theme-modal-blur));
+    backdrop-filter: blur(var(--theme-modal-blur));
+    color: var(--pref-task-text, var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface))));
     border: 1px solid var(--theme-card-border, transparent);
     /* High-priority accent — set by JS as --focus-task-priority when the
        current task is flagged; falls back to transparent (no accent). */
     border-left: 4px solid var(--focus-task-priority, transparent);
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-lg);
+    border-radius: var(--panel-radius);
+    box-shadow: var(--shadow-panel);
     text-align: center;
 }
 
@@ -130,10 +137,10 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     font-size: var(--font-size-md);
     font-weight: 600;
     font-family: inherit;
-    /* The theme's own button text, not hard-coded white: Dark Ocean and
-       Golden Glow pair light button backgrounds with dark text (Oct 2026). */
-    color: var(--theme-button-primary-text, var(--color-white));
-    background: var(--theme-button-primary-bg, var(--color-primary));
+    /* The main-action colour every dialog, Add and Close bar use (buttons.css);
+       until Nov 2026 this one button was the deeper #3a5fc7, a second blue. */
+    color: var(--btn-primary-text);
+    background: var(--btn-primary-bg);
     border: none;
     border-radius: var(--radius-full);
     cursor: pointer;
@@ -163,14 +170,15 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     gap: var(--space-6);
 }
 
+/* Drawn chevrons at 24px. Until Nov 2026 these were the ‹ › text characters,
+   which are small at any sensible font size and sit off-centre. */
 .focus-task-nav-btn {
-    width: 40px;
-    height: 40px;
+    width: 44px;
+    height: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: var(--font-size-lg);
-    font-family: inherit;
+    padding: 0;
     color: inherit;
     background: transparent;
     border: 1px solid var(--theme-card-border, currentColor);
@@ -178,6 +186,11 @@ body:not(.focus-mode) #nav-dots .dot[aria-controls="focus-task-panel"] {
     opacity: 0.6;
     cursor: pointer;
     transition: opacity var(--transition-fast) ease;
+}
+
+.focus-task-nav-btn svg {
+    width: 24px;
+    height: 24px;
 }
 
 .focus-task-nav-btn:focus-visible {
