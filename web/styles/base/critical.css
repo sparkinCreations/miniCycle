@@ -68,7 +68,7 @@ html, body {
   opacity: 0.85;
 }
 .loader-tip-header {
-  font-size: var(--font-size-md, 17px);
+  font-size: 17px;
   font-weight: 600;
   margin-bottom: 6px;
 }
@@ -371,7 +371,7 @@ html:not(.mc-first-run) .first-run-choice,
    already spoken for by .is-chosen below, which inverts the tapped button). */
 .first-run-btn-primary {
   padding: 18px 20px;
-  font-size: var(--font-size-md, 16px);
+  font-size: 16px;
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
 }
 

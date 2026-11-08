@@ -147,7 +147,7 @@ body.quick-actions-open #quick-actions-window {
     background: none;
     border-radius: var(--radius-md) var(--radius-md) 0 0;
     color: var(--color-white);
-    font-size: var(--font-size-md);
+    font-size: var(--font-size-sm);
     font-weight: bold;
     margin-top: calc(-1 * var(--space-2-5));
     margin-left: calc(-1 * var(--space-2-5));

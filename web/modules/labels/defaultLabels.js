@@ -1412,7 +1412,7 @@ export const DEFAULT_LABELS = deepFreeze({
         wordmark:        'miniCycle',
         descriptor:      'Routine Checklist Manager',
         createRoutine:   'Create a new routine',
-        openRoutine:     'Open existing routine',
+        openRoutine:     'Switch routine',
         restoreBackup:   'Restore from a backup file',
         // Replays the onboarding of the current view (Focus View banner or Home
         // View modal) for a returning user.
@@ -2040,7 +2040,7 @@ export const DEFAULT_LABELS = deepFreeze({
         singleKeysOff: 'Prefer single keys, like M for the menu? Turn them on in Settings → Behavior.',
         showList:      'Show this list',
         newRoutine:    'Create a new routine',
-        openRoutine:   'Open routines (the list or Browse)',
+        openRoutine:   'Switch routines (the list or Browse)',
         focusView:     'Focus View on or off',
         moveBetween:   'Move between tasks',
         toggleTask:    'Check or uncheck the selected task',
@@ -2175,7 +2175,7 @@ export const DEFAULT_LABELS = deepFreeze({
 
     quickAction: {
         stats:          'Stats',
-        openRoutine:    'Open Routine',
+        openRoutine:    'Switch Routine',
         browseRoutines: 'Browse Routines',   // the same action when Settings → routines open in Browse
         recurring:      'Recurring',
         reminders:      'Reminders',

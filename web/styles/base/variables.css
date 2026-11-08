@@ -479,6 +479,7 @@
   --font-size-base: 16px;
   --font-size-xs: calc(var(--font-size-base) - 4px);
   --font-size-sm: calc(var(--font-size-base) - 2px);
+  --font-size-md: var(--font-size-base);
   --font-size-lg: calc(var(--font-size-base) + 2px);
   --font-size-xl: calc(var(--font-size-base) + 4px);
   --font-size-2xl: calc(var(--font-size-base) + 8px);

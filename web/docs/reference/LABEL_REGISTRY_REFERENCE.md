@@ -178,7 +178,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 
 | Key | Current Value | Source(s) | Lens-Sensitive | Notes |
 |-----|--------------|-----------|----------------|-------|
-| `switcher.title` | Open Routine | miniCycle.html:2468 | Yes | Modal title |
+| `switcher.title` | Switch Routine | miniCycle.html:2468 | Yes | Modal title |
 | `switcher.search` | Search routines... | miniCycle.html:2470 | Yes | Search placeholder |
 | `switcher.filterAll` | All Modes | miniCycle.html:2476 | No | Filter option |
 | `switcher.filterAuto` | Auto Cycle | miniCycle.html:2477 | Yes | Filter option |
@@ -508,7 +508,7 @@ These are the foundational terms that define the app's vocabulary. A contextual 
 | Key | Current Value | Source(s) | Lens-Sensitive | Notes |
 |-----|--------------|-----------|----------------|-------|
 | `quickAction.stats` | Stats | quickActionsManager.js | No | Action label |
-| `quickAction.openRoutine` | Open Routine | quickActionsManager.js | Yes | Action label |
+| `quickAction.openRoutine` | Switch Routine | quickActionsManager.js | Yes | Action label |
 | `quickAction.recurring` | Recurring | quickActionsManager.js | No | Action label |
 | `quickAction.reminders` | Reminders | quickActionsManager.js | No | Action label |
 | `quickAction.settings` | Settings | quickActionsManager.js | No | Action label |
