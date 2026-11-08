@@ -22,9 +22,10 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, LIMITS } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, APP_VERSION, LIMITS, BREAKPOINTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
+import { attachLongPressHint } from '../utils/longPressHint.js';
 import { toggleSectionExpanded, setSectionExpanded, isSectionExpanded, collapseAllSections, usesExclusiveSections, isCollapseAllClick } from '../utils/collapsibleSections.js';
 import { getRoutines, getRoutine, setActiveRoutineId, getActiveRoutineId, getActiveRoutine } from '../utils/cycleMode.js';
 import { applyTaskStatusLabel } from '../task/taskUtils.js';
@@ -183,11 +184,73 @@ export class MenuManager {
 
             // Setup menu
             this.setupMainMenu();
+            this._wireRecentlyUsedPlacement();
             this._initialized = true;
         } catch (error) {
             console.warn('Menu Manager initialization failed:', error);
             this.deps.showNotification(getLabel('notify.menuLimited'), 'warning');
         }
+    }
+
+    /**
+     * On a very short window the menu is a two-pane sheet (menu.css), and
+     * Recently Used sits in the left pane. CSS cannot lift it out of the
+     * scrolling section list, so it is moved: to a direct child of the menu
+     * while the window is short, and back to the top of the list otherwise.
+     * Moving the element keeps its listeners (quickActionsManager binds them
+     * to it). Idempotent.
+     * @private
+     */
+    _wireRecentlyUsedPlacement() {
+        this._recentlyUsedCleanup?.();
+        const menu = this.elements.menu;
+        const sections = menu?.querySelector(DOM_SELECTORS.MENU_SECTIONS);
+        const row = menu?.querySelector(DOM_SELECTORS.QUICK_ACTIONS_MENU_ROW);
+        if (!sections || !row) return;
+
+        const short = window.matchMedia(`(max-height: ${BREAKPOINTS.SHORT_WINDOW_MAX_HEIGHT}px)`);
+        const place = () => {
+            if (short.matches) {
+                if (row.parentElement !== menu) sections.before(row);
+            } else if (row.parentElement !== sections) {
+                sections.prepend(row);
+            }
+        };
+        place();
+        short.addEventListener('change', place);
+
+        // Where those two primary actions are icons alone, a hold says what
+        // each one is. Only then: a hold on a labelled button should not
+        // swallow its click.
+        const iconOnly = window.matchMedia(`(max-height: ${BREAKPOINTS.SHORT_WINDOW_MAX_HEIGHT}px) and (max-width: ${BREAKPOINTS.SHORT_WINDOW_ICON_ACTIONS_MAX_WIDTH}px)`);
+        let detachHints = [];
+        const syncHints = () => {
+            detachHints.forEach(detach => detach());
+            detachHints = [];
+            if (!iconOnly.matches) return;
+            for (const id of [DOM_IDS.MENU_OPEN_TITLE_SCREEN, DOM_IDS.MENU_ENTER_FOCUS_VIEW]) {
+                const btn = menu.querySelector(`#${id}`);
+                if (!btn) continue;
+                detachHints.push(attachLongPressHint(btn, {
+                    getText: () => btn.querySelector(DOM_SELECTORS.MENU_PRIMARY_ACTION_TEXT)?.textContent.trim() || btn.getAttribute('aria-label')
+                }));
+            }
+        };
+        syncHints();
+        iconOnly.addEventListener('change', syncHints);
+
+        this._recentlyUsedCleanup = () => {
+            short.removeEventListener('change', place);
+            iconOnly.removeEventListener('change', syncHints);
+            detachHints.forEach(detach => detach());
+            detachHints = [];
+            this._recentlyUsedCleanup = null;
+        };
+    }
+
+    /** Remove what this module added outside setupMainMenu's guarded bindings. */
+    destroy() {
+        this._recentlyUsedCleanup?.();
     }
 
     /**
@@ -701,15 +764,15 @@ export class MenuManager {
                     this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalCycleName } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
+                // ✅ The same fresh copy the routine switcher's Duplicate makes —
+                // new task ids, no inherited cycle count or History (routineCopy.js).
+                // Filed under its own generated id: the key is identity, the title is text.
+                const copy = buildRoutineCopy(currentCycle, finalCycleName);
+
                 // ✅ Update through state system
                 AppState.update(state => {
-
-                    // ✅ The same fresh copy the routine switcher's Duplicate makes —
-                    // new task ids, no inherited cycle count or History (routineCopy.js).
-                    getRoutines(state)[finalCycleName] = buildRoutineCopy(currentCycle, finalCycleName);
-
-                    // ✅ Set as active cycle using the title as key
-                    setActiveRoutineId(state, finalCycleName);
+                    getRoutines(state)[copy.id] = copy;
+                    setActiveRoutineId(state, copy.id);
                     state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
 
                 }, true); // immediate save
@@ -719,7 +782,7 @@ export class MenuManager {
                 // repaired that, and dropped the change it was recording — so the
                 // first edit in a fresh copy could not be undone.
                 if (typeof this.deps.onCycleCreated === 'function') {
-                    Promise.resolve(this.deps.onCycleCreated(finalCycleName)).catch(err => {
+                    Promise.resolve(this.deps.onCycleCreated(copy.id)).catch(err => {
                         console.warn('⚠️ Undo system cycle creation notification failed:', err);
                     });
                 }

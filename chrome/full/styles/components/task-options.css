@@ -88,7 +88,6 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     height: 24px;
     font-size: var(--font-size-sm);
     cursor: pointer;
-    box-shadow: var(--shadow-xs);
     transition: background var(--transition-fast), transform var(--transition-fast);
     display: flex;
     align-items: center;
@@ -287,9 +286,8 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
    on a 667px phone the card was taller than the screen: its top ran off the top
    and Close was cut off at the bottom (Oct 2026). */
 .modal-content.task-options-modal {
-    max-width: 620px;
-    width: 90vw;
-    border-radius: var(--radius-lg);
+    width: var(--modal-width-lg);
+    border-radius: var(--modal-radius);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -321,9 +319,10 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
 
 .task-options-modal .modal-header h2 {
     margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     color: var(--theme-text-on-surface);
+    text-align: center;
 }
 
 .task-options-modal .modal-subtitle {
@@ -532,9 +531,6 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
    ============================================================================= */
 
 @media (max-width: 768px) {
-    .task-options-modal {
-        max-width: 95%;
-    }
 
     .task-options-modal .modal-body {
         padding: var(--space-2-5);
@@ -552,16 +548,9 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
 }
 
 @media (max-width: 480px) {
-    .task-options-modal {
-        width: 95%;
-    }
 
     .task-options-modal .modal-header {
         padding-left: var(--space-10);
-    }
-
-    .task-options-modal .modal-header h2 {
-        font-size: var(--font-size-base);
     }
 
     .task-options-modal .modal-subtitle {
@@ -917,26 +906,9 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
     background: var(--overlay-medium);
 }
 
+/* Close is a .close-bar (buttons.css). */
 .task-options-modal .close-button-fullwidth {
-    width: 100%;
     margin-top: var(--space-3);
-    padding: var(--space-3-5);
-    background: var(--color-steel-blue);
-    color: var(--color-white);
-    border: none;
-    border-radius: 0;
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    cursor: pointer;
-    transition: filter var(--transition-fast) ease;
-}
-
-.task-options-modal .close-button-fullwidth:hover {
-    filter: brightness(0.85);
-}
-
-.task-options-modal .close-button-fullwidth:active {
-    filter: brightness(0.72);
 }
 
 /* =============================================================================
@@ -1063,7 +1035,6 @@ body.dark-mode .task-option-item.selected:has(.option-checkbox:checked) {
     background: var(--dark-success-bg);
     border-color: var(--dark-accent-green);
 }
-
 
 body.dark-mode .preview-option-title {
     color: var(--color-slate-100);

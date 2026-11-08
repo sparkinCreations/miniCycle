@@ -233,6 +233,7 @@ function expandSearch() {
         inputRow.classList.remove(DOM_CLASSES.HIDDEN);
         filterRow?.classList.remove(DOM_CLASSES.HIDDEN);
         searchBtn.classList.add(DOM_CLASSES.ACTIVE);
+        searchBtn.setAttribute('aria-expanded', 'true');
         isSearchExpanded = true;
 
         // Mobile: don't auto-focus — let user tap the search bar to bring up keyboard.
@@ -340,6 +341,7 @@ function collapseSearch() {
         inputRow.classList.add(DOM_CLASSES.HIDDEN);
         filterRow?.classList.add(DOM_CLASSES.HIDDEN);
         searchBtn.classList.remove(DOM_CLASSES.ACTIVE);
+        searchBtn.setAttribute('aria-expanded', 'false');
         isSearchExpanded = false;
 
         // Always re-collapse the filter group when search closes

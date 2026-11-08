@@ -182,7 +182,6 @@ export class StatsPanelManager {
         };
 
         // Collapsible section state
-        this._milestonesExpanded = false;
 
         // DOM elements cache
         this.elements = {};
@@ -296,7 +295,8 @@ export class StatsPanelManager {
         this.injectFeatureButtons();
 
         // ✅ Restore collapsible section preferences (applies to injected buttons too)
-        this.restoreCollapsiblePreferences();
+        this.showStatsSections();
+        this.setupStatsTabs();
 
         // NOTE: Badge tooltips are now initialized by achievementsManager during its init (Phase 7)
         // This ensures badges are clickable after achievementsManager loads
@@ -315,13 +315,13 @@ export class StatsPanelManager {
             return;
         }
 
-        // === HISTORY BUTTON (inside Current Routine dropdown) ===
+        // === HISTORY BUTTON (in the Current Routine card) ===
         // Note: Cleared Tasks is now a tab within the History modal
         const currentRoutineCycleCount = statsPanel.querySelector(`#${DOM_IDS.CURRENT_ROUTINE_CYCLE_COUNT}`);
         const currentRoutineClearedCount = statsPanel.querySelector(`#${DOM_IDS.CURRENT_ROUTINE_CLEARED_COUNT}`);
         if (currentRoutineCycleCount) {
             const routineButtonsContainer = document.createElement('div');
-            // Note: 'visible' class will be added by restoreCollapsiblePreferences() based on user preference
+            // The 'visible' class is added by showStatsSections().
             routineButtonsContainer.className = 'routine-buttons-container';
             routineButtonsContainer.innerHTML = `
                 <button class="stats-feature-btn history-btn" id="${DOM_IDS.HISTORY_BTN}">
@@ -522,8 +522,6 @@ export class StatsPanelManager {
                 }
             },
             // Theme event handlers
-            handleCurrentRoutineToggle: () => this.handleCurrentRoutineToggle(),
-            handleThemeToggleClick: () => this._rewards.handleThemeToggleClick(),
             handleQuickDarkToggle: () => this.handleQuickDarkToggle()
         };
 
@@ -594,36 +592,6 @@ export class StatsPanelManager {
     setupThemeEvents() {
         const safeAdd = _deps.safeAddEventListener;
         if (!safeAdd) return; // Guard: dependency not injected (e.g., in tests)
-
-        // Current Routine status click + keyboard activation
-        if (this.elements.currentRoutineStatus) {
-            safeAdd(this.elements.currentRoutineStatus, "click", this.boundHandlers.handleCurrentRoutineToggle);
-            this._routineHeaderEl = this.elements.currentRoutineStatus.querySelector(DOM_SELECTORS.CLICKABLE);
-            if (this._routineHeaderEl) {
-                this._routineHeaderKeydownHandler = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.boundHandlers.handleCurrentRoutineToggle(e);
-                    }
-                };
-                safeAdd(this._routineHeaderEl, "keydown", this._routineHeaderKeydownHandler);
-            }
-        }
-
-        // Theme unlock status click + keyboard activation
-        if (this.elements.themeUnlockStatus) {
-            safeAdd(this.elements.themeUnlockStatus, "click", this.boundHandlers.handleThemeToggleClick);
-            this._milestoneHeaderEl = this.elements.themeUnlockStatus.querySelector(DOM_SELECTORS.CLICKABLE);
-            if (this._milestoneHeaderEl) {
-                this._milestoneHeaderKeydownHandler = (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        this.boundHandlers.handleThemeToggleClick(e);
-                    }
-                };
-                safeAdd(this._milestoneHeaderEl, "keydown", this._milestoneHeaderKeydownHandler);
-            }
-        }
 
         /* Quick dark toggle
         if (this.elements.quickDarkToggle) {
@@ -853,8 +821,16 @@ export class StatsPanelManager {
 
         // ✅ Update current cycle progress text with proper singular/plural
         if (this.elements.currentCycleProgressText) {
-            this.elements.currentCycleProgressText.textContent =
-                getLabel('stats.completion', { vars: { completed: completedTasks, total: totalTasks, taskWord: getLabel('noun.task', { count: totalTasks }), cycleWord: getLabel('noun.cycle', { count: 1 }) } });
+            // "this cycle" separates this round from the all-time cycle count
+            // printed under it, so it is never dropped: CSS only moves it to its
+            // own line where the card is narrow.
+            const progressVars = { completed: completedTasks, total: totalTasks, taskWord: getLabel('noun.task', { count: totalTasks }), cycleWord: getLabel('noun.cycle', { count: 1 }) };
+            const progressRound = document.createElement('span');
+            progressRound.className = DOM_CLASSES.STATS_PROGRESS_ROUND;
+            progressRound.textContent = getLabel('stats.completionRound', { vars: progressVars });
+            const progressText = this.elements.currentCycleProgressText;
+            progressText.textContent = `${getLabel('stats.completion', { vars: progressVars })} `;
+            progressText.appendChild(progressRound);
         }
 
         // ✅ Show global cycles count (primary metric for rewards) with proper singular/plural
@@ -881,12 +857,9 @@ export class StatsPanelManager {
             if (perRoutineCleared > 0) {
                 this.elements.perRoutineCleared.textContent =
                     getLabel('stats.clearedTasks', { vars: { count: perRoutineCleared, taskWord: getLabel('noun.task', { count: perRoutineCleared }) } });
-                // Mark as having content - visibility is controlled by .visible class from dropdown toggle
+                // Mark as having content; shown whenever it has some.
                 this.elements.currentRoutineClearedCount.classList.add(DOM_CLASSES.HAS_CONTENT);
-                // Sync with dropdown expanded state (check if cycle count has .visible)
-                if (this.elements.currentRoutineCycleCount?.classList.contains(DOM_CLASSES.VISIBLE)) {
-                    this.elements.currentRoutineClearedCount.classList.add(DOM_CLASSES.VISIBLE);
-                }
+                this.elements.currentRoutineClearedCount.classList.add(DOM_CLASSES.VISIBLE);
             } else {
                 // No content - always hide
                 this.elements.currentRoutineClearedCount.classList.remove(DOM_CLASSES.HAS_CONTENT, DOM_CLASSES.VISIBLE);
@@ -967,123 +940,87 @@ export class StatsPanelManager {
     // ==========================================
 
     /**
-     * Update theme unlock status messages based on GLOBAL cycles completed
-     * @param {number} globalCyclesCompleted - Total cycles across all routines
+     * Show every section of the panel. They were collapsible dropdowns until
+     * Nov 2026; any saved expanded/collapsed preference is now ignored.
+     * Cleared Tasks is left to updateStatsPanel, which knows if it has content.
      * @returns {void}
      */
-    handleCurrentRoutineToggle() {
-        const { currentCycleDoughnutContainer, currentCycleProgressText,
-                currentRoutineCycleCount, currentRoutineClearedCount, currentRoutineStatus, routineButtonsContainer } = this.elements;
-
-        if (!currentRoutineCycleCount) return;
-
-        // Toggle routine name, doughnut chart, progress text, cycle count, cleared count, and History button container
-        if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.toggle(DOM_CLASSES.VISIBLE);
-        if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.toggle(DOM_CLASSES.VISIBLE);
-        if (currentCycleProgressText) currentCycleProgressText.classList.toggle(DOM_CLASSES.VISIBLE);
-        currentRoutineCycleCount.classList.toggle(DOM_CLASSES.VISIBLE);
-        // Only toggle cleared count if it has content to show
-        if (currentRoutineClearedCount?.classList.contains(DOM_CLASSES.HAS_CONTENT)) {
-            currentRoutineClearedCount.classList.toggle(DOM_CLASSES.VISIBLE);
-        }
-        if (routineButtonsContainer) routineButtonsContainer.classList.toggle(DOM_CLASSES.VISIBLE);
-
-        // Update toggle arrow and aria-expanded
-        const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
-        if (toggleIcon) {
-            const anyVisible = currentRoutineCycleCount.classList.contains(DOM_CLASSES.VISIBLE);
-            toggleIcon.textContent = anyVisible ? "▲" : "▼";
-
-            const clickableHeader = currentRoutineStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
-            if (clickableHeader) clickableHeader.setAttribute('aria-expanded', String(anyVisible));
-
-            // ✅ Save preference to localStorage
-            this.saveCollapsiblePreference('currentRoutineExpanded', anyVisible);
-        }
-
+    showStatsSections() {
+        const { currentRoutineName, currentCycleDoughnutContainer, currentCycleProgressText,
+                currentRoutineCycleCount, routineButtonsContainer } = this.elements;
+        [currentRoutineName, currentCycleDoughnutContainer, currentCycleProgressText,
+         currentRoutineCycleCount, routineButtonsContainer]
+            .forEach(el => el?.classList.add(DOM_CLASSES.VISIBLE));
     }
 
     /**
-     * Save collapsible section preference to AppState
-     * @param {string} key - Preference key
-     * @param {boolean} value - Whether section is expanded
+     * The Badges / Milestones tabs. Both panels always occupy the same space
+     * (stats-panel.css), so switching never resizes the panel; [data-inactive]
+     * hides one with visibility, which also takes it out of the tab order and
+     * the accessibility tree. Arrow keys, Home and End move between tabs. The
+     * choice is kept in settings.statsPanel.tab.
      * @returns {void}
      */
-    saveCollapsiblePreference(key, value) {
+    setupStatsTabs() {
+        const tablist = document.querySelector(DOM_SELECTORS.STATS_TABS);
+        if (!tablist) return;
+        const tabs = [...tablist.querySelectorAll(DOM_SELECTORS.STATS_TAB)];
+        const panelOf = (tab) => document.getElementById(tab.getAttribute('aria-controls'));
+
+        const select = (tab, { focus = false, save = false } = {}) => {
+            tabs.forEach(t => {
+                const on = t === tab;
+                t.setAttribute('aria-selected', String(on));
+                t.tabIndex = on ? 0 : -1;
+                panelOf(t)?.toggleAttribute('data-inactive', !on);
+            });
+            if (focus) tab.focus();
+            if (save) this.saveStatsPanelPreference('tab', tab.dataset.tab);
+        };
+
+        const AppState = this.dependencies.AppState;
+        const savedTab = AppState?.isReady?.() ? AppState.get()?.settings?.statsPanel?.tab : null;
+        select(tabs.find(t => t.dataset.tab === savedTab) || tabs[0]);
+
+        this._statsTabsCleanup?.();
+        const onClick = (e) => {
+            const tab = e.target.closest(DOM_SELECTORS.STATS_TAB);
+            if (tab) select(tab, { save: true });
+        };
+        const onKeydown = (e) => {
+            const i = tabs.indexOf(document.activeElement);
+            if (i < 0) return;
+            const next = { ArrowRight: tabs[(i + 1) % tabs.length], ArrowLeft: tabs[(i - 1 + tabs.length) % tabs.length], Home: tabs[0], End: tabs[tabs.length - 1] }[e.key];
+            if (!next) return;
+            e.preventDefault();
+            select(next, { focus: true, save: true });
+        };
+        tablist.addEventListener('click', onClick);
+        tablist.addEventListener('keydown', onKeydown);
+        this._statsTabsCleanup = () => {
+            tablist.removeEventListener('click', onClick);
+            tablist.removeEventListener('keydown', onKeydown);
+            this._statsTabsCleanup = null;
+        };
+    }
+
+    /**
+     * Save one Stats panel preference to settings.statsPanel.
+     * @param {string} key
+     * @param {*} value
+     * @returns {void}
+     */
+    saveStatsPanelPreference(key, value) {
         try {
-            // ✅ Save to AppState instead of separate localStorage key - DI-pure
             const AppState = this.dependencies.AppState;
             if (AppState?.isReady?.()) {
                 AppState.update(state => {
-                    // Initialize statsPanel preferences object if it doesn't exist
-                    if (!state.settings.statsPanel) {
-                        state.settings.statsPanel = {};
-                    }
+                    if (!state.settings.statsPanel) state.settings.statsPanel = {};
                     state.settings.statsPanel[key] = value;
-                }, false); // Debounced save
-
+                }, false, { system: true }); // Debounced save; system: not undo history
             }
         } catch (error) {
-            console.warn('⚠️ Failed to save collapsible preference:', error);
-        }
-    }
-
-    /**
-     * Restore collapsible section preferences from AppState
-     * Default: Current Routine starts expanded, Milestone Rewards starts collapsed
-     */
-    restoreCollapsiblePreferences() {
-        try {
-            let preferences = {};
-
-            // Read from AppState
-            const AppState = this.dependencies.AppState;
-            if (AppState?.isReady?.()) {
-                const currentState = AppState.get();
-                if (currentState?.settings?.statsPanel) {
-                    preferences = currentState.settings.statsPanel;
-                }
-            }
-
-            // Current Routine: defaults to expanded, Milestone Rewards: defaults to collapsed
-            const currentRoutineExpanded = preferences.currentRoutineExpanded !== false;
-            const milestonesExpanded = preferences.milestonesExpanded === true;
-
-            // Restore Current Routine state
-            const { currentCycleDoughnutContainer, currentCycleProgressText,
-                    currentRoutineCycleCount, currentRoutineClearedCount, currentRoutineStatus, routineButtonsContainer } = this.elements;
-
-            if (currentRoutineExpanded && currentRoutineCycleCount) {
-                if (this.elements.currentRoutineName) this.elements.currentRoutineName.classList.add(DOM_CLASSES.VISIBLE);
-                if (currentCycleDoughnutContainer) currentCycleDoughnutContainer.classList.add(DOM_CLASSES.VISIBLE);
-                if (currentCycleProgressText) currentCycleProgressText.classList.add(DOM_CLASSES.VISIBLE);
-                currentRoutineCycleCount.classList.add(DOM_CLASSES.VISIBLE);
-                // Don't add visible to cleared count here - let updateStatsPanel() handle it based on content
-                if (routineButtonsContainer) routineButtonsContainer.classList.add(DOM_CLASSES.VISIBLE);
-
-                const toggleIcon = currentRoutineStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
-                if (toggleIcon) toggleIcon.textContent = "▲";
-            }
-
-            // Restore Milestone Rewards state
-            const { themeUnlockMessage, goldenUnlockMessage, gameUnlockMessage, themeUnlockStatus } = this.elements;
-
-            this._milestonesExpanded = milestonesExpanded;
-
-            if (milestonesExpanded && themeUnlockMessage) {
-                themeUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
-                if (goldenUnlockMessage) goldenUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
-                if (gameUnlockMessage) gameUnlockMessage.classList.add(DOM_CLASSES.VISIBLE);
-
-                const toggleIcon = themeUnlockStatus?.querySelector(DOM_SELECTORS.TOGGLE_ICON);
-                if (toggleIcon) toggleIcon.textContent = "▲";
-
-                const clickableHeader = themeUnlockStatus?.querySelector(DOM_SELECTORS.CLICKABLE);
-                if (clickableHeader) clickableHeader.setAttribute('aria-expanded', 'true');
-            }
-
-        } catch (error) {
-            console.warn('⚠️ Failed to restore collapsible preferences:', error);
+            console.warn('⚠️ Failed to save Stats panel preference:', error);
         }
     }
 
@@ -1260,22 +1197,7 @@ export class StatsPanelManager {
         }
 
         // Remove setupThemeEvents listeners
-        if (this.elements.currentRoutineStatus) {
-            this.elements.currentRoutineStatus.removeEventListener("click", this.boundHandlers.handleCurrentRoutineToggle);
-        }
-        if (this._routineHeaderEl && this._routineHeaderKeydownHandler) {
-            this._routineHeaderEl.removeEventListener("keydown", this._routineHeaderKeydownHandler);
-            this._routineHeaderKeydownHandler = null;
-            this._routineHeaderEl = null;
-        }
-        if (this.elements.themeUnlockStatus) {
-            this.elements.themeUnlockStatus.removeEventListener("click", this.boundHandlers.handleThemeToggleClick);
-        }
-        if (this._milestoneHeaderEl && this._milestoneHeaderKeydownHandler) {
-            this._milestoneHeaderEl.removeEventListener("keydown", this._milestoneHeaderKeydownHandler);
-            this._milestoneHeaderKeydownHandler = null;
-            this._milestoneHeaderEl = null;
-        }
+        this._statsTabsCleanup?.();
         // Remove setupDataReadyListener listeners
         if (this.boundHandlers.handleCycleReady) {
             document.removeEventListener('cycle:ready', this.boundHandlers.handleCycleReady);

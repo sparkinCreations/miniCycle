@@ -13,6 +13,17 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
+import { GlobalUtils } from '../utils/globalUtils.js';
+
+/**
+ * A new routine's key and id (they are the same value). Routines are keyed by a
+ * generated id, never by their title: the title is display text the user can
+ * change, the key is identity. Creation wrote the title as the key until Nov 2026
+ * (AppState._repairRoutineKeys re-keys what it left behind). Same id maker as the
+ * 2.6 migration and routineCopy.js.
+ * @returns {string}
+ */
+const newRoutineId = () => GlobalUtils.generateId('routine');
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { setIconText } from '../utils/icons.js';
@@ -199,11 +210,14 @@ export class RoutineManager {
                 message: 'modal.createRoutineMessage',
                 placeholder: 'modal.createRoutinePlaceholder',
                 isOnboarding: true,
+                // First-run "Create My First Routine": a name is already there,
+                // so the first step can be just pressing Enter.
+                defaultName: options.firstRoutine === true ? getLabel('modal.firstRoutineName') : '',
                 // First-run "Load a Sample" choice opens straight to the picker.
                 startInSampleView: options.startInSampleView === true,
                 onCreateBlank: async (inputValue) => {
                     const newCycleName = this.deps.sanitizeInput(inputValue);
-                    const cycleId = `cycle_${Date.now()}`;
+                    const cycleId = newRoutineId();
 
                     const appState = this.deps.AppState;
 
@@ -220,7 +234,7 @@ export class RoutineManager {
                     }
 
                     await appState.update(state => {
-                        getRoutines(state)[finalTitle] = {
+                        getRoutines(state)[cycleId] = {
                             id: cycleId,
                             title: finalTitle,
                             tasks: [],
@@ -240,7 +254,7 @@ export class RoutineManager {
                             }
                         };
 
-                        setActiveRoutineId(state, finalTitle);
+                        setActiveRoutineId(state, cycleId);
                         state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
                     }, true);
 
@@ -248,7 +262,7 @@ export class RoutineManager {
                         // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
                         // call, so it yields undefined when the hook is unwired and `.catch` on
                         // undefined throws here — inside a UI flow, after state already changed.
-                        Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
+                        Promise.resolve(this.deps.onCycleCreated(cycleId)).catch(err => {
                             console.warn('⚠️ Undo system cycle creation notification failed:', err);
                         });
                     }
@@ -267,7 +281,7 @@ export class RoutineManager {
 
                     this._clearHelpWindowTemporary();
                     this.deps.updateRecurringInfoLink?.();
-                    await this.deps.completeInitialSetup(finalTitle, appState.get());
+                    await this.deps.completeInitialSetup(cycleId, appState.get());
 
                     // First-run "Create My First Routine" one-shot: now that the
                     // empty routine has rendered, swap the generic empty hint for
@@ -333,16 +347,16 @@ export class RoutineManager {
             return;
         }
 
-        const cycleId = `cycle_${Date.now()}`;
+        const cycleId = newRoutineId();
         const fallbackTitle = "Getting Started";
 
         // ✅ Get unique name (uses centralized utility)
         const existingCycles = getRoutines(appState.get()) || {};
         const { name: finalTitle } = getUniqueCycleName(fallbackTitle, existingCycles);
 
-        // ✅ Create fallback cycle via AppState.update() - use title as key
+        // ✅ Create fallback routine via AppState.update() - keyed by its id
         await appState.update(state => {
-            getRoutines(state)[finalTitle] = {
+            getRoutines(state)[cycleId] = {
                 id: cycleId,
                 title: finalTitle,
                 tasks: [
@@ -367,7 +381,7 @@ export class RoutineManager {
                 recurringTemplates: {}
             };
 
-            setActiveRoutineId(state, finalTitle);
+            setActiveRoutineId(state, cycleId);
             state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
         }, true); // immediate save
 
@@ -376,12 +390,12 @@ export class RoutineManager {
             // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
             // call, so it yields undefined when the hook is unwired and `.catch` on
             // undefined throws here — inside a UI flow, after state already changed.
-            Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
+            Promise.resolve(this.deps.onCycleCreated(cycleId)).catch(err => {
                 console.warn('⚠️ Undo system cycle creation notification failed:', err);
             });
         }
 
-        await this.deps.completeInitialSetup(finalTitle, appState.get());
+        await this.deps.completeInitialSetup(cycleId, appState.get());
     }
 
     /**
@@ -437,7 +451,7 @@ export class RoutineManager {
             isOnboarding: false,
             onCreateBlank: (inputValue) => {
                 const newCycleName = this.deps.sanitizeInput(inputValue);
-                const cycleId = `cycle_${Date.now()}`;
+                const cycleId = newRoutineId();
 
                 const existingCycles = getRoutines(this.deps.AppState.get()) || {};
                 const { name: finalTitle, wasModified } = getUniqueCycleName(newCycleName, existingCycles);
@@ -446,7 +460,7 @@ export class RoutineManager {
                     this.deps.showNotification(getLabel('notify.nameExists', { vars: { name: finalTitle } }), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
                 }
 
-                const storageKey = finalTitle;
+                const storageKey = cycleId;
                 let finalResult = null;
 
                 // Created in Focus View: open its input bar. Focus View hides the
@@ -611,13 +625,13 @@ export class RoutineManager {
                 throw new Error('AppState not ready');
             }
 
-            const cycleId = `cycle_${Date.now()}`;
+            const cycleId = newRoutineId();
             const sampleTitle = sample.title || sample.name || 'Sample Routine';
             const existingCycles = getRoutines(appState.get()) || {};
             const { name: finalTitle } = getUniqueCycleName(sampleTitle, existingCycles);
 
             await appState.update(state => {
-                getRoutines(state)[finalTitle] = {
+                getRoutines(state)[cycleId] = {
                     id: cycleId,
                     title: finalTitle,
                     tasks: sample.tasks || [],
@@ -638,7 +652,7 @@ export class RoutineManager {
                     }
                 };
 
-                setActiveRoutineId(state, finalTitle);
+                setActiveRoutineId(state, cycleId);
                 state.metadata.totalRoutinesCreated = (state.metadata.totalRoutinesCreated || 0) + 1;
             }, true);
 
@@ -653,7 +667,7 @@ export class RoutineManager {
                 // Promise.resolve(): the moduleLoader DI wrapper optional-chains its inner
                 // call, so it yields undefined when the hook is unwired and `.catch` on
                 // undefined throws here — inside a UI flow, after state already changed.
-                Promise.resolve(this.deps.onCycleCreated(finalTitle)).catch(err => {
+                Promise.resolve(this.deps.onCycleCreated(cycleId)).catch(err => {
                     console.warn('⚠️ Undo system cycle creation notification failed:', err);
                 });
             }
@@ -671,7 +685,7 @@ export class RoutineManager {
             }
 
             if (isOnboarding) {
-                await this.deps.completeInitialSetup(finalTitle, appState.get());
+                await this.deps.completeInitialSetup(cycleId, appState.get());
             } else {
                 // Menu path — sync mode, refresh UI, load routine
                 const modeSelector = this.deps.getElementById(DOM_IDS.MODE_SELECTOR);
@@ -769,7 +783,7 @@ export class RoutineManager {
         dialog._previousFocus = document.activeElement;
 
         const box = document.createElement('div');
-        box.className = 'miniCycle-prompt-box';
+        box.className = `miniCycle-prompt-box ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
         // =====================================================================
         // VIEW 1: Name input view
@@ -797,6 +811,7 @@ export class RoutineManager {
         input.id = DOM_IDS.SAMPLE_CREATION_INPUT;
         input.className = 'miniCycle-prompt-input';
         input.placeholder = getLabel(placeholder);
+        input.value = config.defaultName || '';
         nameView.appendChild(input);
 
         // "Load Sample" button (hidden if no samples available)
@@ -814,12 +829,12 @@ export class RoutineManager {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_SECONDARY, DOM_CLASSES.MINI_CYCLE_BTN_CANCEL].join(' ');
         cancelBtn.textContent = getLabel('button.cancel');
 
         const confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
-        confirmBtn.className = 'miniCycle-btn-confirm';
+        confirmBtn.className = [DOM_CLASSES.BTN, DOM_CLASSES.BTN_PRIMARY, DOM_CLASSES.MINI_CYCLE_BTN_CONFIRM].join(' ');
         confirmBtn.textContent = getLabel('button.create');
 
         buttons.appendChild(cancelBtn);
@@ -1026,6 +1041,8 @@ export class RoutineManager {
             showSampleView();
         } else {
             input.focus();
+            // Selected, so typing replaces a suggested name outright.
+            input.select();
         }
     }
 }

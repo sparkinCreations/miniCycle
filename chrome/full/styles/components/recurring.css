@@ -253,23 +253,9 @@
     display: none;
 }
 
+/* .btn.btn-secondary (buttons.css) */
 .toggle-advanced-btn {
     margin-top: var(--space-3);
-    background: var(--color-gray-600);
-    color: var(--color-white);
-    border: 1px solid var(--color-gray-600);
-    border-radius: var(--radius-md);
-    padding: var(--space-1-5) var(--space-3);
-    font-size: var(--font-size-xs);
-    font-weight: 500;
-    cursor: pointer;
-    transition: all var(--transition-fast) ease;
-}
-
-.toggle-advanced-btn:hover {
-    background: var(--color-steel-blue);
-    color: var(--color-white);
-    border-color: var(--color-steel-blue);
 }
 
 /* =============================================================================
@@ -282,46 +268,9 @@
     margin-top: var(--space-3);
 }
 
-.recur-settings-actions button {
+/* Apply and Cancel are .btn.btn-primary and .btn.btn-secondary (buttons.css). */
+.recur-settings-actions .btn {
     flex: 1;
-    padding: var(--space-2) var(--space-4);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    border: none;
-    border-radius: var(--radius-6);
-    cursor: pointer;
-    transition: background-color var(--transition-fast) ease, transform var(--transition-fast) ease;
-}
-
-#apply-recurring-settings {
-    background-color: var(--theme-success, var(--color-success));
-    color: var(--color-white);
-}
-
-#apply-recurring-settings:hover {
-    background-color: var(--color-success);
-    transform: scale(1.02);
-}
-
-#apply-recurring-settings:active {
-    background-color: var(--color-success);
-    transform: scale(0.98);
-}
-
-#cancel-recurring-settings {
-    background-color: transparent;
-    color: var(--color-gray-600);
-    border: 1px solid var(--color-gray-400);
-}
-
-#cancel-recurring-settings:hover {
-    background-color: var(--color-gray-100);
-    border-color: var(--color-gray-600);
-    transform: scale(1.02);
-}
-
-#cancel-recurring-settings:active {
-    transform: scale(0.98);
 }
 
 /* =============================================================================
@@ -409,7 +358,7 @@
     font-style: italic;
 }
 
-/* Close button — matches #close-main-menu style */
+/* Close is a .close-bar (buttons.css); this only places it. */
 .close-recurring-panel {
     /* Sticky to the panel's bottom edge: the panel scrolls (a selected task's
        summary, then the settings form), and as its last child Close used to
@@ -417,12 +366,6 @@
     position: sticky;
     bottom: 0;
     z-index: 1;
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
-    border: none;
     border-radius: 0 0 var(--radius-15) var(--radius-15);
     /* Bottom 0, not -20px: the panel's bottom padding is gone (see
        #recurring-panel below), and a sticky element cannot hang past the edge
@@ -430,14 +373,6 @@
        overflow-x clips the excess. */
     margin: var(--space-2-5) -25px 0;
     width: calc(100% + 50px);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    display: block;
-    text-align: center;
-}
-
-.close-recurring-panel:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================
@@ -577,23 +512,9 @@
     font-weight: 500;
 }
 
+/* .btn.btn-secondary (buttons.css) */
 .change-recurring-btn {
     margin-top: var(--space-2);
-    padding: var(--space-2) var(--space-4);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    color: var(--color-white);
-    background: var(--color-steel-blue);
-    border: none;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease, box-shadow var(--transition-fast) ease;
-}
-
-.change-recurring-btn:hover {
-    background: var(--color-blue-medium);
-    box-shadow: var(--shadow-md);
 }
 
 /* =============================================================================
@@ -1033,30 +954,10 @@ button.add-recurring-task-btn:hover {
 }
 
 /* Confirm add button */
+/* .btn.btn-primary (buttons.css), full width */
 .confirm-add-recurring-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
     width: 100%;
     margin-top: var(--space-2-5);
-    padding: var(--space-2-5) var(--space-4);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-white);
-    background: var(--theme-success, var(--color-success));
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-fast) ease;
-}
-
-.confirm-add-recurring-btn:hover {
-    background: var(--color-success);
-}
-
-.confirm-add-recurring-btn:disabled {
-    background: var(--theme-input-border);
-    cursor: not-allowed;
 }
 
 .no-available-tasks {
@@ -1148,9 +1049,8 @@ dialog.reminders-modal[open] {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-5);
-    border-radius: var(--radius-md);
-    width: 380px;
-    max-width: 90%;
+    border-radius: var(--modal-radius);
+    width: var(--modal-width-md);
     box-shadow:
         var(--shadow-lg, 0 4px 10px rgba(0, 0, 0, 0.3)),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
@@ -1162,6 +1062,9 @@ dialog.reminders-modal[open] {
 .reminders-modal-content h2 {
     margin-top: 0;
     padding-left: var(--space-7);
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
+    text-align: center;
 }
 
 .reminders-modal-content .close-btn {

@@ -196,18 +196,25 @@ export const DRAGGABLES = [
         // Float handle just outside the button's left edge so it doesn't
         // overlap the icon+label and stays visible against any button color.
         handlePosition: 'outside-left',
-        // Default home is below the task list; the button rides flex flow
-        // when docked so it follows the task list as tasks are added/removed.
-        // Snap zone is a narrow band (80px tall × 70% of card width,
-        // centered) directly below the card so the user has to deliberately
-        // aim near the card's bottom-center to re-dock.
+        // Self-home dock: its default home is the right-hand column under the
+        // status bubble (components/buttons.css), so the snap zone is that
+        // spot and it no longer follows the card. Until Nov 2026 home was
+        // below the card, as a follower of it; `_isStaleFollower` drops the
+        // follower positions that left behind.
         dock: {
-            relativeToId: DOM_IDS.TASK_CARD_GROUP,
-            side: 'bottom',
+            self: true,
             ...LAYOUT_DOCK_ZONES.COMPLETE_CYCLE_BTN
+        },
+        // A second place it can dock: under the routine card, which then gives
+        // up the height. Saved as `belowCard: true` in its position record.
+        belowCard: {
+            anchorId: DOM_IDS.TASK_CARD_GROUP,
+            ...LAYOUT_DOCK_ZONES.COMPLETE_BELOW_CARD
         }
     }
 ];
+
+const BELOW_CARD_SUFFIX = ':below-card';
 
 function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -485,10 +492,7 @@ export class TaskViewLayoutManager {
         if (!session || !element.style.position) {
             const rect = element.getBoundingClientRect();
             const followingDeps = this._captureFollowers(element, rect);
-            if (config.dock?.self) {
-                const homeEntry = this._registry.get(config.key);
-                if (homeEntry) homeEntry._homeRect = this._measureHomeRect(element);
-            }
+            this._captureHomeRects(config, element);
             session = {
                 pointerId: null,
                 startX: rect.left, startY: rect.top, offsetX: 0, offsetY: 0,
@@ -521,6 +525,11 @@ export class TaskViewLayoutManager {
     _keyboardDock(config, element) {
         const entry = this._registry.get(config.key);
         if (!entry?.customized || !config.dock) return false;
+        if (this._isInBelowCardZone(element.getBoundingClientRect(), config)) {
+            this._dockBelowCard(element, config);
+            this._endKeyboardMove(config, element);
+            return true;
+        }
         const returnedToFlow = this._snapToDock(element, config);
         if (returnedToFlow) this._clearSavedPosition(config.key);
         else this._saveElementPosition(element, config, false);
@@ -634,7 +643,9 @@ export class TaskViewLayoutManager {
         const widthRaw = parseFloat(element.style.width);
         if (!Number.isFinite(left) || !Number.isFinite(top)) return;
         const width = Number.isFinite(widthRaw) ? widthRaw : null;
-        this._queuePositionWrite(config.key, { left, top, width, customized });
+        const value = { left, top, width, customized };
+        if (this._registry.get(config.key)?.belowCard) value.belowCard = true;
+        this._queuePositionWrite(config.key, value);
     }
 
     _clearSavedPosition(key) {
@@ -791,10 +802,22 @@ export class TaskViewLayoutManager {
      * @param {object} pos - Saved position record
      * @returns {void}
      */
+    /**
+     * A self-homing element cannot be a follower, so a `customized: false`
+     * position for one is left over from when it was. Complete Cycle followed
+     * the card until Nov 2026: restoring that spot would hold the button under
+     * the card for everyone who ever moved the card, though they never placed
+     * it. A position the user dragged it to is `customized: true` and is kept.
+     */
+    _isStaleFollower(entry, pos) {
+        return pos?.customized === false && entry?.config?.dock?.self === true && pos?.belowCard !== true;
+    }
+
     _applySavedPosition(key, pos) {
         const entry = this._registry.get(key);
         if (!entry || !entry.element) return;
         if (!pos || !Number.isFinite(pos.left) || !Number.isFinite(pos.top)) return;
+        if (this._isStaleFollower(entry, pos)) return;
         const el = entry.element;
 
         // Clamp so the element keeps a grabbable overlap with the play area.
@@ -905,6 +928,7 @@ export class TaskViewLayoutManager {
             }
         }
         // Clear inline drag styles so all elements snap back to default.
+        this._syncBelowCard(null);
         this._clearAllCustomPositions();
         return true;
     }
@@ -937,9 +961,10 @@ export class TaskViewLayoutManager {
             return true;
         }
         const positions = this._readPositions() || {};
+        this._syncBelowCard(positions);
         for (const [key, entry] of this._registry.entries()) {
             const pos = positions[key];
-            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top)) {
+            if (pos && Number.isFinite(pos.left) && Number.isFinite(pos.top) && !this._isStaleFollower(entry, pos)) {
                 this._applySavedPosition(key, pos);
                 continue;
             }
@@ -972,6 +997,7 @@ export class TaskViewLayoutManager {
         }
         if (!this._shouldApplyLayout()) return;
         const positions = this._readPositions();
+        this._syncBelowCard(positions);
         if (!positions) return;
         if (Object.keys(positions).length && this._readLayoutFrame() !== LAYOUT_FRAME_VERSION) {
             this._discardLegacyPositions();
@@ -1122,6 +1148,11 @@ export class TaskViewLayoutManager {
             indicator.appendChild(label);
             this._wrapper.appendChild(indicator);
             this._snapIndicators.set(config.key, indicator);
+            if (config.belowCard) {
+                const belowIndicator = indicator.cloneNode(true);
+                this._wrapper.appendChild(belowIndicator);
+                this._snapIndicators.set(`${config.key}${BELOW_CARD_SUFFIX}`, belowIndicator);
+            }
         }
     }
 
@@ -1184,10 +1215,7 @@ export class TaskViewLayoutManager {
             // flow NOW (its "home"), so the snap zone can target it even while
             // the element is dragged far away. Cached on the registry entry and
             // read by _getSnapZoneRect during this drag.
-            if (config.dock?.self) {
-                const homeEntry = this._registry.get(config.key);
-                if (homeEntry) homeEntry._homeRect = this._measureHomeRect(element);
-            }
+            this._captureHomeRects(config, element);
 
             dragState = {
                 pointerId: e.pointerId,
@@ -1301,11 +1329,12 @@ export class TaskViewLayoutManager {
             if (config.dock) {
                 const liveRect = element.getBoundingClientRect();
                 const inSnap = this._isInSnapZone(liveRect, config);
-                element.classList.toggle(DOM_CLASSES.TVL_SNAP_HOVER, inSnap);
-                const indicator = this._snapIndicators.get(config.key);
-                if (indicator) {
-                    indicator.classList.toggle(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE, inSnap);
-                }
+                const inBelow = this._isInBelowCardZone(liveRect, config);
+                element.classList.toggle(DOM_CLASSES.TVL_SNAP_HOVER, inSnap || inBelow);
+                this._snapIndicators.get(config.key)
+                    ?.classList.toggle(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE, inSnap);
+                this._snapIndicators.get(`${config.key}${BELOW_CARD_SUFFIX}`)
+                    ?.classList.toggle(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE, inBelow);
             }
 
             // Pull along non-DOM-descendant dependents using their captured
@@ -1333,7 +1362,9 @@ export class TaskViewLayoutManager {
                 if (config.dock) this._hideSnapTarget(config);
                 // Decide on drop: snap back to dock, or hold absolute position.
                 const dropRect = element.getBoundingClientRect();
-                if (config.dock && this._isInSnapZone(dropRect, config)) {
+                if (this._isInBelowCardZone(dropRect, config)) {
+                    this._dockBelowCard(element, config);
+                } else if (config.dock && this._isInSnapZone(dropRect, config)) {
                     const returnedToFlow = this._snapToDock(element, config);
                     if (returnedToFlow) {
                         // Anchor is at its default spot → the element is back in
@@ -1452,6 +1483,9 @@ export class TaskViewLayoutManager {
     }
 
     _beginDrag(element, config, dragState) {
+        // Picked up from under the card: the card takes its height back.
+        const dragged = this._registry.get(config.key);
+        if (dragged?.belowCard) this._setBelowCard(dragged, false);
         element.classList.add(DOM_CLASSES.TVL_DRAGGING);
         this.deps.getBody().style.userSelect = 'none';
 
@@ -1529,10 +1563,13 @@ export class TaskViewLayoutManager {
     }
 
     _showSnapTarget(config) {
-        const indicator = this._snapIndicators.get(config.key);
-        if (!indicator) return;
-        const zone = this._getSnapZoneRect(config);
-        if (!zone) return;
+        this._placeSnapIndicator(this._snapIndicators.get(config.key), this._getSnapZoneRect(config));
+        this._placeSnapIndicator(
+            this._snapIndicators.get(`${config.key}${BELOW_CARD_SUFFIX}`), this._getBelowCardZoneRect(config));
+    }
+
+    _placeSnapIndicator(indicator, zone) {
+        if (!indicator || !zone) return;
         const wrapperRect = this._wrapper.getBoundingClientRect();
         indicator.style.left = `${zone.left - wrapperRect.left}px`;
         indicator.style.top = `${zone.top - wrapperRect.top}px`;
@@ -1543,10 +1580,12 @@ export class TaskViewLayoutManager {
     }
 
     _hideSnapTarget(config) {
-        const indicator = this._snapIndicators.get(config.key);
-        if (!indicator) return;
-        indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
-        indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
+        for (const key of [config.key, `${config.key}${BELOW_CARD_SUFFIX}`]) {
+            const indicator = this._snapIndicators.get(key);
+            if (!indicator) continue;
+            indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_VISIBLE);
+            indicator.classList.remove(DOM_CLASSES.TVL_SNAP_TARGET_ACTIVE);
+        }
     }
 
     /**
@@ -1584,7 +1623,8 @@ export class TaskViewLayoutManager {
     _getDependentsOf(anchorElementId) {
         const result = [];
         for (const entry of this._registry.values()) {
-            if (entry.config.dock?.relativeToId === anchorElementId) {
+            if (entry.config.dock?.relativeToId === anchorElementId
+                || (entry.belowCard && entry.config.belowCard?.anchorId === anchorElementId)) {
                 result.push(entry);
             }
         }
@@ -1719,6 +1759,79 @@ export class TaskViewLayoutManager {
         };
     }
 
+    /**
+     * The band under the routine card where the Complete button can dock. With
+     * the card at home, it is centred on where the button will land (captured at
+     * drag start); with the card moved, under the card as it now sits.
+     * @returns {{left:number, top:number, width:number, height:number}|null}
+     */
+    _getBelowCardZoneRect(config) {
+        if (!config.belowCard) return null;
+        const anchor = this.deps.getElementById(config.belowCard.anchorId);
+        if (!anchor) return null;
+        const anchorRect = anchor.getBoundingClientRect();
+        const entry = this._registry.get(config.key);
+        const landing = this._findEntryByElement(anchor)?.customized ? null : entry?._belowRect;
+        const landingHeight = landing?.height ?? entry?.element?.offsetHeight ?? 0;
+        const centerY = landing
+            ? landing.top + landing.height / 2
+            : anchorRect.bottom + LIMITS.LAYOUT_DOCK_GAP + landingHeight / 2;
+        const width = anchorRect.width * config.belowCard.widthFraction;
+        return {
+            left: anchorRect.left + (anchorRect.width - width) / 2,
+            top: centerY - config.belowCard.tolerancePx / 2,
+            width,
+            height: config.belowCard.tolerancePx
+        };
+    }
+
+    _isInBelowCardZone(elementRect, config) {
+        const zone = this._getBelowCardZoneRect(config);
+        if (!zone) return false;
+        const centerX = elementRect.left + elementRect.width / 2;
+        const centerY = elementRect.top + elementRect.height / 2;
+        return centerX >= zone.left && centerX <= zone.left + zone.width
+            && centerY >= zone.top && centerY <= zone.top + zone.height;
+    }
+
+    /** Record whether the Complete button is docked under the card; CSS does the layout. */
+    _setBelowCard(entry, on) {
+        entry.belowCard = on;
+        this.deps.getBody().classList.toggle(DOM_CLASSES.COMPLETE_BELOW_CARD, on);
+    }
+
+    /** Bring the dock state in line with saved positions (boot, undo, reset). */
+    _syncBelowCard(positions) {
+        for (const [key, entry] of this._registry.entries()) {
+            if (entry.config.belowCard) this._setBelowCard(entry, positions?.[key]?.belowCard === true);
+        }
+    }
+
+    /**
+     * Dock under the routine card. With the card at home the button returns to
+     * the flow and the card's shrink chain makes the room; with the card moved it
+     * stays absolute, glued below it as a follower.
+     */
+    _dockBelowCard(element, config) {
+        element.classList.remove(DOM_CLASSES.TVL_DRAGGING, DOM_CLASSES.TVL_SNAP_HOVER, DOM_CLASSES.TVL_CUSTOMIZED);
+        this.deps.getBody().style.userSelect = '';
+        const entry = this._registry.get(config.key);
+        entry.customized = false;
+        this._setBelowCard(entry, true);
+        const anchor = this.deps.getElementById(config.belowCard.anchorId);
+        if (this._findEntryByElement(anchor)?.customized) {
+            const anchorRect = anchor.getBoundingClientRect();
+            element.style.zIndex = '';
+            this._prepDependentForFollow(element);
+            this._positionDependentRelativeToAnchor(
+                element, { side: 'bottom' }, anchorRect.left, anchorRect.top, anchorRect.bottom, anchorRect.width);
+            this._saveElementPosition(element, config, false);
+            return;
+        }
+        this._clearInlineLayout(element);
+        this._queuePositionWrite(config.key, { belowCard: true });
+    }
+
     _isInSnapZone(elementRect, config) {
         const zone = this._getSnapZoneRect(config);
         if (!zone) return false;
@@ -1829,6 +1942,23 @@ export class TaskViewLayoutManager {
      * event handler, so the browser never paints the intermediate state — the
      * element does not visibly jump.
      */
+    _captureHomeRects(config, element) {
+        const entry = this._registry.get(config.key);
+        if (!entry || !config.dock?.self) return;
+        if (!config.belowCard) {
+            entry._homeRect = this._measureHomeRect(element);
+            return;
+        }
+        // Both docks, measured by briefly applying each layout; it never paints.
+        const body = this.deps.getBody();
+        const wasBelow = body.classList.contains(DOM_CLASSES.COMPLETE_BELOW_CARD);
+        body.classList.remove(DOM_CLASSES.COMPLETE_BELOW_CARD);
+        entry._homeRect = this._measureHomeRect(element);
+        body.classList.add(DOM_CLASSES.COMPLETE_BELOW_CARD);
+        entry._belowRect = this._measureHomeRect(element);
+        body.classList.toggle(DOM_CLASSES.COMPLETE_BELOW_CARD, wasBelow);
+    }
+
     _measureHomeRect(element) {
         const saved = {
             position: element.style.position,
@@ -1861,7 +1991,9 @@ export class TaskViewLayoutManager {
             if (depEntry.customized) continue;   // independent — leave it
             this._clearInlineLayout(depEntry.element);
             depEntry.element.classList.remove(DOM_CLASSES.TVL_CUSTOMIZED);
-            keys.push(depEntry.config.key);
+            // Docked under the card: it stays docked there, back in the flow.
+            if (depEntry.belowCard) this._queuePositionWrite(depEntry.config.key, { belowCard: true });
+            else keys.push(depEntry.config.key);
         }
         this._clearSavedPositions(keys);
     }

@@ -223,6 +223,7 @@
  * @property {boolean} [showTaskInput=true] - Show task input bar
  * @property {'list'|'browse'} [routineOpenView] - What opening routines shows: the Open Routine list or Browse Routines; absent = list
  * @property {boolean} [singleKeyShortcuts] - Opt-in single-key shortcuts (M, S, [, ], ?) besides the Alt+Shift ones; absent = off
+ * @property {boolean} [confirmUncheckedCycle] - Manual Cycle: Complete Cycle asks first when tasks are unchecked (off unless turned on)
  * @property {'recent'|'alpha'} [routineBrowserSort='recent'] - Browse Routines' order
  * @property {'cards'|'grid'} [routineBrowserLayout='cards'] - Browse Routines' layout
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding
@@ -496,7 +497,7 @@
  * @property {'cycles'|'tasks'} type - What triggers this milestone
  * @property {number} threshold - Number required to unlock
  * @property {string} [reward] - Reward unlocked (theme name, game name, etc.)
- * @property {string} [rewardType] - Type of reward ('theme', 'game', 'badge')
+ * @property {string} [rewardType] - Type of reward ('vocab-theme', 'game')
  * @example
  * const milestone = {
  *     id: "cycles-50",
@@ -504,8 +505,8 @@
  *     description: "Complete 50 cycles",
  *     type: "cycles",
  *     threshold: 50,
- *     reward: "golden-glow",
- *     rewardType: "theme"
+ *     reward: "scholar",
+ *     rewardType: "vocab-theme"
  * };
  */
 

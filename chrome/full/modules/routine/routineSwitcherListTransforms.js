@@ -39,7 +39,7 @@
  * both that binding and any import-time work.
  *
  * @module routine/routineSwitcherListTransforms
- * @see {@link file://docs/future-work/LARGE_MODULE_SPLITS_PLAN.md} - why this split
+ * @see {@link file://docs/archive/LARGE_MODULE_SPLITS_PLAN.md} - why this split
  */
 
 import { compareNames } from '../utils/taskSort.js';

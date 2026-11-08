@@ -176,6 +176,7 @@ const ICONS = {
 
     // Compress (inward-pointing brackets) — exit focus mode. Mirrors the
     // expand glyph: corners pulled inward to read as "collapse" / "exit".
+    'ellipsis': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="5" cy="12" r="2" fill="currentColor"/><circle cx="12" cy="12" r="2" fill="currentColor"/><circle cx="19" cy="12" r="2" fill="currentColor"/></svg>',
     'compress': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" aria-hidden="true" focusable="false"><path d="M6 2v4H2M10 2v4h4M6 14v-4H2M10 14v-4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"/></svg>',
 
     // Drag handle — 6-dot grip used by Task View Layout customization

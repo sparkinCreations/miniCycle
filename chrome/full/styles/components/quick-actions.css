@@ -176,14 +176,12 @@ body.hide-quick-actions .quick-actions-menu-row {
         display: block;
         position: absolute;
         right: calc(100% + 25px);
-        top: 50%;
+        top: calc(50% + var(--side-nudge, 0px));   /* on the card's centre (buttons.css) */
         transform: translateY(-50%);
         background: var(--pref-panel-bg);
         border-radius: var(--radius-2xl);
         border: 1px solid var(--pref-panel-border);
-        box-shadow:
-            0 4px 15px rgba(0, 0, 0, 0.08),
-            inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-glass-panel);
         padding: var(--space-2-5) var(--space-3);
         z-index: var(--z-content);
         backdrop-filter: blur(var(--pref-panel-blur));
@@ -338,10 +336,6 @@ dialog.quick-actions-picker-overlay {
     -webkit-backdrop-filter: none;
 }
 
-dialog.quick-actions-picker-overlay::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-}
-
 dialog.quick-actions-picker-overlay:not([open]) {
     display: none;
 }
@@ -356,10 +350,9 @@ dialog.quick-actions-picker-overlay[open] {
     position: relative;
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     padding: var(--space-5);
-    width: 420px;
-    max-width: 95%;
+    width: var(--modal-width-md);
     max-height: 80vh;
     overflow-y: auto;
     box-shadow:
@@ -437,27 +430,14 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 /* Close button — matches settings modal close-btn pattern */
+/* A .close-bar (buttons.css); this bleeds it to the picker's edges. */
 .quick-actions-picker-cancel {
-    display: block;
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
     margin-top: var(--space-3);
     margin-left: -20px;
     margin-right: -20px;
     margin-bottom: -20px;
     width: calc(100% + 40px);
-    border: none;
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    text-align: center;
-}
-
-.quick-actions-picker-cancel:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================

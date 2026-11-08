@@ -379,16 +379,17 @@ export class DailyResetManager {
 
         const overlay = document.createElement('dialog');
         overlay.className = 'miniCycle-prompt-dialog';
+        overlay.setAttribute('aria-labelledby', DOM_IDS.AUTO_UNCHECK_TIME_TITLE);
         overlay.innerHTML = `
             <div class="miniCycle-prompt-box has-corner-logo">
-                <h2 class="miniCycle-prompt-title">${title}</h2>
+                <h2 id="${DOM_IDS.AUTO_UNCHECK_TIME_TITLE}" class="miniCycle-prompt-title">${title}</h2>
                 <p class="miniCycle-prompt-message">${message}</p>
                 <input type="time" class="miniCycle-prompt-input auto-uncheck-time-input"
                        value="${formatTimeInput(s.hour, s.minute)}"
                        aria-label="${title}" />
                 <div class="miniCycle-prompt-buttons">
-                    <button type="button" class="miniCycle-btn-cancel">${getLabel('button.cancel')}</button>
-                    <button type="button" class="miniCycle-btn-confirm">${getLabel('button.save')}</button>
+                    <button type="button" class="btn btn-secondary miniCycle-btn-cancel">${getLabel('button.cancel')}</button>
+                    <button type="button" class="btn btn-primary miniCycle-btn-confirm">${getLabel('button.save')}</button>
                 </div>
             </div>
         `;

@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { applyReadableTextColors } from '../utils/readableText.js';
+import { applyReadableTextColors, applyCornerButtonColors, applyActionTextColors } from '../utils/readableText.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -1060,15 +1060,13 @@ export class PreferencesManager {
     }
 
     /**
-     * Check if the default theme is active (no CSS-class override and no vocab theme)
+     * Check if the default theme is active (not dark mode, no vocab theme)
      * @returns {boolean}
      */
     isDefaultTheme() {
         const body = _deps.getBody();
         const root = _deps.getRootElement();
-        return !body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) &&
-               !body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW) &&
-               !body.classList.contains(DOM_CLASSES.DARK_MODE) &&
+        return !body.classList.contains(DOM_CLASSES.DARK_MODE) &&
                (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
     }
 
@@ -1078,11 +1076,8 @@ export class PreferencesManager {
      * @returns {boolean}
      */
     isPatternCustomizable() {
-        const body = _deps.getBody();
         const root = _deps.getRootElement();
-        return !body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) &&
-               !body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW) &&
-               (!root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic');
+        return !root.dataset.vocabTheme || root.dataset.vocabTheme === 'classic';
     }
 
     /**
@@ -1776,11 +1771,9 @@ export class PreferencesManager {
         setBodyClass(DOM_CLASSES.HIDE_DARK_MODE_BTN, customColors.showDarkModeBtn === false);
 
         if (!this.isDefaultTheme()) {
-            // Only clear --pref-* vars for CSS-class overrides (dark mode, legacy themes).
+            // Only clear --pref-* vars for the dark-mode class override.
             // Vocab themes apply their own --pref-* vars directly — don't clear them.
-            if (body.classList.contains(DOM_CLASSES.DARK_MODE) ||
-                body.classList.contains(DOM_CLASSES.THEME_DARK_OCEAN) ||
-                body.classList.contains(DOM_CLASSES.THEME_GOLDEN_GLOW)) {
+            if (body.classList.contains(DOM_CLASSES.DARK_MODE)) {
                 this.removeCustomColors();
             }
             return;
@@ -1819,6 +1812,11 @@ export class PreferencesManager {
         // Handle checkbox fill visibility
         const appBg = normalizeHex(customColors.appBg) || null;
         applyReadableTextColors(root, appBg);
+        applyCornerButtonColors(root, normalizeHex(customColors.cornerBtn) || null);
+        applyActionTextColors(root, '--pref', {
+            complete: normalizeHex(customColors.completeBtn) || null,
+            clear: normalizeHex(customColors.clearBtn) || null
+        });
         // A colour the user picked themselves (not a quick preset: handleColorChange
         // clears `preset`) gets the backing strip under the footer links, so any
         // colour works without the user having to think about it. A preset relies
@@ -1922,6 +1920,8 @@ export class PreferencesManager {
             root.style.removeProperty(config.cssVar);
         });
         applyReadableTextColors(root, null);
+        applyCornerButtonColors(root, null);
+        applyActionTextColors(root, '--pref', { complete: null, clear: null });
         setBodyClass(DOM_CLASSES.CUSTOM_APP_BG, false);
 
         // Update status bar color back to default
@@ -1978,6 +1978,11 @@ export class PreferencesManager {
                     previewSection.style.setProperty('--preview-section-bg', safePreviewColor);
                 }
             }
+        });
+
+        applyActionTextColors(preview, '--preview', {
+            complete: normalizeHex(customColors.completeBtn) || null,
+            clear: normalizeHex(customColors.clearBtn) || null
         });
 
         // Handle checkbox fill visibility in preview

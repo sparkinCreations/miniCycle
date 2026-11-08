@@ -15,7 +15,7 @@
     background: var(--theme-input-bg, rgb(255, 255, 255));
     border-radius: var(--radius-md);
     padding: var(--space-1-25) var(--space-1-25) var(--space-1-25) var(--space-2-5); /* Less right padding since button has its own */
-    box-shadow: var(--shadow-input);
+    box-shadow: var(--shadow-card);
     margin-bottom: var(--space-4);
     max-width: 450px;
     width: 80%;
@@ -30,7 +30,7 @@
 
 /* Focus ring on the entire container when input is focused */
 .task-input:focus-within {
-    box-shadow: var(--shadow-input), var(--shadow-focus-ring);
+    box-shadow: var(--shadow-card), var(--shadow-focus-ring);
 }
 
 /* Hidden state - use visibility to reserve space and prevent CLS */
@@ -107,17 +107,18 @@ input[type="text"]:focus-visible {
     align-items: center;
     justify-content: center;
     flex-shrink: 0; /* Don't shrink the button */
-    background: rgba(0, 0, 0, 0.8);
-    color: var(--color-white);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     border: none;
-    border-radius: var(--radius-6);
+    border-radius: var(--chrome-radius);
     cursor: pointer;
-    transition: background var(--transition-normal), transform var(--transition-fast);
+    transition: filter var(--transition-fast), transform var(--transition-fast);
+    font-weight: 600;
 }
 
 #addTaskBtn:hover {
-    background: var(--color-error);
     transform: scale(1.02);
+    filter: brightness(0.9);
 }
 
 #addTaskBtn:active {
@@ -149,4 +150,62 @@ input[type="text"]:focus-visible {
         margin-top: var(--space-2);
         width: 90%; /* Wider on mobile for more input space */
     }
+}
+
+/* =============================================================================
+   GLASS BAR
+   The bar floats on the background, so it is glass like the toolbar and corner
+   buttons; Add stays the solid main action. The text follows what is behind the
+   bar. The rim is an inset shadow, not a border, so the bar's height (which Focus
+   View's top row is built around) does not change. High Contrast keeps the
+   solid bar.
+   ============================================================================= */
+body:not(.high-contrast) #task-input-row {
+    --input-ink: var(--pref-chrome-ink, var(--input-glass-ink));
+    --input-rim: var(--input-glass-rim);
+    --input-typed: var(--pref-chrome-ink, var(--input-glass-text));
+    border: none;
+    background: var(--pref-chrome-glass, var(--input-glass-bg));
+    -webkit-backdrop-filter: var(--chrome-blur);
+    backdrop-filter: var(--chrome-blur);
+    box-shadow: inset 0 0 0 1px var(--input-rim), var(--chrome-shadow);
+}
+
+body:not(.high-contrast).focus-mode #task-input-row,
+body:not(.high-contrast).dark-mode #task-input-row {
+    --input-ink: var(--color-white);
+    --input-rim: var(--input-glass-rim-dim);
+    --input-typed: var(--color-white);
+    background: var(--input-glass-bg-dim);
+}
+
+body:not(.high-contrast).has-bg-image:not(.focus-mode) #task-input-row {
+    --input-ink: var(--color-white);
+    --input-typed: var(--color-white);
+    background: var(--photo-input-glass);
+}
+
+body:not(.high-contrast) #task-input-row:focus-within {
+    box-shadow: inset 0 0 0 1px var(--input-rim), var(--chrome-shadow), var(--shadow-focus-ring);
+}
+
+/* A rim, not a fill change: Add stays the solid steel main action. */
+body:not(.high-contrast) #task-input-row #addTaskBtn:not(:focus-visible) {
+    box-shadow: 0 0 0 1px var(--input-add-rim);
+}
+
+body:not(.high-contrast) #task-input-row #taskInput {
+    background: transparent;
+    color: var(--input-typed);
+    font-weight: 500;
+}
+
+/* On the light Home surface, more frost behind the text while typing. */
+body:not(.high-contrast):not(.focus-mode):not(.dark-mode):not(.has-bg-image) #task-input-row:focus-within {
+    background: var(--pref-chrome-glass, var(--input-glass-bg-focus));
+}
+
+body:not(.high-contrast) #task-input-row #taskInput::placeholder {
+    color: var(--input-ink);
+    opacity: 0.88;
 }

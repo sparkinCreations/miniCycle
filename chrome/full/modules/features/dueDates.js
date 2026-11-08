@@ -479,7 +479,7 @@ export class MiniCycleDueDates {
         dialog.setAttribute('aria-labelledby', DOM_IDS.DUE_DATE_PICKER_TITLE);
 
         const form = document.createElement('form');
-        form.className = DOM_CLASSES.DUE_DATE_PICKER;
+        form.className = `${DOM_CLASSES.DUE_DATE_PICKER} ${DOM_CLASSES.HAS_CORNER_LOGO}`;
 
         const title = document.createElement('h3');
         title.id = DOM_IDS.DUE_DATE_PICKER_TITLE;
@@ -522,9 +522,10 @@ export class MiniCycleDueDates {
             actions.appendChild(button);
             return button;
         };
-        const clearButton = makeButton('button', 'dueDate.clear', DOM_CLASSES.DUE_DATE_PICKER_CLEAR);
-        const cancelButton = makeButton('button', 'button.cancel');
-        makeButton('submit', 'button.save');
+        const secondary = `${DOM_CLASSES.BTN} ${DOM_CLASSES.BTN_SECONDARY}`;
+        const clearButton = makeButton('button', 'dueDate.clear', `${secondary} ${DOM_CLASSES.DUE_DATE_PICKER_CLEAR}`);
+        const cancelButton = makeButton('button', 'button.cancel', secondary);
+        makeButton('submit', 'button.save', `${DOM_CLASSES.BTN} ${DOM_CLASSES.BTN_PRIMARY}`);
         form.appendChild(actions);
         dialog.appendChild(form);
 
