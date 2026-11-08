@@ -1,3 +1,12 @@
+## [2.671] - 2026-11-08
+- fix(ui): define --font-size-md; one name for Switch Routine
+- feat(ui): Focus View and Home polish, Stats and Routine switcher rebuilds
+- feat(home): matching home-screen chrome; every static button through getLabel
+- feat(modals): one modal frame — corners, widths, titles, logo, Close bar
+- feat(buttons): one button system for modals, panels and dialogs
+- fix(modals): light prompt box, named dialogs, Themes focus
+
+
 ## [2.670] - 2026-11-06
 - fix(styles): High Contrast + Dark Mode colours; hollow unchecked checkboxes in dark mode
 - fix(sw): answer the install check's offline fetch of /app with the app shell
