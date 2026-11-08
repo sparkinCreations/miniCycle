@@ -437,27 +437,14 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 /* Close button — matches settings modal close-btn pattern */
+/* A .close-bar (buttons.css); this bleeds it to the picker's edges. */
 .quick-actions-picker-cancel {
-    display: block;
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
     margin-top: var(--space-3);
     margin-left: -20px;
     margin-right: -20px;
     margin-bottom: -20px;
     width: calc(100% + 40px);
-    border: none;
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    text-align: center;
-}
-
-.quick-actions-picker-cancel:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================

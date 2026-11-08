@@ -63,21 +63,16 @@
    PLAY GAME BUTTON
    ============================================================================= */
 
+/* Play is a .btn.btn-primary and Close a .close-bar (buttons.css). */
 #open-task-order-game {
-    background: var(--color-game-primary);
-    color: var(--color-white);
-    font-weight: bold;
-    border: none;
-    padding: 10px var(--space-4);
-    border-radius: var(--radius-md);
-    font-size: var(--font-size-base);
     margin-bottom: var(--space-4);
-    cursor: pointer;
-    transition: background var(--transition-normal) ease;
 }
 
-#open-task-order-game:hover {
-    background: var(--color-game-primary-dark);
+/* The bar runs flush along the card's rounded bottom edge. */
+#close-games-panel {
+    margin: var(--space-2) calc(-1 * var(--space-6)) calc(-1 * var(--space-6));
+    width: calc(100% + 2 * var(--space-6));
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
 }
 
 /* =============================================================================
@@ -186,8 +181,4 @@
         font-size: var(--font-size-xl);
     }
 
-    #open-task-order-game {
-        padding: var(--space-2) 14px;
-        font-size: var(--font-size-sm);
-    }
 }

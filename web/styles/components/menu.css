@@ -1090,31 +1090,24 @@ body.quick-actions-open #quick-actions-window {
     margin-bottom: 0;
 }
 
+/* A .close-bar (buttons.css), bled to the menu's edges. Unlike every other
+   Close bar it restates the bar's look: `.menu-container button` (and its
+   dark-mode twin) styles every menu button transparent, left-aligned and
+   14px, and out-ranks .close-bar on classes. The id out-ranks them both. */
 #close-main-menu {
+    background: var(--close-btn-effective);
+    color: var(--menu-close-text, var(--color-white));
+    padding: var(--space-3-5);
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    text-align: center;
     width: calc(100% + 2 * var(--space-2-5));
     margin-left: calc(-1 * var(--space-2-5));
     margin-right: calc(-1 * var(--space-2-5));
     margin-bottom: calc(-1 * var(--space-2-5));
     margin-top: var(--space-2);
-    padding: var(--space-3-5);
-    /* Same accent as the primary actions above: leaving Close on steel blue while
-       those follow the theme gave the menu two competing accent colours, which
-       reads worse than either choice on its own. --menu-close-bg still wins where
-       a colour theme sets it (dark-mode, golden-glow), so those are untouched. */
-    background: var(--close-btn-effective);
-    color: var(--menu-close-text, var(--color-white));
-    border: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
     flex-shrink: 0;
-    text-align: center;
-}
-
-#close-main-menu:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================

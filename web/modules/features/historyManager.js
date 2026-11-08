@@ -333,8 +333,8 @@ export class HistoryManager {
                     <button class="history-reset-progress-btn">${getLabel('history.resetRoutineProgress')}</button>
                 </div>
                 <footer class="history-footer">
-                    <button class="history-cancel-btn">${getLabel('button.cancel')}</button>
-                    <button class="history-confirm-btn">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
+                    <button class="btn btn-secondary history-cancel-btn">${getLabel('button.cancel')}</button>
+                    <button class="btn btn-primary history-confirm-btn">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
                 </footer>
             </div>
         `;

@@ -260,19 +260,7 @@
     gap: var(--space-2);
 }
 
-.storage-modal-buttons .btn-confirm {
-    padding: var(--space-2) var(--space-4);
-    background-color: var(--btn-bg, #007bff);
-    color: var(--btn-text, white);
-    border: none;
-    border-radius: var(--radius-6);
-    font-weight: bold;
-    cursor: pointer;
-}
-
-.storage-modal-buttons .btn-confirm:hover {
-    background-color: var(--btn-hover-bg, #0056b3);
-}
+/* Close is a .btn.btn-secondary (buttons.css). */
 
 /* Storage Viewer Overlay */
 /* Positioning is the UA's job now. This was a plain <div> overlay pinned at

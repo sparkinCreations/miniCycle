@@ -1153,8 +1153,13 @@ export const DOM_CLASSES = Object.freeze({
     TIP_ARCHIVE_MODAL_CONTENT: 'tip-archive-modal-content',
     TIP_ARCHIVE_BODY: 'tip-archive-body',
     HAS_CORNER_LOGO: 'has-corner-logo',
-    // House class for a modal's primary/close action: full-width, --color-primary.
-    // Used by the reminders, settings and preferences modals.
+    // The button system (buttons.css): .btn plus one role, or .close-bar.
+    BTN: 'btn',
+    BTN_PRIMARY: 'btn-primary',
+    BTN_SECONDARY: 'btn-secondary',
+    BTN_DANGER: 'btn-danger',
+    CLOSE_BAR: 'close-bar',
+    // Settings' full-width row layout; the look comes from .btn + a role.
     SETTINGS_BTN: 'settings-btn',
     SETTINGS_BTN_GHOST: 'settings-btn-ghost',
     AUTO_BACKUPS_TOGGLE_LABEL: 'auto-backups-toggle-label',

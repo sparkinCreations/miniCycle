@@ -917,26 +917,9 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
     background: var(--overlay-medium);
 }
 
+/* Close is a .close-bar (buttons.css). */
 .task-options-modal .close-button-fullwidth {
-    width: 100%;
     margin-top: var(--space-3);
-    padding: var(--space-3-5);
-    background: var(--color-steel-blue);
-    color: var(--color-white);
-    border: none;
-    border-radius: 0;
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    cursor: pointer;
-    transition: filter var(--transition-fast) ease;
-}
-
-.task-options-modal .close-button-fullwidth:hover {
-    filter: brightness(0.85);
-}
-
-.task-options-modal .close-button-fullwidth:active {
-    filter: brightness(0.72);
 }
 
 /* =============================================================================

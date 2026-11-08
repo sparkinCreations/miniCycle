@@ -587,7 +587,7 @@ export class OnboardingManager {
                  <text class="cycle-anim-complete" x="80" y="105" font-size="12" text-anchor="middle" font-weight="700">${getLabel('onboarding.step2CycleComplete')}</text>
                </svg>
              </div>
-             <button class="onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>
+             <button class="btn btn-primary onboarding-try-btn">${getLabel('onboarding.step2TryIt')}</button>
              <p class="onboarding-choice-hint">${getLabel('onboarding.step2Choice')}</p>`,
             `<h3>${getLabel('onboarding.step3Title')}</h3>
              <p>${getLabel('onboarding.step3Desc1')}</p>

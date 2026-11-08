@@ -403,7 +403,7 @@ export class TaskOptionsCustomizer {
                             <span class="icon" aria-hidden="true">${getIcon('redo')}</span> ${getLabel('taskOptions.resetDefault')}
                         </button>
                     </div>
-                    <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-button-fullwidth">
+                    <button id="${DOM_IDS.CLOSE_TASK_OPTIONS_BTN}" class="close-bar close-button-fullwidth">
                         ${getLabel('button.close')}
                     </button>
                 </div>

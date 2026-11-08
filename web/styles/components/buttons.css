@@ -58,85 +58,164 @@ button:disabled {
 }
 
 /* =============================================================================
-   PRIMARY BUTTONS
+   THE BUTTON SYSTEM (Nov 2026)
+   =============================================================================
+   Every action button in a modal, panel or dialog is one of four things. Use
+   these classes for any new one and give it no colours or sizing of its own —
+   a feature's stylesheet may only place it (width, flex, margin, order).
+
+     .btn.btn-primary    the action the dialog is for: Save, Apply, Create, OK
+     .btn.btn-secondary  everything beside it: Cancel, Back, Undo, settings rows
+     .btn.btn-danger     destroys or resets something: Delete, Factory Reset
+     .close-bar          the full-width Close along a modal's bottom edge
+
+   Before this, each feature styled its own (about 105 *-btn classes): main
+   actions came in green and four blues, Cancel had six looks, and the system
+   defined here sat unused. One accent, --close-btn-effective, now fills both
+   the main action and the Close bar. It was already every Close bar's fill: the
+   steel blue (white on it is 4.52:1 — a floor, see variables.css), the active
+   vocab theme's accent outside dark mode. Green is left for completing things
+   (the Complete Cycle button); it carries white at only 3.13:1.
+
+   Declared on BODY, like --close-btn-effective in modals.css, so a theme's
+   inline --pref-* values on <body> reach them. High Contrast: accessibility.css.
+   The Testing modal's own button.primary / .secondary / … are below. */
+
+body {
+    --btn-primary-bg: var(--close-btn-effective);
+    --btn-primary-text: var(--menu-close-text, var(--color-white));
+    --btn-danger-bg: var(--theme-error, var(--color-error));
+    --btn-danger-text: var(--color-white);
+    /* Secondary is a tint of whatever surface it sits on, so it works on every
+       modal colour a theme can set; its text is that surface's own text. */
+    --btn-secondary-bg: rgba(0, 0, 0, 0.05);
+    --btn-secondary-hover-bg: rgba(0, 0, 0, 0.1);
+    --btn-secondary-border: rgba(0, 0, 0, 0.22);
+}
+
+body.dark-mode {
+    --btn-secondary-bg: rgba(255, 255, 255, 0.08);
+    --btn-secondary-hover-bg: rgba(255, 255, 255, 0.14);
+    --btn-secondary-border: rgba(255, 255, 255, 0.28);
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    min-height: 44px;
+    padding: var(--space-2-5) var(--space-5);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    font-family: inherit;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.2;
+    text-align: center;
+    cursor: pointer;
+    transition: filter var(--transition-fast), background-color var(--transition-fast), transform var(--transition-fast);
+}
+
+.btn.btn-primary {
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
+}
+
+.btn.btn-secondary {
+    background: var(--btn-secondary-bg);
+    color: inherit;
+    border-color: var(--btn-secondary-border);
+}
+
+.btn.btn-danger {
+    background: var(--btn-danger-bg);
+    color: var(--btn-danger-text);
+}
+
+.close-bar {
+    display: block;
+    width: 100%;
+    padding: var(--space-3-5);
+    border: none;
+    background: var(--close-btn-effective);
+    color: var(--menu-close-text, var(--color-white));
+    font-family: inherit;
+    font-size: var(--font-size-lg);
+    font-weight: 700;
+    text-align: center;
+    cursor: pointer;
+    transition: filter var(--transition-fast);
+}
+
+/* A filter rather than a hover colour, so the hover follows whatever accent a
+   theme sets. Same pointer guard as the base button hover above. */
+@media (hover: hover) and (pointer: fine) {
+    .btn.btn-primary:hover:not(:disabled),
+    .btn.btn-danger:hover:not(:disabled),
+    .close-bar:hover {
+        filter: brightness(0.9);
+    }
+
+    .btn.btn-secondary:hover:not(:disabled) {
+        background: var(--btn-secondary-hover-bg);
+    }
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* =============================================================================
+   TESTING MODAL BUTTONS (testing-modal-ui.js: button.primary / .secondary / …)
    ============================================================================= */
 
-.btn-primary,
 button.primary {
     background: var(--theme-button-primary-bg, var(--color-primary));
     color: var(--theme-button-primary-text, var(--color-white));
 }
 
-.btn-primary:hover,
 button.primary:hover {
     background: var(--theme-button-primary-hover-bg, #5a87ff);
 }
 
-/* =============================================================================
-   SECONDARY BUTTONS
-   ============================================================================= */
-
-.btn-secondary,
 button.secondary {
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
 }
 
-.btn-secondary:hover,
 button.secondary:hover {
     background: var(--theme-button-secondary-hover-bg);
 }
 
-/* =============================================================================
-   DANGER BUTTONS
-   ============================================================================= */
-
-.btn-danger,
 button.danger {
     background: var(--theme-error, var(--color-error));
     color: var(--color-white);
 }
 
-.btn-danger:hover,
 button.danger:hover {
     background: var(--theme-error-light, #e55353);
 }
 
-/* =============================================================================
-   SUCCESS BUTTONS
-   ============================================================================= */
-
-.btn-success,
 button.success {
     background: var(--theme-success, var(--color-success));
     color: var(--color-white);
 }
 
-.btn-success:hover,
 button.success:hover {
     background: var(--theme-success-light, var(--color-success-light));
 }
 
-/* =============================================================================
-   GHOST/OUTLINE BUTTONS
-   ============================================================================= */
-
-.btn-ghost,
 button.ghost {
     background: transparent;
     border: 1px solid currentColor;
 }
 
-.btn-ghost:hover,
 button.ghost:hover {
     background: rgba(0, 0, 0, 0.05);
 }
 
-/* =============================================================================
-   ICON BUTTONS
-   ============================================================================= */
-
-.btn-icon,
 button.icon-only {
     padding: var(--space-2);
     width: 36px;
@@ -147,7 +226,6 @@ button.icon-only {
     border-radius: var(--radius-full);
 }
 
-.btn-icon i,
 button.icon-only i {
     font-size: var(--font-size-base);
 }
@@ -643,22 +721,6 @@ body.hide-help-window .help-window {
 .close-modal:hover {
     opacity: 1;
     background: transparent;
-}
-
-/* Full-width close button */
-.close-button-fullwidth {
-    width: 100%;
-    padding: var(--space-3);
-    background: var(--theme-button-secondary-bg);
-    color: var(--theme-button-secondary-text);
-    border: 1px solid var(--theme-button-secondary-border, rgba(0, 0, 0, 0.1));
-    border-radius: var(--radius-md);
-    font-weight: 500;
-    transition: background var(--transition-normal);
-}
-
-.close-button-fullwidth:hover {
-    background: var(--theme-button-secondary-hover-bg);
 }
 
 /* =============================================================================

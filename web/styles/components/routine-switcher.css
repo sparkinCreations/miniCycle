@@ -795,16 +795,10 @@ input.routine-search-input:focus {
 }
 
 /* =============================================================================
-   CLOSE BUTTON — matches recurring panel / settings close bar
+   CLOSE BUTTON — a .close-bar (buttons.css); this only places it
    ============================================================================= */
 
 .close-routine-switcher {
-    background: var(--close-btn-effective);
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
-    border: none;
     border-radius: 0 0 var(--radius-15) var(--radius-15);
     /* Horizontal -25px against 15px padding is DELIBERATE: the extra 10px per
        side is clipped by the shell's overflow, which is how this button goes
@@ -820,14 +814,6 @@ input.routine-search-input:focus {
     position: sticky;
     bottom: 0;
     z-index: 1;
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    display: block;
-    text-align: center;
-}
-
-.close-routine-switcher:hover {
-    background: var(--menu-close-hover-bg, var(--color-steel-blue));
 }
 
 /* =============================================================================

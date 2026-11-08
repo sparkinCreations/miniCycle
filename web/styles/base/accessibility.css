@@ -90,10 +90,6 @@ body.high-contrast:not(.dark-mode) .toggle-slider {
     border: 2px solid #555555;
 }
 
-body.high-contrast:not(.dark-mode) .settings-btn {
-    border: 1px solid #333333;
-}
-
 /* Stats panel */
 body.high-contrast:not(.dark-mode) .stats-panel {
     border: 2px solid #333333;
@@ -444,18 +440,6 @@ body.high-contrast:not(.dark-mode) .preferences-footer {
     border-top: 2px solid #cccccc;
 }
 
-body.high-contrast:not(.dark-mode) .preferences-undo-btn {
-    border: 2px solid #999999;
-}
-
-body.high-contrast:not(.dark-mode) .preferences-undo-btn:disabled {
-    opacity: 0.6;
-}
-
-body.high-contrast:not(.dark-mode) .preferences-reset-all-btn {
-    border: 2px solid var(--theme-error, #dc3545);
-}
-
 body.high-contrast:not(.dark-mode) .preferences-preview-label {
     color: rgba(255, 255, 255, 1);
 }
@@ -523,10 +507,6 @@ body.high-contrast:not(.dark-mode) .storage-modal-header {
 
 body.high-contrast:not(.dark-mode) .storage-modal-buttons {
     border-top: 2px solid #999999;
-}
-
-body.high-contrast:not(.dark-mode) .storage-modal-buttons .btn-confirm {
-    border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 /* --- Settings Modal --- */
@@ -680,9 +660,6 @@ body.high-contrast:not(.dark-mode) .mode-description {
 }
 
 /* Main menu — close button */
-body.high-contrast:not(.dark-mode) #close-main-menu {
-    border-top: 2px solid rgba(0, 0, 0, 0.2);
-}
 
 /* Main menu — legacy list buttons */
 body.high-contrast:not(.dark-mode) .menu-container ul li button {
@@ -783,10 +760,6 @@ body.high-contrast.dark-mode .settings-section.collapsible.collapsed {
 
 body.high-contrast.dark-mode .toggle-slider {
     border: 2px solid #888888;
-}
-
-body.high-contrast.dark-mode .settings-btn {
-    border: 1px solid #888888;
 }
 
 /* Stats panel */
@@ -1041,18 +1014,6 @@ body.high-contrast.dark-mode .preferences-footer {
     border-top: 2px solid #666666;
 }
 
-body.high-contrast.dark-mode .preferences-undo-btn {
-    border: 2px solid #777777;
-}
-
-body.high-contrast.dark-mode .preferences-undo-btn:disabled {
-    opacity: 0.6;
-}
-
-body.high-contrast.dark-mode .preferences-reset-all-btn {
-    border: 2px solid var(--theme-error, #dc3545);
-}
-
 body.high-contrast.dark-mode .preferences-preview-label {
     color: rgba(255, 255, 255, 1);
 }
@@ -1120,10 +1081,6 @@ body.high-contrast.dark-mode .storage-modal-header {
 
 body.high-contrast.dark-mode .storage-modal-buttons {
     border-top: 2px solid #777777;
-}
-
-body.high-contrast.dark-mode .storage-modal-buttons .btn-confirm {
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 /* --- Settings Modal --- */
@@ -1278,9 +1235,6 @@ body.high-contrast.dark-mode .mode-description {
 }
 
 /* Main menu — close button */
-body.high-contrast.dark-mode #close-main-menu {
-    border-top: 2px solid rgba(255, 255, 255, 0.2);
-}
 
 /* Main menu — legacy list buttons */
 body.high-contrast.dark-mode .menu-container ul li button {
@@ -1296,6 +1250,53 @@ body.high-contrast.dark-mode .menu-grid button {
 /* Main menu — collapsible header hover */
 body.high-contrast.dark-mode .menu-section-header.collapsible:hover {
     background: rgba(255, 255, 255, 0.1);
+}
+
+/* =============================================================================
+   BUTTON SYSTEM (buttons.css: .btn-primary / -secondary / -danger, .close-bar)
+   =============================================================================
+   Secondary is a translucent tint everywhere else; here it is solid, with the
+   high-contrast outline. Filled buttons and the Close bar get an edge. These
+   out-weigh buttons.css's rules on classes, whatever the load order. */
+
+body.high-contrast:not(.dark-mode) .btn.btn-secondary {
+    background: #f0f0f0;
+    color: #111111;
+    border: 2px solid #333333;
+}
+
+body.high-contrast.dark-mode .btn.btn-secondary {
+    background: #3a3a3a;
+    color: #f0f0f0;
+    border: 2px solid #aaaaaa;
+}
+
+@media (hover: hover) and (pointer: fine) {
+    body.high-contrast:not(.dark-mode) .btn.btn-secondary:hover:not(:disabled) {
+        background: #e0e0e0;
+    }
+
+    body.high-contrast.dark-mode .btn.btn-secondary:hover:not(:disabled) {
+        background: #4a4a4a;
+    }
+}
+
+body.high-contrast:not(.dark-mode) .btn.btn-primary,
+body.high-contrast:not(.dark-mode) .btn.btn-danger {
+    border: 2px solid #1a1a1a;
+}
+
+body.high-contrast.dark-mode .btn.btn-primary,
+body.high-contrast.dark-mode .btn.btn-danger {
+    border: 2px solid #aaaaaa;
+}
+
+body.high-contrast:not(.dark-mode) .close-bar {
+    border-top: 2px solid #333333;
+}
+
+body.high-contrast.dark-mode .close-bar {
+    border-top: 2px solid #aaaaaa;
 }
 
 /* =============================================================================
@@ -1443,31 +1444,6 @@ body.high-contrast:not(.dark-mode) .recurring-empty-state {
     color: #333;
 }
 
-body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn:disabled {
-    background: #999;
-    color: #333;
-}
-
-body.high-contrast:not(.dark-mode) .change-recurring-btn {
-    border: 2px solid #333;
-    background: #e0e0e0;
-    color: #000;
-}
-
-body.high-contrast:not(.dark-mode) #apply-recurring-settings {
-    border: 2px solid #006600;
-    color: #fff;
-}
-
-body.high-contrast:not(.dark-mode) #cancel-recurring-settings {
-    border: 2px solid #333;
-    color: #fff;
-}
-
-body.high-contrast:not(.dark-mode) .close-recurring-panel {
-    border-top: 2px solid #333;
-}
-
 body.high-contrast:not(.dark-mode) .add-recurring-task-btn {
     border: 2px dashed #333;
     color: #000;
@@ -1478,16 +1454,8 @@ body.high-contrast:not(.dark-mode) .select-all-add-recurring-btn {
     text-decoration: underline;
 }
 
-body.high-contrast:not(.dark-mode) .confirm-add-recurring-btn {
-    border: 2px solid #006600;
-}
-
 body.high-contrast:not(.dark-mode) .recurring-remove-btn {
     color: #cc0000;
-}
-
-body.high-contrast:not(.dark-mode) .toggle-advanced-btn {
-    border: 1px solid #333;
 }
 
 body.high-contrast:not(.dark-mode) #toggle-check-all {
@@ -1569,31 +1537,6 @@ body.high-contrast.dark-mode .recurring-empty-state {
     color: #ccc;
 }
 
-body.high-contrast.dark-mode .confirm-add-recurring-btn:disabled {
-    background: #555;
-    color: #ccc;
-}
-
-body.high-contrast.dark-mode .change-recurring-btn {
-    border: 2px solid #aaa;
-    background: #3a3a3a;
-    color: #fff;
-}
-
-body.high-contrast.dark-mode #apply-recurring-settings {
-    border: 2px solid #00aa00;
-    color: #fff;
-}
-
-body.high-contrast.dark-mode #cancel-recurring-settings {
-    border: 2px solid #aaa;
-    color: #fff;
-}
-
-body.high-contrast.dark-mode .close-recurring-panel {
-    border-top: 2px solid #aaa;
-}
-
 body.high-contrast.dark-mode .add-recurring-task-btn {
     border: 2px dashed #aaa;
     color: #fff;
@@ -1604,16 +1547,8 @@ body.high-contrast.dark-mode .select-all-add-recurring-btn {
     text-decoration: underline;
 }
 
-body.high-contrast.dark-mode .confirm-add-recurring-btn {
-    border: 2px solid #00aa00;
-}
-
 body.high-contrast.dark-mode .recurring-remove-btn {
     color: #ff4444;
-}
-
-body.high-contrast.dark-mode .toggle-advanced-btn {
-    border: 1px solid #aaa;
 }
 
 body.high-contrast.dark-mode #toggle-check-all {
@@ -1762,15 +1697,6 @@ body.high-contrast:not(.dark-mode) .miniCycle-prompt-input {
     border: 2px solid #333;
 }
 
-/* The prompt's Cancel fills with --theme-input-border, which High Contrast
-   turns into #333 here: dark text on a near-black button (found Nov 2026).
-   Give it a light fill and the high-contrast outline instead. */
-body.high-contrast:not(.dark-mode) .miniCycle-btn-cancel {
-    background-color: #e0e0e0;
-    color: #111111;
-    border: 2px solid #333;
-}
-
 /* =============================================================================
    HIGH CONTRAST — ONBOARDING (Dark Mode)
    ============================================================================= */
@@ -1797,13 +1723,6 @@ body.high-contrast.dark-mode .onboarding-dot.active {
 }
 
 body.high-contrast.dark-mode .miniCycle-prompt-input {
-    border: 2px solid #aaa;
-}
-
-/* Same Cancel, dark side: --theme-input-border is #999 here, under #f0f0f0 text. */
-body.high-contrast.dark-mode .miniCycle-btn-cancel {
-    background-color: #3a3a3a;
-    color: #f0f0f0;
     border: 2px solid #aaa;
 }
 

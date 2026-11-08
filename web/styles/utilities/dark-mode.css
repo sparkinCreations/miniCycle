@@ -104,7 +104,6 @@ body.dark-mode:not([data-theme]) {
     --dark-todo-bg: #1e3a5f;
     --dark-todo-hover: #1a3352;
     --dark-mini-modal-bg: #23272e;
-    --dark-mini-modal-cancel: #444950;
     --dark-mini-modal-text: #e2e8f0;
     --dark-next-occurrence-bg: rgba(76, 175, 80, 0.2);
     --dark-next-occurrence-text: #81c784;
@@ -893,16 +892,6 @@ body.dark-mode .available-tasks-list {
     border-color: var(--dark-button-hover-bg);
 }
 
-body.dark-mode #cancel-recurring-settings {
-    color: var(--dark-text-light);
-    border-color: rgba(255, 255, 255, 0.2);
-}
-
-body.dark-mode #cancel-recurring-settings:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.3);
-}
-
 body.dark-mode .recurring-remove-btn {
     color: var(--dark-text-light);
 }
@@ -953,11 +942,6 @@ body.dark-mode .recurring-empty-state {
     color: var(--dark-text-dim);
 }
 
-body.dark-mode .confirm-add-recurring-btn:disabled {
-    background: var(--dark-button-bg);
-    color: var(--dark-text-dim);
-}
-
 /* =============================================================================
    DARK MODE MINI-MODAL
    ============================================================================= */
@@ -973,11 +957,6 @@ body.dark-mode .mini-modal-header {
 }
 
 body.dark-mode .mini-modal-body {
-    color: var(--dark-mini-modal-text);
-}
-
-body.dark-mode .mini-modal-buttons .btn-cancel {
-    background-color: var(--dark-mini-modal-cancel);
     color: var(--dark-mini-modal-text);
 }
 
@@ -1388,18 +1367,6 @@ body.dark-mode .preferences-section-toggle {
     color: var(--dark-text-dim);
 }
 
-/* Reset All button */
-body.dark-mode .preferences-reset-all-btn {
-    background: color-mix(in srgb, var(--color-error) 15%, transparent);
-    color: var(--dark-text-light);
-    border-color: var(--color-error);
-}
-
-body.dark-mode .preferences-footer button.preferences-reset-all-btn:hover {
-    background: var(--color-error);
-    color: var(--color-white);
-}
-
 /* =============================================================================
    DARK MODE ACHIEVEMENTS MODAL
    ============================================================================= */
@@ -1544,15 +1511,6 @@ body.dark-mode .history-footer {
     border-top-color: var(--dark-overlay-light);
 }
 
-body.dark-mode .history-cancel-btn {
-    color: var(--dark-text-light);
-    border-color: var(--dark-border-subtle);
-}
-
-body.dark-mode .history-confirm-btn {
-    background: var(--color-primary);
-}
-
 /* =============================================================================
    DARK MODE THEMES MODAL
    ============================================================================= */
@@ -1561,15 +1519,6 @@ body.dark-mode .themes-modal-content h2,
 body.dark-mode .themes-modal-content p,
 body.dark-mode .themes-modal-content label {
     color: var(--theme-text-primary);
-}
-
-body.dark-mode .themes-modal .close-btn {
-    background: var(--dark-button-hover-bg);
-    color: var(--theme-text-primary);
-}
-
-body.dark-mode .themes-modal .close-btn:hover {
-    background: var(--dark-border-subtle);
 }
 
 body.dark-mode .themes-modal-content input[type="checkbox"] {

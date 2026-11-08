@@ -645,53 +645,11 @@ dialog.mini-modal-dialog::backdrop {
     justify-content: center;
 }
 
-.mini-modal-buttons .btn-cancel {
-    background: var(--color-blue-pale);
-    color: var(--theme-button-secondary-text);
-    padding: var(--space-2-5) var(--space-5);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--border-blue-subtle);
-    cursor: pointer;
+/* Cancel and Confirm are .btn.btn-secondary and .btn.btn-primary (or
+   .btn-danger for a destructive confirm) from buttons.css; the row only
+   shares the width between them. */
+.mini-modal-buttons .btn {
     flex: 1;
-    font-size: var(--font-size-sm);
-    font-weight: 500;
-    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
-}
-
-.mini-modal-buttons .btn-confirm {
-    background: var(--theme-color-success);
-    color: var(--color-white);
-    padding: var(--space-2-5) var(--space-5);
-    border-radius: var(--radius-md);
-    border: none;
-    cursor: pointer;
-    flex: 1;
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
-}
-
-.mini-modal-buttons .btn-confirm.btn-destructive {
-    background: var(--theme-color-error);
-}
-
-.mini-modal-buttons button:hover {
-    opacity: 0.9;
-    transform: translateY(-1px);
-}
-
-.mini-modal-buttons button:active {
-    transform: translateY(0);
-}
-
-.mini-modal-buttons .btn-confirm:focus-visible,
-.mini-modal-buttons .btn-cancel:focus-visible {
-    outline: 2px solid var(--theme-color-success);
-    outline-offset: 2px;
-}
-
-.mini-modal-buttons .btn-confirm.btn-destructive:focus-visible {
-    outline-color: var(--theme-color-error);
 }
 
 /* Choice modal (multi-option) */
@@ -748,11 +706,6 @@ body.dark-mode .mini-modal-header {
 
 body.dark-mode .mini-modal-body {
     color: var(--pref-modal-text, var(--theme-modal-text));
-}
-
-body.dark-mode .mini-modal-buttons .btn-cancel {
-    background-color: var(--theme-button-secondary-bg);
-    color: var(--theme-modal-text);
 }
 
 body.dark-mode .btn-choice {
@@ -1142,25 +1095,11 @@ body.dark-mode .btn-choice:hover {
     background: var(--overlay-medium, rgba(0, 0, 0, 0.12));
 }
 
-/* Close matches the house modal-close treatment (#close-reminders-btn,
-   #close-main-menu): the theme-aware --menu-close-* tokens, not .settings-btn's
-   --color-primary. .settings-btn supplies the full-width shape; this supplies
-   the colour and seats it flush against the modal's bottom edge. No corner
-   radius is declared — .tip-archive-modal-content has overflow:hidden, so the
-   shell clips the button to its own radius and the two can never disagree. */
+/* Close is a .close-bar (buttons.css). No corner radius:
+   .tip-archive-modal-content has overflow:hidden, so the shell clips the bar
+   to its own radius and the two can never disagree. */
 #tip-archive-close {
     margin: 0;
-    padding: var(--space-3-5);
-    border-radius: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-}
-
-#tip-archive-close:hover {
-    background: var(--menu-close-hover-bg, var(--color-steel-blue));
-    transform: none;
 }
 
 /* Pause is a PLAYBACK control, so it lives with prev/next rather than beside

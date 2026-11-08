@@ -532,12 +532,12 @@ export class RoutineSwitcherActions {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.className = 'btn btn-secondary miniCycle-btn-cancel';
         cancelBtn.textContent = getLabel('button.cancel');
 
         const saveBtn = document.createElement('button');
         saveBtn.type = 'button';
-        saveBtn.className = 'miniCycle-btn-confirm';
+        saveBtn.className = 'btn btn-primary miniCycle-btn-confirm';
         saveBtn.textContent = getLabel('button.save');
 
         buttons.appendChild(cancelBtn);

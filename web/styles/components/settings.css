@@ -139,11 +139,6 @@
     border-radius: var(--radius-6);
 }
 
-.settings-btn:focus-visible {
-    outline: 2px solid var(--accent-color, var(--color-primary));
-    outline-offset: 2px;
-}
-
 .settings-section-toggle {
     font-size: var(--font-size-xs);
     transition: transform var(--transition-fast) ease;
@@ -299,53 +294,19 @@
    SETTINGS BUTTONS
    ============================================================================= */
 
+/* A full-width row. Its look is .btn + a role (buttons.css): Backup and
+   Restore are primary, Factory Reset is danger, everything else secondary. */
 .settings-btn {
     width: 100%;
-    padding: var(--space-2-5) var(--space-3-5);
     margin: var(--space-1-5) 0;
-    font-weight: 500;
-    font-size: var(--font-size-sm);
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    color: var(--color-white);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease, transform var(--transition-fast) ease;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
 }
 
-.settings-btn:hover {
-    background: var(--color-primary-dark);
-    transform: scale(1.01);
-}
-
 .settings-btn i {
     font-size: var(--font-size-sm);
-}
-
-/* Primary buttons (Backup/Restore) */
-.settings-btn.settings-btn-primary {
-    background: var(--color-success);
-    color: var(--color-white);
-}
-
-.settings-btn.settings-btn-primary:hover {
-    background: var(--color-success);
-}
-
-/* Ghost/Outline buttons (Reset options) */
-.settings-btn.settings-btn-ghost {
-    background: transparent;
-    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-gray-600)));
-    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--theme-input-border)));
-}
-
-.settings-btn.settings-btn-ghost:hover {
-    background: var(--theme-input-bg, var(--color-gray-100));
-    border-color: var(--color-gray-500);
 }
 
 /* A secondary group inside a section, with a short note above its buttons
@@ -406,36 +367,15 @@
     padding: var(--space-1-5) var(--space-3);
 }
 
-/* Factory reset button — combined selector wins over .settings-btn alone */
 .settings-btn.factory-reset-btn {
-    background: var(--color-error);
-    color: var(--color-white);
     margin-top: var(--space-2);
 }
 
-.settings-btn.factory-reset-btn:hover {
-    background: var(--color-error);
-}
-
-/* Close button — matches #close-main-menu style */
-button.settings-btn.close-btn {
-    display: block;
-    background: var(--color-steel-blue);
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
+/* Close is a .close-bar (buttons.css); this seats it on the rounded bottom. */
+.settings-close-bar {
     margin: 0;
-    width: 100%;
-    border: none;
     border-radius: 0 0 var(--radius-xl) var(--radius-xl);
-    text-align: center;
     flex-shrink: 0;
-}
-
-button.settings-btn.close-btn:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
-    transform: none;
 }
 
 /* =============================================================================
@@ -467,16 +407,6 @@ button.settings-btn.close-btn:hover {
 
     .settings-modal-content h2 {
         padding: var(--space-4-5) var(--space-3-5) var(--space-3);
-    }
-
-    .settings-btn {
-        padding: 10px var(--space-3);
-        font-size: var(--font-size-sm);
-    }
-
-    button.settings-btn.close-btn {
-        font-size: var(--font-size-base);
-        padding: var(--space-3);
     }
 
     .settings-section-header {
@@ -538,40 +468,11 @@ button.settings-btn.close-btn:hover {
     display: none;   /* .settings-btn's display: flex would otherwise win over [hidden] */
 }
 
-.settings-btn {
-    background: var(--color-primary);
-    color: var(--color-white);
-    border: none;
-    padding: var(--space-2) var(--space-3);
-    margin-right: var(--space-2-5);
-    border-radius: var(--radius-sm);
-    cursor: pointer;
-    transition: background var(--transition-normal);
-}
-
-.settings-btn:hover {
-    background: var(--color-primary-dark);
-}
-
-/* Reminders close button — matches #close-main-menu style */
+/* Reminders' Close is a .close-bar (buttons.css); this bleeds it to the edges. */
 #close-reminders-btn {
-    background: var(--menu-close-bg, var(--color-steel-blue));
-    color: var(--menu-close-text, var(--color-white));
-    font-size: var(--font-size-lg);
-    font-weight: 700;
-    padding: var(--space-3-5);
-    border: none;
     border-radius: 0 0 var(--radius-md) var(--radius-md);
     margin: var(--space-3) -20px -20px;
     width: calc(100% + 40px);
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-    display: block;
-    text-align: center;
-}
-
-#close-reminders-btn:hover {
-    background: var(--menu-close-hover-bg, var(--menu-close-hover-bg));
 }
 
 /* =============================================================================

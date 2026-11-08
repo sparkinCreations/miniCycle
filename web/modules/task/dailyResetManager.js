@@ -388,8 +388,8 @@ export class DailyResetManager {
                        value="${formatTimeInput(s.hour, s.minute)}"
                        aria-label="${title}" />
                 <div class="miniCycle-prompt-buttons">
-                    <button type="button" class="miniCycle-btn-cancel">${getLabel('button.cancel')}</button>
-                    <button type="button" class="miniCycle-btn-confirm">${getLabel('button.save')}</button>
+                    <button type="button" class="btn btn-secondary miniCycle-btn-cancel">${getLabel('button.cancel')}</button>
+                    <button type="button" class="btn btn-primary miniCycle-btn-confirm">${getLabel('button.save')}</button>
                 </div>
             </div>
         `;

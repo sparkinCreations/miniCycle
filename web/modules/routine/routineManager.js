@@ -825,12 +825,12 @@ export class RoutineManager {
 
         const cancelBtn = document.createElement('button');
         cancelBtn.type = 'button';
-        cancelBtn.className = 'miniCycle-btn-cancel';
+        cancelBtn.className = 'btn btn-secondary miniCycle-btn-cancel';
         cancelBtn.textContent = getLabel('button.cancel');
 
         const confirmBtn = document.createElement('button');
         confirmBtn.type = 'button';
-        confirmBtn.className = 'miniCycle-btn-confirm';
+        confirmBtn.className = 'btn btn-primary miniCycle-btn-confirm';
         confirmBtn.textContent = getLabel('button.create');
 
         buttons.appendChild(cancelBtn);

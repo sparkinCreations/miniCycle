@@ -1834,8 +1834,8 @@ async setDefaultPosition(notificationContainer) {
       <div class="mini-modal-body">${safeMessage}</div>
       ${checkboxHTML}
       <div class="mini-modal-buttons">
-        <button class="btn-cancel">${safeCancelText}</button>
-        <button class="btn-confirm${destructive ? ' btn-destructive' : ''}">${safeConfirmText}</button>
+        <button class="btn btn-secondary btn-cancel">${safeCancelText}</button>
+        <button class="btn ${destructive ? 'btn-danger btn-destructive' : 'btn-primary'} btn-confirm">${safeConfirmText}</button>
       </div>
     `;
 
@@ -1932,7 +1932,7 @@ async setDefaultPosition(notificationContainer) {
       <div class="mini-modal-body">${safeMessage}</div>
       <div class="mini-modal-choices">${choicesHTML}</div>
       <div class="mini-modal-buttons">
-        <button class="btn-cancel">${safeCancelText}</button>
+        <button class="btn btn-secondary btn-cancel">${safeCancelText}</button>
       </div>
     `;
 
@@ -2009,8 +2009,8 @@ async setDefaultPosition(notificationContainer) {
         <p class="miniCycle-prompt-message">${safeMessage}</p>
         <input type="text" id="miniCycle-prompt-input" name="miniCycle-prompt-input" class="miniCycle-prompt-input" aria-labelledby="${DOM_IDS.PROMPT_TITLE}" placeholder="${safePlaceholder}" value="${safeDefaultValue}" />
         <div class="miniCycle-prompt-buttons">
-          <button type="button" class="miniCycle-btn-cancel">${safeCancelText}</button>
-          <button type="button" class="miniCycle-btn-confirm">${safeConfirmText}</button>
+          <button type="button" class="btn btn-secondary miniCycle-btn-cancel">${safeCancelText}</button>
+          <button type="button" class="btn btn-primary miniCycle-btn-confirm">${safeConfirmText}</button>
         </div>
       </div>
     `;

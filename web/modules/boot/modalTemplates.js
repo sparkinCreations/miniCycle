@@ -42,7 +42,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
     <div id="recurring-summary-preview" class="hidden">
       <div class="summary-box">
         <p id="recurring-preview-text"></p>
-        <button id="change-recurring-settings" class="change-recurring-btn">${getLabel('recurring.changeSettings')}</button>
+        <button id="change-recurring-settings" class="btn btn-secondary change-recurring-btn">${getLabel('recurring.changeSettings')}</button>
       </div>
     </div>
     </div>
@@ -61,7 +61,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
         <div id="specific-date-list">
           <!-- First date picker inserted by JS -->
         </div>
-        <button id="add-specific-date" type="button"><span class="plus-icon">+</span> ${getLabel('recurring.addAnotherDate')}</button>
+        <button id="add-specific-date" type="button" class="btn btn-secondary"><span class="plus-icon">+</span> ${getLabel('recurring.addAnotherDate')}</button>
       </div>
       
       <div id="specific-date-time-options" class="hidden">
@@ -193,7 +193,7 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
         </div>
       </div>
 
-      <button id="toggle-advanced-settings" type="button" class="toggle-advanced-btn">
+      <button id="toggle-advanced-settings" type="button" class="btn btn-secondary toggle-advanced-btn">
         ${getLabel('recurring.showAdvanced')}
       </button>
 
@@ -356,8 +356,8 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
       <!-- This will be filled in dynamically -->
     </div>
       <div id="recur-settings-actions" class="recur-settings-actions">
-        <button id="cancel-recurring-settings" class="cancel-btn" type="button">${getLabel('button.cancel')}</button>
-        <button id="apply-recurring-settings" class="apply-btn">${getLabel('button.apply')}</button>
+        <button id="cancel-recurring-settings" class="btn btn-secondary cancel-btn" type="button">${getLabel('button.cancel')}</button>
+        <button id="apply-recurring-settings" class="btn btn-primary apply-btn">${getLabel('button.apply')}</button>
       </div>
       </div>
       </div>
@@ -371,10 +371,10 @@ export const RECURRING_PANEL_HTML = `<!-- Recurring Panel Modal w/ Overlay -->
           <p class="available-tasks-header">${getLabel('recurring.selectTasksHeader')} <button id="select-all-add-recurring" class="select-all-add-recurring-btn">${getLabel('recurring.selectAll')}</button></p>
           <ul id="non-recurring-tasks" aria-label="${getLabel('recurring.ariaAvailableTasks')}"></ul>
           <p id="no-available-tasks" class="no-available-tasks hidden">${getLabel('recurring.noAvailableTasks')}</p>
-          <button id="confirm-add-recurring" class="confirm-add-recurring-btn hidden">${getLabel('recurring.addToRecurringShort')}</button>
+          <button id="confirm-add-recurring" class="btn btn-primary confirm-add-recurring-btn hidden">${getLabel('recurring.addToRecurringShort')}</button>
         </div>
       </div>
-      <button id="close-recurring-panel" class="close-recurring-panel">${getLabel('button.close')}</button>
+      <button id="close-recurring-panel" class="close-bar close-recurring-panel">${getLabel('button.close')}</button>
     </div>
   </div>
 </dialog>
@@ -845,13 +845,13 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
 
         <!-- Footer Actions -->
         <div class="preferences-footer">
-            <button id="preferences-undo" class="preferences-undo-btn" title="${getLabel('prefs.undoTitle')}" disabled>
+            <button id="preferences-undo" class="btn btn-secondary preferences-undo-btn" title="${getLabel('prefs.undoTitle')}" disabled>
                 <span aria-hidden="true">&#x21A9;</span> ${getLabel('prefs.undoButton')}
             </button>
-            <button id="preferences-reset-all" class="preferences-reset-all-btn">${getLabel('prefs.resetAll')}</button>
+            <button id="preferences-reset-all" class="btn btn-danger preferences-reset-all-btn">${getLabel('prefs.resetAll')}</button>
         </div>
 
-        <button id="close-preferences-btn" class="close-btn">${getLabel('button.close')}</button>
+        <button id="close-preferences-btn" class="close-bar">${getLabel('button.close')}</button>
     </div>
 </dialog>
 `;
@@ -906,7 +906,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span class="settings-option-text"><span>${getLabel('settings.oneSectionAtATime')}</span><span class="settings-desc" id="settings-toggle-one-section-desc">${getLabel('settings.oneSectionAtATimeDesc')}</span></span>
                         </label>
-                        <button id="open-task-options-customizer" class="settings-btn"><span class="icon-text">+/-</span> ${getLabel('settings.addRemoveTaskButtons')}</button>
+                        <button id="open-task-options-customizer" class="btn btn-secondary settings-btn"><span class="icon-text">+/-</span> ${getLabel('settings.addRemoveTaskButtons')}</button>
                     </div>
                 </div>
 
@@ -1013,9 +1013,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-data">
-                        <button id="backup-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
-                        <button id="restore-mini-cycles" class="settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
-                        <button id="${DOM_IDS.AUTO_BACKUPS_TOGGLE}" class="settings-btn settings-btn-ghost" aria-expanded="false" aria-controls="${DOM_IDS.AUTO_BACKUPS}"><i class="fas fa-history"></i> <span class="${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}">${getLabel('settings.autoBackupsShow')}</span></button>
+                        <button id="backup-mini-cycles" class="btn btn-primary settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
+                        <button id="restore-mini-cycles" class="btn btn-primary settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
+                        <button id="${DOM_IDS.AUTO_BACKUPS_TOGGLE}" class="btn btn-secondary settings-btn settings-btn-ghost" aria-expanded="false" aria-controls="${DOM_IDS.AUTO_BACKUPS}"><i class="fas fa-history"></i> <span class="${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}">${getLabel('settings.autoBackupsShow')}</span></button>
                         <div id="${DOM_IDS.AUTO_BACKUPS}" class="settings-subsection" hidden>
                             <p class="settings-note">${getLabel('settings.autoBackupsNote')}</p>
                             <p id="${DOM_IDS.AUTO_BACKUPS_FOLDER_NOTE}" class="settings-note" hidden></p>
@@ -1024,9 +1024,9 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         </div>
                         <div id="${DOM_IDS.PRE_MIGRATION_COPY}" class="settings-subsection" hidden>
                             <p id="${DOM_IDS.PRE_MIGRATION_COPY_DESC}" class="settings-note"></p>
-                            <button id="${DOM_IDS.PRE_MIGRATION_DOWNLOAD}" class="settings-btn settings-btn-ghost"><i class="fas fa-file-download"></i> ${getLabel('settings.preMigrationDownload')}</button>
-                            <button id="${DOM_IDS.PRE_MIGRATION_RESTORE}" class="settings-btn settings-btn-ghost"><i class="fas fa-history"></i> ${getLabel('settings.preMigrationRestore')}</button>
-                            <button id="${DOM_IDS.PRE_MIGRATION_DELETE}" class="settings-btn settings-btn-ghost"><i class="fas fa-trash-alt"></i> ${getLabel('settings.preMigrationDelete')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_DOWNLOAD}" class="btn btn-secondary settings-btn settings-btn-ghost"><i class="fas fa-file-download"></i> ${getLabel('settings.preMigrationDownload')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_RESTORE}" class="btn btn-secondary settings-btn settings-btn-ghost"><i class="fas fa-history"></i> ${getLabel('settings.preMigrationRestore')}</button>
+                            <button id="${DOM_IDS.PRE_MIGRATION_DELETE}" class="btn btn-secondary settings-btn settings-btn-ghost"><i class="fas fa-trash-alt"></i> ${getLabel('settings.preMigrationDelete')}</button>
                         </div>
                     </div>
                 </div>
@@ -1039,19 +1039,19 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-reset">
-                        <button id="${DOM_IDS.RESET_ONBOARDING}" class="settings-btn settings-btn-ghost" aria-describedby="reset-onboarding-desc"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
+                        <button id="${DOM_IDS.RESET_ONBOARDING}" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="reset-onboarding-desc"><i class="fas fa-redo"></i> ${getLabel('settings.resetOnboarding')}</button>
                         <p class="settings-desc settings-btn-desc" id="reset-onboarding-desc">${getLabel('settings.resetOnboardingDesc')}</p>
-                        <button id="retake-guided-tour" class="settings-btn settings-btn-ghost" aria-describedby="retake-guided-tour-desc"><i class="fas fa-route"></i> <span class="${DOM_CLASSES.TOUR_PROMPTS_BTN_LABEL}">${getLabel('tour.retakeTour')}</span></button>
+                        <button id="retake-guided-tour" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="retake-guided-tour-desc"><i class="fas fa-route"></i> <span class="${DOM_CLASSES.TOUR_PROMPTS_BTN_LABEL}">${getLabel('tour.retakeTour')}</span></button>
                         <p class="settings-desc settings-btn-desc" id="retake-guided-tour-desc">${getLabel('settings.tourPromptsDesc')}</p>
-                        <button id="reset-notification-position" class="settings-btn settings-btn-ghost" aria-describedby="reset-notification-position-desc"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
+                        <button id="reset-notification-position" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="reset-notification-position-desc"><i class="fas fa-bell"></i> ${getLabel('settings.resetNotifPosition')}</button>
                         <p class="settings-desc settings-btn-desc" id="reset-notification-position-desc">${getLabel('settings.resetNotifPositionDesc')}</p>
-                        <button id="reset-task-view-layout" class="settings-btn settings-btn-ghost" aria-describedby="reset-task-view-layout-desc"><i class="fas fa-arrows-alt"></i> ${getLabel('settings.resetTaskViewLayout')}</button>
+                        <button id="reset-task-view-layout" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="reset-task-view-layout-desc"><i class="fas fa-arrows-alt"></i> ${getLabel('settings.resetTaskViewLayout')}</button>
                         <p class="settings-desc settings-btn-desc" id="reset-task-view-layout-desc">${getLabel('settings.resetTaskViewLayoutDesc')}</p>
-                        <button id="reset-recurring-default" class="settings-btn settings-btn-ghost" aria-describedby="reset-recurring-default-desc"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>
+                        <button id="reset-recurring-default" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="reset-recurring-default-desc"><i class="fas fa-sync"></i> ${getLabel('settings.resetRecurringDefault')}</button>
                         <p class="settings-desc settings-btn-desc" id="reset-recurring-default-desc">${getLabel('settings.resetRecurringDefaultDesc')}</p>
-                        <button id="reset-achievement-progress" class="settings-btn settings-btn-ghost" aria-describedby="reset-achievement-progress-desc"><i class="fas fa-trophy"></i> ${getLabel('settings.resetAchievements')}</button>
+                        <button id="reset-achievement-progress" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="reset-achievement-progress-desc"><i class="fas fa-trophy"></i> ${getLabel('settings.resetAchievements')}</button>
                         <p class="settings-desc settings-btn-desc" id="reset-achievement-progress-desc">${getLabel('settings.resetAchievementsDesc')}</p>
-                        <button id="clear-undo-history" class="settings-btn settings-btn-ghost" aria-describedby="clear-undo-history-desc"><i class="fas fa-history"></i> ${getLabel('settings.clearUndoHistory')}</button>
+                        <button id="clear-undo-history" class="btn btn-secondary settings-btn settings-btn-ghost" aria-describedby="clear-undo-history-desc"><i class="fas fa-history"></i> ${getLabel('settings.clearUndoHistory')}</button>
                         <p class="settings-desc settings-btn-desc" id="clear-undo-history-desc">${getLabel('settings.clearUndoHistoryDesc')}</p>
                     </div>
                 </div>
@@ -1071,10 +1071,10 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span class="settings-option-text"><span>${getLabel('settings.debugMode')}</span><span class="settings-desc" id="toggle-debug-mode-desc">${getLabel('settings.debugModeDesc')}</span></span>
                         </label>
-                        <button id="open-testing-modal" class="settings-btn"><i class="fas fa-flask"></i> ${getLabel('settings.diagnostics')}</button>
-                        <button id="${DOM_IDS.CHECK_FOR_UPDATES}" class="settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>
-                        <button id="try-lite-version" class="settings-btn"><i class="fas fa-mobile-alt"></i> ${getLabel('settings.tryLite')}</button>
-                        <button id="factory-reset" class="settings-btn factory-reset-btn"><i class="fas fa-exclamation-triangle"></i> ${getLabel('settings.factoryReset')}</button>
+                        <button id="open-testing-modal" class="btn btn-secondary settings-btn"><i class="fas fa-flask"></i> ${getLabel('settings.diagnostics')}</button>
+                        <button id="${DOM_IDS.CHECK_FOR_UPDATES}" class="btn btn-secondary settings-btn"><i class="fas fa-sync-alt"></i> ${getLabel('settings.checkUpdates')}</button>
+                        <button id="try-lite-version" class="btn btn-secondary settings-btn"><i class="fas fa-mobile-alt"></i> ${getLabel('settings.tryLite')}</button>
+                        <button id="factory-reset" class="btn btn-danger settings-btn factory-reset-btn"><i class="fas fa-exclamation-triangle"></i> ${getLabel('settings.factoryReset')}</button>
                     </div>
                 </div>
 
@@ -1083,7 +1083,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                     <div class="settings-version" id="settings-version-display">v...</div>
                 </div>
                 </div><!-- end .settings-scroll-area -->
-                <button id="close-settings" class="settings-btn close-btn">${getLabel('button.close')}</button>
+                <button id="close-settings" class="close-bar settings-close-bar">${getLabel('button.close')}</button>
             </div>
         </dialog>
 `;

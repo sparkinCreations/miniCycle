@@ -622,29 +622,11 @@ body.onboarding-active .onboarding-placeholder {
    "TRY IT YOURSELF" BUTTON
    ============================================================================= */
 
+/* A .btn.btn-primary (buttons.css), centred under the step. .btn is
+   inline-flex; flex keeps it a block so the auto margins centre it. */
 .onboarding-try-btn {
-    display: block;
+    display: flex;
     margin: var(--space-3) auto 0;
-    padding: var(--space-2) var(--space-5);
-    /* --theme-notify-info, not --theme-info: white onboarding text on the
-       plain info teal (#17a2b8) measured 3.05:1, well under AA. */
-    background: var(--theme-notify-info);
-    color: var(--color-white, #fff);
-    border: none;
-    border-radius: var(--radius-8, 8px);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    cursor: pointer;
-    transition: background var(--transition-fast), transform var(--transition-fast);
-}
-
-.onboarding-try-btn:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-}
-
-.onboarding-try-btn:active {
-    transform: translateY(0);
 }
 
 /* =============================================================================
@@ -875,36 +857,15 @@ dialog.miniCycle-prompt-dialog::backdrop {
 
 .miniCycle-prompt-buttons {
     display: flex;
-    justify-content: space-around;
+    gap: var(--space-3);
     margin-top: var(--space-5);
 }
 
-.miniCycle-btn-cancel,
-.miniCycle-btn-confirm {
-    padding: 10px var(--space-5);
-    border: none;
-    border-radius: var(--radius-md);
-    font-size: 1rem;
-    cursor: pointer;
-    transition: background var(--transition-fast) ease;
-}
-
-.miniCycle-btn-cancel {
-    background-color: var(--theme-input-border);
-    color: var(--theme-text-on-surface);
-}
-
-.miniCycle-btn-cancel:hover {
-    background-color: #bbb;
-}
-
-.miniCycle-btn-confirm {
-    background-color: var(--color-success);
-    color: var(--color-white);
-}
-
-.miniCycle-btn-confirm:hover {
-    background-color: var(--color-success);
+/* Cancel and Confirm are .btn.btn-secondary and .btn.btn-primary
+   (buttons.css); the row only shares the width, as the confirmation
+   dialog's does. */
+.miniCycle-prompt-buttons .btn {
+    flex: 1;
 }
 
 /* Sample tasks option styling */

@@ -420,28 +420,7 @@
     display: flex;
 }
 
-.history-cancel-btn {
+/* Cancel and Recreate are .btn.btn-secondary and .btn.btn-primary (buttons.css). */
+.history-footer .btn {
     flex: 1;
-    padding: var(--space-2-5);
-    border: 1px solid var(--theme-modal-border, var(--overlay-medium));
-    border-radius: var(--radius-md);
-    background: none;
-    cursor: pointer;
-    color: var(--theme-modal-text, var(--color-gray-700));
-}
-
-.history-confirm-btn {
-    flex: 1;
-    padding: var(--space-2-5);
-    border: none;
-    border-radius: var(--radius-md);
-    background: var(--color-primary);
-    cursor: pointer;
-    color: var(--color-white);
-    font-weight: 500;
-}
-
-.history-confirm-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
 }

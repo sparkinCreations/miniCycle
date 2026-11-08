@@ -1254,7 +1254,7 @@ function renderAutoBackupsList(items, { folder = null } = {}) {
 
         const btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = `${DOM_CLASSES.SETTINGS_BTN} ${DOM_CLASSES.SETTINGS_BTN_GHOST} ${DOM_CLASSES.AUTO_BACKUP_RESTORE}`;
+        btn.className = `${DOM_CLASSES.BTN} ${DOM_CLASSES.BTN_SECONDARY} ${DOM_CLASSES.SETTINGS_BTN} ${DOM_CLASSES.SETTINGS_BTN_GHOST} ${DOM_CLASSES.AUTO_BACKUP_RESTORE}`;
         btn.textContent = getLabel('settings.autoBackupRestore');
         btn.setAttribute('aria-label', getLabel('settings.autoBackupRestoreAria', { vars: { date } }));
         btn.dataset.type = item.type;

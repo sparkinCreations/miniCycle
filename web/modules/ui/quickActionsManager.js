@@ -1218,7 +1218,7 @@ export class QuickActionsManager {
         picker.appendChild(grid);
 
         const cancelBtn = document.createElement('button');
-        cancelBtn.className = 'quick-actions-picker-cancel';
+        cancelBtn.className = `${DOM_CLASSES.CLOSE_BAR} quick-actions-picker-cancel`;
         cancelBtn.textContent = getLabel('button.close');
         cancelBtn.addEventListener('click', () => this._hidePickerOverlay());
         picker.appendChild(cancelBtn);
