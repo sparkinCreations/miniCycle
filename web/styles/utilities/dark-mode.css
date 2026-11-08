@@ -684,14 +684,7 @@ body.dark-mode #about-modal a:hover {
     color: var(--dark-link-hover);
 }
 
-body.dark-mode #about-modal .close-modal {
-    color: var(--theme-text-secondary);
-}
 
-body.dark-mode #about-modal .close-modal:hover {
-    color: var(--color-white);
-    cursor: pointer;
-}
 
 /* =============================================================================
    DARK MODE STORAGE
@@ -1379,7 +1372,6 @@ body.dark-mode .achievements-header {
     border-bottom-color: var(--dark-overlay-light);
 }
 
-body.dark-mode .achievements-back-btn,
 body.dark-mode .achievements-title {
     color: var(--dark-text-light);
 }
@@ -1436,7 +1428,6 @@ body.dark-mode .history-header {
     border-bottom-color: var(--dark-overlay-light);
 }
 
-body.dark-mode .history-back-btn,
 body.dark-mode .history-title {
     color: var(--dark-text-light);
 }

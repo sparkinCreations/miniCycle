@@ -314,9 +314,8 @@ export class HistoryManager {
         const clearedCount = this._getClearedTasksCount();
 
         this.modalOverlay.innerHTML = `
-            <div class="history-modal">
+            <div class="history-modal has-corner-logo">
                 <header class="history-header">
-                    <button class="history-back-btn" aria-label="${getLabel('button.close')}">&larr;</button>
                     <h2 class="history-title"><span class="icon" aria-hidden="true">${getSvgIcon('history')}</span> ${getLabel('history.title')}</h2>
                     <button class="history-action-btn history-action-btn--danger">${getLabel('history.clearAll')}</button>
                 </header>
@@ -336,6 +335,7 @@ export class HistoryManager {
                     <button class="btn btn-secondary history-cancel-btn">${getLabel('button.cancel')}</button>
                     <button class="btn btn-primary history-confirm-btn">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
                 </footer>
+                <button class="close-bar modal-close-bar history-back-btn">${getLabel('button.close')}</button>
             </div>
         `;
 
@@ -353,14 +353,14 @@ export class HistoryManager {
         // Render content
         this._renderModalContent();
 
-        // Animate in and move focus to first focusable element
+        // Animate in and move focus to the Close bar. It was the first focusable
+        // element while it sat in the header as a back arrow; now the first one
+        // is Clear All, which focus must not land on by default.
         requestAnimationFrame(() => {
             this.modalOverlay.style.opacity = '1';
             this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_MODAL).style.transform = 'translateY(0)';
-            const firstFocusable = this.modalOverlay.querySelector(
-                'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-            );
-            if (firstFocusable) firstFocusable.focus();
+            const closeBar = this.modalOverlay.querySelector(DOM_SELECTORS.HISTORY_BACK_BTN);
+            if (closeBar) closeBar.focus();
 
             // Trigger appropriate guided tour
             if (this.activeTab === 'cleared') {

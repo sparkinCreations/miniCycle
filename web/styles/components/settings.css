@@ -17,7 +17,7 @@
     height: 100%;
     justify-content: center;
     align-items: center;
-    padding: var(--space-5);
+    padding: var(--modal-gutter);
 }
 
 .settings-modal.active,
@@ -34,10 +34,9 @@
 .settings-modal-content {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     padding: 0;
-    width: 420px;
-    max-width: 95%;
+    width: var(--modal-width-md);
     text-align: left;
     box-shadow:
         var(--shadow-modal-heavy),
@@ -62,9 +61,10 @@
     margin: 0;
     padding: var(--space-6) var(--space-5) var(--space-4);
     text-align: center;
-    font-size: var(--font-size-xl);
+    font-size: var(--modal-title-size);
     color: inherit;
     flex-shrink: 0;
+    font-weight: var(--modal-title-weight);
 }
 
 /* =============================================================================

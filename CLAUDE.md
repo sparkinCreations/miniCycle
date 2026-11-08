@@ -313,6 +313,13 @@ Nov 2026 each feature styled its own (~105 `*-btn` classes, five blues and a gre
 Watch for broad container rules such as `.menu-container button`: they out-rank `.btn` on
 classes, which is why `#close-main-menu` restates the bar's look.
 
+**Modals use the modal frame** (top of `styles/components/modals.css`): the box reads
+`--modal-radius` and one of `--modal-width-sm` / `-md` / `-lg`, the title reads
+`--modal-title-size` / `--modal-title-weight` and is centred, the box has `.has-corner-logo`,
+and an information modal ends in a `.close-bar` (`.close-bar.modal-close-bar` when the box is
+padded — the box sets `--modal-pad`). A question dialog keeps its Cancel / OK pair instead.
+The dimming is the one `dialog::backdrop` rule; don't add per-dialog backdrops.
+
 ---
 
 ## STATE MANAGEMENT

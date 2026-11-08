@@ -1339,7 +1339,6 @@
 
             <dialog id="about-modal" class="modal" data-modal aria-labelledby="about-modal-title" aria-modal="true">
                 <div class="modal-content about-modal-content has-corner-logo">
-                    <button class="close-modal" aria-label="Close about modal">&times;</button>
 
                     <div class="about-header">
                         <img src="assets/images/logo/minicycle_logo_icon.png" alt="miniCycle Logo" class="about-logo">
@@ -1364,6 +1363,7 @@
                         <p class="about-copyright">&copy; <span data-copyright-year>2026</span> miniCycle&trade;</p>
                         <p class="about-cache">Cache: <span id="about-sw-version">—</span></p>
                     </div>
+                    <button id="close-about-btn" class="close-bar modal-close-bar">Close</button>
                 </div>
             </dialog>
 
@@ -1781,7 +1781,7 @@
 
 
 <dialog id="storage-viewer-overlay" class="storage-modal-overlay" aria-labelledby="storage-viewer-title" aria-modal="true">
-  <div class="storage-modal-box">
+  <div class="storage-modal-box has-corner-logo">
     <div class="storage-modal-header" id="storage-viewer-title"><i class="fas fa-save"></i> Local Storage Viewer</div>
     <div class="storage-modal-body scrollable" id="storage-content">
       <!-- Content injected here -->
@@ -1912,16 +1912,15 @@
      Focus View makes the menu inert, and an inert ancestor would make this
      dialog unusable there. -->
 <dialog id="shortcuts-modal" class="modal shortcuts-modal" data-modal aria-labelledby="shortcuts-modal-title" aria-modal="true">
-    <div class="modal-content shortcuts-modal-content">
-        <button class="close-modal" aria-label="Close keyboard shortcuts">&times;</button>
+    <div class="modal-content shortcuts-modal-content has-corner-logo">
         <h2 id="shortcuts-modal-title"><i class="fas fa-keyboard"></i> Keyboard Shortcuts</h2>
         <div id="shortcuts-list" class="shortcuts-list"></div>
+        <button id="close-shortcuts-btn" class="close-bar modal-close-bar">Close</button>
     </div>
 </dialog>
 
 <dialog id="feedback-modal" class="feedback-modal" aria-labelledby="feedback-modal-title" data-modal aria-modal="true">
     <div class="feedback-modal-content has-corner-logo">
-        <button class="close-feedback-modal" aria-label="Close feedback modal">&times;</button>
         <h2 id="feedback-modal-title"><i class="fas fa-comment"></i> Provide Feedback</h2>
         <p>We appreciate your feedback! Let us know how we can improve miniCycle.</p>
 
@@ -1958,12 +1957,13 @@
             <label for="feedback-email" class="visually-hidden">Your email (optional)</label>
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
 
-            <button type="submit" id="submit-feedback">Submit</button>
+            <button type="submit" id="submit-feedback" class="btn btn-primary">Submit</button>
         </form>
 
         <p id="thank-you-message" style="display: none; color: green; font-weight: bold;">
             <span aria-hidden="true">✅</span> Thank you for your feedback!
         </p>
+        <button class="close-bar modal-close-bar close-feedback-modal">Close</button>
     </div>
 </dialog>
 

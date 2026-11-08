@@ -36,9 +36,8 @@
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-6);
-    border-radius: var(--radius-lg);
-    width: 420px;
-    max-width: 95%;
+    border-radius: var(--modal-radius);
+    width: var(--modal-width-md);
     text-align: center;
     box-shadow:
         0 6px 20px rgba(0, 0, 0, 0.3),
@@ -49,8 +48,10 @@
 
 .games-modal-content h2 {
     margin-bottom: var(--space-3);
-    font-size: var(--font-size-2xl);
+    font-size: var(--modal-title-size);
     color: inherit;
+    font-weight: var(--modal-title-weight);
+    text-align: center;
 }
 
 .games-modal-content p {
@@ -173,12 +174,7 @@
 
 @media (max-width: 768px) {
     .games-modal-content {
-        width: 95%;
         padding: var(--space-5);
-    }
-
-    .games-modal-content h2 {
-        font-size: var(--font-size-xl);
     }
 
 }

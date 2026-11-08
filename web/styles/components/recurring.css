@@ -1049,9 +1049,8 @@ dialog.reminders-modal[open] {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-5);
-    border-radius: var(--radius-md);
-    width: 380px;
-    max-width: 90%;
+    border-radius: var(--modal-radius);
+    width: var(--modal-width-md);
     box-shadow:
         var(--shadow-lg, 0 4px 10px rgba(0, 0, 0, 0.3)),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
@@ -1063,6 +1062,9 @@ dialog.reminders-modal[open] {
 .reminders-modal-content h2 {
     margin-top: 0;
     padding-left: var(--space-7);
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
+    text-align: center;
 }
 
 .reminders-modal-content .close-btn {

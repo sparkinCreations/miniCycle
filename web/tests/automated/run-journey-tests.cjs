@@ -6830,7 +6830,7 @@ async function journeyFocusEscapeAndShortcutList(browser, baseURL) {
             return { open: d.open, title: document.getElementById('shortcuts-modal-title').textContent.trim(),   // trim: an icon + space lead the title
                 rows: d.querySelectorAll('.shortcuts-row').length, fits: d.querySelector('.shortcuts-modal-content').scrollHeight <= innerHeight,
                 href: link?.getAttribute('href'), target: link?.target,
-                label: d.getAttribute('aria-labelledby'), closeName: d.querySelector('.close-modal')?.getAttribute('aria-label') };
+                label: d.getAttribute('aria-labelledby'), closeName: document.getElementById('close-shortcuts-btn')?.getAttribute('aria-label') };
         });
         record('Keyboard Shortcuts opens from the main menu', list.open && list.title === 'Keyboard Shortcuts', JSON.stringify({ open: list.open, title: list.title }));
         record('…showing five keys on one screen, and a link to every shortcut in the user manual',

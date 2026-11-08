@@ -601,7 +601,7 @@ export async function runModalManagerTests(resultsDiv) {
         document.body.appendChild(openBtn);
 
         const closeBtn = document.createElement('button');
-        closeBtn.classList.add('close-modal');
+        closeBtn.id = 'close-about-btn';
         modal.appendChild(closeBtn);
 
         mm.setupAboutModal();
@@ -634,7 +634,7 @@ export async function runModalManagerTests(resultsDiv) {
         document.body.appendChild(openBtn);
 
         const closeBtn = document.createElement('button');
-        closeBtn.classList.add('close-modal');
+        closeBtn.id = 'close-about-btn';
         modal.appendChild(closeBtn);
 
         mm.setupAboutModal();

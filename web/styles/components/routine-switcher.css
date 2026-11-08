@@ -111,10 +111,6 @@ dialog.mini-cycle-switch-modal[open] {
     display: flex;
 }
 
-dialog.mini-cycle-switch-modal::backdrop {
-    background: var(--overlay-heavy);
-}
-
 /* =============================================================================
    MODAL CONTENT
    ============================================================================= */
@@ -124,7 +120,7 @@ dialog.mini-cycle-switch-modal::backdrop {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246))));
     color: var(--pref-modal-text, var(--theme-modal-text, #333));
     padding: var(--space-3-75) var(--space-3-75) 0;
-    border-radius: var(--radius-10);
+    border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-dropdown),
         inset 0 1px 1px rgba(255, 255, 255, 0.25);
@@ -1338,7 +1334,6 @@ input.routine-search-input:focus {
     }
 }
 
-
 /* =============================================================================
    OPEN ROUTINE — THE LIST'S HEADING AND EXPAND / COLLAPSE (routineSwitcher.setListExpanded)
    The heading shows on every screen size (it used to be desktop-only) because
@@ -1474,7 +1469,6 @@ input.routine-search-input:focus {
         display: none;
     }
 }
-
 
 /* =============================================================================
    BROWSE ROUTINES (routine/routineBrowser.js, routineBrowserRender.js)

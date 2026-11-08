@@ -1159,6 +1159,7 @@ export const DOM_CLASSES = Object.freeze({
     BTN_SECONDARY: 'btn-secondary',
     BTN_DANGER: 'btn-danger',
     CLOSE_BAR: 'close-bar',
+    MODAL_CLOSE_BAR: 'modal-close-bar',   // a .close-bar flush along a padded modal's bottom (modals.css)
     // Settings' full-width row layout; the look comes from .btn + a role.
     SETTINGS_BTN: 'settings-btn',
     SETTINGS_BTN_GHOST: 'settings-btn-ghost',
@@ -1426,6 +1427,7 @@ export const DOM_IDS = Object.freeze({
     ROUTINE_OPEN_VIEW_GROUP: 'routine-open-view-group', // Settings → When you open routines, show: List / Browse (radios)
     SHORTCUTS_MODAL: 'shortcuts-modal',
     SHORTCUTS_MODAL_TITLE: 'shortcuts-modal-title',
+    CLOSE_SHORTCUTS_BTN: 'close-shortcuts-btn',     // the Shortcuts modal's Close bar
     SHORTCUTS_LIST: 'shortcuts-list',
     OPEN_TIP_ARCHIVE: 'open-tip-archive',
     MENU_OPEN_TITLE_SCREEN: 'menu-open-title-screen',
@@ -1562,6 +1564,7 @@ export const DOM_IDS = Object.freeze({
     FEEDBACK_RATING_TAGS_VALUE: 'feedback-rating-tags-value',
     ABOUT_MODAL: 'about-modal',
     OPEN_ABOUT_MODAL: 'open-about-modal',
+    CLOSE_ABOUT_BTN: 'close-about-btn',             // the About modal's Close bar
     ABOUT_VERSION: 'about-version',
     ABOUT_SW_VERSION: 'about-sw-version',
     TASK_OPTIONS_CUSTOMIZER_MODAL: 'task-options-customizer-modal',

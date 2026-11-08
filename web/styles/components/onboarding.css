@@ -792,10 +792,6 @@ body.onboarding-active .onboarding-placeholder {
     z-index: var(--z-modal-high);
 }
 
-dialog.miniCycle-prompt-dialog::backdrop {
-    background: rgba(0, 0, 0, 0.4);
-}
-
 /* The same panel as the confirmation dialog (.mini-modal-box in modals.css), so
    it follows light mode, Personalization and the glass setting. Until Nov 2026
    it was charcoal with white text in every mode — the one black box in a light
@@ -806,7 +802,7 @@ dialog.miniCycle-prompt-dialog::backdrop {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     padding: var(--space-6-25);
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     border: 1px solid transparent;
     text-align: center;
     box-shadow:
@@ -818,17 +814,18 @@ dialog.miniCycle-prompt-dialog::backdrop {
        dialog reset in modals.css now caps every dialog at 100vw, so a percentage
        here would resolve correctly too — but this keeps a real gutter instead of
        sitting flush, and it does not depend on the parent to stay correct. */
-    width: min(420px, calc(100vw - var(--space-8)));
+    width: var(--modal-width-sm);
 }
 
 .miniCycle-prompt-title {
     /* An <h2> since Oct 2026 (it names the dialog); keep the old block metrics. */
     margin-top: 0;
-    font-size: 1.4rem;
-    font-weight: bold;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     margin-bottom: var(--space-2-5);
     color: inherit;
     padding-left: var(--space-7);
+    text-align: center;
 }
 
 .miniCycle-prompt-message {

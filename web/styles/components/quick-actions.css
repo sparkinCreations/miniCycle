@@ -338,10 +338,6 @@ dialog.quick-actions-picker-overlay {
     -webkit-backdrop-filter: none;
 }
 
-dialog.quick-actions-picker-overlay::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-}
-
 dialog.quick-actions-picker-overlay:not([open]) {
     display: none;
 }
@@ -356,10 +352,9 @@ dialog.quick-actions-picker-overlay[open] {
     position: relative;
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     padding: var(--space-5);
-    width: 420px;
-    max-width: 95%;
+    width: var(--modal-width-md);
     max-height: 80vh;
     overflow-y: auto;
     box-shadow:

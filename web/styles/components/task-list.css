@@ -52,7 +52,6 @@
     flex: 1 1 auto;
 }
 
-
 /* Custom scrollbar - water themed */
 .task-list-container::-webkit-scrollbar {
     width: 8px;
@@ -441,10 +440,6 @@ body.onboarding-active .complete-all-and-help-window-container {
 
 /* ---- Due date picker (one shared <dialog>, dueDates.js) ---- */
 
-dialog.due-date-picker-overlay::backdrop {
-    background: rgba(0, 0, 0, 0.6);
-}
-
 dialog.due-date-picker-overlay[open] {
     justify-content: center;
     align-items: center;
@@ -455,11 +450,10 @@ dialog.due-date-picker-overlay[open] {
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
-    width: 340px;
-    max-width: 95%;
+    width: var(--modal-width-sm);
     margin: auto;
     padding: var(--space-5);
-    border-radius: var(--radius-xl);
+    border-radius: var(--modal-radius);
     border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
@@ -472,8 +466,8 @@ dialog.due-date-picker-overlay[open] {
 
 .due-date-picker h3 {
     margin: 0;
-    font-size: var(--font-size-base);
-    font-weight: 600;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     text-align: center;
 }
 
@@ -515,8 +509,9 @@ dialog.due-date-picker-overlay[open] {
     gap: var(--space-2);
 }
 
-.due-date-picker-actions button {
-    padding: var(--space-2) var(--space-3);
+/* Clear and Cancel are .btn.btn-secondary, Save .btn.btn-primary (buttons.css). */
+.due-date-picker-actions .btn {
+    flex: 1;
 }
 
 .due-date-picker-actions .due-date-picker-clear {
@@ -527,10 +522,6 @@ dialog.due-date-picker-overlay[open] {
     display: none;
 }
 
-.due-date-picker-actions button[type="submit"] {
-    background: var(--theme-button-primary-bg, var(--color-primary));
-    color: var(--theme-button-primary-text, var(--color-white));
-}
 
 /* =============================================================================
    HIGH PRIORITY
@@ -1220,11 +1211,9 @@ body.tasks-sorted #taskList .move-down {
         max-height: calc(100vh - 320px);
     }
 
-
     #task-view.complete-btn-visible .task-card {
         max-height: calc(100vh - 380px);
     }
-
 
     #task-view.mode-description-visible .task-card {
         max-height: calc(100vh - 380px);

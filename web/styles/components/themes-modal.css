@@ -88,9 +88,8 @@ body.dark-mode {
     background: var(--modal-bg-effective);
     color: var(--modal-text-effective);
     padding: 0;
-    border-radius: var(--radius-xl);
-    width: 420px;
-    max-width: 95%;
+    border-radius: var(--modal-radius);
+    width: var(--modal-width-md);
     text-align: center;
     box-shadow:
         var(--shadow-modal),
@@ -106,10 +105,11 @@ body.dark-mode {
     padding: var(--space-4-5) var(--space-6);
     background: var(--modal-header-bg-effective);
     color: var(--modal-text-effective);
-    font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     letter-spacing: 0.3px;
     border-bottom: 1px solid var(--modal-border-effective);
+    text-align: center;
 }
 
 /* Theme options sections */
@@ -332,20 +332,13 @@ body.dark-mode {
     cursor: pointer;
 }
 
-dialog.preferences-modal::backdrop {
-    background: var(--overlay-backdrop);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-}
-
 .preferences-modal-content {
     position: relative;
     background: var(--modal-bg-effective);
     color: var(--modal-text-effective);
     padding: 0;
-    border-radius: var(--radius-xl);
-    width: 420px;
-    max-width: 95%;
+    border-radius: var(--modal-radius);
+    width: var(--modal-width-lg);
     max-height: 85vh;
     text-align: center;
     box-shadow:
@@ -364,11 +357,12 @@ dialog.preferences-modal::backdrop {
     padding: var(--space-4) var(--space-5);
     background: var(--modal-header-bg-effective);
     color: var(--modal-text-effective);
-    font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     letter-spacing: 0.3px;
     border-bottom: 1px solid var(--modal-border-effective);
     flex-shrink: 0;
+    text-align: center;
 }
 
 /* Theme notice section */
@@ -1300,10 +1294,6 @@ dialog.preferences-modal::backdrop {
 
 /* Desktop: sidebar preview + sections column */
 @media (min-width: 1024px) {
-    .preferences-modal-content {
-        width: 680px;
-        max-width: 95%;
-    }
 
     .preferences-scroll-area {
         display: flex;
@@ -1332,15 +1322,11 @@ dialog.preferences-modal::backdrop {
 
 @media (max-width: 768px) {
     .preferences-modal-content {
-        width: 92%;
-        max-width: 380px;
         max-height: 80vh;
-        border-radius: var(--radius-14);
     }
 
     .preferences-modal-content h2 {
         padding: 14px var(--space-4);
-        font-size: var(--font-size-base);
     }
 
     .preferences-scroll-area {
@@ -1395,15 +1381,11 @@ dialog.preferences-modal::backdrop {
 
 @media (max-width: 480px) {
     .preferences-modal-content {
-        width: 90%;
-        max-width: 340px;
         max-height: 75vh;
-        border-radius: var(--radius-lg);
     }
 
     .preferences-modal-content h2 {
         padding: var(--space-3) var(--space-3-5);
-        font-size: var(--font-size-sm);
     }
 
     .preferences-theme-notice {

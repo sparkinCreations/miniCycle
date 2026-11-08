@@ -19,9 +19,8 @@
 
 .achievements-modal {
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
-    border-radius: var(--radius-lg);
-    width: 90%;
-    max-width: 500px;
+    border-radius: var(--modal-radius);
+    width: var(--modal-width-md);
     max-height: 80vh;
     display: flex;
     flex-direction: column;
@@ -32,6 +31,7 @@
     transition: transform var(--transition-fast) ease;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
+    --modal-bar-gap: 0px;
 }
 
 /* =============================================================================
@@ -41,26 +41,19 @@
 .achievements-header {
     display: flex;
     align-items: center;
-    padding: var(--space-4);
+    padding: var(--space-4) var(--space-12);
     border-bottom: 1px solid var(--theme-modal-border, var(--overlay-medium));
     gap: var(--space-3);
 }
 
-.achievements-back-btn {
-    background: none;
-    border: none;
-    font-size: var(--font-size-xl);
-    cursor: pointer;
-    padding: var(--space-1) var(--space-2);
-    color: var(--theme-modal-text, var(--color-gray-700));
-}
 
 .achievements-title {
     flex: 1;
     margin: 0;
-    font-size: var(--font-size-lg);
-    font-weight: 600;
+    font-size: var(--modal-title-size);
+    font-weight: var(--modal-title-weight);
     color: var(--theme-modal-text, var(--color-gray-700));
+    text-align: center;
 }
 
 /* =============================================================================
