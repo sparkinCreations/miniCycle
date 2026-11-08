@@ -516,13 +516,13 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    background: var(--overlay-white-light);
+    background: var(--pref-corner-glass, var(--overlay-white-light));
     -webkit-backdrop-filter: blur(12px) saturate(140%);
     backdrop-filter: blur(12px) saturate(140%);
-    box-shadow: var(--shadow-button);
+    box-shadow: var(--chrome-shadow);
     /* The soft white rim Focus View's round button and the glass Complete /
        Clear buttons wear (1px, 40%). */
-    border: 1px solid var(--overlay-white-medium);
+    border: 1px solid var(--chrome-border-color);
     /* --pref-corner-btn: Personalization → Buttons & Progress → Corner Button Color */
     color: var(--pref-corner-btn, var(--color-navy));
     border-radius: 50%;
@@ -579,7 +579,7 @@
         line-height: 1.5;
         white-space: nowrap;
         color: var(--pref-corner-btn, var(--color-navy));
-        background: var(--overlay-white-light);
+        background: var(--pref-corner-glass, var(--overlay-white-light));
         -webkit-backdrop-filter: blur(12px) saturate(140%);
         backdrop-filter: blur(12px) saturate(140%);
         border: 1px solid var(--overlay-white-medium);
@@ -612,7 +612,7 @@ body.corner-btns-solid:not(.high-contrast) #personalization-btn {
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
     border-color: var(--overlay-white-medium);
-    color: var(--color-white);
+    color: var(--pref-corner-ink, var(--color-white));
 }
 
 /* Emoji: the original 🎨 / 🌙 (☀️ in dark mode) on the frosted circle, in

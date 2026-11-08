@@ -316,6 +316,20 @@ export async function runPreferencesManagerTests(resultsDiv) {
         if (el.style.cssText !== '') throw new Error('null should clear every var, left: ' + el.style.cssText);
     });
 
+    // Nov 2026: a pale corner-button colour left a white icon on a pale circle.
+    await test('readableText: corner buttons keep a readable icon for any colour', async () => {
+        const rt = await import(`../modules/utils/readableText.js?v=${cacheBuster}`);
+        const el = document.createElement('div');
+        rt.applyCornerButtonColors(el, '#e6efff');
+        if (el.style.getPropertyValue('--pref-corner-ink') !== '#111111') throw new Error('pale fill should get a near-black icon: ' + el.style.cssText);
+        if (!el.style.getPropertyValue('--pref-corner-glass')) throw new Error('pale colour should get the navy glass for the frosted style: ' + el.style.cssText);
+        rt.applyCornerButtonColors(el, '#1b5e20');
+        if (el.style.getPropertyValue('--pref-corner-ink') !== '#ffffff') throw new Error('dark fill should get a white icon: ' + el.style.cssText);
+        if (el.style.getPropertyValue('--pref-corner-glass') !== '') throw new Error('a colour that reads on white glass keeps the default glass: ' + el.style.cssText);
+        rt.applyCornerButtonColors(el, null);
+        if (el.style.cssText !== '') throw new Error('null should clear both vars, left: ' + el.style.cssText);
+    });
+
     await test('isDefaultTheme returns true on a clean body and false under a theme class', () => {
         const body = document.body;
         const hadDark = body.classList.contains('dark-mode');

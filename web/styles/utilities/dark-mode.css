@@ -93,6 +93,11 @@ body.dark-mode:not([data-theme]) {
     /* Unchecked: a hollow ring, not a solid white dot. #a0a0a0 on the task
        card (#3d3d40) is 4.2:1, past the 3:1 a control's outline needs. */
     --dark-checkbox-incomplete-border: #a0a0a0;
+    /* Home-screen chrome and surfaces (variables.css) */
+    --chrome-border-color: var(--dark-overlay-strong);
+    --chrome-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-glass-panel: none;
     --dark-checkbox-incomplete-bg: rgba(255, 255, 255, 0.06);
     --dark-priority-border: #ff6b6b;
     --dark-priority-bg: #1e1e1e;
@@ -439,7 +444,7 @@ body.dark-mode .task-options .task-btn,
 body.dark-mode .task-options .move-btn {
     background: var(--dark-button-hover-bg);
     border: 1px solid var(--dark-border-subtle);
-    box-shadow: var(--shadow-md);
+    box-shadow: none;
 }
 
 body.dark-mode .complete-all-btn.todo-mode-btn {
@@ -818,7 +823,6 @@ body.dark-mode .task-options-list {
 body.dark-mode .undo-redo-btn {
     background: rgba(255, 255, 255, 0.1);
     color: var(--theme-progress-text);
-    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 body.dark-mode .undo-redo-btn:hover {
@@ -1188,11 +1192,12 @@ body.dark-mode .storage-value-raw {
 body.dark-mode .mode-selector-wrapper .mode-selector {
     background: rgba(30, 30, 30, 0.8);
     color: var(--theme-text-primary);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--chrome-border-color);
 }
 
 body.dark-mode .routine-switcher-btn,
 body.dark-mode .quick-actions-btn,
+body.dark-mode .menu-button,
 body.dark-mode #personalization-btn,
 body.dark-mode #quick-dark-toggle {
     background: var(--dark-overlay-heavy);
@@ -1646,7 +1651,7 @@ body.dark-mode .sample-item-name {
 body.dark-mode .task-input {
     background: var(--color-slate-800);
     border: 1px solid var(--color-slate-700);
-    box-shadow: var(--shadow-input);
+    box-shadow: var(--shadow-card);
 }
 
 body.dark-mode #taskInput {
@@ -1662,14 +1667,7 @@ body.dark-mode .task-input:focus-within {
     box-shadow: var(--shadow-input), var(--shadow-focus-ring);
 }
 
-body.dark-mode #addTaskBtn {
-    background: var(--color-slate-600);
-    color: var(--color-slate-100);
-}
 
-body.dark-mode #addTaskBtn:hover {
-    background: var(--color-slate-500);
-}
 
 /* =============================================================================
    DARK MODE TITLE ROW
@@ -1698,7 +1696,7 @@ body.dark-mode .mini-cycle-title {
     color: var(--dark-text-light);
     border-color: rgba(255, 255, 255, 0.12);
     border-bottom-color: rgba(255, 255, 255, 0.08);
-    box-shadow: none;
+    box-shadow: var(--shadow-glass-panel);
 }
 
 body.dark-mode #mini-cycle-title:focus {
@@ -1737,7 +1735,6 @@ body.dark-mode .auto-uncheck-banner {
 
 body.dark-mode .navigation-dots::before {
     background-color: rgba(60, 70, 90, 0.6);
-    border-color: rgba(255, 255, 255, 0.1);
 }
 
 body.dark-mode .dot::after {

@@ -489,7 +489,7 @@ body.focus-mode #focus-mode-menu-btn {
     width: 52px;
     height: 30px;
     border-radius: var(--radius-md);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--chrome-border-color);
     background: rgba(255, 255, 255, 0.12);
     color: var(--pref-panel-text, var(--color-white));
     font-size: 22px;
@@ -501,6 +501,7 @@ body.focus-mode #focus-mode-menu-btn {
     backdrop-filter: blur(2px);
     transition: background var(--transition-fast) ease,
                 transform var(--transition-fast) ease;
+    box-shadow: var(--chrome-shadow);
 }
 
 body.focus-mode #focus-mode-menu-btn { right: 16px; }
@@ -521,7 +522,7 @@ body.focus-mode #focus-mode-exit-btn {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--chrome-border-color);
     background: rgba(255, 255, 255, 0.12);
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
     line-height: 1;
@@ -531,6 +532,7 @@ body.focus-mode #focus-mode-exit-btn {
     backdrop-filter: blur(2px);
     transition: background var(--transition-fast) ease,
                 transform var(--transition-fast) ease;
+    box-shadow: var(--chrome-shadow);
 }
 
 /* Same 20px glyph box as .focus-mode-btn svg below: the compress brackets are
@@ -1070,7 +1072,7 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    border: 1px solid var(--chrome-border-color);
     background: rgba(255, 255, 255, 0.12);
     color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
     cursor: pointer;
@@ -1078,6 +1080,7 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     padding: 0;
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
+    box-shadow: var(--chrome-shadow);
 }
 
 @media (hover: hover) and (pointer: fine) {

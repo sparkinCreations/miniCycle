@@ -15,7 +15,7 @@
     background: var(--theme-input-bg, rgb(255, 255, 255));
     border-radius: var(--radius-md);
     padding: var(--space-1-25) var(--space-1-25) var(--space-1-25) var(--space-2-5); /* Less right padding since button has its own */
-    box-shadow: var(--shadow-input);
+    box-shadow: var(--shadow-card);
     margin-bottom: var(--space-4);
     max-width: 450px;
     width: 80%;
@@ -30,7 +30,7 @@
 
 /* Focus ring on the entire container when input is focused */
 .task-input:focus-within {
-    box-shadow: var(--shadow-input), var(--shadow-focus-ring);
+    box-shadow: var(--shadow-card), var(--shadow-focus-ring);
 }
 
 /* Hidden state - use visibility to reserve space and prevent CLS */
@@ -107,17 +107,18 @@ input[type="text"]:focus-visible {
     align-items: center;
     justify-content: center;
     flex-shrink: 0; /* Don't shrink the button */
-    background: rgba(0, 0, 0, 0.8);
-    color: var(--color-white);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
     border: none;
-    border-radius: var(--radius-6);
+    border-radius: var(--chrome-radius);
     cursor: pointer;
-    transition: background var(--transition-normal), transform var(--transition-fast);
+    transition: filter var(--transition-fast), transform var(--transition-fast);
+    font-weight: 600;
 }
 
 #addTaskBtn:hover {
-    background: var(--color-error);
     transform: scale(1.02);
+    filter: brightness(0.9);
 }
 
 #addTaskBtn:active {

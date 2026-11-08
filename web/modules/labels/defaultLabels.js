@@ -89,6 +89,14 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     action: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        filterAllTitle: 'Show every task',
+        filterIncompleteTitle: 'Only tasks not yet checked',
+        filterCompletedTitle: 'Only checked tasks',
+        filterPriorityTitle: 'Only tasks with a priority',
+        filterDueDateTitle: 'Only tasks with a due date',
+        filterRecurringTitle: 'Only recurring tasks',
+        toggleCompletedAria: 'Toggle completed tasks',
         addTask:              'Add task',
         addTaskButton:        'Add',
         addTaskPlaceholder:   'Enter a task...',
@@ -249,6 +257,10 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     switcher: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        rename: 'Rename',
+        themeButton: 'Theme',
+        changeThemeAria: 'Change theme',
         title:              'Open Routine',
         search:             'Search routines...',
         filterAll:          'All Modes',
@@ -311,6 +323,8 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     stats: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        milestoneBadgeAria: '{count} cycles milestone',
         title:              'Stats',
         currentRoutine:     'Current Routine',
         completion:         '{completed} of {total} {taskWord} completed this {cycleWord}',
@@ -1432,6 +1446,30 @@ export const DEFAULT_LABELS = deepFreeze({
     },
 
     menu: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        openTitle: 'Open menu',
+        routineActionsAria: 'Toggle Routine Actions section',
+        routineActionsTitle: 'Create, open, import, export, and share routines',
+        taskActionsAria: 'Toggle Task Actions section',
+        taskActionsTitle: 'Manage tasks, reminders, recurring schedules, and task options',
+        rewardsAria: 'Toggle Rewards section',
+        rewardsTitle: 'Unlock themes and mini-games as you complete cycles',
+        helpAria: 'Toggle Help section',
+        helpTitle: 'User manual, feedback, updates, and sharing',
+        legalInfo: 'Legal & Info',
+        legalAria: 'Toggle Legal section',
+        legalTitle: 'Privacy policy, terms of service, accessibility, and security',
+        settingsAria: 'Toggle Settings section',
+        settingsTitle: 'Customize colors, accessibility, and app preferences',
+        autoUncheckTimeTitle: 'Change auto-uncheck time',
+        themesTitle: 'Open Themes Panel',
+        userManualTitle: 'Open the user manual',
+        liteVersion: 'Lite Version',
+        liteVersionTitle: 'Switch to the lightweight version',
+        checkUpdatesTitle: 'Check for app updates',
+        personalizationTitle: 'Customize task list colors',
+        settingsOpenTitle: 'Open settings',
+        enterFocusViewAria: 'Enter Focus View',
         routineActions:          'Routine Actions',
         taskActions:             'Task Actions & Features',
         rewardsExtras:           'Rewards & Extras',
@@ -1781,6 +1819,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     nav: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        showRoutineView: 'Show Routine View',
+        showStatistics: 'Show Statistics',
         tasksView:      'Tasks view',
         tasksTab:       'Tasks',
         statsView:      'Statistics view',
@@ -1810,6 +1851,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // Captions under those two buttons (desktop only — settings.css)
         personalizationCaption: 'Personalization',
         darkModeCaption: 'Dark mode',
+        lightModeCaption: 'Light mode',
         darkModeHintOn:  'Switch to dark mode',
         darkModeHintOff: 'Switch to light mode',
         appSubtitle:    'ROUTINE MANAGER',
@@ -2616,6 +2658,9 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     footer: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        feedbackAria: 'Open feedback modal',
+        feedbackTitle: 'Send us feedback',
         privacyPolicy:  'Privacy Policy',
         termsOfService: 'Terms of Service',
         feedback:       'Feedback',
@@ -2786,6 +2831,41 @@ export const DEFAULT_LABELS = deepFreeze({
     // ========================================================================
 
     test: {
+        // Static buttons in miniCycle.html (data-label-*-key; themeManager's label sweep)
+        closeModalAria: 'Close testing modal',
+        tabDiagnostics: 'Diagnostics',
+        tabDebug: 'Debug Info',
+        tabAutomated: 'Automated Tests',
+        btnRunHealthCheck: 'Run Full Diagnostic',
+        btnCheckDataIntegrity: 'Check Data Integrity',
+        btnValidateSchema: 'Validate Schema',
+        btnDryRunSchema26: 'Dry-Run 2.6 Migration',
+        btnShowRoutineKeys: 'Show Routine Keys',
+        btnShowAppInfo: 'Show App Details',
+        btnShowStorageInfo: 'Storage Analysis',
+        btnShowPerformanceInfo: 'Performance Info',
+        btnShowBootTiming: 'Boot Timing',
+        btnRunFullAnalysis: 'Run Full Analysis',
+        btnExportDebugData: 'Export Debug Package',
+        btnRepairData: 'Repair Corrupted Data',
+        btnListAvailableBackups: 'List Available Backups',
+        btnCreateManualBackup: 'Create Manual Backup',
+        btnRestoreFromBackup: 'Restore from Backup',
+        btnCleanOldBackups: 'Clean Old Backups',
+        btnGenerateDebugReport: 'Generate Debug Report',
+        btnViewLocalStorage: 'View Local Storage',
+        btnShowServiceWorkerInfo: 'Service Worker Info',
+        btnTestServiceWorkerUpdate: 'Test SW Update',
+        btnShowBrowserInfo: 'Browser Capabilities',
+        btnEnableAutoCapture: 'Enable Auto-Capture Mode',
+        btnShowAllConsoleLogs: 'Show All Captured Logs',
+        btnShowMigrationErrors: 'Show Migration Issues',
+        btnClearAllConsoleLogs: 'Clear All Captured Logs',
+        btnStopConsoleCapture: 'Stop Auto Capture',
+        btnRunAllAutomatedTests: 'Run All Tests',
+        btnClearTestResults: 'Clear',
+        btnExportTestResults: 'Export Results',
+        btnCopyTestResults: 'Copy to Clipboard',
         dragHandle:           ':: Drag to Move ::',
         resultsTitle:         'Test Results - Expanded View',
         resultsGenerated:     'Generated: {timestamp}',

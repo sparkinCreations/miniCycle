@@ -17,12 +17,12 @@
 .mode-selector-wrapper .mode-selector {
     position: relative;
     background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
+    box-shadow: var(--chrome-shadow);
+    border: 1px solid var(--chrome-border-color);
     color: rgb(44, 50, 112);
-    border-radius: var(--radius-5);
+    border-radius: var(--chrome-radius);
     padding: 3px var(--space-5) 4px var(--space-2);
-    font-size: var(--font-size-xs);
+    font-size: var(--chrome-font-size);
     font-weight: 500;
     max-width: 200px;
     /* min-height (not height) so the box grows when the accessibility Font Size
@@ -316,10 +316,10 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
 
 .quick-actions-btn {
     background: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
+    box-shadow: var(--chrome-shadow);
+    border: 1px solid var(--chrome-border-color);
     color: rgb(44, 50, 112);
-    border-radius: var(--radius-5);
+    border-radius: var(--chrome-radius);
     width: var(--header-side-btn-width);   /* = the routine button's (above) */
     /* Match the mode selector's height. The selector is a native <select> whose
        height stays ~25px (browsers don't reliably scale a closed select's box
@@ -333,6 +333,7 @@ body.dark-mode.todo-mode-mode .mode-selector-wrapper .mode-selector {
     transition: all var(--transition-normal) ease;
     /* Anchors the tap-target pseudo-element below. */
     position: relative;
+    font-size: var(--chrome-font-size);
 }
 
 /* WCAG 2.5.8 tap target via pseudo-element — same approach as
@@ -459,7 +460,6 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     }
 
     .mode-selector-wrapper .mode-selector {
-        font-size: var(--font-size-xs);
         min-height: var(--space-6-25);
         padding: 3px var(--space-5) 4px var(--space-2);
         max-width: 200px;
@@ -473,6 +473,6 @@ body.reduced-motion .quick-actions-btn.first-time-shimmer {
     }
 
     .quick-actions-btn {
-        font-size: var(--font-size-xs);
+
     }
 }

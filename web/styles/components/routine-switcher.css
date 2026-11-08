@@ -11,10 +11,10 @@
     position: absolute;
     right: var(--space-3-75);
     background: var(--overlay-white-light);
-    box-shadow: var(--shadow-button);
-    border: 1px solid var(--border-blue-subtle-hover);
+    box-shadow: var(--chrome-shadow);
+    border: 1px solid var(--chrome-border-color);
     color: var(--color-navy);
-    border-radius: var(--radius-5);
+    border-radius: var(--chrome-radius);
     width: var(--header-side-btn-width);   /* shared with the + (mode-selector.css) */
     /* Match the mode selector's height (see .quick-actions-btn in
        mode-selector.css). The selector is a native <select> that stays ~25px,
@@ -26,6 +26,7 @@
     align-items: center;
     justify-content: center;
     transition: all var(--transition-normal) ease;
+    font-size: var(--chrome-font-size);
 }
 
 /* WCAG 2.5.8 tap target via pseudo-element — matches .quick-actions-btn::after.

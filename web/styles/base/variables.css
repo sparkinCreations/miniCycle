@@ -562,6 +562,20 @@
   --shadow-button-hover: 0 3px 6px rgba(0, 0, 0, 0.18);
 
   /* Focus rings */
+  /* Home-screen chrome (Nov 2026): the glass controls that sit on the app
+     background — header buttons, Menu, Undo/Redo, the round corner buttons,
+     Focus View's buttons — share one edge, one lift, one corner and one label
+     size. Controls INSIDE a card (task options, chips, search) get no lift.
+     Two surface shadows: --shadow-card for the input bar and task rows,
+     --shadow-glass-panel for the status bubble and routine title bar. Dark
+     mode redefines them in dark-mode.css. */
+  --chrome-border-color: rgba(255, 255, 255, 0.45);
+  --chrome-shadow: var(--shadow-button);
+  --chrome-radius: var(--radius-md);
+  --chrome-font-size: var(--font-size-xs);
+  --shadow-card: 0 2px 5px rgba(0, 0, 0, 0.2);
+  --shadow-glass-panel: 0 4px 15px rgba(0, 0, 0, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3);
+
   --shadow-focus-ring: 0 0 0 2px rgba(76, 121, 255, 0.5);
   --shadow-focus-ring-subtle: 0 0 0 2px rgba(76, 121, 255, 0.2);
 

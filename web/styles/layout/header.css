@@ -157,18 +157,19 @@
 
 .menu-button {
     justify-self: end;
-    background: rgba(0, 0, 0, 0.787);
-    border: 1px solid rgba(255, 255, 255, 0.72);
-    border-radius: var(--radius-5);
-    color: var(--color-white);
+    background: var(--overlay-white-light);
+    border: 1px solid var(--chrome-border-color);
+    border-radius: var(--chrome-radius);
+    color: var(--color-navy);
     padding: 5px var(--space-2);
     font-size: var(--font-size-sm);
     cursor: pointer;
     z-index: var(--z-content);
+    box-shadow: var(--chrome-shadow);
 }
 
 .menu-button:hover {
-    background: rgba(0, 0, 0, 0.9);
+    background: var(--overlay-white-medium);
 }
 
 .menu-button:active {
@@ -206,12 +207,12 @@
 .mode-selector-wrapper .mode-selector {
     position: relative;
     background: rgba(255,255,255,0.2);
-    box-shadow: 0 2px 4px rgba(226, 226, 226, 0.2);
-    border: 1px solid #0c20913f;
+    box-shadow: var(--chrome-shadow);
+    border: 1px solid var(--chrome-border-color);
     color: rgb(44, 50, 112);
-    border-radius: var(--radius-5);
+    border-radius: var(--chrome-radius);
     padding: 3px var(--space-5) 4px var(--space-2);
-    font-size: 12px;
+    font-size: var(--chrome-font-size);
     font-weight: 500;
     max-width: 140px;
     /* min-height (not height) so larger accessibility font sizes don't clip the text. */
@@ -312,9 +313,6 @@ body.dark-mode .app-subtitle {
     }
 
     .menu-button {
-        background-color: rgba(0, 0, 0, 0.8);
-        border: 1px solid rgba(0, 0, 0, 0.475);
-        color: var(--color-white);
         font-size: 20px;
     }
 }

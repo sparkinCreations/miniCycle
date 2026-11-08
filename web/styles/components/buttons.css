@@ -472,9 +472,7 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
     background: var(--pref-panel-bg);
     border-radius: var(--radius-2xl);
     border: 1px solid var(--pref-panel-border);
-    box-shadow:
-        0 4px 15px rgba(0, 0, 0, 0.08),
-        inset 0 1px 1px rgba(255, 255, 255, 0.3);
+    box-shadow: var(--shadow-glass-panel);
     max-width: 450px;
     width: 100%;
     padding: var(--space-2-5) var(--space-2-5);
@@ -671,18 +669,19 @@ body.hide-help-window .help-window {
 }
 
 .undo-redo-btn {
-    font-size: 0.85em;
+    font-size: var(--chrome-font-size);
     font-weight: 600;
     color: var(--color-white);
     background: rgba(0, 0, 0, 0.4);
-    border: none;
-    border-radius: var(--radius-6);
+    border: 1px solid var(--chrome-border-color);
+    border-radius: var(--chrome-radius);
     cursor: pointer;
     padding: var(--space-1) var(--space-2);
     opacity: .8;
     transition: background var(--transition-fast) ease, color var(--transition-fast) ease;
     min-width: 50px;
     position: absolute;
+    box-shadow: var(--chrome-shadow);
 }
 
 .undo-redo-btn#undo-btn {

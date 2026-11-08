@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { applyReadableTextColors } from '../utils/readableText.js';
+import { applyReadableTextColors, applyCornerButtonColors } from '../utils/readableText.js';
 import { DOM_IDS, DOM_CLASSES, DOM_SELECTORS, DATA_SELECTORS, APP_VERSION, UI_TIMEOUTS, PREFERENCES } from '../core/constants.js';
 import { updateThemeColor } from '../features/themeManager.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -1812,6 +1812,7 @@ export class PreferencesManager {
         // Handle checkbox fill visibility
         const appBg = normalizeHex(customColors.appBg) || null;
         applyReadableTextColors(root, appBg);
+        applyCornerButtonColors(root, normalizeHex(customColors.cornerBtn) || null);
         // A colour the user picked themselves (not a quick preset: handleColorChange
         // clears `preset`) gets the backing strip under the footer links, so any
         // colour works without the user having to think about it. A preset relies
@@ -1915,6 +1916,7 @@ export class PreferencesManager {
             root.style.removeProperty(config.cssVar);
         });
         applyReadableTextColors(root, null);
+        applyCornerButtonColors(root, null);
         setBodyClass(DOM_CLASSES.CUSTOM_APP_BG, false);
 
         // Update status bar color back to default

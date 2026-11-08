@@ -88,7 +88,6 @@ body:not(.show-three-dots-enabled) .task:hover .task-options.task-options-force-
     height: 24px;
     font-size: var(--font-size-sm);
     cursor: pointer;
-    box-shadow: var(--shadow-xs);
     transition: background var(--transition-fast), transform var(--transition-fast);
     display: flex;
     align-items: center;

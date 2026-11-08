@@ -627,10 +627,7 @@ dialog.due-date-picker-overlay[open] {
     top: 0;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     transition: background var(--transition-fast) ease-in-out, color var(--transition-fast) ease-in-out;
-    box-shadow:
-        0 2px 8px rgba(0, 100, 180, 0.1),
-        inset 0 1px 2px rgba(255, 255, 255, 0.5),
-        inset 0 -1px 1px rgba(100, 180, 255, 0.1);
+    box-shadow: var(--shadow-glass-panel);
     /* Allow long titles to wrap to a second line. -webkit-line-clamp caps
        at 2 lines and adds an ellipsis if a title is even longer. Short
        titles stay one line; the min-height above keeps the box stable
@@ -690,6 +687,8 @@ dialog.due-date-picker-overlay[open] {
     transition: color var(--transition-fast) ease;
     /* Anchors the tap-target pseudo-element below. */
     position: relative;
+    min-width: 24px;
+    min-height: 24px;
 }
 
 /* WCAG 2.5.8 tap target via pseudo-element — matches .toggle-switch::after in
@@ -748,6 +747,8 @@ dialog.due-date-picker-overlay[open] {
     line-height: 1;
     border-radius: var(--radius-sm);
     transition: color var(--transition-fast) ease;
+    min-width: 24px;
+    min-height: 24px;
 }
 
 .task-search-clear:hover {
@@ -878,8 +879,8 @@ body > .edit-focus-overlay.search-page-overlay.active {
 
 .filter-chip.active,
 .sort-chip.active {
-    background: var(--theme-accent, var(--color-primary));
-    color: var(--color-white);
+    background: var(--btn-primary-bg);
+    color: var(--btn-primary-text);
 }
 
 .filter-chip:focus-visible,
@@ -901,7 +902,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
     border-radius: var(--radius-md);
     margin: var(--space-2-5);
     background: var(--theme-task-bg, var(--color-white));
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-card);
     color: var(--theme-task-text, var(--theme-text-on-surface));
     position: relative;
 }

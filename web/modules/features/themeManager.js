@@ -339,9 +339,16 @@ function _refreshLiveLensLabels() {
     // text is a PURE getLabel() value (no interpolation/counts) is re-resolved
     // here, on every routine/theme change AND on the boot-time refreshThemeLabels()
     // call in finalizeUI(). Keep the tag off interpolated/dynamic text.
-    _deps.querySelectorAll('[data-label-key]').forEach(el => {
-        const key = el.dataset.labelKey;
-        if (key) el.textContent = getLabel(key);
+    // miniCycle.html's static buttons use it too (Nov 2026), with two more
+    // attributes for the strings that are not text: data-label-aria-key and
+    // data-label-title-key. data-label-count passes a fixed number as {count}
+    // (the milestone badges); it is markup, never state.
+    _deps.querySelectorAll('[data-label-key], [data-label-aria-key], [data-label-title-key]').forEach(el => {
+        const { labelKey, labelAriaKey, labelTitleKey, labelCount } = el.dataset;
+        const opts = labelCount ? { vars: { count: labelCount } } : undefined;
+        if (labelKey) el.textContent = getLabel(labelKey, opts);
+        if (labelAriaKey) el.setAttribute('aria-label', getLabel(labelAriaKey, opts));
+        if (labelTitleKey) el.title = getLabel(labelTitleKey, opts);
     });
 
     // Focus-view pill tabs — the visible text is CSS `content: attr(data-tab-label)`
@@ -581,7 +588,7 @@ export class ThemeManager {
             // button does no longer toggles dark mode (Oct 2026). The words name
             // the mode a press switches TO, read from the live state each time.
             newQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
-            newQuickToggle.dataset.label = getLabel('nav.darkModeCaption');
+            newQuickToggle.dataset.label = getLabel(isDark ? 'nav.lightModeCaption' : 'nav.darkModeCaption');
             attachLongPressHint(newQuickToggle, {
                 getText: () => getLabel(newQuickToggle.getAttribute('aria-pressed') === 'true'
                     ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn')
@@ -632,6 +639,10 @@ export class ThemeManager {
 
             currentQuickToggle.replaceChildren(createIconElement(isDark ? 'sun' : 'moon'));
             currentQuickToggle.title = getLabel(isDark ? 'nav.darkModeHintOff' : 'nav.darkModeHintOn');
+            // The desktop caption names the mode a press switches TO, like the
+            // icon and the title; it was set once to "Dark mode" and never
+            // followed the state (Nov 2026).
+            currentQuickToggle.dataset.label = getLabel(isDark ? 'nav.lightModeCaption' : 'nav.darkModeCaption');
 
             // The emoji was the ONLY state cue, and it is invisible to assistive
             // tech twice over: it is decorative content, and the button's

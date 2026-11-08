@@ -1160,6 +1160,12 @@ export const DOM_CLASSES = Object.freeze({
     BTN_DANGER: 'btn-danger',
     CLOSE_BAR: 'close-bar',
     MODAL_CLOSE_BAR: 'modal-close-bar',   // a .close-bar flush along a padded modal's bottom (modals.css)
+    // Hooks that ride alongside a system class on the same button
+    MINI_CYCLE_BTN_CANCEL: 'miniCycle-btn-cancel',
+    MINI_CYCLE_BTN_CONFIRM: 'miniCycle-btn-confirm',
+    CHANGE_RECURRING_BTN: 'change-recurring-btn',
+    HISTORY_BACK_BTN: 'history-back-btn',
+    ACHIEVEMENTS_BACK_BTN: 'achievements-back-btn',
     // Settings' full-width row layout; the look comes from .btn + a role.
     SETTINGS_BTN: 'settings-btn',
     SETTINGS_BTN_GHOST: 'settings-btn-ghost',

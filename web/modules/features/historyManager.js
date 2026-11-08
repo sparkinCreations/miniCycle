@@ -335,7 +335,7 @@ export class HistoryManager {
                     <button class="btn btn-secondary history-cancel-btn">${getLabel('button.cancel')}</button>
                     <button class="btn btn-primary history-confirm-btn">${getLabel('history.recreateSelected', { vars: { count: 0 } })}</button>
                 </footer>
-                <button class="close-bar modal-close-bar history-back-btn">${getLabel('button.close')}</button>
+                <button class="${DOM_CLASSES.CLOSE_BAR} ${DOM_CLASSES.MODAL_CLOSE_BAR} ${DOM_CLASSES.HISTORY_BACK_BTN}">${getLabel('button.close')}</button>
             </div>
         `;
 

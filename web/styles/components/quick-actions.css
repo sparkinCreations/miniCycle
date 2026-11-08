@@ -181,9 +181,7 @@ body.hide-quick-actions .quick-actions-menu-row {
         background: var(--pref-panel-bg);
         border-radius: var(--radius-2xl);
         border: 1px solid var(--pref-panel-border);
-        box-shadow:
-            0 4px 15px rgba(0, 0, 0, 0.08),
-            inset 0 1px 1px rgba(255, 255, 255, 0.3);
+        box-shadow: var(--shadow-glass-panel);
         padding: var(--space-2-5) var(--space-3);
         z-index: var(--z-content);
         backdrop-filter: blur(var(--pref-panel-blur));
