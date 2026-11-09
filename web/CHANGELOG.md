@@ -1,3 +1,12 @@
+## [2.673] - 2026-11-09
+- ci: deploy from GitHub Actions instead of Netlify builds
+- fix(menu): keep Personalization inside its button on narrow phones
+- ci: run Playwright jobs on ubuntu-24.04
+- Update User Manual screenshots and instructions for the current app
+- docs: rewrite README and CONTRIBUTING, refresh screenshots
+- fix(site): rename the second Features header link to FAQ
+
+
 ## [2.671] - 2026-11-08
 - fix(ui): define --font-size-md; one name for Switch Routine
 - feat(ui): Focus View and Home polish, Stats and Routine switcher rebuilds
