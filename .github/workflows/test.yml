@@ -105,7 +105,7 @@ jobs:
         run: npm run test:restore
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # Playwright cannot install on ubuntu-latest (26.04) yet
 
     strategy:
       matrix:
@@ -194,7 +194,7 @@ jobs:
   # cannot skip them: the a11y result for a build must exist whether or not the
   # rest of that build's run is green.
   test-a11y:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # same Playwright limit as the test job
     steps:
     - name: Checkout code
       uses: actions/checkout@v5
@@ -227,7 +227,7 @@ jobs:
       run: CONTRAST_GATE=1 npm run test:contrast
 
   test-webkit:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04  # same Playwright limit as the test job
     continue-on-error: true
     steps:
     - name: Checkout code
