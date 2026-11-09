@@ -264,3 +264,43 @@ jobs:
     # Oct 26 2026 (about 6 green in 30) while every one of them passed on macOS WebKit —
     # the port the iPhone app actually runs on. A red that never means anything is
     # worse than no signal.
+
+  # Production deploy. Netlify's own builds are switched off (ignore = "exit 0" in
+  # the repo-root netlify.toml) because the free plan's build minutes ran out in
+  # Nov 2026. This job builds web/dist here and uploads the finished files, which
+  # uses no Netlify build minutes. It runs only after the blocking checks pass.
+  deploy:
+    name: Deploy to Netlify
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    needs: [lint, test, test-a11y]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+    env:
+      NETLIFY_SITE_ID: ad0a9a8c-26f4-4084-8404-125e79ec017c
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v5
+      with:
+        node-version: 20.x
+        cache: 'npm'
+        cache-dependency-path: web/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ./web
+      run: npm ci
+
+    - name: Build the site
+      working-directory: ./web
+      run: node scripts/build-web.cjs
+
+    - name: Upload to Netlify
+      env:
+        NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+      run: npx --yes netlify-cli@27.16.2 deploy --no-build --prod --dir=web/dist --site "$NETLIFY_SITE_ID"

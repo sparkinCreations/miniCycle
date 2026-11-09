@@ -116,7 +116,7 @@ git add -A
 git commit -m "v2.057: description of changes"
 git push origin main
 ```
-Netlify auto-deploys on push to `main`. No manual upload needed.
+GitHub Actions builds the site and uploads it to Netlify on a push to `main`, once the tests pass. No manual upload needed. See [Deploying without Netlify build minutes](BUILD_PROCESS.md#deploying-without-netlify-build-minutes-nov-2026).
 
 ### 4. Verify
 - Visit https://minicycleapp.com and https://minicycle.app/ → product page
@@ -245,7 +245,7 @@ Both must stay in sync. If you modify ANY inline `<script>` in miniCycle.html, y
 
 **Solutions:**
 1. Verify the deploy completed successfully on Netlify dashboard
-2. Check that the file exists in the repo (Netlify deploys from Git)
+2. Check that the file exists in the repo (the deploy is built from Git)
 3. Verify the server returns `text/javascript` MIME type for `.js` files
 
 ### App Doesn't Work Offline After Deploy
@@ -277,7 +277,7 @@ Both must stay in sync. If you modify ANY inline `<script>` in miniCycle.html, y
 
 ### Deploy
 - [ ] Commit changes with version number in message
-- [ ] Push to `main` — Netlify auto-deploys
+- [ ] Push to `main` — GitHub Actions deploys once the tests pass
 - [ ] Check Netlify dashboard for successful deploy
 
 ### After Deployment
