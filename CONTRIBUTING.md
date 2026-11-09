@@ -4,21 +4,21 @@ Contributions are welcome. miniCycle is source-available under a proprietary
 license (see [LICENSE](LICENSE)), which means forking and modifying the code
 requires prior written consent from Sparkin Creations.
 
-**That consent is granted on request, and it's a formality — not a hurdle.**
-Open an issue describing what you'd like to work on and you'll get written
-permission to fork the repository and submit a pull request.
+Getting that consent is easy. Open an issue describing what you'd like to work
+on and you'll get written permission to fork the repository and submit a pull
+request.
 
 ## How to contribute
 
 1. **Open an issue first.** Describe the bug you want to fix or the change you
-   want to make. This is also where permission to fork is granted, so it's the
-   required first step rather than an optional courtesy.
+   want to make. This is where permission to fork is granted, so this step is
+   required.
 2. **Wait for a reply.** You'll get a yes (usually), plus any context on how the
    change should fit the existing architecture.
 3. **Fork, branch, and build.** Follow
-   [web/docs/start-here/FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md)
-   — it covers setup, the five daily code patterns, and the PR checklist.
-4. **Open the pull request.** Every CI gate must pass — see
+   [web/docs/start-here/FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md),
+   which covers setup, the code patterns you'll use most, and the PR checklist.
+4. **Open the pull request.** Every CI check has to pass. See
    [Before you open the PR](#before-you-open-the-pr) below.
 
 ## Good first contributions
@@ -28,30 +28,27 @@ permission to fork the repository and submit a pull request.
 - Documentation fixes and improvements
 - Accessibility work (ARIA labels, keyboard navigation, screen reader support)
 
-Look for issues labeled `good first issue`. For anything larger — especially
-changes that span multiple modules — open an issue to discuss the approach
-before writing code. The dependency-injection wiring path is four layers deep
-and a missed layer fails silently, so it's worth a conversation first.
+Look for issues labeled `good first issue`. For anything larger, especially
+changes that span multiple modules, open an issue to talk through the approach
+before writing code. Dependency injection is wired through four layers and a
+missed layer fails silently.
 
 ## What you should know before starting
 
 - **Read [web/docs/start-here/HOW_MINICYCLE_WORKS.md](web/docs/start-here/HOW_MINICYCLE_WORKS.md).**
-  Roughly 20 minutes, and it covers the whole architecture end to end.
-- **The one rule for new code:** data changes go through `AppState.update()`.
-  Nearly every other convention in the codebase exists to protect that one.
-  (Older code still reads through the `loadMiniCycleData()` wrapper — a ratcheted
-  gate keeps that count from growing. Don't add to it.)
-- **No build step to develop.** Clone, `npm install`, `npm start`, open the file.
-  The esbuild bundle is for releases only.
+  It takes about 20 minutes and covers the architecture from start to finish.
+- **Data changes go through `AppState.update()`.** Most other conventions in the
+  codebase are there to support that.
+- **There's no build step for development.** Clone, `npm install`, `npm start`,
+  and open the app. The esbuild bundle is only for releases.
 
 ## Before you open the PR
 
-`npm test` is **not** the full test set — it runs the module suites only. CI runs
-four more suites and eight static gates, and a PR that skips them goes red on
-checks you never saw locally. Run these from `web/`:
+`npm test` only runs the module suites. CI runs more suites and static checks than
+that, so run these from `web/` before opening a PR:
 
 ```bash
-# Static gates — no server needed
+# Static checks, no server needed
 npm run lint                # ESLint; fails above the --max-warnings ratchet
 npm run validate:di         # DI declarations vs actual usage
 npm run validate:legacy     # legacy-read ratchet
@@ -59,31 +56,29 @@ npm run validate:inline     # inline scripts in miniCycle.html
 npm run validate:comments   # identifiers named in comments must exist
 npm run validate:builtins   # no post-es2020 built-ins (they ship verbatim)
 npm run validate:labels     # every getLabel() key resolves
-npm run validate:docs       # docs links, sidebar, and CLAUDE.md routing
+npm run validate:docs       # docs links and sidebar
 
-# Module suites — need a server
+# Module suites, need a server
 npm start                   # separate terminal, port 8080
 npm test
 
-# Real-app suites — each starts its own server
+# Real-app suites, each starts its own server
 npm run test:layout
 npm run test:a11y
 npm run test:sw
 npm run test:meta
 npm run test:journey
+npm run test:contrast
 ```
 
-**`npm run test:journey` fails on DI wiring gaps.** It drives the real app, and a
-dependency a module never declared does not throw — it silently removes a feature.
-The suite now treats the app's own `DI access` / `missing required dep` warning as a
-failure. Unit tests cannot cover this: they inject dependencies directly and so pass
-while the manifest is wrong.
+**`npm run test:journey` catches DI wiring gaps.** If a module uses a dependency it
+never declared, nothing throws and the feature just stops working. The journey suite
+drives the real app and fails on the app's `DI access` / `missing required dep`
+warnings. Unit tests can't catch this because they inject dependencies directly.
 
-**If you add a module file, `npm run test:sw` is the one that matters.** Its
-precache drift guard fails when a module in the boot graph is missing from
-`BOOT_CRITICAL` in `service-worker.js`. Nothing else catches it — a new module
-can pass the entire browser suite and every other gate while leaving offline
-boot broken.
+**If you add a module file, run `npm run test:sw`.** It fails when a module in the
+boot graph is missing from `BOOT_CRITICAL` in `service-worker.js`. Nothing else
+catches that, and the module would break offline boot.
 
 Full reference: [web/docs/working-on-code/VALIDATION_GATES.md](web/docs/working-on-code/VALIDATION_GATES.md).
 
@@ -92,12 +87,12 @@ Full reference: [web/docs/working-on-code/VALIDATION_GATES.md](web/docs/working-
 By submitting a pull request, you agree that your contribution is assigned to
 Sparkin Creations and may be distributed under the project's license. You retain
 no separate claim over merged code. This keeps the licensing of the codebase
-unambiguous — with a view-only license, the inbound grant in GitHub's terms
-("under the same terms" as the repository) doesn't resolve cleanly on its own.
+clear, because GitHub's default inbound terms ("under the same terms" as the
+repository) don't work cleanly with a view-only license.
 
 If that doesn't work for you, say so in the issue and we can talk about it.
 
-## What this doesn't change
+## Trademarks and derivative products
 
 - The miniCycle name, logo, and brand identity remain trademarks of Sparkin
   Creations and are not covered by contribution permission.
@@ -107,12 +102,10 @@ If that doesn't work for you, say so in the issue and we can talk about it.
 
 ## Related
 
-- [web/docs/start-here/FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md)
-  — step-by-step walkthrough for your first PR
-- [web/docs/project-info/CONTRIBUTING.md](web/docs/project-info/CONTRIBUTING.md)
-  — the architecture guide: how modules communicate and how to extend them
-  safely. This file covers *whether and how* to contribute; that one covers
-  *what the code expects of you* once you start.
+- [web/docs/start-here/FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md):
+  a step-by-step walkthrough of your first PR
+- [web/docs/project-info/CONTRIBUTING.md](web/docs/project-info/CONTRIBUTING.md):
+  how modules communicate and how to extend them safely
 
 ## Questions
 
