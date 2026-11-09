@@ -1,3 +1,8 @@
+## [2.674] - 2026-11-09
+- docs(deploy): install real dependencies for the manual Netlify upload
+- fix(focus): keep Redo clear of the tabs in very small windows
+
+
 ## [2.673] - 2026-11-09
 - ci: deploy from GitHub Actions instead of Netlify builds
 - fix(menu): keep Personalization inside its button on narrow phones
