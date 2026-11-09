@@ -110,8 +110,7 @@ which keeps uncommitted work and untracked files out of the upload.
 ```bash
 CLEAN=$(mktemp -d)
 git archive HEAD | tar -x -C "$CLEAN"
-ln -s "$PWD/web/node_modules" "$CLEAN/web/node_modules"
-(cd "$CLEAN/web" && node scripts/build-web.cjs)
+(cd "$CLEAN/web" && npm ci && node scripts/build-web.cjs)
 cd "$CLEAN"
 npx --yes netlify-cli login
 npx --yes netlify-cli deploy --no-build --dir=web/dist --site ad0a9a8c-26f4-4084-8404-125e79ec017c
@@ -126,14 +125,17 @@ again with `--prod` added. `--prod` publishes straight to minicycle.app.
   `/package.json` (must be 404) and a missing page against production. The status,
   `cache-control` and `content-security-policy` should match. On Nov 9 2026 they did.
   A draft also sends `x-robots-tag: noindex`, which is expected.
-- **Functions:** the click counter `track` has to be in the upload. `netlify api getDeploy
-  --data '{"deploy_id":"…"}'` lists it under `available_functions`.
+- **Functions:** the click counter `track` has to run, and being listed is not enough. On
+  the draft's address, `curl -X OPTIONS …/.netlify/functions/track` must return 204 and a
+  plain `GET` must return 401. A 502 means its packages did not make it into the upload.
 
 ### Gotchas
 
 - **`--no-build` is required.** Without it the tool tries to run the build itself.
 - **Run the deploy from the repo root,** where it reads `base = "web"` and finds
-  `web/netlify/functions`. It needs `web/node_modules` to bundle them.
+  `web/netlify/functions`. It needs a real `web/node_modules` to bundle them. A symlink
+  to another checkout uploads without any error, but the function then fails on every
+  request because `@netlify/blobs` is left out (Nov 9 2026).
 - **A red test run now blocks the release.** The `recurringPanelSummary` biweekly tests
   fail on Saturday nights Eastern time, when it is already Sunday in UTC. Re-run the
   workflow from the Actions tab once the date has rolled over; it can be started by hand.
