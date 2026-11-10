@@ -1,7 +1,7 @@
 # miniCycle Testing - Quick Reference
 
-**Last Updated**: January 7, 2026
-**Platforms**: Mac ✅ | iPad ✅ | iPhone ✅
+**Last verified:** Nov 10 2026
+**Platforms**: the browser runner is used on Mac, iPad and iPhone. CI runs Chromium (blocking) and WebKit (non-blocking).
 
 > **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
@@ -12,13 +12,19 @@
 ### Run Tests Manually (Browser)
 
 ```bash
-# 1. Start server
-cd miniCycle/web
-python3 -m http.server 8080
+# 1. Start server (from web/)
+cd web
+npm start              # scripts/serve.py on :8080 (python3 -m http.server 8080 also works)
 
 # 2. Open in browser
 # http://localhost:8080/tests/module-test-suite.html
 ```
+
+> "Run All Tests" clears the page origin's `localStorage` with no backup. `localhost:8080` is
+> the same origin as your local copy of the app, so a full run there wipes your local
+> routines. For a full manual run use the separate test origin instead:
+> `npm run start:test-origin`, then `http://localhost:8081/tests/module-test-suite.html`.
+> Single-module runs ("Run Tests") back up and restore storage.
 
 ### Run Tests on Mobile Devices (iPad/iPhone)
 
@@ -32,7 +38,9 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 # http://192.168.1.20:8080/tests/module-test-suite.html
 
 # 3. Run tests in browser
-# Tap "Run All Tests" or select individual modules
+# Select a module and tap "Run Tests".
+# "Run All Tests" is refused on a LAN IP: the runner only allows it on
+# localhost, 127.0.0.1 and test.minicycle.app (HERMETIC_TEST_ORIGINS).
 ```
 
 **Why test on mobile?**
@@ -47,8 +55,10 @@ ifconfig | grep "inet " | grep -v 127.0.0.1
 # Install (one-time)
 npm install
 
-# Run module suite
+# Run module suite (needs `npm start` running in another terminal: it loads localhost:8080)
 npm test
+npm test -- routineManager   # one module (or every module whose name matches)
+npm test -- --list           # list the registered modules
 
 # Real-app gating runners
 npm run test:layout    # layout-overlap regression (port 8077)
@@ -95,46 +105,25 @@ cp tests/MODULE_TEMPLATE.tests.js tests/myModule.tests.js
 
 ### 2. Write Tests
 
-**IMPORTANT:** Use `MODULE_TEMPLATE.tests.js` as your starting point - it includes localStorage protection!
+**IMPORTANT:** Use `MODULE_TEMPLATE.tests.js` as your starting point. Its `test()` comes from
+`createProtectedTest()` in `tests/testHelpers.js`, which saves the protected `localStorage`
+keys before each test and restores them afterwards, and awaits async test bodies.
 
 ```javascript
-export function runMyModuleTests(resultsDiv, isPartOfSuite = false) {
+import { setupTestEnvironment, createProtectedTest } from './testHelpers.js';
+
+export async function runMyModuleTests(resultsDiv) {
     resultsDiv.innerHTML = '<h2>🎯 MyModule Tests</h2>';
+    await setupTestEnvironment();
+
     let passed = { count: 0 }, total = { count: 0 };
 
-    // 🔒 localStorage Protection (automatically included in template)
-    let savedRealData = {};
-    if (!isPartOfSuite) {
-        const protectedKeys = ['miniCycleData', 'miniCycleForceFullVersion'];
-        protectedKeys.forEach(key => {
-            const value = localStorage.getItem(key);
-            if (value !== null) savedRealData[key] = value;
-        });
-    }
-
-    function restoreOriginalData() {
-        if (!isPartOfSuite) {
-            localStorage.clear();
-            Object.keys(savedRealData).forEach(key => {
-                localStorage.setItem(key, savedRealData[key]);
-            });
-        }
-    }
-
-    function test(name, testFn) {
-        total.count++;
-        try {
-            testFn();
-            resultsDiv.innerHTML += `<div class="result pass">✅ ${name}</div>`;
-            passed.count++;
-        } catch (error) {
-            resultsDiv.innerHTML += `<div class="result fail">❌ ${name}: ${error.message}</div>`;
-        }
-    }
+    // 🔒 localStorage protection + async-safe harness
+    const test = createProtectedTest(resultsDiv, passed, total);
 
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
-    test('module class is defined', () => {
+    await test('module class is defined', () => {
         if (typeof MyModule === 'undefined') {
             throw new Error('MyModule not found');
         }
@@ -142,50 +131,59 @@ export function runMyModuleTests(resultsDiv, isPartOfSuite = false) {
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;
 
-    // 🔓 CRITICAL: Restore data before return!
-    restoreOriginalData();
-
+    // Required: "Run All" scores the suite from this return value
     return { passed: passed.count, total: total.count };
 }
 ```
 
+`npm run test:meta` checks three things in every test file: a hand-written `test()` harness
+must await async bodies, every test must assert (or say in its name that it only checks for
+no throw), and the exported runner must return `{ passed, total }`.
+
 ### 3. Add to `module-test-suite.html`
 
-```html
-<!-- Import -->
-<script type="module">
-    import { runMyModuleTests } from './myModule.tests.js';
-</script>
+The page has five places to wire; copy an existing module such as `globalUtils` in each.
 
-<!-- Dropdown -->
+```html
+<!-- Dropdown (#module-select) -->
 <option value="myModule">MyModule</option>
 ```
 
 ```javascript
-// Loader
-if (moduleName === 'myModule') {
-    await import('../modules/myModule.js');
-    currentModule = 'myModule';
-}
+// Import of the test file (with the other imports)
+const { runMyModuleTests } = await import(`./myModule.tests.js?v=${cacheBuster}`);
 
-// Runner
-if (currentModule === 'myModule') {
-    runMyModuleTests(resultsDiv);
-}
+// loadAndExposeModule(): used by "Run All Tests"
+} else if (moduleKey === 'myModule') {
+    const mod = await import(`../modules/<folder>/myModule.js?v=${cacheBuster}`);
+    window.MyModule = mod.MyModule;
+
+// Dropdown change handler: loads the module for a single run
+} else if (moduleName === 'myModule') {
+    const mod = await import(`../modules/<folder>/myModule.js?v=${cacheBuster}`);
+    window.MyModule = mod.MyModule;
+    currentModule = 'myModule';
+
+// "Run Tests" handler
+} else if (currentModule === 'myModule') {
+    await runMyModuleTests(resultsDiv);
+
+// allModules list in the "Run All Tests" handler
+{ name: 'MyModule', key: 'myModule', runFn: runMyModuleTests, importPath: '../modules/<folder>/myModule.js' },
 ```
 
 ### 4. Add to `automated/run-browser-tests.cjs`
 
 ```javascript
-const modules = [
-    'themeManager',
-    'deviceDetection',
-    'routineLoader',
-    'globalUtils',
-    'notifications',
+const ALL_MODULES = [
+    'integration', 'themeManager', 'deviceDetection', 'routineLoader',
+    // ...
     'myModule'  // ← Add here
 ];
 ```
+
+The runner refuses to start if a `tests/*.tests.js` file is not in `ALL_MODULES`
+(`assertNoUnregisteredTests()`), so a new test file cannot be left out of CI by accident.
 
 ---
 
@@ -344,16 +342,20 @@ test('debug test', () => {
 
 ### Run Single Module (Browser Console)
 
+On the test page, select the module in the dropdown first (that loads the module under
+test), then in the console:
+
 ```javascript
-import { runGlobalUtilsTests } from './globalUtils.tests.js';
+// The console cannot use a static import; use a dynamic one
+const { runGlobalUtilsTests } = await import('./globalUtils.tests.js');
 const resultsDiv = document.getElementById('results');
-runGlobalUtilsTests(resultsDiv);
+await runGlobalUtilsTests(resultsDiv);
 ```
 
 ### Reset Test Environment
 
 ```javascript
-function test(name, testFn) {
+async function test(name, testFn) {
     total.count++;
     try {
         // Reset before each test
@@ -362,7 +364,7 @@ function test(name, testFn) {
         delete window.AppState;
         delete window.showNotification;
 
-        testFn();
+        await testFn();   // a local harness must await (npm run test:meta checks this)
         // ...
     } catch (error) {
         // ...
@@ -372,47 +374,24 @@ function test(name, testFn) {
 
 ---
 
-## 📊 Current Test Coverage (100% ✅)
+## 📊 Current Test Coverage
 
-| Module | Tests | Status |
-|--------|-------|--------|
-| Integration (E2E) | 11 | ✅ |
-| ThemeManager | 18 | ✅ |
-| DeviceDetection | 17 | ✅ |
-| CycleLoader | 11 | ✅ |
-| StatsPanel | 27 | ✅ |
-| ConsoleCapture | 33 | ✅ |
-| State | 41 | ✅ |
-| RecurringCore | 72 | ✅ |
-| RecurringIntegration | 25 | ✅ |
-| RecurringPanel | 55 | ✅ |
-| GlobalUtils | 36 | ✅ |
-| Notifications | 39 | ✅ |
-| DragDropManager | 67 | ✅ |
-| MigrationManager | 38 | ✅ |
-| DueDates | 17 | ✅ |
-| Reminders | 20 | ✅ |
-| ModeManager | 28 | ✅ |
-| RoutineSwitcher | 22 | ✅ |
-| UndoRedoManager | 52 | ✅ |
-| GamesManager | 21 | ✅ |
-| OnboardingManager | 33 | ✅ |
-| ModalManager | 50 | ✅ |
-| MenuManager | 29 | ✅ |
-| SettingsManager | 33 | ✅ |
-| TaskCore | 34 | ✅ |
-| TaskValidation | 25 | ✅ |
-| TaskUtils | 23 | ✅ |
-| TaskRenderer | 16 | ✅ |
-| TaskEvents | 22 | ✅ |
-| TaskDOM | 43 | ✅ |
-| **Total** | _see [PROJECT_STATS.md](../PROJECT_STATS.md)_ | **100%** ✅ |
+Code coverage is not measured in this project (see the "Jest removed" note in
+`web/package.json`), so there is no coverage percentage to quote. What exists:
 
-**Recent Improvements (October 2025):**
-- ✅ **100% Test Coverage Achieved** - All tests passing (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
-- ✅ **ConsoleCapture** - Fixed 3 auto-start edge case tests
-- ✅ **GitHub Actions** - CI/CD integrated for automated testing
-- ✅ **Multi-version Testing** - Node.js 18.x and 20.x compatibility
+- **Which modules have a test suite:** `ALL_MODULES` in `tests/automated/run-browser-tests.cjs`
+  (`npm test -- --list` prints it). The runner fails if a `tests/*.tests.js` file is missing
+  from that list.
+- **How many tests and test files:** [PROJECT_STATS.md](../PROJECT_STATS.md). Per-module
+  counts are printed by `npm test`.
+- **Whether they pass:** the `test` job in `.github/workflows/test.yml` runs `npm test` on
+  every push and pull request and blocks the deploy when it fails.
+
+**History (October 2025):**
+- All tests passing at that date
+- **ConsoleCapture** - Fixed 3 auto-start edge case tests
+- **GitHub Actions** - CI/CD integrated for automated testing
+- **Multi-version Testing** - Node.js 18.x and 20.x compatibility
 
 ---
 
@@ -474,10 +453,15 @@ function createTestDOM() {
 > The `isPartOfSuite` pattern below remains as **defense-in-depth**: it only matters if you
 > run a test file directly on an origin that *does* hold real data (e.g. against the live app
 > origin). On the isolated test origin it is a harmless no-op.
+>
+> It is the **older** pattern. Some earlier test files carry it; new files copied from
+> `MODULE_TEMPLATE.tests.js` get per-test save and restore from `createProtectedTest()` in
+> `tests/testHelpers.js` instead and do not need it. The runner page also backs up and
+> restores `localStorage` itself around every single-module run.
 
 #### The Pattern: `isPartOfSuite`
 
-**Every test file should include this pattern:**
+**The pattern, as the older test files have it:**
 
 ```javascript
 export async function runYourModuleTests(resultsDiv, isPartOfSuite = false) {
@@ -520,9 +504,8 @@ export async function runYourModuleTests(resultsDiv, isPartOfSuite = false) {
 **How it works:**
 
 1. **When running individually** (`isPartOfSuite = false`):
-   - Backs up real user data before tests
-   - Restores it after tests complete
-   - User data is safe! ✅
+   - Backs up the two protected keys before tests
+   - Restores them after tests complete
 
 2. **When running as part of the suite** (`isPartOfSuite = true`):
    - Skips per-file backup/restore — the suite runs on the isolated test origin, so there is no real data to protect
@@ -530,10 +513,9 @@ export async function runYourModuleTests(resultsDiv, isPartOfSuite = false) {
 
 **Benefits:**
 
-- ✅ User data never gets lost
-- ✅ Tests can run individually without risk
-- ✅ Automated test suite passes `isPartOfSuite = true` for efficiency
-- ✅ Clean, simple pattern used across all 30+ test files
+- ✅ The protected keys survive an individual run
+- ✅ "Run All Tests" passes `isPartOfSuite = true`, so the per-file backup is skipped there
+- ✅ Simple pattern, already present in the older test files
 
 #### Automated Script for Adding Protection
 
@@ -546,8 +528,8 @@ node tests/automated/add-localStorage-backup.js
 This script:
 - Adds `isPartOfSuite` parameter to test function
 - Inserts backup/restore code at correct locations
-- Updates all test files in one run
-- Safe to run multiple times (detects existing protection)
+- Only touches the files named in its `TEST_FILES_TO_FIX` list (a fixed list from when it was written), so add a file there first
+- Safe to run multiple times (skips a file that already contains `savedRealData`)
 
 ---
 
@@ -564,9 +546,9 @@ const originalConsole = {
     info: console.info
 };
 
-function test(name, testFn) {
+async function test(name, testFn) {
     try {
-        testFn();
+        await testFn();
     } finally {
         // ✅ ALWAYS restore console methods
         console.log = originalConsole.log;
@@ -589,7 +571,7 @@ function test(name, testFn) {
 **Properly handle async operations:**
 
 ```javascript
-test('async operation', async () => {  // ✅ async function
+await test('async operation', async () => {  // ✅ async function, and the call is awaited
     const state = createStateManager();
 
     await state.init();  // ✅ Wait for completion
@@ -710,19 +692,16 @@ test('rolls back on update error', async () => {
 - Simple structure
 - Basic cleanup
 - Happy path focused
-- ~15-20 tests per module
+- Fewer tests per module
 
 **Later Tests (After Lessons Learned):**
 - Complete state save/restore
 - Finally blocks everywhere
 - Error path testing
-- ~40-70 tests per module
+- More tests per module
 
-**Result:**
-- Started: 148 tests (some bugs)
-- Current: 340+ tests (reliable)
-- **130% increase** in coverage
-- **0 known bugs** in test infrastructure
+**Result (as of late 2025, when this section was written):** the suite had more than doubled
+in size from its first version. Current counts are in [PROJECT_STATS.md](../PROJECT_STATS.md).
 
 ---
 
@@ -793,8 +772,8 @@ test('updatePreview generates task preview', async () => {
 **Real Impact:**
 - RoutineSwitcher tests found a data-shape bug in first run (4/22 tests failed)
 - Bug was in `updatePreview()` accessing `schemaData.cycles` instead of `schemaData.data.routine`
-- Single fix: `const cycles = schemaData.data?.routine || {};`
-- All 22 tests passed after fix - **100% success rate**
+- Single fix at the time: `const cycles = schemaData.data?.routine || {};` (today the preview reads routines through `getRoutines()` in `modules/routine/routineSwitcherPreview.js`)
+- Every RoutineSwitcher test passed after the fix
 
 ---
 
@@ -830,61 +809,22 @@ test('updatePreview generates task preview', async () => {
 
 ### Workflow Configuration
 
-```yaml
-# Automated Tests - Runs on every push/PR
-name: Automated Tests
+The workflow is named **Automated Tests**. It runs on every push and pull request to `main`
+or `develop`, and can be started by hand from the Actions tab. Read the file for the exact
+steps; its jobs are:
 
-on:
-  push:
-    branches: [ main, develop ]
-  pull_request:
-    branches: [ main, develop ]
-  workflow_dispatch: # Manual trigger
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [18.x, 20.x]
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Setup Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v4
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-        cache-dependency-path: web/package-lock.json
-
-    - name: Install dependencies
-      working-directory: ./web
-      run: npm ci
-
-    - name: Run module suite
-      working-directory: ./web
-      run: npm test
-
-    - name: Run layout-overlap regression
-      working-directory: ./web
-      run: npm run test:layout
-
-    - name: Run offline boot + precache-drift guard
-      working-directory: ./web
-      run: npm run test:sw
-
-    - name: Run end-to-end user journey
-      working-directory: ./web
-      run: npm run test:journey
-```
+| Job | What it runs | Blocking? |
+|-----|--------------|-----------|
+| `lint` | ESLint, the `validate:*` gates, and three script tests (`test:changelog`, `test:csp-sync`, `test:restore`) | Yes |
+| `test` | On Node.js 18.x and 20.x: installs Playwright Chromium, starts `python3 -m http.server 8080`, then `npm test`, `npm run test:layout`, `npm run test:sw`, `npm run test:meta`, `npm run test:journey`, `npm run test:lite -- --no-visual` | Yes |
+| `test-a11y` | `npm run test:a11y` and `CONTRAST_GATE=1 npm run test:contrast` | Yes |
+| `test-webkit` | `npm run test:webkit` (the module suite on WebKit) | No (`continue-on-error: true`) |
+| `deploy` | Builds and uploads the site; only on `main`, after `lint`, `test` and `test-a11y` pass | — |
 
 ### Features:
 - ✅ Runs on every push to `main` or `develop`
-- ✅ Runs on all pull requests
+- ✅ Runs on all pull requests to those branches
 - ✅ Tests on Node.js 18.x and 20.x
-- ✅ Generates coverage reports
 - ✅ Manual trigger available in GitHub UI
 - ✅ Results visible in commit status checks
 
@@ -902,7 +842,7 @@ jobs:
 ## 🎉 Changelog
 
 ### November 9, 2025 - v2.3 - Cross-Platform Fixes
-- **Cross-Platform Testing** - All tests now pass on Mac, iPad, and iPhone (100%)
+- **Cross-Platform Testing** - All tests passed on Mac, iPad, and iPhone at this date
 - **Safari Compatibility** - Fixed DeviceDetection boolean type errors
 - **Reminders Module** - Fixed state properties and interval management (6 bugs)
 - **Test Isolation** - Fixed ConsoleCapture localStorage pollution
@@ -910,7 +850,7 @@ jobs:
 - **Bug Fixes**: DeviceDetection (2), Reminders (6), ConsoleCapture (1)
 
 ### October 31, 2025 - v2.2
-- **100% Test Coverage** - All tests passing (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
+- All tests passing at this date (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current counts)
 - **GitHub Actions** - CI/CD integration complete
 - **ConsoleCapture Fixes** - Resolved 3 auto-start edge case tests
 - **Multi-version Testing** - Node.js 18.x and 20.x support
@@ -921,6 +861,5 @@ jobs:
 
 ---
 
-**Version**: 2.3 (Cross-Platform 100% + Safari Fixes)
-**Last Updated**: November 9, 2025
+**Version**: 2.3 (Cross-Platform + Safari Fixes)
 **Maintained By**: sparkinCreations

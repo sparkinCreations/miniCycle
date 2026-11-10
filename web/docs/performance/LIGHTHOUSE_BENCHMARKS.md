@@ -1,11 +1,21 @@
-# Performance Benchmarks
+# Lighthouse Benchmarks
+
+**Last verified:** Nov 10 2026
 
 > Lighthouse audit results and Core Web Vitals for minicycle.app
 
 **Last Tested:** July 19–20, 2026 · **App Version:** 2.308 (entry-hashed bundled build)
 **Test Environment:** Lighthouse CLI (headless Chrome, mobile simulation: slow-4G, 4× CPU)
 
-## Current (July 2026, mobile simulation — the strict profile)
+> **Status:** a log of dated Lighthouse runs, not a statement of today's scores. Every
+> number below was measured on one machine on the date given and has not been re-measured
+> since. Nothing here is enforced: `web/lighthouserc.json` fails CI only on `viewport` and
+> `cumulative-layout-shift` (max 0.1); its category scores (performance ≥ 0.85,
+> accessibility ≥ 0.90, best-practices ≥ 0.90, seo ≥ 0.85) and timings are `warn`. CI also
+> runs the **desktop** preset against the built `dist/` (`.github/workflows/performance.yml`,
+> the Lighthouse CI job), which is a different profile from the mobile simulation recorded below.
+
+## Latest recorded run (July 2026, mobile simulation — the strict profile)
 
 | Category | Score |
 |----------|-------|
@@ -26,7 +36,10 @@ override — content lays out centered for the pre-override window (~485px) then
 at 412px. Real browsers never re-apply metrics: PerformanceObserver measured **CLS 0**
 at both desktop and mobile viewports through full boot. The v2.308 first-install
 no-reload fix removed a related mid-trace navigation. Median of ≥3 runs, and treat a
-0.787 reading as the artifact. History/context: memory + BUILD_PIPELINE_PLAN.md.
+0.787 reading as the artifact. Context for the pre-pipeline 6.2MB figure:
+[BUILD_PIPELINE_PLAN.md](../archive/BUILD_PIPELINE_PLAN.md) (archived); the on-device
+numbers are Baseline #3 in [BOOT_PERF_ROADMAP.md](../future-work/BOOT_PERF_ROADMAP.md).
+The CLS-artifact analysis itself is recorded only on this page.
 
 **Measurement discipline:** simulated LCP varies ±0.5s run-to-run; never cite a single
 run. Run in incognito/fresh profile — stored IndexedDB state and browser extensions
@@ -34,169 +47,21 @@ pollute results (a real extension once added 134KB of foreign CSS to a report).
 
 ---
 
-## Historical: December 12, 2025 (v1.474, desktop, Chromium 143)
+## Earlier runs
 
----
-
-## 🏆 Lighthouse Scores
-
-| Category | Score | Rating |
-|----------|-------|--------|
-| **Performance** | 98 | 🟢 Excellent |
-| **Accessibility** | 97 | 🟢 Excellent |
-| **Best Practices** | 100 | 🟢 Perfect |
-| **SEO** | 100 | 🟢 Perfect |
-
----
-
-## 📊 Core Web Vitals
-
-| Metric | Value | Target | Status | Description |
-|--------|-------|--------|--------|-------------|
-| **LCP** (Largest Contentful Paint) | 1.0s | < 2.5s | ✅ Pass | Time until main content is visible |
-| **FCP** (First Contentful Paint) | 0.9s | < 1.8s | ✅ Pass | Time until first content appears |
-| **TBT** (Total Blocking Time) | 0ms | < 200ms | ✅ Pass | Time main thread was blocked |
-| **CLS** (Cumulative Layout Shift) | 0.02 | < 0.1 | ✅ Pass | Visual stability score |
-| **Speed Index** | 0.9s | < 3.4s | ✅ Pass | How quickly content is visually populated |
-| **INP** (Interaction to Next Paint) | - | < 200ms | ✅ Pass | Interaction responsiveness |
-
----
-
-## 📈 Performance Panel Metrics
-
-From Chrome DevTools Performance profiling:
-
-| Metric | Value |
-|--------|-------|
-| **LCP** | 0.16s - 0.19s |
-| **CLS** | 0.01 - 0.03 |
-| **Total Load Time** | ~624ms |
-| **Passed Insights** | 12/12 |
-
-### Resource Timing Breakdown
-
-| Activity | Duration |
-|----------|----------|
-| Scripting | 174ms |
-| Rendering | 50-93ms |
-| System | 46-149ms |
-| Loading | 9-19ms |
-| Painting | 1-11ms |
-| **Total** | ~188-624ms |
-
----
-
-## 🌐 Network Resources
-
-| Resource | Transfer Size | Main Thread Time |
-|----------|---------------|------------------|
-| minicycle.app (1st party) | 102-717 KB | 106-112ms |
-| Google Fonts | 56.3-102 KB | 0ms |
-| Cloudflare CDN | 56.3-252 KB | 0ms |
-| HP Wolf Security Extension | 0-699 KB | 12-15ms |
-
-### Key Files Loaded
-
-- `minicycle` (HTML)
-- `miniCycle-styles.css`
-- `version.js`
-- `appInit.js`
-- `constants.js`
-- Google Fonts CSS (fonts.googleapis.com)
-- CDN libraries (cdnjs.cloudflare.com)
-
----
-
-## 🏗️ Architecture Validation
-
-These benchmarks validate key architectural decisions:
-
-### ✅ No-Build-Step Approach Works
-
-- **61 ES6 modules** loaded dynamically
-- **97 Performance score** achieved without bundling
-- Proves modular architecture doesn't sacrifice performance
-
-### ✅ Service Worker Caching Effective
-
-- Repeat visits benefit from SW cache
-- Offline functionality maintained
-- Cache versioning (v211) prevents stale assets
-
-### ✅ Dependency Injection Pattern
-
-- Clean module boundaries
-- No global namespace pollution
-- Lazy loading where appropriate
-
----
-
-## ⚠️ Known Issues & Recommendations
-
-### Current Issues
-
-| Issue | Impact | Priority |
-|-------|--------|----------|
-| Touch target size warning for `.dot` buttons | Lighthouse detection limitation | Info |
-| CLS from progress-container (0.017) | Minor visual stability | Low |
-| IndexedDB data affects audit | Testing artifact | Info |
-
-> **Note:** The `.dot` button touch targets are actually 44x44px (WCAG compliant) using the `background-clip: content-box` technique, but Lighthouse measures the visual bounding box (7-8px) rather than the clickable area.
-
-### Recommended Fixes
-
-#### 1. Add Image Dimensions
-
-```html
-<!-- Before -->
-<img src="assets/images/logo/logo.png" alt="miniCycle logo">
-
-<!-- After -->
-<img src="assets/images/logo/logo.png" alt="miniCycle logo" width="48" height="48">
-```
-
-#### 2. SEO Improvements
-
-Check for:
-- Meta description present and descriptive
-- Canonical URL set
-- Open Graph tags for social sharing
-- Structured data (JSON-LD)
-
-#### 3. Optional: Self-Host Google Fonts
-
-```css
-/* Download and serve fonts locally to eliminate external request */
-@font-face {
-  font-family: 'Your Font';
-  src: url('/assets/fonts/your-font.woff2') format('woff2');
-  font-display: swap;
-}
-```
-
----
-
-## 📅 Benchmark History
-
-| Date | Version | Performance | Accessibility | Best Practices | SEO |
-|------|---------|-------------|---------------|----------------|-----|
-| Dec 12, 2025 | 1.474 | 98 | 97 | 100 | 100 |
-| Dec 9, 2025 | 1.459 | 97 | 93 | 100 | 92 |
-
-*Update this table when running new audits to track performance over time.*
-
-### Recent Improvements (v1.474)
-
-- Fixed invalid `aria-role` → `role` attribute in taskDOM.js (+4 Accessibility)
-- Added WCAG 2.5.5 compliant touch targets for `.dot` buttons (44x44px)
-- Fixed progress-container CLS with explicit height
-- SEO improvements (+8 SEO)
+The December 2025 record (v1.474 and v1.459, from the DevTools Lighthouse panel, taken
+before the release build existed) and the budget table recommended then are archived:
+[LIGHTHOUSE_BENCHMARKS_DEC_2025.md](../archive/LIGHTHOUSE_BENCHMARKS_DEC_2025.md).
 
 ---
 
 ## 🧪 How to Run These Tests
 
 ### Lighthouse Audit
+
+From the command line, `npm run lighthouse` (run from `web/`) runs `lhci autorun` with
+`web/lighthouserc.json`; see [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md#lighthouse-ci).
+By hand in the browser:
 
 1. Open minicycle.app in Chrome/Edge
 2. Open DevTools (F12)
@@ -223,20 +88,6 @@ For real-user metrics, check:
 
 ---
 
-## 🎯 Performance Budget
-
-Recommended limits to maintain current scores:
-
-| Metric | Budget | Current |
-|--------|--------|---------|
-| Total JS | < 500 KB | ~300 KB |
-| Total CSS | < 100 KB | ~50 KB |
-| LCP | < 2.5s | 1.1s |
-| TBT | < 200ms | 10ms |
-| CLS | < 0.1 | 0.02 |
-
----
-
 ## 📚 Related Documentation
 
 - [FOLDER_STRUCTURE.md](../start-here/FOLDER_STRUCTURE.md) - Module organization
@@ -254,5 +105,4 @@ Recommended limits to maintain current scores:
 
 ---
 
-**Last Updated:** December 12, 2025
 **Maintainer:** sparkinCreations

@@ -106,8 +106,6 @@
   * [Testing Quick Reference](testing/TESTING_QUICK_REFERENCE.md)
   * [Testing Modal](testing/TESTING_MODAL.md)
   * [Performance Testing Guide](performance/PERFORMANCE_TESTING_GUIDE.md)
-  * [Performance Setup](performance/PERFORMANCE_SETUP.md)
-  * [Performance Summary](performance/PERFORMANCE_SUMMARY.md)
   * [Lighthouse Benchmarks](performance/LIGHTHOUSE_BENCHMARKS.md)
 
 * **Security & Error Handling**
@@ -222,6 +220,9 @@
 
   * **Superseded Docs (2026)** _(archived Nov 5 2026, docs audit round 1)_
     * [Developer Documentation Hub](archive/DEVELOPER_DOCUMENTATION.md)
+    * [Performance Testing Summary](archive/PERFORMANCE_SUMMARY.md) _(archived Nov 10 2026, docs audit round 3b)_
+    * [Performance Testing - Quick Setup Guide](archive/PERFORMANCE_SETUP.md) _(archived Nov 10 2026, docs audit round 3b)_
+    * [Lighthouse Benchmarks — December 2025 Record](archive/LIGHTHOUSE_BENCHMARKS_DEC_2025.md) _(archived Nov 10 2026, docs audit round 3b)_
 
   * **Historical Updates**
     * [October 2025 Improvements](archive/OCTOBER_2025_IMPROVEMENTS.md)

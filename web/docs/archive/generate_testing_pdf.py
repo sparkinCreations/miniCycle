@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# Archived Nov 10 2026 (docs audit round 3b): generator for the tester handout PDF beside it,
+# a manual-testing aid that nothing links to. Its UI steps were not re-checked against the app.
 """Generate a styled PDF of miniCycle feature testing directions."""
 
 import os
