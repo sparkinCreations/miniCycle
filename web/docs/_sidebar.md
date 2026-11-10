@@ -158,6 +158,7 @@
   * [Single-Source Consolidation](future-work/SINGLE_SOURCE_CONSOLIDATION_PLAN.md)
   * [State-as-Truth Migration](future-work/STATE_TRUTH_MIGRATION.md)
   * [Task Ordering System](future-work/TASK_ORDERING_SYSTEM_PLAN.md)
+  * [Vocabulary Themes — Label Coverage](future-work/VOCAB_THEME_LABEL_COVERAGE.md)
 
 
 * **Links**
