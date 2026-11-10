@@ -1,8 +1,8 @@
 # Docs Audit Plan — accuracy, numbers, archive, sidebar (round 0 + 12 rounds)
 
-> **Status:** in progress — rounds 0, 1, 2 and 3a done (round 2 shipped in v2.678,
-> Nov 10 2026; round 3a approved by MJ the same day, its questions still open);
-> round 3b audited Nov 10 2026 and waiting on MJ's review; round 4 is next.
+> **Status:** in progress — rounds 0, 1, 2, 3a and 3b done (round 2 shipped in v2.678,
+> Nov 10 2026; rounds 3a and 3b approved by MJ the same day, 3b with its archive
+> decisions; questions from both still open); round 4 is next.
 > Proposed Oct 27 2026;
 > revised Nov 5 2026 (round 0, two new gates, line-budgeted rounds, wider
 > scope — see *Decisions*).
@@ -122,7 +122,7 @@ below.
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
 | 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | ✅ audited Nov 6 2026 — see *Round 2 result* (questions open) |
 | 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`. **First job (MJ, Nov 7 2026):** `SCHEMA_2_6` becomes the only description of the stored shape — audit it against the code, carry in round 2's `DATA_SCHEMA_GUIDE` corrections (`showTaskInput` per routine, not in settings; `dueTime`; the recurring-template shape; `frequencyUnit`), then cut the guide's ~185-line copy of the shape and keep it as the short data-flow walkthrough + worked example, linking to `SCHEMA_2_6` (it stays a file: eight `modules/` comments cite it) | ✅ done Nov 10 2026 — see *Round 3a result* (questions open) |
-| 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | ✅ audited Nov 10 2026 — see *Round 3b result* (questions open) |
+| 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | ✅ done Nov 10 2026 — see *Round 3b result* (questions open) |
 | 4 | 13 | ~5,000 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
 | 5 | 13 | ~5,700 | **Working on Code** rest (5): `MAKING_CODE_CHANGES`, `MESSAGING_SURFACES`, `SECURITY_GUIDE`, `TESTING_GUIDE`, `VALIDATION_GATES`; **Security** (6 incl. `audits/`); **Deployment**: `BUILD_PROCESS`, `DEPLOYMENT` | pending |
 | 6 | 13 | ~5,000 | **Deployment** rest (4): `CLICK_TRACKING`, `PWA_OFFLINE_ARCHITECTURE`, `SERVICE_WORKER_UPDATE_STRATEGY`, `UPDATE-VERSION-GUIDE`; **Incidents** (5); **Architecture** A–B (4): `APPINIT_EXPLAINED`, `APPINIT_SYSTEM`, `ARCHITECTURE_OVERVIEW`, `BACKGROUND_PATTERN` | pending |
