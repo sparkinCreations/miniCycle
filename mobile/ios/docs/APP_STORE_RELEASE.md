@@ -84,6 +84,9 @@ lost certificate is recoverable. The Apple ID itself is the crown jewel; keep 2F
 
 ## Phase 4 — Store listing assets
 
+> Drafted 2026-11-10: copy, keywords, review notes and a first 6.9" screenshot set are in
+> [`APP_STORE_LISTING.md`](./APP_STORE_LISTING.md). Nothing is submitted yet.
+
 - [ ] **Name** (≤30 chars) + **subtitle** (≤30) + **description** + **keywords** (≤100 chars).
 - [ ] **Screenshots** — required: 6.9" (iPhone 17 Pro Max class) and 6.5"; optionally iPad.
       Capture from simulators: `xcrun simctl io <UDID> screenshot shot.png` (the exact
@@ -99,8 +102,8 @@ lost certificate is recoverable. The Apple ID itself is the crown jewel; keep 2F
       minicycle.app) should already cover it — data stays on-device, no collection.
 - [ ] **Privacy nutrition labels** in App Store Connect — declare **Data Not Collected**.
       (True: the only network call is the optional feedback form to web3forms.)
-- [ ] **Export compliance** — uses only standard HTTPS: answer "standard encryption, exempt"
-      (set `ITSAppUsesNonExemptEncryption = NO` in Info.plist to skip the per-upload prompt).
+- [x] **Export compliance** — uses only standard HTTPS. `ITSAppUsesNonExemptEncryption` is
+      `false` in Info.plist (2026-11-10), so there is no per-upload prompt.
 - [ ] **App Review notes** — mention it's fully offline/local so the reviewer isn't hunting
       for a login.
 
