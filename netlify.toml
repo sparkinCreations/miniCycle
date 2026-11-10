@@ -23,3 +23,6 @@
   base = "web"
   command = "npm install --include=dev && node scripts/build-web.cjs"
   publish = "dist"
+  # Netlify's own builds are off: the free plan's build minutes ran out in Nov
+  # 2026. The deploy job in .github/workflows/test.yml builds and uploads instead.
+  ignore = "exit 0"

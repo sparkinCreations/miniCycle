@@ -238,6 +238,19 @@ export async function runCycleImportManagerTests(resultsDiv) {
         if (!Object.prototype.hasOwnProperty.call(reloaded, key)) throw new Error('the routine vanished on a save and reload');
     });
 
+    await test('a dueDate with a time keeps the task and its date', async () => {
+        const { state } = await runImport({
+            name: 'Timestamped Due',
+            tasks: [
+                { id: 'd1', text: 'timestamped', dueDate: '2025-11-15T17:00:00Z' },
+                { id: 'd2', text: 'plain', dueDate: '2025-11-16' }
+            ]
+        });
+        const tasks = importedCycle(state).tasks;
+        if (tasks.length !== 2) throw new Error(`task dropped: ${tasks.length} of 2 imported`);
+        if (tasks[0].dueDate !== '2025-11-15') throw new Error(`expected the date part, got ${tasks[0].dueDate}`);
+    });
+
     await test('invalid dueDate values are nulled (bad format AND fake calendar date)', async () => {
         const { state } = await runImport({
             name: 'Bad Dates',

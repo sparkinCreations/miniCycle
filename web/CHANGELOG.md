@@ -1,3 +1,31 @@
+## [2.676] - 2026-11-10
+- fix(examples): repair four broken routine files
+- fix(import): keep tasks with timestamped due dates and import every opened file
+- fix(restore): refuse unusable files before the replace warning
+- docs(future-work): boot orchestration hardening notes
+- chore(ios): App Store prep - listing draft, 6.9" screenshots, export-compliance key
+
+
+## [2.675] - 2026-11-10
+- Add launch film highlights to the README
+- Add two sample GIFs
+- Add miniCycle launch video
+
+
+## [2.674] - 2026-11-09
+- docs(deploy): install real dependencies for the manual Netlify upload
+- fix(focus): keep Redo clear of the tabs in very small windows
+
+
+## [2.673] - 2026-11-09
+- ci: deploy from GitHub Actions instead of Netlify builds
+- fix(menu): keep Personalization inside its button on narrow phones
+- ci: run Playwright jobs on ubuntu-24.04
+- Update User Manual screenshots and instructions for the current app
+- docs: rewrite README and CONTRIBUTING, refresh screenshots
+- fix(site): rename the second Features header link to FAQ
+
+
 ## [2.671] - 2026-11-08
 - fix(ui): define --font-size-md; one name for Switch Routine
 - feat(ui): Focus View and Home polish, Stats and Routine switcher rebuilds

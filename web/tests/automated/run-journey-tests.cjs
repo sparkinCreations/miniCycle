@@ -5215,6 +5215,49 @@ async function journeyPreMigrationCopyFromSettings(browser, baseURL) {
 // v2.573 that check demanded the 2.6 layout, so every backup file a user had
 // made before the update was rejected as corrupt — while the version check right
 // beside it admitted 2.5. The reload migrates the restored document.
+// The installed app's "open with" hands files to launchQueue. Its guard against a
+// reload re-delivering a launch was a flag only a page reload ever consumed, so once
+// imports rendered in place the flag stuck and the next opened file was dropped.
+async function journeyOpenedFilesImport(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const routineFile = (title) => JSON.stringify({ name: title, title, tasks: [{ id: 'a', text: 'From file', completed: false, recurring: false, recurringSettings: {}, schemaVersion: 2 }], autoReset: true, cycleCount: 0, deleteCheckedTasks: false, recurringTemplates: {} });
+    const stubLaunchQueue = () => Object.defineProperty(window, 'launchQueue', { configurable: true, value: { setConsumer(fn) { window.__launchConsumer = fn; } } });
+    const { context, page } = await openFresh(browser, baseURL, { initScript: stubLaunchQueue });
+    const open = async (fileName, body) => {
+        await page.evaluate(([n, b]) => { void window.__launchConsumer({ files: [{ getFile: async () => new File([b], n, { lastModified: 1000 }) }] }); }, [fileName, body]);
+        await page.waitForTimeout(1200);
+        const offered = await page.evaluate(() => {
+            const choice = [...document.querySelectorAll('button')].filter(b => b.getClientRects().length).find(b => b.textContent.includes('Use as Template'));
+            if (choice) choice.click();
+            return !!choice;
+        });
+        await page.waitForTimeout(1600);
+        return offered;
+    };
+    const titles = () => page.evaluate(() => Object.values(JSON.parse(localStorage.getItem('miniCycleData')).data.routine).map(r => r.title));
+    try {
+        await page.waitForFunction(() => typeof window.__launchConsumer === 'function', null, { timeout: 10000 });
+        await open('First.mcyc', routineFile('First Opened'));
+        record('the first opened file imports', (await titles()).includes('First Opened'), JSON.stringify(await titles()));
+        await open('Second.mcyc', routineFile('Second Opened'));
+        record('a second file opened in the same window also imports', (await titles()).includes('Second Opened'), JSON.stringify(await titles()));
+
+        const count = (await titles()).length;
+        await page.reload({ waitUntil: 'domcontentloaded', timeout: 20000 });
+        await bootApp(page);
+        await page.waitForFunction(() => typeof window.__launchConsumer === 'function', null, { timeout: 10000 });
+        const reoffered = await open('Second.mcyc', routineFile('Second Opened'));
+        record('a reload re-delivering the same launch does not import it again', !reoffered && (await titles()).length === count, JSON.stringify({ reoffered, titles: await titles() }));
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'files opened with the installed app import, once each', failures };
+}
+
 async function journeySettingsRestoreAcceptsOlderBackup(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const inner = JSON.stringify(Object.assign(legacy25Document(), {
@@ -7822,6 +7865,7 @@ const JOURNEYS = [
     { name: 'title-keyed routines are re-keyed by id at boot; rename keeps the key', fn: journeyBootRepairsTitleKeyedRoutines },
     { name: 'the pre-migration copy is usable from Settings', fn: journeyPreMigrationCopyFromSettings },
     { name: 'a backup made before 2.6 restores from Settings', fn: journeySettingsRestoreAcceptsOlderBackup },
+    { name: 'files opened with the installed app import, once each', fn: journeyOpenedFilesImport },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },
     { name: 'drag reorder lands where released, reverts when abandoned, never moves hidden tasks', fn: journeyDragReorder },

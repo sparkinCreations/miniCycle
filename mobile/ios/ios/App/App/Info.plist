@@ -71,5 +71,9 @@
 	<true/>
 	<key>LSSupportsOpeningDocumentsInPlace</key>
 	<true/>
+	<!-- Only standard HTTPS (the optional feedback form). Declaring it here skips the
+	     export-compliance question App Store Connect otherwise asks on every upload. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 </dict>
 </plist>

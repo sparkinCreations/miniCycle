@@ -84,8 +84,11 @@ path here fails **silently** — it routes to a missing file and degrades every 
 
 ## SHIPPING — Push = Production Deploy
 
-**Every push to `main` triggers a Netlify build of `web/dist/` and deploys it** — driven by
-the **repo-root `netlify.toml`** (the build authority; do not delete it — `web/netlify.toml`
+**Every push to `main` deploys.** Since Nov 2026 the `deploy` job in `.github/workflows/test.yml`
+builds `web/dist/` and uploads it once lint, the browser tests and the a11y tests pass (a red
+run means nothing ships). Netlify's own builds are off (`ignore = "exit 0"`) because the free
+plan's build minutes ran out. Build settings still live in
+the **repo-root `netlify.toml`** (do not delete it — `web/netlify.toml`
 is headers/redirects only, and its [build] block is NOT read). Since v2.301 JS and CSS entries are
 content-hashed (`/build/` tree + module map + `build/styles/main-*.css`). `?v=` is NOT gone:
 `version.js?v=` is a live production request and has to stay query-busted — it is the file

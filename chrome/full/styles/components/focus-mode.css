@@ -1607,4 +1607,11 @@ body.focus-mode #complete-all-and-help-window-container {
         padding-left: 1px;
         font-size: calc(var(--font-size-xs) - 2px);
     }
+
+    /* Too narrow for both arrows on the tabs' left, where a slightly wider font
+       ran Redo into them. One arrow either side leaves the tabs the most room. */
+    body.focus-mode #redo-btn {
+        left: auto;
+        right: calc(env(safe-area-inset-right, 0px) + 2px);
+    }
 }

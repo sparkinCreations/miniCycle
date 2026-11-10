@@ -1101,22 +1101,24 @@ async function runBootSequence() {
     window.launchQueue.setConsumer(async (launchParams) => {
       if (!launchParams.files?.length) return;
 
-      // Guard against reload loop: processImportedData calls location.reload()
-      // and the launchQueue re-fires on reload in some browsers
-      if (sessionStorage.getItem('__mcyc_file_import_pending')) {
-        sessionStorage.removeItem('__mcyc_file_import_pending');
-        return;
-      }
-
       try {
         const fileHandle = launchParams.files[0];
         const file = await fileHandle.getFile();
         const name = file.name.toLowerCase();
         if (!name.endsWith('.mcyc') && !name.endsWith('.json')) return;
-        const content = await file.text();
 
-        // Set flag before import (processImportedData will reload)
-        sessionStorage.setItem('__mcyc_file_import_pending', '1');
+        // A reload can hand this page the same launch again, which would import
+        // the file twice. Skip only that case. Imports render in place now, so a
+        // plain "import pending" flag was never cleared and swallowed the next
+        // file opened in this window (found Nov 2026).
+        const launchedFile = `${file.name}|${file.size}|${file.lastModified}`;
+        const navigationType = performance.getEntriesByType('navigation')[0]?.type;
+        if (navigationType === 'reload' && sessionStorage.getItem('__mcyc_file_import_pending') === launchedFile) {
+          return;
+        }
+
+        const content = await file.text();
+        sessionStorage.setItem('__mcyc_file_import_pending', launchedFile);
 
         const { processImportedData } = await import(
           `../ui/cycleImportManager.js?v=${APP_VERSION}`

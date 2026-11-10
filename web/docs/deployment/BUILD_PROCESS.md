@@ -15,12 +15,12 @@
 DEV   npm start            → python serves web/ — pristine source, ?v= cache-busting,
                               no build step, all tests run against source. UNCHANGED.
 
-PROD  push to main         → Netlify runs the build (per ROOT netlify.toml) and
-                              publishes web/dist/ (bundled, minified, hashed)
+PROD  push to main         → GitHub Actions runs the build once the tests pass and
+                              uploads web/dist/ to Netlify (bundled, minified, hashed)
 ```
 
-**Nothing about local development changed.** `dist/` is gitignored and only exists on
-Netlify (or when you run the build locally to verify). The `?v=` mechanism now exists
+**Nothing about local development changed.** `dist/` is gitignored and only exists in
+the CI deploy job (or when you run the build locally to verify). The `?v=` mechanism now exists
 **for dev only** — production cache identity comes from content hashes.
 
 ---
@@ -56,6 +56,95 @@ The fix and current contract:
 
 ---
 
+## Deploying without Netlify build minutes (Nov 2026)
+
+The free plan's build minutes ran out in November 2026, which pauses every build on the
+team until the next month. The sites stay online, but a push no longer reaches them.
+Netlify still accepts finished files, and an upload of already-built files uses no build
+minutes, so GitHub Actions now does the building. MasterMath runs the same setup.
+
+### How a push reaches the site
+
+1. A push to `main` starts `.github/workflows/test.yml`. App code still goes through
+   `update-version.sh` ([The release rule](#the-release-rule-unchanged) has not changed).
+2. The `deploy` job waits for `lint`, `test` and `test-a11y`. `test-webkit` is
+   informational and does not hold it up. If a required job fails, nothing deploys.
+3. The job runs `npm ci` and `node scripts/build-web.cjs`, then uploads `web/dist` with
+   `netlify-cli deploy --no-build --prod`.
+4. The service worker on each visitor's device then finds the new version on the server.
+   The iOS, Android, desktop and Chrome builds carry their own copy of the app and only
+   change when a new build of each one ships.
+
+`ignore = "exit 0"` in the repo-root `netlify.toml` stops Netlify from starting its own
+build on each push. The build settings in that file are still the deploy configuration.
+
+### Setting this up on a repo
+
+1. **Test an upload first.** Build the site, then run the deploy command without `--prod`
+   (see below). That makes a draft at its own address and leaves the live site alone.
+2. **Add a `deploy` job** that needs the blocking test jobs and carries the site's ID. Use
+   the job in `test.yml` as the template. The site ID comes from `netlify sites:list` and
+   is not secret. The folder passed to `--dir` is whatever that site's build produces.
+3. **Create a personal access token** at <https://app.netlify.com/user/applications>, then
+   save it on that repo. The command asks for the value, so it stays out of shell history:
+
+   ```bash
+   gh secret set NETLIFY_AUTH_TOKEN --repo OWNER/REPO
+   ```
+
+   The token belongs only in GitHub's secrets. Never paste it into a chat, a file or a
+   commit. To replace it, make a new one, delete the old one on Netlify, and run the same
+   command again.
+4. **Turn off Netlify's builds** by adding `ignore = "exit 0"` under `[build]`. Do this
+   last, or in the same push as the job, so the site is never left with no way to deploy.
+
+Check the repo's visibility too: GitHub limits free Actions minutes on private repos, and
+not on public ones.
+
+### One-time upload from a Mac
+
+Use this when CI cannot deploy, for example when an unrelated test is failing and a change
+needs to go out. Run it from the repo root. `git archive` makes a copy of the last commit,
+which keeps uncommitted work and untracked files out of the upload.
+
+```bash
+CLEAN=$(mktemp -d)
+git archive HEAD | tar -x -C "$CLEAN"
+(cd "$CLEAN/web" && npm ci && node scripts/build-web.cjs)
+cd "$CLEAN"
+npx --yes netlify-cli login
+npx --yes netlify-cli deploy --no-build --dir=web/dist --site ad0a9a8c-26f4-4084-8404-125e79ec017c
+```
+
+That last command publishes a draft and prints its address. Check the draft, then run it
+again with `--prod` added. `--prod` publishes straight to minicycle.app.
+
+### What to check on a draft
+
+- **Pages and redirects:** compare `curl -sI` for `/`, `/app`, `/version.js`,
+  `/package.json` (must be 404) and a missing page against production. The status,
+  `cache-control` and `content-security-policy` should match. On Nov 9 2026 they did.
+  A draft also sends `x-robots-tag: noindex`, which is expected.
+- **Functions:** the click counter `track` has to run, and being listed is not enough. On
+  the draft's address, `curl -X OPTIONS …/.netlify/functions/track` must return 204 and a
+  plain `GET` must return 401. A 502 means its packages did not make it into the upload.
+
+### Gotchas
+
+- **`--no-build` is required.** Without it the tool tries to run the build itself.
+- **Run the deploy from the repo root,** where it reads `base = "web"` and finds
+  `web/netlify/functions`. It needs a real `web/node_modules` to bundle them. A symlink
+  to another checkout uploads without any error, but the function then fails on every
+  request because `@netlify/blobs` is left out (Nov 9 2026).
+- **A red test run now blocks the release.** The `recurringPanelSummary` biweekly tests
+  fail on Saturday nights Eastern time, when it is already Sunday in UTC. Re-run the
+  workflow from the Actions tab once the date has rolled over; it can be started by hand.
+- **`dist/` is over 1 GB,** but only files Netlify does not already have are uploaded.
+- **Going back to Netlify builds:** remove the `ignore` line and the `deploy` job in the
+  same push. Otherwise each push deploys twice.
+
+---
+
 ## The release rule (unchanged)
 
 **Every push to `main` is a production deploy.** But a deploy is NOT a release:
@@ -72,7 +161,7 @@ The fix and current contract:
 
 ## What `scripts/build-web.cjs` does
 
-`npm run build:web` (or Netlify automatically):
+`npm run build:web` (or the CI deploy job automatically):
 
 1. **Entry points = EVERY module** (`modules/**/*.js` + `miniCycle-main.js`, ~133) — not
    just dynamic-import targets, because the stable-path shims (below) must cover every

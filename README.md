@@ -1,342 +1,205 @@
 # miniCycle
 
-**Turn Your Routine Into Progress**
+Checklists that reset when you finish them.
 
-**Last verified:** Nov 6 2026
+miniCycle is a free routine manager. You build a list, work through it, and it resets so you can run it again. Each finished run counts as a cycle, and your cycle count is how you see progress over time. It's made for the things you repeat: a morning routine, a workout, a closing shift, a cleaning list.
 
-A free, privacy-first routine manager with automatic task cycling, gamification, and offline support. Repeatable checklists that reset on completion — not one-and-done to-dos, not a daily habit tracker. Complete your routine, watch it reset, and track your cycles over time.
+It works offline and doesn't need an account. Your routines stay on your device.
+
+**[Open miniCycle](https://minicycle.app/app)** · [Product page](https://minicycle.app) · [User manual](https://minicycle.app/legal/user-manual.html) · [Chrome extension](https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi)
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/main-view.jpg" alt="Main View" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/cycle-complete.jpg" alt="Cycle Complete" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/dark-mode.jpg" alt="Dark Mode" width="200"/>
+  <img src=".github/readme/launch.webp" alt="Launch film highlights: a morning routine is checked off and resets, then the app changes colors and switches to dark mode" width="700"/>
 </p>
 
----
+<p align="center">
+  <img src=".github/readme/home.jpg" alt="Home View with a morning routine partly checked off" width="220"/>
+  <img src=".github/readme/focus.jpg" alt="Focus View showing the same routine with the toolbar hidden" width="220"/>
+  <img src=".github/readme/dark.jpg" alt="A workout routine in dark mode" width="220"/>
+</p>
+
+<p align="center">
+  <img src=".github/readme/desktop-home.jpg" alt="miniCycle on a desktop screen" width="700"/>
+</p>
 
 ## Features
 
-### Routine Cycling
-The core mechanic — add your routine tasks, complete them all, and they automatically reset for the next cycle. Your cycle count tracks how many times you've completed your routine.
+### Cycles
 
-- **Auto Cycle Mode** — tasks reset automatically when all are completed
-- **Manual Cycle Mode** — you decide when to reset
-- **To-Do Mode** — completed tasks are removed instead of cycled (for one-off lists)
+Add your tasks and check them off. What happens at the end depends on the mode you pick:
+
+- **Auto Cycle** resets the list as soon as everything is checked.
+- **Manual Cycle** waits until you press Complete Cycle.
+- **To-Do Mode** clears finished tasks instead of resetting them, for one-off lists.
+
+Each task has its own row of option buttons, and you can choose which ones show.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/todo-mode.jpg" alt="To-Do Mode" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/task-options.jpg" alt="Task Options" width="200"/>
+  <img src=".github/readme/cycle-complete.jpg" alt="The checkmark shown when a cycle completes" width="200"/>
+  <img src=".github/readme/todo.jpg" alt="To-Do Mode with two chores checked and a Clear Chores button" width="200"/>
+  <img src=".github/readme/task-options.jpg" alt="Option buttons open on a task" width="200"/>
 </p>
 
-### Multiple Routines
-Create and switch between separate routines — morning, workout, cooking, work, etc. Each routine has its own tasks, cycle count, stats, and theme.
+### Routines
 
-- Search, sort, and filter your routine library
-- Import/export routines as `.mcyc` files to share with others
-- Per-routine storage size tracking
+Keep as many routines as you like and switch between them. Each one has its own tasks, cycle count and theme. You can search and sort them, and share one with someone else as a `.mcyc` file ([format details](https://minicycle.app/pages/mcyc-format.html)). There are sample routines to start from if you don't want to begin with a blank list.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/routine-switcher.jpg" alt="Routine Switcher" width="200"/>
+  <img src=".github/readme/routine-switcher.jpg" alt="The routine browser showing five routines" width="200"/>
 </p>
 
-### Recurring Tasks & Due Dates
-Schedule tasks to appear on a repeating basis — daily, weekly, monthly, or custom intervals. Set due dates with calendar picker for deadline tracking.
+### Focus View
 
-- Flexible frequency options with advanced scheduling (hourly, daily, weekly, biweekly, monthly, yearly, specific dates)
-- Automatic activation when the next occurrence arrives
-- Full management panel for all recurring tasks
-- Due date badges with overdue highlighting
+Focus View hides the header and toolbar so the routine gets the whole screen. It has three tabs: Task shows one task at a time, Routine shows the full list, and Stats shows your progress.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/recurring-panel.jpg" alt="Recurring Tasks" width="200"/>
+  <img src=".github/readme/desktop-focus.jpg" alt="Focus View on a desktop screen in dark mode" width="700"/>
 </p>
 
-### Gamification
-Stay motivated with achievements, milestones, unlockable themes, and a mini-game that reward consistency.
+### Recurring tasks, due dates and reminders
 
-- **Achievement Badges** — unlock by reaching cycle and task milestones (5, 25, 50, 75, 100)
-- **Milestone Celebrations** — overlay animations for major achievements
-- **Progress Tracking** — see how close you are to the next unlock
-- **Mini-Game** — Task Order unlocks at 100 cycles
+Tasks can come back on a schedule: hourly, daily, weekly, every two weeks, monthly, yearly, or on specific dates. Tasks can also have due dates, which get a badge and are highlighted once they're overdue. Reminders repeat at whatever interval you set.
+
+miniCycle also reminds you to back up every 14 days, every 25 cycles, or every 100 cleared tasks, since your data only lives on your device.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/achievements.jpg" alt="Achievements" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/milestone-badges.jpg" alt="Milestone Badges" width="200"/>
+  <img src=".github/readme/recurring.jpg" alt="The Recurring Tasks panel" width="200"/>
+  <img src=".github/readme/reminders.jpg" alt="The Reminders and Notifications dialog" width="200"/>
 </p>
 
-### Vocabulary Themes
-Unlock 5 themes that transform a routine's language, icons, and color palette to match its context:
+### Stats and rewards
 
-| Theme | Unlocks At | Example Vocabulary |
-|-------|-----------|-------------------|
-| Classic | Default | tasks, cycles, complete |
-| Habit Tracker | 5 cycles | habits, streaks, check in |
-| Fitness | 25 cycles | workouts, reps, finish set |
-| Scholar | 50 cycles | studies, sessions, review |
-| Cleaning | 75 cycles | chores, sweeps, clean up |
+The Stats panel shows how far along the current cycle is, your cycle count, and your badges. Each routine also keeps a history log and a list of cleared tasks you can restore.
 
-Each routine can use a different theme — your cooking routine can speak "Cleaning" while your study routine speaks "Scholar." Themes change both vocabulary and the entire color scheme.
+Badges unlock at 5, 25, 50, 75 and 100 cycles, or at a matching number of cleared tasks. The first four unlock vocabulary themes and the last one unlocks a mini-game, Whack-a-Order.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/themes.jpg" alt="Vocabulary Themes" width="200"/>
+  <img src=".github/readme/stats.jpg" alt="The Stats panel with a progress ring and five badges" width="200"/>
+  <img src=".github/readme/achievements.jpg" alt="The Achievements list" width="200"/>
 </p>
 
-### Stats & History
-Swipe left on the main view to access detailed statistics for your current routine.
+### Vocabulary themes
 
-- Completion percentage ring and cycle count
-- Full cycle history log
-- Cleared tasks archive with restore option
+A theme changes a routine's colors and the words the app uses for it, so a workout can talk about exercises instead of tasks. Each routine can have its own.
+
+| Theme | Unlocks at | A task is a | A cycle is a |
+|---|---|---|---|
+| Classic | Start | task | cycle |
+| Habit Tracker | 5 cycles | habit | check-in |
+| Fitness | 25 cycles | exercise | workout |
+| Scholar | 50 cycles | topic | study session |
+| Cleaning | 75 cycles | chore | clean sweep |
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/stats-panel.jpg" alt="Stats Panel" width="200"/>
+  <img src=".github/readme/fitness.jpg" alt="A routine using the green Fitness theme" width="200"/>
+  <img src=".github/readme/themes.jpg" alt="The theme picker" width="200"/>
 </p>
 
 ### Personalization
-Customize colors, backgrounds, and display preferences to make miniCycle yours.
 
-- Quick color themes and custom color picker
-- Save, import, and export color presets
-- Custom background images
-- Dark mode toggle
-- Checkmark style options (fitted, minimal, larger, or none)
+You can change the colors, save them as presets, set your own background image, and turn dark mode on or off (it's a manual switch; it doesn't follow your system setting). Presets can be imported and exported.
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/personalization.jpg" alt="Personalization" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/settings.jpg" alt="Settings" width="200"/>
+  <img src=".github/readme/personalization.jpg" alt="The Personalization panel" width="200"/>
+  <img src=".github/readme/settings.jpg" alt="The Settings dialog" width="200"/>
 </p>
 
-### Reminders & Notifications
-Set per-task reminders with flexible scheduling — minutes, hours, or days — with optional browser notifications and due date alerts.
+### Accessibility
 
-- Automatic backup reminders (every 14 days, 25 cycles, or 100 cleared tasks)
-- Due date notifications for approaching deadlines
+miniCycle has a high contrast mode, adjustable font sizes, a reduced motion setting that also follows your system, keyboard navigation, and labels for screen readers. The target is WCAG AA.
+
+CI checks that custom controls are named and keyboard-operable, and runs axe color contrast checks per theme and view. Zoom and actual screen reader behavior are still tested by hand.
+
+### Also included
+
+- Search and filter tasks by name, status, priority, due date or recurring, and sort them
+- Reorder by dragging or with arrow buttons
+- Undo and redo (Ctrl+Z / Cmd+Z), plus keyboard shortcuts for common actions
+- A customizable Quick Actions menu
+- 14 guided tours
+- Full backup and restore
 
 <p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/reminders.jpg" alt="Reminders" width="200"/>
+  <img src=".github/readme/search.jpg" alt="Task search and filters" width="200"/>
+  <img src=".github/readme/tour.jpg" alt="A guided tour step pointing at the mode selector" width="200"/>
 </p>
 
-### Accessibility (WCAG AA target)
-- Reduced motion support (respects OS preference + manual toggle)
-- High contrast mode
-- Adjustable font sizes (Small, Default, Large, Extra Large)
-- Keyboard navigation and ARIA labels
-- Focus management and focus trapping in modals
-- What is verified automatically, in CI: accessible names and keyboard operability of custom controls on the real app surfaces (`npm run test:a11y`), and axe colour contrast per theme and view, gated at zero serious violations (`npm run test:contrast`; text over background images is reported, not judged). Zoom, reduced motion and screen-reader behaviour are checked by hand.
+## Where it runs
 
-### More
-- **Search & Filter** — filter by name, status, priority, due date, or recurring; sort by A-Z, priority, or due date
-- **Drag & Drop** — reorder tasks by dragging or arrow buttons (custom Safari ghost)
-- **Undo/Redo** — full undo history for task and cycle actions (Ctrl+Z / Cmd+Z)
-- **Focus Mode** — distraction-free view hiding all navigation chrome
-- **Guided Tours** — interactive walkthroughs for the major features
-- **Quick Actions** — customizable fast-access toolbar in the hamburger menu
-- **Sample Routines** — prebuilt routines (Daily Routine, Cardio, QA Inspection, etc.) to get started quickly
-- **Offline Support** — works fully offline as a Progressive Web App
-- **Backup & Restore** — full backup/restore of all routines and settings
+- **Browser:** [minicycle.app/app](https://minicycle.app/app). You can install it as a PWA from there and use it offline.
+- **Chrome:** [miniCycle](https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi) opens in the side panel. [miniCycle Lite](https://chromewebstore.google.com/detail/minicycle-lite/mfbedmndcmhileaofjfmepcgofdipeeo) is the smaller version.
+- **iOS, Android, macOS, Windows:** this repo has Capacitor and Electron builds that wrap the same web app.
+- **Older devices:** browsers below Chrome 80, Safari 13.1 or Firefox 74 are sent to [Lite](https://minicycle.app/lite/miniCycle-lite.html), a separate version that doesn't need modern JavaScript.
 
-<p align="center">
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/search-tasks.jpg" alt="Search & Filter" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/focus-mode.jpg" alt="Focus Mode" width="200"/>
-  <img src="web/assets/images/screenshots/Example/user-manual/v3/guided-tour.jpg" alt="Guided Tour" width="200"/>
-</p>
+**Privacy:** the app has no accounts, analytics or tracking. The marketing pages count button clicks with a self-hosted counter that stores no personal data. Details are in the [privacy policy](https://minicycle.app/legal/privacy.html).
 
----
+## How it's built
 
-## Try It
+miniCycle is plain JavaScript with no framework. I wanted to understand each layer, so I built the pieces a framework would normally hand you:
 
-**[minicycle.app](https://minicycle.app)** — works instantly in the browser, no account required.
+- **Dependency injection.** Modules declare what they need in `diBase.js`, and manifests wire them together at boot. That avoids circular imports and shared globals, and it lets each module be tested on its own.
+- **Labels.** User-facing text goes through `getLabel()`, which handles plurals and variables. It's also what makes vocabulary themes possible, since a theme can override any label for one routine.
+- **Boot phases.** `orchestrator → coreBoot → featureBoot → uiBoot` makes sure state exists before modules are wired, and modules are wired before the UI renders.
+- **State.** All writes go through `AppState.update()`, which handles saving and undo.
+- **CSS tokens.** Colors, spacing and type live in `styles/base/variables.css`, and dark mode and themes override those values.
+- **Offline and releases.** A service worker serves the app from cache. Release builds use esbuild and content-hashed filenames, and there's no build step for development.
+- **Security.** Inline scripts are allowed by hash through CSP, with no `'unsafe-inline'` for scripts in the app. User text is rendered with `textContent`.
 
-### Install as an App
-1. Visit [minicycle.app](https://minicycle.app) on any device
-2. Look for "Install App" or "Add to Home Screen"
-3. Use miniCycle as a native-like app with offline support
+If you want the details, start with [How miniCycle Works](web/docs/start-here/HOW_MINICYCLE_WORKS.md) or the [architecture docs](web/docs/architecture/ARCHITECTURE_OVERVIEW.md).
 
-All data stays on your device. No servers, no accounts, no tracking.
+| | |
+|---|---|
+| App modules | 176 (about 110,000 lines) |
+| CSS | 45 files (about 32,000 lines) |
+| Browser tests | 4,208 |
+| Label strings | about 2,100 |
 
----
-
-## Why Vanilla JS?
-
-miniCycle is built entirely with vanilla JavaScript — no React, no Vue, no framework. This is an intentional choice, not a limitation. Every architectural layer exists because a real problem demanded it, and building it by hand means every line is understood, not just imported.
-
-### Philosophy
-
-**Dependency Injection from scratch.** The app uses a custom DI framework (`diBase.js`) with `required()` and `optional()` dependency declarations, lazy getter resolution, and manifest-based wiring. This exists because the app's modules need to reference each other without circular imports or global state — the same problem Angular's DI solves, built here to understand how and why it works.
-
-**A full label system instead of hardcoded strings.** Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. This started as a way to keep text consistent and evolved into the foundation for the vocabulary theme system — where the entire app's language changes based on your routine's context.
-
-**A three-phase boot sequence under an orchestrator.** `orchestrator → coreBoot → featureBoot → uiBoot` controls startup order so that state is ready before modules wire, modules wire before instances create, and instances create before the UI renders. This prevents an entire class of race conditions that plague large vanilla JS apps.
-
-**No `window.*` fallbacks for dependencies.** Dependencies are explicitly injected. If a module needs `document.body`, it receives a `getBody()` helper through DI. This makes modules testable in isolation and the dependency graph visible. (No gate counts globals: `miniCycle.html` exposes a few window-scoped helpers, and module code has one known custom global — see [PROJECT_STATS.md](web/docs/PROJECT_STATS.md).)
-
-The result is an app that solves the same problems frameworks solve — but with full visibility into every layer. The understanding paid off in both directions: miniCycle later gained an esbuild release pipeline (content-hashed bundles) without touching its architecture, and the studio's second app, [MasterMath](https://mastermath.app), ships on React + Vite — framework fluency and from-scratch depth, by way of the same codebase lessons.
-
----
-
-## By the Numbers
-
-Module, test, CSS and doc counts change with every release, so they live in one
-generated place: [PROJECT_STATS.md](web/docs/PROJECT_STATS.md) (also published as
-JSON at <https://minicycle.app/stats.json>).
-
-What the numbers cover:
-
-- **Automated tests** — the browser suite (`npm test`) plus offline-boot, layout,
-  meta, journey, accessibility and contrast suites. A pass rate, not code coverage,
-  which is not measured.
-- **Validation gates** — static checks that run in CI or before release (CSP hashes,
-  HTML, docs links, DI declarations, appContext API surface, manifest `provides`,
-  inline-script contracts, comment references, ES built-in floor, label registries,
-  duplicate keys, required-dep chaining, factory-reset coverage, cache headers);
-  full list in [VALIDATION_GATES.md](web/docs/working-on-code/VALIDATION_GATES.md).
-- **DI-manifested modules** load across 8 phases (`PHASES` in
-  `modules/boot/moduleManifests.js`).
-
----
+These were accurate at version 2.672. The test count measures tests that pass, and code coverage isn't measured. Current numbers are in [PROJECT_STATS.md](web/docs/PROJECT_STATS.md).
 
 ## Development
 
-### Prerequisites
-- Node.js (for test dependencies)
-- Python 3 (for the dev server)
+You'll need Node.js and Python 3.
 
-### Setup
 ```bash
 git clone https://github.com/sparkinCreations/miniCycle.git
 cd miniCycle/web
 npm install
-npm start        # HTTP server on localhost:8080
+npm start
 ```
 
-### Commands
+Then open http://localhost:8080/miniCycle.html.
+
 ```bash
-npm start          # Python HTTP server on port 8080
-npm test           # Playwright browser tests (server must be running)
-npm run lint       # ESLint with security + SonarJS plugins
-npm run perf       # Performance benchmarks
-npm run lighthouse # Lighthouse CI audit
+npm test             # browser tests (needs npm start running)
+npm run test:journey # end-to-end flows on the real app
+npm run test:layout  # layout and overlap checks
+npm run test:sw      # offline boot
+npm run test:a11y    # keyboard and naming checks
+npm run test:contrast
+npm run lint
+npm run build:web    # release bundle in web/dist
 ```
 
-### Project Structure
-```
-miniCycle/
-├── web/
-│   ├── miniCycle.html              # Main entry point (PWA)
-│   ├── service-worker.js           # Cache-first SW with version verification
-│   ├── version.js                  # APP_VERSION + CACHE_VERSION (single source of truth)
-│   ├── modules/                    # ES6 modules (strict DI, no window.* fallbacks)
-│   │   ├── boot/                   # orchestrator → coreBoot → featureBoot → uiBoot
-│   │   ├── core/                   # appState, appContext, diBase, constants
-│   │   ├── task/                   # Task CRUD, rendering, drag-drop
-│   │   ├── ui/                     # Modals, menus, settings, search, import/export, gestures, guided tours
-│   │   ├── recurring/              # Scheduling, matching, panel, settings
-│   │   ├── features/               # Themes, stats, achievements, history, reminders
-│   │   ├── routine/                # Routine lifecycle, switching, migration
-│   │   ├── labels/                 # Label system + vocabulary theme overrides
-│   │   ├── utils/                  # Notifications, device detection, validation
-│   │   ├── storage/                # backupManager (IndexedDB)
-│   │   ├── progress/               # Cycle completion tracking
-│   │   ├── platform/               # capacitorBridge (iOS/Android) + desktopBridge (Electron); no-op on web
-│   │   ├── testing/                # In-app testing modal (deferred, loaded on demand)
-│   │   └── other/                  # Plugin system
-│   ├── styles/                     # Token-based CSS (variables.css foundation)
-│   ├── tests/                      # Playwright browser tests
-│   ├── scripts/                    # build-web.cjs, update-version.sh, validators, tooling
-│   ├── lite/                       # Frozen ES5 fallback for old devices
-│   └── docs/                       # Developer guides & architecture docs
-├── chrome/                         # Chrome extension (MV3) — generated from web/ + hand-built lite popup
-├── mobile/                         # Native mobile builds
-│   ├── android/                    # Capacitor app — WebView shell over the byte-identical web app
-│   └── ios/                        # Capacitor app (SPM-based) — same web payload, iOS shell
-├── desktop/                        # Electron app (macOS + Windows) — same generated web payload, desktop shell
-├── shared/                         # Reserved for platform-agnostic logic (empty by design)
-├── .github/workflows/              # CI pipelines (tests + Lighthouse + perf)
-└── CLAUDE.md                       # Implementation rules & patterns
-```
-
-### Architecture
-
-#### Dependency Injection
-Every module declares its dependencies through `createDIModule()` from `diBase.js` with `required()` and `optional()` declarations. Dependencies are wired via manifest-based resolution in `featureBoot.js` — no circular imports, no global state, no `window.*` fallbacks. Lazy getter resolution ensures dependencies aren't evaluated until first access.
-
-#### Boot Sequence
-An orchestrator runs three phases, each with its own timeout (`BOOT_TIMEOUTS.PHASE_1` / `PHASE_2` / `PHASE_3` in `core/constants.js`):
+Those suites and the `validate:*` scripts also run in GitHub Actions. [VALIDATION_GATES.md](web/docs/working-on-code/VALIDATION_GATES.md) explains each check.
 
 ```
-orchestrator.js (sequence control + boot UI)
-  → Phase 1: coreBoot.js     — AppState, GlobalUtils, migration
-  → Phase 2: featureBoot.js  — moduleLoader loads the manifests, wires ALL DI
-  → Phase 3: uiBoot.js       — event listeners, UI finalization
+web/       the app, its tests and its docs
+chrome/    Chrome extensions (full is generated from web/, Lite is hand-built)
+mobile/    iOS and Android apps (Capacitor)
+desktop/   macOS and Windows app (Electron)
+shared/    reserved for cross-platform code, currently empty
 ```
-
-Modules load across 8 phases: Core Utils → Theme/Visual → Task Management → Recurring → Cycle → UI Managers → Features → Testing. Each module can declare `requires`, `optionalDeps`, and `lazyRequires` to control wiring order.
-
-#### State Management
-Centralized `AppState.update(producer)` is the single mutation entry point for all state changes. Schema 2.6 organizes data into `routine`, `appState`, `settings`, `userProgress`, and `achievements`. Saves are debounced (`DEBOUNCE.STATE_SAVE`, 600ms) by default, with immediate save option for critical operations. A full undo/redo system captures snapshots with deduplication and signature tracking.
-
-#### Label System
-Every user-facing string flows through `getLabel()` with pluralization, interpolation, and theme-aware resolution. The vocabulary theme system layers theme-specific overrides on top of the default label set (`modules/labels/defaultLabels.js`). Themes are resolved per-routine, so different routines can display entirely different vocabulary simultaneously.
-
-#### CSS Architecture
-Token-based design system built on `variables.css` with semantic color palette, spacing scale, typography scale, and z-index layers. Dark mode is a manual toggle (`body.dark-mode` overrides the tokens); it does not follow the system setting. A `prefers-color-scheme` media query only paints a dark page background before the app has loaded, so a device in dark mode does not flash white. Reduced motion support auto-disables transitions via `prefers-reduced-motion`. Vocabulary themes apply color presets as `--pref-*` CSS variables at runtime.
-
-#### Service Worker
-Cache-first navigation with a `verifyVersionFresh()` safety net that checks version.js after serving cached content. Handles Safari's `redirected: true` response rejection with a `cleanResponse()` helper. Release builds content-hash JS and CSS (`/build/[name]-[hash].js`, immutable caching), so a changed file always gets a new name. `?v=` versioning is still live in production for `version.js` (the file that publishes `APP_VERSION`) and for dynamic sub-module imports (`?v=${APP_VERSION}`); HTML routes must never be long-cached (`npm run validate:cache`).
-
-#### Security
-- **CSP**: Strict Content Security Policy with SHA-256 hashes for the app's inline scripts (no `'unsafe-inline'` for scripts; `npm run validate:csp` blocks a release with an unhashed one)
-- **XSS Prevention**: `textContent` for all user data, `innerHTML` only for trusted static content (icons, labels)
-- **Headers**: HSTS (1 year), X-Content-Type-Options (nosniff); clickjacking protection via CSP `frame-ancestors` (X-Frame-Options is deliberately not set — see `web/netlify.toml`)
-- **Permissions Policy**: Geolocation, microphone, camera, and payment APIs blocked
-- **DOM Isolation**: All DOM access through DI helpers (`getElementById`, `querySelector`, `getBody`, etc.)
-
-### CI/CD
-GitHub Actions runs on every push and PR to main/develop:
-
-- **Test Pipeline** (`test.yml`): Node.js 18.x + 20.x matrix — the Playwright browser suite against Chromium, plus offline-boot/precache-drift, layout regression, test-suite meta guards, end-to-end journey and Lite suites; accessibility semantics and colour contrast in their own job; the browser suite on WebKit (non-blocking)
-- **Validation Gates** (`test.yml` + `performance.yml`): DI declarations, legacy-read ratchet, required-dep chaining, inline-script contracts, comment references, ES built-in floor, appContext API surface, manifest `provides`, factory-reset coverage, label registries, duplicate keys, cache headers, changelog range, CSP hash sync, restore-script generation, W3C HTML, docs links — most gated at zero, the rest one-way ratchets; CSP hash coverage gates every release before push
-- **Performance Pipeline** (`performance.yml`): Lighthouse CI audit + performance benchmarks
-- **Linting**: ESLint with `eslint-plugin-security` and `eslint-plugin-sonarjs` under a one-way `--max-warnings` ratchet
-
-### PWA Capabilities
-- **Standalone display** with window controls overlay support
-- **File handlers**: Opens `.mcyc` and `.json` files directly from the OS
-- **Shortcuts**: Quick Add Task, Open Lite, User Manual
-- **Offline**: Full functionality via service worker cache
-- **Install prompts**: Automatic detection for iOS Safari, Chrome, Edge
-
-### Browser Compatibility
-- **Full app**: any browser that parses optional chaining / nullish coalescing and has `globalThis` — Chrome 80+, Safari 13.1+, Firefox 74+, Edge (es2020 build target; the feature gate in `miniCycle.html` checks both, and a CI gate blocks newer built-ins from sneaking in)
-- **Mobile**: iOS Safari, Android Chrome (full PWA support)
-- **Legacy**: automatic feature-gate redirect to a static ES5 fallback in `web/lite/` for older devices
-
----
 
 ## Contributing
 
-Contributions are welcome. The license is view-only, so forking requires written
-consent — but that consent is granted on request and is a formality, not a hurdle.
-Open an issue describing what you'd like to work on and you'll get permission to
-fork and submit a pull request.
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) to get started, or
-[web/docs/start-here/FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md)
-for a step-by-step walkthrough of your first PR.
-
----
+Contributions are welcome. The license is view-only, so you'll need written permission before forking. Open an issue about what you'd like to work on and you can get that there. [CONTRIBUTING.md](CONTRIBUTING.md) has the rest, and [FIRST_CONTRIBUTION.md](web/docs/start-here/FIRST_CONTRIBUTION.md) walks through a first pull request.
 
 ## License
 
-This project is source-available under a proprietary license. You may view and study the code, but copying, modifying, distributing, or using it in other projects is not permitted. See [LICENSE](LICENSE) for full terms.
-
----
+miniCycle is source-available under a proprietary license. You can read and study the code, but you can't copy, modify, distribute or reuse it in other projects. See [LICENSE](LICENSE).
 
 ## About
 
-miniCycle is developed by [sparkinCreations](https://sparkincreations.com).
+miniCycle is made by [sparkinCreations](https://sparkincreations.com). [TaskCycle](https://taskcycle.app) and [MasterMath](https://mastermath.app) are also from the studio.
 
-- **App**: [minicycle.app](https://minicycle.app)
-- **Website**: [sparkincreations.com](https://sparkincreations.com)
-- **TaskCycle Demo**: [taskcycle.app](https://taskcycle.app) — a live demo of the upcoming full TaskCycle
-- **Support**: [Open an issue](https://github.com/sparkinCreations/miniCycle/issues)
+Found a bug or have an idea? [Open an issue](https://github.com/sparkinCreations/miniCycle/issues).
