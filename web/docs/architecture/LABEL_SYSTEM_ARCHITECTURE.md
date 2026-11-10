@@ -287,7 +287,7 @@ The hardcoded notification strings that remained outside the original tier scope
 ## Related Documentation
 
 - **[Contextual Theme System Plan](../archive/CONTEXTUAL_THEME_SYSTEM_PLAN.md)** — Full plan for contextual lenses that override labels
-- **[Label Registry Reference](../reference/LABEL_REGISTRY_REFERENCE.md)** — Complete audit of all 566 keys with source file locations
+- **[Label Registry Reference](../reference/LABEL_REGISTRY_REFERENCE.md)** — Partial catalog of label keys with the files that name them; `modules/labels/defaultLabels.js` is authoritative
 - **[Label System Integration Plan](../archive/LABEL_SYSTEM_INTEGRATION_PLAN.md)** — Migration plan and status
 - **[Theme Architecture](./THEME_ARCHITECTURE.md)** — Existing color theme system (separate from labels)
 - **[DI Patterns](../working-on-code/DI_PATTERNS.md)** — Why `defaultLabels.js` doesn't need DI (pure data pattern)

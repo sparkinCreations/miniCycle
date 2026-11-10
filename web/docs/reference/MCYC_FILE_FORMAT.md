@@ -1,6 +1,9 @@
 # .mcyc File Format Documentation
 
-**Last Updated:** September 19, 2026 — format 2.6 shipped with app v2.573 (priority as a level, one `autoClear` map; every 2.5 spelling still imports). Previous revision: August 2026.
+**Last verified:** Nov 10 2026
+
+Format 2.6 shipped with app v2.573 on September 19, 2026 (priority as a level, one `autoClear` map; every 2.5 spelling still imports).
+
 **Normative spec:** <https://minicycle.app/pages/mcyc-format> (source: `web/pages/mcyc-format.html`)
 
 > **This page is the long-form companion, not the specification.** The published page above
@@ -9,7 +12,8 @@
 >
 > **A `.mcyc` file is one routine.** Its root is `name` + `tasks` (plus optional `title`,
 > `autoReset`, `deleteCheckedTasks`, `cycleCount`, `theme`, `recurringTemplates`), matching
-> `/mcyc.schema.json`. Whole-app exports are a **different file type** — see
+> `/mcyc.schema.json`. The app's own exports add more optional root keys; see
+> [Top-Level Properties](#simple-format-single-cycle). Whole-app exports are a **different file type** — see
 > [Full-state `.json` backups](#full-state-json-backups-not-mcyc), which are *not* `.mcyc`
 > and are *not* accepted by the routine importer.
 
@@ -91,7 +95,7 @@ A `.mcyc` (miniCycle) file is a **JSON-formatted file** that stores miniCycle ro
 - **Imported** into miniCycle for instant routine setup
 - **Created manually** for custom workflows
 
-**File Extension:** `.mcyc`
+**File Extension:** `.mcyc` (the import picker, drag and drop and the PWA file handler also accept `.json`; Share names its file `<title>.mcyc.json` because share targets reject unknown extensions)
 **MIME Type:** `application/json`
 **Character Encoding:** UTF-8
 
@@ -99,12 +103,13 @@ A `.mcyc` (miniCycle) file is a **JSON-formatted file** that stores miniCycle ro
 
 ## Creating .mcyc Files
 
-The app writes `.mcyc` files from three places — **Share** (main menu), **Export**
-(Settings), and **Download** (routine switcher). Since v2.343 all three use one
-payload builder (`modules/utils/mcycPayload.js`); they differ in exactly one way:
+The app writes `.mcyc` files from three places — **Share** and **Download** in the
+main menu's Routine Actions section, and the download action in the routine
+switcher. Since v2.343 all three use one payload builder, `buildMcycPayload()`
+(`modules/utils/mcycPayload.js`); they differ in exactly one way:
 whether `history` and `clearedTasks` are included. **Share asks the sender** at
 share time ("Routine Only" vs "Include Full History", v2.345 — routine-only listed
-first; see Security & Privacy below). Export and Download always include them
+first; see Security & Privacy below). Both download paths always include them
 (backup semantics).
 
 ### Method 1: Export from miniCycle (Recommended)
@@ -113,13 +118,16 @@ The easiest way to create a `.mcyc` file is to export an existing cycle:
 
 1. **Open miniCycle** in your browser
 2. **Create your cycle** and add tasks
-3. **Open Settings** (gear icon)
-4. **Click "Export miniCycle"**
-5. **File downloads** as `Cycle_Name.mcyc`
+3. **Open the main menu** and expand **Routine Actions**
+4. **Click "Download"** and confirm
+5. **The file is saved** under the routine's title with a `.mcyc` extension (a save
+   dialog where the browser has one, a plain download otherwise). `buildMcycFilename()`
+   keeps the title as written, Unicode and spaces included, and replaces only the
+   characters a filename cannot hold
 
 **Advantages:**
 - ✅ Automatically generates valid structure
-- ✅ Includes all settings and metadata
+- ✅ Includes the routine's settings, recurring templates, history and cleared tasks
 - ✅ Handles IDs and timestamps automatically
 - ✅ No manual JSON editing required
 
@@ -155,7 +163,7 @@ For developers or advanced users, you can create `.mcyc` files manually:
 }
 ```
 
-**Save as:** `My_Daily_Routine.mcyc`
+**Save as:** My_Daily_Routine.mcyc
 
 ---
 
@@ -184,12 +192,26 @@ The `.mcyc` format. Lightweight and easy to edit.
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `name` | string | Yes | Unique identifier for the cycle |
+| `name` | string | Yes | Identifier for the routine. Must be present and non-empty or the file is rejected. An exported file carries the routine's storage key here; the importer never reuses it as a key (it generates a new id) and reads it only as the fallback for `title` |
 | `title` | string | No | Display name shown in UI. Falls back to `name` when omitted — `/mcyc.schema.json` requires only `name` and `tasks` |
 | `tasks` | array | Yes | Array of task objects |
 | `autoReset` | boolean | No | Auto-reset when all tasks complete (default: `true`) |
 | `cycleCount` | number | No | Number of times cycle completed (default: `0`) |
 | `deleteCheckedTasks` | boolean | No | To-Do mode: delete completed tasks (default: `false`) |
+
+The app's own exports also write these optional root keys, and the importer reads
+each of them (see [Cycle Object](#cycle-object) for the shapes):
+
+| Property | Type | Description |
+|----------|------|-------------|
+| `theme` | string | Vocabulary theme id (default `"classic"`). A theme the importing user has not unlocked falls back to their default theme, and an unknown id to `"classic"` |
+| `taskOptionButtons` | object\|null | Which option buttons show on a task row |
+| `recurringTemplates` | object | Recurring templates keyed by task id. Usually omit: see [Import Security](#import-security) for what is kept |
+| `reminders` | object\|null | Per-routine reminder settings |
+| `autoUncheckDaily` | object\|null | Auto-Uncheck Daily settings: `enabled`, `hour`, `minute`. The importer resets the runtime fields `lastResetDate` and `pendingNotification` |
+| `createdAt` | number\|null | When the routine was created. Written on export; the importer stamps its own time instead |
+| `history` | object\|null | Activity log. Present only in downloads and in shares sent with "Include Full History" |
+| `clearedTasks` | object\|null | Cleared-task records. Same rule as `history` |
 
 ---
 
@@ -204,7 +226,7 @@ routine importer rejects it.
 | Extension | `.mcyc` | `.json` (forced by `backupRestoreManager`) |
 | Contains | one routine | the whole app document |
 | Written by | `cycleExportManager` via `buildMcycPayload()` | `backupRestoreManager` |
-| Read by | the routine import button (`processImportedData`) | Settings → Restore, and the pre-boot rescue screen |
+| Read by | the routine import button (`processImportedData`) | Settings → Data Management → Restore All Routines, the first-run screen's "Restore from a backup file", and the pre-boot rescue screen |
 | Described by | `/mcyc.schema.json` | `docs/reference/SCHEMA_2_6.md` |
 
 `processImportedData` opens with a hard gate:
@@ -216,28 +238,32 @@ if (!importedData.name || !Array.isArray(importedData.tasks)) { /* rejected */ }
 A full-state file has neither key at its root, so **handing one to the routine importer
 produces "invalid format."** That is expected — restore it through Settings instead.
 
-Its shape follows the app's stored document (see `SCHEMA_2_6.md`, which is normative for it):
+It is a wrapper around the app's stored document, built by `buildBackupFile()` in
+`backupRestoreManager`:
 
 ```json
 {
-  "schemaVersion": "2.5",
-  "metadata": { /* app metadata */ },
-  "settings": { /* app settings */ },
-  "data": {
-    "cycles": {
-      "cycle_id": { /* cycle object */ }
-    }
-  },
-  "appState": { /* active cycle, mode */ },
-  "userProgress": { /* achievements */ },
-  "customReminders": { /* reminder settings */ }
+  "schemaVersion": "2.6",
+  "miniCycleData": "{ \"schemaVersion\": \"2.6\", \"metadata\": { }, \"settings\": { }, \"data\": { \"routine\": { } }, \"appState\": { } }",
+  "backupMetadata": {
+    "createdAt": 1789760998636,
+    "version": "<app version>",
+    "schemaVersion": "2.6",
+    "includesLiteStorage": false,
+    "source": "miniCycle App"
+  }
 }
 ```
+
+`miniCycleData` is a **string**: the whole stored document, serialized. Its shape is
+described in [SCHEMA_2_6.md](SCHEMA_2_6.md), which is normative for it. A backup may
+also carry a `liteStorage` object (the Lite app's keys). A backup made before 2.6 holds
+a 2.5 document (`data.cycles`, `appState.activeCycleId`); restore accepts it and the
+app migrates it on the next boot.
 
 **Use Cases:**
 - Full app backup
 - Migrating between devices
-- Sharing complete configurations
 - Testing/development
 
 ---
@@ -248,7 +274,8 @@ Its shape follows the app's stored document (see `SCHEMA_2_6.md`, which is norma
 
 > **"Required" here means "present in every file miniCycle exports"** — not "rejected if absent."
 > The only fields the importer actually enforces are the top-level `name` and `tasks`.
-> A task missing `id` gets one generated, non-string `text` is coerced, and `schemaVersion`
+> A task missing `id` gets one generated (so does one whose `id` is not 1 to 64 characters
+> of letters, digits, `.`, `_`, `:` or `-`), non-string `text` is coerced, and `schemaVersion`
 > is set for you. Author the required fields anyway; just do not expect an error if you skip one.
 
 Every task in the `tasks` array uses this structure:
@@ -279,7 +306,7 @@ Every task in the `tasks` array uses this structure:
 | `text` | string | **Yes** | - | Task description (emojis supported 🎯) |
 | `completed` | boolean | **Yes** | `false` | Completion status |
 | `schemaVersion` | number | **Yes** | `2` | Task schema version |
-| `dueDate` | string\|null | No | `null` | ISO 8601 date string |
+| `dueDate` | string\|null | No | `null` | ISO 8601 date string. The app stores and exports a plain date (`"YYYY-MM-DD"`); a full timestamp is accepted and cut to its date. Anything else imports as `null` |
 | `dueTime` | string\|null | No | `null` | Due time of day, `"HH:MM"` 24-hour local time (e.g. `"15:30"`), only meaningful beside a `dueDate`. Written since Oct 2026, kept as its own key so `dueDate` stays a plain date: a reader that predates it ignores the key and treats the task as date-only (notification at 9:00, overdue from the next day). Malformed values, or a time with no date, import as `null`. Not in the immutable 2.6 schema file; the schema's open task object accepts it. |
 | `priority` | string\|null | No | `null` | Priority LEVEL: `"high"`, `"medium"`, `"low"` or `null`. The app shows it as the reader's theme colour for that level — no colour travels in the file. *(2.5 spelling, still accepted: `highPriority` + `priorityColor`; a swatch colour of any theme names its level, any other hex its colour family; ignored when `priority` is present.)* |
 | `remindersEnabled` | boolean | No | `false` | Enable reminders for this task |
@@ -291,12 +318,15 @@ Every task in the `tasks` array uses this structure:
 
 ### Cycle Object
 
-In a full-state backup each cycle is stored under `data.cycles` (in a `.mcyc`, the routine
-*is* the root object and there is no such map):
+In the app's stored document (and so inside a full-state backup) each routine is stored
+under `data.routine`, keyed by its generated id (in a `.mcyc`, the routine *is* the root
+object and there is no such map). The stored shape is described field by field in
+[SCHEMA_2_6.md](SCHEMA_2_6.md#cycle-structure); the keys below are the ones a `.mcyc`
+shares with it:
 
 ```json
 {
-  "id": "cycle_1234567890",
+  "id": "routine-1789760998636-bqphapbbc",
   "title": "Morning Routine",
   "tasks": [ /* array of tasks */ ],
   "autoReset": true,
@@ -323,7 +353,7 @@ In a full-state backup each cycle is stored under `data.cycles` (in a `.mcyc`, t
 
 | Property | Type | Required | Description |
 |----------|------|----------|-------------|
-| `id` | string | **Yes** | Internal cycle ID. **Not** the `cycles` map key — cycles are keyed by **title** (creation, rename, duplication, and import all write `cycles[title]`), and this field is currently not read by the app |
+| `id` | string | **Yes** | The routine's generated id, which is also its key in `data.routine` (title keys were written until Nov 2026 and are repaired at boot; see SCHEMA_2_6.md). **Not part of a `.mcyc`:** the file carries `name` instead, and import always generates a fresh id |
 | `title` | string | **Yes** | Display name |
 | `tasks` | array | **Yes** | Array of task objects |
 | `autoReset` | boolean | No | Auto-reset behavior. **Import default is `true`** — the importer reads it as `!== false`, so a file that omits this field becomes an *Auto* routine. Write `false` explicitly for Manual. |
@@ -333,18 +363,21 @@ In a full-state backup each cycle is stored under `data.cycles` (in a `.mcyc`, t
 | `taskOptionButtons` | object\|null | No | Per-cycle task button visibility settings |
 | `recurringTemplates` | object | No | Recurring task templates |
 | `reminders` | object\|null | No | Per-routine reminder configuration |
+| `autoUncheckDaily` | object\|null | No | Auto-Uncheck Daily settings (`enabled`, `hour`, `minute`, plus two runtime fields) |
 | `theme` | string | No | Vocabulary theme identifier (default: `"classic"`) |
 | `history` | object | No | Per-routine activity log (v1.685+) |
 | `clearedTasks` | object | No | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) (v1.685+) |
 
 ### History Object (v1.685+)
 
-Per-routine history tracking. Travels with **backup** exports (Settings → Export,
-routine download). On Share it's the **sender's choice** at share time (v2.345;
+Per-routine history tracking. Travels with **backup** exports (main-menu Download,
+routine switcher download). On Share it's the **sender's choice** at share time (v2.345;
 v2.342–v2.344 stripped it unconditionally — privacy: a shared routine usually
-carries its structure, not the owner's event log). On import,
-each event's `details` object is reduced to an **allowlist** of the keys the
-history renderer actually reads (v2.343); unknown keys are dropped.
+carries its structure, not the owner's event log). On import with "Import with
+Progress", each event keeps only `type`, `timestamp` and `details`, and `details` is
+reduced to an **allowlist** (v2.343; `HISTORY_DETAIL_NUMBER_KEYS`,
+`HISTORY_DETAIL_STRING_KEYS` and `taskNames` in `cycleImportManager.js`); unknown
+keys are dropped. "Use as Template" imports no history at all.
 
 ```json
 {
@@ -363,15 +396,19 @@ history renderer actually reads (v2.343); unknown keys are dropped.
 }
 ```
 
-**Event Types:**
+**Event Types** (the `type` is free text to the importer; these are the ones
+`historyManager.logEvent()` has labels for):
 - `cycle_completed` - Routine cycle completed
 - `tasks_cleared` - Tasks cleared in To-Do mode
-- `achievement_unlocked` - Achievement milestone reached
+- `cycle_reset`, `achievement_unlocked`, `theme_changed`
+- `task_added`, `task_deleted`, `task_edited`
+- `task_priority_set`, `task_priority_removed`, `task_priority_color_changed`
+- `recurring_tasks_removed`, `tasks_removed_on_reset`
 
 ### Cleared Tasks Object (v1.685+)
 
-Per-routine tracking of cleared tasks in To-Do mode. Travels with **backup**
-exports (Settings → Export, routine download). On Share it's the **sender's
+Per-routine tracking of cleared tasks (To-Do mode clears and tasks removed on a cycle
+reset). Travels with **backup** exports (main-menu Download, routine switcher download). On Share it's the **sender's
 choice** at share time (v2.345; v2.342–v2.344 stripped it unconditionally —
 privacy: a shared routine usually shouldn't carry the owner's cleared task names).
 
@@ -409,7 +446,7 @@ legacy alias when reading old files).
 |----------|------|-------------|
 | `entries` | array | Recent cleared tasks (auto-pruned after 90 days) |
 | `taskText` | string | The cleared task's text (see trap above) |
-| `priority` / `hadDueDate` / `dueDate` / `remindersEnabled` / `autoClear` / `recurring` / `recurringSettings` / `clearedInMode` | various | Full metadata `_buildClearedEntry()` records, so **Recreate** rebuilds the task with settings intact. Since v2.342 the importer preserves all of these (validated) rather than dropping them |
+| `priority` / `hadDueDate` / `dueDate` / `dueTime` / `remindersEnabled` / `autoClear` / `recurring` / `recurringSettings` / `clearedInMode` | various | Full metadata `_buildClearedEntry()` records, so **Recreate** rebuilds the task with settings intact. Since v2.342 the importer preserves all of these (validated) rather than dropping them |
 | `totalCleared` | number | Lifetime count of cleared tasks (persists through prune) |
 | `autoPruneEnabled` | boolean | Whether to auto-remove entries older than 90 days |
 
@@ -418,30 +455,8 @@ legacy alias when reading old files).
 ### Settings Object
 
 Application-wide settings. These live in a **full-state backup only** — a `.mcyc` carries no
-`settings` object:
-
-```json
-{
-  "theme": null,
-  "darkMode": false,
-  "alwaysShowRecurring": false,
-  "autoSave": true,
-  "defaultRecurringSettings": {
-    "frequency": null,
-    "indefinitely": true,
-    "time": null
-  },
-  "unlockedThemes": [],
-  "unlockedFeatures": [],
-  "notificationPosition": { "x": 0, "y": 0 },
-  "notificationPositionModified": false,
-  "accessibility": {
-    "reducedMotion": false,
-    "highContrast": false,
-    "screenReaderHints": false
-  }
-}
-```
+`settings` object. Their shape is part of the stored document and is described in
+[SCHEMA_2_6.md](SCHEMA_2_6.md#settings); it is not repeated here.
 
 ---
 
@@ -506,6 +521,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 | `count` | number\|null | No | Number of times to recur (if not indefinite) |
 | `untilDate` | string\|null | No | End date in YYYY-MM-DD format (NEW v1.349+) |
 | `time` | object\|null | No | Specific time of day (see Time Object below) |
+| `useSpecificTime` | boolean | No | Whether the recurring panel's "specific time" option is on (default `false`). Written by the app's exports; not in the JSON example above |
 
 **Time Object (optional):**
 
@@ -634,7 +650,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 }
 ```
 
-**Filename:** `Morning_Routine.mcyc`
+**Filename:** Morning_Routine.mcyc
 
 ---
 
@@ -702,7 +718,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 }
 ```
 
-**Filename:** `Weekly_Workout.mcyc`
+**Filename:** Weekly_Workout.mcyc
 
 ---
 
@@ -748,7 +764,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 }
 ```
 
-**Filename:** `Product_Launch_Checklist.mcyc`
+**Filename:** Product_Launch_Checklist.mcyc
 
 **Note:** `deleteCheckedTasks: true` enables To-Do mode where completed tasks are deleted.
 
@@ -816,7 +832,7 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 }
 ```
 
-**Filename:** `Fluffy_Pancakes_Recipe.mcyc`
+**Filename:** Fluffy_Pancakes_Recipe.mcyc
 
 ---
 
@@ -824,35 +840,46 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 
 ### Exporting from miniCycle
 
-1. **Open Settings** (⚙️ icon)
-2. **Click "Export miniCycle"**
-3. **File downloads** as `Cycle_Name.mcyc`
-4. **Location:** Your browser's download folder
+1. **Open the main menu** and expand **Routine Actions**
+2. **Click "Download"** and confirm (or **Share**, which first asks whether to include history)
+3. **The file is saved** under the routine's title with a `.mcyc` extension
+4. **Location:** wherever you choose in the save dialog, or your browser's download folder
 
 ### Importing into miniCycle
 
+Every path below ends in the same function, `processImportedData()`
+(`modules/ui/cycleImportManager.js`). After the file passes its checks the app asks
+how to import it:
+
+- **Use as Template** — tasks come in unchecked, due dates are cleared, the cycle
+  count starts at 0 and no history or cleared-task records are imported.
+- **Import with Progress** — completion state, due dates, cycle count, history and
+  cleared tasks are kept as the file has them.
+
+The imported routine always gets a new generated id and becomes the open routine. A
+title that is already in use is made unique.
+
 **Method 1: Import Button**
-1. **Open Settings** (⚙️ icon)
-2. **Click "Import miniCycle"**
-3. **Select `.mcyc` file**
-4. **Cycle loads automatically**
+1. **Open the main menu** and expand **Routine Actions** (the routine switcher and
+   Browse Routines have an Import button too)
+2. **Click "Import"**
+3. **Select a `.mcyc` file**
+4. **Choose** Use as Template or Import with Progress
 
-**Method 2: Onboarding**
-1. **First launch** or after clearing data
-2. **Choose "Import existing cycle"**
-3. **Select `.mcyc` file**
-4. **Start using immediately**
-
-**Method 3: Drag & Drop** (if supported)
-1. **Drag `.mcyc` file** into miniCycle window
-2. **Confirm import**
+**Method 2: Drag & Drop**
+1. **Drag one `.mcyc` file** into the miniCycle window
+2. **Choose** how to import it
 3. **Cycle loads**
 
-**Method 4: Open from Desktop (PWA)**
+**Method 3: Open from Desktop (PWA)**
 1. **Install miniCycle as a PWA** (Chromium browsers — Chrome, Edge, etc.)
 2. **Double-click a `.mcyc` file** in your file explorer
-3. **miniCycle opens** and imports the routine automatically
-4. Requires the `file_handlers` entry in `manifest.json`
+3. **miniCycle opens** and starts the import
+4. Requires the file-handlers entry in `manifest.json`
+
+The first-run screen does not import a `.mcyc`. Its "Restore from a backup file"
+button takes a full-state `.json` backup, and "Load a Sample" loads one of the bundled
+sample routines.
 
 > **Note:** This method only works when the app is installed as a PWA. The OS file association is registered via the [File Handling API](https://developer.chrome.com/docs/capabilities/web-apis/file-handling).
 
@@ -864,11 +891,15 @@ When importing `.mcyc` files, miniCycle applies several layers of validation and
 
 - **JSON validation:** Files that are not valid JSON are rejected with a clear error message
 - **File size limit:** Maximum 10 MB per file
-- **Task count limit:** Excess tasks beyond 150 are truncated (not rejected)
-- **Text sanitization:** All task text and cycle names are trimmed and enforced to length limits at import. HTML is **not** stripped or escaped here — XSS safety lives at the render sinks (`textContent` for user data; `escapeHtml()` before any innerHTML interpolation), which escape imported text wherever it is displayed
+- **Task count limit:** Tasks beyond `LIMITS.TASKS_PER_CYCLE` (150) are truncated (not rejected), and the user is told how many were left out
+- **Task ids:** An id is kept only if it is 1 to 64 characters of letters, digits, `.`, `_`, `:` or `-` and is not `__proto__`, `constructor` or `prototype`; otherwise a new one is generated
+- **Text sanitization:** All task text and cycle names have control characters removed, are trimmed, and are cut to length limits at import (`LIMITS.TASK_CHARACTER` for task text, `LIMITS.CYCLE_NAME_CHARACTER` for the title). HTML is **not** stripped or escaped here — XSS safety lives at the render sinks (`textContent` for user data; `escapeHtml()` before any innerHTML interpolation), which escape imported text wherever it is displayed
 - **Field allowlisting:** `taskOptionButtons` and `reminders` are sanitized to only allow known keys with expected types — unknown fields are stripped
 - **Storage quota check:** Import is blocked if insufficient localStorage space is available
-- **Recurring template security:** Only safe metadata fields (`id`, `createdAt`, `updatedAt`) are kept from imported templates; all text comes from the sanitized source
+- **Recurring settings:** Every task's `recurringSettings` goes through `normalizeRecurringSettings()`, which drops unknown keys and coerces an unknown `frequency` to `"daily"`; `specificDates` entries must be real dates and are capped at `LIMITS.MAX_SPECIFIC_DATES`
+- **Recurring template security:** A template is rebuilt for every task with `recurring: true`. From the file's own `recurringTemplates` entry for that task only the metadata fields `id`, `createdAt` and `updatedAt` are kept; all text comes from the sanitized task. A template in the file with **no** task of the same id (a routine exported between occurrences) is carried over too, with every field re-validated and its next occurrence recomputed
+- **History and cleared tasks:** Event `details` are reduced to an allowlist and cleared entries are rebuilt field by field (see above)
+- **Legacy `.tcyc` files** are refused
 
 ---
 
@@ -885,7 +916,7 @@ Grocery_Shopping_List.mcyc
 
 ❌ **Avoid:**
 ```
-my file.mcyc              // Spaces cause issues
+my file.mcyc              // Works, but needs quoting on a command line
 new.mcyc                  // Not descriptive
 cycle@2024!.mcyc          // Special characters
 ```
@@ -907,12 +938,12 @@ cycle@2024!.mcyc          // Special characters
 ```json
 "id": "1"           // Too generic
 "id": ""            // Empty
-// Missing id        // Required field
+// Missing id        // The importer generates one, so the id is not stable
 ```
 
 **Rules:**
 - Must be unique within the cycle
-- String type (not number)
+- String type (not number), 1 to 64 characters of letters, digits, `.`, `_`, `:` or `-`
 - Sequential or descriptive
 
 ---
@@ -1000,7 +1031,7 @@ node -e "console.log(JSON.parse(require('fs').readFileSync('Morning_Routine.mcyc
 
 ### Common Issues
 
-**1. "Invalid file format" error**
+**1. "Invalid file — not valid JSON." error**
 
 **Cause:** Malformed JSON
 **Fix:** Validate JSON syntax
@@ -1010,23 +1041,28 @@ python3 -m json.tool your_file.mcyc
 
 ---
 
-**2. "Missing required fields" error**
+**2. "Invalid file format" error**
 
-**Cause:** Missing `id`, `text`, or `schemaVersion`
-**Fix:** Ensure every task has:
+**Cause:** The root object has no `name`, or `tasks` is not an array. (A full-state
+`.json` backup fails here too — restore it from Settings instead.)
+**Fix:** Ensure the root has both:
 ```json
 {
-  "id": "t1",
-  "text": "Task description",
-  "schemaVersion": 2
+  "name": "my_routine",
+  "tasks": []
 }
 ```
+
+There is no "missing required fields" error for tasks: a task without an `id` or
+`schemaVersion` is repaired, not rejected.
 
 ---
 
 **3. Tasks don't appear after import**
 
-**Cause:** Empty `tasks` array
+**Cause:** Empty `tasks` array, or tasks that failed validation (an invalid task is
+skipped, not reported). Tasks that arrive unchecked with no due date are expected
+when you chose "Use as Template".
 **Fix:** Ensure tasks array is not empty:
 ```json
 "tasks": [
@@ -1050,11 +1086,12 @@ python3 -m json.tool your_file.mcyc
 "recurringSettings": {
   "frequency": "daily",
   "indefinitely": true,
-  "time": "09:00"
+  "time": { "hour": 9, "minute": 0, "meridiem": "AM" }
 }
 ```
 
-Valid frequencies: `"daily"`, `"weekly"`, `"monthly"`
+`time` is an object (or `null`), not a string. Valid frequencies: `"hourly"`, `"daily"`,
+`"weekly"`, `"biweekly"`, `"monthly"`, `"yearly"`; anything else is imported as `"daily"`.
 
 ---
 
@@ -1099,8 +1136,7 @@ function createMcycFile(cycleName, tasks, options = {}) {
       completed: false,
       schemaVersion: 2,
       dueDate: options.dueDates?.[index] || null,
-      highPriority: options.priorities?.[index] || false,
-      priorityColor: options.priorityColors?.[index] || null
+      priority: options.priorities?.[index] || null   // "high" | "medium" | "low" | null
     })),
     autoReset: options.autoReset !== false,
     cycleCount: 0,
@@ -1123,7 +1159,7 @@ createMcycFile('Morning Routine', [
   '📝 Plan the day'
 ], {
   autoReset: true,
-  priorities: [false, false, true, false, false, true]
+  priorities: [null, null, 'high', null, null, 'medium']
 });
 ```
 
@@ -1192,8 +1228,9 @@ easiest mistake to make here.
 
 ### App data schema — the stored document
 
-Versions the app's own state has passed through. This is what "Schema 2.5" refers to
-everywhere else in the docs, and it is *not* stamped on a `.mcyc` file.
+Versions the app's own state has passed through. This is what "Schema 2.6" (and, in
+older passages, "Schema 2.5") refers to everywhere else in the docs, and it is *not*
+stamped on a `.mcyc` file.
 
 | Version | Date | Changes |
 |---------|------|---------|
@@ -1213,7 +1250,8 @@ capability by key presence, not by a version stamp.
 | Schema document | Status |
 |---|---|
 | [`/mcyc.schema.json`](https://minicycle.app/mcyc.schema.json) | Rolling; tracks the current format. May gain fields. |
-| [`/schema/mcyc-2.5.schema.json`](https://minicycle.app/schema/mcyc-2.5.schema.json) | Pinned and **immutable**. Pin this for CI. |
+| [`/schema/mcyc-2.6.schema.json`](https://minicycle.app/schema/mcyc-2.6.schema.json) | Pinned to format 2.6 and **immutable**. Pin this for CI. |
+| [`/schema/mcyc-2.5.schema.json`](https://minicycle.app/schema/mcyc-2.5.schema.json) | Pinned to format 2.5 and **immutable**; kept as published. |
 
 **Backward compatibility:** existing files keep importing — see
 [Compatibility commitment](#compatibility-commitment) at the top of this page.
@@ -1225,10 +1263,11 @@ capability by key presence, not by a version stamp.
 **Recommended:**
 - Tasks per cycle: < 100
 - File size: < 1 MB
-- Cycles in complete export: < 50
 
 **Technical Limits:**
-- localStorage: ~5-10 MB per origin
+- Import file size: 10 MB (`MAX_FILE_SIZE_BYTES` in `cycleImportManager.js`); a larger file is refused
+- Tasks per routine: `LIMITS.TASKS_PER_CYCLE` (150); the rest are truncated on import
+- Storage: the import is blocked when the routine would not fit in the space left (localStorage is ~5-10 MB per origin)
 - JSON nesting: Avoid deep nesting (< 5 levels)
 
 ---
@@ -1236,7 +1275,7 @@ capability by key presence, not by a version stamp.
 ## Security & Privacy
 
 **Safe:**
-- ✅ `.mcyc` files contain only task data
+- ✅ A `.mcyc` file contains one routine: its tasks and settings, plus its history and cleared-task records when those were included. No app settings, progress or other routines
 - ✅ No personal information required
 - ✅ No network requests
 - ✅ Stored locally in browser
@@ -1247,7 +1286,7 @@ capability by key presence, not by a version stamp.
   History" (also the event log + cleared-task records). Routine-only is listed
   first and is the fallback default. (v2.342–v2.344 stripped unconditionally;
   before v2.342 shares silently included everything)
-- ⚠️ **Backup files are different**: Export and Download keep history and cleared
+- ⚠️ **Downloads are different**: both download paths keep history and cleared
   tasks (they exist for your own restore) — review before handing one to someone else
 - ⚠️ Task text itself always travels — review content before sharing
 - ⚠️ Use descriptive but generic names
@@ -1261,8 +1300,9 @@ capability by key presence, not by a version stamp.
 - See [Sample Routines Guide](../features/SAMPLE_ROUTINES.md) for adding new samples
 
 **Documentation:**
-- `WHAT_IS_MINICYCLE.md` - App overview
-- `QUICK_REFERENCE.md` - Feature guide
+- [WHAT_IS_MINICYCLE.md](../start-here/WHAT_IS_MINICYCLE.md) - App overview
+- [QUICK_REFERENCE.md](../user-guides/QUICK_REFERENCE.md) - Feature guide
+- [SCHEMA_2_6.md](SCHEMA_2_6.md) - The app's stored document
 - [INDEX.md](../INDEX.md) - where to start in the docs
 
 **Support:**
@@ -1276,16 +1316,15 @@ capability by key presence, not by a version stamp.
 **Document Version:** 1.5
 **Schema Version:** 2.6 (format 2.6 published September 19, 2026; 2.5 schema kept immutable at `/schema/mcyc-2.5.schema.json`)
 
-**Last Updated:** September 19, 2026
-
 ---
 
 > **Shipped September 19, 2026 (v2.573):** [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md)
 > renamed the per-task `deleteWhenCompleteSettings` to `autoClear`, dropped the derived
 > `deleteWhenComplete` mirror and replaced `highPriority` + `priorityColor` with the `priority`
 > level. That change altered this format, so it added `schema/mcyc-2.6.schema.json` and left the
-> pinned 2.5 schema untouched. The exporter writes both spellings while older platform builds
-> are still in use; the importer reads both permanently. The `cycles` → `routine` rename in that
+> pinned 2.5 schema untouched. The exporter wrote both spellings from Sep 19 to Oct 13, 2026
+> while older platform builds were still in use and writes only the 2.6 fields since; the
+> importer reads both permanently. The `cycles` → `routine` rename in that
 > same plan does **not** affect this format.
 
 ---

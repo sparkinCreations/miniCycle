@@ -694,7 +694,7 @@ this.deps.AppState.update(state => {
 
 - **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Learn the 4 module patterns
 - **[AppInit System](APPINIT_SYSTEM.md)** - Understand 2-phase initialization
-- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - Explore Schema 2.6 structure
+- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - How data flows through the app; the stored shape is in [Schema 2.6](../reference/SCHEMA_2_6.md)
 - **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions and modules
 
 ---

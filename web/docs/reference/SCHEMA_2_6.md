@@ -1,13 +1,29 @@
 # miniCycle Schema 2.6 Documentation
 
 **Version**: See [PROJECT_STATS.md](../PROJECT_STATS.md)
-**Last Updated**: September 18, 2026 — Schema 2.6: routines keyed by a generated id under `data.routine`, priority as a level, one `autoClear` map. Audited field-by-field against `createInitialSchemaData()`, `types.js`, `schemaMigration26.js` and the modules that read/write each field.
+**Last verified:** Nov 10 2026
+
+Schema 2.6 (shipped with v2.573, Sep 19 2026): routines keyed by a generated id under `data.routine`, priority as a level, one `autoClear` map. Checked field by field against `createInitialSchemaData()`, `schemaMigration26.js` and the modules that write each field.
 
 ## Overview
 
-Schema 2.6 represents the current data structure for miniCycle, consolidating all application state, user data, settings, and metadata into a single unified format. This schema supports multiple cycles, recurring tasks, theme unlocks, and comprehensive user progress tracking.
+Schema 2.6 represents the current data structure for miniCycle, consolidating all application state, user data, settings, and metadata into a single unified format. This schema supports multiple routines, recurring tasks, theme unlocks, and user progress tracking.
 
-> **Source of Truth**: `modules/core/types.js` contains the canonical JSDoc type definitions.
+This page is the only description of the stored shape.
+[DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) is the short walkthrough of how a change
+travels from a click to storage, with one worked example.
+
+> **Source of truth is the code that writes the data:** `createInitialSchemaData()`
+> (`modules/routine/migrationManager.js`) for a fresh install, `routineManager.js` for a
+> new routine, `task/taskUtils.js` and `recurring/recurringTemplate.js` for tasks and
+> templates, and `routine/schemaMigration26.js` for migrated 2.5 data. The JSDoc in
+> `modules/core/types.js` is partly stale (its `Cycle` typedef still names `name` as the
+> display field, and its recurring-settings, recurring-template and cleared-entry
+> typedefs predate the shapes below), so check it against those writers.
+>
+> **Read stored names through the accessors**, not by spelling the keys:
+> `modules/utils/cycleMode.js` (`getActiveRoutine()`, `getRoutine()`, `getAutoClear()`, …)
+> and `modules/utils/priorityLevel.js` (`getPriorityLevel()`, `setPriorityLevel()`, …).
 
 ## Schema Version
 
@@ -100,14 +116,15 @@ colours of the user's own, the Golden or Ocean preset is written into `settings.
   metadata: {
     createdAt: 1696723400000,              // Unix timestamp
     lastModified: 1696723445123,           // Unix timestamp
-    migratedFrom: "2.0",                   // Previous schema version (null when fresh)
-    migrationDate: "2025-10-07",           // When migration occurred (null when fresh)
+    migratedFrom: "2.5",                   // Previous schema version (null when fresh)
+    migrationDate: 1789760998636,          // Unix timestamp of the migration (null when fresh)
     totalRoutinesCreated: 5,               // Lifetime routine creation count
-    totalCyclesCompleted: 12,              // Lifetime cycle completion count
+    totalCyclesCompleted: 0,               // Seeded as 0; no module updates it. The live
+                                           // count is userProgress.cyclesCompleted
     schemaVersion: "2.6",                  // Duplicated here as well as at the root
     lastModifiedBy: "tab-x7f2",            // Writing tab's id — multi-tab conflict detection
-                                           // (appState.js stamps it on every save)
-    storageQuota: { /* … */ }              // Cached quota estimate (storageUtils.js)
+                                           // (appState.js stamps it on every save; not seeded)
+    storageQuota: { /* … */ }              // Cached quota estimate (storageUtils.js; not seeded)
     // NOT here: `appVersion`, `migrationHistory` and `totalTasksCompleted` were
     // documented on metadata but nothing writes them. `totalTasksCompleted` is
     // real and lives on `userProgress` — see that section.
@@ -118,33 +135,42 @@ colours of the user's own, the Golden or Ocean preset is written into `settings.
     darkMode: false,                       // Dark mode enabled
     alwaysShowRecurring: false,            // Always show recurring panel
     autoSave: true,                        // Auto-save enabled
-    showThreeDots: false,                  // Global three dots menu visibility
-    showTaskInput: true,                   // Show task input bar
+    showThreeDots: false,                  // Global three dots menu visibility. A fresh install
+                                           // seeds `true` on a touch-capable device
+    // NOT here: `showTaskInput`. The task-input bar's visibility is stored per
+    // routine (see `data.routine[id].showTaskInput` below); nothing reads a
+    // settings-level value.
     onboardingCompleted: false,            // User completed onboarding
     dismissedEducationalTips: {},          // { [tipId]: boolean }
-    defaultRecurringSettings: {            // Default values for new recurring tasks
-      frequency: "daily",
-      indefinitely: true,
+    defaultRecurringSettings: {            // Default values for new recurring tasks. Seeded with
+      frequency: "daily",                  // these three keys; saving defaults from the recurring
+      indefinitely: true,                  // panel stores the full Recurring Settings shape below
       time: null                           // Optional time-of-day
     },
     unlockedThemes: [],                    // Themes unlocked through milestones
     unlockedFeatures: [],                  // Features unlocked through milestones
-    notificationPosition: { x: 100, y: 20 }, // Draggable notification position
+    notificationPosition: { x: 0, y: 0 },  // Draggable notification position (seeded 0, 0)
     notificationPositionModified: false,   // User has customized position
-    showCompletedDropdown: false,          // Enable completed tasks dropdown
-    completedTasksExpanded: false,         // Completed section expanded state
+    showCompletedDropdown: false,          // Enable completed tasks dropdown (written on first use)
+    completedTasksExpanded: false,         // Completed section expanded state (written on first use)
     oneMenuSectionAtATime: true,           // Accordion for menu/settings/personalization (absent = true)
     // Accessibility is FLAT (not nested under an `accessibility` object):
     reducedMotion: false,                  // Reduce animations
     highContrast: false,                   // High contrast mode
     fontSize: "16",                        // Base font size (string)
-    debugMode: false,                      // Debug mode enabled
+    debugMode: false,                      // Debug mode enabled (written on first use)
+    defaultPriority: "high",               // The level a newly flagged task starts at: the last
+                                           // level picked (absent = "high"; priorityLevel.js)
+    routineOpenView: "list",               // "list" | "browse" — what opening routines shows.
+                                           // Seeded from the primary pointer; absent = "list"
     // …plus guided-tour step trackers (guidedTourStep, statsTourStep, …),
-    // customColors {}, savedColorPresets [], and the three collapsed-section
-    // maps (menuCollapsedSections, settingsCollapsedSections,
+    // customColors {}, savedColorPresets [], taskViewLayout, and the three
+    // collapsed-section maps (menuCollapsedSections, settingsCollapsedSections,
     // preferencesCollapsedSections — see the UI Preferences table below).
-    // And more: see createInitialState() in
-    // appState.js / the Settings typedef in types.js for the exhaustive list.
+    // There is no single exhaustive list: createInitialSchemaData()
+    // (routine/migrationManager.js) seeds the fresh-install keys, and each
+    // feature adds its own key on first use. The Settings typedef in types.js
+    // covers only part of them.
   },
 
   data: {
@@ -152,42 +178,64 @@ colours of the user's own, the Golden or Ocean preset is written into `settings.
       "routine-1789760998636-bqphapbbc": { // Keyed by a GENERATED id (GlobalUtils.generateId('routine'))
         id: "routine-1789760998636-bqphapbbc",
         // ⚠️ `title` IS the display name. There is no `name` field: nothing in
-        // the app writes one (routineManager creates routines with `title`, and
-        // there are ~47 reads of `.title`). An earlier revision of this doc had
-        // these reversed — `cycleCompletion.js` still reads `cycleData.name ||
-        // activeCycle`, which therefore always falls through to the storage key.
+        // the app writes one (routineManager creates routines with `title`).
+        // `name` exists only in a .mcyc file, where it holds the exporting
+        // device's storage key (see MCYC_FILE_FORMAT.md).
         title: "Morning Routine",          // Display name — the real field
         theme: "classic",                  // Per-routine vocab theme (default "classic")
-        showTaskInput: true,               // Per-routine task-input bar visibility
+        showTaskInput: true,               // Per-routine task-input bar visibility. OPTIONAL:
+                                           // only `true` shows the bar, so absent = hidden
                                            // (modeManager toggles it per routine)
         cycleCount: 42,                    // Times completed
-        autoReset: true,                   // Auto-reset on completion
-        deleteCheckedTasks: false,         // Delete tasks when checked
+        autoReset: true,                   // Auto-cycle mode
+        deleteCheckedTasks: false,         // To-Do mode (wins over autoReset)
         createdAt: 1696723400000,          // Creation timestamp
-        lastModified: 1696723445123,       // Last modification timestamp
+        lastModified: 1696723445123,       // OPTIONAL — absent until the user first switches
+                                           // away from the routine (routineSwitcher);
+                                           // previews fall back to createdAt
+        lastAccessedAt: 1696723445123,     // OPTIONAL — set each time the routine is opened
+                                           // from the switcher; drives the "recent" order
         tasks: [/* Task objects */],
-        recurringTemplates: {/* Template objects */},
-        taskOptionButtons: {
+        recurringTemplates: {/* Template objects, keyed by task id */},
+        taskOptionButtons: {               // OPTIONAL — defaults: DEFAULT_TASK_OPTION_BUTTONS
+                                           // (utils/globalUtils.js). Each value is the
+                                           // VISIBILITY of one option button (a boolean)
           customize: true,                 // -/+ customize button
           moveArrows: false,               // Move task arrows
-          threeDots: false,                // Three dots menu
-          highPriority: true,              // High priority toggle
+          highPriority: true,              // Priority button (an option-button id, not the
+                                           // 2.5 task field of the same name)
           rename: true,                    // Rename/edit task
           delete: true,                    // Delete task
           recurring: false,                // Recurring task option
           dueDate: false,                  // Due date option
           reminders: false,                // Reminders option
-          deleteWhenComplete: false        // 🧹 Clear on Reset / Marked for Clearing (per-mode auto-remove)
+          deleteWhenComplete: false        // 🧹 Clear on Reset / Marked for Clearing button
+                                           // (an option-button id; the task field is `autoClear`)
+          // NOT a default: `threeDots`. The three-dots menu is the global
+          // `settings.showThreeDots`. The .mcyc importer still lets a
+          // `threeDots` key through from a file; nothing reads it here.
         },
-        // ⚠️ An OBJECT, not an array. `historyManager.logEvent()` writes
+        // ⚠️ An OBJECT, not an array. OPTIONAL — created by the first logged
+        // event. `historyManager.logEvent()` writes
         // { events: [], maxEvents: 100 } and unshifts onto `history.events`.
         // Building a fixture with `history: []` passes the `if (!cycle.history)`
         // guard (an empty array is truthy) and then throws on
         // `history.events.unshift`.
         history: { events: [], maxEvents: 100 },
-        reminders: {},                     // Per-routine reminder settings
-        clearedTasks: {                    // Cleared tasks (To-Do mode clears + cycle reset auto-removes)
-          entries: [],                     // Array of cleared task records
+        reminders: {},                     // OPTIONAL — a copy of the customReminders fields,
+                                           // seeded by some creation paths and carried by
+                                           // .mcyc files. The reminder system itself reads
+                                           // the top-level `customReminders`
+        autoUncheckDaily: {                // OPTIONAL — Auto-Uncheck Daily (task/dailyResetManager.js)
+          enabled: false,
+          hour: 0,                         // Local time of the daily uncheck
+          minute: 0,
+          lastResetDate: null,             // Local date of the last run
+          pendingNotification: false       // A run happened while this routine was not open
+        },
+        clearedTasks: {                    // OPTIONAL — created by the first cleared task
+                                           // (To-Do mode clears + cycle reset auto-removes)
+          entries: [],                     // Array of cleared task records, newest first
           totalCleared: 0,                 // Total tasks cleared in this routine
           autoPruneEnabled: true           // Whether old entries are auto-pruned
         }
@@ -199,32 +247,43 @@ colours of the user's own, the Golden or Ocean preset is written into `settings.
     activeRoutineId: "routine-1789760998636-bqphapbbc", // Currently selected routine
     overdueTaskStates: {}                  // { [taskId]: boolean }
     // NOTE: the current mode is NOT stored here — it's derived from the active
-    // cycle's autoReset / deleteCheckedTasks flags (see modeManager).
+    // cycle's autoReset / deleteCheckedTasks flags (getCycleMode in cycleMode.js).
   },
 
-  ui: {
+  ui: {                                    // ⚠️ OPTIONAL — created on demand, not seeded and not
+                                           // part of the minimal valid shape
+                                           // (validateStateStructure requires only a current
+                                           // schemaVersion, data.routine and appState)
     moveArrowsVisible: false,              // Global arrow visibility
     activeTaskId: null                     // Task ID whose options are currently open
   },
 
   userProgress: {
     cyclesCompleted: 42,                   // Total cycles completed (global)
-    rewardMilestones: [],                  // Reached milestone IDs (e.g., "golden-glow-50")
+    rewardMilestones: [],                  // Reward ids already granted. LIVE: gamesManager and
+                                           // statsPanelRewards push "task-order-game-100", and
+                                           // Reset Progress clears it
     totalTasksCompleted: 156,              // Lifetime To-Do clears (Auto/Manual Cycle clears don't count) — LIVES HERE, not on metadata
-                                           // (read by achievementsManager, backupReminder, undo)
+                                           // (written by taskCycleReset and undo/redo; read by
+                                           // achievementsManager, statsPanel, backupReminder)
     // createInitialSchemaData() seeds only `cyclesCompleted` and
     // `rewardMilestones`; `totalTasksCompleted` is written later, on first clear.
     // NOT here, despite older docs listing both:
-    //  • `streaks` — never implemented. types.js declares a StreakData typedef,
-    //    but nothing writes one. ("streaks" in the codebase is mostly the
-    //    habit-tracker vocab theme renaming "cycle" in UI labels.)
+    //  • `streaks` — never implemented, and types.js no longer declares a
+    //    typedef for it. (The habit-tracker vocab theme once renamed "cycle" to
+    //    "streak" in UI labels; that was wording, not state.)
     //  • `achievementsUnlocked` — superseded by the top-level `achievements`
     //    object below, which is what achievementsManager actually uses.
   },
 
-  achievements: {
-    unlocked: [],                          // Unlocked achievement IDs (OR-based)
-    seen: {}                               // { [achievementId]: boolean } - user has seen popup
+  achievements: {                          // OPTIONAL — created by achievementsManager on first check
+    unlocked: [                            // One RECORD per milestone reached (OR-based)
+      { milestoneId: "milestone-5", unlockedAt: 1696723445123,
+        unlockedVia: "cycles",             // "cycles" | "tasks" — which threshold was met
+        valueAtUnlock: 5 }
+    ],
+    seen: {}                               // Created empty and cleared by Reset Progress;
+                                           // nothing else writes or reads it
   },
 
   customReminders: {
@@ -233,9 +292,12 @@ colours of the user's own, the Golden or Ocean preset is written into `settings.
     dueDatesReminders: false,              // Remind about due dates
     repeatCount: 0,                        // Times to repeat
     frequencyValue: 30,                    // Interval value
-    frequencyUnit: "minutes"               // "minutes"|"hours"
-    // NOT here: `customMessages` was documented but appears nowhere in the
-    // codebase — no reads, no writes.
+    frequencyUnit: "minutes"               // "minutes"|"hours"|"days" (the keys of FREQUENCY_MS)
+    // Defaults: DEFAULT_REMINDERS (core/constants.js). The reminders form also
+    // saves `browserNotifications` and `privacyNoticeOpen`, and the scheduler
+    // keeps `nextReminderTime`, `reminderStartTime` and `timesReminded` here.
+    // NOT here: `customMessages`. Nothing reads one; the only write is the
+    // .mcyc importer copying it into a routine's own `reminders` object.
   }
 }
 ```
@@ -244,18 +306,22 @@ colours of the user's own, the Golden or Ocean preset is written into `settings.
 
 ### Metadata
 
-Tracks application-level information and migration history:
+Tracks application-level information and where the document came from:
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `createdAt` | number | Initial data creation timestamp |
-| `lastModified` | number | Last update timestamp |
-| `appVersion` | string | Application version string |
-| `migrationHistory` | string[] | Array of migration paths taken |
-| `migratedFrom` | string | Previous schema version (if migrated) |
-| `migrationDate` | string | When migration occurred |
-| `totalRoutinesCreated` | number | Lifetime routine creation count |
-| `totalTasksCompleted` | number | Lifetime task completion count |
+| `lastModified` | number | Last update timestamp (stamped by every `AppState.update()`) |
+| `schemaVersion` | string | The document version again (`"2.6"`), beside the root one |
+| `migratedFrom` | string\|null | Previous schema version (`"2.5"` if migrated, `null` when fresh) |
+| `migrationDate` | number\|null | Unix timestamp of the migration (`null` when fresh) |
+| `totalRoutinesCreated` | number | Lifetime routine creation count (create, import, duplicate, sample) |
+| `totalCyclesCompleted` | number | Seeded as `0` and kept by the migration; no module updates it |
+| `lastModifiedBy` | string | Id of the tab that last saved (multi-tab conflict detection) |
+| `storageQuota` | object | Cached storage-quota estimate (`utils/storageUtils.js`) |
+
+Not on metadata: an app version, a migration history, or `totalTasksCompleted`
+(that one is real and lives on `userProgress`).
 
 ### Settings
 
@@ -270,7 +336,7 @@ Tracks application-level information and migration history:
 #### Recurring Task Defaults
 | Field | Type | Description |
 |-------|------|-------------|
-| `defaultRecurringSettings.frequency` | string | Daily, weekly, monthly, yearly |
+| `defaultRecurringSettings.frequency` | string | `hourly`, `daily`, `weekly`, `biweekly`, `monthly` or `yearly` |
 | `defaultRecurringSettings.indefinitely` | boolean | Whether to repeat forever |
 
 #### Notifications
@@ -282,7 +348,6 @@ Tracks application-level information and migration history:
 #### UI Preferences
 | Field | Type | Description |
 |-------|------|-------------|
-| `showTaskInput` | boolean | Show task input bar |
 | `showCompletedDropdown` | boolean | Enable completed tasks dropdown |
 | `completedTasksExpanded` | boolean | Completed section expanded state |
 | `showThreeDots` | boolean | Global three dots menu visibility |
@@ -316,21 +381,23 @@ Each cycle contains:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `id` | string | Unique cycle identifier |
+| `id` | string | The routine's generated id; equal to its key in `data.routine` |
 | `title` | string | **Display name — the real field.** There is no `name` field; nothing writes one |
 | `theme` | string | Per-routine vocab theme (`"classic"` by default) |
-| `showTaskInput` | boolean | Per-routine task-input bar visibility |
+| `showTaskInput` | boolean | Per-routine task-input bar visibility. Optional; only `true` shows the bar |
 | `tasks` | Task[] | Array of task objects |
-| `recurringTemplates` | object | Recurring task template definitions |
+| `recurringTemplates` | object | Recurring templates, keyed by task id (see below) |
 | `autoReset` | boolean | Auto-reset on completion (Auto Cycle Mode) |
-| `deleteCheckedTasks` | boolean | Delete tasks when checked (To-Do Mode) |
+| `deleteCheckedTasks` | boolean | Delete tasks when checked (To-Do Mode); wins over `autoReset` |
 | `cycleCount` | number | Number of times cycle has been completed |
 | `createdAt` | number | Creation timestamp |
-| `lastModified` | number | Last modification timestamp |
-| `taskOptionButtons` | object | Per-cycle button visibility settings |
-| `history` | **object** | Per-routine activity log — `{ events: [], maxEvents: 100 }`, NOT an array |
-| `reminders` | object | Per-routine reminder settings (created with each routine) |
-| `clearedTasks` | object | Cleared tasks tracking (To-Do mode + cycle reset auto-removes) |
+| `lastModified` | number | Optional. Set when the user switches away from the routine |
+| `lastAccessedAt` | number | Optional. Set when the routine is opened from the switcher |
+| `taskOptionButtons` | object | Optional. Per-cycle button visibility settings |
+| `history` | **object** | Optional. Per-routine activity log — `{ events: [], maxEvents: 100 }`, NOT an array |
+| `reminders` | object | Optional. A copy of the reminder fields written by some creation paths and by import; the reminder system reads the top-level `customReminders` |
+| `autoUncheckDaily` | object | Optional. Auto-Uncheck Daily: `{ enabled, hour, minute, lastResetDate, pendingNotification }` |
+| `clearedTasks` | object | Optional. Cleared tasks tracking (To-Do mode + cycle reset auto-removes) |
 | `clearedTasks.entries` | array | Array of cleared task records |
 | `clearedTasks.totalCleared` | number | Total tasks cleared in this routine |
 | `clearedTasks.autoPruneEnabled` | boolean | Whether old entries are automatically pruned |
@@ -339,7 +406,8 @@ Each cycle contains:
 
 `cycle.history` is an **object**, and the entries live in `history.events` — newest
 first (`unshift`), capped at `maxEvents` (100). `historyManager.logEvent()` is the
-only writer:
+only writer of new events (a `.mcyc` import can bring a whole `history` object
+with it; a duplicated routine starts without one):
 
 ```javascript
 cycle.history = {
@@ -353,7 +421,7 @@ Each entry in `history.events`:
 | Field | Type | Description |
 |-------|------|-------------|
 | `id` | string | `evt-<timestamp>-<random>` |
-| `type` | string | Entry type (e.g., "task_completed", "cycle_completed", "tasks_cleared") |
+| `type` | string | Entry type (e.g., "cycle_completed", "tasks_cleared", "task_added") |
 | `timestamp` | number | Unix timestamp of action |
 | `details` | object | Type-specific payload — per-event fields such as `taskText` live in HERE, not on the entry |
 
@@ -375,17 +443,29 @@ Each entry in `clearedTasks.entries`:
 | `priority` | string\|null | The task's priority level when cleared (`'high'` / `'medium'` / `'low'` / `null`) |
 | `hadDueDate` | boolean | Whether the task had a due date |
 | `dueDate` | string\|null | The task's due date, if any |
+| `dueTime` | string\|null | The task's due time (`"HH:MM"`), only beside a `dueDate` |
 | `remindersEnabled` | boolean | Whether task reminders were enabled |
 | `autoClear` | object | Per-mode clear map snapshot (`{ cycle, todo }`) |
+| `recurring` | boolean | Whether the task was recurring |
+| `recurringSettings` | object\|null | A copy of the task's recurring settings, so Recreate can restore them |
+| `clearedInMode` | string | `'todo'` or `'cycle'`: the mode the task was cleared in |
+
+The entry shape has one builder, `ClearedTasksManager._buildClearedEntry()`
+(`features/clearedTasksManager.js`).
 
 #### Task Option Buttons
+
+Each value is a boolean: whether that option button is shown on a task row. The
+keys are option-button ids, which is why two of them keep 2.5 spellings
+(`highPriority`, `deleteWhenComplete`) although the task fields they act on are
+`priority` and `autoClear`. Defaults: `DEFAULT_TASK_OPTION_BUTTONS`
+(`utils/globalUtils.js`).
 
 | Field | Description |
 |-------|-------------|
 | `customize` | -/+ customize button (always true) |
 | `moveArrows` | Move task arrows |
-| `threeDots` | Three dots menu |
-| `highPriority` | High priority toggle |
+| `highPriority` | Priority button |
 | `rename` | Rename/edit task |
 | `delete` | Delete task |
 | `recurring` | Recurring task option |
@@ -404,42 +484,101 @@ Each task object in the `tasks` array:
 | `completed` | boolean | Completion status |
 | `priority` | string\|null | Priority LEVEL: `'high'` / `'medium'` / `'low'` / `null`. No colour is stored — the row shows the active theme's swatch for the level (`vocabThemeManager.getTaskPriorityColor`) |
 | `dueDate` | string\|null | Due date in ISO format |
+| `dueTime` | string\|null | Due time `"HH:MM"` (24-hour, local), only beside a `dueDate`; absent in data written before Oct 2026 |
 | `remindersEnabled` | boolean | Task-specific reminder toggle |
 | `recurring` | boolean | Whether task is recurring |
-| `recurringSettings` | object | Recurring task configuration |
-| `schemaVersion` | number | Per-task shape version. Currently the number `2`. This is a *separate* counter from the document's `schemaVersion` (`"2.6"`) — see "Two Version Stamps" below. |
-| `createdAt` | string | ISO timestamp of creation |
-| `completedAt` | string\|null | ISO timestamp of completion |
+| `recurringSettings` | object | Recurring task configuration (`{}` when not recurring) |
+| `schemaVersion` | number | Per-task shape version. Currently the number `2` (`SCHEMA.CURRENT_TASK`). This is a *separate* counter from the document's `schemaVersion` (`"2.6"`) — see "Two Version Stamps" above. |
 | `autoClear` | object | 🧹 Clear on Reset (cycle) / Marked for Clearing (to-do), per mode: `{ cycle: boolean, todo: boolean }`. An OPEN map — a boolean under any other key is kept. Read with `getAutoClear(task, routine, defaults)`; there is no derived mirror. A **recurring** task's pin is one choice for every mode (Oct 2026): `setAutoClear` writes every key, a map pinned in any mode reads pinned in all, and `syncTaskAutoClear` repairs a disagreeing one to all-`false` |
 
-#### Recurring Settings Structure
+Task creation (`TaskUtils.createOrUpdateTaskData()` in `task/taskUtils.js`) writes
+exactly the fields above. It does not write `createdAt` or `completedAt`; no module
+does, although the `Task` typedef in `types.js` still lists them.
+
+A task as stored:
 
 ```javascript
 {
-  frequency: "daily",              // "daily"|"weekly"|"monthly"|"yearly"|"custom"
-  indefinitely: true,              // Repeat forever
-  repeatCount: 0,                  // Times to repeat (if not indefinite)
-  timesActivated: 0,               // How many times activated
-  weekdays: ["Mon", "Wed", "Fri"], // Days for weekly recurrence
-  dayOfMonth: 15,                  // Day of month (1-31)
-  nthWeekday: "1",                 // Ordinal: "1"|"2"|"3"|"4"|"last"
-  weekday: "Mon",                  // Weekday name for nth pattern
-  time: {                          // Specific activation time
-    hour: 9,
-    minute: 0,
-    meridiem: "AM"
-  },
-  daily: { time: "09:00" },        // Daily-specific settings
-  weekly: { days: [] },            // Weekly-specific settings
-  monthly: {                       // Monthly-specific settings
-    dayOfMonth: null,
-    nthWeekday: null,
-    weekday: null
-  },
-  lastActivated: null,             // ISO timestamp of last activation
-  nextActivation: null             // ISO timestamp of next activation
+  id: "task-xyz789",
+  text: "☕ Make coffee",
+  completed: false,
+  priority: null,                  // 'high'|'medium'|'low'|null — a level, no colour stored
+  dueDate: null,                   // ISO string or null
+  dueTime: null,                   // "HH:MM" or null, only beside a dueDate
+  remindersEnabled: false,
+  recurring: false,
+  recurringSettings: {},
+  autoClear: { cycle: false, todo: true }, // defaults: DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS
+  schemaVersion: 2                 // per-task shape version (number)
 }
 ```
+
+#### Recurring Template Structure
+
+`recurringTemplates` is keyed by the id of the task each template spawns. Every
+writer builds the record through `buildRecurringTemplate()`
+(`recurring/recurringTemplate.js`), so this is the whole shape:
+
+```javascript
+recurringTemplates: {
+  "task-def456": {
+    id: "task-def456",               // The task id; an instance in `tasks` shares it
+    text: "💊 Take medication",
+    recurring: true,
+    recurringSettings: { /* see Recurring Settings Structure */ },
+    dueDate: null,
+    dueTime: null,                   // only kept beside a dueDate
+    priority: "high",                // 'high'|'medium'|'low'|null
+    remindersEnabled: true,
+    autoClear: { cycle: true, todo: true }, // defaults: DEFAULT_RECURRING_DELETE_SETTINGS
+    occurrenceCount: 0,
+    lastTriggeredTimestamp: null,
+    paused: false,                   // a paused template keeps its schedule but never spawns
+    nextScheduledOccurrence: 1696809600000, // epoch ms; null = never fires again
+    position: null,                  // index where a recreated instance is inserted; null appends
+    schemaVersion: 2                 // RECURRING_TEMPLATE_SCHEMA_VERSION
+  }
+}
+```
+
+#### Recurring Settings Structure
+
+The full shape is what `normalizeRecurringSettings()` (`recurring/recurringSettings.js`)
+returns; [RECURRING_SYSTEM_REFERENCE.md](RECURRING_SYSTEM_REFERENCE.md) explains how
+each block is scheduled.
+
+```javascript
+{
+  frequency: "daily",              // "hourly"|"daily"|"weekly"|"biweekly"|"monthly"|"yearly"
+                                   // (anything else is coerced to "daily")
+  indefinitely: true,              // Repeat forever
+  count: null,                     // Number of occurrences when not indefinite
+  untilDate: null,                 // End date when not indefinite
+  time: null,                      // { hour, minute, meridiem, military } or null
+  useSpecificTime: false,
+  specificDates: { enabled: false, dates: [] },
+  hourly: { useSpecificMinute: false, minute: 0 },
+  weekly: { days: [] },            // "Sun" … "Sat"
+  biweekly: { week1: [], week2: [], referenceDate: null },
+  monthly: {
+    useSpecificDays: false,
+    days: [],                      // 1-31
+    lastDay: false,
+    useWeekOfMonth: false,
+    weekOfMonth: null              // { ordinal: "1"|"2"|"3"|"4"|"last", day: "Mon" } or null
+  },
+  yearly: {
+    months: [],                    // 1-12
+    useSpecificDays: false,
+    applyDaysToAll: true,
+    daysByMonth: {}                // { all: [days] } or { "1".."12": [days] }
+  }
+}
+```
+
+There is no `daily` block. When a frequency needs a selection and none was made,
+the normalizer fills in today's weekday, day of month or month, and a missing
+`biweekly.referenceDate` becomes the current time.
 
 ### App State
 
@@ -447,14 +586,15 @@ Tracks current application state:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `activeCycleId` | string\|null | Currently selected cycle ID |
+| `activeRoutineId` | string\|null | Key (generated id) of the currently open routine |
 | `overdueTaskStates` | object | Map of task ID to overdue boolean |
 
-> The current **mode** is not stored in `appState` — it's derived from the active cycle's `autoReset` / `deleteCheckedTasks` flags (see modeManager).
+> The current **mode** is not stored in `appState` — it's derived from the active cycle's `autoReset` / `deleteCheckedTasks` flags (`getCycleMode()` in `utils/cycleMode.js`).
 
 ### UI State
 
-Global UI configuration:
+Global UI configuration. The whole `ui` object is optional: it is created on
+demand, not seeded.
 
 | Field | Type | Description |
 |-------|------|-------------|
@@ -468,9 +608,10 @@ Gamification and achievement tracking:
 | Field | Type | Description |
 |-------|------|-------------|
 | `cyclesCompleted` | number | Total cycles completed (global across all routines) |
-| `rewardMilestones` | string[] | Reached milestone IDs (e.g., "golden-glow-50") |
+| `rewardMilestones` | string[] | Reward ids already granted (e.g., "task-order-game-100") |
+| `totalTasksCompleted` | number | Lifetime To-Do clears; absent until the first one. Auto/Manual Cycle clears don't count (`clearsCountTowardAchievements()` in `utils/cycleMode.js`) |
 
-> `streaks` and a `userProgress.totalTasksCompleted` are **not** written by the current code — fresh state seeds only `cyclesCompleted` + `rewardMilestones`. Don't rely on them. (Lifetime task/cycle totals live in `metadata.totalTasksCompleted` / `metadata.totalCyclesCreated`.)
+> Fresh state seeds only `cyclesCompleted` + `rewardMilestones`. `streaks` and an unlocked-achievements list on `userProgress` are **not** fields the code writes — see the notes in the structure above.
 
 ### Achievements
 
@@ -478,8 +619,8 @@ OR-based achievement system (unlock via cycles OR tasks):
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `unlocked` | string[] | Array of unlocked achievement/badge IDs |
-| `seen` | object | Map of achievement ID to boolean (user has seen popup) |
+| `unlocked` | object[] | One record per milestone reached: `{ milestoneId, unlockedAt, unlockedVia, valueAtUnlock }` |
+| `seen` | object | Created as `{}` and reset by Reset Progress; nothing else writes or reads it |
 
 **`achievements.unlocked` and `settings.unlockedThemes` are deliberately separate.**
 They look like the same idea — "things the user has earned" — and they are not:
@@ -495,17 +636,16 @@ Merging them would make a cosmetic badge record load-bearing for theme access, a
 would mean an import touching theme entitlements could rewrite the user's milestone
 history. Keep them apart.
 
-**Achievement tiers unlock at:**
-| Badge | Cycles | Tasks |
-|-------|--------|-------|
-| Bronze | 5 | 25 |
-| Silver | 10 | 50 |
-| Gold | 25 | 125 |
-| Diamond | 50 | 250 |
-| Crown | 100 | 500 |
-| Star | 250 | 1250 |
-| Lightning | 500 | 2500 |
-| Fire | 1000 | 5000 |
+**Achievement tiers** are defined once, in `MILESTONES.TIERS` (`core/constants.js`).
+Each tier unlocks at its cycle threshold OR its task threshold, whichever comes first:
+
+| `milestoneId` | Name | Cycles | Tasks |
+|---------------|------|--------|-------|
+| `milestone-5` | Habit Tracker | 5 | 5 |
+| `milestone-25` | Fitness | 25 | 125 |
+| `milestone-50` | Scholar | 50 | 250 |
+| `milestone-75` | Cleaning | 75 | 375 |
+| `milestone-100` | Crowned | 100 | 500 |
 
 ### Custom Reminders
 
@@ -518,12 +658,17 @@ User-configurable reminder system:
 | `dueDatesReminders` | boolean | Remind about task due dates: in-app banners on open (overdue) and on setting a date within three days; with `browserNotifications` also one system notification per due day at `LIMITS.DUE_DATE_NOTIFY_HOUR` (dueDates.js `syncDueDateNotifications`) |
 | `repeatCount` | number | Number of times to repeat |
 | `frequencyValue` | number | Numeric interval value |
-| `frequencyUnit` | string | "minutes"\|"hours" |
-| `customMessages` | string[] | Custom reminder messages |
+| `frequencyUnit` | string | "minutes"\|"hours"\|"days" |
+| `browserNotifications` | boolean | Also send system notifications (saved by the reminders form; not in the defaults) |
+
+The reminders form also saves `privacyNoticeOpen`, and the scheduler keeps
+`nextReminderTime`, `reminderStartTime` and `timesReminded` on this object. Defaults
+are `DEFAULT_REMINDERS` (`core/constants.js`), which readers substitute when
+`customReminders` is absent.
 
 ## Undo Snapshots — new state surfaces must join the signature
 
-`undoRedoManager.buildSnapshotSignature()` reduces a snapshot to a comparison key
+`buildSnapshotSignature()` (`ui/undoSnapshotUtils.js`, re-exported by `undoRedoManager`) reduces a snapshot to a comparison key
 and **skips pushing** anything whose key matches the previous entry. That dedup is
 what stops a burst of no-op updates flooding the undo stack.
 
@@ -598,17 +743,18 @@ this.deps.AppState.update(state => {
 
 ## File Format Compatibility
 
-This schema structure is also used in `.mcyc` file exports/imports, ensuring consistent data representation across:
-- localStorage persistence
-- File exports
-- File imports
-- Data migrations
+A `.mcyc` file holds **one routine**, not this whole document: a flat object with the
+routine's fields (`title`, `tasks`, `recurringTemplates`, `taskOptionButtons`, …) built
+by `buildMcycPayload()` (`utils/mcycPayload.js`). Tasks and templates inside it use
+the shapes above. Settings, progress and achievements never travel in a `.mcyc`; a
+full backup file does carry the whole document. See
+[MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md).
 
 ## Related Documentation
 
 - [MCYC_FILE_FORMAT.md](./MCYC_FILE_FORMAT.md) - File import/export format
-- [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - Schema guide with data flow
-- [types.js](../../modules/core/types.js) - Canonical JSDoc type definitions
-- [minicycle-recurring-guide.md](RECURRING_SYSTEM_REFERENCE.md) - Recurring task implementation
+- [DATA_SCHEMA_GUIDE.md](DATA_SCHEMA_GUIDE.md) - How a change reaches storage, with a worked example
+- [types.js](../../modules/core/types.js) - JSDoc type definitions (partly stale; see the note at the top)
+- [RECURRING_SYSTEM_REFERENCE.md](RECURRING_SYSTEM_REFERENCE.md) - Recurring task implementation
 - [SCHEMA_2_6_PLAN.md](../archive/SCHEMA_2_6_PLAN.md) - The plan this schema shipped from: decisions, the
   reader sweeps, the migration's ordered steps and the release checklist.

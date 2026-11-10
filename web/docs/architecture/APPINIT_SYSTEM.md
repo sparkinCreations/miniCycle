@@ -385,7 +385,7 @@ If `init()` is awaited before `markCoreSystemsReady()` is called in the boot seq
 
 ## Next Steps
 
-- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - Understand Schema 2.6 structure
+- **[Data Schema Guide](../reference/DATA_SCHEMA_GUIDE.md)** - How data flows through the app; the stored shape is in [Schema 2.6](../reference/SCHEMA_2_6.md)
 - **[API Reference](../reference/API_REFERENCE.md)** - Browse available functions
 - **[Module System Guide](MODULE_SYSTEM_GUIDE.md)** - Review module patterns
 

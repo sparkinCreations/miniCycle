@@ -2,7 +2,11 @@
 
 **Version 1.6 | For miniCycle v2.023+ Users & Developers**
 
-_Updated February 2026 to include: **NEW v2.023 features** - Recurring info link in task list (shows count of recurring tasks, opens panel on click), "Select All" button for bulk adding tasks to recurring, watcher interval reduced from 30s to 15s for faster task appearance, 5 bug fixes (listener leak, cache corruption, missing await, stale DOM data, DOM query in state callback). Plus from v1.349: Monthly week-of-month patterns (2nd Tuesday, Last Friday), End date (Until) option for all frequencies, Monthly last-day handling; Plus from v1.348: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
+**Last verified:** Nov 10 2026
+
+> **For current version, see [PROJECT_STATS.md](../PROJECT_STATS.md).** Code snippets in this guide are simplified pseudocode unless a file is named; the modules under `modules/recurring/` are the source of truth.
+
+_History — the February 2026 revision added: **v2.023 features** - Recurring info link in task list (shows count of recurring tasks, opens panel on click), "Select All" button for bulk adding tasks to recurring, watcher interval reduced from 30s to 15s for faster task appearance, 5 bug fixes (listener leak, cache corruption, missing await, stale DOM data, DOM query in state callback). Plus from v1.349: Monthly week-of-month patterns (2nd Tuesday, Last Friday), End date (Until) option for all frequencies, Monthly last-day handling; Plus from v1.348: Biweekly two-week pattern with separate day selections per week, DST-safe date calculations, clarification of "one task only" catch-up behavior for cycle-based routine management, next occurrence display, catch-up function, two-state notifications, hybrid optimization pattern, immediate appearance for newly-enabled tasks, and schedule recalculation on cycle reset._
 
 ---
 
@@ -117,20 +121,27 @@ Recurring tasks use a **template-based architecture** with two storage locations
 ```
 **Purpose:** Remembers what the settings were, even if you toggle recurring off
 
-#### 2. Recurring Template (in cycle storage)
+#### 2. Recurring Template (on the routine)
 ```javascript
-cycle.recurringTemplates["task-123"] = {
+// state.data.routine[routineId].recurringTemplates — a map keyed by task id
+routine.recurringTemplates["task-123"] = {
   id: "task-123",
   text: "Take medication",
   recurring: true,
   recurringSettings: { /* same as above */ },
-  lastTriggeredTimestamp: "2025-01-15T09:00:00Z",
-  nextScheduledOccurrence: 1737019200000,  // Unix timestamp for next occurrence
-  position: 1,                             // index in cycle.tasks to recreate at (null = append)
-  paused: false                            // true = the watcher skips it until resumed (Oct 2026)
+  dueDate: null, dueTime: null,
+  priority: null,                          // 'high' | 'medium' | 'low' | null
+  remindersEnabled: false,
+  autoClear: { cycle: true, todo: true },  // per-mode clear map (recurring preset)
+  occurrenceCount: 0,                      // spawns so far (drives the "N times" limit)
+  lastTriggeredTimestamp: 1736931600000,   // epoch ms of the last spawn; null after a reset
+  paused: false,                           // true = the watcher skips it until resumed (Oct 2026)
+  nextScheduledOccurrence: 1737019200000,  // epoch ms of the next occurrence; null = finished
+  position: 1,                             // index in routine.tasks to recreate at (null = append)
+  schemaVersion: 2                         // RECURRING_TEMPLATE_SCHEMA_VERSION
 }
 ```
-**Purpose:** The "master copy" used to recreate the task on schedule. Includes optimization field for fast checking.
+**Purpose:** The "master copy" used to recreate the task on schedule. Includes optimization field for fast checking. Every writer builds this record through `buildRecurringTemplate()` in `modules/recurring/recurringTemplate.js`, so the field set cannot drift between writers. A template with no `nextScheduledOccurrence` reads as finished to the watcher and never fires.
 
 `position` (Sep 2026) is where the recreated instance is inserted in the routine. It is recorded
 whenever an instance leaves the task list — cycle reset, To-Do clear — and set at activation and
@@ -162,7 +173,7 @@ every recurring task drifted to the bottom of the routine after each reset.
    
    ═══════════════════════════════════════
    
-10. WATCH FUNCTION checks every 15 seconds
+10. WATCH FUNCTION checks every 15 seconds (INTERVALS.RECURRING_WATCHER)
     ↓
 11. Is it time to recreate this task?
     ↓
@@ -178,10 +189,10 @@ every recurring task drifted to the bottom of the routine after each reset.
 - Task text
 - Recurring schedule
 - Priority level
-- Due dates
+- Due date (kept in step with the task; cleared when a cycle reset removes the occurrence — see *Due dates* below)
 - Reminder settings
 
-This allows the task to be **perfectly recreated** when its schedule says it's time.
+This allows the task to be recreated from the template when its schedule says it's time.
 
 ---
 
@@ -208,14 +219,18 @@ task.recurringSettings = {
   time: null  // Default: no specific time
 };
 
-// Template is created
-currentCycle.recurringTemplates[taskId] = {
+// Template is created (activateTaskRecurringState → buildRecurringTemplate)
+routine.recurringTemplates[taskId] = {
   id: taskId,
   text: "Take medication at 9am",
   recurring: true,
-  recurringSettings: { /* same as above */ }
+  recurringSettings: { /* same as above */ },
+  position: /* the task's index in routine.tasks */,
+  nextScheduledOccurrence: calculateNextOccurrence(settings, Date.now())
 };
 ```
+
+The task itself stays in the list; it is also set to clear in every mode (`DEFAULT_RECURRING_DELETE_SETTINGS`). If the task was recurring before, its previous `recurringSettings` are reused instead of the defaults (`settings.defaultRecurringSettings`, or daily / indefinitely when none are saved).
 
 #### Step 2: Quick Actions Notification
 
@@ -223,33 +238,32 @@ currentCycle.recurringTemplates[taskId] = {
 
 ```
 ┌─────────────────────────────────────────┐
-│ "Your task text here"                💡 │
+│ "Your task text here"                    │
 │                                          │
-│ 🔁 Recurring set to daily (Indefinitely) │
+│ 🔁 Recurring set to daily (Indefinitely) ⓘ│
 │                                          │
 │           [Change Settings]              │
 └─────────────────────────────────────────┘
 
-💡 Tip: Recurring tasks are removed on cycle
-reset and reappear based on their schedule.
+ⓘ Recurring tasks are removed on cycle reset
+and will reappear on their schedule
 ```
 
 **Default state shows:**
 - The task text you just made recurring
 - Current frequency and pattern
 - "Change Settings" button
-- Tip toggle (💡) in top-right corner
+- An info button (ⓘ) that shows or hides the explanation; the explanation is open the first time and collapsed after that
 - Auto-dismisses after 10 seconds (pauses on hover/interaction)
 
 **Click "Change Settings" to expand quick options:**
 
 ```
 ┌─────────────────────────────────────────┐
-│ "Your task text here"                💡 │
+│ "Your task text here"                    │
 │                                          │
-│ 🔁 Recurring set to daily (Indefinitely) │
+│ 🔁 Recurring set to daily (Indefinitely) ⓘ│
 │                                          │
-│ Quick options:                           │
 │ ○ Hourly   ● Daily   ○ Weekly  ○ Monthly│
 │                                          │
 │ [Apply]                  [More Options]  │
@@ -264,7 +278,7 @@ reset and reappear based on their schedule.
 
 #### Step 3: Adjusting Settings (Optional)
 
-**Click "More Options" or open "Manage Recurring Tasks" from menu:**
+**Click "More Options" or open the panel with the "Recurring" button in the main menu:**
 
 ```
 Recurring Tasks Panel
@@ -305,13 +319,14 @@ task.recurringSettings = {
   time: { hour: 9, minute: 0, meridiem: "AM" }
 };
 
-// Template updated
-currentCycle.recurringTemplates[taskId].recurringSettings = {
+// Template rebuilt with the new settings and a fresh nextScheduledOccurrence
+// (recurringSettingsApplicator.js; keeps paused, occurrenceCount, lastTriggeredTimestamp)
+routine.recurringTemplates[taskId].recurringSettings = {
   /* same as above */
 };
 
-// Saved to localStorage
-localStorage.setItem("miniCycleData", JSON.stringify(fullSchemaData));
+// Both writes happen inside one AppState.update(), which persists the state
+// to localStorage (key "miniCycleData")
 ```
 
 ### Phase 2: Cycle Completion
@@ -343,10 +358,12 @@ tasks.forEach(task => {
 
 #### What Happens to Recurring Tasks:
 ```javascript
-// Recurring tasks deleted
+// Recurring tasks deleted (a recurring task pinned to the list is kept and
+// only unchecked — see "Pinned = paused" below)
 tasks = tasks.filter(task => !task.recurring);
 
-// Templates remain
+// Templates remain; each removed task's template gets a recalculated
+// nextScheduledOccurrence, lastTriggeredTimestamp = null, and its position
 recurringTemplates["task-123"] still exists
 ```
 
@@ -363,10 +380,11 @@ Morning Routine
 
 ### Phase 3: Task Reappears Automatically
 
-**The Watch Function runs every 15 seconds (and on tab visibility):**
+**The Watch Function runs every 15 seconds while the active routine has templates (`INTERVALS.RECURRING_WATCHER`), and on tab visibility. With no templates it idles at `INTERVALS.RECURRING_WATCHER_IDLE` (2 hours).** Only the active routine's templates are checked.
 
 ```javascript
 // Simplified pseudocode with hybrid optimization
+// (real code: watchRecurringTasks → recreateDueTasks in recurringWatcher.js)
 setInterval(() => {
   const now = Date.now();
 
@@ -376,22 +394,24 @@ setInterval(() => {
     const exists = tasks.find(t => t.id === template.id);
     if (exists) return; // Already there, skip
 
+    if (template.paused === true) return;                 // paused in the panel
+    if (template.nextScheduledOccurrence == null) return; // finished (count / end date)
+
     // ========================================
     // HYBRID OPTIMIZATION PATTERN
     // ========================================
 
     // FAST PATH: Check pre-calculated timestamp
-    if (template.nextScheduledOccurrence) {
-      if (now < template.nextScheduledOccurrence) {
-        return; // Not time yet, skip expensive pattern matching
-      }
+    if (now < template.nextScheduledOccurrence) {
+      return; // Not time yet, skip expensive pattern matching
     }
 
     // SLOW PATH: Validate with pattern matching
     // (This ensures accuracy for complex patterns)
-    if (shouldRecreateTask(template, now)) {
+    if (shouldRecreateRecurringTask(template, tasks, now)) {
 
-      // Recreate from template
+      // Recreate from template (buildRecurringInstance): text, due date,
+      // priority, reminders, settings; always set to clear in every mode
       const newTask = {
         id: template.id,
         text: template.text,
@@ -400,20 +420,22 @@ setInterval(() => {
         recurringSettings: template.recurringSettings
       };
 
-      tasks.push(newTask);
-      renderTaskToDOM(newTask);
+      // Inserted at template.position (appended when it is null)
+      tasks.splice(template.position ?? tasks.length, 0, newTask);
 
-      // Update timestamps for next occurrence
+      // Update the template for the next occurrence
+      template.occurrenceCount += 1;
       template.lastTriggeredTimestamp = now;
       template.nextScheduledOccurrence = calculateNextOccurrence(
         template.recurringSettings,
         now
-      );
+      ); // null once the count limit or the end date is reached
 
-      saveToStorage();
+      // One AppState.update(..., { system: true }): saved immediately and
+      // kept out of undo history; the task list is then refreshed from state
     }
   });
-}, 15000); // Check every 15 seconds
+}, INTERVALS.RECURRING_WATCHER); // 15 seconds
 
 // Also runs on visibility change (catch-up function)
 document.addEventListener("visibilitychange", () => {
@@ -426,8 +448,9 @@ document.addEventListener("visibilitychange", () => {
 
 **Why Hybrid Approach?**
 - **Fast Path:** Skip pattern matching if `nextScheduledOccurrence` indicates it's not time yet (performance optimization)
-- **Slow Path:** Always validate with pattern matching to ensure accuracy (handles edge cases like DST, month boundaries)
-- **Best of Both:** Fast checking for most cases, accurate validation when needed
+- **Slow Path:** The 15-second watch validates with pattern matching before it spawns (for a timed task the current minute must match the schedule)
+- **Catch-up is fast path only:** `catchUpMissedRecurringTasks()` spawns any template whose `nextScheduledOccurrence` has passed, without re-matching the pattern. It runs at startup, when a routine is loaded (`routineLoader.js`), when the tab becomes visible, and when a watch tick notices it overslept (the gap since the last tick exceeds `LIMITS.RECURRING_OVERSLEEP_FACTOR` times the interval — device sleep or a frozen tab)
+- **Task limit:** a spawn that would exceed `LIMITS.TASKS_PER_CYCLE` is blocked with a one-time warning; its template is not advanced and retries on later ticks
 
 **At 9:00 AM, your list updates:**
 ```
@@ -441,9 +464,9 @@ Morning Routine
 
 ### Phase 4: Managing Recurring Tasks
 
-**The "Manage Recurring Tasks" button appears in your menu when you have active recurring tasks.**
+**The "Recurring" button in the main menu (`#open-recurring-panel`) opens the Recurring Tasks panel. It is always shown, because tasks can also be made recurring from inside the panel.**
 
-**Why?** Because recurring tasks get deleted after cycle reset, you need a way to:
+**Why a panel?** Because recurring tasks get deleted after cycle reset, you need a way to:
 - See what's scheduled (even when not visible)
 - Modify schedules
 - Turn off recurring
@@ -516,12 +539,15 @@ occurrence. Before this, the date set when recurring was enabled came back on ev
 
 **Next Occurrence Display:**
 miniCycle shows you when each recurring task will appear next using human-readable formatting:
+- "Appears in less than 1 minute"
 - "Appears in 30 minutes" (within 1 hour)
 - "Appears in 3 hours" (within 24 hours)
-- "Next: Tomorrow at 9:00 AM" (beyond 24 hours)
-- "Next: Wednesday at 2:30 PM" (specific days and times)
+- "Next: Tomorrow at 9:00 AM" (beyond 24 hours, on tomorrow's date)
+- "Next: Wednesday at 2:30 PM" (within the next 7 days)
+- "Next: Wed, Jan 15, 2025 at 9:00 AM" (further out)
+- "Overdue" (the time has passed and the task has not been recreated yet) and "No upcoming occurrences" (the template has finished)
 
-This helps you understand your schedule at a glance without mental calculations.
+Times follow the device's own 12/24-hour setting (`formatNextOccurrence()` in `recurringCalculators.js`). This helps you understand your schedule at a glance without mental calculations.
 
 **Recurring Info Link (v2.023+):**
 At the bottom of the task list, a clickable info link shows how many recurring templates are active:
@@ -531,16 +557,16 @@ At the bottom of the task list, a clickable info link shows how many recurring t
 ☐ Exercise
 ☐ Review calendar
 
-🔄 3 recurring tasks scheduled — tap to manage
+🔁 3 tasks set to recurring
 ```
 
-- Appears automatically when you have one or more recurring templates
-- Shows the current count of active recurring templates
-- Clicking it opens the Manage Recurring Tasks panel directly
-- Updates in real-time as you add, remove, or modify recurring settings
+- Appears automatically when the routine has one or more recurring templates
+- Shows the number of recurring templates on the routine (paused ones included)
+- Clicking it (or pressing Enter/Space on it) opens the Recurring Tasks panel directly
+- Refreshed when recurring is turned on or off for a task (`updateRecurringInfoLink()` in `recurringBoot.js`)
 - If all recurring templates are removed, the link disappears
 
-When no tasks are in the list at all, an enhanced empty state message appears encouraging you to add tasks or set up recurring schedules.
+When no tasks are in the list at all but templates exist, the empty-state hint is replaced by the same count followed by "View recurring settings".
 
 **Add Task to Recurring (with Select All):**
 The panel includes an "Add Task to Recurring" section at the bottom, letting you convert existing non-recurring tasks into recurring tasks:
@@ -559,7 +585,7 @@ Select tasks to make recurring:    [Select All]
 - Check individual tasks or use the **Select All** button (v2.023+) to select/deselect all at once
 - The Select All button toggles between "Select All" and "Deselect All" based on the current state
 - The confirm button shows how many tasks are selected and is hidden when none are selected
-- After confirming, the recurring settings panel opens for each selected task so you can configure its schedule
+- After confirming, every selected task becomes recurring with the default settings (daily, indefinitely) in one step; the panel goes back to its list, where you can select a task to change its schedule (`handleConfirmAddRecurring()` in `recurringPanelAddTask.js`)
 
 ---
 
@@ -567,44 +593,58 @@ Select tasks to make recurring:    [Select All]
 
 ### Module Organization
 
-The recurring task system is organized across multiple files following miniCycle's modular architecture:
+The recurring task system lives in `modules/recurring/`. What used to be one large `recurringCore.js` is now a coordinator plus focused sub-modules. For current file sizes and module counts see [PROJECT_STATS.md](../PROJECT_STATS.md).
 
 #### Core Files
 
-**`/modules/recurringCore.js`** - *The Engine*
-- **Purpose:** Core recurring logic, scheduling algorithms, and business rules
-- **Responsibilities:**
-  - Pattern matching (`shouldTaskRecurNow()`)
-  - Next occurrence calculation (`calculateNextOccurrence()`)
-  - Template lifecycle management
-  - Watch function (15-second polling)
-  - Catch-up function (missed task detection)
-  - Cycle reset integration (`removeRecurringTasksFromCycle()`)
-- **Size:** ~1,700 lines
-- **Pattern:** Strict dependency injection for testability
-- **Why separate?** Complex scheduling logic needs isolation for testing and maintenance
+**`modules/recurring/recurringCore.js`** - *The Coordinator*
+- **Purpose:** Loads the logic sub-modules (dynamic `import()` with version cache-busting), wires them to each other, and re-exports their functions
+- **Entry point:** `setRecurringCoreDependencies(overrides)` — stores the dependencies, loads the sub-modules, passes the dependencies on to the watcher and activation modules, and returns the loaded functions
+- **Sub-modules it loads:**
+  - `recurringDateUtils.js` — date helpers (`getDaysBetween()`, `applyTimeToDate()`, `calculateNthWeekdayOfMonth()`, `parseDateAsLocal()`)
+  - `recurringSettings.js` — `normalizeRecurringSettings()` (defaults, allow-lists, memoized)
+  - `recurringCalculators.js` — `calculateNextOccurrence()`, `calculateNextOccurrences()`, `formatNextOccurrence()` and one calculator per frequency
+  - `recurringMatcher.js` — pattern matching (`shouldTaskRecurNow()`, `shouldRecreateRecurringTask()`)
+  - `recurringWatcher.js` — the watch function, the catch-up function and the interval (`setupRecurringWatcher()`, `watchRecurringTasks()`, `catchUpMissedRecurringTasks()`, `restartRecurringWatcher()`)
+  - `recurringActivation.js` — turning recurring on and off, template deletion, cycle reset planning (`handleRecurringTaskActivation()`, `handleRecurringTaskDeactivation()`, `applyRecurringToTask()`, `deleteRecurringTemplate()`, `removeRecurringTasksFromCycle()`)
+- **Pattern:** `createDIModule` (diBase.js) with late-binding dependencies
+- **Why separate?** Scheduling logic is isolated from the DOM so it can be tested on its own
 
-**`/modules/recurringPanel.js`** - *The Interface*
-- **Purpose:** UI panel for managing recurring tasks
+**`modules/recurring/recurringTemplate.js`** - *The Template Shape*
+- `buildRecurringTemplate()` is the single definition of a template record
+- `syncTemplateFromTask()` / `healTemplatesFromTasks()` keep a template in step with edits to its live task (text, due date, priority, reminder flag)
+- `getRecurringPauseState()` / `isRecurringPinned()` answer why a template is not spawning
+- `keepBiweeklyStart()` / `withoutBiweeklyStart()` carry or drop the biweekly Week 1 start date
+
+**`modules/recurring/recurringSettingsApplicator.js`** - *Apply from the Panel*
+- `applyRecurringSettings(panel, buildSettingsFromPanel)` writes the panel form's settings to the checked tasks and rebuilds their templates
+
+**`modules/recurring/recurringPanel.js`** - *The Interface*
+- **Purpose:** UI panel for managing recurring tasks (`RecurringPanelManager`)
 - **Responsibilities:**
   - Recurring tasks panel modal
   - Task preview and editing
   - Settings form rendering
-  - Quick actions notification
+  - Pause / resume and remove
   - User interaction handling
-- **Size:** ~2,200 lines
-- **Pattern:** Resilient constructor (UI-focused)
+- **Sub-modules:** `recurringPanelSetup.js`, `recurringPanelForm.js`, `recurringPanelEvents.js`, `recurringPanelGrids.js`, `recurringPanelSummary.js`, `recurringPanelAddTask.js`
+- **Loaded on demand:** the panel and its sub-modules are not loaded at boot; they load the first time the panel is opened (`ensureRecurringPanelLoaded()` inside `recurringIntegration.js`)
 - **Why separate?** UI concerns separated from business logic
+- The Quick Actions notification is not part of the panel: it is built by `createRecurringNotificationWithTip()` in `modules/utils/notifications.js`
 
-**`/modules/recurringIntegration.js`** - *The Glue*
+**`modules/recurring/recurringBoot.js`** - *Boot-time UI*
+- `updateRecurringButtonVisibility()`, `updateRecurringInfoLink()` and `wireRecurringOpenTriggers()` — the menu button, the info link and the open triggers, which must work before the panel is loaded
+
+**`modules/recurring/recurringIntegration.js`** - *The Glue*
 - **Purpose:** Integration layer connecting core and panel to main app
+- **Entry point:** `initRecurringModules(options)`. The module is registered in `modules/boot/moduleManifests.js` as `recurringIntegration` (phase `PHASES.RECURRING`, API name `recurring`, provides `panel` and `core`)
 - **Responsibilities:**
   - Dependency injection setup
+  - One-time repair of templates that drifted from their live task
   - Wiring panel callbacks to core functions
-  - Global function exposure
-  - Watch initialization
-  - Integration testing
-- **Size:** ~370 lines
+  - Starting the watcher
+  - Building the lazy panel object and the `coreAPI` / `panelAPI` wrappers it returns
+  - `testRecurringIntegration()` self-check
 - **Pattern:** Integration/facade pattern
 - **Why separate?** Decouples core logic from app-specific dependencies
 
@@ -613,95 +653,103 @@ The recurring task system is organized across multiple files following miniCycle
 ```
 User Action (UI)
     ↓
-modules/boot/orchestrator.js (main app)
+moduleLoader.js dependency mappings (deps.recurring.core / deps.recurring.panel)
     ↓
 recurringIntegration.js (wiring/setup)
     ↓                    ↓
-recurringPanel.js    recurringCore.js
-(UI layer)          (business logic)
+recurringPanel.js    recurringCore.js → sub-modules
+(UI layer, lazy)     (business logic)
     ↓                    ↓
 AppState.update() ← Both write here
 ```
 
 **Initialization Flow:**
-1. **App starts** → `modules/boot/orchestrator.js` loads modules
-2. **Integration loads** → `recurringIntegration.js` imports core and panel
-3. **Dependencies configured** → Core receives AppState functions via DI
-4. **Panel wired** → Panel callbacks connected to core functions
-5. **Watch started** → 15-second polling begins
+1. **App starts** → the module loader (`modules/boot/moduleLoader.js`, driven by `moduleManifests.js`) loads modules phase by phase
+2. **Integration loads** → `initRecurringModules()` waits for core (`appInit.waitForCore()`), then imports `recurringCore.js` and `recurringSettingsApplicator.js`
+3. **Dependencies configured** → `setRecurringCoreDependencies()` receives AppState and the other dependencies via DI
+4. **Watch started** → `setupRecurringWatcher()` runs a catch-up and a watch pass if the active routine has templates, starts the interval and registers the `visibilitychange` listener
+5. **Boot UI wired** → menu button, info link and open triggers (`recurringBoot.js`); the panel itself loads on first open
 6. **System ready** → User can interact with recurring features
 
 **Data Flow Example (Toggle Recurring ON):**
 ```
 1. User clicks 🔁 button
-   → taskEvents.js handles click
+   → taskDOM.js: setupRecurringButtonHandler() handles the click
 
-2. Call applyRecurringToTask(taskId, settings)
-   → recurringCore.js:1495
+2. Call handleRecurringTaskActivation(task, taskContext, button)
+   → recurringActivation.js (reached through deps.recurring.core)
 
-3. Core updates AppState:
-   - Mark task.recurring = true
-   - Create template in recurringTemplates
-   - Set nextScheduledOccurrence = 0 (for immediate appearance)
-   → recurringCore.js:1527-1557
+3. One AppState.update():
+   - Mark task.recurring = true, store the normalized settings
+   - Build the template in recurringTemplates
+   - Set nextScheduledOccurrence = calculateNextOccurrence(settings, now)
+   → activateTaskRecurringState() in recurringActivation.js
 
-4. Core triggers panel update callback
-   → recurringPanel.js:updateRecurringPanel()
+4. Show quick actions notification
+   → notifications.js: createRecurringNotificationWithTip()
 
-5. Show quick actions notification
-   → recurringPanel.js:showQuickActionsNotification()
+5. Restart the watcher at the active interval, refresh the menu button
+   and the info link
+   → restartRecurringWatcher(), recurringBoot.js
 ```
 
 **Scheduling Flow (Watch Function):**
 ```
-Every 15 seconds:
+Every INTERVALS.RECURRING_WATCHER (15 seconds) while templates exist:
 
 1. watchRecurringTasks() runs
-   → recurringCore.js:1086
+   → recurringWatcher.js
 
-2. Get all templates from AppState
-   → recurringCore.js:1084-1096
+2. Read the active routine's templates and tasks from AppState;
+   switch between the active and idle interval
 
-3. For each template:
+3. If the tick overslept, hand over to catchUpMissedRecurringTasks()
+
+4. For each template (recreateDueTasks()):
+   - Skip if present in the list, paused, finished or count-exhausted
    - Fast path: Check nextScheduledOccurrence
-   - Slow path: Validate with shouldTaskRecurNow()
-   → recurringCore.js:1100-1159
+   - Slow path: Validate with shouldRecreateRecurringTask()
 
-4. If task should appear:
-   - Create task from template
-   - Add to AppState.tasks
-   - Update template timestamps
-   → recurringCore.js:1115-1132
+5. If task should appear:
+   - Build the task from the template (buildRecurringInstance())
+   - Insert it at the template's position, up to LIMITS.TASKS_PER_CYCLE
+   - Advance the template (occurrenceCount, lastTriggeredTimestamp,
+     nextScheduledOccurrence)
 
-5. Save to localStorage
-   → state.js handles persistence
+6. Commit with AppState.update(..., { system: true })
+   → saved immediately, kept out of undo history
 ```
 
 #### Why This Organization?
 
 **Separation of Concerns:**
-- **Core:** Pure logic, no DOM manipulation, highly testable
+- **Core + sub-modules:** scheduling logic; the calculators, matcher, settings and date utilities touch no DOM
 - **Panel:** UI/UX, form handling, user feedback
 - **Integration:** App-specific wiring, keeps core reusable
 
 **Dependency Injection:**
 ```javascript
-// recurringCore.js uses injected dependencies
-const Deps = {
-  getAppState: null,        // Injected by integration
-  updateAppState: null,     // Injected by integration
-  now: Date.now,           // Mockable for testing
+// recurringCore.js declares its dependencies with diBase
+const di = createDIModule('RecurringCore', {
+  appInit: optional(null),
+  AppState: optional(null),        // Injected by integration
+  updateAppState: optional(null),  // Injected by integration
+  now: optional(null),             // Mockable for testing
   // ... other dependencies
-};
+});
 
-// recurringIntegration.js wires them up
-import { configureRecurringCoreDeps } from './recurringCore.js';
-
-const { state } = await import(`../core/appContext.js?v=${globalThis.APP_VERSION}`);
-configureRecurringCoreDeps({
-  getAppState: () => state().AppState.get(),
-  updateAppState: (...args) => state().AppState.update(...args),
-  // ... inject real implementations
+// recurringIntegration.js wires them up (inside initRecurringModules)
+const coreFunctions = await recurringCore.setRecurringCoreDependencies({
+  AppMeta: options.AppMeta,
+  appInit: deps.appInit,
+  AppState: deps.AppState,
+  updateAppState: (updateFn, immediate = false, options) =>
+    deps.AppState.update(updateFn, immediate, options),
+  now: () => Date.now(),
+  setInterval: (fn, ms) => setInterval(fn, ms),
+  clearInterval: (id) => clearInterval(id),
+  isEnabled: () => deps.FeatureFlags?.recurringEnabled !== false,
+  // ... notifications, DOM access, UI callbacks, getLabel
 });
 ```
 
@@ -713,67 +761,74 @@ configureRecurringCoreDeps({
 
 **Module Loading:**
 ```javascript
-// modules/boot/orchestrator.js loads in order:
-const APP_VERSION = globalThis.APP_VERSION || 'dev-local';
-const { appInit } = await import(`./modules/core/appInit.js?v=${APP_VERSION}`);
+// recurringIntegration.js — initRecurringModules()
+const version = options.AppMeta?.version || APP_VERSION;
 
-// After core systems ready:
-const { configureRecurringCoreDeps, watchRecurringTasks } =
-  await import(`./modules/recurring/recurringCore.js?v=${APP_VERSION}`);
+const [recurringCore, settingsApplicator] = await Promise.all([
+  import(`./recurringCore.js?v=${version}`),
+  import(`./recurringSettingsApplicator.js?v=${version}`)
+]);
 
-const { RecurringPanelManager } =
-  await import(`./modules/recurring/recurringPanel.js?v=${APP_VERSION}`);
-
-// Integration ties them together:
-await import(`./modules/recurring/recurringIntegration.js?v=${APP_VERSION}`);
+// recurringCore.js then loads its sub-modules the same way
+// (loadSubModules). The panel is imported later, on first open:
+const { RecurringPanelManager, loadPanelSubModules /* ... */ } =
+  await import(`./recurringPanel.js?v=${version}`);
 ```
 
 #### Related Modules
 
-**`/modules/state.js`** - State Management
+**`modules/core/appState.js`** - State Management
 - All recurring data stored in AppState
 - Handles persistence to localStorage
-- Provides `getAppState()` and `updateAppState()` functions
-- Recurring core uses these via dependency injection
+- The recurring modules reach it through the injected `AppState` / `updateAppState` dependencies
 
-**`/modules/task/taskCore.js`** - Task CRUD Operations
-- Core task manipulation functions
-- Used by recurring system to create/delete tasks
-- `deleteTask()` function does NOT recalculate recurring schedules (intentional - manual deletion is different from cycle reset)
+**`modules/task/taskDOM.js`** - Task DOM and Button Handlers
+- `setupRecurringButtonHandler()` handles clicks on the recurring button (🔁)
+- Calls `handleRecurringTaskActivation()` / `handleRecurringTaskDeactivation()` through its injected dependencies
 
-**`/modules/task/taskEvents.js`** - Task UI Event Handlers
-- Handles clicks on recurring button (🔁)
-- Calls `applyRecurringToTask()` from recurringCore
-- Manages task options menu interactions
+**`modules/task/taskCRUD.js`** - Task Create / Edit / Delete
+- Deleting a recurring task by hand also deletes its template
+- Renaming a task (`syncTemplateFromTask()`) or changing its priority also updates the template
 
-**`/modules/boot/orchestrator.js`** - Main Application
-- Orchestrates all modules
-- Calls `completeMiniCycle()` which triggers recurring task deletion
-- Loads recurring modules during Phase 2 initialization
+**`modules/task/taskCycleReset.js`** - Cycle Reset
+- Calls `removeRecurringTasksFromCycle()` to plan the removal, then applies the plan inside its own `AppState.update()`
+- Its To-Do clear path records the template's `position` when a completed recurring task is cleared
+
+**`modules/boot/moduleManifests.js`** / **`modules/boot/moduleLoader.js`** - Boot
+- The manifest entry `recurringIntegration` declares the phase and dependencies
+- The loader's dependency mappings route calls such as `handleRecurringTaskActivation` and `removeRecurringTasksFromCycle` to `deps.recurring.core`
 
 **File Reference Summary:**
 ```
-/modules/
-  ├── recurringCore.js         (~1,700 lines) - Business logic
-  ├── recurringPanel.js        (~2,200 lines) - UI panel
-  ├── recurringIntegration.js  (~370 lines)   - Wiring/setup
-  ├── state.js                 - Data persistence
-  └── task/
-      ├── taskCore.js          - Task CRUD
-      └── taskEvents.js        - UI event handling
+modules/recurring/
+  ├── recurringCore.js                 - Coordinator, loads the logic sub-modules
+  ├── recurringDateUtils.js            - Date helpers
+  ├── recurringSettings.js             - Settings normalization
+  ├── recurringCalculators.js          - Next-occurrence calculation and formatting
+  ├── recurringMatcher.js              - Pattern matching
+  ├── recurringWatcher.js              - Watch, catch-up, interval
+  ├── recurringActivation.js           - On/off, template deletion, reset planning
+  ├── recurringTemplate.js             - Template record, pause state, sync helpers
+  ├── recurringSettingsApplicator.js   - Apply panel settings to tasks
+  ├── recurringIntegration.js          - Wiring/setup
+  ├── recurringBoot.js                 - Boot-time button, info link, open triggers
+  └── recurringPanel*.js               - UI panel and its sub-modules (lazy)
 
-/modules/boot/orchestrator.js            - Main orchestrator
+modules/core/appState.js               - Data persistence
+modules/task/taskDOM.js                - Recurring button handler
+modules/task/taskCycleReset.js         - Cycle reset / To-Do clear
+modules/boot/moduleManifests.js        - Boot registration
 ```
 
 ### Storage Schema
 
 ```javascript
-// Full miniCycle data structure
+// Where recurring data sits in the stored state (Schema 2.6, abridged)
 {
+  "appState": { "activeRoutineId": "<routineId>" },
   "data": {
-    "cycles": {
-      "Morning Routine": {
-        "id": "morning-routine",
+    "routine": {
+      "<routineId>": {
         "title": "Morning Routine",
         "tasks": [
           {
@@ -804,8 +859,12 @@ await import(`./modules/recurring/recurringIntegration.js?v=${APP_VERSION}`);
               "indefinitely": true,
               "time": { "hour": 9, "minute": 0, "meridiem": "AM" }
             },
-            "lastTriggeredTimestamp": "2025-01-15T09:00:00Z",
-            "nextScheduledOccurrence": 1737019200000
+            "occurrenceCount": 1,
+            "lastTriggeredTimestamp": 1736931600000,
+            "nextScheduledOccurrence": 1737019200000,
+            "paused": false,
+            "position": 1,
+            "schemaVersion": 2
           }
         }
       }
@@ -814,66 +873,65 @@ await import(`./modules/recurring/recurringIntegration.js?v=${APP_VERSION}`);
 }
 ```
 
+Stored `recurringSettings` are the full normalized shape (every frequency block present, see *Frequency Options Reference*); the example shows only the fields in use. The template also carries `dueDate`, `dueTime`, `priority`, `remindersEnabled` and `autoClear` (see *The Two-Part System*). The complete schema is in [SCHEMA_2_6.md](SCHEMA_2_6.md).
+
 ### Key Functions
 
-Below are the core functions with their file locations and line numbers (as of v1.338+):
+Below are the core functions with their file locations. The code blocks are simplified; read the named file for the real implementation.
 
 #### Toggle Recurring On
-**Location:** `/modules/recurringCore.js` (lines 1495-1583)
-**Function:** `applyRecurringToTask(taskId, newSettings)`
+**Location:** `modules/recurring/recurringActivation.js`
+**Functions:** `handleRecurringTaskActivation(task, taskContext, button)` (the 🔁 button) and `applyRecurringToTask(taskId, newSettings)` (the Quick Actions "Apply"); both write state through `activateTaskRecurringState(cycle, taskId, normalizedSettings, calculateNextOccurrenceFn)`
 ```javascript
-function handleRecurringTaskActivation(task, taskContext) {
-  // 1. Mark task as recurring
-  task.recurring = true;
-  task.recurringSettings = getDefaultSettings(); // daily, indefinite
+async function handleRecurringTaskActivation(task, taskContext, button = null) {
+  // 1. Pick the settings: the task's previous recurringSettings if it has any,
+  //    otherwise settings.defaultRecurringSettings (daily, indefinite), normalized
+  const normalizedSettings = normalizeRecurringSettings(/* ... */);
 
-  // 2. Create template with next occurrence calculation
-  // ✅ NEW (v1.338+): For newly-enabled recurring tasks, set nextScheduledOccurrence to 0
-  // This ensures the task appears immediately on the next watch cycle (within 15 seconds)
-  const isNewRecurring = !currentCycle.recurringTemplates[task.id] ||
-                         !currentCycle.recurringTemplates[task.id].recurring;
+  // 2. One AppState.update(): mark the task and build the template
+  await updateAppState(draft => {
+    const routine = getRoutine(draft, getActiveRoutineId(draft));
+    activateTaskRecurringState(routine, taskId, normalizedSettings, calculateNextOccurrence);
+    //   task.recurring = true; task.recurringSettings = normalizedSettings
+    //   task.autoClear = clear in every mode
+    //   routine.recurringTemplates[taskId] = buildRecurringTemplate({
+    //     id, text, position, recurringSettings, priority, dueDate, dueTime,
+    //     remindersEnabled,
+    //     nextScheduledOccurrence: calculateNextOccurrence(normalizedSettings, Date.now())
+    //   })
+  }, true);
 
-  currentCycle.recurringTemplates[task.id] = {
-    id: task.id,
-    text: task.text,
-    recurring: true,
-    recurringSettings: structuredClone(task.recurringSettings),
-    lastTriggeredTimestamp: null,
-    nextScheduledOccurrence: isNewRecurring ? 0 : calculateNextOccurrence(task.recurringSettings)
-  };
-
-  // 3. Save to storage
-  saveToLocalStorage();
+  // 3. Sync the task's DOM (recurring class, settings attribute)
 
   // 4. Show quick actions notification
-  showQuickActionsNotification(task);
+  showNotificationWithTip(notifications.createRecurringNotificationWithTip(/* ... */), "recurring", 10000, /* ... */);
 
-  // 5. Update UI
-  updateRecurringPanelButtonVisibility();
+  // 5. Restart the watcher at the active interval; refresh menu button + info link
+  restartRecurringWatcher();
 }
 ```
 
+The task stays in the list when recurring is switched on, so nothing has to "appear": the template's first `nextScheduledOccurrence` is simply the next scheduled time after now. (Earlier versions set it to `0` for newly-enabled tasks; the code no longer does.)
+
 #### Toggle Recurring Off
-**Location:** `/modules/recurringCore.js` (lines 1642-1673)
-**Function:** `removeRecurringFromTask(taskId)`
+**Location:** `modules/recurring/recurringActivation.js`
+**Functions:** `handleRecurringTaskDeactivation(task, taskContext, assignedTaskId)`, which writes state through `deactivateTaskRecurringState(cycle, taskId)`. `deleteRecurringTemplate(taskId)` removes only the template (used by the panel's Remove).
 ```javascript
-function handleRecurringTaskDeactivation(task, taskId) {
-  // 1. Mark task as non-recurring
-  task.recurring = false;
-  // Note: Settings are preserved for if user toggles back on
-  
-  // 2. Remove template
-  delete currentCycle.recurringTemplates[taskId];
-  
-  // 3. Keep task in main array
-  // (Task stays visible, just not recurring anymore)
-  
-  // 4. Save to storage
-  saveToLocalStorage();
-  
-  // 5. Update UI
-  updateRecurringPanelButtonVisibility();
-  showNotification("Recurring turned off");
+async function handleRecurringTaskDeactivation(task, taskContext, assignedTaskId) {
+  await updateAppState(draft => {
+    const routine = getRoutine(draft, activeRoutineId);
+
+    // 1. Mark task as non-recurring; reset its autoClear map to the normal defaults
+    // Note: recurringSettings are preserved for if user toggles back on
+    // 2. Remove template
+    deactivateTaskRecurringState(routine, assignedTaskId);
+
+    // 3. Keep task in main array
+    // (Task stays visible, just not recurring anymore)
+  }, true);
+
+  // 4. Update the task's DOM, then notify and refresh menu button + info link
+  showNotification("Recurring turned off for this task.");
 }
 ```
 
@@ -881,7 +939,7 @@ function handleRecurringTaskDeactivation(task, taskId) {
 
 miniCycle supports six frequency types, each with customizable options:
 
-**1. Hourly** - Every hour, with optional specific minute
+**1. Hourly** - Every hour at a set minute (when no minute is chosen, the normalizer anchors to the minute at which the task was set up)
 ```javascript
 recurringSettings: {
   frequency: "hourly",
@@ -918,7 +976,7 @@ recurringSettings: {
   biweekly: {
     week1: ["Mon", "Wed"],        // Days for Week 1 (even weeks)
     week2: ["Tue", "Thu"],        // Days for Week 2 (odd weeks)
-    referenceDate: "2025-01-06"   // Week 0 starting point
+    referenceDate: "2025-01-06T14:00:00.000Z"  // Week 1 start: set when the task becomes biweekly, kept across edits
   },
   time: { hour: 9, minute: 0, meridiem: "AM", military: false }
 }
@@ -977,7 +1035,7 @@ recurringSettings: {
      - "2nd Tuesday of month" for recurring meetings
      - "Last Friday of month" for monthly reports
      - "1st Monday of month" for monthly reviews
-   - Note: If pattern doesn't exist (e.g., "5th Monday" in a 4-week month), task is skipped that month
+   - Note: Only 1st–4th and Last can be chosen, so the pattern exists in every month; a stored ordinal outside that list is normalized to "1"
 
 **6. Yearly** - Specific months and days
 ```javascript
@@ -991,11 +1049,15 @@ recurringSettings: {
       6: [1],                     // Jun 1st
       12: [25]                    // Dec 25th
     },
-    applyDaysToAll: false         // Different days per month
+    applyDaysToAll: false         // Different days per month (true: one list under daysByMonth.all)
   },
   time: { hour: 9, minute: 0, meridiem: "AM", military: false }
 }
 ```
+
+**Specific dates.** Besides the six frequencies, `recurringSettings.specificDates = { enabled: true, dates: ["2025-03-01", ...] }` makes the task recur on listed dates only. When enabled it overrides the frequency in both the calculator and the matcher, and still honours `time` if one is set. The list is capped at `LIMITS.MAX_SPECIFIC_DATES`.
+
+**Empty selections.** `normalizeRecurringSettings()` fills an empty selection from the day the settings are saved: weekly with no days → today's weekday; biweekly with no days → today's weekday in Week 1 only; monthly with no pattern → today's day of the month; yearly with no months → today's month and day. An unknown `frequency` is coerced to `"daily"`.
 
 #### Duration Options (NEW v1.349+)
 
@@ -1048,128 +1110,126 @@ recurringSettings: {
 - **Works with all frequency types:** hourly, daily, weekly, biweekly, monthly, yearly
 
 **Duration Priority:**
-- If `indefinitely: true` → task recurs forever (count and untilDate ignored)
-- If `count` is set → task stops after N occurrences
-- If `untilDate` is set → task stops after specified date
-- Only one duration mode is active at a time
+- If `indefinitely: true` → the count is ignored (`isCountExhausted()` in `recurringWatcher.js` requires `indefinitely === false`)
+- If `indefinitely: false` and `count` is set → the template's `occurrenceCount` goes up by one per spawn; when it reaches `count` the template's `nextScheduledOccurrence` becomes `null`, a "completed all N scheduled occurrences" notification is shown, and the task stops recurring
+- If `untilDate` is set → `calculateNextOccurrence()` returns `null` for any occurrence after the end of that day and the matcher refuses to recur past it. The code checks `untilDate` whenever it is present, whatever `indefinitely` says
+- The panel offers the three modes as alternatives
 
 #### Calculate Next Occurrence
-**Location:** `/modules/recurringCore.js` (lines 146-711)
+**Location:** `modules/recurring/recurringCalculators.js` (date helpers in `modules/recurring/recurringDateUtils.js`)
 **Functions:**
-- `calculateNextOccurrence(settings, fromTime)` - Main dispatcher (line 146)
-- `calculateNextDailyOccurrence(settings, fromTime)` - Daily logic (line 222)
-- `calculateNextWeeklyOccurrence(settings, fromTime)` - Weekly logic (line 291)
-- `calculateNextBiweeklyOccurrence(settings, fromTime)` - Biweekly logic with DST-safe calculation (line 322)
-- `calculateNextMonthlyOccurrence(settings, fromTime)` - Monthly logic (line 404)
-- `formatNextOccurrence(nextOccurrence)` - Display formatting (line 667)
-- `getDaysBetween(startDate, endDate)` - DST-safe day calculation helper (line 215)
+- `calculateNextOccurrence(settings, fromTime)` - Main entry: normalizes, dispatches, then enforces the end date
+- `calculateNextHourly(hourlySettings, from)` - Hourly logic, stepping in real hours (DST-safe)
+- `calculateNextDaily(timeSettings, from)` - Daily logic (no time set → start of tomorrow)
+- `calculateNextWeekly(weeklySettings, timeSettings, from)` - Weekly logic
+- `calculateNextBiweekly(biweeklySettings, timeSettings, from)` - Biweekly logic with DST-safe calculation
+- `calculateNextMonthly(monthlySettings, timeSettings, from)` - Monthly logic
+- `calculateNextYearly(yearlySettings, timeSettings, from)` - Yearly logic
+- `calculateNextSpecificDate(dates, from, timeSettings)` - Specific-dates logic
+- `calculateNextOccurrences(settings, count, fromTime)` - The next several occurrences
+- `formatNextOccurrence(nextOccurrence)` - Display formatting
+- `getDaysBetween(startDate, endDate)` - DST-safe day calculation helper (`recurringDateUtils.js`)
 ```javascript
 function calculateNextOccurrence(settings, fromTime = Date.now()) {
-  const { frequency, time } = settings;
+  settings = normalizeRecurringSettings(settings);
+  const from = new Date(fromTime);
 
-  // Handle different frequencies
-  switch (frequency) {
-    case "hourly":
-      return calculateNextHourlyOccurrence(settings, fromTime);
-
-    case "daily":
-      return calculateNextDailyOccurrence(settings, fromTime);
-
-    case "weekly":
-      return calculateNextWeeklyOccurrence(settings, fromTime);
-
-    case "biweekly":
-      return calculateNextBiweeklyOccurrence(settings, fromTime);
-
-    case "monthly":
-      return calculateNextMonthlyOccurrence(settings, fromTime);
-
-    case "yearly":
-      return calculateNextYearlyOccurrence(settings, fromTime);
+  let next;
+  if (settings.specificDates?.enabled && settings.specificDates.dates.length > 0) {
+    // Specific dates override the frequency
+    next = calculateNextSpecificDate(settings.specificDates.dates, from, settings.time);
+  } else {
+    switch (settings.frequency) {
+      case "hourly":   next = calculateNextHourly(settings.hourly, from); break;
+      case "daily":    next = calculateNextDaily(settings.time, from); break;
+      case "weekly":   next = calculateNextWeekly(settings.weekly, settings.time, from); break;
+      case "biweekly": next = calculateNextBiweekly(settings.biweekly, settings.time, from); break;
+      case "monthly":  next = calculateNextMonthly(settings.monthly, settings.time, from); break;
+      case "yearly":   next = calculateNextYearly(settings.yearly, settings.time, from); break;
+    }
   }
+  if (next === null) return null;
 
-  return null; // Invalid frequency
+  // End date: never schedule past settings.untilDate (inclusive, end of day)
+  if (settings.untilDate && next > endOfDay(settings.untilDate)) return null;
+
+  return next; // epoch ms
 }
 
 function formatNextOccurrence(nextOccurrence) {
-  if (!nextOccurrence) return null;
+  // Every string comes from the label registry (recurring.next* labels)
+  if (!nextOccurrence) return "No upcoming occurrences";
 
-  const now = Date.now();
-  const diff = nextOccurrence - now;
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(diff / 3600000);
-  const days = Math.floor(diff / 86400000);
+  const msUntil = nextOccurrence - Date.now();
+  if (msUntil < 0) return "Overdue";
+  if (msUntil < 60000) return "Appears in less than 1 minute";
 
   // Within 1 hour
-  if (minutes < 60) {
-    return `Appears in ${minutes} minute${minutes !== 1 ? 's' : ''}`;
-  }
+  if (msUntil < 3600000) return `Appears in ${minutes} minute(s)`;
 
   // Within 24 hours
-  if (hours < 24) {
-    return `Appears in ${hours} hour${hours !== 1 ? 's' : ''}`;
-  }
+  if (msUntil < 86400000) return `Appears in ${hours} hour(s)`;
 
-  // Beyond 24 hours - show specific date/time
-  const date = new Date(nextOccurrence);
-  const dayName = ["Sunday", "Monday", "Tuesday", "Wednesday",
-                   "Thursday", "Friday", "Saturday"][date.getDay()];
-  const timeStr = formatTime(date); // e.g., "9:00 AM"
+  // Beyond 24 hours - show specific date/time in the device's 12/24-hour clock
+  const timeStr = next.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 
-  if (days === 1) {
+  if (/* next falls on tomorrow's date */) {
     return `Next: Tomorrow at ${timeStr}`;
-  } else if (days < 7) {
-    return `Next: ${dayName} at ${timeStr}`;
+  } else if (msUntil < 604800000) {
+    return `Next: ${weekdayName} at ${timeStr}`;
   } else {
-    return `Next: ${date.toLocaleDateString()} at ${timeStr}`;
+    return `Next: ${dateStr} at ${timeStr}`; // e.g. "Wed, Jan 15, 2025"
   }
 }
 ```
 
 #### Check if Task Should Recreate (Hybrid Approach)
-**Location:** `/modules/recurringCore.js` (lines 883-911)
+**Location:** `modules/recurring/recurringMatcher.js`
 **Functions:**
-- `shouldRecreateRecurringTask(template, taskList, now)` - Validation logic (line 883)
-- `shouldTaskRecurNow(settings, now)` - Pattern matching fallback (line 737)
+- `shouldRecreateRecurringTask(template, taskList, now)` - Validation logic used by the 15-second watch
+- `shouldTaskRecurNow(settings, now)` - Pattern matching (one matcher per frequency)
+
+The fast path (`now < template.nextScheduledOccurrence`) is checked by the caller, `recreateDueTasks()` in `recurringWatcher.js`, before this function runs.
 ```javascript
 function shouldRecreateRecurringTask(template, taskList, now) {
-  // 1. Already exists? Skip
-  if (taskList.find(t => t.id === template.id)) {
-    return false;
-  }
+  if (!template.recurring || !template.recurringSettings) return false;
 
-  // 2. Fast path: Check nextScheduledOccurrence
-  if (template.nextScheduledOccurrence) {
-    if (now < template.nextScheduledOccurrence) {
-      return false; // Not time yet
-    }
-  }
+  // 1. Already exists? Skip
+  if (taskList.some(t => t.id === template.id)) return false;
+
+  // 2. Suppressed until a later time?
+  if (template.suppressUntil && new Date(template.suppressUntil) > now) return false;
 
   // 3. Was it just triggered? (prevent duplicates)
-  if (template.lastTriggeredTimestamp) {
-    const lastTriggered = new Date(template.lastTriggeredTimestamp);
-    const sameMinute = isSameMinute(lastTriggered, now);
-    if (sameMinute) return false;
-  }
+  //    Compared as real minutes since the epoch, not clock readings (DST-safe)
+  if (template.lastTriggeredTimestamp &&
+      sameRealMinute(template.lastTriggeredTimestamp, now)) return false;
 
   // 4. Slow path: Validate with pattern matching
   return shouldTaskRecurNow(template.recurringSettings, now);
 }
 
 function shouldTaskRecurNow(settings, now) {
-  const { frequency, time } = settings;
+  settings = normalizeRecurringSettings(settings);
 
-  // Daily at specific time
-  if (frequency === "daily" && time) {
-    return now.getHours() === time.hour &&
-           now.getMinutes() === time.minute;
+  // Past the end date (end of that day)? Never recur
+  if (settings.untilDate && now > endOfDay(settings.untilDate)) return false;
+
+  // Specific dates override the frequency
+  if (settings.specificDates?.enabled) { /* today must be a listed date */ }
+
+  const { frequency, time } = settings;
+  const weekday = now.toLocaleDateString("en-US", { weekday: "short" }); // "Mon"
+
+  // Daily: at the scheduled minute, or any time when no time is set
+  if (frequency === "daily") {
+    return time ? isAtScheduledTime(time, now) : true;
   }
 
-  // Weekly on specific days
-  if (frequency === "weekly" && settings.weekly?.days) {
-    const dayNames = ["Sunday", "Monday", "Tuesday", ...];
-    const today = dayNames[now.getDay()];
-    return settings.weekly.days.includes(today);
+  // Weekly on specific days (short names: "Mon", "Tue", ...)
+  if (frequency === "weekly") {
+    if (!settings.weekly.days.includes(weekday)) return false;
+    return time ? isAtScheduledTime(time, now) : true;
   }
 
   // Biweekly - two-week pattern (v1.348+ with DST-safe calculation)
@@ -1184,16 +1244,15 @@ function shouldTaskRecurNow(settings, now) {
     // Check appropriate week's days
     const currentWeekDays = isWeek1 ? settings.biweekly.week1 : settings.biweekly.week2;
     if (currentWeekDays.length === 0) return false;
-
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const today = dayNames[now.getDay()];
-    return currentWeekDays.includes(today);
+    if (!currentWeekDays.includes(weekday)) return false;
+    return time ? isAtScheduledTime(time, now) : true;
   }
 
-  // ... other frequencies
+  // Hourly: the chosen minute (minute 0 when none is stored)
+  // ... monthly, yearly
 }
 
-// DST-safe helper function
+// DST-safe helper function (recurringDateUtils.js)
 function getDaysBetween(startDate, endDate) {
   // Normalize to midnight UTC to eliminate DST effects
   const start = new Date(Date.UTC(
@@ -1212,136 +1271,136 @@ function getDaysBetween(startDate, endDate) {
 }
 ```
 
+`isAtScheduledTime()` places the time on today's date with the same helper the calculator uses (`applyTimeToDate()`), so the matcher and the scheduler agree on a day when the clocks change.
+
 #### Catch Up Missed Tasks
-**Location:** `/modules/recurringCore.js` (lines 924-1082)
+**Location:** `modules/recurring/recurringWatcher.js`
 **Function:** `catchUpMissedRecurringTasks()`
-**Trigger:** Runs when browser tab becomes visible again (`visibilitychange` event)
+**Triggers:** at startup (`setupRecurringWatcher()`, when the active routine has templates), when a routine is loaded (`routineLoader.js`), when the browser tab becomes visible again (`visibilitychange` event), and from a watch tick that detects it overslept
 ```javascript
 async function catchUpMissedRecurringTasks() {
-  const state = getAppState();
-  const currentCycle = state.cycles[state.appState.activeRoutineId];
-  if (!currentCycle?.recurringTemplates) return;
+  if (!Deps.isEnabled()) return { added: 0, updated: 0 };
+  await Deps.appInit?.waitForCore();
 
-  const now = Date.now();
-  const tasksToAdd = [];
+  const state = Deps.AppState.get();
+  const activeRoutineId = getActiveRoutineId(state);
+  const routine = getRoutine(state, activeRoutineId);
+  const templates = routine?.recurringTemplates || {};
+  if (!Object.keys(templates).length) return { added: 0, updated: 0 };
 
-  // Check each template for missed occurrences
-  Object.values(currentCycle.recurringTemplates).forEach(template => {
-    // Skip if already in task list
-    if (currentCycle.tasks.find(t => t.id === template.id)) return;
+  const now = new Date(Deps.now());
 
-    // Check if it should have appeared by now
-    if (shouldTaskRecurNow(template.recurringSettings, now)) {
-      tasksToAdd.push({
-        id: template.id,
-        text: template.text,
-        completed: false,
-        recurring: true,
-        recurringSettings: template.recurringSettings
-      });
+  // Shared engine, with NO pattern re-validation: a template whose
+  // nextScheduledOccurrence has passed is trusted as missed.
+  // One task per template, however many occurrences were missed.
+  const stats = await recreateDueTasks(activeRoutineId, templates, routine.tasks, now);
 
-      // Update template for next occurrence
-      template.lastTriggeredTimestamp = now;
-      template.nextScheduledOccurrence = calculateNextOccurrence(
-        template.recurringSettings,
-        now
-      );
-    }
-  });
-
-  // Add all missed tasks in batch
-  if (tasksToAdd.length > 0) {
-    updateAppState(draft => {
-      const cycle = draft.cycles[draft.appState.activeRoutineId];
-      cycle.tasks.push(...tasksToAdd);
-    });
+  if (stats.added > 0) {
+    Deps.showNotification(`Added ${stats.added} missed recurring task(s)`, 'info');
   }
+  return stats; // { added, updated, blocked }
 }
 ```
 
+`recreateDueTasks()` skips a template that is already in the list, paused, finished (`nextScheduledOccurrence == null`), count-exhausted, or not yet due. Each template is evaluated in its own `try`, so one template with bad data cannot stop the others.
+
 #### Watch Recurring Tasks (15-second Polling)
-**Location:** `/modules/recurringCore.js` (lines 1086-1217)
+**Location:** `modules/recurring/recurringWatcher.js`
 **Function:** `watchRecurringTasks()`
-**Trigger:** Runs every 15 seconds via `setInterval` (setup in `recurringIntegration.js`)
+**Trigger:** Runs every `INTERVALS.RECURRING_WATCHER` (15 seconds) via the injected `setInterval`; the interval is created by `switchInterval()` in the same file, first called from `setupRecurringWatcher()`. It also runs on `visibilitychange`, shortly after a recurring task is checked off (`taskCompletion.js`, through its optional `watchRecurringTasks` dependency), and from `restartRecurringWatcher()` when a template is created or changed.
 ```javascript
 // Simplified version of the watch function
 export async function watchRecurringTasks() {
+  if (!Deps.isEnabled()) return;
+
   // Wait for core systems
-  await appInit.waitForCore();
+  await Deps.appInit?.waitForCore();
 
   // Get current state
-  const state = Deps.getAppState();
-  const cycleData = state.data?.routine?.[state.appState.activeRoutineId];
-  const templates = cycleData.recurringTemplates || {};
-  const taskList = cycleData.tasks || [];
+  const state = Deps.AppState.get();
+  const activeRoutineId = getActiveRoutineId(state);
+  const routine = getRoutine(state, activeRoutineId);
+  const templates = routine.recurringTemplates || {};
+  const taskList = routine.tasks || [];
+
+  // 15s while templates exist, 2h idle when there are none
+  switchInterval(Object.keys(templates).length > 0);
 
   const now = new Date(Deps.now());
-  const tasksToAdd = [];
 
-  // Check each template
-  Object.values(templates).forEach(template => {
-    // Skip if already exists
-    if (taskList.some(task => task.id === template.id)) return;
+  // Overslept (device sleep, frozen tab)? Let catch-up handle this tick
+  if (overslept) return catchUpMissedRecurringTasks();
 
-    // Fast path: Check timestamp
-    if (template.nextScheduledOccurrence && now.getTime() < template.nextScheduledOccurrence) {
-      return; // Not due yet
-    }
+  // Shared engine, plus the slow-path pattern check for each due template
+  await recreateDueTasks(activeRoutineId, templates, taskList, now,
+    (template) => Deps.shouldRecreateRecurringTask(template, taskList, now));
+}
 
-    // Slow path: Validate with pattern matching
-    if (!shouldRecreateRecurringTask(template, taskList, now)) return;
+async function recreateDueTasks(activeRoutineId, templates, taskList, now, extraEligibility) {
+  // ...select the due templates, build instances, apply the task limit...
 
-    // Add task
-    tasksToAdd.push({ /* task data */ });
-  });
-
-  // Update AppState with new tasks
-  if (tasksToAdd.length > 0) {
-    Deps.updateAppState(draft => {
-      draft.data.routine[activeCycleId].tasks.push(...tasksToAdd);
-    });
-  }
+  // Commit as a SYSTEM mutation: saved immediately, not added to undo history
+  await Deps.updateAppState(draft => {
+    const routine = getRoutine(draft, activeRoutineId);
+    // insert each new task at its template's position (append when unknown)
+    // replace each spawned template with its advanced copy
+  }, true, { system: true });
 }
 ```
 
 #### Cycle Reset (Delete Recurring Tasks)
-**Location:** `/modules/recurringCore.js` (lines 1593-1632)
-**Function:** `removeRecurringTasksFromCycle(cycleId, taskList, recurringTemplates)`
-**Called by:** `completeMiniCycle()` in main app when cycle completes
+**Location:** `modules/recurring/recurringActivation.js`
+**Function:** `removeRecurringTasksFromCycle(taskElements, cycleData)`
+**Called by:** `resetTasksData()` in `modules/task/taskCycleReset.js` when the cycle resets
+
+The function only *plans* the removal. It removes the recurring task elements from the DOM and returns `{ removedIds, keptIds, templateUpdates }`; it does not touch state. The caller applies the plan inside its own `AppState.update()`.
 ```javascript
-function completeMiniCycle() {
-  const tasks = currentCycle.tasks;
+// recurringActivation.js — plan
+function removeRecurringTasksFromCycle(taskElements, cycleData) {
+  const plan = { removedIds: [], keptIds: [], templateUpdates: {} };
 
-  // Separate recurring from non-recurring
-  const recurringTasks = tasks.filter(t => t.recurring);
-  const nonRecurringTasks = tasks.filter(t => !t.recurring);
+  taskElements.forEach(taskEl => {
+    if (!taskEl.classList.contains('recurring')) return;
+    const taskId = taskEl.dataset.taskId;
+    const task = cycleData.tasks.find(t => t.id === taskId);
 
-  // Reset non-recurring tasks
-  nonRecurringTasks.forEach(task => {
-    task.completed = false;
-  });
+    // Pinned (set NOT to clear): keep it, just uncheck it
+    if (!getAutoClear(task, cycleData, DEFAULT_RECURRING_DELETE_SETTINGS)) {
+      plan.keptIds.push(taskId);
+      return;
+    }
 
-  // Delete recurring tasks (templates remain)
-  currentCycle.tasks = nonRecurringTasks;
+    taskEl.remove();
+    plan.removedIds.push(taskId);
 
-  // ✅ NEW (v1.338+): Recalculate nextScheduledOccurrence for recurring templates
-  // This ensures tasks can appear again based on the current time after reset
-  Object.values(currentCycle.recurringTemplates).forEach(template => {
-    if (template.recurring) {
-      template.nextScheduledOccurrence = calculateNextOccurrence(
-        template.recurringSettings,
-        Date.now()
-      );
-      template.lastTriggeredTimestamp = null; // Reset since cycle completed
+    // ✅ (v1.338+): Recalculate nextScheduledOccurrence from the current time
+    if (cycleData.recurringTemplates?.[taskId]) {
+      plan.templateUpdates[taskId] = {
+        nextScheduledOccurrence: calculateNextOccurrence(template.recurringSettings, Date.now()),
+        lastTriggeredTimestamp: null,             // Reset since cycle completed
+        position: /* where the task sat in the list */
+      };
     }
   });
 
-  // Templates still exist in recurringTemplates
-  // They will be recreated by watchRecurringTasks() when due
-
-  saveToLocalStorage();
-  renderTasks(currentCycle.tasks);
+  return plan;
 }
+
+// taskCycleReset.js — apply, inside AppState.update()
+routine.tasks = routine.tasks.filter(t => !removedIds.has(t.id) /* and not cleared */);
+keptIds.forEach(id => { /* task.completed = false */ });
+Object.entries(templateUpdates).forEach(([id, upd]) => {
+  const template = routine.recurringTemplates[id];
+  template.nextScheduledOccurrence = upd.nextScheduledOccurrence;
+  template.lastTriggeredTimestamp = upd.lastTriggeredTimestamp;
+  template.position = upd.position;
+  template.dueDate = null;   // the date belonged to the occurrence just cleared
+  template.dueTime = null;
+});
+// Non-recurring tasks: completed = false, due date cleared
+
+// Templates still exist in recurringTemplates
+// They will be recreated by watchRecurringTasks() when due
 ```
 
 ---
@@ -1670,17 +1729,17 @@ Do you just need a reminder?
 **Checklist:**
 
 1. **Is it actually set to recurring?**
-   - Open "Manage Recurring Tasks" from menu
+   - Open the Recurring panel from the main menu
    - Check if the task appears in the list
    - If not there, the task isn't set to recur
 
-2. **For newly-enabled recurring tasks (v1.338+):**
-   - After toggling recurring ON, the task should appear within 15 seconds
-   - The system sets `nextScheduledOccurrence = 0` for immediate appearance
-   - If it doesn't appear, try switching tabs or refreshing the page
+2. **Is it paused, pinned, or finished?**
+   - A paused task shows "Paused" in the panel and does not recur until you resume it
+   - A recurring task pinned to the list shows "Paused · pinned"; it never leaves the list, so there is nothing to reappear
+   - A task that has used up its number of times, or passed its end date, shows "No upcoming occurrences"
 
 3. **Check the next occurrence time:**
-   - Open "Manage Recurring Tasks"
+   - Open the Recurring panel
    - Look for "Next: [time]" under the task
    - This shows exactly when it will appear
    - Example: "Next: Tomorrow at 9:00 AM" means it's scheduled for tomorrow
@@ -1688,7 +1747,7 @@ Do you just need a reminder?
 4. **Has enough time passed?**
    - Watch function checks every 15 seconds
    - Wait up to 15 seconds after scheduled time
-   - Example: 9:00am task may appear between 9:00:00 and 9:00:30
+   - Example: 9:00am task may appear between 9:00:00 and 9:00:15
 
 5. **Did the task already appear?**
    - Check if it's already in your task list
@@ -1706,11 +1765,18 @@ Do you just need a reminder?
    - The catch-up function will check for missed tasks
    - This forces an immediate check instead of waiting for the 15-second interval
 
-8. **Was it triggered recently?**
-   - Tasks won't appear twice in the same minute
-   - If you complete cycle at 9:00am and task is scheduled for 9:00am, it may not reappear until 9:01am
+8. **Did you reset the cycle at the scheduled time?**
+   - A reset schedules each removed task for its next occurrence *after* the moment of the reset
+   - If a daily 9:00am task is in the list and you complete the cycle at 9:00am or later, its next occurrence is 9:00am tomorrow
+   - Separately, the watcher never recreates a task twice in the same minute
 
-9. **After cycle reset (v1.338+):**
+9. **Is the list full?**
+   - A routine holds at most `LIMITS.TASKS_PER_CYCLE` tasks; a recurring task that would exceed it is held back (with a warning) and appears once there is room
+
+10. **Is this the open routine?**
+   - Only the routine you have open is checked. A missed task in another routine is added when you open that routine
+
+11. **After cycle reset (v1.338+):**
    - The schedule is automatically recalculated from the current time
    - This ensures tasks can appear again based on the schedule
    - No manual intervention needed
@@ -1722,7 +1788,7 @@ Do you just need a reminder?
 Recurring tasks are **deleted on cycle reset** and reappear based on their schedule.
 
 **To see them:**
-- Open menu → "Manage Recurring Tasks"
+- Open menu → "Recurring"
 - This shows all scheduled tasks, even when not visible
 
 **To check when they'll reappear:**
@@ -1731,14 +1797,15 @@ Recurring tasks are **deleted on cycle reset** and reappear based on their sched
 
 ### Q: "How do I change a recurring task's schedule?"
 
-**Method 1: From the task (while visible):**
-1. Click task options (three dots)
-2. Click recurring button (🔁)
-3. Adjust settings in Quick Actions
-4. Or click "More Options" for full panel
+**Method 1: From the Quick Actions notification (right after turning recurring on):**
+1. Click "Change Settings" in the notification
+2. Pick a frequency and click "Apply"
+3. Or click "More Options" for full panel
+
+(Clicking the 🔁 button on a task that is already recurring turns recurring off; it does not reopen the settings.)
 
 **Method 2: From Recurring Panel (anytime):**
-1. Open menu → "Manage Recurring Tasks"
+1. Open menu → "Recurring"
 2. Click the task you want to change
 3. Click "Change Settings"
 4. Adjust and click "Apply"
@@ -1763,25 +1830,25 @@ Recurring tasks are **deleted on cycle reset** and reappear based on their sched
 
 **If you need flexibility:** Consider using reminders instead of recurring, so the task stays visible.
 
-### Q: "Why does the 'Manage Recurring Tasks' button disappear?"
+### Q: "Why does the recurring link under my task list disappear?"
 
-**The button only shows when you have active recurring tasks.**
+**The "Recurring" button in the main menu is always shown.** The info link under the task list ("N tasks set to recurring") only shows when the open routine has recurring templates.
 
-**It disappears when:**
+**The link disappears when:**
 - You turn off recurring for all tasks
-- You delete all recurring tasks
-- No templates exist in storage
+- You delete all recurring tasks (deleting a recurring task also deletes its template)
+- No templates exist on the routine
 
 **It reappears when:**
 - You set any task to recur
-- You import a cycle with recurring tasks
+- You import a routine with recurring tasks
 
 ### Q: "Can I see when a recurring task will appear next?"
 
 **Yes!** The Recurring Panel shows the next occurrence time for every scheduled task.
 
 **How to view:**
-1. Open menu → "Manage Recurring Tasks"
+1. Open menu → "Recurring"
 2. Look under each task for "Next: [time]"
 
 **Format examples:**
@@ -1790,7 +1857,7 @@ Recurring tasks are **deleted on cycle reset** and reappear based on their sched
 - "Next: Tomorrow at 9:00 AM" - specific date and time
 - "Next: Wednesday at 2:30 PM" - for weekly tasks
 
-**Technical details:** miniCycle calculates `nextScheduledOccurrence` when you set recurring settings, and updates it each time the task appears. This uses a hybrid optimization approach for performance.
+**Technical details:** miniCycle calculates `nextScheduledOccurrence` when you set recurring settings, and updates it each time the task appears, each time a cycle reset removes the task, and when you resume a paused task. This uses a hybrid optimization approach for performance.
 
 ### Q: "What happens if I miss multiple days of a daily recurring task?"
 
@@ -1863,8 +1930,8 @@ miniCycle is built for **cycle-based routine management**, not **project-based t
 **Catch-Up Function:**
 When you return to miniCycle after being away, it automatically checks for any missed recurring tasks:
 
-1. **Trigger:** Runs when browser tab becomes visible again
-2. **Check:** Scans all templates for missed occurrences
+1. **Trigger:** Runs when the app starts, when a routine is opened, when the browser tab becomes visible again, and when the watcher notices the device was asleep
+2. **Check:** Scans the open routine's templates for a next occurrence that has passed
 3. **Add Once:** Each template creates ONE task (see "What happens if I miss multiple days" above)
 4. **Update:** Calculates next occurrence for future
 
@@ -1998,9 +2065,9 @@ Work Routine cycle:
    - **On schedule** → Recurring task (deletes/recreates)
    - **Need reminder** → Reminders (stays visible)
 
-5. **"Manage Recurring Tasks" is your control center** - see and edit scheduled tasks even when not visible
+5. **The Recurring panel is your control center** - see and edit scheduled tasks even when not visible
 
-6. **Watch function checks every 15 seconds** - tasks appear automatically at scheduled times
+6. **Watch function checks every 15 seconds** (`INTERVALS.RECURRING_WATCHER`) - tasks appear automatically at scheduled times
 
 ### Who This Is For
 
@@ -2029,6 +2096,7 @@ miniCycle is open source and actively developed. Your input helps improve the re
 *miniCycle v1.338+ | sparkinCreations | 2025*
 
 **Guide Changelog:**
+- Nov 2026: Checked against the code for the docs audit — Technical Architecture rewritten for the split `modules/recurring/` modules, Schema 2.6 names, the menu button, watcher/catch-up behaviour and the Add Task flow corrected
 - v1.3 (Nov 2025): Added comprehensive explanation of "one task only" catch-up behavior and cycle-based vs project-based philosophy
 - v1.2 (Oct 2025): Added immediate appearance for newly-enabled recurring tasks, schedule recalculation on cycle reset
 - v1.1 (Oct 2025): Added next occurrence display, catch-up function, two-state notifications, hybrid optimization

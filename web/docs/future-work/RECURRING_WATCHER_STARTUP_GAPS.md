@@ -52,8 +52,9 @@ journey step: new user, make a task recurring, assert the watcher is initialized
 
 **From reading the code; not reproduced.**
 
-Only `watchRecurringTasks()` calls `switchInterval()`. Loading a routine
-(`routineLoader.js`) calls `catchUpMissedRecurringTasks()`, which does not. So if the app
+`switchInterval()` is called from three places: `setupRecurringWatcher()` (boot),
+`restartRecurringWatcher()` (a template is created) and `watchRecurringTasks()`. Loading a
+routine (`routineLoader.js`) calls `catchUpMissedRecurringTasks()`, which is none of them. So if the app
 booted on a routine with no recurring templates, the watcher is on
 `INTERVALS.RECURRING_WATCHER_IDLE` (2 hours), and switching to a routine that has templates
 leaves it there until something else calls the watch: a completion, a cycle reset, pull to

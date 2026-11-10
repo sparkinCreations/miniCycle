@@ -1,7 +1,8 @@
 # Docs Audit Plan — accuracy, numbers, archive, sidebar (round 0 + 12 rounds)
 
-> **Status:** in progress — rounds 0, 1 and 2 done (round 2 shipped in v2.678,
-> Nov 10 2026); round 3a is next. Proposed Oct 27 2026;
+> **Status:** in progress — rounds 0, 1, 2 and 3a done (round 2 shipped in v2.678,
+> Nov 10 2026; round 3a approved by MJ the same day, its questions still open);
+> round 3b is next. Proposed Oct 27 2026;
 > revised Nov 5 2026 (round 0, two new gates, line-budgeted rounds, wider
 > scope — see *Decisions*).
 > **Owner:** MJ reviews each round; Claude executes.
@@ -119,7 +120,7 @@ below.
 | 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | ✅ done Nov 5 2026 — see *Round 0 result* |
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
 | 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | ✅ audited Nov 6 2026 — see *Round 2 result* (questions open) |
-| 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`. **First job (MJ, Nov 7 2026):** `SCHEMA_2_6` becomes the only description of the stored shape — audit it against the code, carry in round 2's `DATA_SCHEMA_GUIDE` corrections (`showTaskInput` per routine, not in settings; `dueTime`; the recurring-template shape; `frequencyUnit`), then cut the guide's ~185-line copy of the shape and keep it as the short data-flow walkthrough + worked example, linking to `SCHEMA_2_6` (it stays a file: eight `modules/` comments cite it) | pending |
+| 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`. **First job (MJ, Nov 7 2026):** `SCHEMA_2_6` becomes the only description of the stored shape — audit it against the code, carry in round 2's `DATA_SCHEMA_GUIDE` corrections (`showTaskInput` per routine, not in settings; `dueTime`; the recurring-template shape; `frequencyUnit`), then cut the guide's ~185-line copy of the shape and keep it as the short data-flow walkthrough + worked example, linking to `SCHEMA_2_6` (it stays a file: eight `modules/` comments cite it) | ✅ done Nov 10 2026 — see *Round 3a result* (questions open) |
 | 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | pending |
 | 4 | 13 | ~5,000 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
 | 5 | 13 | ~5,700 | **Working on Code** rest (5): `MAKING_CODE_CHANGES`, `MESSAGING_SURFACES`, `SECURITY_GUIDE`, `TESTING_GUIDE`, `VALIDATION_GATES`; **Security** (6 incl. `audits/`); **Deployment**: `BUILD_PROCESS`, `DEPLOYMENT` | pending |
@@ -268,6 +269,133 @@ names the mode a press switches to, like its icon and tooltip (fixed the same wa
 `main` in v2.671, `4b046ac2`; the merge keeps main's code and this branch's test). The copyright
 statement's author name stays out of the repo — the placeholder now says it is filled
 in on the signed copy only.
+
+### Round 3a result (Nov 10 2026)
+
+**Audited:** all six docs plus the schema merge (three readers, disjoint files). The
+readers' larger corrections were then re-checked against the code by the session running
+the round, not taken from their reports: the label catalog by an independent script (405
+rows — every key exists, every value and theme flag matches `defaultLabels.js`), the
+`REVIEW_PATTERNS` heading list (identical before and after, so every "pattern #N"
+citation still lands), and about thirty individual claims across the other docs.
+
+**The schema merge (MJ, Nov 7 2026) is done.** `SCHEMA_2_6` is now the only description
+of the stored shape (614 → 760 lines); `DATA_SCHEMA_GUIDE` lost its copy of the shape
+(285 → 125 lines) and keeps the data-flow walkthrough and the worked example. Every
+heading of the guide is kept, so `#how-data-flows` (cited twice from
+`modules/core/appState.js`) still resolves. Carried into `SCHEMA_2_6`, each checked
+against the writer first: `showTaskInput` per routine, `dueTime`, the full
+recurring-template shape (a new *Recurring Template Structure* section, from
+`buildRecurringTemplate()`), `frequencyUnit` in minutes, hours or days.
+
+**Heaviest corrections:**
+
+- `RECURRING_SYSTEM_REFERENCE` — its *Technical Architecture* described three files
+  under `/modules/` with line counts; it now describes `modules/recurring/` as it is
+  (coordinator, sub-modules, lazy panel). Seven named functions did not exist
+  (`completeMiniCycle`, `removeRecurringFromTask`, `calculateNextDailyOccurrence` …).
+  Wrong behaviour claims fixed: the 🔁 button on a recurring task turns recurring off (it
+  does not open settings); *Add Task to Recurring* applies daily defaults to every
+  selected task in one step; a newly enabled task is not given a next occurrence of 0; a
+  daily 9:00 task reset at 9:00 returns tomorrow, not at 9:01.
+- `SCHEMA_2_6` — the recurring-settings block was the pre-2.6 shape and is replaced with
+  what `normalizeRecurringSettings()` returns; the achievements table listed eight tiers
+  (there are the five in `MILESTONES.TIERS`); `achievements.unlocked` holds records, not
+  ids; `userProgress.totalTasksCompleted` *is* written (the doc said the opposite);
+  `appState` said `activeCycleId`.
+- `MCYC_FILE_FORMAT` — export is *Download* under the main menu's Routine Actions, not
+  "Export miniCycle" in Settings; the full-state backup is a wrapper around a string, not
+  a bare document; the first-run screen has no `.mcyc` import; the Settings example showed
+  a nested `accessibility` object that does not exist.
+- `TASKDOM_DI_GUIDE` — it documented a `window.*` wrapper layer and hand-wiring in
+  `orchestrator.js`; neither exists. Bodies rewritten to the manifest / `createDIModule`
+  route, the Jest sample replaced with two real cases from `tests/taskCore.tests.js`.
+  Two `###` headings under *Correct Usage* changed (the "import directly" option does not
+  exist); nothing linked to either.
+- `LABEL_REGISTRY_REFERENCE` — 62 keys were listed under dotted names that never shipped
+  (`action.addTask.button` → `action.addTaskButton`), 10 rows named keys that do not
+  exist, 44 values and 9 theme flags were stale. Its status now says what it is: a
+  partial catalog, with `defaultLabels.js` authoritative.
+- `REVIEW_PATTERNS` — small: two stale counts, four `file:line` citations turned into
+  function names, the input-bar menu wording. No pattern renumbered, renamed or removed.
+
+**Gates:** volatile counts 33 → 32; Schema 2.5 names 11 → 10 (the eleventh was added by a
+future-work note written earlier the same day, reworded here); docs code references
+130 → 104. Left in this round's docs: four references in `REVIEW_PATTERNS` that are not
+app code and belong on the allow-list round 10 needs — `checkNeeded()` (in a passage
+about its removal), `Routine_Lists.webp` (an asset), `showOpenFilePicker` and
+`Emulation.setCPUThrottlingRate` (browser and DevTools APIs).
+
+**Touched outside the six docs,** one line each, because this round made them untrue:
+`APPINIT_SYSTEM` and `ARCHITECTURE_OVERVIEW` described `DATA_SCHEMA_GUIDE` as the schema
+structure; `LABEL_SYSTEM_ARCHITECTURE` called the label reference a "complete audit of
+all 566 keys". Two future-work notes from Nov 10 were corrected:
+`RECURRING_WATCHER_STARTUP_GAPS` said only `watchRecurringTasks()` calls
+`switchInterval()` (setup and restart do too; its finding stands), and
+`APPSTATE_LOAD_PATH_AND_VALIDATION` quoted a 2.5 path that tripped the names gate.
+
+**Not touched, because it would make this a release round** (round 0's lesson): eight
+comment lines in `modules/` still call `DATA_SCHEMA_GUIDE` the "Schema reference", and
+`scripts/build-visual-map.py` points to it as the "full reference" from a card titled
+"The Schema 2.5 document" (so does the generated `visual-map-04-state-flow.svg`);
+`scripts/update-version.sh` cites `docs/developer-guides/TASKDOM_DI_GUIDE.md`, a folder
+that does not exist. Fold both into the next release that touches those files.
+
+**Found in code or shipped pages, not fixed.** Checked by the session running the round:
+
+- *Real, low.* The published `.mcyc` schema (`web/mcyc.schema.json`, the pinned
+  `schema/mcyc-2.6.schema.json`) and `pages/mcyc-format.html` document recurring fields
+  the importer does not read: `repeatCount` (the app reads `count`) and
+  `monthly.dayOfMonth` / `nthWeekday` / `weekday` (the app reads `useSpecificDays`,
+  `days`, `lastDay`, `useWeekOfMonth`, `weekOfMonth`). `normalizeRecurringSettings()`
+  keeps known keys only, so a file written by hand from the schema loses its repeat count
+  and monthly pattern without an error. Files the app exports are unaffected.
+- *Real, low.* `cycleImportManager.js` accepts only `minutes` or `hours` for a routine's
+  `reminders.frequencyUnit`, so a routine exported with reminders in days imports with
+  the same number in hours.
+- *Cosmetic.* The `showNotification` wrapper `recurringIntegration.js` hands the recurring
+  core takes three arguments, so the icon option the watcher passes never arrives.
+
+Reported by the readers and not re-checked: the history import's `details` allow-list
+omits five keys `cycleCompletion.js` writes; `core/types.js` typedefs predate 2.6
+(`Cycle.name`, the recurring shapes, `wasHighPriority`); `metadata.totalCyclesCompleted`
+and `achievements.seen` are written once and never used; `handleRecurringTasksAfterReset()`
+no longer does anything; 72 catalogued label keys are named literally nowhere (keys
+built at run time were not ruled out); stale headers in `defaultLabels.js`,
+`labelResolver.js`, `recurringIntegration.js`, `taskDOM.js` and `taskCycleReset.js`.
+
+**Check 4:** `Schema 2.6`, `MCYC File Format`, `Review Patterns`, `Label Registry
+Reference` and `Data Schema Guide` are short forms of their H1s. Two are not, and are
+open questions below: `RECURRING_SYSTEM_REFERENCE` (H1 "miniCycle Recurring Tasks:
+Complete User Guide") and `TASKDOM_DI_GUIDE` (H1 "DI-Pure Module Guide").
+
+**Open questions (MJ):**
+
+1. `RECURRING_SYSTEM_REFERENCE` is two documents: about 60% is a user guide (comparison
+   with other apps, who should use it, alternatives, best practices — roughly 550 lines
+   with no code claims) and the rest is the reference. Split it, cut the user-guide part,
+   or leave it? Its H1, its "Version 1.6 | For miniCycle v2.023+" line and its own
+   changelog follow from that answer.
+2. `LABEL_REGISTRY_REFERENCE`'s per-key tables cover about a fifth of the registry and
+   will drift with the next label change. Cut them and keep the short "how labels
+   resolve" top, generate them from `defaultLabels.js`, or keep them by hand?
+3. `TASKDOM_DI_GUIDE`, once corrected, is a short note that overlaps `DI_PATTERNS`,
+   `MAKING_CODE_CHANGES` and `HIDDEN_CODEBASE_INSIGHTS`. Merge it into one of them
+   (round 4 or 5), or keep it and retitle the H1 and the two headings that no longer
+   fit ("Two Task Rendering Paths", "When Legacy Wrappers Are OK")?
+4. `REVIEW_PATTERNS`: number its six unnumbered sections so they can be cited? And the
+   heading "The charcoal prompt modals are a name-entry family" now has one caller that
+   is not a name (the auto-uncheck time picker).
+5. The published `.mcyc` schema: fix the rolling `mcyc.schema.json` and the public page,
+   and decide what the pinned 2.6 schema, immutable by policy, should do about it.
+6. `MCYC_FILE_FORMAT` (1,332 lines) repeats much of the public format page. Cut its
+   best-practice advice and the two generator scripts in a later round? Keep or drop
+   "Document Version: 1.5"?
+7. `web/examples/routines/` holds scratch files (`.txt`, `.docx`, a 2.5 backup); only
+   `examples/sample-routines/` is used by the app.
+8. The repo-root `README` (round 2) says badges unlock "at 5, 25, 50, 75 and 100 cycles,
+   or at a matching number of cleared tasks"; the cleared-task thresholds in
+   `MILESTONES.TIERS` are 5, 125, 250, 375 and 500.
 
 ## How a round runs
 
