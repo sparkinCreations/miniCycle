@@ -714,6 +714,54 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
         }
     });
 
+    // Until Nov 2026 these got the "this will replace all your routines" warning
+    // and were refused only after the user confirmed it.
+    for (const [label, suffix, fileBody, expected] of [
+        ['a routine file', 'routine-file', JSON.stringify({ name: 'r', title: 'R', tasks: [] }), 'Invalid file format'],
+        ['a backup with a broken document', 'broken-doc', JSON.stringify({ schemaVersion: '2.6', miniCycleData: '{}' }), 'corrupt']
+    ]) {
+        await test(`Settings restore refuses ${label} before warning about replacing data`, async () => {
+            const fresh = await import(`../modules/ui/backupRestoreManager.js?v=${cacheBuster}-${suffix}`);
+            const current = JSON.stringify({ schemaVersion: '2.6', sentinel: 'current-data' });
+            localStorage.setItem('miniCycleData', current);
+
+            const notes = [];
+            let confirmations = 0;
+            fresh.setBackupRestoreManagerDependencies({
+                AppState: { get: () => ({}), forceSave: () => {} },
+                showNotification: (msg) => notes.push(String(msg)),
+                showConfirmationModal: ({ callback }) => { confirmations++; callback(true); },
+                safeAddEventListener: (el, ev, fn, opts) => el.addEventListener(ev, fn, opts)
+            });
+
+            const btn = document.createElement('button');
+            btn.id = 'restore-mini-cycles';   // DOM_IDS.RESTORE_MINI_CYCLES
+            document.body.appendChild(btn);
+            try {
+                fresh.setupRestoreButton();
+                btn.click();
+                const input = document.getElementById('import-cycle-file-input');
+                if (!input) throw new Error('restore file input was never created');
+                const dt = new DataTransfer();
+                dt.items.add(new File([fileBody], 'not-a-backup.json', { type: 'application/json' }));
+                input.files = dt.files;
+                input.dispatchEvent(new Event('change'));
+
+                for (let i = 0; i < 60 && !notes.some(n => n.includes(expected)); i++) {
+                    await new Promise(r => setTimeout(r, 50));
+                }
+                if (!notes.some(n => n.includes(expected))) {
+                    throw new Error(`expected "${expected}", got: ${JSON.stringify(notes)}`);
+                }
+                if (confirmations !== 0) throw new Error('the replace-everything warning was shown for an unusable file');
+                if (localStorage.getItem('miniCycleData') !== current) throw new Error('current data was changed');
+            } finally {
+                btn.remove();
+                document.getElementById('import-cycle-file-input')?.remove();
+            }
+        });
+    }
+
     await test('Settings restore rejects a pre-2.5 backup without touching current data', async () => {
         // A separate module instance: setupRestoreButton() wires once per module
         // (_initialized.restoreButton), and the test above already used this one's.
