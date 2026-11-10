@@ -1,14 +1,23 @@
 /**
  * 📱 miniCycle Device Detection Module (DI-Pure)
  *
- * Handles device capability detection and app version routing
+ * Offers the Lite version on a device where the full app is measurably slow,
+ * and answers touch-input questions for the UI.
  *
- * Features:
- * - User agent analysis
- * - Hardware capability detection
- * - Network connection assessment
- * - Compatibility data stored in the state document
- * - Automatic lite version routing
+ * The Lite offer (Nov 2026; replaced an automatic redirect):
+ * - Judged by how long the full app takes to boot HERE (performance.now() at
+ *   the end of UI boot), not by user-agent sniffing or connection type. A
+ *   browser too old to run the app never gets this far: the feature gate in
+ *   miniCycle.html sends it to Lite before boot. And connection speed says
+ *   nothing about a cached PWA, which boots from the service worker.
+ * - A boot right after an update (it downloads the new build) and a boot in a
+ *   hidden tab (throttled timers) are not counted.
+ * - After LIMITS.SLOW_BOOTS_BEFORE_LITE_OFFER slow boots in a row (one on a
+ *   device with 2 or fewer cores), the user is ASKED, once: Lite keeps its own
+ *   separate list, so moving there silently showed an empty app. The answer is
+ *   kept in settings.deviceCompatibility and never asked again; choosing
+ *   "Try Full Version" in Lite (STORAGE_KEYS.FORCE_FULL_VERSION) counts as no.
+ * - Never on the native or desktop shells, which always run the full app.
  *
  * Note: window.screen, window.location, navigator.* are browser APIs,
  * not dependencies - they cannot be injected.
@@ -16,7 +25,7 @@
  * @module deviceDetection
  */
 
-import { STORAGE_KEYS, UI_TIMEOUTS, SCHEMA } from '../core/constants.js';
+import { STORAGE_KEYS, UI_TIMEOUTS, SCHEMA, BOOT_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
@@ -27,6 +36,7 @@ import { createDIModule, required, optional } from '../core/diBase.js';
 
 const di = createDIModule('DeviceDetection', {
     showNotification: optional((msg) => console.warn('showNotification not available:', msg)),
+    showConfirmationModal: required(),
     AppState: required(),
     appInit: required(),
     AppMeta: optional(null)
@@ -62,155 +72,128 @@ export class DeviceDetectionManager {
     return di.resolve().AppMeta?.version || this._constructorVersion;
   }
 
-  // Main detection function
-  async runDeviceDetection() {
-    const userAgent = navigator.userAgent;
-
-    // Check manual override first
-    if (await this.checkManualOverride(userAgent)) {
-      return;
-    }
-
-    // Perform detection and routing
-    await this.performDetectionAndRouting(userAgent);
+  /**
+   * The stored device record (settings.deviceCompatibility), or {}.
+   * @returns {Object}
+   */
+  getRecord() {
+    return this.deps.AppState.get()?.settings?.deviceCompatibility || {};
   }
 
-  async checkManualOverride(userAgent) {
-    const manualOverride = localStorage.getItem(STORAGE_KEYS.FORCE_FULL_VERSION);
-    if (manualOverride === 'true') {
-
-      // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
-      const appInitModule = this.deps.appInit;
-      await appInitModule.waitForCore();
-
-      if (!this.deps.AppState.isReady()) {
-        console.error('❌ State data required for device detection');
-        return false;
-      }
-
-      await this.saveCompatibilityData({
-        shouldUseLite: false,
-        reason: 'manual_override',
-        userAgent: userAgent
-      });
-
-      this.deps.showNotification(getLabel('notify.deviceDetectionComplete'), 'success', UI_TIMEOUTS.NOTIFICATION_LONG);
-      return true;
-    }
-    return false;
-  }
-
-  shouldRedirectToLite() {
-    const userAgent = navigator.userAgent.toLowerCase();
-
-    // Device capability checks
-    const isOldDevice =
-      /android [1-4]\./i.test(userAgent) ||
-      /chrome\/[1-4][0-9]\./i.test(userAgent) ||
-      /firefox\/[1-4][0-9]\./i.test(userAgent) ||
-      /safari\/[1-7]\./i.test(userAgent) ||
-      /msie|trident/i.test(userAgent);
-
-    // ✅ Ensure boolean return values (Safari doesn't support these APIs)
-    const hasLowMemory = Boolean(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
-    const hasSlowConnection = Boolean(navigator.connection &&
-      (navigator.connection.effectiveType === 'slow-2g' ||
-       navigator.connection.effectiveType === '2g' ||
-       navigator.connection.effectiveType === '3g'));
-
-    return isOldDevice || hasLowMemory || hasSlowConnection;
-  }
-
-  async performDetectionAndRouting(userAgent) {
-    const shouldUseLite = this.shouldRedirectToLite();
-    const reason = shouldUseLite ? 'device_compatibility' : 'device_capable';
-
-    const compatibilityData = {
-      shouldUseLite: shouldUseLite,
-      reason: reason,
-      userAgent: userAgent,
-      deviceInfo: {
-        hardwareConcurrency: navigator.hardwareConcurrency || 'unknown',
-        connectionType: navigator.connection?.effectiveType || 'unknown',
-        screenWidth: window.screen.width,
-        screenHeight: window.screen.height
-      }
-    };
-
-    await this.saveCompatibilityData(compatibilityData);
-
-    if (shouldUseLite) {
-      this.redirectToLite();
-    }
-  }
-
-  async saveCompatibilityData(compatibilityData) {
-    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
-    const appInitModule = this.deps.appInit;
-    await appInitModule.waitForCore();
-
-    // ✅ Use AppState only (no localStorage fallback) - DI-pure
-    const AppState = this.deps.AppState;
-    if (!AppState.isReady()) {
-      console.error('❌ AppState not ready for saveCompatibilityData');
-      return;
-    }
-
+  /**
+   * Replace the stored device record. Immediate save: a boot that ends right
+   * after this must not count the same slow boot twice.
+   * @param {Object} record
+   * @returns {Promise<void>}
+   */
+  async saveRecord(record) {
     try {
-      await AppState.update(state => {
+      await this.deps.AppState.update(state => {
         if (!state.settings) state.settings = {};
-
-        state.settings.deviceCompatibility = {
-          ...compatibilityData,
-          lastDetectionVersion: this.currentVersion,
-          detectionDate: new Date().toISOString()
-        };
+        state.settings.deviceCompatibility = record;
       }, true);
-
     } catch (error) {
-      console.error('❌ Error saving compatibility data:', error);
+      console.error('❌ Error saving device record:', error);
     }
   }
 
-  redirectToLite() {
-    // Suppress the whole flow on native and desktop — no "redirecting"
-    // notification, no nav. Those shells always run the full app;
-    // goToLiteVersion() is the nav backstop.
-    if (isNativeApp() || isDesktopApp()) {
-      console.warn('[miniCycle] lite auto-redirect suppressed (packaged build)');
-      return;
-    }
-
-    this.deps.showNotification(getLabel('notify.redirectingToLite'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'mobile-alt' });
-    setTimeout(() => {
-      goToLiteVersion({
-        params: { redirect: 'auto', v: this.currentVersion, t: Date.now() },
-        reason: 'device auto-redirect'
-      });
-    }, 1000);
+  /** @returns {boolean} 2 or fewer logical cores, when the browser says */
+  hasFewCores() {
+    return Boolean(navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 2);
   }
 
-  // Auto-redetection on version change
-  async autoRedetectOnVersionChange() {
+  /** @returns {number|null} ms from navigation start to now, or null without the API */
+  measureBootMs() {
+    return typeof performance !== 'undefined' && typeof performance.now === 'function'
+      ? Math.round(performance.now())
+      : null;
+  }
 
-    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
-    const appInitModule = this.deps.appInit;
-    await appInitModule.waitForCore();
-
-    if (!this.deps.AppState.isReady()) {
-      console.error('❌ State data required for version detection');
-      return;
+  /**
+   * Whether the user has already answered, or chose the full version from Lite.
+   * @param {Object} record
+   * @returns {boolean}
+   */
+  hasDecided(record) {
+    if (record.liteOffer === 'accepted' || record.liteOffer === 'declined') return true;
+    try {
+      return localStorage.getItem(STORAGE_KEYS.FORCE_FULL_VERSION) === 'true';
+    } catch {
+      return false; // storage blocked: treat as undecided
     }
+  }
 
-    // From state, not storage: the stored copy can be a debounce window stale.
-    const lastDetectionVersion = this.deps.AppState.get()?.settings?.deviceCompatibility?.lastDetectionVersion ?? null;
-    
-    // If version changed or first time, re-run detection
-    if (lastDetectionVersion !== this.currentVersion) {
+  /**
+   * Count this boot towards the Lite offer, and offer it when the streak is
+   * reached. Called once per boot, at the end of UI boot (uiBoot.finalizeUI).
+   * Writes only when something changed: on a fast boot of a known version,
+   * nothing.
+   * @param {Object} [measure] - Test seam: { bootMs, hidden, fewCores }
+   * @returns {Promise<{counted: boolean, slow: boolean, streak: number, offered: boolean}|null>}
+   *   What this boot did, or null when nothing was assessed
+   */
+  async assessBootPerformance(measure = {}) {
+    if (isNativeApp() || isDesktopApp()) return null;
+    await this.deps.appInit.waitForCore();
+    // First run: no state yet, and the boot was the first-run screen's anyway.
+    if (!this.deps.AppState.isReady()) return null;
 
-      // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
-      await this.runDeviceDetection();
+    const record = this.getRecord();
+    if (this.hasDecided(record)) return null;
+
+    const version = this.currentVersion;
+    const bootMs = 'bootMs' in measure ? measure.bootMs : this.measureBootMs();
+    const hidden = 'hidden' in measure ? measure.hidden : document.hidden;
+    const fewCores = 'fewCores' in measure ? measure.fewCores : this.hasFewCores();
+
+    const firstBootOfVersion = record.lastBootVersion !== version;
+    const counted = !firstBootOfVersion && !hidden && typeof bootMs === 'number';
+    const slow = counted && bootMs >= BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER;
+    const previous = Number.isInteger(record.slowBootStreak) ? record.slowBootStreak : 0;
+    let streak = previous;
+    if (counted) streak = slow ? previous + 1 : 0;
+
+    const needed = fewCores ? 1 : LIMITS.SLOW_BOOTS_BEFORE_LITE_OFFER;
+    const offered = slow && streak >= needed;
+
+    if (firstBootOfVersion || streak !== previous) {
+      // A fresh record: the redirect-era fields (shouldUseLite, userAgent,
+      // connectionType, …) are not carried over — nothing reads them now.
+      const next = { lastBootVersion: version, slowBootStreak: streak };
+      const lastSlowBootMs = slow ? bootMs : record.lastSlowBootMs;
+      if (lastSlowBootMs) next.lastSlowBootMs = lastSlowBootMs;
+      await this.saveRecord(next);
     }
+    if (offered) this.offerLite(bootMs);
+    return { counted, slow, streak, offered };
+  }
+
+  /**
+   * Ask whether to switch to Lite, and keep the answer either way.
+   * @param {number} bootMs - The slow boot that prompted the offer
+   */
+  offerLite(bootMs) {
+    if (isNativeApp() || isDesktopApp()) return;
+    const seconds = Math.max(1, Math.round(bootMs / 1000));
+    this.deps.showConfirmationModal({
+      title: getLabel('modal.liteOfferTitle'),
+      message: getLabel('modal.liteOfferMessage', { vars: { seconds } }),
+      confirmText: getLabel('modal.liteVersionConfirm'),
+      cancelText: getLabel('modal.liteOfferKeepFull'),
+      callback: async (confirmed) => {
+        await this.saveRecord({
+          ...this.getRecord(),
+          liteOffer: confirmed ? 'accepted' : 'declined',
+          decidedAt: new Date().toISOString()
+        });
+        if (confirmed) {
+          goToLiteVersion({
+            params: { redirect: 'offer', v: this.currentVersion, t: Date.now() },
+            reason: 'slow boots, user accepted the Lite offer'
+          });
+        }
+      }
+    });
   }
 
   // Generate compatibility report
@@ -226,26 +209,22 @@ export class DeviceDetectionManager {
       return null;
     }
     
+    const record = this.getRecord();
+    // true = chose Lite, false = chose the full version (here or from Lite), null = not asked
     let storedDecision = null;
-    let lastDetectionVersion = null;
-    let detectionData = null;
-    
-    const compatibility = this.deps.AppState.get()?.settings?.deviceCompatibility;
-    if (compatibility) {
-      storedDecision = compatibility.shouldUseLite;
-      lastDetectionVersion = compatibility.lastDetectionVersion;
-      detectionData = compatibility;
-    }
-    
+    if (record.liteOffer === 'accepted') storedDecision = true;
+    else if (this.hasDecided(record)) storedDecision = false;
+
     const deviceInfo = {
       userAgent: navigator.userAgent,
       version: this.currentVersion,
-      lastDetectionVersion: lastDetectionVersion,
+      lastDetectionVersion: record.lastBootVersion || null,
+      slowBootStreak: Number.isInteger(record.slowBootStreak) ? record.slowBootStreak : 0,
       storedDecision: storedDecision,
       currentUrl: window.location.href,
       timestamp: new Date().toISOString(),
       schema: SCHEMA.CURRENT,
-      detectionData: detectionData
+      detectionData: record
     };
     
     this.displayCompatibilityReport(deviceInfo, storedDecision);
@@ -272,31 +251,25 @@ export class DeviceDetectionManager {
       `${statusMessage}\n` +
       `${getLabel('notify.deviceStatusVersion', { vars: { version: deviceInfo.version } })}\n` +
       `${getLabel('notify.deviceStatusSchema', { vars: { schema: deviceInfo.schema } })}\n` +
-      getLabel('notify.deviceStatusLastCheck', { vars: { lastCheck: deviceInfo.lastDetectionVersion || 'Never' } }),
+      `${getLabel('notify.deviceStatusLastCheck', { vars: { lastCheck: deviceInfo.lastDetectionVersion || getLabel('notify.deviceNeverChecked') } })}\n` +
+      getLabel('notify.deviceStatusSlowBoots', { vars: { count: deviceInfo.slowBootStreak } }),
       statusType,
       UI_TIMEOUTS.NOTIFICATION_PERSISTENT
     );
   }
 
-  // Test function for manual testing
+  // Manual test (testing modal / module test page): forget any answer and show
+  // the offer now, as if the streak had just been reached.
   async testDeviceDetection() {
     this.deps.showNotification(getLabel('notify.startingDetectionTest'), 'info', UI_TIMEOUTS.NOTIFICATION_SHORT, { icon: 'flask' });
-
-    // ✅ Wait for core systems to be ready (AppState + data) - DI-pure
-    const appInitModule = this.deps.appInit;
-    await appInitModule.waitForCore();
-
+    await this.deps.appInit.waitForCore();
     if (!this.deps.AppState.isReady()) {
       console.error('❌ State data required for device detection test');
       this.deps.showNotification(getLabel('notify.detectionTestFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
       return;
     }
-
-    // Clear detection data for fresh test
-    this.clearDetectionData();
-
-    // ✅ No need for setTimeout - appInit.waitForCore() already handles timing
-    await this.runDeviceDetection();
+    await this.clearDetectionData();
+    this.offerLite(this.measureBootMs() ?? BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER);
   }
 
   async clearDetectionData() {
@@ -314,8 +287,12 @@ export class DeviceDetectionManager {
       }
     }
 
-    // Also clear legacy keys for cleanup
-    localStorage.removeItem(STORAGE_KEYS.FORCE_FULL_VERSION);
+    // Also forget "Try Full Version" from Lite, so the offer can be asked again
+    try {
+      localStorage.removeItem(STORAGE_KEYS.FORCE_FULL_VERSION);
+    } catch {
+      // storage blocked: nothing stored to forget
+    }
   }
 }
 
@@ -330,12 +307,8 @@ function initializeDeviceDetectionManager() {
   return deviceDetectionManager;
 }
 
-function runDeviceDetection() {
-  return initializeDeviceDetectionManager().runDeviceDetection();
-}
-
-function autoRedetectOnVersionChange() {
-  return initializeDeviceDetectionManager().autoRedetectOnVersionChange();
+function assessBootPerformance() {
+  return initializeDeviceDetectionManager().assessBootPerformance();
 }
 
 function reportDeviceCompatibility() {
@@ -393,8 +366,7 @@ function isTouchCapable() {
 export {
   deviceDetectionManager,
   initializeDeviceDetectionManager,
-  runDeviceDetection,
-  autoRedetectOnVersionChange,
+  assessBootPerformance,
   reportDeviceCompatibility,
   testDeviceDetection,
   isTouchDevice,

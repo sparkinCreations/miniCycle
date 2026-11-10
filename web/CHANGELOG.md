@@ -1,3 +1,26 @@
+## [2.678] - 2026-11-10
+- docs(future-work): AppState load path, validation and leftovers
+- docs(future-work): vocabulary theme label coverage
+- docs(future-work): drag-and-drop hardening and recurring watcher gaps
+- test: refresh the test-count manifest after a full run on merged main (v2.672)
+- docs(audit): round 2 — ACCESSIBILITY points to the public statement instead of restating it; schema merge scheduled for round 3a
+- fix(ui): the dark-mode corner button's desktop caption names the mode it switches to; round 2 decisions
+- docs(audit): round 2 — Children's Privacy in the public page's words; WCAG 2.2 AA as a goal, AAA dropped
+- docs(privacy): remove the comparison table of other apps' data practices
+- docs(privacy): policy 2.9 — the .mcyc format page's counter, and the 50 most recent event times
+- docs(audit): round 2 — copyright statement's author name stays out of the repo
+- docs(audit): round 2 — archive CODE_REVIEW_REPORT.md (Dec 2025, all recommendations closed)
+- test: refresh the test-count manifest after a full run on merged main
+- chore(csp): resync script-src hashes for the module test page's inline script
+- fix(boot): deliver deviceDetectionManager to uiBoot — the boot check never ran
+- feat(lite): offer Lite after measured slow boots, asked once — no more silent redirect
+- docs(audit): round 2 — root README/CONTRIBUTING/AGENTS, code review report status; one date format
+- docs(audit): round 2 (wip checkpoint) — API reference, data schema guide (in progress)
+- docs(audit): round 2 (wip) — roadmap, contributing (project-info), ADRs, drift checklist, feature list
+- docs(audit): round 2 (wip) — project-info: accessibility, app reviews, browser compatibility, copyright, privacy
+- TODO(changelog): uncommitted work shipped in this release — describe it here
+
+
 ## [2.676] - 2026-11-10
 - fix(examples): repair four broken routine files
 - fix(import): keep tasks with timestamped due dates and import every opened file

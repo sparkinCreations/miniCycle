@@ -1345,10 +1345,10 @@ export async function finalizeUI(options) {
 
   recurringPanel?.updateRecurringPanelButtonVisibility?.();
 
-  // Device detection
+  // Count this boot towards the Lite offer (asked once, on a measurably slow device)
   const deviceManager = getDeviceDetectionManager?.();
   if (deviceManager) {
-    await deviceManager.autoRedetectOnVersionChange();
+    await deviceManager.assessBootPerformance();
   }
 
   // Sync theme-sensitive labels with the active vocab theme.
