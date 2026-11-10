@@ -499,28 +499,44 @@ repeat "100% pass rate" and "100% coverage", tell the reader to edit an array ca
 `perf`) and recommend "<500 tasks per cycle" against `LIMITS.TASKS_PER_CYCLE`.
 
 **Check 4:** the Testing titles are short forms of their H1s, as are three of the
-Performance ones. `LIGHTHOUSE_BENCHMARKS` is not: its H1 is "Performance Benchmarks" and
-the page holds only Lighthouse runs.
+Performance ones. `LIGHTHOUSE_BENCHMARKS` was not: its H1 was "Performance Benchmarks" on
+a page that holds only Lighthouse runs. It is now "Lighthouse Benchmarks" (see *Decided*
+below).
+
+**Decided (MJ, Nov 10 2026 — "archive all of those things"),** done in the same pull
+request. None of the four is cited from `modules/`, `scripts/` or `tests/`, so this did
+not become a release round:
+
+- `PERFORMANCE_SUMMARY` → `archive/PERFORMANCE_SUMMARY.md`. What was left after the audit
+  was one dated run plus pointers the guide also carries.
+- `PERFORMANCE_SETUP` → `archive/PERFORMANCE_SETUP.md`. Every section repeated a section
+  of the guide.
+- `LIGHTHOUSE_BENCHMARKS` keeps the July 2026 run and how to run an audit. Its December
+  2025 record, with the budget table recommended then, is split out as
+  `archive/LIGHTHOUSE_BENCHMARKS_DEC_2025.md`. Its H1 is now "Lighthouse Benchmarks",
+  matching the sidebar: the retitle was asked in the same question as the archive, so it
+  was done with it.
+- `generate_testing_pdf.py` and `miniCycle_Testing_Directions.pdf` (a handout for human
+  testers that nothing linked to) → `archive/`. The handout's steps were not re-checked
+  against the app.
+
+Each archived doc carries its banner and sits in the sidebar under *Archive → Superseded
+Docs (2026)*. The live links to the two archived guides were repointed or dropped: one in
+`BROWSER_COMPATIBILITY`, two in `TESTING_README`, one in the guide's own Resources list.
+`PERFORMANCE_TESTING_GUIDE` is now the one live performance guide, with
+`LIGHTHOUSE_BENCHMARKS` as its run log.
 
 **Open questions (MJ):**
 
-1. `PERFORMANCE_SUMMARY`: archive it? What is left is one dated run plus pointers the
-   guide also carries. (Nothing in `modules/` cites it, so archiving is not a release.)
-2. `PERFORMANCE_SETUP`: merge into the guide's Quick Start, or archive? Every section
-   repeats a guide section.
-3. `LIGHTHOUSE_BENCHMARKS`: retitle the H1 to match the sidebar, and move its Dec 2025
-   half to the archive?
-4. `TESTING_ARCHITECTURE` restates `TESTING_README` as diagrams and repeats the same
+1. `TESTING_ARCHITECTURE` restates `TESTING_README` as diagrams and repeats the same
    Nov 2025 numbers three times. Merge it, or cut it to the suite table, the CI diagram
    and the file tree?
-5. There are two files named `TESTING_QUICK_REFERENCE.md` (`docs/testing/` and
+2. There are two files named `TESTING_QUICK_REFERENCE.md` (`docs/testing/` and
    `web/tests/`) that differ. Keep one and make the other a pointer? And should the five
    `web/tests/*.md` docs join the audit, since no round covers them?
-6. The benchmark results are a year old and the suite has since doubled. Re-measure
+3. The benchmark results are a year old and the suite has since doubled. Re-measure
    once, or cut the tables and point at `performance/`?
-7. `docs/testing/generate_testing_pdf.py` and `miniCycle_Testing_Directions.pdf` are a
-   handout for human testers that nothing links to. Archive, or move out of `docs/testing/`?
-8. Nothing fails on a slowdown except the two Lighthouse assertions. The docs now say so.
+4. Nothing fails on a slowdown except the two Lighthouse assertions. The docs now say so.
    Leave it that way? (Recommended: yes for now; it is a decision, not a defect.)
 
 ## How a round runs

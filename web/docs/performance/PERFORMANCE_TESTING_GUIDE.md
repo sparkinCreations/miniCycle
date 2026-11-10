@@ -1232,7 +1232,6 @@ benchmarks of the time all finished under their thresholds, by a factor of rough
 
 ### Resources
 
-- **Quick Start**: `PERFORMANCE_SETUP.md`
 - **Benchmark Suite**: `tests/performance.benchmark.js`
 - **Benchmark Runner**: `tests/automated/run-performance-benchmarks.cjs`
 - **CI Config**: `.github/workflows/performance.yml` (repository root)

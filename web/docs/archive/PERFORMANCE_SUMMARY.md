@@ -1,3 +1,5 @@
+> Archived Nov 10 2026 (docs audit round 3b): a summary of one benchmark run from Nov 12 2025 (v1.352) with no gate behind its numbers; superseded by [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md), which carries the same record and says how the checks work today.
+
 # Performance Testing Summary
 
 > **Executive summary of miniCycle's performance testing results and capabilities**
@@ -9,7 +11,7 @@
 > **Status:** a dated record plus pointers. The one benchmark run summarised here was taken
 > on Nov 12 2025 at v1.352 and has not been repeated for this page. It is not a statement
 > of today's performance, and no gate enforces its numbers. For how the checks work today,
-> read [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md).
+> read [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md).
 
 ---
 
@@ -28,7 +30,7 @@ What can be said from the record and the config:
   `lighthouserc.json`: `viewport` and `cumulative-layout-shift` (max 0.1).
 - Real-device boot timing is tracked in
   [BOOT_PERF_ROADMAP.md](../future-work/BOOT_PERF_ROADMAP.md), and dated Lighthouse runs
-  in [LIGHTHOUSE_BENCHMARKS.md](./LIGHTHOUSE_BENCHMARKS.md).
+  in [LIGHTHOUSE_BENCHMARKS.md](../performance/LIGHTHOUSE_BENCHMARKS.md).
 
 ---
 
@@ -293,7 +295,7 @@ All commands run from `web/`.
 
 ### Available Guides
 
-1. **[PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)**
+1. **[PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md)**
    - 📖 Complete reference
    - 🔍 Deep dive into all testing aspects
    - 🛠️ Optimization strategies

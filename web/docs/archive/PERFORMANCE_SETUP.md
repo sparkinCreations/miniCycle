@@ -1,3 +1,5 @@
+> Archived Nov 10 2026 (docs audit round 3b): the Nov 2025 setup note for the performance tooling; every section is repeated in [PERFORMANCE_TESTING_GUIDE.md](../performance/PERFORMANCE_TESTING_GUIDE.md) (see its Quick Start).
+
 # ⚡ Performance Testing - Quick Setup Guide
 
 **Last verified:** Nov 10 2026

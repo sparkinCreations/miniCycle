@@ -180,7 +180,7 @@ the older engines inside the admitted band are not tested automatically.
 
 Not measured per browser. `npm run perf` (`tests/automated/run-performance-benchmarks.cjs`)
 measures boot and module micro-benchmarks on Chromium only; see the
-[performance docs](../performance/PERFORMANCE_SUMMARY.md).
+[performance testing guide](../performance/PERFORMANCE_TESTING_GUIDE.md).
 
 ---
 
