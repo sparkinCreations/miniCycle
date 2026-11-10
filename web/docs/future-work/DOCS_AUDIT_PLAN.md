@@ -117,8 +117,8 @@ below.
 |---|---|---|---|---|
 | 0 | — | — | **Triage + tooling.** (a) Archive or split the plans whose status line already says shipped: `LARGE_MODULE_SPLITS_PLAN` (CLOSED Aug 2026), `WELCOME_SCREEN_PLAN` (CLOSED Sep 2026), `SETTINGS_TOGGLE_LATCH_GAP` (FIXED v2.587), and `SCHEMA_2_6_PLAN`, whose status still says *Planned* though `SCHEMA.CURRENT` is `'2.6'` (shipped Sep 2026) — split if any part is still open. Read the status lines, confirm each against the code or `CHANGELOG.md`, nothing more. (b) Build the two gates in `validate:docs` / `validate:comments` in **warning** mode: volatile counts, Schema 2.5 names, and backticked code references (see *Decisions*). (c) Record each gate's baseline count in the round report — that is the number later rounds drive to zero. | ✅ done Nov 5 2026 — see *Round 0 result* |
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
-| 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | pending |
-| 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE` | pending |
+| 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | ✅ audited Nov 6 2026 — see *Round 2 result* (questions open) |
+| 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`. **First job (MJ, Nov 7 2026):** `SCHEMA_2_6` becomes the only description of the stored shape — audit it against the code, carry in round 2's `DATA_SCHEMA_GUIDE` corrections (`showTaskInput` per routine, not in settings; `dueTime`; the recurring-template shape; `frequencyUnit`), then cut the guide's ~185-line copy of the shape and keep it as the short data-flow walkthrough + worked example, linking to `SCHEMA_2_6` (it stays a file: eight `modules/` comments cite it) | pending |
 | 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | pending |
 | 4 | 13 | ~5,000 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
 | 5 | 13 | ~5,700 | **Working on Code** rest (5): `MAKING_CODE_CHANGES`, `MESSAGING_SURFACES`, `SECURITY_GUIDE`, `TESTING_GUIDE`, `VALIDATION_GATES`; **Security** (6 incl. `audits/`); **Deployment**: `BUILD_PROCESS`, `DEPLOYMENT` | pending |
@@ -201,6 +201,72 @@ routine creation still keys new routines by **title**, not a generated id
 `styles/themes/theme-manager.js` is imported by nothing; stale headers in
 `schemaMigration26.js` ("NOT WIRED YET") and an `AppState.update` JSDoc example
 (`state.data.cycles`).
+
+### Round 2 result (Nov 6 2026)
+
+**Audited:** all 16 docs (three readers, disjoint files). Heaviest corrections:
+`API_REFERENCE` (most documented calls did not exist; rewritten to the DI / appContext
+names — every call in its examples now exists; the Theme Manager section came from
+PR #116), `ACCESSIBILITY` (claimed the skip link, reduced motion and keyboard
+shortcuts were missing, and contrast unverified — all exist, contrast is CI-gated),
+`BROWSER_COMPATIBILITY` (real floor from the feature gate: Chrome 80 / Firefox 74 /
+Safari 13.1), `FEATURE_LIST` and `DATA_SCHEMA_GUIDE` (~15 wrong rows each), `ROADMAP`
+("open source" → source-available, per `LICENSE`). Gates: volatile counts 39 → 33;
+Schema 2.5 names 10 (none in this round); docs code references 125 (only noise left
+in this round). Check 4: every sidebar title is its H1's short form. **Archived** (MJ:
+"archive as you see fit"): the repo-root `CODE_REVIEW_REPORT.md` →
+`archive/CODE_REVIEW_REPORT_DEC_2025.md` — a one-off review from Dec 19 2025 whose seven
+recommendations are all closed or superseded; nothing linked to it but this plan. No other
+doc in the round met the bar: the rest were fixed in place.
+
+**App code in this round — so it ships with a release.** Reading the Lite routing
+for `BROWSER_COMPATIBILITY` led to a change MJ asked for in this PR:
+`utils/deviceDetection.js` no longer redirects to Lite on every new version from
+user-agent regexes, ≤2 cores or a `3g` connection. It times each boot and, after
+`LIMITS.SLOW_BOOTS_BEFORE_LITE_OFFER` slow boots in a row
+(`BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER`; one on ≤2 cores), **asks** once, saying Lite
+keeps its own separate list — it does (`miniCycleLite*` storage keys), so the old
+silent redirect landed users with routines on an empty Lite list. The answer is kept;
+Lite's *Try Full Version* counts as no. **Found while testing it in the real app:**
+the boot-time device check had never run in production — `featureBoot` built the `ui`
+API's `deviceDetectionManager` from `deps.ui`, but the manifest delivers it on
+`deps.utils`, so `uiBoot` always got `undefined` (`validate:api` passes: the name is
+allow-listed, only its source is wrong). Fixed in the same commit; the old post-boot
+redirect was therefore dead code, and the Lite routing users actually got came from
+the `miniCycle.html` feature gate and boot-failure fallbacks.
+
+**Found in code or shipped pages, not fixed:** `legal/accessibility.html` says
+keyboard reordering needs *Show Move Arrows* (Alt+↑/↓ works without it);
+`netlify.toml` CSP still allows cdnjs, Google Fonts and Formspree, which nothing
+loads; a hardcoded string in `preferencesBgImage.js`; the milestone levels are a
+literal array in `cycleCompletion.js`; stale comments in `types.js`, `taskCore.js`,
+`guidedTourDefinitions.js` ("thirteen" tours; there are 14), `appContext.js`.
+
+**Open questions (MJ):** none left. *Decided (MJ, Nov 7 2026), the two overlaps:*
+`ACCESSIBILITY` keeps its developer content and now points to `legal/accessibility.html`
+for what the public statement already says (how to report, response time, the WCAG
+target wording) instead of restating it; and `DATA_SCHEMA_GUIDE` / `SCHEMA_2_6` are
+merged in round 3a (see its row). *Decided (MJ, Nov 6 2026):* the privacy policy (`legal/privacy.html`, a shipped page,
+and `PRIVACY.md`; version 2.9) now names the .mcyc format page among the counted pages
+and discloses the 50 most recent event times kept for the owner-only dashboard
+(`MAX_RECENT`, `netlify/functions/track.js`); `PRIVACY.md`'s comparison table of
+other apps' data practices (Todoist, Asana, Trello) is removed — claims about other
+companies that this project cannot verify or keep current; its "COPPA Compliance"
+heading becomes plain "Children's Privacy" in the public page's words (a compliance
+claim it did not need, beside bullets that said "no tracking" without the counter).
+**WCAG:** 2.2 Level AA stays the stated *goal*, never a conformance claim — as the
+public statement already words it; the two "WCAG AAA" items (`ROADMAP`,
+`ACCESSIBILITY`'s not-done list) are removed, AAA was never a realistic target. `ROADMAP`: tiers, prices and dates stand; its
+"habit building" positioning becomes routine language (the *Habit Tracker* theme keeps
+its name). `CONTRIBUTING` (project-info): the `@version` / `@pattern` header requirement
+is dropped (few modules had them, nothing checked them). `README`: dark mode is a manual
+toggle and does not follow the system; the `prefers-color-scheme` rule only paints the
+pre-load background. Found on the way, fixed (app code): the desktop caption under the
+dark-mode corner button said "Dark mode" in dark mode too, under a sun icon — it now
+names the mode a press switches to, like its icon and tooltip (fixed the same way on
+`main` in v2.671, `4b046ac2`; the merge keeps main's code and this branch's test). The copyright
+statement's author name stays out of the repo — the placeholder now says it is filled
+in on the signed copy only.
 
 ## How a round runs
 

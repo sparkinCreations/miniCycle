@@ -4,19 +4,26 @@
 >
 > **For current metrics, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Last Updated:** December 20, 2025
+**Last verified:** Nov 6 2026
+
+> **Status:** Partly historical. The dated releases under *Upcoming Updates*
+> (v1.360 → v2.0, Q1–Q4 2026) were planned in Dec 2025 under the old numbering; the
+> app reached v2.0 on Feb 24 2026 and has released continuously since (`CHANGELOG.md`),
+> so those headings no longer name real releases. Items confirmed shipped are marked
+> ✅ with where they live; unmarked items are unverified, not necessarily open. Tier
+> names, prices and vote counts are owner statements nothing in the repo can check.
 
 ---
 
 ## Vision
 
-**miniCycle** is the **forever-free gateway** to the cycling methodology. It introduces users to task cycling, habit formation, and systematic progress - establishing the foundation for upgrading to professional tiers when needed.
+**miniCycle** is the **forever-free gateway** to the cycling methodology. It introduces users to task cycling, repeatable routines, and systematic progress - establishing the foundation for upgrading to professional tiers when needed.
 
 ### Three-Tier Ecosystem
 
 miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
-1. **miniCycle** (Free) - Personal habit building & cycling introduction
+1. **miniCycle** (Free) - Personal routines & cycling introduction
 2. **Task Cycle** ($25 one-time) - Professional workflows & advanced features
 3. **Task Cycle Pro** ($10-15/month) - Team collaboration & cloud sync
 
@@ -32,8 +39,8 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 ✅ **Offline-First** - Works without internet, no servers required
 ✅ **No Accounts** - No registration, no authentication
 ✅ **Privacy-First** - All data stored locally
-✅ **Open Source** - Transparent, auditable, forkable
-✅ **Personal Use** - Focused on individual habit building
+✅ **Source-available** - Code is public to view and audit (the repo `LICENSE` is proprietary, view-only — not an open-source licence)
+✅ **Personal Use** - Focused on individual routines
 
 **miniCycle's role:** Introduce cycling methodology to broad audience and serve as gateway to professional tiers.
 
@@ -64,24 +71,28 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 **Core Features Complete:**
 
-- ✅ Modularization Complete (100+ modules)
-- ✅ Full Test Coverage (100% passing)
-- ✅ Task Options Customizer (per-cycle button visibility)
-- ✅ Schema 2.5 Stable
-- ✅ PWA Fully Functional
+- ✅ Modularization Complete (DI-wired ES modules — counts in [PROJECT_STATS.md](../PROJECT_STATS.md))
+- ✅ Playwright browser suite + CI validation gates (test counts and pass rate in [PROJECT_STATS.md](../PROJECT_STATS.md))
+- ✅ Task Options Customizer (per-routine button visibility)
+- ✅ Schema 2.6 (shipped v2.573, Sep 2026; 2.5 data is migrated once at boot)
+- ✅ PWA with offline boot (pinned by `npm run test:sw`)
 - ✅ Recurring Tasks System
-- ✅ Undo/Redo (20 levels per cycle)
+- ✅ Undo/Redo (`LIMITS.UNDO_STACK` levels per routine)
 - ✅ Drag & Drop System
-- ✅ Theme System (gamification)
+- ✅ Vocabulary themes as milestone rewards (`MILESTONES.TIERS`); colours are Personalization presets
 - ✅ Completed Tasks Dropdown
 - ✅ Quick Access Buttons (personalization 🖌️, dark mode 🌓)
 - ✅ Comprehensive Documentation
 
-**miniCycle is feature-complete for personal habit building.**
+**miniCycle is feature-complete as a personal routine manager.**
 
 ---
 
 ## Upcoming Updates
+
+> Planned Dec 2025 — see the *Status* note at the top. These version numbers were
+> overtaken (v2.0 shipped Feb 24 2026); generic items (bug fixes, performance,
+> docs) are ongoing rather than done or open.
 
 ### v1.360 - Q1 2026
 
@@ -89,11 +100,11 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 - [ ] Performance optimizations
 - [ ] Mobile experience improvements
-- [ ] Accessibility enhancements (WCAG AAA)
-- [ ] Additional themes (achievement unlocks)
+- [ ] Accessibility enhancements towards WCAG 2.2 Level AA, the goal the accessibility statement names (not a conformance claim) — *partly: `npm run test:a11y` and `npm run test:contrast` gate keyboard operability, names and serious contrast violations. AAA is not a goal*
+- [x] Additional themes (achievement unlocks) — ✅ Habit Tracker, Fitness, Scholar, Cleaning (`MILESTONES.TIERS` in `core/constants.js`)
 - [ ] Bug fixes and stability
 - [ ] Documentation improvements
-- [ ] Tutorial improvements
+- [x] Tutorial improvements — ✅ guided tour (`ui/guidedTourManager.js`)
 
 **No new major features - refinement phase.**
 
@@ -103,12 +114,12 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 **Focus: User Experience**
 
-- [ ] Onboarding improvements
-- [ ] Better first-time user experience
-- [ ] Help system enhancements
+- [x] Onboarding improvements — ✅ `ui/onboardingManager.js`
+- [x] Better first-time user experience — ✅ first-run choice screen (inline in `miniCycle.html`) and the Welcome Screen (`ui/titleScreen.js`)
+- [x] Help system enhancements — ✅ help window (`ui/helpWindowManager.js`)
 - [ ] Visual polish and animations
 - [ ] Sound effects (optional)
-- [ ] More achievement-based themes
+- [x] More achievement-based themes — ✅ see v1.360 above
 - [ ] Performance dashboard (local stats only)
 
 **Estimated Release:** June 2026
@@ -153,14 +164,14 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 ### High Priority (May Add)
 
-- [ ] **Task Options Customizer** - Per-cycle button visibility customization ([See plan](../archive/TASK_OPTIONS_CUSTOMIZER_PLAN.md))
+- [x] **Task Options Customizer** - Per-routine button visibility customization — ✅ shipped (`ui/taskOptionsCustomizer.js`; [archived plan](../archive/TASK_OPTIONS_CUSTOMIZER_PLAN.md))
 - [ ] Subtasks/checklist items (within tasks)
 - [ ] Task dependencies (simple)
 - [ ] More theme options
 - [ ] Keyboard shortcuts expansion
 - [ ] Print-friendly view
 - [ ] CSV export (basic)
-- [ ] Habit tracking charts (local only)
+- [ ] Routine progress charts (local only)
 - [ ] Widget support (PWA)
 
 ### Medium Priority (Maybe)
@@ -176,12 +187,12 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 ### Low Priority (Unlikely)
 
 - [ ] Custom CSS themes
-- [ ] Plugin system (basic)
+- [x] Plugin system (basic) — ✅ exists as a developer API (`modules/other/basicPluginSystem.js`), no user-facing plugin UI
 - [ ] Voice commands
 - [ ] Calendar view
-- [ ] Browser extension
+- [x] Browser extension — ✅ Chrome extension, lite popup + full app in the side panel (repo-root `chrome/`; side panel since v2.244)
 
-**Note:** These are being considered but not guaranteed. miniCycle remains focused on core habit-building features.
+**Note:** These are being considered but not guaranteed. miniCycle remains focused on its core routine features.
 
 ---
 
@@ -204,7 +215,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 - Need cloud sync? → **Task Cycle Pro**
 - Need team features? → **Task Cycle Pro**
 - Need professional workflows? → **Task Cycle** ($25 one-time)
-- Just building habits? → **Stay on miniCycle** (free forever)
+- Just running your own routines? → **Stay on miniCycle** (free forever)
 
 ---
 
@@ -214,7 +225,7 @@ miniCycle is **Tier 1** of SparkinCreations' product ecosystem:
 
 **Principles:**
 
-1. **Keep it simple** - Core habit-building features only
+1. **Keep it simple** - Core routine features only
 2. **Keep it free** - No paywalls or premium features
 3. **Keep it offline** - No server dependencies
 4. **Keep it private** - No data collection
@@ -226,7 +237,7 @@ miniCycle serves as:
 - Introduction to cycling methodology
 - Gateway to professional tiers
 - Always-free option for personal use
-- Reference implementation for open source
+- Reference implementation people can read (source-available, see `LICENSE`)
 
 **Complex features live in Task Cycle/Pro** where they can be properly supported and funded.
 
@@ -242,7 +253,7 @@ miniCycle serves as:
 - ✅ Bug fixes (indefinitely)
 - ✅ Browser compatibility (as browsers evolve)
 - ✅ Documentation (keep current)
-- ✅ Open source (always)
+- ✅ Source viewable (proprietary view-only `LICENSE`)
 
 **What changes:**
 
@@ -256,7 +267,7 @@ miniCycle serves as:
 - Add paywalls
 - Require accounts
 - Collect data
-- Shut down (open source forever)
+- Shut down
 
 ---
 
@@ -309,7 +320,7 @@ miniCycle serves as:
 
 **What we'll consider:**
 
-- Features that serve personal habit building
+- Features that serve personal routines
 - Improvements to core experience
 - Accessibility enhancements
 - Performance optimizations
@@ -457,7 +468,7 @@ Want to support continued development?
 
 ### "Will miniCycle get abandoned?"
 
-**No.** As long as SparkinCreations exists, miniCycle will be maintained. Plus it's open source - community can fork if needed.
+**No.** As long as SparkinCreations exists, miniCycle will be maintained.
 
 ### "Can I use miniCycle commercially?"
 
@@ -465,12 +476,11 @@ Want to support continued development?
 
 ### "Why not just make everything free?"
 
-Professional features require ongoing development, support, and potentially infrastructure (cloud sync). Paid tiers ensure sustainable development while keeping core habit-building free.
+Professional features require ongoing development, support, and potentially infrastructure (cloud sync). Paid tiers ensure sustainable development while keeping the core routine manager free.
 
 ---
 
 **Roadmap Version:** 2.1
-**Last Updated:** January 18, 2026
 **Next Review:** March 2026
 
-*miniCycle: Forever free, forever focused on personal habit building.*
+*miniCycle: Forever free, forever focused on personal routines.*

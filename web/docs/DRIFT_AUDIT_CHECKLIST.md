@@ -1,7 +1,9 @@
 # Doc Drift Audit Checklist
 
+**Last verified:** Nov 6 2026
+
 Purpose: Track documentation that appears out of sync with the current code — both
-developer docs (vs the zero-globals + strict DI architecture) and **public surfaces**
+developer docs (vs the strict-DI, no-`window.*`-globals rules in `CLAUDE.md`) and **public surfaces**
 (vs actual app behavior). The July 2026 external drift review found that every one of
 its copy findings lived on public surfaces this checklist didn't cover; the Public
 Surfaces section below closes that gap.
@@ -18,22 +20,24 @@ Surfaces section below closes that gap.
 - [x] docs/architecture/APPINIT_SYSTEM.md
   - Updated to use injected `appInit`/`AppState` and versioned imports.
 - [x] docs/deployment/UPDATE-VERSION-GUIDE.md
-  - Updated to `globalThis.APP_VERSION`, current script v5.2, and file lists.
+  - Updated to `globalThis.APP_VERSION`, the then-current script v5.2 (the script header
+    reads v5.5 today), and file lists.
 - [x] docs/deployment/SERVICE_WORKER_UPDATE_STRATEGY.md
   - Updated to inlined SW versioning and consistent appInit import notes.
 - [x] docs/features/TASK_OPTIONS_CUSTOMIZER.md
   - Updated examples to DI/appContext and module imports.
-- [x] docs/features/minicycle-recurring-guide.md
+- [x] docs/features/minicycle-recurring-guide.md *(since retitled `docs/reference/RECURRING_SYSTEM_REFERENCE.md`, Aug 2026 docs reorg)*
   - Updated DI wiring examples and module paths.
 - [x] docs/architecture/MODULE_SYSTEM_GUIDE.md
   - Labeled legacy patterns and updated wiring examples.
 - [x] docs/PROJECT_STATS.md
   - Clarified module-only zero-globals and HTML helper scope.
   - Fixed boot fallback descriptions (8-second late fallback, 60-second load timeout).
+    The late fallback is 16 s today (`miniCycle.html`; see ADR-005).
 - [x] docs/project-info/CONTRIBUTING.md
   - Fixed /src → /modules paths, removed window.* examples, updated all code samples to DI patterns.
   - Added social layer: PR process, code review expectations, Good First Issue guidance.
-- [x] docs/DEVELOPER_DOCUMENTATION.md
+- [x] docs/DEVELOPER_DOCUMENTATION.md *(archived Nov 5 2026 — now `docs/archive/DEVELOPER_DOCUMENTATION.md`; its routing moved to `INDEX.md`)*
   - Removed window.AppState/window.showNotification examples, updated to _deps.* DI pattern.
 
 ## Medium Priority
@@ -63,7 +67,9 @@ in this direction, prefer fixing the copy to match the code unless the code is w
 - [x] legal/user-manual.html
   - July 2026: "restore any task" → "recreate… with due date, priority, and recurring
     settings intact"; version stamp refreshed. **Stamp goes stale every release** —
-    `validate:docs` now fails if it falls more than 30 minor versions behind `version.js`.
+    `validate:docs` fails if it falls more than `STALE_TOLERANCE` minor versions behind
+    `version.js` (30 when added; raised to 250 on Aug 11 2026 for release cadence —
+    `scripts/validate-docs.py`).
 - [x] legal/privacy.html
   - July 2026: self-reference URL verified correct. Privacy claims are load-bearing —
     re-verify against `shareManager`/tracker code whenever export/share/analytics change.

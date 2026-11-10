@@ -2,6 +2,8 @@
 
 **Prepared for potential U.S. Copyright Office registration**
 
+**Last verified:** Nov 6 2026
+
 ---
 
 ## 1. Work Identification
@@ -10,15 +12,15 @@
 - **Subtitle:** Turn Your Routine Into Progress
 - **Type:** Web Application (Software)
 - **First Created:** September 18, 2025
-- **Current Version:** 1.623+
-- **Total Commits:** 828+
-- **Source Files:** 203+ (JavaScript, CSS, HTML)
+- **Current Version:** see [PROJECT_STATS.md](../PROJECT_STATS.md) — record the exact version on the day of filing (1.623+ when this statement was first drafted)
+- **Total Commits:** record `git rev-list --count HEAD` on a full clone on the day of filing (828+ when first drafted)
+- **Source Files:** record on the day of filing (203+ JavaScript, CSS and HTML files when first drafted)
 
 ---
 
 ## 2. Human Author Information
 
-- **Author:** [Your Full Legal Name]
+- **Author:** [Author's legal name — filled in on the signed copy only, not stored in this repo]
 - **Business/DBA:** sparkinCreations
 - **Role:** Sole Creator, Designer, Developer, and Creative Director
 
@@ -55,7 +57,7 @@ I, the undersigned author, created miniCycle as an original work of authorship. 
 **Feature Design & Specification:**
 - Task management with CRUD operations
 - Recurring task scheduling with multiple frequency options
-- "Delete When Complete" functionality
+- "Clear on Reset" / "Marked for Clearing" functionality (originally named "Delete When Complete")
 - Task search/filtering system
 - Dark mode and theme system (vocabulary themes, color presets, dark mode)
 - Undo/redo functionality
@@ -134,14 +136,14 @@ The following elements represent my original creative expression:
 | **UI Design** | Card layouts, color palette, iconography choices, responsive breakpoints |
 | **UX Flow** | Swipe navigation, task interaction patterns, onboarding sequence |
 | **Architecture** | Module organization, DI system design, state management approach |
-| **Features** | Recurring tasks, delete-when-complete, achievement system, theme unlocks |
+| **Features** | Recurring tasks, clear-on-reset (originally delete-when-complete), achievement system, theme unlocks |
 | **Content** | App name, tagline, all UI text, notification messages |
 
 ---
 
 ## 6. Version History Evidence
 
-The git repository contains 828+ commits documenting the iterative creative process, demonstrating:
+The git repository contains 828+ commits (as of the first draft; record the count at filing) documenting the iterative creative process, demonstrating:
 - Evolution of features over time
 - Design decisions and refinements
 - Bug fixes and improvements

@@ -5,6 +5,8 @@ miniCycle — the "why," which normally lives only in a maintainer's head. Its
 companion, `HOW_MINICYCLE_WORKS.md`, explains *how* the system works; this explains
 *why it's built that way*.
 
+**Last verified:** Nov 6 2026
+
 ## How to use this file
 
 - Each entry is one decision. When you make a new significant call, add a new ADR at
@@ -67,7 +69,8 @@ distributable store builds.
 **Decision.** Modules do not import their collaborators directly. Each module
 *declares* what it needs (in `moduleManifests.js` and via `createDIModule` in
 `diBase.js`), and the boot system *delivers* those dependencies into a shared
-container. Inside a module, `_deps.X` is "the X that was injected into me."
+container. Inside a module, `this.deps.X` (`_deps.X` in the few legacy-pattern
+modules) is "the X that was injected into me."
 
 **Why.**
 - **Testability** is the headline reason. Because a module receives its
@@ -77,7 +80,7 @@ container. Inside a module, `_deps.X` is "the X that was injected into me."
 - **Decoupling.** Modules talk *through* the container, not directly to each other,
   so one can be reworked or replaced without a chain reaction — as long as it still
   `provides` what others `require`.
-- **Declarative wiring.** ~130 modules with hand-written wiring would be
+- **Declarative wiring.** Every manifest module (count in `PROJECT_STATS.md`) with hand-written wiring would be
   unmaintainable; declaring needs and letting the system compute order scales.
 
 **Rejected alternatives.**
@@ -133,7 +136,7 @@ contributor docs make "always use `AppState.update()`" a top-tier rule.
 
 ## ADR-004 — Client-side schema versioning and migration (id-keyed routines since 2.6)
 
-**Status:** Accepted · **Date:** Schema 2.5 documented v2.263 (2026-06-28); Schema 2.6 shipped v2.588 (Sep 2026); migration system predates changelog
+**Status:** Accepted · **Date:** Schema 2.5 documented v2.263 (2026-06-28); Schema 2.6 shipped v2.573 (2026-09-19); migration system predates changelog
 
 **Decision.** Stamp every saved data blob with a `schemaVersion` (currently `"2.6"`).
 On startup, `AppState._migrateIfOlder` reads the stamp and upgrades older data to the
@@ -142,6 +145,13 @@ their **display name** until Schema 2.6 (Sep 2026) rekeyed them by a generated i
 (`routine-...`) with `title` as the name, stored priority as a level and folded the
 clear-on-complete flags into one `autoClear` map; `routine/schemaMigration26.js`
 performs that rewrite once at boot.
+
+*(Current state, Nov 6 2026: every write path now files a routine under its generated
+id — create and import in `routineManager.js` / `cycleImportManager.js`, duplicate in
+`routineSwitcherActions.js` — and a rename changes only `title`. Until then those paths
+still wrote **title** keys after the migration, the name-key duality in Consequences
+below; boot re-keys any such routine once (`repairRoutineKeys`, called by
+`AppState._repairRoutineKeys`).)*
 
 **Why.**
 - The app has **no server**, so users hold data in whatever shape was current when
@@ -180,8 +190,8 @@ order with `await`. Wrap the sequence in failure handling: on a failed attempt,
 tear down the partial ("zombie") attempt and **retry**; if it still fails, fall back
 to the lite version.
 
-Timeouts (from `constants.js`): Phase 1 = 15s, Phase 2 = 30s (largest phase, 40+
-modules), Phase 3 = 15s, pre-boot version gate = 1.5s. In the HTML shell, a
+Timeouts (`BOOT_TIMEOUTS` in `constants.js`): Phase 1 = 15s, Phase 2 = 30s (largest phase),
+Phase 3 = 15s, pre-boot version gate = 1.5s. In the HTML shell, a
 **16-second** late fallback and a **60-second** hard load-timeout both redirect to
 lite as last resorts.
 
@@ -216,9 +226,10 @@ lite as last resorts.
 
 **Decision.** The DI container supports a `strict` mode that *throws* when a
 `required()` dependency is missing, but strict mode is **off by default** and turned
-on in only 2 modules. Everywhere else, a missing required dep logs a `console.warn`
+on in only 2 modules (`dataValidator.js`, `recurringPanel.js`). Everywhere else, a missing required dep logs a `console.warn`
 and resolves to `null` rather than throwing. In practice most modules declare deps
-as `optional(null)` (roughly 781 `optional()` vs 92 `required()` across the code).
+as `optional(null)` — `optional()` outnumbers `required()` several to one across
+`modules/`.
 
 **Why.**
 - The app's guiding instinct is **degrade gracefully, don't crash the user.** A
@@ -240,6 +251,12 @@ as `optional(null)` (roughly 781 `optional()` vs 92 `required()` across the code
   rather than a clear failure at the wiring point. **Worth revisiting** for the most
   safety-critical modules (state, storage, migration), where fail-fast might be
   preferable to silent degradation.
+
+*(Still in force at the `resolve()` level, Nov 6 2026 — `diBase.js` warns and
+resolves `null` unless `{ strict: true }`. Two later changes narrowed the gap
+without reversing it: `ENFORCE_REQUIRES = true` in `boot/moduleLoader.js` (v2.418)
+delivers only declared deps, and `CLAUDE.md` rule #19 — gated by `validate:chains` —
+reads required deps unguarded so a wiring failure throws at the point of use.)*
 
 ---
 

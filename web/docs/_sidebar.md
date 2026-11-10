@@ -212,6 +212,7 @@
 
   * **Audits & Analysis (Complete)**
     * [Event Listener Audit](archive/EVENT_LISTENER_AUDIT.md)
+    * [Code Review Report (Dec 2025)](archive/CODE_REVIEW_REPORT_DEC_2025.md) _(archived Nov 6 2026, docs audit round 2)_
 
   * **Plans Completed (2026)** _(archived Nov 5 2026, docs audit round 0)_
     * [Large Module Splits](archive/LARGE_MODULE_SPLITS_PLAN.md)

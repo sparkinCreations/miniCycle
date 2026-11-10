@@ -1092,7 +1092,7 @@
                 const mod = await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
                 window.DeviceDetectionManager = mod.DeviceDetectionManager;
                 window.deviceDetectionManager = mod.deviceDetectionManager;
-                window.runDeviceDetection = mod.runDeviceDetection;
+                window.assessBootPerformance = mod.assessBootPerformance;
                 window.reportDeviceCompatibility = mod.reportDeviceCompatibility;
                 window.testDeviceDetection = mod.testDeviceDetection;
             } else if (moduleKey === 'routineLoader') {
@@ -1430,7 +1430,7 @@
                     const mod = await import(`../modules/utils/deviceDetection.js?v=${cacheBuster}`);
                     window.DeviceDetectionManager = mod.DeviceDetectionManager;
                     window.deviceDetectionManager = mod.deviceDetectionManager;
-                    window.runDeviceDetection = mod.runDeviceDetection;
+                    window.assessBootPerformance = mod.assessBootPerformance;
                     window.reportDeviceCompatibility = mod.reportDeviceCompatibility;
                     window.testDeviceDetection = mod.testDeviceDetection;
                     currentModule = 'deviceDetection';

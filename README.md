@@ -97,7 +97,7 @@ A theme changes a routine's colors and the words the app uses for it, so a worko
 
 ### Personalization
 
-You can change the colors, save them as presets, set your own background image, and turn on dark mode or let it follow your system. Presets can be imported and exported.
+You can change the colors, save them as presets, set your own background image, and turn dark mode on or off (it's a manual switch; it doesn't follow your system setting). Presets can be imported and exported.
 
 <p align="center">
   <img src=".github/readme/personalization.jpg" alt="The Personalization panel" width="200"/>

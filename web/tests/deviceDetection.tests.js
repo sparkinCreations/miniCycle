@@ -1,7 +1,7 @@
 /**
  * 📱 Device Detection Manager Tests
  *
- * Tests for device capability detection and app version routing
+ * Tests for the Lite offer (measured slow boots, asked once) and touch detection
  * Following miniCycle browser testing patterns
  *
  * Updated for Phase 3 DI Pattern - direct module imports
@@ -112,7 +112,7 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
     
     await test('creates instance successfully', () => {
         const manager = new DeviceDetectionManager();
-        if (!manager || typeof manager.runDeviceDetection !== 'function') {
+        if (!manager || typeof manager.assessBootPerformance !== 'function') {
             throw new Error('DeviceDetectionManager not properly initialized');
         }
     });
@@ -136,199 +136,163 @@ export async function runDeviceDetectionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
-    // === DEVICE DETECTION LOGIC TESTS ===
-    resultsDiv.innerHTML += '<h4>🔍 Device Detection Logic</h4>';
+    // === LITE OFFER (Nov 2026: measured slow boots, asked once) ===
+    resultsDiv.innerHTML += '<h4>🐢 Lite offer</h4>';
 
-    await test('shouldRedirectToLite returns boolean', () => {
-        const manager = new DeviceDetectionManager();
-        const result = manager.shouldRedirectToLite();
+    const VERSION = '9.001';
+    const SLOW = 20000, FAST = 500;
+    // In-memory AppState + a recording confirm modal. The confirm callback is
+    // only ever answered "no" here: "yes" navigates to Lite.
+    const makeHarness = (record) => {
+        const state = { settings: record === undefined ? {} : { deviceCompatibility: record } };
+        const h = { state, confirms: [], updates: 0 };
+        module.setDeviceDetectionDependencies({
+            AppState: { isReady: () => true, get: () => state, update: async (fn) => { h.updates++; fn(state); } },
+            appInit: { waitForCore: async () => {} },
+            showNotification: () => {},
+            showConfirmationModal: (opts) => h.confirms.push(opts),
+            AppMeta: { version: VERSION }
+        });
+        h.manager = new DeviceDetectionManager();
+        h.boot = (bootMs, extra = {}) => h.manager.assessBootPerformance({ bootMs, hidden: false, fewCores: false, ...extra });
+        h.record = () => state.settings.deviceCompatibility || {};
+        return h;
+    };
+    const known = (streak = 0) => ({ lastBootVersion: VERSION, slowBootStreak: streak });
 
-        if (typeof result !== 'boolean') {
-            throw new Error('shouldRedirectToLite should return boolean');
-        }
+    await test('a fast boot of a known version writes nothing', async () => {
+        const h = makeHarness(known());
+        const r = await h.boot(FAST);
+        if (!r.counted || r.slow || r.offered || r.streak !== 0) throw new Error(JSON.stringify(r));
+        if (h.updates !== 0) throw new Error(`expected no write, got ${h.updates}`);
     });
 
-    await test('device detection logic exists and is callable', () => {
-        const manager = new DeviceDetectionManager();
-
-        // Verify the method exists and doesn't throw
-        if (typeof manager.shouldRedirectToLite !== 'function') {
-            throw new Error('shouldRedirectToLite should be a function');
-        }
-
-        // Should not throw when called
-        const result = manager.shouldRedirectToLite();
-
-        // Result should be boolean
-        if (typeof result !== 'boolean') {
-            throw new Error('shouldRedirectToLite should return boolean value');
-        }
+    await test('the first boot after an update is recorded but not counted (it downloads the new build)', async () => {
+        const h = makeHarness({ lastBootVersion: '9.000', slowBootStreak: 1 });
+        const r = await h.boot(SLOW);
+        if (r.counted || r.offered) throw new Error(JSON.stringify(r));
+        if (h.record().lastBootVersion !== VERSION || h.record().slowBootStreak !== 1) throw new Error(JSON.stringify(h.record()));
+        if (h.confirms.length) throw new Error('offered on an update boot');
     });
 
-    await test('checkManualOverride is async and returns boolean', async () => {
-        module.setDeviceDetectionDependencies({ AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } }, appInit: { waitForCore: async () => {} } });
-        const manager = new DeviceDetectionManager();
-
-        const result = await manager.checkManualOverride('test-agent');
-
-        if (typeof result !== 'boolean') {
-            throw new Error('checkManualOverride should return boolean');
-        }
+    await test('two slow boots in a row offer Lite; one is not enough', async () => {
+        const h = makeHarness(known());
+        const first = await h.boot(SLOW);
+        if (first.streak !== 1 || first.offered || h.confirms.length) throw new Error(`after one: ${JSON.stringify(first)}`);
+        const second = await h.boot(SLOW);
+        if (second.streak !== 2 || !second.offered || h.confirms.length !== 1) throw new Error(`after two: ${JSON.stringify(second)}`);
+        if (h.record().lastSlowBootMs !== SLOW) throw new Error('slow boot time not kept');
     });
 
-    // === MANUAL OVERRIDE TESTS ===
-    resultsDiv.innerHTML += '<h4>🚀 Manual Override Tests</h4>';
-    
-    await test('respects manual override preference', async () => {
-        // checkManualOverride is async — the old test never awaited it, so `hasOverride` was a
-        // Promise (always truthy) and `if (!hasOverride)` could never fire (green even if override
-        // detection were broken). Also: deps resolve from the MODULE-level DI (di.resolve),
-        // NOT constructor args — so the override path (which needs ready state) requires
-        // injecting a ready AppState.
+    await test('a fast boot resets the streak', async () => {
+        const h = makeHarness(known(1));
+        const r = await h.boot(FAST);
+        if (r.streak !== 0 || h.record().slowBootStreak !== 0) throw new Error(JSON.stringify(r));
+    });
+
+    await test('a boot in a hidden tab is not counted (throttled timers)', async () => {
+        const h = makeHarness(known(1));
+        const r = await h.boot(SLOW, { hidden: true });
+        if (r.counted || r.streak !== 1 || h.confirms.length) throw new Error(JSON.stringify(r));
+    });
+
+    await test('one slow boot is enough on a device with 2 or fewer cores', async () => {
+        const h = makeHarness(known());
+        const r = await h.boot(SLOW, { fewCores: true });
+        if (!r.offered || h.confirms.length !== 1) throw new Error(JSON.stringify(r));
+    });
+
+    await test('the offer says Lite keeps its own list, and how long the boot took', async () => {
+        const h = makeHarness(known());
+        await h.boot(7400, { fewCores: true });
+        const offer = h.confirms[0];
+        if (!offer) throw new Error('no offer');
+        if (!/own separate list/.test(offer.message)) throw new Error(`message: ${offer.message}`);
+        if (!/about 7 seconds/.test(offer.message)) throw new Error(`seconds not interpolated: ${offer.message}`);
+        if (/\{|\}/.test(offer.message + offer.title + offer.confirmText + offer.cancelText)) throw new Error('an unresolved label placeholder');
+    });
+
+    await test('declining is kept, and the offer is never asked again', async () => {
+        const h = makeHarness(known(1));
+        await h.boot(SLOW);
+        await h.confirms[0].callback(false);
+        if (h.record().liteOffer !== 'declined' || !h.record().decidedAt) throw new Error(JSON.stringify(h.record()));
+        const later = await h.boot(SLOW);
+        if (later !== null || h.confirms.length !== 1) throw new Error('asked again after a no');
+    });
+
+    await test('an accepted offer is not asked again', async () => {
+        const h = makeHarness({ ...known(5), liteOffer: 'accepted' });
+        if (await h.boot(SLOW) !== null || h.confirms.length) throw new Error('asked again after a yes');
+    });
+
+    await test('"Try Full Version" in Lite counts as no', async () => {
+        const h = makeHarness(known(5));
         localStorage.setItem('miniCycleForceFullVersion', 'true');
-        module.setDeviceDetectionDependencies({
-            AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } },
-            appInit: { waitForCore: async () => {} }
-        });
-        try {
-            const manager = new DeviceDetectionManager();
-            const hasOverride = await manager.checkManualOverride('test-agent');
-            if (hasOverride !== true) {
-                throw new Error('Should detect manual override when miniCycleForceFullVersion is set');
-            }
-        } finally {
-            localStorage.removeItem('miniCycleForceFullVersion');
-            module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } }); // restore default
-        }
+        if (await h.boot(SLOW) !== null || h.confirms.length) throw new Error('offered despite the full-version choice');
     });
-    
-    // === VERSION CHANGE DETECTION ===
-    resultsDiv.innerHTML += '<h4>🔄 Version Change Detection</h4>';
-    
-    await test('detects version changes', async () => {
-        // autoRedetectOnVersionChange re-runs detection only when the stored
-        // settings.deviceCompatibility.lastDetectionVersion differs from currentVersion; it
-        // awaits runDeviceDetection() directly (no setTimeout). The old test never asserted its
-        // `detectionRan` spy and only checked the method still exists.
-        // Deps resolve from module-level DI; only AppMeta.version drives this.currentVersion.
-        module.setDeviceDetectionDependencies({
-            AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } },
-            appInit: { waitForCore: async () => {} }
-        });
-        const makeManager = (version) => {
-            const m = new DeviceDetectionManager({ AppMeta: { version } });   // sets this.currentVersion
-            m.detectionRan = false;
-            m.runDeviceDetection = () => { m.detectionRan = true; };
-            return m;
-        };
 
-        try {
-            // Version CHANGED (stored 1.999 → current 2.000) → detection re-runs.
-            localStorage.setItem('miniCycleData', JSON.stringify({
-                settings: { deviceCompatibility: { lastDetectionVersion: '1.999' } }
-            }));
-            const changed = makeManager('2.000');
-            await changed.autoRedetectOnVersionChange();
-            if (!changed.detectionRan) {
-                throw new Error('detection should re-run when the stored version differs from current');
-            }
+    await test('first run (no state yet) assesses nothing', async () => {
+        const h = makeHarness(known());
+        module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } });
+        if (await h.manager.assessBootPerformance({ bootMs: SLOW, hidden: false, fewCores: true }) !== null) throw new Error('assessed without state');
+    });
 
-            // Version SAME (stored 2.000 === current 2.000) → detection does NOT run (the control
-            // that makes the test meaningful — fails if the version comparison were removed).
-            localStorage.setItem('miniCycleData', JSON.stringify({
-                settings: { deviceCompatibility: { lastDetectionVersion: '2.000' } }
-            }));
-            const same = makeManager('2.000');
-            await same.autoRedetectOnVersionChange();
-            if (same.detectionRan) {
-                throw new Error('detection should NOT re-run when the stored version matches current');
-            }
-        } finally {
-            localStorage.removeItem('miniCycleData');
-            module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } }); // restore default
-        }
+    await test('the redirect-era fields are dropped on the next write', async () => {
+        const h = makeHarness({ shouldUseLite: true, reason: 'device_compatibility', userAgent: 'x', deviceInfo: { connectionType: '3g' }, lastDetectionVersion: '9.000' });
+        await h.boot(FAST);
+        const keys = Object.keys(h.record()).sort().join(',');
+        if (keys !== 'lastBootVersion,slowBootStreak') throw new Error(`kept: ${keys}`);
     });
 
     // === COMPATIBILITY REPORTING ===
     resultsDiv.innerHTML += '<h4>📊 Compatibility Reporting</h4>';
 
-    await test('handles missing Schema 2.5 data gracefully', async () => {
-        localStorage.clear();
-
+    await test('report returns null without state data', async () => {
         module.setDeviceDetectionDependencies({ AppState: { isReady: () => false }, showNotification: () => {}, appInit: { waitForCore: async () => {} } });
-        const manager = new DeviceDetectionManager();
+        const report = await new DeviceDetectionManager().reportDeviceCompatibility();
+        if (report !== null) throw new Error('Should return null when state data is missing');
+    });
 
-        const report = await manager.reportDeviceCompatibility();
-
-        if (report !== null) {
-            throw new Error('Should return null when Schema 2.5 data missing');
-        }
+    await test('report reads the decision and the streak from the record', async () => {
+        let h = makeHarness({ ...known(1), liteOffer: 'accepted' });
+        let r = await h.manager.reportDeviceCompatibility();
+        if (r.storedDecision !== true || r.slowBootStreak !== 1 || r.lastDetectionVersion !== VERSION) throw new Error(JSON.stringify(r));
+        h = makeHarness(known(0));
+        localStorage.setItem('miniCycleForceFullVersion', 'true');
+        r = await h.manager.reportDeviceCompatibility();
+        if (r.storedDecision !== false) throw new Error('full-version choice not reported');
+        localStorage.removeItem('miniCycleForceFullVersion');
+        h = makeHarness(known(0));
+        r = await h.manager.reportDeviceCompatibility();
+        if (r.storedDecision !== null) throw new Error('an unasked device reported a decision');
     });
 
     // === UTILITY FUNCTIONS ===
     resultsDiv.innerHTML += '<h4>🧹 Utility Functions</h4>';
-    
-    await test('clears detection data properly', () => {
-        const manager = new DeviceDetectionManager();
-        
-        // Save some data first
-        manager.saveCompatibilityData({
-            shouldUseLite: true,
-            reason: 'test'
-        });
-        
-        // Clear it
-        manager.clearDetectionData();
-        
-        const clearedData = JSON.parse(localStorage.getItem('miniCycleData'));
-        
-        if (clearedData.settings?.deviceCompatibility) {
-            throw new Error('Detection data not properly cleared');
+
+    await test('clearing forgets the record and the full-version choice', async () => {
+        const h = makeHarness({ ...known(2), liteOffer: 'declined' });
+        localStorage.setItem('miniCycleForceFullVersion', 'true');
+        await h.manager.clearDetectionData();
+        if (h.state.settings.deviceCompatibility) throw new Error('record not cleared');
+        if (localStorage.getItem('miniCycleForceFullVersion') !== null) throw new Error('full-version choice not cleared');
+    });
+
+    // === EXPORTS ===
+    resultsDiv.innerHTML += '<h4>🌐 Exports</h4>';
+
+    await test('exports the boot assessment, report and test entry points', () => {
+        for (const name of ['assessBootPerformance', 'reportDeviceCompatibility', 'testDeviceDetection', 'isTouchDevice', 'isTouchCapable']) {
+            if (typeof module[name] !== 'function') throw new Error(`${name} not exported`);
+        }
+        for (const gone of ['runDeviceDetection', 'autoRedetectOnVersionChange']) {
+            if (gone in module) throw new Error(`${gone} should be gone`);
         }
     });
 
-    // === ERROR HANDLING ===
-    resultsDiv.innerHTML += '<h4>⚠️ Error Handling</h4>';
-
-    // ⚠️ ENVIRONMENT-SPECIFIC: Error handling behavior may vary by browser
-    await test('handles corrupted localStorage gracefully', async () => {
-        localStorage.setItem('miniCycleData', 'invalid-json');
-
-        module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } });
-        const manager = new DeviceDetectionManager();
-
-        // Should not throw - if it does, test will fail
-        try {
-            await manager.runDeviceDetection();
-        } catch (error) {
-            throw new Error('Should handle corrupted localStorage gracefully, but threw: ' + error.message);
-        }
-    });
-
-    // ⚠️ ENVIRONMENT-SPECIFIC: Dependency injection behavior varies by environment
-    await test('handles missing dependencies gracefully', async () => {
-        module.setDeviceDetectionDependencies({ AppState: { isReady: () => true, get: () => JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'), update: async (fn, immediate) => { const d = JSON.parse(localStorage.getItem('miniCycleData') || '{"settings":{}}'); fn(d); localStorage.setItem('miniCycleData', JSON.stringify(d)); } } });
-        const manager = new DeviceDetectionManager();
-
-        // Should not throw even with missing dependencies
-        try {
-            await manager.runDeviceDetection();
-        } catch (error) {
-            throw new Error('Should handle missing dependencies gracefully, but threw: ' + error.message);
-        }
-    });
-
-    // === GLOBAL FUNCTIONS ===
-    resultsDiv.innerHTML += '<h4>🌐 Global Functions</h4>';
-    
-    await test('exposes global compatibility functions', () => {
-        // Import should have set up globals
-        if (typeof window.runDeviceDetection !== 'function' ||
-            typeof window.reportDeviceCompatibility !== 'function' ||
-            typeof window.testDeviceDetection !== 'function') {
-            throw new Error('Global functions not properly exposed');
-        }
-    });
+    // Leave the shared module instance with no state, as the old tests did
+    module.setDeviceDetectionDependencies({ AppState: { isReady: () => false } });
 
     // === TOUCH CAPABILITY vs TOUCH PRIMARY ===
     resultsDiv.innerHTML += '<h4 class="test-section">✋ Touch capability</h4>';
