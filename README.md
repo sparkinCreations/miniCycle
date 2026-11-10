@@ -9,6 +9,10 @@ It works offline and doesn't need an account. Your routines stay on your device.
 **[Open miniCycle](https://minicycle.app/app)** · [Product page](https://minicycle.app) · [User manual](https://minicycle.app/legal/user-manual.html) · [Chrome extension](https://chromewebstore.google.com/detail/minicycle/ncfhifaoplaakjpbjokpnblkplcceegi)
 
 <p align="center">
+  <img src=".github/readme/launch.webp" alt="Launch film highlights: a morning routine is checked off and resets, then the app changes colors and switches to dark mode" width="700"/>
+</p>
+
+<p align="center">
   <img src=".github/readme/home.jpg" alt="Home View with a morning routine partly checked off" width="220"/>
   <img src=".github/readme/focus.jpg" alt="Focus View showing the same routine with the toolbar hidden" width="220"/>
   <img src=".github/readme/dark.jpg" alt="A workout routine in dark mode" width="220"/>
