@@ -1,3 +1,9 @@
+## [2.675] - 2026-11-10
+- Add launch film highlights to the README
+- Add two sample GIFs
+- Add miniCycle launch video
+
+
 ## [2.674] - 2026-11-09
 - docs(deploy): install real dependencies for the manual Netlify upload
 - fix(focus): keep Redo clear of the tabs in very small windows

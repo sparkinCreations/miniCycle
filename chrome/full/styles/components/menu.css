@@ -1473,6 +1473,22 @@ body.dark-mode .menu-section-grid #menu-task-options .icon-text {
     }
 }
 
+/* "Personalization" is one long word and fills a half-width button: 108px of
+   Poppins, and a wider system font ran it out of the button when Poppins was
+   unavailable. Its right padding goes (the left stays, so the icon lines up
+   with the column), and overflow-wrap lets it break only as a last resort. */
+.menu-section-grid #open-preferences {
+    padding-right: 0;
+    overflow-wrap: anywhere;
+}
+
+/* The two-column layout's tightest buttons (156px at a 375px window). */
+@media (min-width: 375px) and (max-width: 389px) {
+    .menu-section-grid #open-preferences .icon {
+        margin-right: var(--space-1);
+    }
+}
+
 /* "Personalization" is one long word, so beside a full-size icon it no longer
    fits half of the narrowest menus. These two take a row each there. */
 @media (max-width: 374px) {
