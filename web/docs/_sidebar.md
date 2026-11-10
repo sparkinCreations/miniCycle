@@ -140,6 +140,7 @@
   * [AppState Merge States](future-work/APPSTATE_MERGE_STATES.md)
   * [Audit Residuals (Aug 2026)](future-work/AUDIT_RESIDUALS_2026_08.md)
   * [Auto-Generated depMappings](future-work/AUTO_GENERATED_DEPMAPPINGS_PLAN.md)
+  * [Boot Orchestration Hardening](future-work/BOOT_ORCHESTRATION_HARDENING.md)
   * [Boot Performance Roadmap](future-work/BOOT_PERF_ROADMAP.md)
   * [Dev-build validateTask() Enforcement](future-work/DEV_VALIDATE_TASK_ENFORCEMENT.md)
   * [Docs Audit Plan (round 0 + 12 rounds)](future-work/DOCS_AUDIT_PLAN.md)
