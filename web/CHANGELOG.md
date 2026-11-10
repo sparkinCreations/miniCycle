@@ -18,7 +18,7 @@
 - docs(audit): round 2 (wip checkpoint) — API reference, data schema guide (in progress)
 - docs(audit): round 2 (wip) — roadmap, contributing (project-info), ADRs, drift checklist, feature list
 - docs(audit): round 2 (wip) — project-info: accessibility, app reviews, browser compatibility, copyright, privacy
-- TODO(changelog): uncommitted work shipped in this release — describe it here
+- test: refresh the test-count manifest after a full run on merged main (4,218 tests)
 
 
 ## [2.676] - 2026-11-10

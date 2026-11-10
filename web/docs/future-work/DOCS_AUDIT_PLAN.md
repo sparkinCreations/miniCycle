@@ -1,6 +1,7 @@
 # Docs Audit Plan — accuracy, numbers, archive, sidebar (round 0 + 12 rounds)
 
-> **Status:** plan for review — nothing audited yet. Proposed Oct 27 2026;
+> **Status:** in progress — rounds 0, 1 and 2 done (round 2 shipped in v2.678,
+> Nov 10 2026); round 3a is next. Proposed Oct 27 2026;
 > revised Nov 5 2026 (round 0, two new gates, line-budgeted rounds, wider
 > scope — see *Decisions*).
 > **Owner:** MJ reviews each round; Claude executes.
