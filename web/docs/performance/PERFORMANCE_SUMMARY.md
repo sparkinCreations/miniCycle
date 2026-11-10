@@ -4,23 +4,31 @@
 >
 > **For current test counts and module counts, see [PROJECT_STATS.md](../PROJECT_STATS.md).**
 
-**Date**: December 20, 2025
-**Version**: 1.516
-**Status**: ✅ **Production Ready**
+**Last verified:** Nov 10 2026
+
+> **Status:** a dated record plus pointers. The one benchmark run summarised here was taken
+> on Nov 12 2025 at v1.352 and has not been repeated for this page. It is not a statement
+> of today's performance, and no gate enforces its numbers. For how the checks work today,
+> read [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md).
 
 ---
 
 ## 🎯 Overall Assessment
 
-### **EXCEPTIONAL PERFORMANCE** 🚀
+What can be said from the record and the config:
 
-miniCycle demonstrates world-class performance across all metrics:
-
-- ✅ **All functional tests passing** (100%)
-- ✅ **All performance benchmarks passing** (12/12 - 100%)
-- ✅ **Operations 9-125x faster** than threshold requirements
-- ✅ **Minimal memory footprint** (9.54MB - 0.3% of heap)
-- ✅ **Production-ready** with exceptional quality
+- On Nov 12 2025 (v1.352, on a Mac) the twelve micro-benchmarks that
+  existed then all finished under their thresholds, most by a factor of 9 to 125. Date
+  formatting was the exception at 14.90ms against a 15ms threshold.
+- Those benchmarks are synthetic (`tests/performance.benchmark.js` imports no app module),
+  so they measure the browser doing task-shaped work, not the app's own code paths.
+- Benchmarks do not gate anything: a slow one is a warning, and the CI step is
+  `continue-on-error`.
+- The only performance checks that fail CI are the two Lighthouse error assertions in
+  `lighthouserc.json`: `viewport` and `cumulative-layout-shift` (max 0.1).
+- Real-device boot timing is tracked in
+  [BOOT_PERF_ROADMAP.md](../future-work/BOOT_PERF_ROADMAP.md), and dated Lighthouse runs
+  in [LIGHTHOUSE_BENCHMARKS.md](./LIGHTHOUSE_BENCHMARKS.md).
 
 ---
 
@@ -28,43 +36,34 @@ miniCycle demonstrates world-class performance across all metrics:
 
 ### Functional Testing
 
-```
-Total Tests: see ../PROJECT_STATS.md
-Pass Rate: 100%
-Duration: ~65 seconds
-Platform: Mac, iPad, iPhone (cross-platform)
-Status: ✅ All passing
-```
-
-**Test Distribution** (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts):
-- Core Systems: 14%
-- Business Logic: 32%
-- UI Components: 29%
-- Features: 19%
-- Security & Error Handling: 6%
-- Integration: 1%
+Counts and pass results are generated into [PROJECT_STATS.md](../PROJECT_STATS.md) and are
+not repeated here. The functional suites run in `.github/workflows/test.yml`.
 
 ### Performance Benchmarks
 
+Recorded run, Nov 12 2025 (v1.352):
+
 ```
-Total Benchmarks: 12
-Pass Rate: 100%
+Benchmarks in the suite then: 12
+Under threshold: 12
 Total Execution Time: 21.40ms
 Average per Operation: 1.78ms
-Memory Usage: 9.54MB (0.3%)
-Status: ✅ All passing
+Memory Usage: 9.54MB (0.3% of the heap limit; the test-suite page's heap)
 ```
 
-**Performance Multipliers** (vs threshold):
-- Create tasks: **100x faster**
-- Render tasks: **62x faster**
-- Save to storage: **125x faster**
-- Parse from storage: **55x faster**
-- Sort tasks: **14x faster**
+**Ratio of threshold to measured time** in that run:
+- Create tasks: **100x**
+- Render tasks: **62x**
+- Save to storage: **125x**
+- Parse from storage: **55x**
+- Sort tasks: **14x**
 
 ---
 
 ## 🏆 Benchmark Results
+
+Nov 12 2025 run (v1.352). Thresholds are defined in `tests/performance.benchmark.js`,
+which has gained further benchmarks since; those have no recorded run here.
 
 | Operation | Time | Threshold | Performance |
 |-----------|------|-----------|-------------|
@@ -87,56 +86,52 @@ Status: ✅ All passing
 | **Memory Operations** ||||
 | Create/destroy 1000 objects | 1.20ms | 20ms | ✅ 16x faster |
 
-**Summary:**
-- ✅ **Total time**: 21.40ms (4.7x faster than 100ms budget)
-- ✅ **Average**: 1.78ms per operation
-- ✅ **Memory**: 9.54MB (0.3% of available heap)
+**Summary of that run:**
+- **Total time**: 21.40ms
+- **Average**: 1.78ms per operation
+- **Memory**: 9.54MB (0.3% of the heap limit, test-suite page)
 
 ---
 
 ## 💡 Key Strengths
 
-### 1. **Blazingly Fast Operations**
+### 1. Fast synthetic operations
 
-All operations complete in milliseconds, often 10-100x faster than required:
+In the Nov 12 2025 run the benchmarked operations completed in well under their
+thresholds:
 
 ```
-Operation Speed Comparison:
-
 Threshold:     ████████████████████████████████████████████████  50ms
-Your App:      █ 0.80ms
+Nov 12 2025:   █ 0.80ms   (Render 100 task elements)
 
 Threshold:     ██████████████████████████████████████████████████ 100ms
-Your App:      █ 0.80ms
+Nov 12 2025:   █ 0.80ms   (Save 1000 tasks)
 
 Threshold:     ███████████  10ms
-Your App:      ▏ 0.10ms
+Nov 12 2025:   ▏ 0.10ms   (Create 100 tasks)
 ```
 
-### 2. **Efficient Memory Usage**
+### 2. Memory
 
-Only 9.54MB memory footprint:
-- 16x better than 5% budget
-- No memory leaks detected
-- Efficient garbage collection
-- Scales to 10,000+ tasks
+The same run recorded a 9.54MB heap for the test-suite page. No automated check looks for
+memory leaks or measures the app's own heap; that is a manual DevTools job (see the
+guide). A routine is capped at `LIMITS.TASKS_PER_CYCLE` tasks and the undo stack at
+`LIMITS.UNDO_STACK` (`modules/core/constants.js`).
 
-### 3. **Modular Architecture**
+### 3. Modular Architecture
 
-74.8% code reduction through modularization:
-- 117 focused modules (see [PROJECT_STATS.md](../PROJECT_STATS.md))
-- Lazy loading ready
-- Code splitting optimized
-- Clean separation of concerns
+- The app is built from ES modules (count in [PROJECT_STATS.md](../PROJECT_STATS.md))
+- Development has no build step; the release is an esbuild bundle with content-hashed
+  file names (`scripts/build-web.cjs`, see [BUILD_PROCESS.md](../deployment/BUILD_PROCESS.md))
+- Some modules load lazily; what is deferred and why is in
+  [MODULE_DEFERRAL_AUDIT.md](../future-work/MODULE_DEFERRAL_AUDIT.md)
 
-### 4. **Comprehensive Testing**
+### 4. Testing
 
-100% test coverage:
-- Full functional test suite (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
-- 12 performance benchmarks
-- All test modules automated
-- E2E integration tests
-- Cross-platform validated
+- Functional test suite (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
+- Synthetic performance benchmarks plus a real-app boot measurement (`npm run perf`)
+- End-to-end journey tests (`npm run test:journey`)
+- A WebKit run of the browser tests (`npm run test:webkit`; informational in CI)
 
 ---
 
@@ -144,48 +139,37 @@ Only 9.54MB memory footprint:
 
 ### What We Test
 
+What an automated command covers today, performance side:
+
 ```
 ┌────────────────────────────────────────────────────┐
-│                  Test Coverage                      │
-├────────────────────────────────────────────────────┤
-│ ✅ Core app state management                       │
-│ ✅ Task CRUD operations                            │
-│ ✅ Cycle switching & modes                         │
-│ ✅ Undo/redo with IndexedDB                        │
-│ ✅ Recurring task scheduling                       │
-│ ✅ Data migration (v2.0 → v2.5)                    │
-│ ✅ Offline boot + service worker (npm run test:sw) │
-│ ✅ Cross-platform (Mac/iPad/iPhone)                │
-│ ✅ Memory leaks                                    │
-│ ✅ Performance regressions                         │
-│ ✅ Lighthouse CI (viewport + CLS gate)            │
-│ ✅ Bundle size tracking                            │
+│ npm run perf       real-app boot timings (printed) │
+│                    synthetic micro-benchmarks      │
+│ npm run lighthouse viewport + CLS (error gates)    │
+│                    scores and timings (warnings)   │
+│ npm run test:sw    offline boot + service worker   │
 └────────────────────────────────────────────────────┘
 ```
+
+Not automated: memory-leak detection, bundle-size tracking and on-device timing. Those are
+manual (DevTools, `window.getMiniCycleBootTiming()`).
 
 ### How We Test
 
 ```
-Layer 1: Micro Benchmarks (12 tests, 21ms)
-   ↓     Fast operation timing
-Layer 2: Unit Tests (~30s)
-   ↓     Individual function testing
-Layer 3: Component Tests (~20s)
-   ↓     UI component behavior
-Layer 4: Integration Tests (~12s)
-   ↓     End-to-end workflows
-Layer 5: Lighthouse CI (viewport + CLS gate, 3min)
+Layer 1: Micro Benchmarks (npm run perf)
+   ↓     Fast operation timing, informational
+Layer 2: Functional suites (test.yml)
+   ↓     Module tests, layout, service worker, journeys, Lite
+Layer 3: Lighthouse CI (viewport + CLS gate)
          Scores/timings reported as warnings (informational)
 ```
 
 ### When We Test
 
 ```
-✅ Every commit:      npm test (local)
-✅ Every PR:          GitHub Actions (CI)
-✅ Weekly:            npm run perf
-✅ Monthly:           npm run lighthouse
-✅ Per release:       Full QA suite
+Every push and PR to main/develop:  GitHub Actions runs test.yml and performance.yml
+Locally, as needed:                 npm test, npm run perf, npm run lighthouse
 ```
 
 ---
@@ -196,27 +180,28 @@ Layer 5: Lighthouse CI (viewport + CLS gate, 3min)
 
 **GitHub Actions runs automatically on:**
 - Every push to `main` or `develop`
-- Every pull request
+- Every pull request targeting `main` or `develop`
 - Manual workflow dispatch
 
 **Two parallel workflows:**
 
-1. **Functional Tests** (`test.yml`)
-   - Full test suite across all automated modules (see [PROJECT_STATS.md](../PROJECT_STATS.md) for counts)
-   - Tests on Node.js 18.x and 20.x
-   - Duration: ~90 seconds
-   - Artifacts: Test results (30 days)
+1. **Functional Tests** (`test.yml`, name `Automated Tests`)
+   - Jobs: `lint`, `test`, `test-a11y`, `test-webkit`, `deploy`
+   - The `test` job runs on Node.js 18.x and 20.x
+   - `deploy` needs `lint`, `test` and `test-a11y`
 
-2. **Performance Tests** (`performance.yml`)
-   - 12 micro-benchmarks
-   - Lighthouse CI (5 metrics)
-   - Duration: ~180 seconds
-   - Artifacts: Reports + timings (30 days)
+2. **Performance Tests** (`performance.yml`, name `Performance`)
+   - Jobs: `performance-benchmarks`, `html-validation`, `docs-validation` and the Lighthouse CI job
+   - `performance-benchmarks` is informational (`continue-on-error`)
+   - The Lighthouse CI job builds the release (`npm run build:web`), serves `dist/` and runs `lhci autorun`
+   - Artifacts: Lighthouse reports (30 days)
 
-**Branch Protection:**
-- ✅ All tests must pass before merge
-- ✅ Performance must not regress
-- ✅ Lighthouse scores monitored
+**What blocks:**
+- The functional jobs that `deploy` needs must pass before a deploy
+- The Lighthouse CI job fails only on the `viewport` or `cumulative-layout-shift` assertion
+- A benchmark slowdown or a lower Lighthouse score does not fail anything; the `Performance`
+  workflow is not among the jobs `deploy` needs
+- Branch protection rules live in GitHub settings and are not recorded in this repo
 
 ---
 
@@ -224,21 +209,12 @@ Layer 5: Lighthouse CI (viewport + CLS gate, 3min)
 
 ### Version History
 
-| Version | Total Time | Memory | Status |
-|---------|-----------|---------|---------|
-| 1.350 | 23.10ms | 10.2MB | ✅ Good |
-| 1.351 | 22.40ms | 9.8MB | ✅ Improving |
-| **1.352** | **21.40ms** | **9.54MB** | ✅ **Excellent** |
+| Version | Date | Total Time | Memory (test page heap) |
+|---------|------|-----------|---------|
+| 1.352 | Nov 12 2025 | 21.40ms | 9.54MB |
 
-**Trend**: ⬇️ **Improving** (7.4% faster since v1.350)
-
-### Optimization Impact
-
-Modularization (v1.330 → v1.352):
-- ✅ Code size: -74.8% (15,677 → 3,674 lines)
-- ✅ Load time: -15% faster
-- ✅ Memory: -6.5% lower
-- ✅ Maintainability: +100% (modular design)
+One dated benchmark run is on record, so there is no trend. Device boot baselines over
+time (2026) are in [BOOT_PERF_ROADMAP.md](../future-work/BOOT_PERF_ROADMAP.md).
 
 ---
 
@@ -246,20 +222,18 @@ Modularization (v1.330 → v1.352):
 
 ### Current vs Target
 
-| Metric | Budget | Current | Headroom | Status |
-|--------|--------|---------|----------|--------|
-| **Benchmarks** |||||
-| Total time | <100ms | 21.40ms | 78.60ms | ✅ 4.7x |
-| Render 100 | <50ms | 0.80ms | 49.20ms | ✅ 62x |
-| Parse 1000 | <50ms | 0.90ms | 49.10ms | ✅ 55x |
-| **Memory** |||||
-| Initial load | <20MB | 9.54MB | 10.46MB | ✅ 2.1x |
-| Usage % | <5% | 0.3% | 4.7% | ✅ 16x |
-| **Bundle Size** |||||
-| Main JS | <200KB | ~150KB | 50KB | ✅ 1.3x |
-| Total | <500KB | ~313KB | 187KB | ✅ 1.6x |
+Budgets that exist in config:
 
-**All metrics comfortably within budget** ✅
+| Metric | Budget | Defined in | Enforced? |
+|--------|--------|------------|-----------|
+| Each micro-benchmark | its own threshold | `tests/performance.benchmark.js` | Warning only |
+| Cumulative layout shift | ≤0.1 | `lighthouserc.json` | Yes, fails CI |
+| `viewport` audit | must pass | `lighthouserc.json` | Yes, fails CI |
+| Lighthouse category scores and timings | see file | `lighthouserc.json` | Warning only |
+
+No memory budget and no bundle-size budget is defined in any config or script. In the
+Nov 12 2025 run, rendering 100 elements took 0.80ms against a 50ms threshold and parsing
+1000 tasks 0.90ms against 50ms.
 
 ---
 
@@ -282,16 +256,16 @@ Modularization (v1.330 → v1.352):
 ### Configuration Files
 
 ```
+.github/workflows/              # at the repository root, not under web/
+├── test.yml                    # Functional CI
+└── performance.yml             # Performance CI
 web/
 ├── lighthouserc.json           # Lighthouse settings
-├── .github/workflows/
-│   ├── test.yml                # Functional CI
-│   └── performance.yml         # Performance CI
 ├── tests/
 │   ├── performance.benchmark.js # Benchmark suite
 │   └── automated/
 │       ├── run-browser-tests.cjs
-│       └── run-performance-benchmarks.js
+│       └── run-performance-benchmarks.cjs
 └── package.json                # Test scripts
 ```
 
@@ -301,15 +275,17 @@ web/
 # Functional tests (see ../PROJECT_STATS.md for count)
 npm test
 
-# Performance benchmarks (12 tests)
+# Dev server on :8080 (needed by the two commands below)
+npm start
+
+# Performance benchmarks
 npm run perf
 
 # Lighthouse CI (quality audit)
 npm run lighthouse
-
-# Manual testing (browser)
-npm start
 ```
+
+All commands run from `web/`.
 
 ---
 
@@ -318,7 +294,7 @@ npm start
 ### Available Guides
 
 1. **[PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md)**
-   - 📖 Complete reference (10,000+ words)
+   - 📖 Complete reference
    - 🔍 Deep dive into all testing aspects
    - 🛠️ Optimization strategies
    - 🐛 Troubleshooting guide
@@ -351,27 +327,15 @@ npm start
 
 ## ✅ Quality Checklist
 
-### Production Readiness
+What is gated today, and by what:
 
-- [x] **All tests passing** (100%)
-- [x] **All benchmarks passing** (12/12)
-- [x] **No console errors**
-- [x] **No memory leaks**
-- [x] **Cross-browser compatible**
-- [x] **Mobile-friendly** (iPad, iPhone)
-- [x] **PWA compliant**
-- [x] **Offline capable**
-- [x] **CI/CD configured**
-- [x] **Documentation complete**
+- Functional suites: the `test` job in `test.yml` (`npm test`, `test:layout`, `test:sw`, `test:meta`, `test:journey`, `test:lite`)
+- Offline boot and service worker: `npm run test:sw`
+- Layout stability and viewport: the Lighthouse CI job (`lighthouserc.json` error assertions)
+- HTML validity and docs links: the `html-validation` and `docs-validation` jobs
 
-### Performance Standards
-
-- [x] **Operations <50ms** (0.80ms avg)
-- [x] **Memory <20MB** (9.54MB used)
-- [x] **Bundle <500KB** (313KB total)
-- [x] **Test coverage >95%** (100% achieved)
-- [x] **No performance regressions**
-- [x] **Lighthouse ready** (config complete)
+Not gated: benchmark timings, Lighthouse scores and timings, memory use, bundle size,
+WebKit (the `test-webkit` job is `continue-on-error`).
 
 ---
 
@@ -379,46 +343,22 @@ npm start
 
 ### Summary
 
-miniCycle has **exceptional performance and quality**:
-
-```
-✅ All functional tests passing (100%)
-✅ 12/12 performance benchmarks passing (100%)
-✅ Operations 9-125x faster than requirements
-✅ Memory usage 16x better than budget
-✅ 100% production module test coverage (see [PROJECT_STATS.md](../PROJECT_STATS.md))
-✅ Production-ready CI/CD pipeline
-✅ Comprehensive documentation
-```
-
-### Performance Grade
-
-```
-┌──────────────────────────────────┐
-│   miniCycle Performance Grade    │
-│                                  │
-│         🏆 A+ EXCELLENT           │
-│                                  │
-│   All metrics exceed targets     │
-│   Ready for production           │
-│   No optimizations needed        │
-└──────────────────────────────────┘
-```
+- The benchmark suite and Lighthouse CI are in place and run on every push and pull
+  request to `main` or `develop`.
+- The recorded benchmark run (Nov 12 2025, v1.352) was comfortably under every threshold
+  except date formatting, which was just inside its limit.
+- Only layout shift and the viewport audit are enforced. Everything else on this page is
+  information.
 
 ### Recommendations
 
-**Current Status**: ✅ **No action required**
-
-Your app already performs exceptionally well. Continue to:
-
 1. **Monitor** - Run benchmarks before releases
-2. **Maintain** - Keep test coverage at 100%
-3. **Validate** - Run Lighthouse monthly
-4. **Document** - Update docs when features change
+2. **Validate** - Read the Lighthouse warnings in CI, not only the pass/fail
+3. **Document** - Record new runs with their date, version and machine
 
-**Only optimize if**:
-- Benchmarks start failing
-- Lighthouse score drops below 85
+**Optimize if**:
+- Benchmarks start warning or erroring
+- Lighthouse performance score drops below the 0.85 warning threshold
 - Users report slowness
 - Memory usage grows significantly
 
@@ -445,31 +385,4 @@ Your app already performs exceptionally well. Continue to:
 
 ---
 
-## 🎉 Achievement Unlocked
-
-```
-┌─────────────────────────────────────────────┐
-│                                             │
-│        🏆 PERFORMANCE CHAMPION 🏆           │
-│                                             │
-│   miniCycle has achieved world-class       │
-│   performance standards:                   │
-│                                             │
-│   ⚡ Sub-millisecond operations            │
-│   🧠 Minimal memory footprint              │
-│   📦 Optimized bundle size                 │
-│   ✅ 100% test coverage                    │
-│   🚀 Production-ready quality              │
-│                                             │
-│        Ready to ship! 🎊                   │
-│                                             │
-└─────────────────────────────────────────────┘
-```
-
----
-
-**Document Version**: 1.0
-**Last Updated**: November 14, 2025
-**Status**: ✅ Complete
-
-**Performance testing for miniCycle v1.355 - All systems operational** 🚀
+*First written Nov 12 2025 with the benchmark suite (v1.352).*

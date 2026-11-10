@@ -2,7 +2,8 @@
 
 > **Status:** in progress — rounds 0, 1, 2 and 3a done (round 2 shipped in v2.678,
 > Nov 10 2026; round 3a approved by MJ the same day, its questions still open);
-> round 3b is next. Proposed Oct 27 2026;
+> round 3b audited Nov 10 2026 and waiting on MJ's review; round 4 is next.
+> Proposed Oct 27 2026;
 > revised Nov 5 2026 (round 0, two new gates, line-budgeted rounds, wider
 > scope — see *Decisions*).
 > **Owner:** MJ reviews each round; Claude executes.
@@ -121,7 +122,7 @@ below.
 | 1 | 14 | ~4,400 | **Start Here** (7), **User Guides** (3), root routers: `README.md`, `INDEX.md`, `PROJECT_STATS.md` (header + prose only), `DEVELOPER_DOCUMENTATION.md`; plus **checks 2 and 6 only** on `web/legal/user-manual.html` (the page users actually read) | ✅ done Nov 5 2026 — see *Round 1 result* |
 | 2 | 16 | ~6,100 | **Project Info** (7); root: `ARCHITECTURE_DECISIONS.md`, `DRIFT_AUDIT_CHECKLIST.md`; **Reference**: `API_REFERENCE`, `DATA_SCHEMA_GUIDE`, `FEATURE_LIST`; **repo root**: `README.md`, `CONTRIBUTING.md`, `AGENTS.md`, `CODE_REVIEW_REPORT.md` | ✅ audited Nov 6 2026 — see *Round 2 result* (questions open) |
 | 3a | 6 | ~5,600 | **Reference** rest: `LABEL_REGISTRY_REFERENCE`, `MCYC_FILE_FORMAT`, `RECURRING_SYSTEM_REFERENCE`, `REVIEW_PATTERNS`, `SCHEMA_2_6`, `TASKDOM_DI_GUIDE`. **First job (MJ, Nov 7 2026):** `SCHEMA_2_6` becomes the only description of the stored shape — audit it against the code, carry in round 2's `DATA_SCHEMA_GUIDE` corrections (`showTaskInput` per routine, not in settings; `dueTime`; the recurring-template shape; `frequencyUnit`), then cut the guide's ~185-line copy of the shape and keep it as the short data-flow walkthrough + worked example, linking to `SCHEMA_2_6` (it stays a file: eight `modules/` comments cite it) | ✅ done Nov 10 2026 — see *Round 3a result* (questions open) |
-| 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | pending |
+| 3b | 8 | ~4,600 | **Testing** (4); **Performance** (4) | ✅ audited Nov 10 2026 — see *Round 3b result* (questions open) |
 | 4 | 13 | ~5,000 | **Working on Code** A–H: `AI_ASSISTED_DEVELOPMENT` … `HOW_TO_ADD_COOKBOOK` (13) | pending |
 | 5 | 13 | ~5,700 | **Working on Code** rest (5): `MAKING_CODE_CHANGES`, `MESSAGING_SURFACES`, `SECURITY_GUIDE`, `TESTING_GUIDE`, `VALIDATION_GATES`; **Security** (6 incl. `audits/`); **Deployment**: `BUILD_PROCESS`, `DEPLOYMENT` | pending |
 | 6 | 13 | ~5,000 | **Deployment** rest (4): `CLICK_TRACKING`, `PWA_OFFLINE_ARCHITECTURE`, `SERVICE_WORKER_UPDATE_STRATEGY`, `UPDATE-VERSION-GUIDE`; **Incidents** (5); **Architecture** A–B (4): `APPINIT_EXPLAINED`, `APPINIT_SYSTEM`, `ARCHITECTURE_OVERVIEW`, `BACKGROUND_PATTERN` | pending |
@@ -396,6 +397,131 @@ Complete User Guide") and `TASKDOM_DI_GUIDE` (H1 "DI-Pure Module Guide").
 8. The repo-root `README` (round 2) says badges unlock "at 5, 25, 50, 75 and 100 cycles,
    or at a matching number of cleared tasks"; the cleared-task thresholds in
    `MILESTONES.TIERS` are 5, 125, 250, 375 and 500.
+
+### Round 3b result (Nov 10 2026)
+
+**Audited:** all eight docs (three readers, disjoint files). As in round 3a, the larger
+corrections were re-checked by the session running the round: the heading list of every
+doc diffed before and after, both workflows read against the rewritten CI descriptions,
+`lighthouserc.json` against every threshold now quoted, the benchmark runner's exit
+rule, the origin of the benchmark figures in git, and about twenty-five single claims.
+
+**The common fault was claims nothing enforces.** "Test Pass Rate 100%", "Module
+Coverage 100%", "100% Test Coverage Achieved", "Production Ready", "world-class",
+"EXCEPTIONAL PERFORMANCE", "A+" and "PERFORMANCE CHAMPION" are gone from all eight. In
+their place the docs say what does enforce something: the exit code of `npm test` and
+the blocking CI jobs for correctness; for performance, the two Lighthouse assertions
+that are errors (`viewport`, `cumulative-layout-shift`), with everything else a warning.
+No code coverage is measured (`web/package.json` says so), so no coverage figure stays.
+The measurements that have a date and a source are kept as records and are good ones:
+the Nov 12 2025 benchmark run was under every threshold, and the July 2026 mobile
+Lighthouse run scored 89 / 100 / 100 / 100.
+
+**Heaviest corrections:**
+
+- `PERFORMANCE_SUMMARY` (475 → 388 lines) — now a dated record plus pointers. Six
+  sections that held only unenforced claims are removed ("EXCEPTIONAL PERFORMANCE",
+  "Optimization Impact", "Production Readiness", "Performance Standards", "Performance
+  Grade", "Achievement Unlocked"), with the v1.350 / v1.351 rows and the "74.8% code
+  reduction" block, none of which has a source.
+- `PERFORMANCE_TESTING_GUIDE` — says what the benchmarks are: synthetic
+  (`tests/performance.benchmark.js` imports no app module) and warn-only (the runner
+  exits 1 only when a benchmark throws; the CI step is `continue-on-error`). Lighthouse
+  section rewritten from the config: there is no PWA assertion, FCP is 2000 and TBT 300
+  (the doc said 1.8s and 200ms). The workflow outline is the real one: four jobs, `dist`
+  built and served, no PR-comment step. Two code snippets cited constants that do not
+  exist (`MAX_HISTORY = 20`, a 1s save debounce); they now cite `LIMITS.UNDO_STACK` and
+  `DEBOUNCE.STATE_SAVE`. Offline-indicator and sync-queue claims removed (no such code).
+- `PERFORMANCE_SETUP`, `LIGHTHOUSE_BENCHMARKS` — each run record carries its date;
+  the Dec 2025 half of the Lighthouse log is labelled as the pre-bundle app.
+- `TESTING_ARCHITECTURE`, `TESTING_README` — CI diagrams and prose replaced with the
+  jobs that exist; "Upload Results", "Comments on PR with scores", "Fails if thresholds
+  exceeded" and the artifact claims removed (`test.yml` uploads nothing); hand-typed
+  per-module counts and run durations removed; Jest idioms replaced with the harness's
+  own shape (`createProtectedTest()`, the three `test:meta` checks); the steps for adding
+  a test corrected (`ALL_MODULES`, the Run All wiring); "CycleLoader" is `routineLoader`.
+- `TESTING_QUICK_REFERENCE` — the 30-row per-module count table and both "100%"
+  claims removed; the wiring steps and pasted CI YAML corrected; the `isPartOfSuite`
+  section marked as the older pattern; a warning added that Run All on `localhost:8080`
+  clears the local app's storage.
+- `TESTING_MODAL` — the path to the modal corrected (Settings → Advanced → Debug Mode →
+  App Diagnostics); the history said the whole protection stack was deleted, which is
+  true of the app and not of the runner page, which still backs up for single-module runs.
+
+**Headings changed** (nothing outside these docs links to an anchor in them):
+`PERFORMANCE_SUMMARY` six removed and four renamed; `PERFORMANCE_SETUP` three renamed;
+`PERFORMANCE_TESTING_GUIDE` two renamed; `LIGHTHOUSE_BENCHMARKS` and
+`TESTING_QUICK_REFERENCE` one each; none in `TESTING_ARCHITECTURE`, `TESTING_README` or
+`TESTING_MODAL`. Every rename drops a claim ("Current", "Achieved!", "100% ✅") or fixes a
+file name.
+
+**The benchmark figures' date was recovered from git.** All of them (21.40ms total, the
+twelve-row table, 9.54MB) first appear in `505bba6f3`, Nov 12 2025, whose guide says
+"Test Date: November 12, 2025, Version 1.352". Later doc syncs relabelled the same
+numbers as Nov 14 2025 / v1.355 and Dec 20 2025 / v1.516 without re-measuring; the
+original label is restored everywhere.
+
+**Gates:** volatile counts 32 → 25; Schema 2.5 names 10 (none in this round's docs); docs
+code references 104 → 101. No hit of any gate is left in these eight docs.
+
+**Found in code, tests, scripts or CI, not fixed.** All of it is developer tooling; none
+reaches a user. Checked by the session running the round:
+
+- *Real, low.* Run All Tests on the manual test page at `localhost:8080` clears the
+  local app's `localStorage`: `HERMETIC_TEST_ORIGINS` in `tests/module-test-suite.html` is
+  matched on hostname, so the dev app's own origin counts as a test origin.
+- *Real, low.* Port overlaps: `run-contrast-tests.cjs` uses 8081, as do
+  `start:test-origin` and `preview:dist`; `run-sw-offline-tests.cjs` also binds its
+  `PORT + 1`, which is the journey port. They collide only if run at once; CI runs them
+  in sequence.
+- *Cosmetic.* `npm run perf` reports three or four more passes than there are
+  benchmarks (the suite's summary rows carry the pass class), and its "Summary" branch
+  can never run.
+- *Cosmetic.* `performance.yml` uploads `web/tests/results/`, which nothing writes, and
+  its header comment says Lighthouse 12 where `@lhci/cli@0.13` depends on Lighthouse
+  11.4.0 (npm registry, Nov 10 2026). `lighthouse:install` in `package.json` is unpinned.
+- *Cosmetic.* Stale comments: `test.yml` ("Jest tests are currently experimental", "958
+  browser tests"), `run-browser-tests.cjs` ("85 modules"), and `coreBoot.js` /
+  `appState.js` on interrupted-test recovery, which was removed.
+- *Dead code.* `shouldRecreateRecurringTask()` checks a `suppressUntil` field no code
+  sets; `backupManager.js` still creates a `test_backups` store nothing writes to.
+
+Reported by the readers and not re-checked: Run All from the app's testing modal on a
+LAN address gets no result back and waits out its 20-minute timeout (skipping the
+hand-off for LAN addresses is deliberate, per the code comment; the silent wait is the
+unconfirmed part); `setTestModeFlag()` in the runner page writes a flag nothing reads;
+the header and sample payloads of `performance.benchmark.js` predate 2.6;
+`tests/automated/add-localStorage-backup.js` is a finished one-off migration script.
+
+**Wrong but out of the audit's scope:** the five docs beside the tests (`web/tests/*.md`)
+repeat "100% pass rate" and "100% coverage", tell the reader to edit an array called
+`modules` (it is `ALL_MODULES`), suggest `npm run test:performance` (the script is
+`perf`) and recommend "<500 tasks per cycle" against `LIMITS.TASKS_PER_CYCLE`.
+
+**Check 4:** the Testing titles are short forms of their H1s, as are three of the
+Performance ones. `LIGHTHOUSE_BENCHMARKS` is not: its H1 is "Performance Benchmarks" and
+the page holds only Lighthouse runs.
+
+**Open questions (MJ):**
+
+1. `PERFORMANCE_SUMMARY`: archive it? What is left is one dated run plus pointers the
+   guide also carries. (Nothing in `modules/` cites it, so archiving is not a release.)
+2. `PERFORMANCE_SETUP`: merge into the guide's Quick Start, or archive? Every section
+   repeats a guide section.
+3. `LIGHTHOUSE_BENCHMARKS`: retitle the H1 to match the sidebar, and move its Dec 2025
+   half to the archive?
+4. `TESTING_ARCHITECTURE` restates `TESTING_README` as diagrams and repeats the same
+   Nov 2025 numbers three times. Merge it, or cut it to the suite table, the CI diagram
+   and the file tree?
+5. There are two files named `TESTING_QUICK_REFERENCE.md` (`docs/testing/` and
+   `web/tests/`) that differ. Keep one and make the other a pointer? And should the five
+   `web/tests/*.md` docs join the audit, since no round covers them?
+6. The benchmark results are a year old and the suite has since doubled. Re-measure
+   once, or cut the tables and point at `performance/`?
+7. `docs/testing/generate_testing_pdf.py` and `miniCycle_Testing_Directions.pdf` are a
+   handout for human testers that nothing links to. Archive, or move out of `docs/testing/`?
+8. Nothing fails on a slowdown except the two Lighthouse assertions. The docs now say so.
+   Leave it that way? (Recommended: yes for now; it is a decision, not a defect.)
 
 ## How a round runs
 

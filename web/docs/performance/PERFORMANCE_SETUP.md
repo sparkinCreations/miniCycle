@@ -1,12 +1,18 @@
 # ⚡ Performance Testing - Quick Setup Guide
 
-Your performance testing is now fully configured! Here's how to use it.
+**Last verified:** Nov 10 2026
+
+How to run the performance checks. Every command runs from `web/`; the scripts are in the
+`scripts` block of `web/package.json`.
 
 ---
 
 ## 🎯 Quick Commands
 
 ```bash
+# 0. Both tools load pages from http://localhost:8080, so start the dev server first
+npm start
+
 # 1. Run performance benchmarks (fastest)
 npm run perf
 
@@ -21,7 +27,24 @@ npm test && npm run perf
 
 ## 📊 Performance Benchmark Results
 
-Just ran your benchmarks - **ALL PASSED!** 🎉
+`npm run perf` (`tests/automated/run-performance-benchmarks.cjs`) does two things:
+
+1. **Real-app boot.** It opens `miniCycle.html` with the service worker disabled and prints
+   time to `appLoaded`, `domInteractive`, DOMContentLoaded, the load event and first
+   contentful paint. These are printed only; no threshold is applied to them.
+2. **Micro-benchmarks.** It runs the `performance` suite of `tests/module-test-suite.html`,
+   which is `tests/performance.benchmark.js`. Each benchmark carries its own threshold in
+   that file (the third argument to `benchmark()`), so read the list and the thresholds
+   there. The benchmarks are synthetic: the file imports no app module and times generic
+   operations (building task-shaped objects, creating DOM nodes, `JSON.stringify`,
+   `structuredClone`, `localStorage` writes) rather than the app's own code paths.
+
+A benchmark over its threshold is a warning and does not change the exit code. The run
+exits 1 only when a benchmark throws or the page cannot be driven.
+
+The output below is a recorded run from Nov 12 2025 (v1.352, on a Mac),
+when the suite had these twelve benchmarks. It has since grown and has not been
+re-recorded here:
 
 ```
 ✅ Create 100 tasks: 0.10ms (threshold: 10ms)
@@ -42,10 +65,9 @@ Just ran your benchmarks - **ALL PASSED!** 🎉
 🧠 Memory usage: 9.54MB / 3585.82MB (0.3%)
 ```
 
-**Analysis**: Your app is **EXTREMELY FAST** ⚡
-- All operations complete in <15ms
-- Total benchmark suite runs in just 21ms
-- Memory usage is minimal (0.3%)
+In that run every operation finished under its threshold; `Format 100 dates` was the
+closest, at 14.90ms against 15ms. The memory line is the JS heap of the test-suite page
+(`performance.memory`, Chromium only), not of the app.
 
 ---
 
@@ -61,6 +83,10 @@ npm run lighthouse:install
 npm install -g @lhci/cli
 ```
 
+Both install the latest `@lhci/cli`. CI pins `@lhci/cli@0.13.x`
+(`.github/workflows/performance.yml`), so a local run can use a newer Lighthouse than CI
+does.
+
 ### Running Lighthouse
 
 ```bash
@@ -72,6 +98,15 @@ npm start  # Start server in terminal 1
 lhci autorun  # Run lighthouse in terminal 2
 ```
 
+`npm run lighthouse` is `lhci autorun`, and `lighthouserc.json` does not start a server,
+so something must already be serving port 8080. `npm start` serves the development tree.
+CI grades the release build instead: it runs `npm run build:web` and serves `dist/` on
+8080 (`cd dist && python3 -m http.server 8080`). The workflow records that the
+development tree failed the layout-shift gate (CLS about 0.24, Aug 2026) where the built
+`dist/` passed, so to reproduce CI locally serve `dist/` the same way. `npm run
+preview:dist` serves `dist/` on port 8081, which the URLs in `lighthouserc.json` do not
+point at.
+
 **What it tests:**
 
 Only `viewport` and `cumulative-layout-shift` (≤0.1) are **error gates** that fail the build (deterministic, non-flaky). Everything else is a **warn** (informational, never blocks):
@@ -79,8 +114,11 @@ Only `viewport` and `cumulative-layout-shift` (≤0.1) are **error gates** that 
 - ⚠️ Accessibility (target: 90+, warn)
 - ⚠️ Best Practices (target: 90+, warn)
 - ⚠️ SEO (target: 85+, warn)
+- ⚠️ Timings (warn): first-contentful-paint 2000 ms, largest-contentful-paint 2500 ms, total-blocking-time 300 ms, speed-index 3400, interactive 3800 ms, max-potential-fid 130 ms
 
-> PWA audits were removed in Lighthouse 12 (bundled with `@lhci/cli@0.13.x`); service-worker/offline behaviour is gated by `npm run test:sw`, not Lighthouse.
+These values are the ones in `web/lighthouserc.json`; that file is the source. It runs the `desktop` preset, 3 runs per URL.
+
+> `lighthouserc.json` asserts no PWA audits; service-worker/offline behaviour is gated by `npm run test:sw`, not Lighthouse. (Lighthouse 12 removed the PWA category. `@lhci/cli@0.13.x`, which CI pins, bundles Lighthouse 11.4 per the npm registry on Nov 10 2026, so CI's Lighthouse still has it; it is simply not asserted.)
 
 **Tests both versions:**
 - Full app: `miniCycle.html`
@@ -96,27 +134,29 @@ Only `viewport` and `cumulative-layout-shift` (≤0.1) are **error gates** that 
 
 ### Automatic Performance Testing
 
-Added `.github/workflows/performance.yml`:
+The workflow is `.github/workflows/performance.yml` at the repository root (name: `Performance`):
 
 **Triggers:**
 - ✅ Every push to `main` or `develop`
-- ✅ Every pull request
+- ✅ Every pull request targeting `main` or `develop`
 - ✅ Manual workflow dispatch (GitHub Actions UI)
 
 **Jobs:**
-1. **Performance Benchmarks** - Quick operation timing
-2. **Lighthouse CI** - Comprehensive score + metrics
+1. **Performance Benchmarks** (`performance-benchmarks`) - `npm run perf` against the dev server. The step is `continue-on-error`, so it never fails the workflow
+2. **HTML Validation** (`html-validation`) - `python3 scripts/validate-html.py`, gating
+3. **Docs Validation** (`docs-validation`) - `python3 scripts/validate-docs.py`, gating
+4. **Lighthouse CI** - `npm run build:web`, serve `dist/` on 8080, then `lhci autorun`. Fails only on the two error assertions
 
 **Results:**
-- Available in GitHub Actions artifacts
-- PR comments with Lighthouse scores
-- Retained for 30 days
+- Benchmark timings are in the job log. The job also uploads `web/tests/results/` as `performance-results`, but the runner writes no files there, so that artifact is normally absent
+- Lighthouse reports are uploaded as the `lighthouse-results` artifact (`web/.lighthouseci/`), retained for 30 days
+- The workflow does not comment on pull requests
 
 ### How to view results:
 
 1. Go to GitHub → Actions tab
-2. Select "Performance Testing" workflow
-3. Download artifacts (performance-results, lighthouse-results)
+2. Select the "Performance" workflow
+3. Open the job log, or download the `lighthouse-results` artifact
 
 ---
 
@@ -124,18 +164,20 @@ Added `.github/workflows/performance.yml`:
 
 ### Benchmark Thresholds
 
-| Operation | Threshold | Your Result | Status |
+Thresholds are defined per benchmark in `tests/performance.benchmark.js`. A sample, with the Nov 12 2025 run (v1.352) beside it:
+
+| Operation | Threshold | Nov 12 2025 run | Status |
 |-----------|-----------|-------------|--------|
-| Create 100 tasks | 10ms | 0.10ms | ✅ Excellent |
-| Render 100 tasks | 50ms | 0.80ms | ✅ Excellent |
-| Save 1000 tasks | 100ms | 0.80ms | ✅ Excellent |
-| Parse 1000 tasks | 50ms | 0.90ms | ✅ Excellent |
-| Format 100 dates | 15ms | 14.90ms | ✅ Good |
+| Create 100 tasks | 10ms | 0.10ms | ✅ Under |
+| Render 100 tasks | 50ms | 0.80ms | ✅ Under |
+| Save 1000 tasks | 100ms | 0.80ms | ✅ Under |
+| Parse 1000 tasks | 50ms | 0.90ms | ✅ Under |
+| Format 100 dates | 15ms | 14.90ms | ✅ Under |
 
 **Legend:**
 - ✅ Green = Under threshold (Good)
-- ⚠️ Yellow = Exceeds threshold (Needs attention)
-- ❌ Red = Error (Fix required)
+- ⚠️ Yellow = Exceeds threshold (Needs attention; a warning, exit code unchanged)
+- ❌ Red = The benchmark threw an error (Fix required; `npm run perf` exits 1)
 
 ### Lighthouse Score Guide
 
@@ -145,7 +187,7 @@ Added `.github/workflows/performance.yml`:
 | 50-89 | Good | Minor optimizations possible |
 | 0-49 | Poor | Needs significant work |
 
-**Key Metrics:**
+**Key Metrics** (Lighthouse's general "good" targets; the values this project asserts are in `lighthouserc.json` and differ for FCP and TBT, see above):
 - **FCP** (First Contentful Paint): <1.8s
 - **LCP** (Largest Contentful Paint): <2.5s
 - **TBT** (Total Blocking Time): <200ms
@@ -162,7 +204,7 @@ Lighthouse CI configuration:
 - Performance assertions
 - Upload settings
 
-**Customize:**
+**Customize** (an excerpt; the file itself has both URLs and every assertion):
 ```json
 {
   "ci": {
@@ -172,7 +214,7 @@ Lighthouse CI configuration:
     },
     "assert": {
       "assertions": {
-        "viewport": ["error"],
+        "viewport": ["error", {"minScore": 1}],
         "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
         "categories:performance": ["warn", {"minScore": 0.85}]
       }
@@ -181,11 +223,11 @@ Lighthouse CI configuration:
 }
 ```
 
-### `tests/automated/run-performance-benchmarks.js`
+### `tests/automated/run-performance-benchmarks.cjs`
 Playwright script that:
-- Launches headless browser
-- Loads test suite
-- Runs benchmarks
+- Launches headless Chromium
+- Measures the real app's boot on `miniCycle.html`
+- Loads the test suite and runs the `performance` benchmarks
 - Extracts and formats results
 
 **Extend with custom benchmarks:**
@@ -214,31 +256,31 @@ diff before.txt after.txt
 ### Regression Testing
 
 GitHub Actions will automatically:
-1. Run benchmarks on every PR
-2. Fail if performance degrades significantly
-3. Upload results as artifacts for comparison
+1. Run benchmarks on every PR to `main` or `develop`, as information only: the step is `continue-on-error` and a slow benchmark is a warning, so a slowdown does not fail the build
+2. Fail the Lighthouse CI job if the `cumulative-layout-shift` assertion (max 0.1) fails or the `viewport` audit fails
+3. Upload the Lighthouse reports as an artifact for comparison
 
 ---
 
 ## 🎯 Performance Goals
 
-### Current Status (Achieved!)
+### Recorded run (Nov 12 2025)
 
-✅ **All 12 benchmarks passed**
-✅ **Total execution time: 21.40ms**
-✅ **Memory usage: 0.3%**
-✅ **100% test coverage** (see [PROJECT_STATS.md](../PROJECT_STATS.md) for current test counts)
+On Nov 12 2025 (v1.352) all twelve benchmarks that existed then finished under their
+thresholds, in 21.40ms total, with the test page's heap at 0.3% of its limit. For current
+test counts see [PROJECT_STATS.md](../PROJECT_STATS.md).
 
 ### Recommended Limits
 
-| Metric | Current | Recommended | Status |
-|--------|---------|-------------|--------|
-| Render 100 tasks | 0.80ms | <50ms | ✅ Excellent |
-| Parse 1000 tasks | 0.90ms | <50ms | ✅ Excellent |
-| Memory usage | 0.3% | <5% | ✅ Excellent |
-| Total benchmark | 21.40ms | <100ms | ✅ Excellent |
+The first two limits are thresholds in `tests/performance.benchmark.js`. The last two are
+this guide's own suggestions and are not defined or checked by any config or script.
 
-**Your app exceeds all performance targets!** 🎉
+| Metric | Nov 12 2025 run | Recommended |
+|--------|---------|-------------|
+| Render 100 tasks | 0.80ms | <50ms |
+| Parse 1000 tasks | 0.90ms | <50ms |
+| Memory usage (test page heap) | 0.3% | <5% |
+| Total benchmark | 21.40ms | <100ms |
 
 ---
 
@@ -251,13 +293,8 @@ npm run lighthouse
 ```
 Review the report to establish your baseline.
 
-### 2. Enable GitHub Actions
-Push to GitHub to trigger automatic performance testing:
-```bash
-git add .
-git commit -m "Add performance testing setup"
-git push
-```
+### 2. GitHub Actions
+Nothing to enable: the `Performance` workflow already runs on every push and pull request to `main` or `develop`.
 
 ### 3. Monitor Over Time
 - Check Lighthouse scores monthly
@@ -276,8 +313,9 @@ If scores drop:
 
 - **Full Guide**: `tests/PERFORMANCE_TESTING.md`
 - **Benchmarks**: `tests/performance.benchmark.js`
-- **CI Config**: `.github/workflows/performance.yml`
+- **CI Config**: `.github/workflows/performance.yml` (repository root)
 - **Lighthouse Config**: `lighthouserc.json`
+- **Boot timing in the running app**: `window.getMiniCycleBootTiming()` (`modules/boot/orchestrator.js`); device baselines are in [BOOT_PERF_ROADMAP.md](../future-work/BOOT_PERF_ROADMAP.md)
 
 ---
 
@@ -288,9 +326,5 @@ If scores drop:
 - [Chrome DevTools](https://developer.chrome.com/docs/devtools/)
 
 ---
-
-**Status**: ✅ Performance testing fully configured
-**Last benchmark**: All 12 tests passed (21.40ms total)
-**Ready for**: Production deployment 🚀
 
 *Setup completed: 2025-11-12*

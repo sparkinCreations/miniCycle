@@ -1,11 +1,21 @@
 # Performance Benchmarks
 
+**Last verified:** Nov 10 2026
+
 > Lighthouse audit results and Core Web Vitals for minicycle.app
 
 **Last Tested:** July 19–20, 2026 · **App Version:** 2.308 (entry-hashed bundled build)
 **Test Environment:** Lighthouse CLI (headless Chrome, mobile simulation: slow-4G, 4× CPU)
 
-## Current (July 2026, mobile simulation — the strict profile)
+> **Status:** a log of dated Lighthouse runs, not a statement of today's scores. Every
+> number below was measured on one machine on the date given and has not been re-measured
+> since. Nothing here is enforced: `web/lighthouserc.json` fails CI only on `viewport` and
+> `cumulative-layout-shift` (max 0.1); its category scores (performance ≥ 0.85,
+> accessibility ≥ 0.90, best-practices ≥ 0.90, seo ≥ 0.85) and timings are `warn`. CI also
+> runs the **desktop** preset against the built `dist/` (`.github/workflows/performance.yml`,
+> the Lighthouse CI job), which is a different profile from the mobile simulation recorded below.
+
+## Latest recorded run (July 2026, mobile simulation — the strict profile)
 
 | Category | Score |
 |----------|-------|
@@ -26,7 +36,10 @@ override — content lays out centered for the pre-override window (~485px) then
 at 412px. Real browsers never re-apply metrics: PerformanceObserver measured **CLS 0**
 at both desktop and mobile viewports through full boot. The v2.308 first-install
 no-reload fix removed a related mid-trace navigation. Median of ≥3 runs, and treat a
-0.787 reading as the artifact. History/context: memory + BUILD_PIPELINE_PLAN.md.
+0.787 reading as the artifact. Context for the pre-pipeline 6.2MB figure:
+[BUILD_PIPELINE_PLAN.md](../archive/BUILD_PIPELINE_PLAN.md) (archived); the on-device
+numbers are Baseline #3 in [BOOT_PERF_ROADMAP.md](../future-work/BOOT_PERF_ROADMAP.md).
+The CLS-artifact analysis itself is recorded only on this page.
 
 **Measurement discipline:** simulated LCP varies ±0.5s run-to-run; never cite a single
 run. Run in incognito/fresh profile — stored IndexedDB state and browser extensions
@@ -35,6 +48,14 @@ pollute results (a real extension once added 134KB of foreign CSS to a report).
 ---
 
 ## Historical: December 12, 2025 (v1.474, desktop, Chromium 143)
+
+> Everything from here to *How to Run These Tests* is the December 2025 record, kept as
+> history. It describes the app before the release build existed (unbundled modules,
+> Google Fonts and CDN libraries loaded from the network) and is not true of the app today:
+> the release is an esbuild bundle with content-hashed file names
+> (`web/scripts/build-web.cjs`) and the fonts are self-hosted (`assets/fonts/` preloads in
+> `web/miniCycle.html`). Where the Dec 9 and Dec 12 runs differ, the table says which run a
+> number is from.
 
 ---
 
@@ -58,7 +79,7 @@ pollute results (a real extension once added 134KB of foreign CSS to a report).
 | **TBT** (Total Blocking Time) | 0ms | < 200ms | ✅ Pass | Time main thread was blocked |
 | **CLS** (Cumulative Layout Shift) | 0.02 | < 0.1 | ✅ Pass | Visual stability score |
 | **Speed Index** | 0.9s | < 3.4s | ✅ Pass | How quickly content is visually populated |
-| **INP** (Interaction to Next Paint) | - | < 200ms | ✅ Pass | Interaction responsiveness |
+| **INP** (Interaction to Next Paint) | - | < 200ms | Not measured (no value recorded) | Interaction responsiveness |
 
 ---
 
@@ -109,29 +130,36 @@ From Chrome DevTools Performance profiling:
 
 ## 🏗️ Architecture Validation
 
-These benchmarks validate key architectural decisions:
+What the December 2025 runs were taken to show at the time:
 
 ### ✅ No-Build-Step Approach Works
 
-- **61 ES6 modules** loaded dynamically
-- **97 Performance score** achieved without bundling
-- Proves modular architecture doesn't sacrifice performance
+- The app then shipped as unbundled ES modules loaded dynamically
+- **97 Performance score** (the Dec 9 2025 run) without bundling
+- **No longer the shipped shape.** Development still has no build step, but since the
+  July 2026 build pipeline the release is bundled (`npm run build:web`); the mobile
+  simulation numbers at the top of this page are from that bundled build
 
 ### ✅ Service Worker Caching Effective
 
 - Repeat visits benefit from SW cache
-- Offline functionality maintained
-- Cache versioning (v211) prevents stale assets
+- Offline functionality maintained (gated today by `npm run test:sw`, not by Lighthouse)
+- Cache versioning (v211 at the time) prevents stale assets
 
 ### ✅ Dependency Injection Pattern
 
 - Clean module boundaries
-- No global namespace pollution
 - Lazy loading where appropriate
 
 ---
 
 ## ⚠️ Known Issues & Recommendations
+
+> December 2025 list. Checked Nov 10 2026: the header logo `<img>` in `web/miniCycle.html`
+> has `width` and `height`; a meta description, canonical URL and Open Graph tags are
+> present (no JSON-LD block); fonts are self-hosted. The `.dot` buttons no longer use the
+> technique in the note below: `styles/utilities/helpers.css` now gives `.dot` a 24×48px
+> box with the visible 7px dot drawn by `::after`.
 
 ### Current Issues
 
@@ -183,6 +211,10 @@ Check for:
 | Dec 12, 2025 | 1.474 | 98 | 97 | 100 | 100 |
 | Dec 9, 2025 | 1.459 | 97 | 93 | 100 | 92 |
 
+Both rows are runs from the browser's DevTools Lighthouse panel. The July 2026
+mobile-simulation CLI run at the top of this page uses a different profile, so it is not
+comparable and is not added here.
+
 *Update this table when running new audits to track performance over time.*
 
 ### Recent Improvements (v1.474)
@@ -197,6 +229,10 @@ Check for:
 ## 🧪 How to Run These Tests
 
 ### Lighthouse Audit
+
+From the command line, `npm run lighthouse` (run from `web/`) runs `lhci autorun` with
+`web/lighthouserc.json`; see [PERFORMANCE_TESTING_GUIDE.md](./PERFORMANCE_TESTING_GUIDE.md#lighthouse-ci).
+By hand in the browser:
 
 1. Open minicycle.app in Chrome/Edge
 2. Open DevTools (F12)
@@ -225,9 +261,13 @@ For real-user metrics, check:
 
 ## 🎯 Performance Budget
 
-Recommended limits to maintain current scores:
+Limits recommended in December 2025. Only two of them exist in config today, both in
+`web/lighthouserc.json`: `largest-contentful-paint` 2500 ms (a warning) and
+`cumulative-layout-shift` 0.1 (an error, the one that fails CI). That file sets
+`total-blocking-time` at 300 ms (warning), not 200 ms. No config sets a JS or CSS size
+budget.
 
-| Metric | Budget | Current |
+| Metric | Budget | Dec 9 2025 run |
 |--------|--------|---------|
 | Total JS | < 500 KB | ~300 KB |
 | Total CSS | < 100 KB | ~50 KB |
@@ -254,5 +294,4 @@ Recommended limits to maintain current scores:
 
 ---
 
-**Last Updated:** December 12, 2025
 **Maintainer:** sparkinCreations
