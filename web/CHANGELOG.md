@@ -1,3 +1,11 @@
+## [2.676] - 2026-11-10
+- fix(examples): repair four broken routine files
+- fix(import): keep tasks with timestamped due dates and import every opened file
+- fix(restore): refuse unusable files before the replace warning
+- docs(future-work): boot orchestration hardening notes
+- chore(ios): App Store prep - listing draft, 6.9" screenshots, export-compliance key
+
+
 ## [2.675] - 2026-11-10
 - Add launch film highlights to the README
 - Add two sample GIFs
