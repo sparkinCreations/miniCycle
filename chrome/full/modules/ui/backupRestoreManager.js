@@ -995,6 +995,26 @@ async function processRestoreData(fileContent, options = {}) {
         return;
     }
 
+    // Refuse a file this app cannot read BEFORE warning that restoring replaces
+    // everything: that warning is only true of a file the restore can use, and until
+    // Nov 2026 a routine file or a broken backup got it and failed only afterwards.
+    // A pre-2.5 ("legacy") backup lands here too: pre-2.5 predates the public launch,
+    // so the migration that converted it was retired Sep 2026
+    // (docs/archive/SCHEMA_2_6_PLAN.md). 2.5 and 2.6 pass, and an older document is
+    // migrated at the next boot.
+    if (!isSupportedStoredVersion(backupData) || !backupData.miniCycleData) {
+        console.error('Unrecognized backup format');
+        _deps.showNotification(getLabel('notify.invalidFormat'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+        return;
+    }
+
+    // Structural validation, shared with the testing modal's IDB restore.
+    if (!validateStatePayloadString(backupData.miniCycleData)) {
+        console.error('miniCycleData failed structural validation');
+        _deps.showNotification(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+        return;
+    }
+
     // ✅ Confirm before overwriting current data
     const showConfirmationModal = _deps.showConfirmationModal;
     if (!showConfirmationModal) {
@@ -1069,64 +1089,39 @@ async function processRestoreData(fileContent, options = {}) {
                 // Stop AppState from auto-saving
                 neutralizeAppState();
 
-                // Handle a 2.5 or 2.6 backup (an older document is migrated at the next boot)
-                if (isSupportedStoredVersion(backupData) && backupData.miniCycleData) {
-
-                    // Structural validation (shared with the testing modal's IDB
-                    // restore) — includes the `metadata` check the earlier inline
-                    // version cited as motivation but didn't actually test. Reject
-                    // the file up front: "file rejected", not "restored, then
-                    // recovery mode".
-                    if (!validateStatePayloadString(backupData.miniCycleData)) {
-                        console.error('miniCycleData failed structural validation');
-                        _deps.showNotification(getLabel('notify.backupCorruptData'), "error", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                        resolve();
-                        return;
-                    }
-
-                    // The write can be refused (QuotaExceededError on a full
-                    // store). AppState is already neutralised above, and until
-                    // Oct 2026 the throw escaped this callback: the outer promise
-                    // never settled, nothing re-armed state, and the app sat
-                    // dead. Ordinary saves route quota errors through
-                    // AppState._handleQuotaError; restore gets its own path.
-                    // setItem is atomic, so on failure storage still holds the
-                    // previous document — reloading from it is the recovery.
-                    try {
-                        localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
-                    } catch (writeErr) {
-                        console.error('❌ Restore could not write the document:', writeErr);
-                        _deps.showNotification(getLabel('notify.restoreStorageFailed'), "error", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
-                        reloadWithLoader('Restore (write failed)');
-                        resolve();
-                        return;
-                    }
-                    // The document is in. The side keys (Lite snapshot, theme and
-                    // progress keys) are written one by one and never throw past
-                    // here — until Oct 2026 a refusal on one of them escaped this
-                    // callback exactly like the main write used to, with the
-                    // routines already restored and the app left un-armed. Say
-                    // what landed instead of claiming a full restore.
-                    const liteOk = restoreLiteStorageSnapshot(backupData.liteStorage);
-                    const extrasOk = restoreExtraStorageKeys(backupData.extraStorageKeys);
-                    if (liteOk && extrasOk) {
-                        _deps.showNotification(getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                    } else {
-                        _deps.showNotification(getLabel('notify.restorePartialSettings'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
-                    }
-
-                    // Re-render UI in place — faster than location.reload() and works offline
-                    reloadWithLoader('Restore');
+                // The write can be refused (QuotaExceededError on a full
+                // store). AppState is already neutralised above, and until
+                // Oct 2026 the throw escaped this callback: the outer promise
+                // never settled, nothing re-armed state, and the app sat
+                // dead. Ordinary saves route quota errors through
+                // AppState._handleQuotaError; restore gets its own path.
+                // setItem is atomic, so on failure storage still holds the
+                // previous document — reloading from it is the recovery.
+                try {
+                    localStorage.setItem(STORAGE_KEYS.DATA, backupData.miniCycleData);
+                } catch (writeErr) {
+                    console.error('❌ Restore could not write the document:', writeErr);
+                    _deps.showNotification(getLabel('notify.restoreStorageFailed'), "error", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
+                    reloadWithLoader('Restore (write failed)');
                     resolve();
                     return;
                 }
+                // The document is in. The side keys (Lite snapshot, theme and
+                // progress keys) are written one by one and never throw past
+                // here — until Oct 2026 a refusal on one of them escaped this
+                // callback exactly like the main write used to, with the
+                // routines already restored and the app left un-armed. Say
+                // what landed instead of claiming a full restore.
+                const liteOk = restoreLiteStorageSnapshot(backupData.liteStorage);
+                const extrasOk = restoreExtraStorageKeys(backupData.extraStorageKeys);
+                if (liteOk && extrasOk) {
+                    _deps.showNotification(getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+                } else {
+                    _deps.showNotification(getLabel('notify.restorePartialSettings'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
+                }
 
-                // A pre-2.5 ("legacy") backup is not a format this app reads any more:
-                // pre-2.5 predates the public launch, so the migration that converted it
-                // was retired Sep 2026 (docs/archive/SCHEMA_2_6_PLAN.md). It gets the
-                // same message as any file the app cannot read, and nothing is written.
-                console.error('Unrecognized backup format');
-                _deps.showNotification(getLabel('notify.invalidFormat'), "error", UI_TIMEOUTS.NOTIFICATION_LONG);
+                // Re-render UI in place — faster than location.reload() and works offline
+                reloadWithLoader('Restore');
                 resolve();
             }
         });

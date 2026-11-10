@@ -158,6 +158,18 @@ function validateImportedDate(dateValue) {
 }
 
 /**
+ * An imported due date as the plain YYYY-MM-DD every task stores. The format allows
+ * a full ISO timestamp, but DataValidator.validateTask refuses one, and until Nov 2026
+ * that dropped the whole task from a "successful" import.
+ * @param {*} dateValue
+ * @returns {string|null}
+ */
+function importedDueDate(dateValue) {
+    const valid = validateImportedDate(dateValue);
+    return valid ? valid.slice(0, 10) : null;
+}
+
+/**
  * An imported due time: "HH:MM" (24-hour) beside a valid due date, else null.
  * Files written before Oct 2026 have no dueTime at all, which reads as null.
  * @param {*} timeValue
@@ -713,8 +725,8 @@ export async function processImportedData(fileContent) {
                 : `task-${importTimestamp}-${index}`,
             text: sanitizedText,
             completed: task.completed === true,
-            dueDate: validateImportedDate(task.dueDate),
-            dueTime: validateImportedTime(task.dueTime, validateImportedDate(task.dueDate)),
+            dueDate: importedDueDate(task.dueDate),
+            dueTime: validateImportedTime(task.dueTime, importedDueDate(task.dueDate)),
             ...priority,
             remindersEnabled: task.remindersEnabled === true,
             recurring: task.recurring === true,
@@ -920,8 +932,8 @@ export async function processImportedData(fileContent) {
             id: orphanId,
             text: normalizeImportedText(imported.text || '', MAX_TASK_TEXT_LENGTH)
                 || getLabel('noun.untitledTask'),
-            dueDate: validateImportedDate(imported.dueDate),
-            dueTime: validateImportedTime(imported.dueTime, validateImportedDate(imported.dueDate)),
+            dueDate: importedDueDate(imported.dueDate),
+            dueTime: validateImportedTime(imported.dueTime, importedDueDate(imported.dueDate)),
             ...orphanPriority,
             remindersEnabled: imported.remindersEnabled === true,
             recurringSettings: orphanSettings,
