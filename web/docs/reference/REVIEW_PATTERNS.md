@@ -1,5 +1,7 @@
 # Review Patterns — Where miniCycle Breaks
 
+**Last verified:** Nov 10 2026
+
 Derived from the August 2026 review pass (~40 modules, ~35 findings). These are
 the fault lines that produced repeat findings. A reviewer — human or AI — should
 check these first rather than reading top-to-bottom.
@@ -156,10 +158,10 @@ Safari 13.1 — the syntax floor is the later one; `globalThis` alone admitted
 iOS 12, found Sep 2026). Playwright runs modern Chromium, so
 every test passes; lint has no target awareness. `.at(-1)` in undoRedoManager's
 snapshot capture silently broke Undo on Safari ≤ 15.3 for ~10 months — the
-wrapper's try/catch swallowed the throw, 3134/3134 tests green throughout.
+wrapper's try/catch swallowed the throw, and every test stayed green throughout.
 
 **Check:** `npm run validate:builtins` gates this now. The human-review tell:
-a change introducing the **first** use of a built-in in ~136 modules — if
+a change introducing the **first** use of a built-in anywhere in `modules/` — if
 nothing else in the codebase uses it, ask why before assuming it's fine.
 
 ## 9. Bracket lookups on name-keyed maps inherit from Object.prototype
@@ -294,12 +296,16 @@ modal languages, not an inconsistency:
 | `.mini-modal-box` | confirmations — e.g. Factory Reset's "Delete Everything" |
 | `.miniCycle-prompt-box` | **naming something** — create, duplicate, rename, save-as |
 
-Every caller of the dark family is a name-entry action: Create New Routine
-(`routineManager.js:680`), Duplicate Routine (`menuManager.js:547`), mobile
-rename (`routineSwitcher.js:765` — its own comment cites the shared pattern),
-preset save/export/import (`preferencesPresets.js`), backup naming
-(`backupRestoreManager.js:276`). The dark treatment means "you're about to name
-something new."
+Almost every caller of the dark family is a name-entry action: Create New Routine
+(`routineManager.js`, `_buildCreationDialog()`), Duplicate Routine
+(`menuManager.js`, `saveMiniCycleAsNew()`), routine rename
+(`routineSwitcherActions.js`, `_editRoutineModal()`), task rename (`taskCRUD.js`,
+`_editTaskModal()`), preset save/export/import (`preferencesPresets.js`), backup
+naming (`backupRestoreManager.js`, `downloadBackupFile()`). The dark treatment
+means "you're about to name something new." The one caller that asks for
+something other than a name or code is the auto-uncheck time picker
+(`dailyResetManager.js`, `openTimePickerModal()`): still a typed value, not a
+confirmation.
 
 There *is* one real gap inside this otherwise-consistent convention — see
 [`PROMPT_MODAL_THEME_TOKEN_GAP.md`](../future-work/PROMPT_MODAL_THEME_TOKEN_GAP.md).
@@ -307,11 +313,16 @@ There *is* one real gap inside this otherwise-consistent convention — see
 ### The task input bar is setup furniture, not daily furniture
 
 A routine is built once and run many times. After setup the input bar is dead
-weight on every subsequent run, so it is hidden by default and toggled from
-**⋯ → Show/hide input bar**.
+weight on every subsequent run, so it is hidden by default (`showTaskInput` is
+stored per routine and starts `false`; the first-run "Create My First Routine"
+flow turns it on) and toggled from the **+ Actions**, **☰** and Focus View **⋯**
+menus. The item reads "Add Tasks" while the bar is hidden and "Hide Add Task Bar"
+while it is shown (`inputBarToggleLabel()` in `themeWords.js`, in the active
+theme's words).
 
-The empty state that reads *"Open the ⋯ menu at the top and click Show/hide input
-bar to start adding tasks"* is therefore **the discovery mechanism for the
+The empty state — Home View's *"Press the + button to open the task bar and add
+your first task"*, Focus View's *"Open the ⋯ menu at the top and click Add Tasks
+to show the task bar"* — is therefore **the discovery mechanism for the
 toggle**, not a detour around a hidden primary action. Without it a user would
 never learn the bar is toggleable, and would be stuck with it on screen forever.
 Once the bar is shown, the empty state rewrites itself to "Type your first task
@@ -504,7 +515,8 @@ reasoning live at `SAVE_DIALOG_STUB` in
 [`run-journey-tests.cjs`](../../tests/automated/run-journey-tests.cjs).
 
 The stub is **opt-in per journey, never harness-wide**: replacing a real browser
-API for all 32 journeys to fix 4 trades a visible failure for an invisible one.
+API for every journey to fix the few that reset trades a visible failure for an
+invisible one.
 
 Generalise beyond this one API — the same shape applies to anything automation
 provides as a stub that rejects or no-ops: `showSaveFilePicker`,
@@ -565,7 +577,7 @@ if (dataLabel === clearLabel()) throw new Error('used the CLEAR label — mappin
 
 Verify across the lens, not just the default: wire each theme in turn and assert
 the module still passes. A suite that is green under `classic` alone proves only
-that one vocabulary works. Scope at the time of writing: 6 test files import
+that one vocabulary works. Scope at the time of writing (Oct 2026): 6 test files import
 `themes.js`, 9 assert `getLabel()` output, and 4 modules import `themes.js` at
 top level — any of which is enough to flip the resolver for everything downstream.
 

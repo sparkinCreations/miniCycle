@@ -54,8 +54,8 @@ The practical risk is low, since every writer is the app itself.
   removing them.
 - `lastSavedTimestamp` is assigned in two places and never read.
 - `STATE_DATA_PROPERTIES` still lists `cycles`, a Schema 2.5 name.
-- The JSDoc types say `Schema25Data` and the `update()` examples still write
-  `state.data.cycles[cycleId]`.
+- The JSDoc types say `Schema25Data`, and the `update()` examples still reach a routine
+  through the 2.5 `cycles` map instead of `data.routine`.
 
 ---
 
