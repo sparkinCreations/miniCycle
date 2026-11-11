@@ -1,3 +1,15 @@
+## [2.679] - 2026-11-11
+- test: refresh the test-count manifest after a full run
+- fix(mcyc): files written from the published schema keep their recurring settings
+- docs(audit-plan): record round 3b sign-off
+- docs(audit): round 3b decisions — archive two performance docs, the Dec 2025 Lighthouse record and the tester handout
+- docs(audit): round 3b — testing and performance
+- docs(audit-plan): record round 3a sign-off
+- docs(audit): round 3a — reference: schema merge, recurring, .mcyc format, labels, review patterns, taskDOM
+- docs: describe the 2.678 changelog placeholder; audit plan status reflects rounds 0-2 done
+- test: refresh the test-count manifest after a full run on merged main (v2.677)
+
+
 ## [2.678] - 2026-11-10
 - docs(future-work): AppState load path, validation and leftovers
 - docs(future-work): vocabulary theme label coverage
