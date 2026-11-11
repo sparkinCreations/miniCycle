@@ -521,7 +521,17 @@ For tasks with `recurring: true` (Schema 2.5+ structure, updated v1.349):
 | `count` | number\|null | No | Number of times to recur (if not indefinite) |
 | `untilDate` | string\|null | No | End date in YYYY-MM-DD format (NEW v1.349+) |
 | `time` | object\|null | No | Specific time of day (see Time Object below) |
-| `useSpecificTime` | boolean | No | Whether the recurring panel's "specific time" option is on (default `false`). Written by the app's exports; not in the JSON example above |
+| `useSpecificTime` | boolean | No | Whether the recurring panel's "specific time" option is on (default `false`). Written by the app's exports; not in the JSON example above. The importer sets it to `true` when a file gives a `time` without it |
+
+**Old names still accepted on import.** From Aug to Nov 2026 the published schema and format page
+(and the pinned `/schema/mcyc-2.5` and `-2.6` files, which never change) named some recurring fields
+differently from the app: `repeatCount`, `daily.time` (`"HH:MM"`, 24-hour), `monthly.dayOfMonth`,
+and `monthly.nthWeekday` + `monthly.weekday`. A file written with those imported without an error
+and lost its repeat limit, daily time and monthly pattern. `acceptPublishedSchemaRecurring()`
+(`recurring/recurringSettings.js`) now translates them before normalizing, only when the current
+field is absent: `repeatCount` → `count`; `daily.time` → `time`; `dayOfMonth` → `useSpecificDays` +
+`days`; `nthWeekday` (1–4, or 5 / -1 for the last) + `weekday` → `useWeekOfMonth` + `weekOfMonth`.
+The rolling `/mcyc.schema.json` documents the current names and marks the old ones `deprecated`.
 
 **Time Object (optional):**
 

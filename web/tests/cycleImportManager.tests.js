@@ -326,6 +326,76 @@ export async function runCycleImportManagerTests(resultsDiv) {
         if (!tpl || 'defaultRecurTime' in tpl.recurringSettings) throw new Error('template must be built from normalized settings');
     });
 
+    // ── recurring names from the published .mcyc schema (Nov 2026) ─────────
+    // From Aug to Nov 2026 the schema and the format page named fields the app
+    // never read; a file written from them imported without an error and lost
+    // its repeat limit, daily time and monthly pattern (a monthly task fell back
+    // to the import day). These are written exactly as the pinned 2.6 schema
+    // documents them.
+    await test('a file written from the published schema keeps its repeat limit, time and monthly patterns', async () => {
+        const { state } = await runImport({
+            name: 'Schema Recurring',
+            tasks: [
+                { id: 's1', text: 'Daily 3 times', recurring: true, recurringSettings: { frequency: 'daily', indefinitely: false, repeatCount: 3 } },
+                { id: 's2', text: 'Daily at 19:05', recurring: true, recurringSettings: { frequency: 'daily', daily: { time: '19:05' } } },
+                { id: 's3', text: 'Monthly on the 15th', recurring: true, recurringSettings: { frequency: 'monthly', monthly: { dayOfMonth: 15 } } },
+                { id: 's4', text: 'Monthly 2nd Tuesday', recurring: true, recurringSettings: { frequency: 'monthly', monthly: { nthWeekday: 2, weekday: 'Tue' } } },
+                { id: 's5', text: 'Monthly last Friday', recurring: true, recurringSettings: { frequency: 'monthly', monthly: { nthWeekday: -1, weekday: 'Fri' } } }
+            ]
+        });
+        const cycle = importedCycle(state);
+        const rs = Object.fromEntries(cycle.tasks.map(t => [t.id, t.recurringSettings]));
+        if (rs.s1.count !== 3 || rs.s1.indefinitely !== false) throw new Error(`repeat limit lost: ${JSON.stringify({ count: rs.s1.count, indefinitely: rs.s1.indefinitely })}`);
+        const t2 = rs.s2.time;
+        if (!t2 || t2.hour !== 7 || t2.minute !== 5 || t2.meridiem !== 'PM' || rs.s2.useSpecificTime !== true) throw new Error(`daily time lost: ${JSON.stringify({ time: t2, useSpecificTime: rs.s2.useSpecificTime })}`);
+        if (!rs.s3.monthly.useSpecificDays || JSON.stringify(rs.s3.monthly.days) !== '[15]') throw new Error(`day of month lost: ${JSON.stringify(rs.s3.monthly)}`);
+        const w4 = rs.s4.monthly;
+        if (!w4.useWeekOfMonth || w4.weekOfMonth?.ordinal !== '2' || w4.weekOfMonth?.day !== 'Tue') throw new Error(`2nd Tuesday lost: ${JSON.stringify(w4)}`);
+        if (rs.s5.monthly.weekOfMonth?.ordinal !== 'last' || rs.s5.monthly.weekOfMonth?.day !== 'Fri') throw new Error(`last Friday lost: ${JSON.stringify(rs.s5.monthly)}`);
+        // The templates the watcher schedules from carry the same settings
+        if (cycle.recurringTemplates.s3.recurringSettings.monthly.days[0] !== 15) throw new Error('template lost the day of month');
+    });
+
+    await test('an orphan recurring template written with the schema names keeps them too', async () => {
+        const { state } = await runImport({
+            name: 'Schema Orphan',
+            tasks: [],
+            recurringTemplates: {
+                o1: { id: 'o1', text: 'Between occurrences', recurring: true, recurringSettings: { frequency: 'monthly', indefinitely: false, repeatCount: 2, monthly: { dayOfMonth: 1 } } }
+            }
+        });
+        const rs = importedCycle(state).recurringTemplates.o1?.recurringSettings;
+        if (!rs || rs.count !== 2 || JSON.stringify(rs.monthly.days) !== '[1]') throw new Error(`orphan template lost its settings: ${JSON.stringify(rs)}`);
+    });
+
+    await test('the app\'s own recurring names win over the schema\'s old ones', async () => {
+        const { state } = await runImport({
+            name: 'Both Names',
+            tasks: [{
+                id: 'b1', text: 'Both', recurring: true,
+                recurringSettings: {
+                    frequency: 'monthly', indefinitely: false, count: 4, repeatCount: 9,
+                    time: { hour: 6, minute: 0, meridiem: 'AM' }, daily: { time: '20:00' },
+                    monthly: { useSpecificDays: true, days: [3], dayOfMonth: 15 }
+                }
+            }]
+        });
+        const rs = importedCycle(state).tasks[0].recurringSettings;
+        if (rs.count !== 4) throw new Error(`count should stay 4, got ${rs.count}`);
+        if (rs.time.hour !== 6 || rs.time.meridiem !== 'AM') throw new Error(`time should stay 6:00 AM, got ${JSON.stringify(rs.time)}`);
+        if (JSON.stringify(rs.monthly.days) !== '[3]') throw new Error(`days should stay [3], got ${JSON.stringify(rs.monthly.days)}`);
+    });
+
+    await test('reminders every N days import as days, not hours', async () => {
+        const { state } = await runImport({
+            name: 'Reminder Days',
+            tasks: [{ id: 'd1', text: 'x' }],
+            reminders: { enabled: true, frequencyValue: 2, frequencyUnit: 'days' }
+        });
+        const r = importedCycle(state).reminders;
+        if (r?.frequencyUnit !== 'days' || r.frequencyValue !== 2) throw new Error(`expected every 2 days, got ${JSON.stringify(r && { value: r.frequencyValue, unit: r.frequencyUnit })}`);
+    });
+
     // ── delete-when-complete: the canonical per-mode map ───────────────────
     // Two fields describe one behaviour. `autoClear {cycle,
     // todo}` is the durable truth; `deleteWhenComplete` is a flat mirror that

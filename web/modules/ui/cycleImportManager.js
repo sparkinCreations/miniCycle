@@ -9,7 +9,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS } from '../core/constants.js';
+import { LIMITS, DOM_SELECTORS, Z_INDEX, APP_VERSION, UI_TIMEOUTS, FREQUENCY_MS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 // Pure normalizer (no DI, no side effects) — statically imported like
 // recurringCalculators in migrationManager, so imported settings get the same
@@ -20,7 +20,7 @@ import { getLabel } from '../labels/labelResolver.js';
 // via setNormalizer). Safe here because only the pure function is used — the
 // matcher's concern is memo-cache identity shared with recurringCore, which
 // import doesn't need; the cost is one duplicate cache, nothing behavioral.
-import { normalizeRecurringSettings } from '../recurring/recurringSettings.js';
+import { normalizeRecurringSettings, acceptPublishedSchemaRecurring } from '../recurring/recurringSettings.js';
 import { buildRecurringTemplate } from '../recurring/recurringTemplate.js';
 import { isValidHex } from '../utils/styleValidators.js';
 import { fitText, stripDirectionControls } from '../utils/nameUtils.js';
@@ -698,9 +698,12 @@ export async function processImportedData(fileContent) {
         // normalizer passes through: specificDates entries must be real ISO
         // dates — a garbage entry that becomes "next" throws inside the 15s
         // spawn tick — and are capped to a sane count.
-        const safeSettings = normalizeRecurringSettings(
+        // acceptPublishedSchemaRecurring first: the published .mcyc schema named
+        // some fields differently from the app (repeatCount, daily.time,
+        // monthly.dayOfMonth / nthWeekday) and the normalizer drops unknown keys.
+        const safeSettings = normalizeRecurringSettings(acceptPublishedSchemaRecurring(
             (task.recurringSettings && typeof task.recurringSettings === 'object') ? task.recurringSettings : {}
-        );
+        ));
         if (safeSettings.specificDates.dates.length > 0) {
             safeSettings.specificDates.dates = safeSettings.specificDates.dates
                 .filter(d => validateImportedDate(d) !== null)
@@ -900,7 +903,7 @@ export async function processImportedData(fileContent) {
             break;
         }
 
-        const orphanSettings = normalizeRecurringSettings(imported.recurringSettings);
+        const orphanSettings = normalizeRecurringSettings(acceptPublishedSchemaRecurring(imported.recurringSettings));
         if (orphanSettings.specificDates.dates.length > 0) {
             orphanSettings.specificDates.dates = orphanSettings.specificDates.dates
                 .filter(d => validateImportedDate(d) !== null)
@@ -965,7 +968,9 @@ export async function processImportedData(fileContent) {
             dueDatesReminders: !!r.dueDatesReminders,
             repeatCount: typeof r.repeatCount === 'number' ? r.repeatCount : 0,
             frequencyValue: typeof r.frequencyValue === 'number' ? r.frequencyValue : 1,
-            frequencyUnit: (r.frequencyUnit === 'minutes' || r.frequencyUnit === 'hours') ? r.frequencyUnit : 'hours',
+            // Every unit the reminders panel offers (FREQUENCY_MS); 'days' used to
+            // fall through to 'hours', so "every 2 days" imported as every 2 hours.
+            frequencyUnit: Object.prototype.hasOwnProperty.call(FREQUENCY_MS, r.frequencyUnit) ? r.frequencyUnit : 'hours',
             customMessages: Array.isArray(r.customMessages)
                 ? r.customMessages.filter(m => typeof m === 'string').map(m => normalizeImportedText(m, MAX_TASK_TEXT_LENGTH))
                 : []

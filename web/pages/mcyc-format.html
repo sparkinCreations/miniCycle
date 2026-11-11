@@ -654,10 +654,28 @@
                     <code>frequency</code> selects which sub-object is consulted, and may be
                     <code>hourly</code>, <code>daily</code>, <code>weekly</code>, <code>biweekly</code>,
                     <code>monthly</code>, or <code>yearly</code>. Use <code>indefinitely: true</code> to repeat
-                    forever, or <code>indefinitely: false</code> with a <code>repeatCount</code>. Weekday names
-                    are three letters: <code>Sun</code> through <code>Sat</code>. Full details, including the
-                    monthly and specific-date forms, are in the
-                    <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT">full specification</a>.
+                    forever, or <code>indefinitely: false</code> with a <code>count</code> (number of times) or an
+                    <code>untilDate</code> (<code>YYYY-MM-DD</code>, the last day). Weekday names are three letters:
+                    <code>Sun</code> through <code>Sat</code>. A time of day is the top-level
+                    <code>time</code>: <code>{ "hour": 7, "minute": 30, "meridiem": "AM" }</code>.
+                </p>
+                <ul>
+                    <li><code>hourly</code>: <code>{ "useSpecificMinute": true, "minute": 15 }</code> for a set minute past each hour.</li>
+                    <li><code>daily</code>: no sub-object needed; add <code>time</code> for a set time.</li>
+                    <li><code>weekly</code>: <code>{ "days": ["Mon", "Wed"] }</code>.</li>
+                    <li><code>biweekly</code>: <code>{ "week1": ["Mon"], "week2": ["Thu"], "referenceDate": "2026-11-02" }</code>, weeks alternating from the reference date.</li>
+                    <li><code>monthly</code>, on days of the month: <code>{ "useSpecificDays": true, "days": [1, 15], "lastDay": false }</code>.</li>
+                    <li><code>monthly</code>, on a weekday pattern such as the 2nd Tuesday: <code>{ "useWeekOfMonth": true, "weekOfMonth": { "ordinal": "2", "day": "Tue" } }</code> (<code>ordinal</code> is <code>"1"</code> to <code>"4"</code> or <code>"last"</code>).</li>
+                    <li><code>yearly</code>: <code>{ "months": [3, 9], "useSpecificDays": true, "applyDaysToAll": true, "daysByMonth": { "all": [1] } }</code>.</li>
+                </ul>
+                <p>
+                    <strong>Corrected November 2026.</strong> Until then this page and the schemas named some of
+                    these fields differently from the app: <code>repeatCount</code>, <code>daily.time</code>,
+                    <code>monthly.dayOfMonth</code>, <code>monthly.nthWeekday</code> and
+                    <code>monthly.weekday</code>. A file written with those names imported without an error but
+                    lost its repeat limit, its daily time and its monthly pattern. The importer now accepts the
+                    old names too, so such files import as intended; write the names above. Full details are in
+                    the <a href="https://docs.minicycle.app/#/reference/MCYC_FILE_FORMAT">full specification</a>.
                 </p>
             </div>
         </section>
@@ -760,7 +778,9 @@
                             <tr>
                                 <td><a href="../schema/mcyc-2.6.schema.json"><code>/schema/mcyc-2.6.schema.json</code></a></td>
                                 <td><strong>Pinned to format 2.6</strong> (September 2026: priority as a level,
-                                    <code>autoClear</code> as one map; the 2.5 spellings still accepted). Never changes.
+                                    <code>autoClear</code> as one map; the 2.5 spellings still accepted). Never changes,
+                                    so its recurring field names are the old ones (see <a href="#reference">recurringSettings</a>);
+                                    the importer accepts them.
                                     Reference this from CI or a build step, where a validation result that shifts
                                     under you is a broken build.</td>
                             </tr>

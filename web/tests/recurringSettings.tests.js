@@ -273,6 +273,91 @@ export async function runRecurringSettingsTests(resultsDiv) {
         if (second.monthly.days.includes(999)) throw new Error('cache was corrupted by caller mutation');
     });
 
+    // ── the published .mcyc schema's recurring names (Nov 2026) ─────────────
+    // From Aug to Nov 2026 the schema and format page — copied from a types.js
+    // typedef that never matched the code — named fields the normalizer never
+    // read. acceptPublishedSchemaRecurring translates them at the import door.
+    resultsDiv.innerHTML += '<h4 class="test-section">📄 Published schema names</h4>';
+    const accept = mod.acceptPublishedSchemaRecurring;
+    const viaSchema = (raw) => normalize(accept(raw));
+
+    await test('acceptPublishedSchemaRecurring is exported', () => {
+        if (typeof accept !== 'function') throw new Error(`Expected function, got ${typeof accept}`);
+    });
+
+    await test('repeatCount becomes count', () => {
+        eq(viaSchema({ frequency: 'daily', indefinitely: false, repeatCount: 3 }).count, 3, 'count');
+        eq(viaSchema({ frequency: 'daily', indefinitely: false, repeatCount: 0 }).count, null, 'zero is no limit');
+    });
+
+    await test('daily.time (24-hour HH:MM) becomes the stored 12-hour time, with useSpecificTime', () => {
+        const r = viaSchema({ frequency: 'daily', daily: { time: '00:15' } });
+        eq(r.time.hour, 12, 'midnight hour'); eq(r.time.minute, 15, 'minute'); eq(r.time.meridiem, 'AM', 'meridiem');
+        eq(r.useSpecificTime, true, 'useSpecificTime');
+        eq(viaSchema({ frequency: 'daily', daily: { time: '12:00' } }).time.meridiem, 'PM', 'noon');
+        eq(viaSchema({ frequency: 'daily', daily: { time: '25:00' } }).time, null, 'invalid time ignored');
+        eq(viaSchema({ frequency: 'daily', daily: { time: 'soon' } }).time, null, 'garbage ignored');
+    });
+
+    await test('a top-level time without useSpecificTime turns it on; an explicit false is kept', () => {
+        eq(viaSchema({ frequency: 'daily', time: { hour: 9, minute: 0, meridiem: 'AM' } }).useSpecificTime, true, 'set');
+        eq(viaSchema({ frequency: 'daily', time: { hour: 9, minute: 0, meridiem: 'AM' }, useSpecificTime: false }).useSpecificTime, false, 'kept');
+    });
+
+    await test('monthly.dayOfMonth becomes useSpecificDays + days', () => {
+        const m = viaSchema({ frequency: 'monthly', monthly: { dayOfMonth: 15 } }).monthly;
+        eq(m.useSpecificDays, true, 'useSpecificDays'); eq(JSON.stringify(m.days), '[15]', 'days');
+        // Out of range is not translated; the normalizer's usual default for a
+        // monthly task with no day (today's date) applies instead.
+        if (viaSchema({ frequency: 'monthly', monthly: { dayOfMonth: 40 } }).monthly.days.includes(40)) throw new Error('out-of-range day kept');
+    });
+
+    await test('monthly.nthWeekday + weekday becomes a week-of-month pattern (5 / -1 = last)', () => {
+        const m = viaSchema({ frequency: 'monthly', monthly: { nthWeekday: 3, weekday: 'Wed' } }).monthly;
+        eq(m.useWeekOfMonth, true, 'useWeekOfMonth'); eq(m.weekOfMonth.ordinal, '3', 'ordinal'); eq(m.weekOfMonth.day, 'Wed', 'day');
+        eq(viaSchema({ frequency: 'monthly', monthly: { nthWeekday: 5, weekday: 'Sun' } }).monthly.weekOfMonth.ordinal, 'last', '5');
+        eq(viaSchema({ frequency: 'monthly', monthly: { nthWeekday: -1, weekday: 'Sun' } }).monthly.weekOfMonth.ordinal, 'last', '-1');
+        eq(viaSchema({ frequency: 'monthly', monthly: { nthWeekday: 2, weekday: 'Funday' } }).monthly.useWeekOfMonth, false, 'bad weekday ignored');
+    });
+
+    await test('the app\'s own names win, and the input is not mutated', () => {
+        const raw = { frequency: 'monthly', count: 4, repeatCount: 9, monthly: { days: [3], dayOfMonth: 15 } };
+        const before = JSON.stringify(raw);
+        const r = viaSchema(raw);
+        eq(r.count, 4, 'count'); eq(JSON.stringify(r.monthly.days), '[3]', 'days');
+        eq(JSON.stringify(raw), before, 'input untouched');
+        eq(accept(null), null, 'null passes through');
+    });
+
+    // Drift guard: the published rolling schema must document every field the
+    // normalizer produces, and nothing it doesn't (other than names marked
+    // deprecated, which the importer translates). This is the check that would
+    // have caught the Aug 2026 spec.
+    await test('the published /mcyc.schema.json documents exactly the recurring fields the app keeps', async () => {
+        const schema = await (await fetch('../mcyc.schema.json?_cb=' + Date.now(), { cache: 'no-store' })).json();
+        const def = schema.$defs.recurringSettings.properties;
+        const shape = normalize({ frequency: 'daily' });
+        const live = (props) => Object.keys(props).filter(k => !props[k].deprecated).sort();
+        const problems = [];
+        const compare = (label, documented, produced) => {
+            const missing = produced.filter(k => !documented.includes(k));
+            const extra = documented.filter(k => !produced.includes(k));
+            if (missing.length) problems.push(`${label}: not documented ${JSON.stringify(missing)}`);
+            if (extra.length) problems.push(`${label}: documented but not kept ${JSON.stringify(extra)}`);
+        };
+        compare('recurringSettings', live(def), Object.keys(shape).sort());
+        for (const sub of ['hourly', 'weekly', 'biweekly', 'monthly', 'yearly', 'specificDates']) {
+            compare(sub, live(def[sub].properties || {}), Object.keys(shape[sub]).sort());
+        }
+        // Every deprecated name must be one the importer actually translates
+        const deprecated = [
+            ...Object.keys(def).filter(k => def[k].deprecated),
+            ...['daily', 'monthly'].flatMap(s => Object.keys(def[s].properties || {}).filter(k => def[s].properties[k].deprecated).map(k => `${s}.${k}`))
+        ].sort();
+        eq(JSON.stringify(deprecated), JSON.stringify(['daily', 'daily.time', 'monthly.dayOfMonth', 'monthly.nthWeekday', 'monthly.weekday', 'repeatCount']), 'deprecated names');
+        if (problems.length) throw new Error(problems.join('; '));
+    });
+
     // ── results ──────────────────────────────────────────────────────────────
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

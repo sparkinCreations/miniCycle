@@ -161,7 +161,7 @@
     },
     "recurringSettings": {
       "type": "object",
-      "description": "Schedule for a task with recurring:true. Only the sub-object matching 'frequency' is read. Invalid values are normalized rather than rejected, so an unrecognized frequency will not fail the import; it will simply not schedule the way you intended.",
+      "description": "Schedule for a task with recurring:true. The sub-object matching 'frequency' is read. Invalid values are normalized rather than rejected, so an unrecognized value will not fail the import; it will simply not schedule the way you intended. Until Nov 2026 this schema (and the pinned 2.5 / 2.6 files) named some fields differently from the app: repeatCount, daily.time, monthly.dayOfMonth, monthly.nthWeekday and monthly.weekday. Those names are still accepted on import (marked deprecated below); write the current names.",
       "additionalProperties": true,
       "properties": {
         "frequency": {
@@ -179,19 +179,35 @@
         "indefinitely": {
           "type": "boolean",
           "default": true,
-          "description": "Repeat forever. When false, repeatCount bounds it."
+          "description": "Repeat forever. When false, count (or untilDate) bounds it."
+        },
+        "count": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 1,
+          "description": "Number of occurrences when indefinitely is false."
         },
         "repeatCount": {
           "type": "integer",
           "minimum": 0,
-          "description": "Number of occurrences when indefinitely is false."
+          "deprecated": true,
+          "description": "Former name of count, accepted on import when count is absent."
+        },
+        "untilDate": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Last day to recur, YYYY-MM-DD (inclusive). No occurrence is scheduled after it."
         },
         "time": {
           "type": [
             "object",
             "null"
           ],
-          "description": "Time of day for the occurrence.",
+          "description": "Time of day for the occurrence, 12-hour. Used by daily, weekly, biweekly, monthly, yearly and specific dates (hourly uses hourly.minute instead).",
           "properties": {
             "hour": {
               "type": "integer",
@@ -209,24 +225,50 @@
                 "AM",
                 "PM"
               ]
+            },
+            "military": {
+              "type": "boolean",
+              "description": "Written by older versions; false means hour is 12-hour with meridiem."
+            }
+          }
+        },
+        "useSpecificTime": {
+          "type": "boolean",
+          "description": "Whether 'time' is set. The importer sets it when a file gives a time without it."
+        },
+        "hourly": {
+          "type": "object",
+          "properties": {
+            "useSpecificMinute": {
+              "type": "boolean",
+              "description": "Recur at 'minute' past each hour; otherwise each hour from when it was set up."
+            },
+            "minute": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 59
             }
           }
         },
         "daily": {
           "type": "object",
+          "description": "Holds only the former daily.time; daily tasks use the top-level 'time'.",
           "properties": {
             "time": {
               "type": "string",
-              "description": "24-hour HH:MM."
+              "pattern": "^([01]?[0-9]|2[0-3]):[0-5][0-9]$",
+              "deprecated": true,
+              "description": "Former 24-hour HH:MM form of the time, accepted on import when the top-level 'time' is absent."
             }
-          }
+          },
+          "deprecated": true
         },
         "weekly": {
           "type": "object",
           "properties": {
             "days": {
               "type": "array",
-              "description": "Three-letter day names.",
+              "description": "Days of the week to recur on.",
               "items": {
                 "type": "string",
                 "enum": [
@@ -243,38 +285,161 @@
           }
         },
         "biweekly": {
-          "type": "object"
+          "type": "object",
+          "description": "Alternating weeks.",
+          "properties": {
+            "week1": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Sun",
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat"
+                ]
+              }
+            },
+            "week2": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Sun",
+                  "Mon",
+                  "Tue",
+                  "Wed",
+                  "Thu",
+                  "Fri",
+                  "Sat"
+                ]
+              }
+            },
+            "referenceDate": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "A date in week 1 (ISO 8601); weeks alternate from it."
+            }
+          }
         },
         "monthly": {
           "type": "object",
+          "description": "Either specific days of the month (useSpecificDays + days and/or lastDay) or a week-of-month pattern (useWeekOfMonth + weekOfMonth, e.g. the 2nd Tuesday).",
           "properties": {
+            "useSpecificDays": {
+              "type": "boolean"
+            },
+            "days": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 31
+              },
+              "description": "Days of the month to recur on."
+            },
+            "lastDay": {
+              "type": "boolean",
+              "description": "Also recur on the last day of each month."
+            },
+            "useWeekOfMonth": {
+              "type": "boolean"
+            },
+            "weekOfMonth": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "properties": {
+                "ordinal": {
+                  "type": "string",
+                  "enum": [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "last"
+                  ]
+                },
+                "day": {
+                  "type": "string",
+                  "enum": [
+                    "Sun",
+                    "Mon",
+                    "Tue",
+                    "Wed",
+                    "Thu",
+                    "Fri",
+                    "Sat"
+                  ]
+                }
+              }
+            },
             "dayOfMonth": {
               "type": [
                 "integer",
                 "null"
               ],
               "minimum": 1,
-              "maximum": 31
+              "maximum": 31,
+              "deprecated": true,
+              "description": "Former name, accepted on import as days: [dayOfMonth] when no current monthly field is set."
             },
             "nthWeekday": {
               "type": [
                 "integer",
                 "null"
-              ]
+              ],
+              "deprecated": true,
+              "description": "Former name, accepted on import with 'weekday' as weekOfMonth: 1-4 for 1st-4th, 5 or -1 for the last."
             },
             "weekday": {
               "type": [
                 "string",
                 "null"
-              ]
+              ],
+              "deprecated": true,
+              "description": "Former name, the weekday for nthWeekday (Sun-Sat)."
             }
           }
         },
         "yearly": {
-          "type": "object"
-        },
-        "hourly": {
-          "type": "object"
+          "type": "object",
+          "properties": {
+            "months": {
+              "type": "array",
+              "items": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 12
+              }
+            },
+            "useSpecificDays": {
+              "type": "boolean"
+            },
+            "applyDaysToAll": {
+              "type": "boolean",
+              "default": true,
+              "description": "Use daysByMonth.all for every month; otherwise daysByMonth per month number."
+            },
+            "daysByMonth": {
+              "type": "object",
+              "description": "{ \"all\": [days] } or { \"1\"..\"12\": [days] }.",
+              "additionalProperties": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 1,
+                  "maximum": 31
+                }
+              }
+            }
+          }
         },
         "specificDates": {
           "type": "object",

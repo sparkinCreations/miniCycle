@@ -351,6 +351,11 @@ that does not exist. Fold both into the next release that touches those files.
   `days`, `lastDay`, `useWeekOfMonth`, `weekOfMonth`). `normalizeRecurringSettings()`
   keeps known keys only, so a file written by hand from the schema loses its repeat count
   and monthly pattern without an error. Files the app exports are unaffected.
+  **Fixed Nov 11 2026 (MJ: urgent):** the importer accepts the old names
+  (`acceptPublishedSchemaRecurring`), the rolling schema and the format page document the
+  current ones, and `core/types.js` — the typedef the spec had been copied from in Aug 2026,
+  wrong since it was written in Jan 2026 — matches the normalizer. The pinned schemas are
+  unchanged by policy; the importer makes their promise true.
 - *Real, low.* `cycleImportManager.js` accepts only `minutes` or `hours` for a routine's
   `reminders.frequencyUnit`, so a routine exported with reminders in days imports with
   the same number in hours.

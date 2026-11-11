@@ -44,43 +44,51 @@
  */
 
 /**
- * Recurring task/template configuration
+ * Recurring task/template configuration — the shape normalizeRecurringSettings()
+ * (recurring/recurringSettings.js) produces and every reader relies on.
+ *
+ * Until Nov 2026 this typedef named fields the app never read (repeatCount,
+ * weekdays, dayOfMonth, nthWeekday, weekday, daily.time, a 'custom' frequency),
+ * and the published .mcyc schema was written from it — a file built from that
+ * spec lost its repeat limit, daily time and monthly pattern on import. Those
+ * spellings are now accepted only at the import door
+ * (acceptPublishedSchemaRecurring). Keep this in step with the normalizer.
+ *
  * @typedef {Object} RecurringSettings
- * @property {'daily'|'weekly'|'monthly'|'yearly'|'custom'} frequency - Recurrence frequency
- * @property {boolean} indefinitely - Whether task repeats forever
- * @property {number} [repeatCount] - Number of times to repeat (if not indefinite)
- * @property {number} [timesActivated=0] - How many times this has activated
- * @property {string[]} [weekdays] - Days for weekly recurrence ["Mon", "Wed", "Fri"]
- * @property {number} [dayOfMonth] - Day of month for monthly (1-31)
- * @property {string} [nthWeekday] - Ordinal for nth weekday ("1", "2", "3", "4", "last")
- * @property {string} [weekday] - Weekday name for nth pattern ("Mon", "Tue", etc.)
- * @property {TimeSettings|null} [time=null] - Specific activation time
- * @property {DailySettings} [daily] - Daily-specific settings
- * @property {WeeklySettings} [weekly] - Weekly-specific settings
- * @property {MonthlySettings} [monthly] - Monthly-specific settings
- * @property {string} [lastActivated] - ISO timestamp of last activation
- * @property {string} [nextActivation] - ISO timestamp of next scheduled activation
+ * @property {'hourly'|'daily'|'weekly'|'biweekly'|'monthly'|'yearly'} frequency - Which sub-object below is read
+ * @property {boolean} indefinitely - Repeat forever; when false, count or untilDate bounds it
+ * @property {number|null} count - Number of occurrences when indefinitely is false
+ * @property {string|null} untilDate - Last day to recur, "YYYY-MM-DD" (inclusive)
+ * @property {TimeSettings|null} time - Time of day (not used by hourly)
+ * @property {boolean} useSpecificTime - Whether `time` is set (the recurring panel shows the time only when true)
+ * @property {{enabled: boolean, dates: string[]}} specificDates - Fixed dates; checked before frequency
+ * @property {HourlySettings} hourly
+ * @property {WeeklySettings} weekly
+ * @property {BiweeklySettings} biweekly
+ * @property {MonthlySettings} monthly
+ * @property {YearlySettings} yearly
  * @example
  * // Daily at 9 AM
  * const dailySettings = {
  *     frequency: "daily",
  *     indefinitely: true,
- *     time: { hour: 9, minute: 0, meridiem: "AM" }
+ *     time: { hour: 9, minute: 0, meridiem: "AM" },
+ *     useSpecificTime: true
  * };
  *
  * // Every Monday, Wednesday, Friday
  * const weeklySettings = {
  *     frequency: "weekly",
  *     indefinitely: true,
- *     weekdays: ["Mon", "Wed", "Fri"]
+ *     weekly: { days: ["Mon", "Wed", "Fri"] }
  * };
  *
- * // First Monday of every month
+ * // First Monday of every month, 5 times
  * const monthlyNthSettings = {
  *     frequency: "monthly",
- *     indefinitely: true,
- *     nthWeekday: "1",
- *     weekday: "Mon"
+ *     indefinitely: false,
+ *     count: 5,
+ *     monthly: { useWeekOfMonth: true, weekOfMonth: { ordinal: "1", day: "Mon" } }
  * };
  */
 
@@ -90,28 +98,49 @@
  * @property {number} hour - Hour in 12-hour format (1-12)
  * @property {number} minute - Minute (0-59)
  * @property {'AM'|'PM'} meridiem - AM or PM
+ * @property {boolean} [military] - Written by older versions; false means 12-hour with meridiem
  * @example
  * const time = { hour: 9, minute: 30, meridiem: "AM" }; // 9:30 AM
  */
 
 /**
- * Daily recurrence settings
- * @typedef {Object} DailySettings
- * @property {string} [time] - Time string (e.g., "09:00")
+ * Hourly recurrence settings
+ * @typedef {Object} HourlySettings
+ * @property {boolean} useSpecificMinute - Recur at `minute` past each hour
+ * @property {number} minute - Minute past the hour (0-59)
  */
 
 /**
  * Weekly recurrence settings
  * @typedef {Object} WeeklySettings
- * @property {string[]} [days] - Days of week ["Mon", "Tue", ...]
+ * @property {string[]} days - Days of week ["Mon", "Tue", ...]
  */
 
 /**
- * Monthly recurrence settings
+ * Biweekly recurrence settings (alternating weeks)
+ * @typedef {Object} BiweeklySettings
+ * @property {string[]} week1 - Days in week 1
+ * @property {string[]} week2 - Days in week 2
+ * @property {string|null} referenceDate - A date in week 1; weeks alternate from it
+ */
+
+/**
+ * Monthly recurrence settings — specific days, or a week-of-month pattern
  * @typedef {Object} MonthlySettings
- * @property {number} [dayOfMonth] - Day of month (1-31)
- * @property {string} [nthWeekday] - Ordinal ("1", "2", "3", "4", "last")
- * @property {string} [weekday] - Weekday name
+ * @property {boolean} useSpecificDays - Recur on `days` (and/or the last day)
+ * @property {number[]} days - Days of the month (1-31)
+ * @property {boolean} lastDay - Also recur on the last day of the month
+ * @property {boolean} useWeekOfMonth - Recur on `weekOfMonth` instead (checked first)
+ * @property {{ordinal: '1'|'2'|'3'|'4'|'last', day: string}|null} weekOfMonth - e.g. { ordinal: "2", day: "Tue" } = 2nd Tuesday
+ */
+
+/**
+ * Yearly recurrence settings
+ * @typedef {Object} YearlySettings
+ * @property {number[]} months - Months (1-12)
+ * @property {boolean} useSpecificDays - Restrict to the days in daysByMonth
+ * @property {boolean} applyDaysToAll - Use daysByMonth.all for every month
+ * @property {Object<string, number[]>} daysByMonth - { all: [days] } or { "1".."12": [days] }
  */
 
 /**
