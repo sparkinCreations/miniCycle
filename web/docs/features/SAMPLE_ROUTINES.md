@@ -59,6 +59,12 @@ modules/routine/routineManager.js
   └── loadSampleRoutine()          ← Loads a .mcyc file by filename
 ```
 
+Only `examples/sample-routines/` and `examples/initial-run/` are published. Every build
+(web, Capacitor, desktop, Chrome) copies those two folders and nothing else under
+`examples/`, so a routine left in `examples/routines/` (the working folder) is not on the
+site and the app cannot offer it. The web build's list is `PUBLISHED_EXAMPLE_DIRS` in
+`scripts/build-web.cjs`.
+
 ### Data flow
 
 ```

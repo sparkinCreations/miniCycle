@@ -163,6 +163,16 @@ const isLitePrivate = (src) =>
   src === path.join(LITE_DIR, 'tests') ||
   src.startsWith(path.join(LITE_DIR, 'tests') + path.sep) ||
   (path.dirname(src) === LITE_DIR && src.endsWith('.md'));
+// examples/ is an ALLOW-list: only the folders the app fetch()es at runtime ship.
+// Until Nov 2026 the whole folder was copied, so examples/routines/ (dev scratch:
+// notes, a .docx review, a full app backup) and examples/pwa-reference/ (which
+// carries its own sw.js) were publicly downloadable from minicycle.app. The
+// Capacitor, desktop and Chrome builds already used this same list.
+// Keep in step with EXAMPLE_DIRS in build-capacitor-www.cjs.
+const EXAMPLES_DIR = path.join(WEB, 'examples');
+const PUBLISHED_EXAMPLE_DIRS = new Set(['sample-routines', 'initial-run']);
+const isUnpublishedExample = (src) =>
+  path.dirname(src) === EXAMPLES_DIR && !PUBLISHED_EXAMPLE_DIRS.has(path.basename(src));
 function copyStatic() {
   for (const name of fs.readdirSync(WEB)) {
     if (COPY_EXCLUDE.has(name)) continue;
@@ -175,6 +185,10 @@ function copyStatic() {
     fs.cpSync(path.join(WEB, name), path.join(DIST, name), {
       recursive: true,
       filter: (src) => {
+        if (isUnpublishedExample(src)) {
+          console.log(`⏭  not published: ${path.relative(WEB, src)} — examples/ ships only ${[...PUBLISHED_EXAMPLE_DIRS].join(', ')}`);
+          return false;
+        }
         if (!isLitePrivate(src)) return true;
         console.log(`⏭  not published: ${path.relative(WEB, src)} — Lite dev-only (tests/notes)`);
         return false;
@@ -203,6 +217,14 @@ function assertMustPublish() {
     if (!fs.existsSync(path.join(DIST, name))) {
       fail(`dist/${name} is missing — ${why}.\n` +
            `   Something excluded it from the copy pass. It must ship; see COPY_EXCLUDE.`);
+    }
+  }
+  // The app fetch()es these at runtime (first-run routine, "load sample"); a miss
+  // is a 404 the user sees as an empty picker, not an error.
+  for (const dir of PUBLISHED_EXAMPLE_DIRS) {
+    if (!fs.existsSync(path.join(DIST, 'examples', dir))) {
+      fail(`dist/examples/${dir}/ is missing — the app fetches it at runtime.\n` +
+           `   See PUBLISHED_EXAMPLE_DIRS.`);
     }
   }
 }

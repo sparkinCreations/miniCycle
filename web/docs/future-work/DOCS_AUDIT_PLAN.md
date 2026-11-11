@@ -398,7 +398,10 @@ Complete User Guide") and `TASKDOM_DI_GUIDE` (H1 "DI-Pure Module Guide").
    best-practice advice and the two generator scripts in a later round? Keep or drop
    "Document Version: 1.5"?
 7. `web/examples/routines/` holds scratch files (`.txt`, `.docx`, a 2.5 backup); only
-   `examples/sample-routines/` is used by the app.
+   `examples/sample-routines/` is used by the app. **Partly done (Nov 11 2026):** the web
+   build published the whole of `examples/`, so these files were downloadable from
+   minicycle.app; it now ships only `sample-routines/` and `initial-run/`, like the other
+   builds. What to keep in the folder is still the owner's call.
 8. The repo-root `README` (round 2) says badges unlock "at 5, 25, 50, 75 and 100 cycles,
    or at a matching number of cleared tasks"; the cleared-task thresholds in
    `MILESTONES.TIERS` are 5, 125, 250, 375 and 500.
