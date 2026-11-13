@@ -356,14 +356,14 @@ body.high-contrast:not(.dark-mode) .routine-switcher-btn,
 body.high-contrast:not(.dark-mode) #personalization-btn,
 body.high-contrast:not(.dark-mode) #quick-dark-toggle {
     border: 2px solid rgba(0, 0, 0, 0.4);
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-medium);
 }
 
 /* The dark frost on a dark preset, as the toolbar group below: white on the
    white frost was unreadable. */
 body.high-contrast:not(.dark-mode) #menu-button {
     border: 2px solid rgba(0, 0, 0, 0.4);
-    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+    background: var(--pref-chrome-glass, var(--overlay-white-medium));
 }
 
 /* The header's joined group (mode-selector.css): the mode picker's border is
@@ -373,13 +373,13 @@ body.high-contrast:not(.dark-mode) #menu-button {
 body.high-contrast:not(.dark-mode) .mode-selector-wrapper .quick-actions-btn {
     border-right-width: 0;
     border-top-width: 0;
-    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+    background: var(--pref-chrome-glass, var(--overlay-white-medium));
 }
 
 body.high-contrast:not(.dark-mode) .mode-selector-wrapper .routine-switcher-btn {
     border-left-width: 0;
     border-top-width: 0;
-    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.4));
+    background: var(--pref-chrome-glass, var(--overlay-white-medium));
 }
 
 /* --- Themes Modal --- */
