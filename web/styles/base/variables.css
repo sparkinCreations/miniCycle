@@ -408,7 +408,15 @@
   /* ═══════════════════════════════════════════════════════════════════════════
      COMPONENT VARIABLES - Utilities
      ═══════════════════════════════════════════════════════════════════════════ */
-  --pref-panel-text:  rgba(255, 255, 255, 0.9);
+  /* --pref-panel-text is set only by a pick (Personalization, a preset, a
+     vocab theme, High Contrast), never here, so a panel can tell a picked
+     colour from its own default. Until Nov 2026 it defaulted to white here and
+     every panel's own fallback was dead. */
+  --panel-text-default: rgba(255, 255, 255, 0.9);
+  /* The Help window's text when nothing is picked: the corner buttons' navy
+     (Nov 2026). White where its panel is dark: a dark page colour (where
+     --pref-chrome-ink goes white), dark mode, a photo, Focus View. */
+  --help-window-text: var(--pref-chrome-ink, var(--color-navy));
   --pref-panel-bg:    rgba(255, 255, 255, 0.12);
   --pref-panel-border: rgba(255, 255, 255, 0.25);
   --pref-panel-blur:  8px;

@@ -37,7 +37,7 @@ body {
     --modal-border-effective:     var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
     --modal-bg-effective:         var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     --modal-bg-solid-effective:   var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
-    --modal-panel-text-effective: var(--pref-panel-text, var(--theme-text-primary, var(--color-gray-700)));
+    --modal-panel-text-effective: var(--pref-panel-text, var(--panel-text-default));
     /* --pref-modal-bg sits ahead of the theme's APP-header colour on purpose:
        every colorPreset pairs modalBg with modalText, and without that first
        link a DARK colour theme (dark, dark-ocean) painted this surface with its

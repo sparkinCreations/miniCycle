@@ -1210,7 +1210,7 @@ body.dark-mode .quick-action-item:not(:last-child) {
    ============================================================================= */
 
 body.dark-mode .help-window {
-    color: var(--pref-panel-text);
+    color: var(--pref-panel-text, var(--panel-text-default));
 }
 
 /* =============================================================================

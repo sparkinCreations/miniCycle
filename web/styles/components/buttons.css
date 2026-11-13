@@ -485,7 +485,7 @@ html:not([data-vocab-theme]) body:not(.solid-action-buttons):not(.high-contrast)
     justify-content: center;
     text-align: center;
     font-size: var(--font-size-base);
-    color: var(--pref-panel-text);
+    color: var(--pref-panel-text, var(--help-window-text));
     backdrop-filter: blur(var(--pref-panel-blur));
     -webkit-backdrop-filter: blur(var(--pref-panel-blur));
     transition: opacity var(--transition-normal) ease;

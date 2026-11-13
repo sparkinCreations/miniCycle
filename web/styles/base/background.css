@@ -161,6 +161,7 @@ body.has-bg-image {
        light frost vanished on a light photo (Nov 2026). The text colour stays
        the Personalization one (white by default). */
     --pref-panel-bg: var(--pref-chrome-glass);
+    --help-window-text: var(--panel-text-default);
 }
 
 body.has-bg-image #quick-dark-toggle,

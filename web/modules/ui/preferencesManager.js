@@ -57,7 +57,7 @@ const DEFAULT_COLORS = {
     statsProgress: '#4c79ff',
     statsDoughnut: '#4caf50',
     patternColor: '#ffffff',
-    panelText: '#ffffff',
+    panelText: '#2c3270',   // --color-navy: the Help window's default text (Nov 2026)
     resetFlash: '#4caf50',
     celebrationBg: '#4caf4f'
 };

@@ -422,6 +422,12 @@ body.focus-mode #help-window .help-window-size {
 /* Mode-description title: the default accent color (blue) clashes with
    the dim blue focus-mode overlay. White reads cleanly against the
    blurred backdrop and stays distinct from the body text below. */
+/* The Help window's default navy (variables.css) is for the bright page;
+   here it sits on the dimmed overlay, so white like its title. */
+body.focus-mode {
+    --help-window-text: var(--panel-text-default);
+}
+
 body.focus-mode #help-window h4 {
     color: var(--color-white);
 }
@@ -566,7 +572,7 @@ body.focus-mode #focus-mode-menu-btn {
     border-radius: var(--radius-md);
     border: 1px solid var(--chrome-border-color);
     background: rgba(255, 255, 255, 0.12);
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--pref-panel-text, var(--panel-text-default));
     font-size: 22px;
     line-height: 1;
     cursor: pointer;
@@ -599,7 +605,7 @@ body.focus-mode #focus-mode-exit-btn {
     border-radius: var(--radius-full);
     border: 1px solid var(--chrome-border-color);
     background: rgba(255, 255, 255, 0.12);
-    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
+    color: var(--pref-panel-text, var(--panel-text-default));
     line-height: 1;
     cursor: pointer;
     padding: 0;
@@ -1197,7 +1203,7 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     border-radius: var(--radius-full);
     border: 1px solid var(--chrome-border-color);
     background: rgba(255, 255, 255, 0.12);
-    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
+    color: var(--pref-panel-text, var(--panel-text-default));
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     padding: 0;
@@ -1209,7 +1215,7 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
 @media (hover: hover) and (pointer: fine) {
     .focus-mode-btn:hover {
         background: rgba(255, 255, 255, 0.22);
-        color: var(--pref-panel-text, var(--color-white));
+        color: var(--pref-panel-text, var(--panel-text-default));
         transform: scale(1.08);
     }
 }
@@ -1254,7 +1260,7 @@ body.focus-mode #focus-action-btn {
     border-radius: var(--radius-full);
     border: 1px solid rgba(255, 255, 255, 0.4);
     background: rgba(255, 255, 255, 0.25);
-    color: var(--pref-panel-text, var(--color-white));
+    color: var(--pref-panel-text, var(--panel-text-default));
     font-family: inherit;
     cursor: pointer;
     z-index: var(--z-notification);
