@@ -16,7 +16,7 @@
 
 .mode-selector-wrapper .mode-selector {
     position: relative;
-    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.2));
+    background: var(--pref-chrome-glass, var(--overlay-white-light));
     -webkit-backdrop-filter: var(--chrome-blur-small);
     backdrop-filter: var(--chrome-blur-small);
     border: 1px solid var(--chrome-border-color);
@@ -24,7 +24,7 @@
     /* --pref-chrome-ink / --pref-chrome-glass: white on a dark frost over a
        dark preset or theme background (utils/readableText.js); the header's
        other glass buttons read them too. */
-    color: var(--pref-chrome-ink, rgb(44, 50, 112));
+    color: var(--pref-chrome-ink, var(--color-navy));
     border-radius: 0;   /* the middle of the header's button group (QUICK ACTIONS below) */
     padding: 3px var(--space-5) 4px var(--space-2);
     font-size: var(--chrome-font-size);
@@ -104,7 +104,7 @@
 }
 
 .mode-selector:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-medium);
     border-color: var(--color-primary-dark);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
@@ -280,13 +280,13 @@
 }
 
 .quick-actions-btn {
-    background: var(--pref-chrome-glass, rgba(255, 255, 255, 0.2));
+    background: var(--pref-chrome-glass, var(--overlay-white-light));
     -webkit-backdrop-filter: var(--chrome-blur-small);
     backdrop-filter: var(--chrome-blur-small);
     border: 1px solid var(--chrome-border-color);
     border-right-width: 0;   /* the picker's border is the divider */
     border-top-width: 0;     /* hangs from the hairline */
-    color: var(--pref-chrome-ink, rgb(44, 50, 112));   /* see the mode picker above */
+    color: var(--pref-chrome-ink, var(--color-navy));   /* see the mode picker above */
     border-radius: 0 0 0 var(--chrome-radius);
     min-height: var(--chrome-group-height);
     padding: 0 var(--space-3);
@@ -335,7 +335,7 @@
 }
 
 .quick-actions-btn:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-medium);
     border-color: var(--color-primary-dark);
 }
 
