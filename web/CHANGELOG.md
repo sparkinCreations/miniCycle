@@ -1,3 +1,7 @@
+## [2.680] - 2026-11-13
+- style(header): Actions and the mode picker read the colour tokens
+
+
 ## [2.679] - 2026-11-11
 - test: refresh the test-count manifest after a full run
 - fix(mcyc): files written from the published schema keep their recurring settings
