@@ -334,6 +334,32 @@ export async function runPreferencesManagerTests(resultsDiv) {
         if (el.style.getPropertyValue('--pref-complete-text') !== '') throw new Error('clearing should remove it');
     });
 
+    // Nov 2026: Dark Ocean's Complete Cycle read 1.45:1 and Golden Glow's Clear
+    // 1.01:1 — the words were never measured against the glass they sit on.
+    await test('every quick preset keeps Complete Cycle and Clear readable on the glass button', async () => {
+        const rt = await import(`../modules/utils/readableText.js?v=${cacheBuster}`);
+        const { QUICK_PRESET_DATA } = await import(`../modules/ui/quickPresetData.js?v=${cacheBuster}`);
+        // The button's frost (buttons.css --glass-btn-bg): 25% white over the page colour.
+        const glassOver = (bg) => '#' + [1, 3, 5]
+            .map(i => Math.round(255 * 0.25 + parseInt(bg.slice(i, i + 2), 16) * 0.75).toString(16).padStart(2, '0'))
+            .join('');
+        let checked = 0;
+        for (const [key, preset] of Object.entries(QUICK_PRESET_DATA)) {
+            const c = preset.colors;
+            if (!c?.appBg) continue;
+            const glass = glassOver(c.appBg);
+            for (const [name, pick] of [['Complete', c.completeBtn], ['Clear', c.clearBtn]]) {
+                const text = rt.actionTextColor(pick, c.appBg);
+                const ratio = rt.contrastRatio(text, glass);
+                if (!(ratio >= 4.5)) throw new Error(`${key} ${name}: ${text} on ${glass} is ${ratio?.toFixed(2)}:1, under 4.5:1`);
+                checked++;
+            }
+        }
+        if (checked < 2) throw new Error('no presets were checked');
+        // A preset that already read keeps its usual darkened colour exactly.
+        if (rt.actionTextColor('#fd79a8', '#ff6b6b') !== '#653043') throw new Error('Warm Complete Cycle should be unchanged');
+    });
+
     await test('readableText: corner buttons keep a readable icon for any colour', async () => {
         const rt = await import(`../modules/utils/readableText.js?v=${cacheBuster}`);
         const el = document.createElement('div');

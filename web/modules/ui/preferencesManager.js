@@ -1816,7 +1816,7 @@ export class PreferencesManager {
         applyActionTextColors(root, '--pref', {
             complete: normalizeHex(customColors.completeBtn) || null,
             clear: normalizeHex(customColors.clearBtn) || null
-        });
+        }, appBg);
         // A colour the user picked themselves (not a quick preset: handleColorChange
         // clears `preset`) gets the backing strip under the footer links, so any
         // colour works without the user having to think about it. A preset relies
@@ -1983,7 +1983,7 @@ export class PreferencesManager {
         applyActionTextColors(preview, '--preview', {
             complete: normalizeHex(customColors.completeBtn) || null,
             clear: normalizeHex(customColors.clearBtn) || null
-        });
+        }, normalizeHex(customColors.appBg) || null);
 
         // Handle checkbox fill visibility in preview
         const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);
