@@ -1951,6 +1951,13 @@ export class PreferencesManager {
             const inputValue = input?.value;
             const defaultColor = DEFAULT_COLORS[config.key];
 
+            // No Help text colour picked: leave the var unset so each preview
+            // panel shows its own live default (Help navy, Quick Actions white).
+            if (config.key === 'panelText' && !savedColor) {
+                preview.style.removeProperty(config.previewVar);
+                return;
+            }
+
             // Prefer saved color, then input value (if not the default black), then our default
             let color;
             if (savedColor) {

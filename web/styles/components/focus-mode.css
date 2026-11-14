@@ -419,9 +419,6 @@ body.focus-mode #help-window .help-window-size {
     display: none;
 }
 
-/* Mode-description title: the default accent color (blue) clashes with
-   the dim blue focus-mode overlay. White reads cleanly against the
-   blurred backdrop and stays distinct from the body text below. */
 /* Focus View's text over the dimmed page, measured Nov 2026 with the text
    hidden against the pixels behind it (light mode, default colours):
    - the Help line was 90% white on light glass, 4.0:1. It now has the photo
@@ -429,9 +426,13 @@ body.focus-mode #help-window .help-window-size {
    - the routine title was 78% gray on the card's strip, 3.4:1. It is opaque
      here unless a title colour is picked;
    - the unselected tabs were white at 40% opacity, 2.2:1 (NAV DOTS below).
-   Dark mode already measured 5.7:1 and up, and keeps its own panel. */
+   Dark mode already measured 5.7:1 and up, and keeps its own panel. A photo
+   background keeps its white title: its title bar is dark navy glass. */
 body.focus-mode:not(.dark-mode) {
     --pref-panel-bg: var(--photo-glass);
+}
+
+body.focus-mode:not(.dark-mode):not(.has-bg-image) {
     --task-list-title-text: var(--color-gray-800);
 }
 
@@ -439,6 +440,9 @@ body.focus-mode #help-window {
     color: var(--color-white);
 }
 
+/* Mode-description title: the default accent color (blue) clashes with
+   the dim blue focus-mode overlay. White reads cleanly against the
+   blurred backdrop and stays distinct from the body text below. */
 body.focus-mode #help-window h4 {
     color: var(--color-white);
 }

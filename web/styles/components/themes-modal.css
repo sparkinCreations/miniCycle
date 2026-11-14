@@ -649,6 +649,12 @@ body.dark-mode {
     transition: color var(--transition-normal) ease, opacity var(--transition-normal) ease;
 }
 
+/* The Help panel previews the Help window's own default: navy, or white where
+   the page is dark (--help-window-text). Quick Actions keeps white. */
+.preview-panel.preview-help-window {
+    color: var(--preview-panel-text, var(--help-window-text));
+}
+
 .preview-help-window {
     margin-left: auto;
 }

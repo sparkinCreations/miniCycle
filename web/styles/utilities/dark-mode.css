@@ -1213,6 +1213,10 @@ body.dark-mode .help-window {
     color: var(--pref-panel-text, var(--panel-text-default));
 }
 
+body.dark-mode .preview-panel.preview-help-window {
+    color: var(--preview-panel-text, var(--panel-text-default));
+}
+
 /* =============================================================================
    DARK MODE SETTINGS & REMINDERS MODALS
    ============================================================================= */
