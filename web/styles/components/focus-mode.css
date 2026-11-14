@@ -422,10 +422,21 @@ body.focus-mode #help-window .help-window-size {
 /* Mode-description title: the default accent color (blue) clashes with
    the dim blue focus-mode overlay. White reads cleanly against the
    blurred backdrop and stays distinct from the body text below. */
-/* The Help window's default navy (variables.css) is for the bright page;
-   here it sits on the dimmed overlay, so white like its title. */
-body.focus-mode {
-    --help-window-text: var(--panel-text-default);
+/* Focus View's text over the dimmed page, measured Nov 2026 with the text
+   hidden against the pixels behind it (light mode, default colours):
+   - the Help line was 90% white on light glass, 4.0:1. It now has the photo
+     background's dark frost and white text, like its title above;
+   - the routine title was 78% gray on the card's strip, 3.4:1. It is opaque
+     here unless a title colour is picked;
+   - the unselected tabs were white at 40% opacity, 2.2:1 (NAV DOTS below).
+   Dark mode already measured 5.7:1 and up, and keeps its own panel. */
+body.focus-mode:not(.dark-mode) {
+    --pref-panel-bg: var(--photo-glass);
+    --task-list-title-text: var(--color-gray-800);
+}
+
+body.focus-mode #help-window {
+    color: var(--color-white);
 }
 
 body.focus-mode #help-window h4 {
@@ -1012,7 +1023,11 @@ body.focus-mode #nav-dots {
     transform: translateX(-50%);
     z-index: var(--z-notification);
     gap: 0;
-    background: transparent;
+    /* The Help line's dark frost (Nov 2026): white on the bare dimmed page
+       measured 3.9-4.5:1 even at 85% on the lighter presets. Colour and
+       corners only — the tabs' own padding sizes the row, so nothing moves. */
+    background: var(--photo-glass);
+    border-radius: var(--radius-lg);
     pointer-events: auto;
 }
 
@@ -1036,7 +1051,9 @@ body.focus-mode #nav-dots .dot {
     font-size: var(--font-size-sm);
     font-weight: 500;
     letter-spacing: 0.02em;
-    opacity: 0.4;
+    /* 0.85, not the 0.4 it was until Nov 2026 (2.2:1 on the dimmed page; 85% on
+       the row's dark frost clears 4.5:1 on every preset). The dot marks the active tab. */
+    opacity: 0.85;
     text-align: center;
     justify-content: center;
     transition: opacity var(--transition-normal) ease;
@@ -1100,15 +1117,16 @@ body.focus-mode #nav-dots .dot[aria-controls="stats-panel"] {
     padding-left: 0;
 }
 
-/* Active tab = full opacity, inactive = faded (handled by base .dot rule) */
+/* Active tab = full opacity and the dot; inactive is slightly softer (base
+   .dot rule). Not bold: that widens the tab and shifts its neighbours. */
 body.focus-mode #nav-dots .dot.active {
-    opacity: 0.95;
+    opacity: 1;
 }
 
-/* Hover/focus lifts the faded tab so it's still discoverable */
+/* Hover/focus lifts the softer tab to full */
 body.focus-mode #nav-dots .dot:hover,
 body.focus-mode #nav-dots .dot:focus-visible {
-    opacity: 0.85;
+    opacity: 1;
 }
 
 body.focus-mode #nav-dots .dot.active:hover,
