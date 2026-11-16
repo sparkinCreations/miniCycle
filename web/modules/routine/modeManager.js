@@ -1167,12 +1167,17 @@ export class ModeManager {
                 this._closeQuickActionsMenu?.();
                 this._switchToTaskViewIfInStats();
 
-                // Focus the text input when showing the input bar
+                // Focus the text input when showing the input bar — in the
+                // tap itself: iOS opens the keyboard only for a focus() made
+                // inside the user's gesture, and the frame-later focus left the
+                // bar shown but not focused there (Nov 2026 QA report). The
+                // frame-later try stays as a fallback for a bar still hidden.
                 if (newVisible) {
-                    requestAnimationFrame(() => {
-                        const textInput = this.deps.getElementById(DOM_IDS.TASK_INPUT);
-                        textInput?.focus();
-                    });
+                    const textInput = this.deps.getElementById(DOM_IDS.TASK_INPUT);
+                    textInput?.focus();
+                    if (textInput && document.activeElement !== textInput) {
+                        requestAnimationFrame(() => textInput.focus());
+                    }
                 }
 
                 // Persist to active routine (per-routine setting)

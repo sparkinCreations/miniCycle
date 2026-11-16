@@ -30,7 +30,7 @@
 
 /* Focus ring on the entire container when input is focused */
 .task-input:focus-within {
-    box-shadow: var(--shadow-card), var(--shadow-focus-ring);
+    box-shadow: var(--shadow-card), var(--shadow-focus-ring-strong);
 }
 
 /* Hidden state - use visibility to reserve space and prevent CLS */
@@ -186,7 +186,7 @@ body:not(.high-contrast).has-bg-image:not(.focus-mode) #task-input-row {
 }
 
 body:not(.high-contrast) #task-input-row:focus-within {
-    box-shadow: inset 0 0 0 1px var(--input-rim), var(--chrome-shadow), var(--shadow-focus-ring);
+    box-shadow: inset 0 0 0 1px var(--input-rim), var(--chrome-shadow), var(--shadow-focus-ring-strong);
 }
 
 /* A rim, not a fill change: Add stays the solid steel main action. */

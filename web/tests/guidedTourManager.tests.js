@@ -318,6 +318,39 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    // Nov 2026 QA report: at a phone's right edge the ring got 12px on the left
+    // and 6px on the right, and the arrow pointed at nothing.
+    await test('spotlight ring is even on both sides and the arrow points at the target near an edge', async () => {
+        setupTargets();
+        const manager = await createManager({ appReady: false, settings: { onboardingCompleted: true, guidedTourStep: null } });
+        manager.startTour();
+        // A 36px target 18px from the right edge of the window.
+        const target = document.getElementById('mode-picker-btn') || document.querySelector('[id]');
+        assignRect(target, { left: window.innerWidth - 18 - 36, top: 200, width: 36, height: 36 });
+        manager._positionCurrentStep();
+        const spot = document.querySelector('.tour-spotlight');
+        const left = parseFloat(spot.style.left), width = parseFloat(spot.style.width);
+        const padLeft = (window.innerWidth - 18 - 36) - left;
+        const padRight = (left + width) - (window.innerWidth - 18);
+        if (Math.abs(padLeft - padRight) > 0.5) throw new Error(`ring uneven: left ${padLeft}px, right ${padRight}px`);
+        // The arrow offset aims at the target's centre, clamped 16px clear of
+        // the tooltip's corners (checked against the tooltip's own measured box:
+        // the test page does not load guided-tour.css).
+        const tooltip = document.querySelector('.tour-tooltip');
+        const pos = tooltip.dataset.position;
+        const arrow = tooltip.querySelector('.tour-tooltip-arrow');
+        const aw = arrow?.offsetWidth || 0;
+        const offset = parseFloat(tooltip.style.getPropertyValue('--tour-arrow-offset'));
+        if (Number.isNaN(offset)) throw new Error('arrow offset was not set');
+        const horizontal = pos === 'top' || pos === 'bottom';
+        const centre = horizontal ? window.innerWidth - 18 - 18 : 200 + 18;
+        const start = parseFloat(horizontal ? tooltip.style.left : tooltip.style.top);
+        const length = horizontal ? tooltip.getBoundingClientRect().width : tooltip.getBoundingClientRect().height;
+        const expected = Math.min(Math.max(centre - start - aw / 2, 16), length - 16 - aw);
+        if (Math.abs(offset - expected) > 0.5) throw new Error(`arrow offset ${offset}, expected ${expected} (${pos})`);
+        manager.endTour?.();
+    });
+
     await test('startTour resumes from the persisted step', async () => {
         setupTargets();
         const manager = await createManager({

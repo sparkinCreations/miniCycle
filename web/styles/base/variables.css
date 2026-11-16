@@ -629,6 +629,11 @@
 
   --shadow-focus-ring: 0 0 0 2px rgba(76, 121, 255, 0.5);
   --shadow-focus-ring-subtle: 0 0 0 2px rgba(76, 121, 255, 0.2);
+  /* The add-task bar when it has focus: a white ring inside a deep blue one,
+     visible on the blue page, a photo or a dark theme. --shadow-focus-ring
+     (2px of 50% blue) all but vanished on the page gradient — the bar looked
+     unfocused after Add (Nov 2026 QA report). */
+  --shadow-focus-ring-strong: 0 0 0 2px var(--color-white), 0 0 0 4px var(--color-primary-dark);
 
   /* Modal / overlay */
   --shadow-modal: 0 20px 40px rgba(0, 0, 0, 0.15);
@@ -638,6 +643,10 @@
   /* Component-specific */
   --shadow-toast: 0 8px 20px rgba(0, 0, 0, 0.3);
   --shadow-dropdown: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* The header's + and mode pop-ups: lifted clear of the page (a near and a
+     far shadow). --shadow-dropdown left them looking flat on the light-blue
+     page (Nov 2026 QA report). */
+  --shadow-popover: 0 2px 6px rgba(0, 0, 0, 0.18), 0 12px 32px rgba(0, 0, 0, 0.28);
   --shadow-input: 0 4px 6px rgba(0, 0, 0, 0.2);
 
   /* Colored glows */

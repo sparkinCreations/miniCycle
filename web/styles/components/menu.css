@@ -108,6 +108,14 @@ body.mode-picker-open .main-menu-backdrop {
     visibility: visible;
 }
 
+/* The header's small pop-ups dim the page more than the full menu panel
+   does: at 15% the + menu barely stood apart from the page behind it (Nov
+   2026 QA report). */
+body.quick-actions-open .main-menu-backdrop,
+body.mode-picker-open .main-menu-backdrop {
+    background: var(--overlay-backdrop);
+}
+
 /* Elevate the hamburger menu button above the backdrop when the menu
    is open — this keeps it crisp (not blurred) and visually anchors the
    close-affordance for the user. */

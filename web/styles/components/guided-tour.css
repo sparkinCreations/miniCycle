@@ -65,24 +65,26 @@ html[data-tour-active] body {
     transform: rotate(45deg);
 }
 
+/* --tour-arrow-offset (guidedTourManager) puts the arrow at the target's
+   centre; the fixed values are the fallback. */
 .tour-tooltip[data-position="top"] .tour-tooltip-arrow {
     bottom: calc(-1 * var(--space-2));
-    left: var(--space-8);
+    left: var(--tour-arrow-offset, var(--space-8));
 }
 
 .tour-tooltip[data-position="bottom"] .tour-tooltip-arrow {
     top: calc(-1 * var(--space-2));
-    left: var(--space-8);
+    left: var(--tour-arrow-offset, var(--space-8));
 }
 
 .tour-tooltip[data-position="left"] .tour-tooltip-arrow {
     right: calc(-1 * var(--space-2));
-    top: var(--space-6);
+    top: var(--tour-arrow-offset, var(--space-6));
 }
 
 .tour-tooltip[data-position="right"] .tour-tooltip-arrow {
     left: calc(-1 * var(--space-2));
-    top: var(--space-6);
+    top: var(--tour-arrow-offset, var(--space-6));
 }
 
 .tour-step-count {

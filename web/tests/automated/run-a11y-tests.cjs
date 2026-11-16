@@ -297,6 +297,24 @@ async function run() {
             await page.evaluate(() => document.querySelector('#notification-container .notification')?.remove());
         }
 
+        // Add Tasks focuses the bar it reveals INSIDE the click (Nov 2026 QA
+        // report): iOS only opens the keyboard for a focus() made within the
+        // user's gesture, and the old frame-later focus missed it there.
+        {
+            const r = await page.evaluate(() => {
+                const toggle = document.getElementById('toggle-task-input-btn');
+                const row = document.getElementById('task-input-row');
+                if (!toggle || !row) return 'no Add Tasks toggle';
+                if (!row.classList.contains('hidden')) toggle.click();   // start from hidden
+                toggle.click();
+                const synchronous = document.activeElement?.id === 'taskInput';
+                return synchronous ? 'ok' : `focus after the click was on ${document.activeElement?.id || document.activeElement?.tagName}`;
+            });
+            if (r === 'ok') console.log(`   ${colors.green}✅${colors.reset} Add Tasks focuses the task input within the click`);
+            else { console.log(`   ${colors.red}❌ Add Tasks: ${r}${colors.reset}`); failures.push(`Add Tasks focus: ${r}`); }
+            await page.evaluate(() => document.activeElement?.blur?.());
+        }
+
         for (const surface of SURFACES) {
             // Menus need the menu open first; modals are reached from it.
             const needsMenu = !['main menu', 'task options customizer', 'stats panel'].includes(surface.name);

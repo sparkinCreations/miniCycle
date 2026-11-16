@@ -1234,6 +1234,19 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     box-shadow: var(--chrome-shadow);
 }
 
+/* Home View: centred on the progress row, the 36px button reached up to
+   within 1-2px of the routine card above it and looked stuck to it (Nov 2026
+   QA report). `translate`, not a margin or `top`: it moves only the drawing,
+   so the row, the bar and everything measured from them stay put, and it
+   composes with the hover scale below. Browsers without the property keep
+   the old spot. Phones only: on a short desktop window (1280x800) the nudge
+   pushed the button past the nav-dot line (test:layout). */
+@media (max-width: 767px) {
+    .progress-focus-row > .focus-mode-btn {
+        translate: 0 var(--space-1-5);   /* 1px gap → 7px: inside test:layout's 1-8px "hangs just beneath" band */
+    }
+}
+
 @media (hover: hover) and (pointer: fine) {
     .focus-mode-btn:hover {
         background: var(--color-white-a22);
