@@ -1,3 +1,8 @@
+## [2.684] - 2026-11-16
+- fix(onboarding): First Cycle Complete card drops the keyboard keys
+- ci: run the Nu HTML checker as a service container instead of the rate-limited public validator
+
+
 ## [2.683] - 2026-11-16
 - feat(a11y): tooltips show each control's keyboard shortcut; feedback is not sent twice
 - fix(qa): tour ring and arrow centre on their target; Focus View button clears the card; Add Tasks shows focus; header pop-ups stand off the page
