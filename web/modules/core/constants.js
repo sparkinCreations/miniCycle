@@ -1677,6 +1677,8 @@ export const DOM_IDS = Object.freeze({
     // ---- Routine Switcher ----
     MINI_CYCLE_LIST: 'miniCycleList',
     ROUTINE_SEARCH_INPUT: 'routine-search-input',
+    ROUTINE_SEARCH_CLEAR: 'routine-search-clear',
+    ROUTINE_SEARCH_EMPTY: 'routine-search-empty',
     SWITCH_ITEMS_ROW: 'switch-items-row',
     SORT_ALPHA: 'sort-alpha',
     SORT_RECENT: 'sort-recent',

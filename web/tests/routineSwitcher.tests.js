@@ -980,6 +980,59 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
     });
 
     // === SUMMARY ===
+
+    // Nov 2026 QA report: the list view's search had no Clear (×), and a search
+    // that hid every routine left the list blank with no message.
+    const searchFixture = () => {
+        document.querySelectorAll('#rs-search-fixture').forEach(e => e.remove());
+        const root = document.createElement('dialog');
+        root.id = 'rs-search-fixture';
+        root.innerHTML = `
+            <input type="text" id="routine-search-input">
+            <button type="button" id="routine-search-clear" hidden>×</button>
+            <div id="miniCycleList">
+                <div class="mini-cycle-switch-item" data-cycle-key="a" data-cycle-name="Morning"><span class="cycle-item-title">Morning</span></div>
+                <div class="mini-cycle-switch-item" data-cycle-key="b" data-cycle-name="Evening"><span class="cycle-item-title">Evening</span></div>
+            </div>
+            <p id="routine-search-empty" hidden>No routines match</p>`;
+        document.body.appendChild(root);
+        root.show();
+        const get = (id) => root.querySelector('#' + id);
+        const instance = new RoutineSwitcher({ getElementById: get, getModal: () => root, querySelector: (s) => root.querySelector(s) });
+        return { root, get, instance };
+    };
+
+    await test('routine search: the clear button shows with text, clears, and refocuses the box', async () => {
+        const { root, get, instance } = searchFixture();
+        try {
+            instance.setupSearchInput();
+            const input = get('routine-search-input'), clear = get('routine-search-clear');
+            if (!clear.hidden) throw new Error('× should be hidden while the box is empty');
+            input.value = 'zzz';
+            input.dispatchEvent(new Event('input'));
+            if (clear.hidden) throw new Error('× should show once the box has text');
+            clear.click();
+            if (input.value !== '') throw new Error('× did not clear the box');
+            if (!clear.hidden) throw new Error('× should hide again once cleared');
+            if (document.activeElement !== input) throw new Error('focus should return to the box');
+            const showing = [...root.querySelectorAll('.mini-cycle-switch-item')].filter(r => r.style.display !== 'none').length;
+            if (showing !== 2) throw new Error(`every routine should show again, got ${showing}`);
+        } finally { instance.destroy?.(); root.remove(); }
+    });
+
+    await test('routine search: a search that hides every routine says so', async () => {
+        const { root, get, instance } = searchFixture();
+        try {
+            instance.filterRoutineList('zzz');
+            if (get('routine-search-empty').hidden) throw new Error('"No routines match" should show');
+            instance.filterRoutineList('Morn');
+            if (!get('routine-search-empty').hidden) throw new Error('the message should hide while something matches');
+            instance.filterRoutineList('');
+            if (!get('routine-search-empty').hidden) throw new Error('an empty search is not "no matches"');
+        } finally { root.remove(); }
+    });
+
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
 

@@ -182,10 +182,16 @@ dialog.mini-cycle-switch-modal[open] {
    ROUTINE SEARCH
    ============================================================================= */
 
+/* The box and its × clear button (shown only while the box holds text). */
+.routine-search-field {
+    position: relative;
+    margin-bottom: var(--space-2);
+}
+
 input.routine-search-input {
     width: 100%;
-    padding: var(--space-2) var(--space-3);
-    margin-bottom: var(--space-2);
+    padding: var(--space-2) var(--space-8) var(--space-2) var(--space-3);
+    margin-bottom: 0;
     border: 1px solid var(--border-blue-subtle-hover);
     border-radius: var(--radius-5);
     background: transparent;
@@ -209,6 +215,40 @@ input.routine-search-input:focus {
 
 .routine-search-input::placeholder {
     color: var(--color-gray-400);
+}
+
+.routine-search-clear {
+    position: absolute;
+    top: 50%;
+    right: var(--space-1);
+    transform: translateY(-50%);
+    min-width: 28px;
+    min-height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--theme-text-muted, var(--color-neutral-555555));
+    font-size: var(--font-size-lg);
+    line-height: 1;
+    cursor: pointer;
+}
+
+.routine-search-clear:hover {
+    color: var(--theme-text-primary, var(--color-neutral-222222));
+}
+
+.routine-search-clear:focus-visible {
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
+    outline-offset: 2px;
+}
+
+/* A search that hides every routine says so (the list was just blank). */
+.routine-search-empty {
+    margin: var(--space-3) 0 0;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--theme-text-muted, var(--color-neutral-555555));
 }
 
 /* Search match highlighting */
@@ -1089,7 +1129,7 @@ input.routine-search-input:focus {
 
     /* Exactly the preview column below it: its share of the body after the gap
        (the 6 / 5 split on .routine-switcher-left and -right). */
-    input.routine-search-input {
+    .routine-search-field {
         flex: 0 0 auto;
         width: calc((100% - var(--space-4)) * 5 / 11);
         margin-bottom: 0;
@@ -1211,7 +1251,7 @@ input.routine-search-input:focus {
         flex-wrap: wrap;
     }
 
-    input.routine-search-input {
+    .routine-search-field {
         flex: 0 0 100%;
         order: -1;
         margin-bottom: 0;
@@ -1386,7 +1426,7 @@ input.routine-search-input:focus {
 
 /* The actions row is not in this list: it is shown by an inline style, so
    setListExpanded() hides it in JS rather than outranking that here. */
-.routine-list-expanded .routine-sort-filter-row > :not(.routine-search-input),
+.routine-list-expanded .routine-sort-filter-row > :not(.routine-search-field),
 .routine-list-expanded :is(.recent-routines-section, .routine-switcher-right, .theme-picker-row, .switch-action-row, .storage-bar-container, .routine-list-hint) {
     display: none;
 }

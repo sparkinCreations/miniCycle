@@ -1854,7 +1854,11 @@
                 <button id="sort-recent" class="routine-sort-btn" title="Sort by recently used" aria-pressed="false" data-label-key="switcher.sortRecent" data-label-title-key="switcher.sortRecentTitle">Recent</button>
                 <button id="sort-size" class="routine-sort-btn" title="Sort by file size" aria-pressed="false" data-label-key="switcher.sortSize" data-label-title-key="switcher.sortSizeTitle">Size</button>
             </div>
-            <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
+            <!-- The × clears the search (shown only while it holds text), as task search's does (Nov 2026 QA report) -->
+            <div class="routine-search-field">
+                <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
+                <button type="button" id="routine-search-clear" class="routine-search-clear" hidden aria-label="Clear search" title="Clear search" data-label-aria-key="action.clearSearch" data-label-title-key="action.clearSearch">×</button>
+            </div>
         </div>
 
         <div class="routine-switcher-body">
@@ -1862,6 +1866,8 @@
                 <!-- The list's heading, with Expand / Collapse (icon + label set by routineSwitcher._wireListExpand) -->
                 <div class="routine-panel-title routine-list-title"><span>Routines</span><button type="button" id="routine-list-expand-btn" class="routine-list-expand-btn" aria-expanded="false" aria-controls="miniCycleList" aria-label="Expand the routine list" title="Expand the routine list"></button></div>
                 <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
+                <!-- Shown when a search hides every routine; the list was simply blank before -->
+                <p id="routine-search-empty" class="routine-search-empty" hidden data-label-key="routineBrowser.noMatches">No routines match</p>
                 <div id="routine-list-hint" class="routine-list-hint"></div>
             </div>
 
