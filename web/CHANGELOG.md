@@ -1,3 +1,19 @@
+## [2.683] - 2026-11-16
+- feat(a11y): tooltips show each control's keyboard shortcut; feedback is not sent twice
+- fix(qa): tour ring and arrow centre on their target; Focus View button clears the card; Add Tasks shows focus; header pop-ups stand off the page
+- fix(qa): eight issues from the Nov 2026 QA report
+- fix(routines): the list view's search gets a clear button and says when nothing matches
+- fix(a11y): keyboard reaches the priority level picker; Focus View tip shows its exit button
+- fix(a11y): notifications are spoken by VoiceOver, including undo
+- fix(a11y): a task's spoken name follows its recurring state
+- fix(a11y): screen readers hear what changed by name, not the whole task list
+- docs(legal): accessibility statement drops the white-footer limitation
+- style(legal): Back button, callouts, links and copyright clear 4.5:1
+- style(pages): product, learn-more and .mcyc pages read colour tokens
+- style(legal): the legal pages read colour tokens
+- feat(dashboard): overhaul the landing-page dashboard; hour chart follows the range
+
+
 ## [2.682] - 2026-11-16
 - style(footer): deep navy links over the gradient, gated in every state
 - style(quick-actions): Recently Used text reads the side-panel navy
