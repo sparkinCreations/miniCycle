@@ -1250,7 +1250,10 @@
     </div>
   </div>
 
-  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div>
+  <!-- Not a live region (Nov 2026): the popover is re-shown for every
+       notification, and VoiceOver skipped text that arrived as the region came
+       back. Notifications are spoken through utils/announce.js instead. -->
+  <div id="notification-container" popover="manual"></div>
 
 
   

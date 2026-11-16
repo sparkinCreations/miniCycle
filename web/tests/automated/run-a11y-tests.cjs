@@ -240,10 +240,11 @@ async function run() {
         // task list is rebuilt with replaceChildren() on every refresh: as a live
         // region it handed a screen reader the WHOLE list — and a recurring task
         // coming back was never named. The Help window re-spoke its status line
-        // ("13 tasks remaining • ~11 KB") after nearly every action. Both now
-        // announce through utils/announce.js by name instead.
+        // ("13 tasks remaining • ~11 KB") after nearly every action. The
+        // notification popover is re-shown per notification, so VoiceOver never
+        // spoke text arriving in it. All three speak through utils/announce.js.
         {
-            const live = await page.evaluate(() => ['taskList', 'help-window'].map(id => {
+            const live = await page.evaluate(() => ['taskList', 'help-window', 'notification-container'].map(id => {
                 const el = document.getElementById(id);
                 if (!el) return `${id}: missing`;
                 const politeness = el.getAttribute('aria-live');
@@ -252,7 +253,7 @@ async function run() {
                     ? `${id} is a live region (aria-live="${politeness || ''}" role="${role}")` : null;
             }).filter(Boolean));
             if (live.length === 0) {
-                console.log(`   ${colors.green}✅${colors.reset} task list and Help window are not live regions`);
+                console.log(`   ${colors.green}✅${colors.reset} task list, Help window and notification container are not live regions`);
             } else {
                 live.forEach(msg => { console.log(`   ${colors.red}❌ ${msg}${colors.reset}`); failures.push(msg); });
             }

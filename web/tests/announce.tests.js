@@ -66,6 +66,38 @@ export async function runAnnounceTests(resultsDiv) {
         }
     });
 
+    // Nov 2026: notifications are spoken through announce(); one and a task line
+    // can land in the same frame, and the newest used to win.
+    await test('two messages in the same frame are both spoken', async () => {
+        const h = buildRegion();
+        try {
+            mod.announce('Task completed: Stretch', { getElementById: h.getElementById });
+            mod.announce('Undone: Task added', { getElementById: h.getElementById });
+            await h.settle();
+            const text = h.region.textContent;
+            if (!text.includes('Stretch') || !text.includes('Undone')) throw new Error(`expected both messages, got "${text}"`);
+        } finally {
+            h.cleanup();
+        }
+    });
+
+    await test('within: speaks inside an open dialog, through a region created there', async () => {
+        const dialog = document.createElement('dialog');
+        document.body.appendChild(dialog);
+        try {
+            mod.announce('Settings saved', { within: dialog });
+            const region = dialog.querySelector('.announce-region');
+            if (!region || region.getAttribute('aria-live') !== 'polite') throw new Error('no polite region inside the dialog');
+            if (region.textContent !== '') throw new Error('the text must arrive in a later frame than the region');
+            await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+            if (region.textContent !== 'Settings saved') throw new Error(`got "${region.textContent}"`);
+            mod.announce('Again', { within: dialog });
+            if (dialog.querySelectorAll('.announce-region').length !== 1) throw new Error('the region must be reused, not duplicated');
+        } finally {
+            dialog.remove();
+        }
+    });
+
     await test('returns false and does not throw when there is no live region', () => {
         const result = mod.announce('anything', { getElementById: () => null });
         if (result !== false) throw new Error(`expected false, got ${result}`);

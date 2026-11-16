@@ -1023,6 +1023,8 @@ export const DOM_CLASSES = Object.freeze({
 
     // ---- Task State ----
     RECURRING: 'recurring',
+    VISUALLY_HIDDEN: 'visually-hidden',  // on screen for assistive tech only (helpers.css)
+    ANNOUNCE_REGION: 'announce-region', // the hidden live region announce() keeps inside an open modal dialog
     HIGH_PRIORITY: 'high-priority',
     KEPT_TASK: 'kept-task',
     SHOW_DELETE_INDICATOR: 'show-delete-indicator',

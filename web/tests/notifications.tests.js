@@ -256,6 +256,46 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Nov 2026, found with VoiceOver: the container popover is re-shown for every
+    // notification, and VoiceOver skipped text arriving as the region came back
+    // ("Undone: …" was silent). Notifications are spoken through announce().
+    const settleFrames = () => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+    await test('show() speaks the message (not the Close button) through the live region', async () => {
+        setupMockGlobals();
+        createNotificationContainer();
+        let region = document.getElementById('live-region');
+        const made = !region;
+        if (made) { region = document.createElement('div'); region.id = 'live-region'; document.body.appendChild(region); }
+        try {
+            const notifications = new window.MiniCycleNotifications();
+            notifications.show('Undone: Task completed: Stretch', 'success', 3000);
+            await settleFrames();
+            const spoken = region.textContent;
+            if (!spoken.includes('Undone: Task completed: Stretch')) throw new Error(`message not spoken, got "${spoken}"`);
+            if (/close/i.test(spoken)) throw new Error(`the Close button was spoken: "${spoken}"`);
+        } finally {
+            if (made) region.remove();
+        }
+    });
+
+    await test('show() while a modal dialog is open speaks inside that dialog', async () => {
+        setupMockGlobals();
+        createNotificationContainer();
+        const dialog = document.createElement('dialog');
+        document.body.appendChild(dialog);
+        dialog.showModal();
+        try {
+            const notifications = new window.MiniCycleNotifications();
+            notifications.show('Settings saved', 'info', 3000);
+            await settleFrames();
+            const inDialog = dialog.querySelector('.announce-region')?.textContent || '';
+            if (!inDialog.includes('Settings saved')) throw new Error(`not spoken inside the open dialog, got "${inDialog}"`);
+        } finally {
+            dialog.close();
+            dialog.remove();
+        }
+    });
+
     // Browse Routines: a toast over it covers the routine being read (the user,
     // Oct 2026). Held while its dialog is open, shown when it closes; errors
     // still show at once.

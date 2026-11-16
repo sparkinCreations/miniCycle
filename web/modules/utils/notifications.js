@@ -39,6 +39,7 @@ import { UI_TIMEOUTS, COLORS, DEFAULT_PRIORITY_SWATCHES, DOM_IDS, DOM_SELECTORS,
 import { getLabel } from '../labels/labelResolver.js';
 import { getLevelForColor } from './priorityLevel.js';
 import { reshowPopover } from './popoverUtils.js';
+import { announce, openModalDialog } from './announce.js';
 import { EducationalTipManager } from './educationalTips.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import { prefersReducedMotion } from './motionPreference.js';
@@ -260,6 +261,31 @@ export class MiniCycleNotifications {
   }
 
   /**
+   * Speak a notification's text to screen readers.
+   *
+   * The container is a popover, re-shown (hidePopover + showPopover) for every
+   * notification so it stays above open dialogs. A hidden popover leaves the
+   * accessibility tree, so each notification landed in a live region that had
+   * only just come back — and VoiceOver does not speak a region's content when
+   * the region and the content arrive together. Measured with VoiceOver, Nov
+   * 2026: "Undone: …" was never spoken. The container is therefore no longer a
+   * live region; the text goes through announce(), which writes into a region
+   * that already exists — the body's, or one inside the open modal dialog.
+   * Controls are left out (Close, actions, the quick-recurring choices): they
+   * are reachable on their own, and read aloud they only pad the message.
+   * @param {HTMLElement} notification
+   * @param {HTMLElement} container
+   * @returns {void}
+   * @private
+   */
+  _speak(notification, container) {
+    const copy = notification.cloneNode(true);
+    copy.querySelectorAll('button, input, select, [role="button"], [role="radio"], [aria-hidden="true"]').forEach((el) => el.remove());
+    const text = (copy.textContent || '').replace(/\s+/g, ' ').trim();
+    if (text) announce(text, { within: openModalDialog(container) });
+  }
+
+  /**
    * Defensive recovery: rebuild the notification container if it's missing
    * from the DOM. This protects against the edge case where a `<dialog>` that
    * held the container (via NotificationDialogHost reparenting) was removed
@@ -276,9 +302,6 @@ export class MiniCycleNotifications {
       const recovered = document.createElement('div');
       recovered.id = DOM_IDS.NOTIFICATION_CONTAINER;
       recovered.setAttribute('popover', 'manual');
-      recovered.setAttribute('aria-live', 'polite');
-      recovered.setAttribute('aria-atomic', 'true');
-      recovered.setAttribute('role', 'status');
       body.appendChild(recovered);
       console.warn('⚠️ Notification container was missing — recreated. (Likely cause: a <dialog> that held it was removed before its close event reparented it back.)');
       return recovered;
@@ -356,8 +379,9 @@ export class MiniCycleNotifications {
           .forEach(c => notification.classList.add(c));
       }
 
-      // Accessibility: role="alert" for urgent types, role="status" for others
-      notification.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
+      // No role here (Nov 2026): the text is spoken through announce() once the
+      // notification is in place (_speak). See _speak for why the container
+      // itself is not a live region.
 
       // ✅ XSS PROTECTION: Always escape HTML in message content (DI-pure)
       // Security fix (v1.353): Remove bypass condition to prevent XSS
@@ -525,6 +549,7 @@ export class MiniCycleNotifications {
       } else {
         notificationContainer.appendChild(notification);
       }
+      this._speak(notification, notificationContainer);
 
       // Skip drag/position for in-dialog notifications (custom container)
       if (!options?.container) {
@@ -617,8 +642,9 @@ export class MiniCycleNotifications {
       if (type === "warning") notification.classList.add(DOM_CLASSES.NOTIFICATION_WARNING);
       if (type === "recurring") notification.classList.add(DOM_CLASSES.RECURRING);
 
-      // Accessibility: role="alert" for urgent types, role="status" for others
-      notification.setAttribute('role', (type === 'error' || type === 'warning') ? 'alert' : 'status');
+      // No role here (Nov 2026): the text is spoken through announce() once the
+      // notification is in place (_speak). See _speak for why the container
+      // itself is not a live region.
 
       // Check if HTML already has a close button before adding one (only for trusted content)
       const tempDiv = document.createElement("div");
@@ -635,6 +661,7 @@ export class MiniCycleNotifications {
       }
 
       notificationContainer.appendChild(notification);
+      this._speak(notification, notificationContainer);
 
       // Track cleanup function for timeouts
       let cleanupTimeouts = null;

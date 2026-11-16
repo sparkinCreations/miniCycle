@@ -189,8 +189,9 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
 ### Screen Reader Announcements ✅
 
 **Live regions announce:**
-- Notifications (via `aria-live="polite"` container)
-- Everything else through ONE helper, `utils/announce.js` → `#live-region`: task added /
+- Everything through ONE helper, `utils/announce.js` → `#live-region` (or, while a modal
+  dialog is open, a hidden region inside that dialog — `announce(msg, { within })`):
+  every notification's text (`notifications.js` `_speak`), task added /
   completed / uncompleted (by name), a recurring task coming back ("Recurring task back:
   …", named up to `LIMITS.RECURRING_NAMED_MAX`), routine switched / created / renamed, dark
   mode, task moves, and the Help window's one-off messages (a mode's description, tips,
@@ -202,16 +203,20 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
   recurring task was never named).
 - `#help-window` (`role="note"`) — as `role="status"` it re-spoke "13 tasks remaining •
   ~11 KB" after nearly every action.
+- `#notification-container` — a popover, hidden and re-shown for every notification to stay
+  above dialogs; a hidden popover leaves the accessibility tree, so each notification
+  arrived in a region that had only just come back, and VoiceOver did not speak it
+  (found with VoiceOver, Nov 2026: "Undone: …" was silent).
 
-`test:a11y` fails if either becomes a live region again. A task row's accessible name
+`test:a11y` fails if any of the three becomes a live region again. A task row's accessible name
 carries ", recurring" (`action.taskItemRecurring`); every place that turns recurring on or
 off goes through `setTaskRecurringState()` in `task/taskUtils.js`, which sets the class and
 the name together.
 
 **Implementation:**
 ```html
-<!-- Notification container (miniCycle.html) -->
-<div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div>
+<!-- Notification container (miniCycle.html) — NOT a live region; see above -->
+<div id="notification-container" popover="manual"></div>
 
 <!-- Hidden screen reader announcements (miniCycle.html) -->
 <div id="live-region" aria-live="polite"
