@@ -840,8 +840,10 @@ body > .edit-focus-overlay.search-page-overlay.active {
 /* Show a chevron hint on the active chip when collapsed */
 .filter-chip-group.collapsed .filter-chip.active::after {
     content: ' ▾';
-    font-size: 9px;
-    opacity: 0.6;
+    /* Full size and strength: at 9px / 60% the ▾ was hard to see, so the chip
+       did not read as a dropdown (Nov 2026 QA report). */
+    font-size: 1em;
+    opacity: 1;
 }
 
 /* A row just recreated from History / Cleared Tasks: the user is brought to

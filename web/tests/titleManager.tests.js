@@ -95,6 +95,22 @@ export async function runTitleManagerTests(resultsDiv) {
         return deps;
     }
 
+    // Nov 2026 QA report: Enter on the routine title inserted a line break.
+    const titleKeydownCase = (key, isComposing) => {
+        const el = document.createElement('div');
+        el.contentEditable = 'true';
+        document.body.appendChild(el);
+        el.focus();
+        let blurred = false;
+        el.addEventListener('blur', () => { blurred = true; });
+        const ev = new KeyboardEvent('keydown', { key, isComposing, cancelable: true, bubbles: true });
+        el.addEventListener('keydown', mod.handleMiniCycleTitleKeydown);
+        el.dispatchEvent(ev);
+        const result = { prevented: ev.defaultPrevented, blurred };   // before remove(): removing a focused node fires blur
+        el.remove();
+        return result;
+    };
+
     // ── Module Loading (keep original smoke checks) ──────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">📦 Module Loading</h4>';
 
@@ -106,6 +122,15 @@ export async function runTitleManagerTests(resultsDiv) {
         if (typeof mod.setTitleManagerDependencies !== 'function') {
             throw new Error(`Expected function, got ${typeof mod.setTitleManagerDependencies}`);
         }
+    });
+
+    await test('Enter ends the title edit instead of adding a line', () => {
+        const r = titleKeydownCase('Enter', false);
+        if (!r.prevented || !r.blurred) throw new Error(`Enter should be prevented and end editing: ${JSON.stringify(r)}`);
+        const ime = titleKeydownCase('Enter', true);
+        if (ime.prevented || ime.blurred) throw new Error('Enter that confirms IME composition must be left alone');
+        const other = titleKeydownCase('a', false);
+        if (other.prevented || other.blurred) throw new Error('ordinary keys must be left alone');
     });
 
     await test('setupMiniCycleTitleListener is an exported function', () => {

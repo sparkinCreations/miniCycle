@@ -328,6 +328,17 @@ export class ModalManager {
                     return;
                 }
 
+                // Optional email, but an entered one must be an address. The
+                // form is novalidate, so the browser's own type="email" check
+                // never ran ("test123@" was accepted) — ask the input directly.
+                if (emailInput?.value.trim() && !emailInput.checkValidity()) {
+                    emailInput.setAttribute('aria-invalid', 'true');
+                    this.deps.showNotification(getLabel('feedback.emailInvalid'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    emailInput.focus();
+                    return;
+                }
+                emailInput?.removeAttribute('aria-invalid');
+
                 // Disable button while sending
                 if (submitButton) {
                     submitButton.disabled = true;

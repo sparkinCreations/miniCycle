@@ -575,6 +575,51 @@ export async function runModalManagerTests(resultsDiv) {
         openBtn.remove();
     });
 
+    // Nov 2026 QA report: "test123@" was accepted (the form is novalidate).
+    test('feedback: an invalid email blocks the send; a valid one goes through', () => {
+        const warnings = [];
+        const mm = new ModalManager({
+            safeAddEventListener: mockSafeAddEventListener,
+            showNotification: (msg) => warnings.push(msg)
+        });
+        const modal = document.createElement('dialog');
+        modal.id = 'feedback-modal';
+        modal.innerHTML = `
+            <button class="close-feedback-modal"></button>
+            <form id="feedback-form" novalidate>
+                <input type="hidden" id="feedback-rating-value" value="5">
+                <textarea id="feedback-text"></textarea>
+                <input type="email" id="feedback-email">
+                <button type="submit" id="submit-feedback">Submit</button>
+            </form>
+            <div id="thank-you-message"></div>`;
+        document.body.appendChild(modal);
+        const openBtn = document.createElement('button');
+        openBtn.id = 'open-feedback-modal';
+        document.body.appendChild(openBtn);
+        const realFetch = window.fetch;
+        let sends = 0;
+        window.fetch = () => { sends++; return new Promise(() => {}); };
+        try {
+            mm.setupFeedbackModal();
+            const form = modal.querySelector('#feedback-form');
+            const email = modal.querySelector('#feedback-email');
+            email.value = 'test123@';
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+            if (sends !== 0) throw new Error('an invalid email was sent');
+            if (email.getAttribute('aria-invalid') !== 'true') throw new Error('the email field was not marked invalid');
+            if (!warnings.some(w => /valid email/i.test(w))) throw new Error(`no warning shown: ${JSON.stringify(warnings)}`);
+            email.value = 'test123@example.com';
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+            if (sends !== 1) throw new Error('a valid email (with a rating) should send');
+            if (email.hasAttribute('aria-invalid')) throw new Error('aria-invalid should clear once the email is valid');
+        } finally {
+            window.fetch = realFetch;
+            modal.remove();
+            openBtn.remove();
+        }
+    });
+
     // ===== ABOUT MODAL TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">ℹ️ About Modal</h4>';

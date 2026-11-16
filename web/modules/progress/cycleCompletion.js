@@ -519,11 +519,36 @@ export function animateProgressBarEmpty() {
         progressBar.style.setProperty('--progress', '0');
         progressBar.classList.remove(DOM_CLASSES.PROGRESS_COMPLETE);
         progressBar.setAttribute('aria-valuenow', '0');
+        describeProgress(progressBar, 0, (getActiveRoutineTasks() ?? []).length);
         // Clear transition after animation completes (300ms + buffer)
         setTimeout(() => {
             progressBar.style.transition = "";
         }, 350);
     }
+}
+
+/**
+ * Say what the bar shows: "3 of 12 tasks done (25%)" as a tooltip on the
+ * visible track and as the bar's spoken value. It had neither, so a sighted
+ * user saw an unlabelled track that read like a slider (Nov 2026 QA report),
+ * and a screen reader heard only a bare percentage.
+ * @param {HTMLElement} progressBar - the fill (#progressBar)
+ * @param {number} done
+ * @param {number} total
+ * @returns {void}
+ */
+function describeProgress(progressBar, done, total) {
+    const track = progressBar.parentElement;
+    if (total <= 0) {
+        progressBar.removeAttribute('aria-valuetext');
+        track?.removeAttribute('title');
+        return;
+    }
+    const text = getLabel('accessibility.routineProgress', {
+        vars: { done, total, taskWord: getLabel('noun.task', { count: total }), percent: Math.round((done / total) * 100) }
+    });
+    progressBar.setAttribute('aria-valuetext', text);
+    track?.setAttribute('title', text);
 }
 
 /**
@@ -555,6 +580,7 @@ export function updateProgressBar() {
     progressBar.style.transition = `width ${duration} ease-out`;
     progressBar.style.setProperty('--progress', String(progress / 100));
     progressBar.setAttribute('aria-valuenow', String(Math.round(progress)));
+    describeProgress(progressBar, completedTasks, totalTasks);
     // 100% gets a one-shot sheen (CSS keyframes, off under reduced motion).
     progressBar.classList.toggle(DOM_CLASSES.PROGRESS_COMPLETE, totalTasks > 0 && completedTasks === totalTasks);
 

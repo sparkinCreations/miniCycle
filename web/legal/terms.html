@@ -123,6 +123,19 @@ p {
   /* Straight on the page blue: #333 at 85% was 3.45:1. */
   color: var(--color-neutral-111111);
 }
+/* Back button and the "Legal" badge: a row with a real gap, centred on each
+   other. They were two inline boxes ~4px apart, the badge sitting low because
+   only the button carried a bottom margin (Nov 2026 QA report). */
+.back-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.back-row .btn {
+  margin-bottom: 0;
+}
 .pill {
   display:inline-block;
   padding: 6px 10px;

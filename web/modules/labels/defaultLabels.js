@@ -2406,7 +2406,7 @@ export const DEFAULT_LABELS = deepFreeze({
         exportTitle:  'Export as code',
         exportAction: 'Export',
         deleteTitle:  'Delete this preset',
-        deleteAction: 'Del'
+        deleteAction: 'Delete'   // 'Del' until Nov 2026 beside full 'Load' / 'Export' (QA report)
     },
 
     // ========================================================================
@@ -2487,8 +2487,10 @@ export const DEFAULT_LABELS = deepFreeze({
 
     feedback: {
         title:         'Provide Feedback',
-        description:   'We appreciate your feedback! Let us know how we can improve miniCycle.',
-        placeholder:   'Write your feedback here...',
+        // A rating, a message, or both is a valid submission; the form did not
+        // say so until a submit failed (Nov 2026 QA report).
+        description:   'We appreciate your feedback! Choose a star rating, write a message, or both.',
+        placeholder:   'Write your feedback here (optional if you choose a star rating)...',
         email:         'Your Email (optional)',
         emailLabel:    'Your email (optional)',
         feedbackLabel: 'Your feedback',
@@ -2515,7 +2517,10 @@ export const DEFAULT_LABELS = deepFreeze({
         tagOrganized:   'Keeps Me Organized',
         tagMotivating:  'Motivating',
         previousRating: 'You previously rated {stars} of 5 on {date}',
-        minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.'
+        minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.',
+        // The email is optional, but one that is entered must be an address:
+        // "test123@" went through (the form is novalidate) — Nov 2026 QA report.
+        emailInvalid:    'Please enter a valid email address, or leave it empty.'
     },
 
     // ========================================================================
@@ -2748,6 +2753,8 @@ export const DEFAULT_LABELS = deepFreeze({
         darkModeOn: 'Dark mode on',
         darkModeOff: 'Dark mode off',
         taskCompleted: 'Task completed: {name}',
+        // The routine progress bar's tooltip and spoken value (cycleCompletion).
+        routineProgress: '{done} of {total} {taskWord} done ({percent}%)',
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
         tasksCleared: 'Tasks cleared',

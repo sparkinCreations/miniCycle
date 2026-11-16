@@ -1964,7 +1964,8 @@
             </div>
 
             <label for="feedback-text" class="visually-hidden">Your feedback</label>
-            <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
+            <!-- Not required: a star rating alone is a valid submission (modalManager checks "rating OR 10+ characters") -->
+            <textarea id="feedback-text" name="message" placeholder="Write your feedback here (optional if you choose a star rating)..."></textarea>
 
             <label for="feedback-email" class="visually-hidden">Your email (optional)</label>
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">

@@ -710,6 +710,28 @@ export async function runCycleCompletionTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    // Nov 2026 QA report: the bar had no label — it read like a slider.
+    await test('updateProgressBar says "1 of 3 tasks done" as tooltip and spoken value', () => {
+        const track = document.createElement('div');
+        const bar = document.createElement('div');
+        track.appendChild(bar);
+        setCycleCompletionDependencies({
+            AppState: appStateWithTasks([
+                { id: 't1', text: 'One', completed: true },
+                { id: 't2', text: 'Two', completed: false },
+                { id: 't3', text: 'Three', completed: false }
+            ]),
+            getProgressBar: () => bar
+        });
+        updateProgressBar();
+        const said = bar.getAttribute('aria-valuetext') || '';
+        if (!/1 of 3/.test(said) || !/33%/.test(said)) throw new Error(`aria-valuetext: "${said}"`);
+        if (track.getAttribute('title') !== said) throw new Error('the track tooltip should match the spoken value');
+        setCycleCompletionDependencies({ AppState: appStateWithTasks([]), getProgressBar: () => bar });
+        updateProgressBar();
+        if (bar.hasAttribute('aria-valuetext') || track.hasAttribute('title')) throw new Error('an empty routine should clear the text');
+    });
+
     await test('updateProgressBar handles missing progressBar gracefully', () => {
         setCycleCompletionDependencies({
             AppState: appStateWithTasks([{ id: 't1', text: 'One', completed: true }]),
