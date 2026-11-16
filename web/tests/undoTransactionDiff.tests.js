@@ -186,6 +186,23 @@ export async function runUndoTransactionDiffTests(resultsDiv) {
         }
     });
 
+    // Nov 2026: "Undone: Task uncompleted" never said which task — and the
+    // notification is all a screen-reader user hears about an undo.
+    await test('a single-task change names the task; several are counted', async () => {
+        const base = snap();
+        const cases = [
+            ['complete',   describeChange(snap({ tasks: [task('t1', { text: 'Stretch' }), task('t2')] }), snap({ tasks: [task('t1', { text: 'Stretch', completed: true }), task('t2')] })), 'Stretch'],
+            ['uncomplete', describeChange(snap({ tasks: [task('t1', { text: 'Stretch', completed: true }), task('t2')] }), snap({ tasks: [task('t1', { text: 'Stretch' }), task('t2')] })), 'Stretch'],
+            ['add',        describeChange(base, snap({ tasks: [task('t1'), task('t2'), task('t3', { text: 'New one' })] })), 'New one'],
+            ['delete',     describeChange(base, snap({ tasks: [task('t1')] })), 'Task t2']
+        ];
+        for (const [kind, out, name] of cases) {
+            if (!out.includes(name)) throw new Error(`${kind}: expected "${name}" in "${out}"`);
+        }
+        const both = describeChange(base, snap({ tasks: [task('t1', { completed: true }), task('t2', { completed: true })] }));
+        if (both.includes('Task t1') || both.includes('Task t2')) throw new Error(`two completions should be counted, not named: "${both}"`);
+    });
+
     await test('the diff carries the same description describeChange returns', async () => {
         const from = snap(), to = snap({ title: 'Renamed' });
         if (computeTransactionDiff(from, to).description !== describeChange(from, to)) {

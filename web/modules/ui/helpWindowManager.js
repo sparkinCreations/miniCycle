@@ -18,6 +18,7 @@ import { getIcon as getSvgIcon } from '../utils/icons.js';
 import { runsAsInstalledApp } from '../utils/userManualLink.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 import { themeWordVars } from '../labels/themeWords.js';
+import { announce } from '../utils/announce.js';
 
 // First-use notices (showNotice): label + ICONS name.
 const HELP_NOTICES = Object.freeze({
@@ -389,6 +390,7 @@ export class HelpWindowManager {
         if (!this.isVisible) {
             this.show();
         }
+        this._announceContent();
 
         // Auto-hide after 30 seconds and return to normal message
         this.modeDescriptionTimeout = setTimeout(() => {
@@ -559,6 +561,7 @@ export class HelpWindowManager {
                 <p style="margin: 0; line-height: 1.4;">${iconHtml}${tipText}</p>
             </div>
         `;
+        this._announceContent();
 
         // Auto-hide after durationMs
         this.modeDescriptionTimeout = setTimeout(() => {
@@ -595,6 +598,7 @@ export class HelpWindowManager {
                 <p style="margin: 0; line-height: 1.4;">${message}</p>
             </div>
         `;
+        this._announceContent();
 
         // Auto-hide after UI_TIMEOUTS.HELP_TIP
         this.modeDescriptionTimeout = setTimeout(() => {
@@ -604,6 +608,20 @@ export class HelpWindowManager {
             taskView?.classList.remove(DOM_CLASSES.MODE_DESCRIPTION_VISIBLE);
             this._restoreConstantMessage();
         }, UI_TIMEOUTS.HELP_TIP);
+    }
+
+    /**
+     * Speak what the window now shows. The window is role="note", not a live
+     * region (Nov 2026): as role="status" it re-spoke its status line after
+     * nearly every action. The one-off messages — a mode's description, a tip
+     * or notice, "recurring tasks were removed" — are announced here instead.
+     * Cycle-complete and tasks-cleared are not: cycleCompletion announces them.
+     * @returns {void}
+     * @private
+     */
+    _announceContent() {
+        const text = (this.helpWindow?.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text) announce(text);
     }
 
     /**

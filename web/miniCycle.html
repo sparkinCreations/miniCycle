@@ -2087,7 +2087,11 @@
             <span class="auto-uncheck-banner-icon" aria-hidden="true">🕛</span>
             <span id="auto-uncheck-banner-text" class="auto-uncheck-banner-text">All tasks auto-uncheck daily at 12:00 AM</span>
         </button>
-        <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
+        <!-- Not a live region (Nov 2026): every refresh rebuilds the list with
+             replaceChildren(), which handed a screen reader the WHOLE list as
+             removals and additions. Changes are announced by name through
+             utils/announce.js instead. -->
+        <ul id="taskList" class="task-list" aria-label="Task list"></ul>
 
         <div id="empty-state" class="empty-state">
             <div class="empty-state-icon" aria-hidden="true">📋</div>
@@ -2146,7 +2150,10 @@
         </div>
         <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
-    <div id="help-window" class="help-window" role="status" aria-label="Help information">
+    <!-- role="note", not "status" (Nov 2026): as a live region its status line
+         ("13 tasks remaining • ~11 KB") was re-spoken after nearly every action.
+         Its one-off messages are announced by helpWindowManager instead. -->
+    <div id="help-window" class="help-window" role="note" aria-label="Help information">
         <p></p>
     </div>
 </div>

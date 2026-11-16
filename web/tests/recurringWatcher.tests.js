@@ -312,6 +312,63 @@ export async function runRecurringWatcherTests(resultsDiv) {
         eq(as.get().data.routine.c1.tasks.length, 0, 'pattern mismatch blocks spawn');
     });
 
+    // Nov 2026: the task list stopped being a live region (a refresh handed a
+    // screen reader the WHOLE list), so a respawn is now spoken by name — and
+    // nothing else said which task came back.
+    const spokenAfterFrame = async () => {
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        return document.getElementById('live-region')?.textContent || '';
+    };
+    const withLiveRegion = async (fn) => {
+        let region = document.getElementById('live-region');
+        const made = !region;
+        if (made) { region = document.createElement('div'); region.id = 'live-region'; document.body.appendChild(region); }
+        const before = region.textContent;
+        try { return await fn(region); } finally { if (made) region.remove(); else region.textContent = before; }
+    };
+
+    await test('watch announces a respawned task by name', async () => {
+        await withLiveRegion(async () => {
+            const as = cycleState({ t1: dueTemplate('t1', { text: 'Water the plants' }) }, []);
+            mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+            await mod.watchRecurringTasks();
+            const spoken = await spokenAfterFrame();
+            if (!spoken.includes('Water the plants')) throw new Error(`expected the task name to be announced, got "${spoken}"`);
+        });
+    });
+
+    await test('watch counts instead of naming when more than RECURRING_NAMED_MAX come back', async () => {
+        const { LIMITS } = await import(`../modules/core/constants.js?v=${cacheBuster}`);
+        await withLiveRegion(async () => {
+            const n = LIMITS.RECURRING_NAMED_MAX + 1;
+            const templates = {};
+            for (let i = 0; i < n; i++) templates['t' + i] = dueTemplate('t' + i, { text: 'Many-' + i });
+            const as = cycleState(templates, []);
+            mod.setRecurringWatcherDependencies(makeDeps({ AppState: as }));
+            await mod.watchRecurringTasks();
+            const spoken = await spokenAfterFrame();
+            if (!spoken.includes(String(n)) || spoken.includes('Many-0')) throw new Error(`expected a count of ${n} and no names, got "${spoken}"`);
+        });
+    });
+
+    await test('watch announces nothing when nothing respawned', async () => {
+        await withLiveRegion(async (region) => {
+            region.textContent = '';
+            const as = cycleState({ t1: dueTemplate('t1') }, []);
+            mod.setRecurringWatcherDependencies(makeDeps({ AppState: as, shouldRecreateRecurringTask: () => false }));
+            await mod.watchRecurringTasks();
+            eq(await spokenAfterFrame(), '', 'silent when no task came back');
+        });
+    });
+
+    await test('catch-up notification names the missed tasks when few', async () => {
+        const messages = [];
+        const as = cycleState({ t1: dueTemplate('t1', { text: 'Stretch' }) }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState: as, showNotification: (msg) => messages.push(msg) }));
+        await mod.catchUpMissedRecurringTasks();
+        if (!messages.some(m => m.includes('Stretch'))) throw new Error(`expected the task name in the catch-up notification, got ${JSON.stringify(messages)}`);
+    });
+
     // ── Task limit enforcement ────────────────────────────────────────────────
     resultsDiv.innerHTML += '<h4 class="test-section">🚧 Task Limit</h4>';
 

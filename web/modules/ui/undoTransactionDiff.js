@@ -81,16 +81,26 @@ export function describeChange(fromSnapshot, toSnapshot) {
     changes.push(getLabel('notify.changeClearedTasks'));
   }
 
-  // Task count changes
-  if (countDiff > 0) {
-    changes.push(countDiff === 1 ? getLabel('notify.changeTaskAdded') : getLabel('notify.changeTasksAdded', { vars: { count: countDiff } }));
-  } else if (removed > 0) {
-    changes.push(removed === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: removed } }));
-  }
-
-  // Per-task modifications
+  // Per-task lookups (also name the task when exactly one changed)
   const fromTaskMap = new Map(fromTasks.map(t => [t.id, t]));
   const toTaskMap = new Map(toTasks.map(t => [t.id, t]));
+  // A single-task change says which task (Nov 2026): "Undone: Task uncompleted"
+  // never said which one, and the notification is the only thing a
+  // screen-reader user hears about an undo.
+  const named = (namedKey, plainKey, task) => (task?.text
+    ? getLabel(namedKey, { vars: { name: task.text } })
+    : getLabel(plainKey));
+
+  // Task count changes
+  if (countDiff > 0) {
+    changes.push(countDiff === 1
+      ? named('notify.changeTaskAddedNamed', 'notify.changeTaskAdded', toTasks.find(t => !fromTaskMap.has(t.id)))
+      : getLabel('notify.changeTasksAdded', { vars: { count: countDiff } }));
+  } else if (removed > 0) {
+    changes.push(removed === 1 && clearedDelta <= 0
+      ? named('notify.changeTaskDeletedNamed', 'notify.changeTaskDeleted', fromTasks.find(t => !toTaskMap.has(t.id)))
+      : removed === 1 ? getLabel('notify.changeTaskDeleted') : getLabel('notify.changeTasksDeleted', { vars: { count: removed } }));
+  }
 
   // Track per-field change counts to avoid duplicate labels
   const fieldCounts = {
@@ -103,14 +113,17 @@ export function describeChange(fromSnapshot, toSnapshot) {
   };
   // The clearing option is named the way the routine's mode shows it.
   const clearMode = getAutoClearMode(toSnapshot);
+  // The last task seen per completion direction — named when it is the only one.
+  let completedTask = null;
+  let uncompletedTask = null;
 
   for (const [id, toTask] of toTaskMap) {
     const fromTask = fromTaskMap.get(id);
     if (!fromTask) continue;
 
     if (fromTask.text !== toTask.text) fieldCounts.edited++;
-    if (!fromTask.completed && toTask.completed) fieldCounts.completed++;
-    if (fromTask.completed && !toTask.completed) fieldCounts.uncompleted++;
+    if (!fromTask.completed && toTask.completed) { fieldCounts.completed++; completedTask = toTask; }
+    if (fromTask.completed && !toTask.completed) { fieldCounts.uncompleted++; uncompletedTask = toTask; }
     const fromLevel = getPriorityLevel(fromTask);
     const toLevel = getPriorityLevel(toTask);
     if (fromLevel !== toLevel) {
@@ -146,10 +159,14 @@ export function describeChange(fromSnapshot, toSnapshot) {
   // Map field counts to labels (first match per field type)
   if (fieldCounts.edited > 0) changes.push(getLabel('notify.changeTaskEdited'));
   if (fieldCounts.completed > 0) {
-    changes.push(fieldCounts.completed === 1 ? getLabel('notify.changeTaskCompleted') : getLabel('notify.changeTasksCompleted', { vars: { count: fieldCounts.completed } }));
+    changes.push(fieldCounts.completed === 1
+      ? named('notify.changeTaskCompletedNamed', 'notify.changeTaskCompleted', completedTask)
+      : getLabel('notify.changeTasksCompleted', { vars: { count: fieldCounts.completed } }));
   }
   if (fieldCounts.uncompleted > 0) {
-    changes.push(fieldCounts.uncompleted === 1 ? getLabel('notify.changeTaskUncompleted') : getLabel('notify.changeTasksUncompleted', { vars: { count: fieldCounts.uncompleted } }));
+    changes.push(fieldCounts.uncompleted === 1
+      ? named('notify.changeTaskUncompletedNamed', 'notify.changeTaskUncompleted', uncompletedTask)
+      : getLabel('notify.changeTasksUncompleted', { vars: { count: fieldCounts.uncompleted } }));
   }
   if (fieldCounts.prioritySet > 0) changes.push(getLabel('notify.changePrioritySet'));
   if (fieldCounts.priorityRemoved > 0) changes.push(getLabel('notify.changePriorityRemoved'));

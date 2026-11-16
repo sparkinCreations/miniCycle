@@ -236,6 +236,28 @@ async function run() {
 
         await check('routine view');
 
+        // Live regions that must stay quiet (Nov 2026 screen-reader audit). The
+        // task list is rebuilt with replaceChildren() on every refresh: as a live
+        // region it handed a screen reader the WHOLE list — and a recurring task
+        // coming back was never named. The Help window re-spoke its status line
+        // ("13 tasks remaining • ~11 KB") after nearly every action. Both now
+        // announce through utils/announce.js by name instead.
+        {
+            const live = await page.evaluate(() => ['taskList', 'help-window'].map(id => {
+                const el = document.getElementById(id);
+                if (!el) return `${id}: missing`;
+                const politeness = el.getAttribute('aria-live');
+                const role = el.getAttribute('role') || '';
+                return (politeness && politeness !== 'off') || /^(status|alert|log)$/.test(role)
+                    ? `${id} is a live region (aria-live="${politeness || ''}" role="${role}")` : null;
+            }).filter(Boolean));
+            if (live.length === 0) {
+                console.log(`   ${colors.green}✅${colors.reset} task list and Help window are not live regions`);
+            } else {
+                live.forEach(msg => { console.log(`   ${colors.red}❌ ${msg}${colors.reset}`); failures.push(msg); });
+            }
+        }
+
         for (const surface of SURFACES) {
             // Menus need the menu open first; modals are reached from it.
             const needsMenu = !['main menu', 'task options customizer', 'stats panel'].includes(surface.name);

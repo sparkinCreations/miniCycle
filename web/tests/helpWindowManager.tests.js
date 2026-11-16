@@ -981,6 +981,45 @@ export async function runHelpWindowManagerTests(resultsDiv, isPartOfSuite = fals
         }
     });
 
+    // Nov 2026: #help-window is role="note", not a live region — its status line
+    // was re-spoken after nearly every action. The one-off messages are
+    // announced explicitly instead; the status line is not.
+    const spokenAfterFrame = async () => {
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        return document.getElementById('live-region')?.textContent || '';
+    };
+    const withLiveRegion = async (fn) => {
+        let region = document.getElementById('live-region');
+        const made = !region;
+        if (made) { region = document.createElement('div'); region.id = 'live-region'; document.body.appendChild(region); }
+        const before = region.textContent;
+        try { region.textContent = ''; return await fn(); } finally { if (made) region.remove(); else region.textContent = before; }
+    };
+
+    await test('a mode description is announced', async () => {
+        await withLiveRegion(async () => {
+            const manager = new HelpWindowManager();
+            manager.showModeDescription('todo-mode');
+            const spoken = await spokenAfterFrame();
+            if (!spoken.trim()) throw new Error('the mode description was not announced');
+            if (spoken.trim() !== (manager.helpWindow.textContent || '').replace(/\s+/g, ' ').trim()) {
+                throw new Error(`announced text differs from what the window shows: "${spoken}"`);
+            }
+            clearTimeout(manager.modeDescriptionTimeout);
+            manager.isShowingModeDescription = false;
+        });
+    });
+
+    await test('a status-line refresh is not announced', async () => {
+        await withLiveRegion(async () => {
+            const manager = new HelpWindowManager();
+            manager.isShowingModeDescription = false;
+            manager.isShowingCycleComplete = false;
+            manager._restoreConstantMessage();
+            if (await spokenAfterFrame()) throw new Error('the status line was announced');
+        });
+    });
+
     // === SUMMARY ===
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;

@@ -504,6 +504,8 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringNoActiveCycle: 'No active routine',
         recurringAdded:         'Added {count} {taskWord} to recurring (daily by default)',
         recurringMissedAdded:   'Added {count} missed recurring {taskWord}',
+        // The same, naming them when there are few enough to read out (LIMITS.RECURRING_NAMED_MAX).
+        recurringMissedAddedNamed: 'Added missed recurring {taskWord}: {names}',
         recurringCountFinished: '"{taskName}" has completed all {count} scheduled occurrences',
         recurringEndDateFinished: '"{taskName}" reached its end date — final occurrence delivered',
         recurringLimitBlocked:  '{count} recurring {taskWord} couldn\'t spawn — task list full ({limit} limit). Complete or delete tasks to allow more.',
@@ -621,13 +623,17 @@ export const DEFAULT_LABELS = deepFreeze({
         changeCycleRenamed:      'Routine renamed',
         changeModeSwitched:      'Switched to {mode}',
         changeTaskAdded:         'Task added',
+        changeTaskAddedNamed:    'Task added: {name}',
         changeTasksAdded:        '{count} tasks added',
         changeTaskDeleted:       'Task deleted',
+        changeTaskDeletedNamed:  'Task deleted: {name}',
         changeTasksDeleted:      '{count} tasks deleted',
         changeTaskEdited:        'Task renamed',
         changeTaskCompleted:     'Task completed',
+        changeTaskCompletedNamed: 'Task completed: {name}',
         changeTasksCompleted:    '{count} tasks completed',
         changeTaskUncompleted:   'Task uncompleted',
+        changeTaskUncompletedNamed: 'Task uncompleted: {name}',
         changeTasksUncompleted:  '{count} tasks uncompleted',
         changeTasksReordered:    'Tasks reordered',
         changePrioritySet:       'Priority set',
@@ -2756,6 +2762,11 @@ export const DEFAULT_LABELS = deepFreeze({
         routineCreated: 'Routine created: {name}',
         routineSwitched: 'Switched to routine: {name}',
         routineRenamed: 'Routine renamed to: {name}',
+        // A recurring task the watcher put back while the app was open. Visually
+        // silent by design, and until Nov 2026 spoken only as the whole task list
+        // re-entering a live region — never which task came back.
+        recurringTasksBack: 'Recurring {taskWord} back: {names}',
+        recurringTasksBackCount: '{count} recurring {taskWord} back',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
         focusTaskPanelOpened: 'Task view opened',

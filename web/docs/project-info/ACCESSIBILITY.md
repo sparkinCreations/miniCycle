@@ -190,8 +190,23 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
 
 **Live regions announce:**
 - Notifications (via `aria-live="polite"` container)
-- Mode changes
-- Recurring task updates
+- Everything else through ONE helper, `utils/announce.js` → `#live-region`: task added /
+  completed / uncompleted (by name), a recurring task coming back ("Recurring task back:
+  …", named up to `LIMITS.RECURRING_NAMED_MAX`), routine switched / created / renamed, dark
+  mode, task moves, and the Help window's one-off messages (a mode's description, tips,
+  notices)
+
+**Deliberately NOT live regions (Nov 2026 screen-reader audit):**
+- `#taskList` — every refresh rebuilds it with `replaceChildren()`, so as a live region it
+  handed a screen reader the whole list as removals and additions (and a respawned
+  recurring task was never named).
+- `#help-window` (`role="note"`) — as `role="status"` it re-spoke "13 tasks remaining •
+  ~11 KB" after nearly every action.
+
+`test:a11y` fails if either becomes a live region again. A task row's accessible name
+carries ", recurring" (`action.taskItemRecurring`); every place that turns recurring on or
+off goes through `setTaskRecurringState()` in `task/taskUtils.js`, which sets the class and
+the name together.
 
 **Implementation:**
 ```html
@@ -208,7 +223,10 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
 <div id="mode-description" class="mode-description" aria-live="polite"></div>
 ```
 
-**Note:** No test asserts what is announced for task completion, cycle completion or errors; that is part of the screen-reader testing that has not been done (see *Open / not verified*).
+**Tested:** the recurring respawn announcement, the Help window's announced vs. silent
+messages, named undo descriptions and the recurring row name have module tests. What a real
+screen reader finally SAYS is still unverified (see *Open / not verified*): the browser tests
+see what reaches a live region, not what is spoken.
 
 ---
 
