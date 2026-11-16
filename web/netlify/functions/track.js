@@ -13,6 +13,12 @@
 //   {
 //     total:    number,             // lifetime count, never truncated
 //     daily:    { "YYYY-MM-DD": n } // per-day counts, pruned to MAX_DAILY_DAYS
+//     hourly:   { "YYYY-MM-DD": { "14": n } }
+//                                   // per-day counts by hour of day (sparse: only
+//                                   // hours with a hit), pruned to MAX_HOURLY_DAYS.
+//                                   // Lets the dashboard's hour chart follow a
+//                                   // date range; a day recorded before this field
+//                                   // existed simply has no entry.
 //     hours:    number[24],         // lifetime hour-of-day histogram
 //     weekdays: number[7],          // lifetime weekday histogram (0 = Sunday)
 //     recent:   string[]            // last MAX_RECENT ISO timestamps, feed only
@@ -24,6 +30,7 @@ import { getStore } from "@netlify/blobs";
 import { timingSafeEqual } from "node:crypto";
 
 var MAX_DAILY_DAYS = 400;    // ~13 months of daily buckets (~5 KB per event)
+var MAX_HOURLY_DAYS = 92;    // covers the dashboard's longest preset range (90 days)
 var MAX_RECENT = 50;         // bounded ring for the "Recent Clicks" feed
 var MAX_WRITE_ATTEMPTS = 5;  // compare-and-swap retries on a contended key
 
@@ -80,6 +87,7 @@ function emptyRecord() {
     return {
         total: 0,
         daily: {},
+        hourly: {},
         hours: new Array(24).fill(0),
         weekdays: new Array(7).fill(0),
         recent: [],
@@ -94,6 +102,23 @@ function intArray(value, length) {
         out[i] = Number.isFinite(n) && n > 0 ? Math.floor(n) : 0;
     }
     return out;
+}
+
+// One day's sparse hour map: keeps only whole hours 0-23 with a positive count.
+// Returns null when nothing valid is left, so empty days are not stored.
+function normalizeHourMap(value) {
+    if (!value || typeof value !== "object") return null;
+    var out = {};
+    var any = false;
+    for (var key of Object.keys(value)) {
+        var hour = Number(key);
+        var n = Number(value[key]);
+        if (!Number.isInteger(hour) || hour < 0 || hour > 23) continue;
+        if (!Number.isFinite(n) || n <= 0) continue;
+        out[hour] = Math.floor(n);
+        any = true;
+    }
+    return any ? out : null;
 }
 
 // Accepts every historical shape and returns the current one:
@@ -115,6 +140,12 @@ function normalizeRecord(parsed) {
         for (var key of Object.keys(parsed.daily)) {
             var n = Number(parsed.daily[key]);
             if (Number.isFinite(n) && n > 0) record.daily[key] = Math.floor(n);
+        }
+    }
+    if (parsed.hourly && typeof parsed.hourly === "object") {
+        for (var day of Object.keys(parsed.hourly)) {
+            var byHour = normalizeHourMap(parsed.hourly[day]);
+            if (byHour) record.hourly[day] = byHour;
         }
     }
     record.hours = intArray(parsed.hours, 24);
@@ -158,13 +189,14 @@ function parseRecord(raw) {
     }
 }
 
-function pruneDaily(daily) {
-    var keys = Object.keys(daily);
-    if (keys.length <= MAX_DAILY_DAYS) return daily;
-    // ISO-like keys sort lexically; keep the newest MAX_DAILY_DAYS.
+// Keeps the newest `maxDays` entries of a map keyed by "YYYY-MM-DD".
+function pruneDays(byDay, maxDays) {
+    var keys = Object.keys(byDay);
+    if (keys.length <= maxDays) return byDay;
+    // ISO-like keys sort lexically, so the last ones are the newest.
     keys.sort();
     var out = {};
-    for (var key of keys.slice(-MAX_DAILY_DAYS)) out[key] = daily[key];
+    for (var key of keys.slice(-maxDays)) out[key] = byDay[key];
     return out;
 }
 
@@ -172,13 +204,16 @@ function applyHit(record, date) {
     var p = zonedParts(date);
     record.total += 1;
     record.daily[p.dateKey] = (record.daily[p.dateKey] || 0) + 1;
+    var dayHours = record.hourly[p.dateKey] || (record.hourly[p.dateKey] = {});
+    dayHours[p.hour] = (dayHours[p.hour] || 0) + 1;
     record.hours[p.hour]++;
     record.weekdays[p.weekday]++;
     record.recent.push(date.toISOString());
     if (record.recent.length > MAX_RECENT) {
         record.recent = record.recent.slice(-MAX_RECENT);
     }
-    record.daily = pruneDaily(record.daily);
+    record.daily = pruneDays(record.daily, MAX_DAILY_DAYS);
+    record.hourly = pruneDays(record.hourly, MAX_HOURLY_DAYS);
     return record;
 }
 
