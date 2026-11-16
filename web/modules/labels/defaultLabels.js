@@ -2155,10 +2155,10 @@ export const DEFAULT_LABELS = deepFreeze({
         titleCelebration:    'First Cycle Complete!',
         // To-Do mode never counts a cycle; its first success is a clear.
         titleCelebrationTodo: 'First Clear Complete!',
-        // The pointer variant is what keyboard users see too, so it names their
-        // way in: Alt+arrow reordering (dragDropManager.handleReorderKeydown) and
-        // Shift+→, which gesturePanelManager maps to the next panel (review, Oct 2026).
-        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange, or press Alt+↑ / Alt+↓ on a task.|Drag left or press Shift+→ for stats and achievements 📊' },
+        // No keyboard keys here (Nov 2026): onboarding speaks to everyone, and
+        // the keys live elsewhere: Shift+→ to the next panel in the Keyboard
+        // Shortcuts window, Alt+arrow reordering in the User Manual's full list.
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange.|Drag left for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
