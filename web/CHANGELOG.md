@@ -1,3 +1,9 @@
+## [2.682] - 2026-11-16
+- style(footer): deep navy links over the gradient, gated in every state
+- style(quick-actions): Recently Used text reads the side-panel navy
+- style: tokenize every hardcoded colour in the stylesheets
+
+
 ## [2.681] - 2026-11-15
 - fix(focus): photo background keeps its white title in Focus View; preview Help panel matches live
 - style(focus): Focus View's text clears 4.5:1 on the dimmed page
