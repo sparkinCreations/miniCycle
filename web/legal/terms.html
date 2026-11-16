@@ -15,11 +15,14 @@
    defines has the app's value; the rest are named for their value
    (family + hex + alpha %), like the app's palette primitives. */
 :root {
-  --color-accent: #007bff;
+  /* Contrast (Nov 2026): see static-page-styles.css. */
+  --color-primary-dark: #3a5fc7;
+  --color-neutral-111111: #111111;
+  --color-blue-1e40af: #1e40af;
+  --color-navy-deep: #1a2650;
   --color-black-a8: rgba(0, 0, 0, 0.08);
   --color-black-a41p8: rgba(0, 0, 0, 0.418);
   --color-blue-0056b3: #0056b3;
-  --color-blue-1d4ed8: #1d4ed8;
   --color-blue-6a97e4: #6a97e4;
   --color-blue-bfcced: #bfcced;
   --color-blue-eef2ff: #eef2ff;
@@ -74,7 +77,7 @@ h1 {
   display: inline-block;
   margin-bottom: 20px;
   padding: 10px 15px;
-  background: var(--color-accent);
+  background: var(--color-primary-dark);
   color: var(--color-white);
   border: solid 1px var(--color-black-a41p8);
   text-decoration: none;
@@ -117,7 +120,8 @@ p {
 }
 .doc-meta {
   font-size: 0.95rem;
-  opacity: 0.85;
+  /* Straight on the page blue: #333 at 85% was 3.45:1. */
+  color: var(--color-neutral-111111);
 }
 .pill {
   display:inline-block;
@@ -139,7 +143,7 @@ p {
 .muted { opacity: .8; }
 
 /* Links */
-a { color: var(--color-blue-1d4ed8); text-decoration: none; }
+a { color: var(--color-blue-1e40af); text-decoration: none; }   /* #1d4ed8 was 4.2:1 on the card */
 a:hover { text-decoration: underline; }
 
 /* Code blocks */
@@ -153,18 +157,17 @@ code {
 #copyright {
     margin: 0;
     line-height: 1.5;
-    opacity: 0.8; /* Subtle fade effect for a softer appearance */
-    transition: opacity 0.3s ease-in-out;
     align-items: center;
-    
 }
 
+/* Deep navy straight on the page blue, as the app's footer (Nov 2026): the
+   white at 80% it was measured 2.4:1. */
 #copyright {
-    color: var(--color-white); /* Make the text white */
+    color: var(--color-navy-deep);
 }
 
 #copyright a {
-    color: var(--color-white); /* Ensure the link is also white */
+    color: var(--color-navy-deep);
     text-decoration: none; /* Optional: Removes underline */
 }
 
@@ -172,11 +175,6 @@ code {
     text-decoration: underline; /* Optional: Adds underline on hover */
 }
 
-
-/* Hover Effect */
-#footer-container:hover #copyright {
-    opacity: 1; /* Make it fully visible on hover */
-}
 
 /* Responsive: match manual */
 @media (max-width: 600px) {
