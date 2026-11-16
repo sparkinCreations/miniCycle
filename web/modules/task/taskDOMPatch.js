@@ -21,7 +21,7 @@ import { ICONS } from '../utils/icons.js';
 // Local-midnight parse for date-only "YYYY-MM-DD" values — new Date() treats
 // them as UTC midnight, displaying the previous day in negative UTC offsets.
 import { renderDueDateChip, isTaskOverdue } from '../utils/dueDateUtils.js';
-import { applyTaskStatusLabel } from './taskUtils.js';
+import { applyTaskStatusLabel, setTaskRecurringState } from './taskUtils.js';
 import { getActiveRoutine, getAutoClear } from '../utils/cycleMode.js';
 import { hasPriority } from '../utils/priorityLevel.js';
 
@@ -195,7 +195,7 @@ export class TaskDOMPatch {
      */
     _patchRecurring(taskElement, taskData) {
         const isRecurring = taskData.recurring || false;
-        taskElement.classList.toggle(DOM_CLASSES.RECURRING, isRecurring);
+        setTaskRecurringState(taskElement, isRecurring, taskData.text);
 
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {

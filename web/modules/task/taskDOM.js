@@ -29,7 +29,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { applyTaskStatusLabel } from './taskUtils.js';
+import { applyTaskStatusLabel, setTaskRecurringState } from './taskUtils.js';
 import { DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS, DOM_IDS, DOM_SELECTORS, DATA_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { ICONS } from '../utils/icons.js';
 import { createDueDateChip, renderDueDateChip } from '../utils/dueDateUtils.js';
@@ -1129,7 +1129,7 @@ export class TaskDOMManager {
                 }
                 if (taskItem) {
                     taskItem.dataset.deleteWhenComplete = defaultDeleteState.toString();
-                    taskItem.classList.remove(DOM_CLASSES.RECURRING);
+                    setTaskRecurringState(taskItem, false);
                     // Update visual indicators based on mode
                     if (isToDoMode) {
                         taskItem.classList.remove(DOM_CLASSES.SHOW_DELETE_INDICATOR);

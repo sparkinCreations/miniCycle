@@ -42,6 +42,7 @@ import { animateDialogClose } from '../utils/dialogClose.js';
 import { restoreFocusAfterClose, installDialogTabWrap } from '../ui/modalUtils.js';
 import { autoClearFields, getActiveRoutineId, getRoutine, getRoutines } from '../utils/cycleMode.js';
 import { getRecurringPauseState } from './recurringTemplate.js';
+import { setTaskRecurringState } from '../task/taskUtils.js';
 // Boot-time helpers — single source of truth for button-visibility + info-link so
 // recurringIntegration can run them at boot WITHOUT loading this 2k-line panel.
 import {
@@ -977,7 +978,7 @@ export class RecurringPanelManager {
                         if (recurringIndicator) {
                             recurringIndicator.remove();
                         }
-                        matchingTaskItem.classList.remove(DOM_CLASSES.RECURRING);
+                        setTaskRecurringState(matchingTaskItem, false);
                         matchingTaskItem.removeAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS);
 
                         // Restore delete-when-complete state based on cycle mode

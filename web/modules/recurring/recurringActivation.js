@@ -17,6 +17,7 @@ import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate, withoutBiweeklyStart } from './recurringTemplate.js';
 import { autoClearFields, getActiveRoutineId, getAutoClear, getRoutine, setAutoClearSettings } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
+import { setTaskRecurringState } from '../task/taskUtils.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -190,7 +191,7 @@ export async function handleRecurringTaskActivation(task, taskContext, button = 
     // Update DOM AFTER state is committed (prevents desync if state update fails)
     if (taskItem) {
         taskItem.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(normalizedSettings));
-        taskItem.classList.add(DOM_CLASSES.RECURRING);
+        setTaskRecurringState(taskItem, true);
     }
 
     // Sync DOM for delete-on-complete state
@@ -300,7 +301,7 @@ export async function handleRecurringTaskDeactivation(task, taskContext, assigne
     // Update DOM
     if (taskItem) {
         taskItem.removeAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS);
-        taskItem.classList.remove(DOM_CLASSES.RECURRING);
+        setTaskRecurringState(taskItem, false);
 
         if (Deps.GlobalUtils?.syncTaskDeleteWhenCompleteDOM) {
             Deps.GlobalUtils.syncTaskDeleteWhenCompleteDOM(
@@ -382,7 +383,7 @@ export async function applyRecurringToTask(taskId, newSettings) {
     assertInjected('querySelector', Deps.querySelector);
     const taskElement = Deps.querySelector(DATA_SELECTORS.elementByTaskId(taskId));
     if (taskElement) {
-        taskElement.classList.add(DOM_CLASSES.RECURRING);
+        setTaskRecurringState(taskElement, true);
         taskElement.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(updatedTask?.recurringSettings || task.recurringSettings));
         const recurringBtn = taskElement.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {

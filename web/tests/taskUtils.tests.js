@@ -7,7 +7,8 @@
 import {
     TaskUtils,
     setTaskUtilsDependencies,
-    getTaskText
+    getTaskText,
+    setTaskRecurringState
 } from '../modules/task/taskUtils.js';
 
 import {
@@ -441,6 +442,34 @@ export async function runTaskUtilsTests(resultsDiv) {
 
         // Should not throw
         window.setupFinalTaskInteractions(mockItem, false);
+    });
+
+    // Nov 2026: turning recurring on or off only toggled the row class, so the
+    // row's accessible name never said "recurring" (or kept saying it).
+    await test('setTaskRecurringState puts recurring into the row name and takes it out', () => {
+        const li = document.createElement('li');
+        li.innerHTML = '<input type="checkbox"><span class="task-text">Stretch</span>';
+        setTaskRecurringState(li, true);
+        if (!li.classList.contains('recurring')) throw new Error('recurring class not set');
+        if (!/recurring/i.test(li.getAttribute('aria-label') || '')) throw new Error(`name should say recurring, got "${li.getAttribute('aria-label')}"`);
+        if (!/Stretch/.test(li.getAttribute('aria-label'))) throw new Error('name should keep the task text');
+        setTaskRecurringState(li, false);
+        if (li.classList.contains('recurring')) throw new Error('recurring class not removed');
+        if (/recurring/i.test(li.getAttribute('aria-label') || '')) throw new Error(`name should drop recurring, got "${li.getAttribute('aria-label')}"`);
+    });
+
+    await test('setTaskRecurringState keeps the completed and overdue statuses', () => {
+        const done = document.createElement('li');
+        done.innerHTML = '<input type="checkbox" checked><span class="task-text">Done one</span>';
+        const late = document.createElement('li');
+        late.className = 'overdue-task';
+        late.innerHTML = '<input type="checkbox"><span class="task-text">Late one</span>';
+        setTaskRecurringState(done, true, 'Done one');
+        setTaskRecurringState(late, true);
+        const doneName = done.getAttribute('aria-label');
+        const lateName = late.getAttribute('aria-label');
+        if (!/complete/i.test(doneName) || /not complete/i.test(doneName)) throw new Error(`completed status lost: "${doneName}"`);
+        if (!/overdue/i.test(lateName)) throw new Error(`overdue status lost: "${lateName}"`);
     });
 
     // ============================================
