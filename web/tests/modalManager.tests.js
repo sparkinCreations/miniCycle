@@ -620,6 +620,68 @@ export async function runModalManagerTests(resultsDiv) {
         }
     });
 
+    // Nov 2026 QA report: the same feedback could be sent over and over.
+    await test('feedback: the same feedback is not re-sent, and a second send waits out the cooldown', async () => {
+        const { LIMITS } = await import('../modules/core/constants.js');
+        const notes = [];
+        const state = { userProgress: {} };
+        const mm = new ModalManager({
+            safeAddEventListener: mockSafeAddEventListener,
+            showNotification: (msg) => notes.push(msg),
+            AppState: { get: () => state, update: (fn) => { fn(state); return Promise.resolve(); } }
+        });
+        const modal = document.createElement('dialog');
+        modal.id = 'feedback-modal';
+        modal.innerHTML = `
+            <button class="close-feedback-modal"></button>
+            <form id="feedback-form" novalidate>
+                <input type="hidden" id="feedback-rating-value" value="5">
+                <textarea id="feedback-text"></textarea>
+                <input type="email" id="feedback-email" value="me@example.com">
+                <button type="submit" id="submit-feedback">Submit</button>
+            </form>
+            <div id="thank-you-message"></div>`;
+        document.body.appendChild(modal);
+        const openBtn = document.createElement('button');
+        openBtn.id = 'open-feedback-modal';
+        document.body.appendChild(openBtn);
+        const realFetch = window.fetch;
+        let sends = 0;
+        window.fetch = () => { sends++; return Promise.resolve({ json: () => Promise.resolve({ success: true }) }); };
+        const form = modal.querySelector('#feedback-form');
+        const text = modal.querySelector('#feedback-text');
+        const submit = async (message) => {
+            text.value = message;
+            form.dispatchEvent(new Event('submit', { cancelable: true }));
+            await new Promise(r => setTimeout(r, 0));
+        };
+        try {
+            mm.setupFeedbackModal();
+            await submit('Love the app, thank you!');
+            if (sends !== 1) throw new Error('the first feedback should send');
+            if (!state.userProgress.lastFeedback?.signature) throw new Error('the send was not remembered');
+            if (JSON.stringify(state.userProgress.lastFeedback).includes('Love the app')) throw new Error('the feedback text must not be stored');
+
+            await submit('Love the app, thank you!');
+            if (sends !== 1 || !notes.some(n => /already received/i.test(n))) throw new Error(`the same feedback was re-sent: ${JSON.stringify(notes)}`);
+
+            await submit('One more idea for you');
+            if (sends !== 1 || !notes.some(n => /wait a moment/i.test(n))) throw new Error(`a second send inside the cooldown went through: ${JSON.stringify(notes)}`);
+
+            state.userProgress.lastFeedback.at = Date.now() - LIMITS.FEEDBACK_COOLDOWN_MS - 1000;
+            await submit('One more idea for you');
+            if (sends !== 2) throw new Error('different feedback after the cooldown should send');
+
+            state.userProgress.lastFeedback.at = Date.now() - LIMITS.FEEDBACK_DUPLICATE_WINDOW_MS - 1000;
+            await submit('One more idea for you');
+            if (sends !== 3) throw new Error('the same feedback a day later should send');
+        } finally {
+            window.fetch = realFetch;
+            modal.remove();
+            openBtn.remove();
+        }
+    });
+
     // ===== ABOUT MODAL TESTS =====
 
     resultsDiv.innerHTML += '<h4 class="test-section">ℹ️ About Modal</h4>';

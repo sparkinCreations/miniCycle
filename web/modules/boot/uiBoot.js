@@ -65,7 +65,7 @@ import { isDesktopApp } from '../platform/desktopBridge.js';
 import { goToLiteVersion } from '../utils/liteVersion.js';
 import { featureAvailability } from '../utils/featureAvailability.js';
 import { initHeaderLayout } from '../ui/headerLayoutManager.js';
-import { isTextEntryTarget, undoRedoShortcut } from '../utils/keyboardNav.js';
+import { isTextEntryTarget, undoRedoShortcut, appShortcutText, undoShortcutText, setShortcutHint } from '../utils/keyboardNav.js';
 import { USER_MANUAL_PATH, runsAsInstalledApp } from '../utils/userManualLink.js';
 
 let _appContextMod = null;
@@ -468,14 +468,31 @@ const SHORTCUT_TARGETS = Object.freeze({
 
 /**
  * Write aria-keyshortcuts onto each shortcut's control, from KEYBOARD_SHORTCUTS
- * so the advertised key cannot drift from the handled one. Idempotent; called
- * again when Focus View builds its buttons late (they are created in JS).
+ * so the advertised key cannot drift from the handled one — and show the key in
+ * its tooltip, worded for the platform ("Switch routine (Option+Shift+O)" on a
+ * Mac). Until Nov 2026 only a screen reader could learn a shortcut from the
+ * control; a sighted user had to find the Keyboard Shortcuts list. Undo and
+ * Redo (Ctrl/Cmd, handled in handleGlobalKeydown) get the same. Idempotent;
+ * called again when Focus View builds its buttons late (they are created in JS).
  */
 function labelShortcutTargets() {
   Object.keys(SHORTCUT_TARGETS).forEach((action) => {
-    const keys = `Alt+Shift+${shortcutKeyName(KEYBOARD_SHORTCUTS[action])}`;
-    SHORTCUT_TARGETS[action].forEach((id) => document.getElementById(id)?.setAttribute('aria-keyshortcuts', keys));
+    const keyName = shortcutKeyName(KEYBOARD_SHORTCUTS[action]);
+    const keys = `Alt+Shift+${keyName}`;
+    const hint = appShortcutText(keyName);
+    SHORTCUT_TARGETS[action].forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.setAttribute('aria-keyshortcuts', keys);
+      setShortcutHint(el, hint);
+    });
   });
+  const undoBtn = document.getElementById(DOM_IDS.UNDO_BTN);
+  const redoBtn = document.getElementById(DOM_IDS.REDO_BTN);
+  undoBtn?.setAttribute('aria-keyshortcuts', 'Control+Z Meta+Z');
+  redoBtn?.setAttribute('aria-keyshortcuts', 'Control+Y Meta+Shift+Z');
+  setShortcutHint(undoBtn, undoShortcutText('undo'));
+  setShortcutHint(redoBtn, undoShortcutText('redo'));
 }
 
 /**

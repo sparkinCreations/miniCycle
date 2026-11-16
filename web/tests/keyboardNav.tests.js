@@ -402,6 +402,47 @@ export async function runKeyboardNavTests(resultsDiv) {
         if (got !== null) throw new Error(`got ${got}`);
     });
 
+    // Nov 2026: a control's shortcut shows in its tooltip, worded per platform.
+    await test('shortcut text reads Alt / Ctrl, or Option / Cmd on Apple devices', () => {
+        const cases = [
+            [mod.appShortcutText('O', { apple: false }), 'Alt+Shift+O'],
+            [mod.appShortcutText('O', { apple: true }), 'Option+Shift+O'],
+            [mod.undoShortcutText('undo', { apple: false }), 'Ctrl+Z'],
+            [mod.undoShortcutText('redo', { apple: false }), 'Ctrl+Y'],
+            [mod.undoShortcutText('undo', { apple: true }), 'Cmd+Z'],
+            [mod.undoShortcutText('redo', { apple: true }), 'Cmd+Shift+Z']
+        ];
+        for (const [got, want] of cases) if (got !== want) throw new Error(`got "${got}", want "${want}"`);
+    });
+
+    await test('setShortcutHint keeps the key in the tooltip when the app rewrites it', async () => {
+        const btn = document.createElement('button');
+        btn.title = 'Switch routines';
+        document.body.appendChild(btn);
+        try {
+            mod.setShortcutHint(btn, 'Alt+Shift+O');
+            if (btn.title !== 'Switch routines (Alt+Shift+O)') throw new Error(`got "${btn.title}"`);
+            mod.setShortcutHint(btn, 'Alt+Shift+O');
+            if (btn.title !== 'Switch routines (Alt+Shift+O)') throw new Error('a second call must not add the key twice');
+            btn.title = 'Switch routine';
+            await new Promise(r => setTimeout(r, 0));
+            if (btn.title !== 'Switch routine (Alt+Shift+O)') throw new Error(`after a rewrite: "${btn.title}"`);
+        } finally { btn.remove(); }
+    });
+
+    await test('setShortcutHint follows a text-only control as its text changes', async () => {
+        const btn = document.createElement('button');
+        btn.textContent = 'Add Tasks';
+        document.body.appendChild(btn);
+        try {
+            mod.setShortcutHint(btn, 'Alt+Shift+I');
+            if (btn.title !== 'Add Tasks (Alt+Shift+I)') throw new Error(`got "${btn.title}"`);
+            btn.textContent = 'Hide Add Task Bar';
+            await new Promise(r => setTimeout(r, 0));
+            if (btn.title !== 'Hide Add Task Bar (Alt+Shift+I)') throw new Error(`after the text changed: "${btn.title}"`);
+        } finally { btn.remove(); }
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

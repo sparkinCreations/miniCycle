@@ -2066,6 +2066,8 @@ export const DEFAULT_LABELS = deepFreeze({
         keyAlt:        'Alt',
         keyOption:     'Option',
         keyShift:      'Shift',
+        keyCtrl:       'Ctrl',
+        keyCmd:        'Cmd',
     },
 
     homeView: {
@@ -2520,7 +2522,11 @@ export const DEFAULT_LABELS = deepFreeze({
         minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.',
         // The email is optional, but one that is entered must be an address:
         // "test123@" went through (the form is novalidate) — Nov 2026 QA report.
-        emailInvalid:    'Please enter a valid email address, or leave it empty.'
+        emailInvalid:    'Please enter a valid email address, or leave it empty.',
+        // The form posts straight to Web3Forms, which keeps every copy: the same
+        // feedback could be sent again and again (Nov 2026 QA report).
+        alreadySent:     'Thanks, we already received this feedback.',
+        tooSoon:         'Please wait a moment before sending more feedback.'
     },
 
     // ========================================================================

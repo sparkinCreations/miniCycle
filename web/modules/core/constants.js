@@ -407,6 +407,8 @@ export const LAYOUT_CHANGES = Object.freeze({
 });
 
 export const LIMITS = Object.freeze({
+    FEEDBACK_COOLDOWN_MS: 60 * 1000,               // A second feedback submission within this long of the last is held back ("please wait") — modalManager
+    FEEDBACK_DUPLICATE_WINDOW_MS: 24 * 60 * 60 * 1000, // The same message + rating + email again within this long is not re-sent ("already received")
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
     SLOW_BOOTS_BEFORE_LITE_OFFER: 2, // Slow boots in a row (BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER) before the Lite version is offered; one is enough on a device with 2 or fewer cores. Asked once, the answer is kept (deviceDetection)

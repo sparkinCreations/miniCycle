@@ -315,6 +315,18 @@ async function run() {
             await page.evaluate(() => document.activeElement?.blur?.());
         }
 
+        // Shortcut keys show in the controls' tooltips (Nov 2026), worded for
+        // the platform — Alt/Ctrl, or Option/Cmd on Apple devices.
+        {
+            const t = await page.evaluate(() => ({
+                routines: document.getElementById('routine-switcher-btn')?.title || '',
+                undo: document.getElementById('undo-btn')?.title || ''
+            }));
+            const ok = /\((Alt|Option)\+Shift\+O\)$/.test(t.routines) && /\((Ctrl|Cmd)\+Z\)$/.test(t.undo);
+            if (ok) console.log(`   ${colors.green}✅${colors.reset} tooltips name their shortcut keys (${t.routines} · ${t.undo})`);
+            else { console.log(`   ${colors.red}❌ shortcut keys missing from tooltips: ${JSON.stringify(t)}${colors.reset}`); failures.push(`shortcut tooltips: ${JSON.stringify(t)}`); }
+        }
+
         for (const surface of SURFACES) {
             // Menus need the menu open first; modals are reached from it.
             const needsMenu = !['main menu', 'task options customizer', 'stats panel'].includes(surface.name);
