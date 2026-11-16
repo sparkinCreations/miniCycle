@@ -1,3 +1,11 @@
+## [2.681] - 2026-11-15
+- fix(focus): photo background keeps its white title in Focus View; preview Help panel matches live
+- style(focus): Focus View's text clears 4.5:1 on the dimmed page
+- style(help): the Help window's text defaults to the corner buttons' navy
+- fix(personalization): Complete Cycle and Clear stay readable on every preset
+- style(a11y): High Contrast header buttons read the overlay token
+
+
 ## [2.680] - 2026-11-13
 - style(header): Actions and the mode picker read the colour tokens
 
