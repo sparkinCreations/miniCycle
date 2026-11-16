@@ -108,10 +108,10 @@
 
 @keyframes logo-glow-green {
     0%, 100% {
-        filter: drop-shadow(0 0 4px rgba(40, 167, 69, 0.6));
+        filter: drop-shadow(0 0 4px var(--color-green-28a745-a60));
     }
     50% {
-        filter: drop-shadow(0 0 12px rgba(40, 167, 69, 1)) drop-shadow(0 0 20px rgba(40, 167, 69, 0.8));
+        filter: drop-shadow(0 0 12px var(--color-success)) drop-shadow(0 0 20px var(--color-green-28a745-a80));
     }
 }
 
@@ -189,7 +189,7 @@
 .menu-button:focus-visible {
     outline: 2px solid var(--color-white);
     outline-offset: 2px;
-    box-shadow: 0 0 0 5px var(--theme-input-focus-border, #4c79ff);
+    box-shadow: 0 0 0 5px var(--theme-input-focus-border, var(--color-primary));
 }
 
 /* =============================================================================

@@ -93,7 +93,7 @@ body.dark-mode {
     text-align: center;
     box-shadow:
         var(--shadow-modal),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     overflow: hidden;
     cursor: default;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
@@ -343,7 +343,7 @@ body.dark-mode {
     text-align: center;
     box-shadow:
         var(--shadow-modal),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     overflow: hidden;
     cursor: default;
     display: flex;
@@ -624,7 +624,7 @@ body.dark-mode {
     height: 100%;
     background: linear-gradient(90deg,
         var(--preview-stats-progress, var(--color-primary)),
-        color-mix(in srgb, var(--preview-stats-progress, var(--color-primary)), white 30%)
+        color-mix(in srgb, var(--preview-stats-progress, var(--color-primary)), var(--color-white) 30%)
     );
     border-radius: var(--radius-2xs);
     transition: background var(--transition-normal) ease;

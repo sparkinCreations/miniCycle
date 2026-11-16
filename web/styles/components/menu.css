@@ -56,7 +56,7 @@ body.dark-mode {
     right: 10px;
     padding: var(--space-2-5);
     border-radius: var(--radius-md);
-    box-shadow: var(--menu-shadow, 0 4px 6px rgba(0, 0, 0, 0.1));
+    box-shadow: var(--menu-shadow, 0 4px 6px var(--overlay-medium));
     display: none;
     flex-direction: column;
     gap: var(--space-2-5);
@@ -86,7 +86,7 @@ body.dark-mode {
 .main-menu-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     /* Sit just below the menu (--z-menu = 500) so the menu remains on top */
@@ -152,7 +152,7 @@ body.quick-actions-open #quick-actions-window {
     margin-top: calc(-1 * var(--space-2-5));
     margin-left: calc(-1 * var(--space-2-5));
     margin-right: calc(-1 * var(--space-2-5));
-    border-bottom: 1px solid var(--menu-header-border, rgba(0, 0, 0, 0.08));
+    border-bottom: 1px solid var(--menu-header-border, var(--color-black-a8));
     margin-bottom: var(--space-1);
     flex-shrink: 0;
 }
@@ -172,7 +172,7 @@ body.quick-actions-open #quick-actions-window {
     text-align: left;
     font-size: var(--font-size-lg);
     font-weight: 600;
-    color: var(--menu-header-text, #081d3ace);
+    color: var(--menu-header-text, var(--color-blue-081d3a-a80p8));
     margin-left: var(--space-2);
     gap: var(--space-1);
 }
@@ -190,7 +190,7 @@ body.quick-actions-open #quick-actions-window {
 #current-date {
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--menu-date-text, rgba(0, 0, 0, 0.5));
+    color: var(--menu-date-text, var(--overlay-heavy));
     margin-left: 0;
     padding-right: 0;
 }
@@ -210,12 +210,12 @@ body.quick-actions-open #quick-actions-window {
 }
 
 .menu-section {
-    background: var(--menu-section-bg, rgba(255, 255, 255, 0.5));
+    background: var(--menu-section-bg, var(--color-white-a50));
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     border-radius: var(--radius-md);
     padding: var(--space-2-5) var(--space-3);
-    border: 1px solid var(--menu-section-border, rgba(255, 255, 255, 0.3));
+    border: 1px solid var(--menu-section-border, var(--color-white-a30));
 }
 
 .menu-section-header {
@@ -243,18 +243,18 @@ body.quick-actions-open #quick-actions-window {
 }
 
 .menu-section-header.collapsible:hover {
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--color-black-a5);
 }
 
 .menu-section-header.collapsible:focus-visible {
-    outline: 2px solid var(--accent-color, #007bff);
+    outline: 2px solid var(--accent-color, var(--color-accent));
     outline-offset: -2px;
     border-radius: var(--radius-6);
 }
 
 .menu-section-grid button:focus-visible,
 .menu-section-grid .menu-link-button:focus-visible {
-    outline: 2px solid var(--accent-color, #007bff);
+    outline: 2px solid var(--accent-color, var(--color-accent));
     outline-offset: 2px;
     border-radius: var(--radius-6);
 }
@@ -362,7 +362,7 @@ body.quick-actions-open #quick-actions-window {
     font-size: 13px;
     font-weight: 500;
     color: var(--menu-button-text, var(--theme-text-on-surface));
-    background: var(--menu-button-bg, rgba(0, 0, 0, 0.04));
+    background: var(--menu-button-bg, var(--color-black-a4));
     border: none;
     border-radius: var(--radius-2xl);
     cursor: pointer;
@@ -379,7 +379,7 @@ body.quick-actions-open #quick-actions-window {
 
 .menu-section-grid button:hover,
 .menu-section-grid .menu-link-button:hover {
-    background: var(--menu-button-hover-bg, rgba(0, 0, 0, 0.1));
+    background: var(--menu-button-hover-bg, var(--overlay-medium));
     transform: translateY(-1px);
 }
 
@@ -401,38 +401,38 @@ body.quick-actions-open #quick-actions-window {
 /* Recurring button - blue icon */
 .menu-section-grid #open-recurring-panel i,
 .menu-section-grid #open-recurring-panel .icon {
-    color: #2980b9;
+    color: var(--color-blue-2980b9);
 }
 
 /* New button - gold/amber icon */
 .menu-section-grid #new-mini-cycle i,
 .menu-section-grid #new-mini-cycle .icon {
-    color: #b8860b;
+    color: var(--color-amber-b8860b);
 }
 
 /* User Manual button - purple icon */
 .menu-section-grid #open-user-manual i,
 .menu-section-grid #open-user-manual .icon {
-    color: #6a1b9a;
+    color: var(--color-purple-6a1b9a);
 }
 
 /* Check for Updates button - teal icon */
 .menu-section-grid #menu-check-updates i,
 .menu-section-grid #menu-check-updates .icon {
-    color: #00897b;
+    color: var(--color-teal-00897b);
 }
 
 /* Themes button - pink/magenta icon (artistic) */
 .menu-section-grid #open-themes-panel i,
 .menu-section-grid #open-themes-panel .icon {
-    color: #d81b60;
+    color: var(--color-pink-d81b60);
     margin-right: var(--space-1);
 }
 
 /* Games button - green icon (playful) */
 .menu-section-grid #open-games-panel i,
 .menu-section-grid #open-games-panel .icon {
-    color: #2e7d32;
+    color: var(--color-green-2e7d32);
     font-size: 24px;
     width: 24px;
     height: 24px;
@@ -461,7 +461,7 @@ body.quick-actions-open #quick-actions-window {
 .main-menu-row {
     display: flex;
     justify-content: space-evenly;
-    border-top: 1px solid rgba(0, 0, 0, 0.374);
+    border-top: 1px solid var(--color-black-a37p4);
 }
 
 /* =============================================================================
@@ -552,7 +552,7 @@ body.quick-actions-open #quick-actions-window {
     justify-content: space-between;
     width: 100%;
     padding: var(--space-1-5) var(--space-2-5);
-    background: rgba(0, 0, 0, 0.05);
+    background: var(--color-black-a5);
     border: none;
     border-radius: var(--radius-md);
     font-size: 12px; /* base — badge inherits from this so "Manual Cycle" stays readable */
@@ -571,7 +571,7 @@ body.quick-actions-open #quick-actions-window {
 }
 
 .mode-description-toggle:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--overlay-medium);
 }
 
 /* Scoped under .menu-container to outrank the global
@@ -636,7 +636,7 @@ body.quick-actions-open #quick-actions-window {
        (--theme-text-on-surface goes light in dark mode / dark themes). */
     color: var(--color-gray-800);
     border-radius: var(--radius-md);
-    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0px 2px 6px var(--color-black-a8);
     font-size: var(--font-size-sm);
     font-weight: 500;
     line-height: 1.4;
@@ -695,7 +695,7 @@ body.quick-actions-open #quick-actions-window {
 }
 
 .mode-radio-option:hover {
-    background: rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-medium);
 }
 
 /* Visible radio circle — matches the .theme-radio-option pattern in
@@ -764,7 +764,7 @@ body.quick-actions-open #quick-actions-window {
 
 .menu-container button:hover,
 .menu-container .menu-button:hover {
-    background-color: rgba(0, 0, 0, 0.1);
+    background-color: var(--overlay-medium);
 }
 
 /* =============================================================================
@@ -783,14 +783,14 @@ body.quick-actions-open #quick-actions-window {
     align-items: center;
     justify-content: center;
     padding: var(--space-3) var(--space-2);
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a30);
     border-radius: var(--radius-md);
     font-size: 13px;
     transition: background var(--transition-fast) ease;
 }
 
 .menu-grid button:hover {
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--color-white-a50);
 }
 
 .menu-grid button i,
@@ -824,9 +824,9 @@ body.quick-actions-open #quick-actions-window {
 }
 
 .slide-arrow:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.8));
+    outline: 2px solid var(--theme-input-focus-border, var(--color-blue-4c79ff-a80));
     outline-offset: 2px;
-    background-color: rgba(255, 255, 255, 0.9);
+    background-color: var(--color-white-a90);
 }
 
 .slide-arrow:hover {
@@ -1148,7 +1148,7 @@ body.quick-actions-open #quick-actions-window {
     }
 
     .slide-arrow:focus-visible {
-        outline: 3px solid #007BFF;
+        outline: 3px solid var(--color-accent);
     }
 }
 
@@ -1225,41 +1225,41 @@ body.dark-mode .menu-section-grid .menu-link-button .icon {
 /* Keep colored icons visible in dark mode */
 body.dark-mode .menu-section-grid #delete-all-mini-cycle-tasks i,
 body.dark-mode .menu-section-grid #delete-all-mini-cycle-tasks .icon {
-    color: #ef5350;
+    color: var(--color-red-light);
 }
 
 body.dark-mode .menu-section-grid #open-recurring-panel i,
 body.dark-mode .menu-section-grid #open-recurring-panel .icon {
-    color: #42a5f5;
+    color: var(--color-blue-42a5f5);
 }
 
 body.dark-mode .menu-section-grid #new-mini-cycle i,
 body.dark-mode .menu-section-grid #new-mini-cycle .icon {
-    color: #ffd54f;
+    color: var(--color-yellow-light);
 }
 
 body.dark-mode .menu-section-grid #open-user-manual i,
 body.dark-mode .menu-section-grid #open-user-manual .icon {
-    color: #ab47bc;
+    color: var(--color-purple-ab47bc);
 }
 
 body.dark-mode .menu-section-grid #menu-check-updates i,
 body.dark-mode .menu-section-grid #menu-check-updates .icon {
-    color: #26a69a;
+    color: var(--color-teal-26a69a);
 }
 
 body.dark-mode .menu-section-grid #open-themes-panel i,
 body.dark-mode .menu-section-grid #open-themes-panel .icon {
-    color: #ec407a;
+    color: var(--color-pink-ec407a);
 }
 
 body.dark-mode .menu-section-grid #open-games-panel i,
 body.dark-mode .menu-section-grid #open-games-panel .icon {
-    color: #66bb6a;
+    color: var(--color-green-66bb6a);
 }
 
 body.dark-mode .menu-section-grid #menu-task-options .icon-text {
-    color: #e2e8f0;
+    color: var(--color-blue-e2e8f0);
 }
 
 /* =============================================================================

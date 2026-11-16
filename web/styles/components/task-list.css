@@ -39,10 +39,10 @@
        on iPad in the other combinations. */
     min-height: 200px; /* Reserve space to prevent CLS when tasks load from IndexedDB */
     overflow-y: auto;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
     backdrop-filter: blur(2px);
     -webkit-backdrop-filter: blur(2px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-white-a30);
     border-top: none;
     border-radius: 0 0 var(--panel-radius) var(--panel-radius);
     padding: var(--space-2-5) var(--space-2-5) var(--space-20) var(--space-2-5);
@@ -56,13 +56,13 @@
 }
 
 .task-list-container::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(150, 210, 255, 0.4));
+    background: linear-gradient(180deg, var(--color-white-a50), var(--color-blue-96d2ff-a40));
     border-radius: var(--radius-10);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--overlay-white-light);
 }
 
 .task-list-container::-webkit-scrollbar-track {
-    background: rgba(100, 180, 255, 0.1);
+    background: var(--color-blue-64b4ff-a10);
     border-radius: var(--radius-10);
 }
 
@@ -105,7 +105,7 @@ body.first-run-picking .empty-state {
     justify-content: center;
     padding: 15px var(--space-5);
     text-align: center;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--overlay-white-strong);
 }
 
 .empty-state-icon {
@@ -118,7 +118,7 @@ body.first-run-picking .empty-state {
     font-size: var(--font-size-lg);
     font-weight: 600;
     margin-bottom: var(--space-2-5);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-white-a90);
 }
 
 /* The "what is this app" line. Sits between the headline and whichever hint is
@@ -127,7 +127,7 @@ body.first-run-picking .empty-state {
    actionable line stays the one that reads first. */
 .empty-state-pitch {
     font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.55);
+    color: var(--color-white-a55);
     max-width: 250px;
     line-height: 1.4;
     margin-bottom: var(--space-2);
@@ -139,7 +139,7 @@ body.first-run-picking .empty-state {
 .empty-state-hint,
 .empty-state-hint-visible {
     font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-white-a70);
     max-width: 250px;
     line-height: 1.4;
 }
@@ -167,12 +167,12 @@ body.first-run-picking .empty-state {
     font-size: var(--font-size-lg);
     font-weight: 600;
     margin-bottom: var(--space-2-5);
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-white-a90);
 }
 
 .empty-state-alldone-hint {
     font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-white-a70);
     max-width: 250px;
     line-height: 1.4;
 }
@@ -197,7 +197,7 @@ body.all-tasks-complete .empty-state-hint-focus-visible {
 
 .empty-state-hint strong,
 .empty-state-hint-visible strong {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-white-light);
     padding: 2px var(--space-2);
     border-radius: var(--radius-sm);
     font-weight: 600;
@@ -215,13 +215,13 @@ body.all-tasks-complete .empty-state-hint-focus-visible {
     padding: var(--space-3) var(--space-4);
     text-align: center;
     font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-white-a70);
     cursor: pointer;
     transition: color var(--transition-normal);
 }
 
 .recurring-info-link:hover {
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--color-white-a95);
 }
 
 .recurring-info-link.show {
@@ -237,7 +237,7 @@ body.all-tasks-complete .empty-state-hint-focus-visible {
     text-align: center;
     font-family: 'Inter', sans-serif;
     font-size: var(--font-size-xs);
-    color: var(--theme-text-secondary, rgba(80, 80, 80, 0.85));
+    color: var(--theme-text-secondary, var(--color-neutral-505050-a85));
     opacity: 0;
     visibility: hidden;
     transition: opacity var(--transition-fast) ease-out, visibility var(--transition-fast) ease-out;
@@ -291,7 +291,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 .completed-tasks-section {
     width: 100%;
     margin: var(--space-3-75) 0 0 0;
-    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-top: 1px solid var(--overlay-white-light);
     padding-top: var(--space-2-5);
     display: none; /* Hidden by default, shown when tasks are added */
 }
@@ -313,10 +313,10 @@ body.onboarding-active .complete-all-and-help-window-container {
     text-align: center;
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--overlay-white-strong);
     margin: 0;
     padding: var(--space-2-5) var(--space-3-75);
-    background-color: rgba(255, 255, 255, 0.05);
+    background-color: var(--color-white-a5);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: all var(--transition-fast) ease;
@@ -329,7 +329,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 }
 
 .completed-tasks-header:hover {
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: var(--color-white-a10);
     transform: scale(1.01);
 }
 
@@ -341,7 +341,7 @@ body.onboarding-active .complete-all-and-help-window-container {
 
 #completed-count {
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-white-a90);
 }
 
 .completed-task-list {
@@ -397,9 +397,9 @@ body.onboarding-active .complete-all-and-help-window-container {
     margin-left: calc(22px + var(--space-2-5));
     max-width: calc(100% - 22px - var(--space-2-5));
     padding: var(--space-1) var(--space-2-5);
-    border: 1px solid var(--theme-input-border, rgba(0, 0, 0, 0.12));
+    border: 1px solid var(--theme-input-border, var(--color-black-a12));
     border-radius: var(--radius-full);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.05));
+    background: var(--theme-input-bg, var(--color-black-a5));
     color: var(--theme-task-text, var(--theme-text-on-surface));
     font-size: var(--font-size-sm);
     font-weight: normal;
@@ -452,12 +452,12 @@ dialog.due-date-picker-overlay[open] {
     margin: auto;
     padding: var(--space-5);
     border-radius: var(--modal-radius);
-    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--theme-modal-border, var(--overlay-medium));
     background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     color: var(--pref-modal-text, var(--theme-modal-text, var(--theme-text-on-surface)));
     box-shadow:
-        var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.25)),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        var(--shadow-lg, 0 8px 32px var(--color-black-a25)),
+        inset 0 1px 1px var(--color-white-a25);
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
 }
@@ -487,7 +487,7 @@ dialog.due-date-picker-overlay[open] {
 .due-date-picker-field input {
     min-height: 40px;
     padding: var(--space-2);
-    border: 1px solid var(--theme-input-border, rgba(0, 0, 0, 0.2));
+    border: 1px solid var(--theme-input-border, var(--color-black-a20));
     border-radius: var(--radius-sm);
     background: var(--theme-input-bg, var(--color-white));
     color: var(--theme-input-text, var(--theme-text-on-surface));
@@ -526,7 +526,7 @@ dialog.due-date-picker-overlay[open] {
    ============================================================================= */
 
 .high-priority {
-    border-left: 5px solid var(--task-priority-color, var(--priority-color, #dc3545));
+    border-left: 5px solid var(--task-priority-color, var(--priority-color, var(--color-error)));
 }
 
 /* =============================================================================
@@ -569,7 +569,7 @@ dialog.due-date-picker-overlay[open] {
 
 .dragging {
     opacity: 0.7;
-    background-color: var(--theme-bg-surface-elevated, #e0e0e0);
+    background-color: var(--theme-bg-surface-elevated, var(--color-neutral-e0e0e0));
     transform: scale(1.05);
     transition: none;
 }
@@ -601,25 +601,25 @@ dialog.due-date-picker-overlay[open] {
     text-align: center;
     min-height: 32px; /* Reserve space to prevent CLS when title loads from IndexedDB */
     letter-spacing: 0.5px;
-    color: rgba(43, 43, 43, 0.85); /* Dark text on light surface - dark mode overrides this */
+    color: var(--color-neutral-2b2b2b-a85); /* Dark text on light surface - dark mode overrides this */
     background:
         linear-gradient(
             180deg,
-            rgba(255, 255, 255, 0.5) 0%,
-            rgba(200, 235, 255, 0.35) 50%,
-            rgba(150, 215, 255, 0.25) 100%
+            var(--color-white-a50) 0%,
+            var(--color-blue-c8ebff-a35) 50%,
+            var(--color-blue-96d7ff-a25) 100%
         ),
         linear-gradient(
             90deg,
-            rgba(255, 255, 255, 0.1) 0%,
-            rgba(255, 255, 255, 0.3) 50%,
-            rgba(255, 255, 255, 0.1) 100%
+            var(--color-white-a10) 0%,
+            var(--color-white-a30) 50%,
+            var(--color-white-a10) 100%
         );
     backdrop-filter: blur(12px) saturate(1.3);
     -webkit-backdrop-filter: blur(12px) saturate(1.3);
     padding: 5px var(--space-8) 5px var(--space-8); /* Symmetric L/R padding to clear search icon and keep text centered */
-    border: 1px solid rgba(255, 255, 255, 0.35);
-    border-bottom: 1px solid rgba(150, 200, 255, 0.2);
+    border: 1px solid var(--color-white-a35);
+    border-bottom: 1px solid var(--color-blue-96c8ff-a20);
     outline: none;
     cursor: text;
     top: 0;
@@ -643,13 +643,13 @@ dialog.due-date-picker-overlay[open] {
 }
 
 #mini-cycle-title:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
 #mini-cycle-title:focus {
-    background: rgba(255, 255, 255, 0.2);
-    color: #f8f8f8;
+    background: var(--overlay-white-light);
+    color: var(--color-neutral-f8f8f8);
     border-bottom: 2px solid var(--color-white);
     white-space: pre-wrap;
     word-wrap: break-word;
@@ -743,7 +743,7 @@ dialog.due-date-picker-overlay[open] {
     display: flex;
     align-items: center;
     gap: var(--space-1);
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--color-white-a70);
     padding: var(--space-1-5) var(--space-2-5);
     border-radius: var(--radius-md);
     margin-bottom: var(--space-2);
@@ -760,17 +760,17 @@ dialog.due-date-picker-overlay[open] {
 }
 
 .task-search-input:focus-visible {
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, var(--color-blue-4c79ff-a50));
 }
 
 .task-search-input::placeholder {
-    color: var(--theme-input-placeholder, rgba(60, 60, 60, 0.5));
+    color: var(--theme-input-placeholder, var(--color-neutral-3c3c3c-a50));
 }
 
 .task-search-clear {
     background: transparent;
     border: none;
-    color: var(--theme-text-muted, rgba(60, 60, 60, 0.4));
+    color: var(--theme-text-muted, var(--color-neutral-3c3c3c-a40));
     cursor: pointer;
     padding: 2px var(--space-1);
     font-size: var(--font-size-base);
@@ -782,11 +782,11 @@ dialog.due-date-picker-overlay[open] {
 }
 
 .task-search-clear:hover {
-    color: var(--theme-text-primary, rgba(60, 60, 60, 0.8));
+    color: var(--theme-text-primary, var(--color-neutral-3c3c3c-a80));
 }
 
 .task-search-clear:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -794,21 +794,21 @@ dialog.due-date-picker-overlay[open] {
 @media (pointer: coarse) {
     .task-search-input-row ~ .edit-focus-overlay.edit-focus-inner,
     .task-search-input-row ~ .edit-focus-overlay.edit-focus-inner.active {
-        background: rgba(0, 0, 0, 0.78);
+        background: var(--color-black-a78);
     }
 }
 
 /* Page overlay darkened when search triggers it (sibling of task-list-container) */
 body > .edit-focus-overlay.search-page-overlay,
 body > .edit-focus-overlay.search-page-overlay.active {
-    background: rgba(0, 0, 0, 0.78);
+    background: var(--color-black-a78);
     pointer-events: auto;
 }
 
 /* Search bar highlighted above edit-focus overlays on mobile */
 .task-search-input-row.edit-focus-target {
-    background: var(--theme-task-bg, #fff);
-    box-shadow: 0 0 0 3px var(--theme-button-bg, #4c79ff), 0 0 12px rgba(255, 255, 255, 0.4);
+    background: var(--theme-task-bg, var(--color-white));
+    box-shadow: 0 0 0 3px var(--theme-button-bg, var(--color-primary)), 0 0 12px var(--overlay-white-medium);
 }
 
 /* Filter / Sort Row (shown when search is expanded) */
@@ -816,7 +816,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
     display: flex;
     align-items: center;
     gap: var(--space-1-5);
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--color-white-a70);
     padding: var(--space-1-25) var(--space-2-5);
     border-radius: var(--radius-md);
     margin-bottom: var(--space-2);
@@ -882,7 +882,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
 .filter-sort-divider {
     width: 1px;
     height: 16px;
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
     flex-shrink: 0;
     margin: 0 var(--space-0-5);
 }
@@ -891,12 +891,12 @@ body > .edit-focus-overlay.search-page-overlay.active {
 .sort-chip,
 .routine-sort-btn,
 .routine-filter-select {
-    background: rgba(0, 0, 0, 0.06);
+    background: var(--overlay-light);
     border: none;
     border-radius: var(--radius-lg);
     padding: var(--space-0-75) var(--space-2-25);
     font-size: var(--font-size-xs);
-    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
+    color: var(--theme-text-secondary, var(--color-neutral-282828-a70));
     cursor: pointer;
     transition: background var(--transition-fast), color var(--transition-fast);
     white-space: nowrap;
@@ -907,7 +907,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
 .sort-chip:hover,
 .routine-sort-btn:hover,
 .routine-filter-select:hover {
-    background: rgba(0, 0, 0, 0.12);
+    background: var(--color-black-a12);
     color: var(--theme-text-primary, var(--theme-text-on-surface));
 }
 
@@ -922,7 +922,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
 .sort-chip:focus-visible,
 .routine-sort-btn:focus-visible,
 .routine-filter-select:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline: 2px solid var(--theme-input-focus-border, var(--color-blue-4c79ff-a50));
     outline-offset: 2px;
 }
 
@@ -946,7 +946,7 @@ body > .edit-focus-overlay.search-page-overlay.active {
 
 .task:hover {
     transform: scale(1.02);
-    background: var(--theme-bg-surface-elevated, #f8f9fa);
+    background: var(--theme-bg-surface-elevated, var(--color-neutral-f8f9fa));
 }
 
 /* =============================================================================
@@ -956,13 +956,13 @@ body > .edit-focus-overlay.search-page-overlay.active {
    ============================================================================= */
 
 .task.overdue-task {
-    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    background: var(--overdue-task-bg, var(--color-red-f44336-a15));
     color: var(--overdue-task-text, var(--color-red));
     font-weight: bold;
 }
 
 .task.overdue-task:hover {
-    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    background: var(--overdue-task-bg, var(--color-red-f44336-a15));
     transform: scale(1.02);
 }
 
@@ -992,8 +992,8 @@ body > .edit-focus-overlay.search-page-overlay.active {
     height: 22px;
     aspect-ratio: 1/1;
     border-radius: 50%;
-    border: 2px solid rgba(180, 180, 180, 0.6);
-    background-color: rgba(200, 200, 200, 0.25);
+    border: 2px solid var(--color-neutral-b4b4b4-a60);
+    background-color: var(--color-neutral-c8c8c8-a25);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1005,22 +1005,22 @@ body > .edit-focus-overlay.search-page-overlay.active {
 
 .task input[type="checkbox"]:focus-visible {
     border-color: var(--theme-input-focus-border, var(--color-primary));
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, #4c79ff);
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, var(--color-primary));
 }
 
 .task input[type="checkbox"]:hover {
-    border-color: #40af4d;
+    border-color: var(--color-green-40af4d);
 }
 
 .task input[type="checkbox"]:checked {
-    background-color: #5db567;
-    border-color: #40af4d;
+    background-color: var(--color-green-5db567);
+    border-color: var(--color-green-40af4d);
 }
 
 .task input[type="checkbox"]::after {
     content: "\2714\FE0E";  /* ✔ + text variation selector — forces text rendering so CSS color works on iOS */
     font-size: 28px;
-    color: rgb(18, 70, 9);
+    color: var(--color-green-124609);
     font-weight: bold;
     display: none;
     position: relative;
@@ -1033,9 +1033,9 @@ body > .edit-focus-overlay.search-page-overlay.active {
 }
 
 .task input[type="checkbox"]:focus-visible {
-    outline: 2px solid var(--accent-color, #007BFF);
+    outline: 2px solid var(--accent-color, var(--color-accent));
     outline-offset: 2px;
-    box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+    box-shadow: 0 0 0 2px var(--color-blue-007bff-a25);
     border-radius: 50%;
 }
 
@@ -1071,7 +1071,7 @@ body.checkmark-circle .task input[type="checkbox"]::after {
 
 /* High priority task */
 .task.high-priority {
-    border-left: 4px solid var(--task-priority-color, var(--priority-color, #dc3545));
+    border-left: 4px solid var(--task-priority-color, var(--priority-color, var(--color-error)));
 }
 
 /* =============================================================================
@@ -1111,7 +1111,7 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     display: inline-block;
     width: 14px;
     height: 14px;
-    border: 1px solid var(--theme-task-border, #666);
+    border: 1px solid var(--theme-task-border, var(--color-neutral-666666));
     border-radius: var(--radius-sm);
     margin-right: var(--space-2);
     transition: background var(--transition-fast) ease;
@@ -1132,7 +1132,7 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     top: -1px;
     width: 5px;
     height: 10px;
-    border: solid white;
+    border: solid var(--color-white);
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -1177,12 +1177,12 @@ body.checkmark-circle .task input[type="checkbox"]::after {
     min-width: 0;
     max-width: calc(100% - 120px);
     margin-right: var(--space-30);
-    box-shadow: 0 0 0 2px rgba(76, 121, 255, 0.25);
+    box-shadow: 0 0 0 2px var(--color-blue-4c79ff-a25);
     pointer-events: auto;
 }
 
 .mini-cycle-switch-item input[type="text"]:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -1399,7 +1399,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task-text {
 /* Overdue tasks must override custom pref colors — match html:not() prefix for specificity */
 html:not(.dark-mode) body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task.overdue-task {
-    background: var(--overdue-task-bg, rgba(244, 67, 54, 0.15));
+    background: var(--overdue-task-bg, var(--color-red-f44336-a15));
     color: var(--overdue-task-text, var(--color-red));
 }
 

@@ -239,21 +239,21 @@ body.has-bg-image.bg-mode-tile:not(.dark-mode):not(.theme-dark-ocean):not(.theme
 /* Dark mode overlay for custom background images */
 body.dark-mode.has-bg-image.bg-mode-cover {
     background:
-        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        linear-gradient(var(--color-black-a80), var(--color-black-a80)),
         var(--custom-bg-image) center/cover no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
 body.dark-mode.has-bg-image.bg-mode-center {
     background:
-        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        linear-gradient(var(--color-black-a80), var(--color-black-a80)),
         var(--custom-bg-image) center/auto no-repeat;
     background-color: var(--theme-bg-solid);
 }
 
 body.dark-mode.has-bg-image.bg-mode-tile {
     background:
-        linear-gradient(rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.8)),
+        linear-gradient(var(--color-black-a80), var(--color-black-a80)),
         var(--custom-bg-image) top left/auto repeat;
     background-color: var(--theme-bg-solid);
 }

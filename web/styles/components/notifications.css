@@ -120,9 +120,9 @@
 .notification.recurring {
     background: var(--color-info);
     color: var(--color-white);
-    border: 3px solid rgba(93, 134, 99, 0.08);
+    border: 3px solid var(--color-green-5d8663-a8);
     border-radius: var(--radius-10);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 4px 12px var(--color-black-a8);
     font-size: 0.95rem;
     font-weight: 500;
     letter-spacing: 0.3px;
@@ -138,7 +138,7 @@
 .notification.recurring .radio-circle.selected {
     background: var(--color-white);
     border-color: var(--color-white);
-    box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+    box-shadow: 0 0 12px var(--overlay-white-medium);
 }
 
 /* Pause-on-hover visual feedback for all notification types */
@@ -192,7 +192,7 @@
     position: absolute;
     top: 8px;
     right: 8px;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
     border: none;
     border-radius: 50%;
     width: 28px;
@@ -210,7 +210,7 @@
 }
 
 .notification .close-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a25);
     transform: scale(1.1);
 }
 
@@ -323,7 +323,7 @@
     margin-left: var(--space-2);
     padding: 6px var(--space-3);
     background: var(--color-gray-500);
-    border: 1px solid rgba(32, 32, 32, 0.091);
+    border: 1px solid var(--color-neutral-202020-a9p1);
     border-radius: var(--radius-6);
     font-size: var(--font-size-xs);
     font-weight: 600;
@@ -332,8 +332,8 @@
 }
 
 .notification .open-recurring-settings:hover {
-    background: rgba(0, 0, 0, 0.35);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: var(--color-black-a35);
+    border-color: var(--color-white-a50);
     transform: translateY(-1px);
     opacity: 1;
 }
@@ -355,8 +355,8 @@
        put white 12px text at 3.6:1 (axe color-contrast, Oct 2026). 22% black
        over the same blue clears 4.5:1 in every light theme and still reads
        as a pill. */
-    background: rgba(0, 0, 0, 0.22);
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: var(--color-black-a22);
+    border: 1px solid var(--color-white-a45);
     border-radius: var(--radius-6);
     color: var(--color-white);
     font-size: var(--font-size-xs);
@@ -367,7 +367,7 @@
 }
 
 .notification .notification-action-btn:hover {
-    background: rgba(0, 0, 0, 0.34);
+    background: var(--color-black-a34);
     transform: translateY(-1px);
     opacity: 1;
 }
@@ -377,7 +377,7 @@
 }
 
 .notification .notification-action-btn:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--overlay-white-strong);
     outline-offset: 2px;
 }
 
@@ -467,8 +467,8 @@ dialog .notification .notification-action-btn {
     display: inline-block;
     margin-top: var(--space-2);
     padding: var(--space-1-5) var(--space-3);
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a15);
+    border: 1px solid var(--color-white-a30);
     border-radius: var(--radius-xs);
     color: var(--color-white);
     cursor: pointer;
@@ -477,7 +477,7 @@ dialog .notification .notification-action-btn {
 }
 
 .notification.recurring .show-quick-actions:hover {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a25);
 }
 
 .notification.recurring .show-quick-actions.hidden {
@@ -506,7 +506,7 @@ dialog .notification .notification-action-btn {
     position: absolute;
     top: var(--space-2);
     right: var(--space-2);
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--color-black-a20);
     border: none;
     border-radius: 50%;
     width: var(--space-6);
@@ -522,7 +522,7 @@ dialog .notification .notification-action-btn {
 }
 
 #notification-container .notification.recurring .close-btn:hover {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--color-black-a40);
     transform: scale(1.1);
 }
 
@@ -531,7 +531,7 @@ dialog .notification .notification-action-btn {
    ============================================================================= */
 
 .notification.recurring .educational-tip {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
     border-radius: var(--radius-sm);
     padding: var(--space-2) var(--space-3);
     margin-bottom: var(--space-3);
@@ -557,7 +557,7 @@ dialog .notification .notification-action-btn {
 
 .notification.recurring .tip-close {
     flex-shrink: 0;
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
     border: none;
     border-radius: 50%;
     width: var(--space-5);
@@ -573,7 +573,7 @@ dialog .notification .notification-action-btn {
 }
 
 .notification.recurring .tip-close:hover {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a30);
 }
 
 /* =============================================================================
@@ -598,17 +598,17 @@ dialog .notification .notification-action-btn {
 }
 
 .quick-option:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 .quick-option:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--overlay-white-strong);
     outline-offset: 2px;
     border-radius: var(--radius-sm);
 }
 
 .notification button:focus-visible {
-    outline: 2px solid rgba(255, 255, 255, 0.8);
+    outline: 2px solid var(--overlay-white-strong);
     outline-offset: 2px;
 }
 
@@ -623,8 +623,8 @@ dialog .notification .notification-action-btn {
 .notification .apply-quick-recurring {
     display: none;
     padding: var(--space-2) var(--space-3);
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: var(--overlay-white-light);
+    border: 1px solid var(--color-white-a30);
     border-radius: var(--radius-6);
     font-size: var(--font-size-xs);
     font-weight: 500;
@@ -638,8 +638,8 @@ dialog .notification .notification-action-btn {
 }
 
 .notification .apply-quick-recurring:hover {
-    background: rgba(255, 255, 255, 0.3);
-    border-color: rgba(255, 255, 255, 0.5);
+    background: var(--color-white-a30);
+    border-color: var(--color-white-a50);
 }
 
 /* =============================================================================
@@ -688,8 +688,8 @@ dialog .notification .notification-action-btn {
     position: absolute;
     bottom: 8px;
     right: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a10);
+    border: 1px solid var(--overlay-white-light);
     border-radius: 50%;
     width: 28px;
     height: 28px;
@@ -704,15 +704,15 @@ dialog .notification .notification-action-btn {
 }
 
 #notification-container .tip-toggle-btn:hover {
-    background: rgba(255, 255, 255, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: var(--color-white-a25);
+    border-color: var(--overlay-white-medium);
 }
 
 @keyframes tip-pulse {
     0%, 100% {
-        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.4);
+        box-shadow: 0 0 0 0 var(--overlay-white-medium);
     }
     50% {
-        box-shadow: 0 0 8px 4px rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 8px 4px var(--color-white-a30);
     }
 }

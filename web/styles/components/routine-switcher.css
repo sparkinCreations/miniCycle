@@ -103,13 +103,13 @@ dialog.mini-cycle-switch-modal[open] {
 
 .mini-cycle-switch-modal-content {
     position: relative;
-    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, rgb(237, 239, 246))));
-    color: var(--pref-modal-text, var(--theme-modal-text, #333));
+    background: var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-neutral-edeff6))));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-neutral-333333)));
     padding: var(--space-3-75) var(--space-3-75) 0;
     border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-dropdown),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     min-width: 300px;
     max-width: 400px;
     text-align: center;
@@ -197,13 +197,13 @@ input.routine-search-input {
 
 input.routine-search-input:focus {
     outline: none;
-    border-color: var(--theme-button-primary-bg, #4c79ff);
+    border-color: var(--theme-button-primary-bg, var(--color-primary));
     box-shadow: var(--shadow-focus-ring-subtle);
     background: var(--color-white);
 }
 
 .routine-search-input:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -348,12 +348,12 @@ input.routine-search-input:focus {
 }
 
 .mini-cycle-switch-item:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: -2px;
 }
 
 .mini-cycle-switch-item.selected {
-    background: var(--color-blue-pale-mid, #c0d4ed);
+    background: var(--color-blue-pale-mid, var(--color-blue-pale-mid));
     color: var(--color-black);
     font-weight: bold;
     box-shadow: var(--shadow-glow-blue-sm);
@@ -394,9 +394,9 @@ input.routine-search-input:focus {
     padding: var(--space-1) var(--space-3);
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--color-navy, #2c3270);
-    background: var(--color-blue-pale, rgba(52, 152, 219, 0.1));
-    border: 1px solid var(--border-blue-subtle, rgba(52, 152, 219, 0.25));
+    color: var(--color-navy, var(--color-navy));
+    background: var(--color-blue-pale, var(--color-blue-3498db-a10));
+    border: 1px solid var(--border-blue-subtle, var(--color-blue-3498db-a25));
     border-radius: var(--radius-full);
     cursor: pointer;
     transition: background var(--transition-fast), color var(--transition-fast);
@@ -407,7 +407,7 @@ input.routine-search-input:focus {
 }
 
 .recent-routine-chip:hover {
-    background: var(--color-blue-medium, #3498db);
+    background: var(--color-blue-medium, var(--color-blue-medium));
     color: var(--color-white);
 }
 
@@ -417,7 +417,7 @@ input.routine-search-input:focus {
 
 /* Current routine indicator */
 .mini-cycle-switch-item.current-routine {
-    border-left: 3px solid var(--color-blue-medium, #3498db);
+    border-left: 3px solid var(--color-blue-medium, var(--color-blue-medium));
 }
 
 .current-routine-badge {
@@ -425,7 +425,7 @@ input.routine-search-input:focus {
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--color-white);
-    background: var(--color-blue-medium, #3498db);
+    background: var(--color-blue-medium, var(--color-blue-medium));
     padding: 1px var(--space-1-5);
     border-radius: var(--radius-full, 9999px);
     margin-left: var(--space-2);
@@ -472,10 +472,10 @@ input.routine-search-input:focus {
     font-size: inherit;
     font-family: inherit;
     padding: var(--space-0-5) var(--space-1-5);
-    border: 1px solid var(--theme-info, #007bff);
+    border: 1px solid var(--theme-info, var(--color-accent));
     border-radius: var(--radius-sm);
-    background: var(--theme-input-bg, #fff);
-    color: var(--theme-input-text, #333);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--color-neutral-333333));
     outline: none;
     min-width: 100px;
     max-width: 200px;
@@ -485,7 +485,7 @@ input.routine-search-input:focus {
 }
 
 .cycle-item-edit-input:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -891,7 +891,7 @@ input.routine-search-input:focus {
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.6));
+    color: var(--theme-text-secondary, var(--color-neutral-282828-a60));
     margin-bottom: var(--space-1);
 }
 
@@ -921,7 +921,7 @@ input.routine-search-input:focus {
     background: var(--overlay-light);
     cursor: pointer;
     font-size: var(--font-size-xs);
-    color: var(--theme-text-secondary, rgba(40, 40, 40, 0.7));
+    color: var(--theme-text-secondary, var(--color-neutral-282828-a70));
     transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
     white-space: nowrap;
     min-width: 52px;
@@ -931,13 +931,13 @@ input.routine-search-input:focus {
 
 .theme-chip:hover:not([aria-disabled="true"]) {
     background: var(--overlay-strong);
-    color: var(--theme-text-primary, #333);
+    color: var(--theme-text-primary, var(--color-neutral-333333));
 }
 
 .theme-chip[aria-checked="true"] {
-    background: var(--theme-accent, #4c79ff);
+    background: var(--theme-accent, var(--color-primary));
     color: var(--color-white);
-    border-color: var(--theme-accent, #4c79ff);
+    border-color: var(--theme-accent, var(--color-primary));
 }
 
 .theme-chip[aria-disabled="true"] {
@@ -946,7 +946,7 @@ input.routine-search-input:focus {
 }
 
 .theme-chip:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    outline: 2px solid var(--theme-input-focus-border, var(--color-blue-4c79ff-a50));
     outline-offset: 2px;
 }
 

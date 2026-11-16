@@ -235,12 +235,12 @@ body.dark-mode .high-priority {
 
 /* Overdue Tasks in Dark Mode */
 body.dark-mode .task.overdue-task {
-    background: rgba(220, 53, 69, 0.25);
+    background: var(--color-error-bg);
     color: var(--color-red-light);
 }
 
 body.dark-mode .task.overdue-task:hover {
-    background: rgba(220, 53, 69, 0.3);
+    background: var(--color-red-dc3545-a30);
 }
 
 /* =============================================================================
@@ -270,7 +270,7 @@ body.dark-mode .mini-cycle-switch-modal-content {
 }
 
 body.dark-mode .stats-panel {
-    background-color: rgba(42, 42, 42, 0.92);
+    background-color: var(--color-neutral-2a2a2a-a92);
     color: var(--theme-text-primary);
     border: 1px solid var(--dark-button-hover-bg);
 }
@@ -447,7 +447,7 @@ body.dark-mode .task-options .move-btn:hover {
 
 /* Active/toggled task button states must keep their colors in dark mode */
 body.dark-mode .task-options .task-btn.priority-btn.priority-active {
-    background: var(--task-priority-color, var(--priority-color, #dc3545));
+    background: var(--task-priority-color, var(--priority-color, var(--color-error)));
     border-color: transparent;
 }
 
@@ -625,11 +625,11 @@ body.dark-mode .menu-section-header {
    ============================================================================= */
 
 body.dark-mode #about-modal .about-links {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-white-a8);
 }
 
 body.dark-mode #about-modal .about-version-badge {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 body.dark-mode #about-modal a {
@@ -660,7 +660,7 @@ body.dark-mode .storage-bar-hint {
 }
 
 body.dark-mode .storage-bar-track {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
 }
 
 body.dark-mode .storage-bar-text {
@@ -672,7 +672,7 @@ body.dark-mode .storage-refresh-btn {
 }
 
 body.dark-mode .storage-refresh-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
     color: var(--color-primary);
 }
 
@@ -772,12 +772,12 @@ body.dark-mode .task-options-list {
    ============================================================================= */
 
 body.dark-mode .undo-redo-btn {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
     color: var(--theme-progress-text);
 }
 
 body.dark-mode .undo-redo-btn:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-white-light);
 }
 
 /* =============================================================================
@@ -825,14 +825,14 @@ body.dark-mode .next-occurrence-text {
 
 /* Add Task to Recurring button + panel section */
 body.dark-mode .add-recurring-task-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a8);
+    border-color: var(--overlay-white-light);
     color: var(--dark-text-light);
 }
 
 body.dark-mode .add-recurring-task-btn:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a14);
+    border-color: var(--color-white-a30);
 }
 
 body.dark-mode .available-tasks-list {
@@ -849,13 +849,13 @@ body.dark-mode .recurring-task-item.selected .recurring-task-text {
 }
 
 body.dark-mode .toggle-check-btn {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-white-a8);
     color: var(--dark-text-light);
-    border-color: rgba(255, 255, 255, 0.2);
+    border-color: var(--overlay-white-light);
 }
 
 body.dark-mode .toggle-check-btn:hover {
-    background: rgba(255, 255, 255, 0.14);
+    background: var(--color-white-a14);
 }
 
 body.dark-mode .available-tasks-header {
@@ -867,7 +867,7 @@ body.dark-mode .select-all-add-recurring-btn {
 }
 
 body.dark-mode .select-all-add-recurring-btn:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 body.dark-mode #non-recurring-tasks li {
@@ -881,7 +881,7 @@ body.dark-mode #non-recurring-tasks li:hover {
 }
 
 body.dark-mode #non-recurring-tasks li.selected {
-    background: rgba(76, 175, 80, 0.15);
+    background: var(--color-green-4caf50-a15);
     border-color: var(--color-success);
 }
 
@@ -913,14 +913,14 @@ body.dark-mode .mini-modal-body {
    ============================================================================= */
 
 body.dark-mode .testing-modal {
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--color-black-a60);
 }
 
 body.dark-mode .testing-modal-content {
     background: var(--dark-test-surface);
     color: var(--dark-test-text);
     border: 1px solid var(--dark-test-border);
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+    box-shadow: 0 20px 60px var(--color-black-a40);
 }
 
 body.dark-mode .testing-modal-header {
@@ -928,12 +928,12 @@ body.dark-mode .testing-modal-header {
 }
 
 body.dark-mode .close-testing-modal {
-    background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a10);
+    border-color: var(--overlay-white-light);
 }
 
 body.dark-mode .close-testing-modal:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-white-light);
 }
 
 body.dark-mode .testing-tabs {
@@ -947,7 +947,7 @@ body.dark-mode .testing-tab {
 }
 
 body.dark-mode .testing-tab:hover {
-    background: rgba(99, 102, 241, 0.15);
+    background: var(--color-blue-6366f1-a15);
     color: var(--dark-test-accent);
 }
 
@@ -991,12 +991,12 @@ body.dark-mode .testing-results-header h3 {
 }
 
 body.dark-mode .testing-results {
-    background: #13141a;
-    color: #c8ccd4;
+    background: var(--color-neutral-13141a);
+    color: var(--color-slate-c8ccd4);
 }
 
 body.dark-mode .testing-output {
-    color: #c8ccd4;
+    color: var(--color-slate-c8ccd4);
 }
 
 body.dark-mode .testing-results::-webkit-scrollbar-track {
@@ -1022,7 +1022,7 @@ body.dark-mode .testing-modal-info {
 }
 
 body.dark-mode .welcome-message {
-    color: #6b7280;
+    color: var(--color-slate-6b7280);
     background: transparent;
 }
 
@@ -1080,8 +1080,8 @@ body.dark-mode .test-results-search-input {
 }
 
 body.dark-mode .test-results-body {
-    background: #13141a;
-    color: #c8ccd4;
+    background: var(--color-neutral-13141a);
+    color: var(--color-slate-c8ccd4);
     border-color: var(--dark-test-border);
 }
 
@@ -1093,19 +1093,19 @@ body.dark-mode .test-results-btn.secondary {
 
 /* JSON Syntax Highlighting */
 body.dark-mode .json-key {
-    color: #7dd3fc;
+    color: var(--color-cyan-7dd3fc);
 }
 
 body.dark-mode .json-value-string {
-    color: #86efac;
+    color: var(--color-green-86efac);
 }
 
 body.dark-mode .json-value-number {
-    color: #93c5fd;
+    color: var(--color-blue-93c5fd);
 }
 
 body.dark-mode .json-value-boolean {
-    color: #fdba74;
+    color: var(--color-orange-fdba74);
 }
 
 body.dark-mode .json-array-info {
@@ -1113,7 +1113,7 @@ body.dark-mode .json-array-info {
 }
 
 body.dark-mode .json-render-error {
-    background: rgba(220, 53, 69, 0.2);
+    background: var(--color-red-dc3545-a20);
 }
 
 /* Storage Viewer */
@@ -1131,7 +1131,7 @@ body.dark-mode .storage-value-parsed {
 }
 
 body.dark-mode .storage-value-raw {
-    background: rgba(23, 162, 184, 0.1);
+    background: var(--color-cyan-17a2b8-a10);
     color: var(--color-info);
     border-left-color: var(--color-info);
 }
@@ -1141,7 +1141,7 @@ body.dark-mode .storage-value-raw {
    ============================================================================= */
 
 body.dark-mode .mode-selector-wrapper .mode-selector {
-    background: rgba(30, 30, 30, 0.8);
+    background: var(--color-neutral-1e1e1e-a80);
     color: var(--theme-text-primary);
     border-color: var(--chrome-border-color);
 }
@@ -1164,7 +1164,7 @@ body.dark-mode .routine-switcher-btn svg {
 
 body.dark-mode .quick-actions-menu {
     background: linear-gradient(135deg, var(--dark-surface-primary) 0%, var(--dark-surface-secondary) 100%);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-white-a10);
 }
 
 body.dark-mode .quick-action-item {
@@ -1174,12 +1174,12 @@ body.dark-mode .quick-action-item {
 /* Focus View's ⋯ menu wears the header dropdowns' dark look too. */
 body.focus-mode.dark-mode #focus-mode-menu {
     background: linear-gradient(135deg, var(--dark-surface-primary) 0%, var(--dark-surface-secondary) 100%);
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: var(--color-white-a10);
 }
 
 body.focus-mode.dark-mode #focus-mode-menu::-webkit-scrollbar-thumb,
 body.focus-mode.dark-mode .focus-mode-menu-separator {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
 }
 
 body.focus-mode.dark-mode .focus-mode-menu-item {
@@ -1188,21 +1188,21 @@ body.focus-mode.dark-mode .focus-mode-menu-item {
 
 body.focus-mode.dark-mode .focus-mode-menu-item:hover,
 body.focus-mode.dark-mode .focus-mode-menu-item:focus-visible {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 body.focus-mode.dark-mode .focus-mode-menu-item--destructive,
 body.focus-mode.dark-mode .focus-mode-menu-item--destructive:hover,
 body.focus-mode.dark-mode .focus-mode-menu-item--destructive:focus-visible {
-    color: var(--color-red-light, #ef5350);
+    color: var(--color-red-light, var(--color-red-light));
 }
 
 body.dark-mode .quick-action-item:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 body.dark-mode .quick-action-item:not(:last-child) {
-    border-bottom-color: rgba(255, 255, 255, 0.1);
+    border-bottom-color: var(--color-white-a10);
 }
 
 /* =============================================================================
@@ -1547,12 +1547,12 @@ body.dark-mode .vocab-theme-unlock-hint {
 body.dark-mode #footer-container,
 body.dark-mode #copyright,
 body.dark-mode .footer-item {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--overlay-white-strong);
 }
 
 body.dark-mode #copyright a,
 body.dark-mode .footer-item a {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--overlay-white-strong);
 }
 
 /* =============================================================================
@@ -1583,7 +1583,7 @@ body.dark-mode .miniCycle-prompt-input {
 /* The routine-creation sample picker inside the prompt: its original
    white-on-charcoal colours (onboarding.css now holds the light-panel ones). */
 body.dark-mode .miniCycle-sample-option {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 body.dark-mode .miniCycle-sample-option label {
@@ -1592,37 +1592,37 @@ body.dark-mode .miniCycle-sample-option label {
 
 body.dark-mode .load-sample-btn,
 body.dark-mode .sample-back-btn {
-    border-color: rgba(255, 255, 255, 0.2);
-    background: rgba(255, 255, 255, 0.08);
-    color: rgba(255, 255, 255, 0.7);
+    border-color: var(--overlay-white-light);
+    background: var(--color-white-a8);
+    color: var(--color-white-a70);
 }
 
 body.dark-mode .load-sample-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
-    border-color: rgba(255, 255, 255, 0.3);
-    color: rgba(255, 255, 255, 0.9);
+    background: var(--color-white-a15);
+    border-color: var(--color-white-a30);
+    color: var(--color-white-a90);
 }
 
 body.dark-mode .sample-back-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
 }
 
 body.dark-mode .sample-list-title {
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--color-white-a90);
 }
 
 body.dark-mode .sample-item {
-    border-color: rgba(255, 255, 255, 0.12);
-    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--color-white-a12);
+    background: var(--color-white-a6);
 }
 
 body.dark-mode .sample-item:hover {
-    background: rgba(255, 255, 255, 0.14);
-    border-color: rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a14);
+    border-color: var(--color-white-a25);
 }
 
 body.dark-mode .sample-item-name {
-    color: rgba(255, 255, 255, 0.85);
+    color: var(--color-white-a85);
 }
 
 /* =============================================================================
@@ -1675,13 +1675,13 @@ body.dark-mode .title-row {
 body.dark-mode .mini-cycle-title {
     background: none;
     color: var(--dark-text-light);
-    border-color: rgba(255, 255, 255, 0.12);
-    border-bottom-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-white-a12);
+    border-bottom-color: var(--color-white-a8);
     box-shadow: var(--shadow-glass-panel);
 }
 
 body.dark-mode #mini-cycle-title:focus {
-    background: rgba(80, 80, 80, 0.8);
+    background: var(--color-neutral-505050-a80);
     color: var(--dark-title-focus);
 }
 
@@ -1693,12 +1693,12 @@ body.dark-mode .task-list-container {
     background: var(--dark-task-panel-bg);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
-    border-color: rgba(255, 255, 255, 0.08);
+    border-color: var(--color-white-a8);
 }
 
 body.dark-mode .task-list-container::-webkit-scrollbar-thumb,
 body.dark-mode .stats-panel-content::-webkit-scrollbar-thumb {
-    background-color: rgba(150, 150, 150, 0.5);
+    background-color: var(--color-neutral-969696-a50);
 }
 
 /* Auto-uncheck banner uses --theme-text-on-surface, which the dark-mode
@@ -1713,15 +1713,15 @@ body.dark-mode .auto-uncheck-banner {
    ============================================================================= */
 
 body.dark-mode .navigation-dots::before {
-    background-color: rgba(60, 70, 90, 0.6);
+    background-color: var(--color-blue-3c465a-a60);
 }
 
 body.dark-mode .dot::after {
-    background-color: rgba(180, 180, 200, 0.8);
+    background-color: var(--color-slate-b4b4c8-a80);
 }
 
 body.dark-mode .dot.active::after {
-    background-color: rgba(100, 150, 255, 1);
+    background-color: var(--color-blue-6496ff);
 }
 
 /* =============================================================================
@@ -1751,7 +1751,7 @@ body.dark-mode .filter-chip,
 body.dark-mode .sort-chip,
 body.dark-mode .routine-sort-btn,
 body.dark-mode .routine-filter-select {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
     color: var(--theme-text-secondary);
 }
 
@@ -1759,7 +1759,7 @@ body.dark-mode .filter-chip:hover,
 body.dark-mode .sort-chip:hover,
 body.dark-mode .routine-sort-btn:hover,
 body.dark-mode .routine-filter-select:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--color-white-a18);
     color: var(--theme-text-primary);
 }
 
@@ -1773,7 +1773,7 @@ body.dark-mode .routine-sort-btn.active {
 }
 
 body.dark-mode .filter-sort-divider {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
 }
 
 body.dark-mode .chip-group-icon {
@@ -1789,12 +1789,12 @@ body.dark-mode .chip-group-icon {
 
 @media (prefers-color-scheme: dark) {
     html:not(.dark-mode):not([data-theme]) {
-        background: #1c1c1c;
-        color: #e0e0e0;
+        background: var(--color-neutral-1c1c1c);
+        color: var(--color-neutral-e0e0e0);
     }
 
     html:not(.dark-mode):not([data-theme]) body {
-        background: linear-gradient(135deg, #1c1c1c, #2a2a2a);
-        color: #e0e0e0;
+        background: linear-gradient(135deg, var(--color-neutral-1c1c1c), var(--color-neutral-2a2a2a));
+        color: var(--color-neutral-e0e0e0);
     }
 }

@@ -231,6 +231,17 @@ transition: opacity 300ms;
 - Nav dots: `--color-nav-dot`, `--color-nav-dot-active`, `--color-nav-dot-press`
 - Navy: `--color-navy`, `--color-navy-dark`
 
+**Palette primitives (Nov 2026):** every colour the stylesheets used to hardcode is a
+token in the *PALETTE PRIMITIVES* block at the end of `:root` in `variables.css`
+(~220 of them). The name is the value — family, hex and alpha percent, with `p` for a
+decimal point: `--color-white-a15`, `--color-black-a37p4`, `--color-neutral-333333`,
+`--color-teal-0a8db5`, `--color-red-dc3545-a20`. Never edit one in place (the name would
+lie and every consumer would move); to change a colour, point the consumer at another
+token. Reach for a semantic token first; use a primitive only when no semantic one fits.
+Literals remain in three places on purpose: `base/critical.css` (pre-paint, no `var()`),
+`::backdrop` rules (no custom-property inheritance in supported Safari), and SVG data
+URIs / mask gradients, where `var()` cannot reach or the colour is only alpha.
+
 ### Themeable Variables (change per theme/mode)
 
 All `--theme-*` variables can be overridden by themes:

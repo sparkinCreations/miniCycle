@@ -12,7 +12,7 @@
     align-items: center;
     gap: var(--space-2); /* Space between input and button */
     align-self: center;
-    background: var(--theme-input-bg, rgb(255, 255, 255));
+    background: var(--theme-input-bg, var(--color-white));
     border-radius: var(--radius-md);
     padding: var(--space-1-25) var(--space-1-25) var(--space-1-25) var(--space-2-5); /* Less right padding since button has its own */
     box-shadow: var(--shadow-card);
@@ -65,14 +65,14 @@ input[type="text"]:focus {
 }
 
 input[type="text"]:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
 /* Specific task input element */
 #taskInput {
     flex: 1;
-    background: var(--theme-input-bg, rgb(255, 255, 255));
+    background: var(--theme-input-bg, var(--color-white));
     color: var(--theme-input-text, var(--theme-text-on-surface));
     /* No vertical padding: the row (.task-input) already pads and centers this
        field. Its own top/bottom padding stacked with a font-size-driven line

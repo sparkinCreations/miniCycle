@@ -56,7 +56,7 @@ body.high-contrast:not(.dark-mode) {
 
 /* Tasks */
 body.high-contrast:not(.dark-mode) .task {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .task.completed {
@@ -73,51 +73,51 @@ body.high-contrast:not(.dark-mode) .task.completed {
    faint 60% grey ring in High Contrast mode (measured 1.5:1, Oct 2026). */
 body.high-contrast:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"],
 body.high-contrast:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .task input[type="checkbox"]:not(:checked) {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .pref-checkbox-incomplete {
-    border-color: #555555;
-    background: rgba(200, 200, 200, 0.5);
+    border-color: var(--color-neutral-555555);
+    background: var(--color-neutral-c8c8c8-a50);
 }
 
 /* Settings */
 body.high-contrast:not(.dark-mode) .settings-section.collapsible {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .toggle-slider {
     /* Drawn inside the track, not as a border: a border moves the knob's
        positioning box, which sat it 2px high and against the right edge. */
-    box-shadow: inset 0 0 0 2px #555555;
+    box-shadow: inset 0 0 0 2px var(--color-neutral-555555);
 }
 
 /* Stats panel */
 body.high-contrast:not(.dark-mode) .stats-panel {
-    border: 2px solid #333333;
-    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--color-neutral-333333);
+    background: var(--color-white-a90);
 }
 
 /* Task option buttons */
 body.high-contrast:not(.dark-mode) .task-btn {
-    border: 1px solid #999999;
+    border: 1px solid var(--color-neutral-999999);
 }
 
 /* Task options modal */
 body.high-contrast:not(.dark-mode) .task-option-item {
-    border: 1px solid #cccccc;
-    background: rgba(0, 0, 0, 0.04);
+    border: 1px solid var(--color-neutral-cccccc);
+    background: var(--color-black-a4);
 }
 
 body.high-contrast:not(.dark-mode) .task-options-section-header {
-    border-bottom: 2px solid #cccccc;
-    color: #222222;
+    border-bottom: 2px solid var(--color-neutral-cccccc);
+    color: var(--color-neutral-222222);
 }
 
 /* Overdue tasks */
 body.high-contrast:not(.dark-mode) .task.overdue-task {
     background: var(--color-error-bg);
-    color: #b71c1c;
+    color: var(--color-danger-on-light);
     border: 2px solid var(--color-error);
 }
 
@@ -130,8 +130,8 @@ body.high-contrast:not(.dark-mode) .task.overdue-task {
    pale against white (the default Medium, #facc15, is ~1.5:1). The colour
    still says which level. */
 body.high-contrast:not(.dark-mode) .task.high-priority {
-    border-left: 8px solid var(--task-priority-color, var(--priority-color, #dc3545));
-    box-shadow: inset 2px 0 0 #111111, 0 2px 5px rgba(0, 0, 0, 0.2);
+    border-left: 8px solid var(--task-priority-color, var(--priority-color, var(--color-error)));
+    box-shadow: inset 2px 0 0 var(--color-neutral-111111), 0 2px 5px var(--color-black-a20);
 }
 
 /* Glass surfaces → solid. The status bubble, the Focus View onboarding
@@ -142,22 +142,22 @@ body.high-contrast:not(.dark-mode) .task.high-priority {
    get; dark High Contrast needs none of this (its backdrop is near-black,
    5.5-13.7:1 measured). */
 body.high-contrast:not(.dark-mode) #help-window {
-    background: rgba(255, 255, 255, 0.97);
-    border: 2px solid #333333;
-    color: #111111;
+    background: var(--color-white-a97);
+    border: 2px solid var(--color-neutral-333333);
+    color: var(--color-neutral-111111);
     text-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }
 
 body.high-contrast:not(.dark-mode) #help-window h4 {
-    color: #0b3d91;
+    color: var(--color-blue-0b3d91);
 }
 
 body.high-contrast:not(.dark-mode) .first-run-welcome {
-    background: rgba(255, 255, 255, 0.97);
-    border: 2px solid #333333;
-    color: #111111;
+    background: var(--color-white-a97);
+    border: 2px solid var(--color-neutral-333333);
+    color: var(--color-neutral-111111);
     text-shadow: none;
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
@@ -170,27 +170,27 @@ body.high-contrast:not(.dark-mode) .first-run-welcome__message {
 }
 
 body.high-contrast:not(.dark-mode) .first-run-welcome .cycle-demo {
-    color: #111111;
+    color: var(--color-neutral-111111);
 }
 
 body.high-contrast:not(.dark-mode) #focus-mode-menu-btn,
 body.high-contrast:not(.dark-mode) #focus-mode-btn {
-    background: rgba(255, 255, 255, 0.97);
-    border: 2px solid #333333;
-    color: #111111;
+    background: var(--color-white-a97);
+    border: 2px solid var(--color-neutral-333333);
+    color: var(--color-neutral-111111);
 }
 
 body.high-contrast:not(.dark-mode) #focus-action-btn {
-    background: rgba(255, 255, 255, 0.97);
-    border: 2px solid #333333;
-    color: #111111;
+    background: var(--color-white-a97);
+    border: 2px solid var(--color-neutral-333333);
+    color: var(--color-neutral-111111);
 }
 
 /* Its caption ("Clear Tasks") sits under the circle, straight on the
    gradient: give it its own light backing. */
 body.high-contrast:not(.dark-mode) #focus-action-btn::after {
-    color: #111111;
-    background: rgba(255, 255, 255, 0.97);
+    color: var(--color-neutral-111111);
+    background: var(--color-white-a97);
     padding: 1px var(--space-1-5);
     border-radius: var(--radius-sm);
     text-shadow: none;
@@ -201,38 +201,38 @@ body.high-contrast:not(.dark-mode) #focus-action-btn::after {
 body.high-contrast:not(.dark-mode) #quick-actions-window {
     /* Its title, arrows and slot icons all read --pref-panel-text (white). */
     --pref-panel-text: #111111;
-    background: rgba(255, 255, 255, 0.97);
-    border: 2px solid #333333;
+    background: var(--color-white-a97);
+    border: 2px solid var(--color-neutral-333333);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
 }
 
 body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-title,
 body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-nav {
-    color: #111111;
+    color: var(--color-neutral-111111);
 }
 
 body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-nav,
 body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-slot.filled {
-    background: rgba(0, 0, 0, 0.06);
-    border: 1px solid #333333;
+    background: var(--overlay-light);
+    border: 1px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) #quick-actions-window .quick-actions-slot.empty {
-    border-color: #333333;
+    border-color: var(--color-neutral-333333);
 }
 
 /* The routine name is dark grey at 78% alpha on a 40% white strip over the
    gradient: ~4.3:1 measured. Full-strength here. */
 body.high-contrast:not(.dark-mode) #mini-cycle-title {
-    color: #111111;
+    color: var(--color-neutral-111111);
 }
 
 body.high-contrast:not(.dark-mode) .undo-redo-btn,
 body.high-contrast:not(.dark-mode) .undo-redo-btn:hover {
-    background: #1f1f1f;
-    border: 2px solid #1f1f1f;
-    color: #ffffff;
+    background: var(--color-neutral-1f1f1f);
+    border: 2px solid var(--color-neutral-1f1f1f);
+    color: var(--color-white);
     opacity: 1;
 }
 
@@ -245,13 +245,13 @@ body.high-contrast:not(.dark-mode) .storage-modal-overlay {
 
 /* Generic modal content */
 body.high-contrast:not(.dark-mode) .modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 /* --- About Modal --- */
 body.high-contrast:not(.dark-mode) .about-modal-content {
-    border: 2px solid #333333;
-    background: rgba(255, 255, 255, 0.9);
+    border: 2px solid var(--color-neutral-333333);
+    background: var(--color-white-a90);
 }
 
 body.high-contrast:not(.dark-mode) .about-tagline {
@@ -259,8 +259,8 @@ body.high-contrast:not(.dark-mode) .about-tagline {
 }
 
 body.high-contrast:not(.dark-mode) .about-version-badge {
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: var(--color-white-a75);
+    border: 1px solid var(--color-black-a20);
 }
 
 body.high-contrast:not(.dark-mode) .about-description {
@@ -268,8 +268,8 @@ body.high-contrast:not(.dark-mode) .about-description {
 }
 
 body.high-contrast:not(.dark-mode) .about-links {
-    background: rgba(255, 255, 255, 0.7);
-    border: 1px solid rgba(0, 0, 0, 0.15);
+    background: var(--color-white-a70);
+    border: 1px solid var(--overlay-strong);
 }
 
 body.high-contrast:not(.dark-mode) .about-link-divider {
@@ -277,7 +277,7 @@ body.high-contrast:not(.dark-mode) .about-link-divider {
 }
 
 body.high-contrast:not(.dark-mode) .about-footer {
-    border-top: 2px solid rgba(0, 0, 0, 0.25);
+    border-top: 2px solid var(--color-black-a25);
 }
 
 body.high-contrast:not(.dark-mode) .about-footer p {
@@ -294,32 +294,32 @@ body.high-contrast:not(.dark-mode) .about-modal-content .about-footer .about-cac
 
 /* --- Routine Switcher Modal --- */
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-title {
-    border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+    border-bottom: 2px solid var(--color-black-a25);
 }
 
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-list {
-    border: 2px solid #555555;
+    border: 2px solid var(--color-neutral-555555);
 }
 
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-item {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--color-black-a20);
 }
 
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-item:hover,
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-item:focus-visible {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
 }
 
 body.high-contrast:not(.dark-mode) .routine-search-input {
-    border: 2px solid #555555;
+    border: 2px solid var(--color-neutral-555555);
 }
 
 body.high-contrast:not(.dark-mode) .routine-search-input::placeholder {
-    color: #555555;
+    color: var(--color-neutral-555555);
 }
 
 body.high-contrast:not(.dark-mode) .routine-search-input:focus {
@@ -327,42 +327,42 @@ body.high-contrast:not(.dark-mode) .routine-search-input:focus {
 }
 
 body.high-contrast:not(.dark-mode) .routine-sort-label {
-    color: #333333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .cycle-item-size {
-    color: #555555;
-    background: rgba(0, 0, 0, 0.1);
+    color: var(--color-neutral-555555);
+    background: var(--overlay-medium);
 }
 
 body.high-contrast:not(.dark-mode) .switch-preview-window {
-    border: 2px solid rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--overlay-backdrop);
 }
 
 body.high-contrast:not(.dark-mode) .switch-preview-date {
-    color: #555555;
+    color: var(--color-neutral-555555);
 }
 
 body.high-contrast:not(.dark-mode) .switch-buttons {
-    color: #333333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .mini-cycle-switch-btn {
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--color-black-a20);
 }
 
 body.high-contrast:not(.dark-mode) .quick-actions-btn,
 body.high-contrast:not(.dark-mode) .routine-switcher-btn,
 body.high-contrast:not(.dark-mode) #personalization-btn,
 body.high-contrast:not(.dark-mode) #quick-dark-toggle {
-    border: 2px solid rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--color-black-a40);
     background: var(--overlay-white-medium);
 }
 
 /* The dark frost on a dark preset, as the toolbar group below: white on the
    white frost was unreadable. */
 body.high-contrast:not(.dark-mode) #menu-button {
-    border: 2px solid rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--color-black-a40);
     background: var(--pref-chrome-glass, var(--overlay-white-medium));
 }
 
@@ -384,85 +384,85 @@ body.high-contrast:not(.dark-mode) .mode-selector-wrapper .routine-switcher-btn 
 
 /* --- Themes Modal --- */
 body.high-contrast:not(.dark-mode) .themes-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .themes-modal-content h2 {
-    border-bottom: 2px solid #cccccc;
+    border-bottom: 2px solid var(--color-neutral-cccccc);
 }
 
 body.high-contrast:not(.dark-mode) .theme-radio-option {
-    background: rgba(0, 0, 0, 0.04);
-    border: 2px solid #cccccc;
+    background: var(--color-black-a4);
+    border: 2px solid var(--color-neutral-cccccc);
 }
 
 body.high-contrast:not(.dark-mode) .theme-radio-option:has(input:checked) {
-    border-color: #333333;
-    background: rgba(74, 144, 226, 0.15);
+    border-color: var(--color-neutral-333333);
+    background: var(--color-blue-4a90e2-a15);
 }
 
 body.high-contrast:not(.dark-mode) .theme-radio-option input[type="radio"] {
-    border: 2px solid #555555;
+    border: 2px solid var(--color-neutral-555555);
 }
 
 body.high-contrast:not(.dark-mode) #dark-mode-section {
-    background: rgba(0, 0, 0, 0.06);
-    border-top: 2px solid #cccccc;
+    background: var(--overlay-light);
+    border-top: 2px solid var(--color-neutral-cccccc);
 }
 
 body.high-contrast:not(.dark-mode) #dark-mode-section .custom-checkbox {
-    background: rgba(0, 0, 0, 0.05);
-    border: 1px solid #cccccc;
+    background: var(--color-black-a5);
+    border: 1px solid var(--color-neutral-cccccc);
     border-radius: 8px;
 }
 
 body.high-contrast:not(.dark-mode) #dark-mode-section .custom-checkbox .checkmark {
-    border: 2px solid #555555;
+    border: 2px solid var(--color-neutral-555555);
 }
 
 /* --- Personalization (Preferences) Modal --- */
 body.high-contrast:not(.dark-mode) .preferences-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-modal-content h2 {
-    border-bottom: 2px solid #cccccc;
+    border-bottom: 2px solid var(--color-neutral-cccccc);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-theme-notice {
-    background: rgba(74, 144, 226, 0.2);
-    border: 2px solid rgba(74, 144, 226, 0.4);
+    background: var(--color-blue-4a90e2-a20);
+    border: 2px solid var(--color-blue-4a90e2-a40);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-color-row {
-    border: 1px solid #cccccc;
+    border: 1px solid var(--color-neutral-cccccc);
     border-radius: 8px;
 }
 
 body.high-contrast:not(.dark-mode) .preferences-color-row input[type="color"] {
-    border: 2px solid #555555;
+    border: 2px solid var(--color-neutral-555555);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-color-row input[type="range"] {
-    background: #999999;
+    background: var(--color-neutral-999999);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-reset-btn {
-    border: 1px solid #999999;
-    color: #333333;
+    border: 1px solid var(--color-neutral-999999);
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-footer {
-    border-top: 2px solid #cccccc;
+    border-top: 2px solid var(--color-neutral-cccccc);
 }
 
 body.high-contrast:not(.dark-mode) .preferences-preview-label {
-    color: rgba(255, 255, 255, 1);
+    color: var(--color-white);
 }
 
 /* --- Feedback Modal --- */
 body.high-contrast:not(.dark-mode) .feedback-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .feedback-modal-content p {
@@ -471,37 +471,37 @@ body.high-contrast:not(.dark-mode) .feedback-modal-content p {
 
 body.high-contrast:not(.dark-mode) #feedback-text,
 body.high-contrast:not(.dark-mode) #feedback-email {
-    border: 2px solid #555555;
+    border: 2px solid var(--color-neutral-555555);
 }
 
 /* --- Reminders Modal --- */
 body.high-contrast:not(.dark-mode) .reminders-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .reminders-modal-content .close-btn {
-    color: #333333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) #frequency-section {
-    border-top: 2px solid #cccccc;
+    border-top: 2px solid var(--color-neutral-cccccc);
 }
 
 /* --- Games Modal --- */
 body.high-contrast:not(.dark-mode) .games-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .game-card {
-    border: 2px solid #999999;
+    border: 2px solid var(--color-neutral-999999);
 }
 
 body.high-contrast:not(.dark-mode) .game-card-description {
-    color: #333333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .game-card-btn {
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--color-black-a20);
 }
 
 body.high-contrast:not(.dark-mode) .game-card-btn:disabled {
@@ -510,62 +510,62 @@ body.high-contrast:not(.dark-mode) .game-card-btn:disabled {
 
 /* --- Storage Modal --- */
 body.high-contrast:not(.dark-mode) .storage-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .storage-modal-box {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .storage-modal-header {
-    border-bottom: 2px solid #999999;
+    border-bottom: 2px solid var(--color-neutral-999999);
 }
 
 body.high-contrast:not(.dark-mode) .storage-modal-buttons {
-    border-top: 2px solid #999999;
+    border-top: 2px solid var(--color-neutral-999999);
 }
 
 /* --- Settings Modal --- */
 body.high-contrast:not(.dark-mode) .settings-modal-content {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 /* --- Recurring Panel --- */
 body.high-contrast:not(.dark-mode) .modal-panel {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 /* --- Mini Modal Box (generic small modals) --- */
 body.high-contrast:not(.dark-mode) .mini-modal-box,
 body.high-contrast:not(.dark-mode) .miniCycle-prompt-box {
-    border: 2px solid #333333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 /* Progress bar */
 body.high-contrast:not(.dark-mode) .progress-container {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: var(--overlay-backdrop);
+    border: 1px solid var(--color-black-a20);
 }
 
 /* Notifications */
 body.high-contrast:not(.dark-mode) .notification .close-btn {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a30);
 }
 
 /* Quick option buttons in notifications */
 body.high-contrast:not(.dark-mode) .notification-quick-option {
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.3);
+    border: 1px solid var(--color-white-a50);
+    background: var(--color-white-a30);
 }
 
 /* Completed tasks header */
 body.high-contrast:not(.dark-mode) .completed-tasks-header {
-    color: rgba(255, 255, 255, 1);
+    color: var(--color-white);
 }
 
 /* Empty state */
 body.high-contrast:not(.dark-mode) .empty-state-hint {
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--color-white-a95);
 }
 
 body.high-contrast:not(.dark-mode) .empty-state-icon {
@@ -574,18 +574,18 @@ body.high-contrast:not(.dark-mode) .empty-state-icon {
 
 /* Scrollbar */
 body.high-contrast:not(.dark-mode) .task-list::-webkit-scrollbar-track {
-    background: rgba(100, 180, 255, 0.25);
+    background: var(--color-blue-64b4ff-a25);
 }
 
 /* Placeholders */
 body.high-contrast:not(.dark-mode) input::placeholder,
 body.high-contrast:not(.dark-mode) textarea::placeholder {
-    color: #555555;
+    color: var(--color-neutral-555555);
 }
 
 /* Menu/mode selector */
 body.high-contrast:not(.dark-mode) .mode-selector {
-    border: 2px solid rgba(0, 0, 0, 0.4);
+    border: 2px solid var(--color-black-a40);
 }
 
 /* The header's toolbar hangs from the hairline: no top edge (mode-selector.css). */
@@ -595,18 +595,18 @@ body.high-contrast:not(.dark-mode) .mode-selector-wrapper .mode-selector {
 
 /* Footer note in task options modal */
 body.high-contrast:not(.dark-mode) .modal-footer-note {
-    color: #333333;
+    color: var(--color-neutral-333333);
 }
 
 /* Reset/secondary buttons */
 body.high-contrast:not(.dark-mode) .reset-btn {
-    border: 1px solid #999999;
-    color: #222222;
+    border: 1px solid var(--color-neutral-999999);
+    color: var(--color-neutral-222222);
 }
 
 /* Three dots menu button */
 body.high-contrast:not(.dark-mode) .three-dots-btn {
-    color: #333333;
+    color: var(--color-neutral-333333);
 }
 
 /* Disabled buttons */
@@ -616,19 +616,19 @@ body.high-contrast:not(.dark-mode) button:disabled {
 
 /* Main menu — container */
 body.high-contrast:not(.dark-mode) .menu-container {
-    border: 2px solid #333333;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    border: 2px solid var(--color-neutral-333333);
+    box-shadow: 0 4px 12px var(--overlay-backdrop);
 }
 
 /* Main menu — sections */
 body.high-contrast:not(.dark-mode) .menu-section {
-    background: rgba(255, 255, 255, 0.75);
-    border: 2px solid rgba(0, 0, 0, 0.3);
+    background: var(--color-white-a75);
+    border: 2px solid var(--overlay-backdrop);
 }
 
 /* Main menu — section headers */
 body.high-contrast:not(.dark-mode) .menu-section-header {
-    color: #222222;
+    color: var(--color-neutral-222222);
 }
 
 body.high-contrast:not(.dark-mode) .menu-section-toggle {
@@ -637,37 +637,37 @@ body.high-contrast:not(.dark-mode) .menu-section-toggle {
 
 /* Main menu — buttons */
 body.high-contrast:not(.dark-mode) .menu-section-grid button {
-    background: rgba(0, 0, 0, 0.08);
-    border: 1px solid rgba(0, 0, 0, 0.2);
-    color: #111111;
+    background: var(--color-black-a8);
+    border: 1px solid var(--color-black-a20);
+    color: var(--color-neutral-111111);
 }
 
 body.high-contrast:not(.dark-mode) .menu-section-grid button:hover {
-    background: rgba(0, 0, 0, 0.15);
-    border-color: rgba(0, 0, 0, 0.35);
+    background: var(--overlay-strong);
+    border-color: var(--color-black-a35);
 }
 
 /* Main menu — date text */
 body.high-contrast:not(.dark-mode) #current-date {
-    color: rgba(0, 0, 0, 0.75);
+    color: var(--color-black-a75);
 }
 
 /* Main menu — header text */
 body.high-contrast:not(.dark-mode) .main-menu-header {
-    color: #111111;
+    color: var(--color-neutral-111111);
 }
 
 /* Main menu — header separator */
 body.high-contrast:not(.dark-mode) .main-menu-header-row::after {
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--color-black-a25);
     height: 2px;
 }
 
 /* Main menu — mode description toggle */
 body.high-contrast:not(.dark-mode) .mode-description-toggle {
-    background: rgba(0, 0, 0, 0.1);
-    color: #222222;
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: var(--overlay-medium);
+    color: var(--color-neutral-222222);
+    border: 1px solid var(--color-black-a20);
 }
 
 body.high-contrast:not(.dark-mode) .mode-description-toggle .mode-badge {
@@ -676,31 +676,31 @@ body.high-contrast:not(.dark-mode) .mode-description-toggle .mode-badge {
 
 /* Main menu — mode description box */
 body.high-contrast:not(.dark-mode) .mode-description {
-    border: 1px solid #cccccc;
-    color: #111111;
+    border: 1px solid var(--color-neutral-cccccc);
+    color: var(--color-neutral-111111);
 }
 
 /* Main menu — close button */
 
 /* Main menu — legacy list buttons */
 body.high-contrast:not(.dark-mode) .menu-container ul li button {
-    color: #111111;
+    color: var(--color-neutral-111111);
 }
 
 /* Main menu — grid buttons */
 body.high-contrast:not(.dark-mode) .menu-grid button {
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(0, 0, 0, 0.2);
+    background: var(--color-white-a50);
+    border: 1px solid var(--color-black-a20);
 }
 
 /* Main menu — icon text (three dots icon-text) */
 body.high-contrast:not(.dark-mode) .menu-section-grid #menu-task-options .icon-text {
-    color: #222222;
+    color: var(--color-neutral-222222);
 }
 
 /* Main menu — collapsible header hover */
 body.high-contrast:not(.dark-mode) .menu-section-header.collapsible:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--overlay-medium);
 }
 
 /* =============================================================================
@@ -756,7 +756,7 @@ html body.high-contrast.dark-mode {
 
 /* Tasks */
 body.high-contrast.dark-mode .task {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .task.completed {
@@ -765,54 +765,54 @@ body.high-contrast.dark-mode .task.completed {
 
 /* Checkboxes */
 body.high-contrast.dark-mode .task input[type="checkbox"] {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .pref-checkbox-incomplete {
-    border-color: #888888;
-    background: rgba(100, 100, 100, 0.5);
+    border-color: var(--color-neutral-888888);
+    background: var(--color-neutral-646464-a50);
 }
 
 /* Settings */
 body.high-contrast.dark-mode .settings-section.collapsible,
 body.high-contrast.dark-mode .settings-section.collapsible.collapsed {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .toggle-slider {
     /* Drawn inside the track, not as a border: a border moves the knob's
        positioning box, which sat it 2px high and against the right edge. */
-    box-shadow: inset 0 0 0 2px #888888;
+    box-shadow: inset 0 0 0 2px var(--color-neutral-888888);
 }
 
 /* Stats panel */
 body.high-contrast.dark-mode .stats-panel {
-    border: 2px solid #aaaaaa;
-    background: rgba(42, 42, 42, 0.95);
+    border: 2px solid var(--color-neutral-aaaaaa);
+    background: var(--color-neutral-2a2a2a-a95);
 }
 
 /* Task option buttons (the .task-options form matches dark-mode.css's base
    rule, which otherwise outranks this one; its hover/active states still win) */
 body.high-contrast.dark-mode .task-btn,
 body.high-contrast.dark-mode .task-options .task-btn {
-    border: 1px solid #777777;
+    border: 1px solid var(--color-neutral-777777);
 }
 
 /* Task options modal */
 body.high-contrast.dark-mode .task-option-item {
-    border: 1px solid #666666;
-    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid var(--color-neutral-666666);
+    background: var(--color-white-a6);
 }
 
 body.high-contrast.dark-mode .task-options-section-header {
-    border-bottom: 2px solid #666666;
-    color: #e0e0e0;
+    border-bottom: 2px solid var(--color-neutral-666666);
+    color: var(--color-neutral-e0e0e0);
 }
 
 /* Overdue tasks */
 body.high-contrast.dark-mode .task.overdue-task {
     background: var(--color-error-bg-dark);
-    color: #ff5252;
+    color: var(--color-red-ff5252);
     border: 2px solid var(--color-error);
 }
 
@@ -820,7 +820,7 @@ body.high-contrast.dark-mode .task.overdue-task {
    here too (`2px solid #aaa`). Light rule inside the band on a dark task. */
 body.high-contrast.dark-mode .task.high-priority {
     border-left: 8px solid var(--task-priority-color, var(--priority-color, var(--dark-priority-border)));
-    box-shadow: inset 2px 0 0 #eeeeee;
+    box-shadow: inset 2px 0 0 var(--color-neutral-eeeeee);
 }
 
 /* Modal overlays */
@@ -832,13 +832,13 @@ body.high-contrast.dark-mode .storage-modal-overlay {
 
 /* Generic modal content */
 body.high-contrast.dark-mode .modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* --- About Modal --- */
 body.high-contrast.dark-mode .about-modal-content {
-    border: 2px solid #aaaaaa;
-    background: rgba(42, 42, 42, 0.95);
+    border: 2px solid var(--color-neutral-aaaaaa);
+    background: var(--color-neutral-2a2a2a-a95);
 }
 
 body.high-contrast.dark-mode .about-tagline {
@@ -846,8 +846,8 @@ body.high-contrast.dark-mode .about-tagline {
 }
 
 body.high-contrast.dark-mode #about-modal .about-version-badge {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a15);
+    border: 1px solid var(--color-white-a30);
 }
 
 body.high-contrast.dark-mode .about-description {
@@ -855,8 +855,8 @@ body.high-contrast.dark-mode .about-description {
 }
 
 body.high-contrast.dark-mode #about-modal .about-links {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a10);
+    border: 1px solid var(--overlay-white-light);
 }
 
 body.high-contrast.dark-mode .about-link-divider {
@@ -864,7 +864,7 @@ body.high-contrast.dark-mode .about-link-divider {
 }
 
 body.high-contrast.dark-mode .about-footer {
-    border-top: 2px solid rgba(255, 255, 255, 0.25);
+    border-top: 2px solid var(--color-white-a25);
 }
 
 body.high-contrast.dark-mode .about-footer p {
@@ -881,35 +881,35 @@ body.high-contrast.dark-mode .about-modal-content .about-footer .about-cache {
 
 /* --- Routine Switcher Modal --- */
 body.high-contrast.dark-mode .mini-cycle-switch-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .mini-cycle-switch-title {
-    border-bottom: 2px solid rgba(255, 255, 255, 0.25);
+    border-bottom: 2px solid var(--color-white-a25);
 }
 
 body.high-contrast.dark-mode .mini-cycle-switch-list {
-    border: 2px solid #888888;
+    border: 2px solid var(--color-neutral-888888);
 }
 
 body.high-contrast.dark-mode .mini-cycle-switch-item {
-    border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-    color: #e0e0e0;
+    border-bottom: 1px solid var(--color-white-a15);
+    color: var(--color-neutral-e0e0e0);
 }
 
 body.high-contrast.dark-mode .mini-cycle-switch-item:hover,
 body.high-contrast.dark-mode .mini-cycle-switch-item:focus-visible {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--color-white-a12);
 }
 
 body.high-contrast.dark-mode .routine-search-input {
-    border: 2px solid #888888;
-    background: #2a2a2a;
-    color: #e0e0e0;
+    border: 2px solid var(--color-neutral-888888);
+    background: var(--color-neutral-2a2a2a);
+    color: var(--color-neutral-e0e0e0);
 }
 
 body.high-contrast.dark-mode .routine-search-input::placeholder {
-    color: #aaaaaa;
+    color: var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .routine-search-input:focus {
@@ -917,30 +917,30 @@ body.high-contrast.dark-mode .routine-search-input:focus {
 }
 
 body.high-contrast.dark-mode .routine-sort-label {
-    color: #cccccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .cycle-item-size {
-    color: #aaaaaa;
-    background: rgba(255, 255, 255, 0.1);
+    color: var(--color-neutral-aaaaaa);
+    background: var(--color-white-a10);
 }
 
 body.high-contrast.dark-mode .switch-preview-window {
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    background: #1a1a1a;
-    color: #e0e0e0;
+    border: 2px solid var(--color-white-a30);
+    background: var(--color-neutral-1a1a1a);
+    color: var(--color-neutral-e0e0e0);
 }
 
 body.high-contrast.dark-mode .switch-preview-date {
-    color: #aaaaaa;
+    color: var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .switch-buttons {
-    color: #cccccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .mini-cycle-switch-btn {
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--overlay-white-light);
 }
 
 body.high-contrast.dark-mode .quick-actions-btn,
@@ -948,9 +948,9 @@ body.high-contrast.dark-mode .routine-switcher-btn,
 body.high-contrast.dark-mode #menu-button,
 body.high-contrast.dark-mode #personalization-btn,
 body.high-contrast.dark-mode #quick-dark-toggle {
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.15);
-    color: #e0e0e0;
+    border: 2px solid var(--overlay-white-medium);
+    background: var(--color-white-a15);
+    color: var(--color-neutral-e0e0e0);
 }
 
 /* The header's joined group: one divider (see the light rule above). */
@@ -966,85 +966,85 @@ body.high-contrast.dark-mode .mode-selector-wrapper .routine-switcher-btn {
 
 /* --- Themes Modal --- */
 body.high-contrast.dark-mode .themes-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .themes-modal-content h2 {
-    border-bottom: 2px solid #666666;
+    border-bottom: 2px solid var(--color-neutral-666666);
 }
 
 body.high-contrast.dark-mode .theme-radio-option {
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid #666666;
+    background: var(--color-white-a5);
+    border: 2px solid var(--color-neutral-666666);
 }
 
 body.high-contrast.dark-mode .theme-radio-option:has(input:checked) {
-    border-color: #aaaaaa;
-    background: rgba(74, 144, 226, 0.15);
+    border-color: var(--color-neutral-aaaaaa);
+    background: var(--color-blue-4a90e2-a15);
 }
 
 body.high-contrast.dark-mode .theme-radio-option input[type="radio"] {
-    border: 2px solid #888888;
+    border: 2px solid var(--color-neutral-888888);
 }
 
 body.high-contrast.dark-mode #dark-mode-section {
-    background: rgba(255, 255, 255, 0.05);
-    border-top: 2px solid #666666;
+    background: var(--color-white-a5);
+    border-top: 2px solid var(--color-neutral-666666);
 }
 
 body.high-contrast.dark-mode #dark-mode-section .custom-checkbox {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid #666666;
+    background: var(--color-white-a6);
+    border: 1px solid var(--color-neutral-666666);
     border-radius: 8px;
 }
 
 body.high-contrast.dark-mode #dark-mode-section .custom-checkbox .checkmark {
-    border: 2px solid #888888;
+    border: 2px solid var(--color-neutral-888888);
 }
 
 /* --- Personalization (Preferences) Modal --- */
 body.high-contrast.dark-mode .preferences-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .preferences-modal-content h2 {
-    border-bottom: 2px solid #666666;
+    border-bottom: 2px solid var(--color-neutral-666666);
 }
 
 body.high-contrast.dark-mode .preferences-theme-notice {
-    background: rgba(74, 144, 226, 0.2);
-    border: 2px solid rgba(74, 144, 226, 0.4);
+    background: var(--color-blue-4a90e2-a20);
+    border: 2px solid var(--color-blue-4a90e2-a40);
 }
 
 body.high-contrast.dark-mode .preferences-color-row {
-    border: 1px solid #666666;
+    border: 1px solid var(--color-neutral-666666);
     border-radius: 8px;
 }
 
 body.high-contrast.dark-mode .preferences-color-row input[type="color"] {
-    border: 2px solid #888888;
+    border: 2px solid var(--color-neutral-888888);
 }
 
 body.high-contrast.dark-mode .preferences-color-row input[type="range"] {
-    background: #666666;
+    background: var(--color-neutral-666666);
 }
 
 body.high-contrast.dark-mode .preferences-reset-btn {
-    border: 1px solid #777777;
-    color: #cccccc;
+    border: 1px solid var(--color-neutral-777777);
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .preferences-footer {
-    border-top: 2px solid #666666;
+    border-top: 2px solid var(--color-neutral-666666);
 }
 
 body.high-contrast.dark-mode .preferences-preview-label {
-    color: rgba(255, 255, 255, 1);
+    color: var(--color-white);
 }
 
 /* --- Feedback Modal --- */
 body.high-contrast.dark-mode .feedback-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .feedback-modal-content p {
@@ -1053,37 +1053,37 @@ body.high-contrast.dark-mode .feedback-modal-content p {
 
 body.high-contrast.dark-mode #feedback-text,
 body.high-contrast.dark-mode #feedback-email {
-    border: 2px solid #888888;
+    border: 2px solid var(--color-neutral-888888);
 }
 
 /* --- Reminders Modal --- */
 body.high-contrast.dark-mode .reminders-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .reminders-modal-content .close-btn {
-    color: #cccccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode #frequency-section {
-    border-top: 2px solid #666666;
+    border-top: 2px solid var(--color-neutral-666666);
 }
 
 /* --- Games Modal --- */
 body.high-contrast.dark-mode .games-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .game-card {
-    border: 2px solid #777777;
+    border: 2px solid var(--color-neutral-777777);
 }
 
 body.high-contrast.dark-mode .game-card-description {
-    color: #cccccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .game-card-btn {
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--overlay-white-light);
 }
 
 body.high-contrast.dark-mode .game-card-btn:disabled {
@@ -1092,62 +1092,62 @@ body.high-contrast.dark-mode .game-card-btn:disabled {
 
 /* --- Storage Modal --- */
 body.high-contrast.dark-mode .storage-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .storage-modal-box {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .storage-modal-header {
-    border-bottom: 2px solid #777777;
+    border-bottom: 2px solid var(--color-neutral-777777);
 }
 
 body.high-contrast.dark-mode .storage-modal-buttons {
-    border-top: 2px solid #777777;
+    border-top: 2px solid var(--color-neutral-777777);
 }
 
 /* --- Settings Modal --- */
 body.high-contrast.dark-mode .settings-modal-content {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* --- Recurring Panel --- */
 body.high-contrast.dark-mode .modal-panel {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* --- Mini Modal Box (generic small modals) --- */
 body.high-contrast.dark-mode .mini-modal-box,
 body.high-contrast.dark-mode .miniCycle-prompt-box,
 body.high-contrast.dark-mode #storage-viewer-overlay .mini-modal-box.wide {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* Progress bar */
 body.high-contrast.dark-mode .progress-container {
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a15);
+    border: 1px solid var(--overlay-white-light);
 }
 
 /* Notifications */
 body.high-contrast.dark-mode .notification .close-btn {
-    background: rgba(255, 255, 255, 0.3);
+    background: var(--color-white-a30);
 }
 
 body.high-contrast.dark-mode .notification-quick-option {
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    background: rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--color-white-a50);
+    background: var(--overlay-white-light);
 }
 
 /* Completed tasks header */
 body.high-contrast.dark-mode .completed-tasks-header {
-    color: rgba(255, 255, 255, 1);
+    color: var(--color-white);
 }
 
 /* Empty state */
 body.high-contrast.dark-mode .empty-state-hint {
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--color-white-a95);
 }
 
 body.high-contrast.dark-mode .empty-state-icon {
@@ -1156,18 +1156,18 @@ body.high-contrast.dark-mode .empty-state-icon {
 
 /* Scrollbar */
 body.high-contrast.dark-mode .task-list::-webkit-scrollbar-track {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
 }
 
 /* Placeholders */
 body.high-contrast.dark-mode input::placeholder,
 body.high-contrast.dark-mode textarea::placeholder {
-    color: #aaaaaa;
+    color: var(--color-neutral-aaaaaa);
 }
 
 /* Menu/mode selector */
 body.high-contrast.dark-mode .mode-selector {
-    border: 2px solid rgba(255, 255, 255, 0.4);
+    border: 2px solid var(--overlay-white-medium);
 }
 
 /* The header's toolbar hangs from the hairline: no top edge (mode-selector.css). */
@@ -1177,18 +1177,18 @@ body.high-contrast.dark-mode .mode-selector-wrapper .mode-selector {
 
 /* Footer note in task options modal */
 body.high-contrast.dark-mode .modal-footer-note {
-    color: #cccccc;
+    color: var(--color-neutral-cccccc);
 }
 
 /* Reset/secondary buttons */
 body.high-contrast.dark-mode .reset-btn {
-    border: 1px solid #777777;
-    color: #e0e0e0;
+    border: 1px solid var(--color-neutral-777777);
+    color: var(--color-neutral-e0e0e0);
 }
 
 /* Three dots menu button */
 body.high-contrast.dark-mode .three-dots-btn {
-    color: #cccccc;
+    color: var(--color-neutral-cccccc);
 }
 
 /* Disabled buttons */
@@ -1198,19 +1198,19 @@ body.high-contrast.dark-mode button:disabled {
 
 /* Main menu — container */
 body.high-contrast.dark-mode .menu-container {
-    border: 2px solid #888888;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    border: 2px solid var(--color-neutral-888888);
+    box-shadow: 0 4px 12px var(--color-black-a60);
 }
 
 /* Main menu — sections */
 body.high-contrast.dark-mode .menu-section {
-    background: rgba(255, 255, 255, 0.1);
-    border: 2px solid rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a10);
+    border: 2px solid var(--color-white-a25);
 }
 
 /* Main menu — section headers */
 body.high-contrast.dark-mode .menu-section-header {
-    color: #e0e0e0;
+    color: var(--color-neutral-e0e0e0);
 }
 
 body.high-contrast.dark-mode .menu-section-toggle {
@@ -1219,37 +1219,37 @@ body.high-contrast.dark-mode .menu-section-toggle {
 
 /* Main menu — buttons */
 body.high-contrast.dark-mode .menu-section-grid button {
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    color: #f0f0f0;
+    background: var(--color-white-a12);
+    border: 1px solid var(--color-white-a25);
+    color: var(--color-neutral-f0f0f0);
 }
 
 body.high-contrast.dark-mode .menu-section-grid button:hover {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-light);
+    border-color: var(--overlay-white-medium);
 }
 
 /* Main menu — date text */
 body.high-contrast.dark-mode #current-date {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--overlay-white-strong);
 }
 
 /* Main menu — header text */
 body.high-contrast.dark-mode .main-menu-header {
-    color: #f0f0f0;
+    color: var(--color-neutral-f0f0f0);
 }
 
 /* Main menu — header separator */
 body.high-contrast.dark-mode .main-menu-header-row::after {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a25);
     height: 2px;
 }
 
 /* Main menu — mode description toggle */
 body.high-contrast.dark-mode .mode-description-toggle {
-    background: rgba(255, 255, 255, 0.1);
-    color: #e0e0e0;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a10);
+    color: var(--color-neutral-e0e0e0);
+    border: 1px solid var(--overlay-white-light);
 }
 
 body.high-contrast.dark-mode .mode-description-toggle .mode-badge {
@@ -1258,27 +1258,27 @@ body.high-contrast.dark-mode .mode-description-toggle .mode-badge {
 
 /* Main menu — mode description box */
 body.high-contrast.dark-mode .mode-description {
-    background: #1a1a2e;
-    border: 1px solid #666666;
-    color: #e0e0e0;
+    background: var(--color-indigo-1a1a2e);
+    border: 1px solid var(--color-neutral-666666);
+    color: var(--color-neutral-e0e0e0);
 }
 
 /* Main menu — close button */
 
 /* Main menu — legacy list buttons */
 body.high-contrast.dark-mode .menu-container ul li button {
-    color: #e0e0e0;
+    color: var(--color-neutral-e0e0e0);
 }
 
 /* Main menu — grid buttons */
 body.high-contrast.dark-mode .menu-grid button {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--color-white-a10);
+    border: 1px solid var(--overlay-white-light);
 }
 
 /* Main menu — collapsible header hover */
 body.high-contrast.dark-mode .menu-section-header.collapsible:hover {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 /* =============================================================================
@@ -1289,43 +1289,43 @@ body.high-contrast.dark-mode .menu-section-header.collapsible:hover {
    out-weigh buttons.css's rules on classes, whatever the load order. */
 
 body.high-contrast:not(.dark-mode) .btn.btn-secondary {
-    background: #f0f0f0;
-    color: #111111;
-    border: 2px solid #333333;
+    background: var(--color-neutral-f0f0f0);
+    color: var(--color-neutral-111111);
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast.dark-mode .btn.btn-secondary {
-    background: #3a3a3a;
-    color: #f0f0f0;
-    border: 2px solid #aaaaaa;
+    background: var(--color-neutral-3a3a3a);
+    color: var(--color-neutral-f0f0f0);
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 @media (hover: hover) and (pointer: fine) {
     body.high-contrast:not(.dark-mode) .btn.btn-secondary:hover:not(:disabled) {
-        background: #e0e0e0;
+        background: var(--color-neutral-e0e0e0);
     }
 
     body.high-contrast.dark-mode .btn.btn-secondary:hover:not(:disabled) {
-        background: #4a4a4a;
+        background: var(--color-neutral-4a4a4a);
     }
 }
 
 body.high-contrast:not(.dark-mode) .btn.btn-primary,
 body.high-contrast:not(.dark-mode) .btn.btn-danger {
-    border: 2px solid #1a1a1a;
+    border: 2px solid var(--color-neutral-1a1a1a);
 }
 
 body.high-contrast.dark-mode .btn.btn-primary,
 body.high-contrast.dark-mode .btn.btn-danger {
-    border: 2px solid #aaaaaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast:not(.dark-mode) .close-bar {
-    border-top: 2px solid #333333;
+    border-top: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast.dark-mode .close-bar {
-    border-top: 2px solid #aaaaaa;
+    border-top: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* =============================================================================
@@ -1384,17 +1384,17 @@ body.high-contrast *:focus-visible {
 .settings-select {
     width: 100%;
     padding: 8px 12px;
-    border: 1px solid var(--theme-input-border, #cccccc);
+    border: 1px solid var(--theme-input-border, var(--color-neutral-cccccc));
     border-radius: var(--radius-md, 8px);
-    background: var(--theme-input-bg, #ffffff);
-    color: var(--theme-input-text, #333333);
+    background: var(--theme-input-bg, var(--color-white));
+    color: var(--theme-input-text, var(--color-neutral-333333));
     font-size: var(--font-size-sm);
     font-family: var(--font-family);
     cursor: pointer;
 }
 
 .settings-select:focus-visible {
-    outline: 2px solid var(--accent-color, #007bff);
+    outline: 2px solid var(--accent-color, var(--color-accent));
     outline-offset: 2px;
 }
 
@@ -1403,28 +1403,28 @@ body.high-contrast *:focus-visible {
    ============================================================================= */
 
 body.high-contrast:not(.dark-mode) #recurring-settings-panel {
-    background: #e8e8e8;
-    border: 2px solid #333;
+    background: var(--color-neutral-e8e8e8);
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .recurring-settings-title {
-    color: #000;
+    color: var(--color-black);
 }
 
 body.high-contrast:not(.dark-mode) #recur-frequency-btn {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .recurring-task-item {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
     box-shadow: none;
 }
 
 body.high-contrast:not(.dark-mode) .monthly-days,
 body.high-contrast:not(.dark-mode) .yearly-months,
 body.high-contrast:not(.dark-mode) .yearly-days {
-    background: #c8c8c8;
-    border: 2px solid #333;
+    background: var(--color-neutral-c8c8c8);
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .monthly-day-box,
@@ -1432,63 +1432,63 @@ body.high-contrast:not(.dark-mode) .weekly-day-box,
 body.high-contrast:not(.dark-mode) .biweekly-day-box,
 body.high-contrast:not(.dark-mode) .yearly-month-box,
 body.high-contrast:not(.dark-mode) .yearly-day-box {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .time-picker-wrapper {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .time-picker-group input[type="number"],
 body.high-contrast:not(.dark-mode) .time-picker-group select,
 body.high-contrast:not(.dark-mode) .recurring-time-input {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) #specific-dates-panel {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .specific-date-entry input[type="date"] {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) #non-recurring-tasks li {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .available-tasks-list {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .available-tasks-header {
-    color: #333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .no-available-tasks {
-    color: #333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .recurring-empty-state {
-    color: #333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .add-recurring-task-btn {
-    border: 2px dashed #333;
-    color: #000;
+    border: 2px dashed var(--color-neutral-333333);
+    color: var(--color-black);
 }
 
 body.high-contrast:not(.dark-mode) .select-all-add-recurring-btn {
-    color: #000;
+    color: var(--color-black);
     text-decoration: underline;
 }
 
 body.high-contrast:not(.dark-mode) .recurring-remove-btn {
-    color: #cc0000;
+    color: var(--color-red-cc0000);
 }
 
 body.high-contrast:not(.dark-mode) #toggle-check-all {
-    border: 1px solid #333;
+    border: 1px solid var(--color-neutral-333333);
 }
 
 /* =============================================================================
@@ -1496,28 +1496,28 @@ body.high-contrast:not(.dark-mode) #toggle-check-all {
    ============================================================================= */
 
 body.high-contrast.dark-mode #recurring-settings-panel {
-    background: #2a2a2a;
-    border: 2px solid #aaa;
+    background: var(--color-neutral-2a2a2a);
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .recurring-settings-title {
-    color: #fff;
+    color: var(--color-white);
 }
 
 body.high-contrast.dark-mode #recur-frequency-btn {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .recurring-task-item {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
     box-shadow: none;
 }
 
 body.high-contrast.dark-mode .monthly-days,
 body.high-contrast.dark-mode .yearly-months,
 body.high-contrast.dark-mode .yearly-days {
-    background: #3a3a3a;
-    border: 2px solid #aaa;
+    background: var(--color-neutral-3a3a3a);
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .monthly-day-box,
@@ -1525,63 +1525,63 @@ body.high-contrast.dark-mode .weekly-day-box,
 body.high-contrast.dark-mode .biweekly-day-box,
 body.high-contrast.dark-mode .yearly-month-box,
 body.high-contrast.dark-mode .yearly-day-box {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .time-picker-wrapper {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .time-picker-group input[type="number"],
 body.high-contrast.dark-mode .time-picker-group select,
 body.high-contrast.dark-mode .recurring-time-input {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode #specific-dates-panel {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .specific-date-entry input[type="date"] {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode #non-recurring-tasks li {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .available-tasks-list {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .available-tasks-header {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .no-available-tasks {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .recurring-empty-state {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .add-recurring-task-btn {
-    border: 2px dashed #aaa;
-    color: #fff;
+    border: 2px dashed var(--color-neutral-aaaaaa);
+    color: var(--color-white);
 }
 
 body.high-contrast.dark-mode .select-all-add-recurring-btn {
-    color: #6cf;
+    color: var(--color-cyan-66ccff);
     text-decoration: underline;
 }
 
 body.high-contrast.dark-mode .recurring-remove-btn {
-    color: #ff4444;
+    color: var(--color-red-ff4444);
 }
 
 body.high-contrast.dark-mode #toggle-check-all {
-    border: 1px solid #aaa;
+    border: 1px solid var(--color-neutral-aaaaaa);
 }
 
 /* =============================================================================
@@ -1589,33 +1589,33 @@ body.high-contrast.dark-mode #toggle-check-all {
    ============================================================================= */
 
 body.high-contrast:not(.dark-mode) .stats-panel {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .stats-feature-btn {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .history-btn {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .achievement-badges-btn {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) #all-routines-count {
-    color: #333;
+    color: var(--color-neutral-333333);
     opacity: 1;
 }
 
 body.high-contrast:not(.dark-mode) #milestone-progress-text {
-    color: #333;
+    color: var(--color-neutral-333333);
     opacity: 1;
 }
 
 body.high-contrast:not(.dark-mode) .badge {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 /* =============================================================================
@@ -1623,33 +1623,33 @@ body.high-contrast:not(.dark-mode) .badge {
    ============================================================================= */
 
 body.high-contrast.dark-mode .stats-panel {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .stats-feature-btn {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .history-btn {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .achievement-badges-btn {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode #all-routines-count {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
     opacity: 1;
 }
 
 body.high-contrast.dark-mode #milestone-progress-text {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
     opacity: 1;
 }
 
 body.high-contrast.dark-mode .badge {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* =============================================================================
@@ -1657,20 +1657,20 @@ body.high-contrast.dark-mode .badge {
    ============================================================================= */
 
 body.high-contrast:not(.dark-mode) .quick-actions-picker {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .quick-actions-picker-item {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .quick-actions-slot.empty {
-    border: 2px dashed #333;
+    border: 2px dashed var(--color-neutral-333333);
     opacity: 0.7;
 }
 
 body.high-contrast:not(.dark-mode) .quick-actions-picker-section-title {
-    color: #333;
+    color: var(--color-neutral-333333);
     opacity: 1;
 }
 
@@ -1679,21 +1679,21 @@ body.high-contrast:not(.dark-mode) .quick-actions-picker-section-title {
    ============================================================================= */
 
 body.high-contrast.dark-mode .quick-actions-picker {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .quick-actions-picker-item {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .quick-actions-slot.empty,
 body.high-contrast.dark-mode .quick-actions-menu-row .quick-actions-slot.empty {
-    border: 2px dashed #aaa;
+    border: 2px dashed var(--color-neutral-aaaaaa);
     opacity: 0.7;
 }
 
 body.high-contrast.dark-mode .quick-actions-picker-section-title {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
     opacity: 1;
 }
 
@@ -1702,28 +1702,28 @@ body.high-contrast.dark-mode .quick-actions-picker-section-title {
    ============================================================================= */
 
 body.high-contrast:not(.dark-mode) .onboarding-content {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .onboarding-skip {
-    color: #333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .onboarding-step-indicator {
-    color: #333;
+    color: var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .onboarding-dot {
-    background: #999;
-    border: 2px solid #333;
+    background: var(--color-neutral-999999);
+    border: 2px solid var(--color-neutral-333333);
 }
 
 body.high-contrast:not(.dark-mode) .onboarding-dot.active {
-    background: var(--theme-button-primary-bg, #4c79ff);
+    background: var(--theme-button-primary-bg, var(--color-primary));
 }
 
 body.high-contrast:not(.dark-mode) .miniCycle-prompt-input {
-    border: 2px solid #333;
+    border: 2px solid var(--color-neutral-333333);
 }
 
 /* =============================================================================
@@ -1731,28 +1731,28 @@ body.high-contrast:not(.dark-mode) .miniCycle-prompt-input {
    ============================================================================= */
 
 body.high-contrast.dark-mode .onboarding-content {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .onboarding-skip {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .onboarding-step-indicator {
-    color: #ccc;
+    color: var(--color-neutral-cccccc);
 }
 
 body.high-contrast.dark-mode .onboarding-dot {
-    background: #555;
-    border: 2px solid #aaa;
+    background: var(--color-neutral-555555);
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 body.high-contrast.dark-mode .onboarding-dot.active {
-    background: var(--theme-button-primary-bg, #4c79ff);
+    background: var(--theme-button-primary-bg, var(--color-primary));
 }
 
 body.high-contrast.dark-mode .miniCycle-prompt-input {
-    border: 2px solid #aaa;
+    border: 2px solid var(--color-neutral-aaaaaa);
 }
 
 /* =============================================================================
@@ -1760,11 +1760,11 @@ body.high-contrast.dark-mode .miniCycle-prompt-input {
    ============================================================================= */
 
 body.high-contrast .notification.recurring {
-    border: 3px solid #333;
+    border: 3px solid var(--color-neutral-333333);
 }
 
 body.high-contrast.dark-mode .notification.recurring {
-    border: 3px solid #aaa;
+    border: 3px solid var(--color-neutral-aaaaaa);
 }
 
 /* =============================================================================

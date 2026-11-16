@@ -11,7 +11,7 @@
     display: block;
     position: fixed;
     bottom: 18px;
-    color: var(--footer-text, #ffffff);
+    color: var(--footer-text, var(--color-white));
     text-align: center;
     font-size: 12px;
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -46,8 +46,8 @@
    gates this mode. Phones swap the strip for dark text (see the mobile block). */
 @media (prefers-contrast: more), (prefers-contrast: high) {
     .footer-links {
-        background: var(--footer-strip-bg, rgba(10, 25, 60, 0.43));
-        border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.35));
+        background: var(--footer-strip-bg, var(--color-blue-0a193c-a43));
+        border: 1px solid var(--footer-strip-border, var(--color-white-a35));
         border-radius: var(--radius-full, 999px);
         backdrop-filter: blur(14px) saturate(1.3);
         -webkit-backdrop-filter: blur(14px) saturate(1.3);
@@ -58,8 +58,8 @@
    set by preferencesManager): the strip makes any colour work. */
 body.high-contrast .footer-links,
 body.custom-app-bg .footer-links {
-    background: var(--footer-strip-bg, rgba(10, 25, 60, 0.43));
-    border: 1px solid var(--footer-strip-border, rgba(255, 255, 255, 0.35));
+    background: var(--footer-strip-bg, var(--color-blue-0a193c-a43));
+    border: 1px solid var(--footer-strip-border, var(--color-white-a35));
     border-radius: var(--radius-full, 999px);
     backdrop-filter: blur(14px) saturate(1.3);
     -webkit-backdrop-filter: blur(14px) saturate(1.3);
@@ -70,11 +70,11 @@ body.custom-app-bg .footer-links {
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--footer-text, #ffffff);
+    color: var(--footer-text, var(--color-white));
 }
 
 #copyright a {
-    color: var(--footer-text, #ffffff);
+    color: var(--footer-text, var(--color-white));
     text-decoration: none;
 }
 
@@ -96,7 +96,7 @@ body.custom-app-bg .footer-links {
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--footer-text, #ffffff);
+    color: var(--footer-text, var(--color-white));
     z-index: var(--z-content);
 }
 
@@ -106,7 +106,7 @@ body.custom-app-bg .footer-links {
 }
 
 .footer-item a {
-    color: var(--footer-text, #ffffff);
+    color: var(--footer-text, var(--color-white));
     text-decoration: none;
 }
 
@@ -120,7 +120,7 @@ body.custom-app-bg .footer-links {
 .footer-item button {
     background: none;
     border: none;
-    color: var(--footer-text, #ffffff);
+    color: var(--footer-text, var(--color-white));
     text-decoration: none;
     cursor: pointer;
     font: inherit;
@@ -175,7 +175,7 @@ body.custom-app-bg .footer-links {
         }
         #footer-container #copyright,
         #footer-container #copyright a {
-            color: var(--footer-text-contrast, #111111);
+            color: var(--footer-text-contrast, var(--color-neutral-111111));
         }
     }
 
@@ -190,7 +190,7 @@ body.custom-app-bg .footer-links {
     body.high-contrast #footer-container #copyright a,
     body.custom-app-bg #footer-container #copyright,
     body.custom-app-bg #footer-container #copyright a {
-        color: var(--footer-text-contrast, #111111);
+        color: var(--footer-text-contrast, var(--color-neutral-111111));
     }
 
     #footer-container #copyright {

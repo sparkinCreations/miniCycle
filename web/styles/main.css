@@ -429,8 +429,8 @@ body.first-run-welcome-active::before {
     background:
         linear-gradient(
             to bottom,
-            rgba(15, 25, 65, 0) 0,
-            rgba(15, 25, 65, 0.55) calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
+            var(--color-blue-0f1941-a0) 0,
+            var(--color-blue-0f1941-a55) calc(var(--first-run-welcome-top) + var(--first-run-welcome-height, 190px) + var(--first-run-welcome-scrim-fade))
         ),
         var(--theme-bg-gradient);
     background-attachment: fixed, fixed;
@@ -458,5 +458,5 @@ body.first-run-welcome-active::before {
    suppresses ::after with opacity: 0. */
 body.first-run-welcome-active.focus-mode::after,
 body.onboarding-active.focus-mode::after {
-    background: rgba(15, 25, 65, 0.55);
+    background: var(--color-blue-0f1941-a55);
 }

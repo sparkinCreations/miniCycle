@@ -58,9 +58,9 @@
 
 .mode-selector {
     position: relative;
-    background: rgba(0, 0, 0, 0.691);
-    color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.72);
+    background: var(--color-black-a69p1);
+    color: var(--color-white);
+    border: 1px solid var(--color-white-a72);
     border-radius: var(--radius-10);
     margin: 0;
     padding: 5px var(--space-3);
@@ -86,7 +86,7 @@
 }
 
 .mode-selector:focus-visible {
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, var(--color-blue-4c79ff-a50));
 }
 
 .mode-selector::after {
@@ -99,7 +99,7 @@
     height: 0;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
-    border-top: 6px solid white;
+    border-top: 6px solid var(--color-white);
     pointer-events: none;
 }
 
@@ -107,7 +107,7 @@
     background: var(--overlay-white-medium);
     border-color: var(--color-primary-dark);
     transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 8px var(--overlay-strong);
 }
 
 /* No lift in the header's joined group: it would step out of line with the
@@ -121,7 +121,7 @@
 }
 
 .mode-selector:focus-visible {
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--color-white-a50);
     border-color: var(--color-primary-dark);
     box-shadow: 0 0 0 2px var(--menu-light-blue-focus);
 }
@@ -131,8 +131,8 @@
    ============================================================================= */
 
 .mode-selector option {
-    background: rgba(0, 0, 0, 0.9);
-    color: white;
+    background: var(--color-black-a90);
+    color: var(--color-white);
     padding: var(--space-2) var(--space-3);
     font-weight: bold;
     border: none;
@@ -143,8 +143,8 @@
 }
 
 .mode-selector option:checked {
-    background: rgba(100, 100, 255, 0.8);
-    color: white;
+    background: var(--color-indigo-6464ff-a80);
+    color: var(--color-white);
     font-weight: bold;
 }
 
@@ -246,7 +246,7 @@
 }
 
 .mode-picker-item:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.6));
+    outline: 2px solid var(--theme-input-focus-border, var(--color-blue-4c79ff-a60));
     outline-offset: -2px;
 }
 
@@ -362,11 +362,11 @@
 .quick-actions-btn.first-time-shimmer {
     background: linear-gradient(
         110deg,
-        rgba(255, 255, 255, 0.2) 0%,
-        rgba(255, 255, 255, 0.2) 40%,
-        rgba(255, 255, 255, 0.8) 50%,
-        rgba(255, 255, 255, 0.2) 60%,
-        rgba(255, 255, 255, 0.2) 100%
+        var(--overlay-white-light) 0%,
+        var(--overlay-white-light) 40%,
+        var(--overlay-white-strong) 50%,
+        var(--overlay-white-light) 60%,
+        var(--overlay-white-light) 100%
     );
     background-size: 200% 100%;
     animation: shimmer 2s ease-in-out infinite;

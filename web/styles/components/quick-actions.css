@@ -28,7 +28,7 @@
 }
 
 .quick-actions-nav {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
     border: none;
     color: var(--pref-panel-text, var(--panel-text-default));
     font-size: 12px;
@@ -40,7 +40,7 @@
 }
 
 .quick-actions-nav:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--overlay-white-light);
     color: var(--pref-panel-text, var(--panel-text-default));
 }
 
@@ -77,12 +77,12 @@
 
 /* Filled action slot */
 .quick-actions-slot.filled {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--color-white-a12);
     color: var(--pref-panel-text, var(--panel-text-default));
 }
 
 .quick-actions-slot.filled:hover {
-    background: rgba(255, 255, 255, 0.22);
+    background: var(--color-white-a22);
     transform: scale(1.08);
 }
 
@@ -92,19 +92,19 @@
 
 /* Empty "+" placeholder slot */
 .quick-actions-slot.empty {
-    background: rgba(255, 255, 255, 0.06);
+    background: var(--color-white-a6);
     color: var(--pref-panel-text, var(--panel-text-default));
     opacity: 0.7;
-    border: 1.5px dashed rgba(255, 255, 255, 0.3);
+    border: 1.5px dashed var(--color-white-a30);
     font-size: 20px;
     font-weight: 300;
 }
 
 .quick-actions-slot.empty:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: var(--color-white-a12);
     color: var(--pref-panel-text, var(--panel-text-default));
     opacity: 0.7;
-    border-color: rgba(255, 255, 255, 0.35);
+    border-color: var(--color-white-a35);
 }
 
 /* Slot icon (SVG or emoji) */
@@ -130,7 +130,7 @@
     width: 16px;
     height: 16px;
     border-radius: 50%;
-    background: rgba(220, 53, 69, 0.9);
+    background: var(--color-red-dc3545-a90);
     color: var(--color-white);
     font-size: 10px;
     line-height: 16px;
@@ -268,7 +268,7 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-menu-row .quick-actions-title {
-    color: rgba(0, 0, 0, 0.7);
+    color: var(--color-black-a70);
     /* Readable row-title text — use the token so it scales with the Font Size
        setting and the mobile bump (was a fixed 11px). */
     font-size: var(--font-size-xs);
@@ -277,29 +277,29 @@ body.hide-quick-actions .quick-actions-menu-row {
 
 .quick-actions-menu-row .quick-actions-nav {
     background: transparent;
-    color: rgba(0, 0, 0, 0.5);
+    color: var(--overlay-heavy);
     font-size: 10px;
     padding: 2px var(--space-1-5);
 }
 
 .quick-actions-menu-row .quick-actions-nav:hover {
     background: transparent;
-    color: rgba(0, 0, 0, 0.75);
+    color: var(--color-black-a75);
 }
 
 .quick-actions-menu-row .quick-actions-slot.filled {
-    background: rgba(0, 0, 0, 0.08);
-    color: rgba(0, 0, 0, 0.7);
+    background: var(--color-black-a8);
+    color: var(--color-black-a70);
 }
 
 .quick-actions-menu-row .quick-actions-slot.filled:hover {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
 }
 
 .quick-actions-menu-row .quick-actions-slot.empty {
-    background: rgba(0, 0, 0, 0.04);
-    color: rgba(0, 0, 0, 0.3);
-    border-color: rgba(0, 0, 0, 0.15);
+    background: var(--color-black-a4);
+    color: var(--overlay-backdrop);
+    border-color: var(--overlay-strong);
 }
 
 .quick-actions-menu-row .quick-actions-slots {
@@ -314,7 +314,7 @@ body.hide-quick-actions .quick-actions-menu-row {
 }
 
 .quick-actions-menu-row .quick-actions-empty-msg {
-    color: rgba(0, 0, 0, 0.5);
+    color: var(--overlay-heavy);
     font-size: var(--font-size-xs);
 }
 
@@ -356,9 +356,9 @@ dialog.quick-actions-picker-overlay[open] {
     max-height: 80vh;
     overflow-y: auto;
     box-shadow:
-        var(--shadow-lg, 0 8px 32px rgba(0, 0, 0, 0.25)),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
-    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+        var(--shadow-lg, 0 8px 32px var(--color-black-a25)),
+        inset 0 1px 1px var(--color-white-a25);
+    border: 1px solid var(--theme-modal-border, var(--overlay-medium));
     margin: auto;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
@@ -381,7 +381,7 @@ dialog.quick-actions-picker-overlay[open] {
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
-    color: var(--theme-modal-text, #666);
+    color: var(--theme-modal-text, var(--color-neutral-666666));
     margin-bottom: var(--space-2);
     padding-left: var(--space-1);
 }
@@ -398,8 +398,8 @@ dialog.quick-actions-picker-overlay[open] {
     gap: var(--space-2);
     padding: var(--space-2) var(--space-3);
     border-radius: var(--radius-10);
-    background: var(--theme-input-bg, rgba(0, 0, 0, 0.05));
-    border: 1px solid var(--theme-modal-border, rgba(0, 0, 0, 0.1));
+    background: var(--theme-input-bg, var(--color-black-a5));
+    border: 1px solid var(--theme-modal-border, var(--overlay-medium));
     color: var(--theme-modal-text, var(--theme-text-on-surface));
     font-size: var(--font-size-sm);
     cursor: pointer;
@@ -408,7 +408,7 @@ dialog.quick-actions-picker-overlay[open] {
 }
 
 .quick-actions-picker-item:hover {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--overlay-medium);
 }
 
 .quick-actions-picker-item.disabled {
@@ -446,7 +446,7 @@ dialog.quick-actions-picker-overlay[open] {
 
 .quick-actions-tooltip {
     position: fixed;
-    background: rgba(0, 0, 0, 0.85);
+    background: var(--color-black-a85);
     color: var(--color-white);
     padding: var(--space-2) 14px;
     border-radius: var(--radius-md);
@@ -456,7 +456,7 @@ dialog.quick-actions-picker-overlay[open] {
     opacity: 0;
     transition: opacity var(--transition-fast) ease;
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px var(--overlay-backdrop);
 }
 
 .quick-actions-tooltip.visible {
@@ -468,7 +468,7 @@ dialog.quick-actions-picker-overlay[open] {
     display: block;
     margin-top: var(--space-1-5);
     padding: var(--space-1) 10px;
-    background: rgba(220, 53, 69, 0.8);
+    background: var(--color-red-dc3545-a80);
     border: none;
     border-radius: var(--radius-sm);
     color: var(--color-white);
@@ -494,38 +494,38 @@ dialog.quick-actions-picker-overlay[open] {
    overrides in dark-mode.css body.dark-mode {} block */
 
 body.dark-mode .quick-actions-slot.filled {
-    background: rgba(255, 255, 255, 0.1);
+    background: var(--color-white-a10);
 }
 
 body.dark-mode .quick-actions-slot.empty {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(255, 255, 255, 0.12);
+    background: var(--color-white-a4);
+    border-color: var(--color-white-a12);
 }
 
 /* Mobile menu row dark mode — override light-mode rgba(0,0,0) colors */
 body.dark-mode .quick-actions-menu-row .quick-actions-nav {
-    color: rgba(255, 255, 255, 0.5);
+    color: var(--color-white-a50);
 }
 
 body.dark-mode .quick-actions-menu-row .quick-actions-nav:hover {
-    color: rgba(255, 255, 255, 0.75);
+    color: var(--color-white-a75);
 }
 
 body.dark-mode .quick-actions-menu-row .quick-actions-slot.filled {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+    background: var(--color-white-a10);
+    color: var(--color-white-a90);
 }
 
 body.dark-mode .quick-actions-menu-row .quick-actions-slot.filled:hover {
-    background: rgba(255, 255, 255, 0.18);
+    background: var(--color-white-a18);
 }
 
 body.dark-mode .quick-actions-menu-row .quick-actions-slot.empty {
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.5);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a4);
+    color: var(--color-white-a50);
+    border-color: var(--color-white-a15);
 }
 
 body.dark-mode .quick-actions-menu-row .quick-actions-empty-msg {
-    color: rgba(255, 255, 255, 0.45);
+    color: var(--color-white-a45);
 }

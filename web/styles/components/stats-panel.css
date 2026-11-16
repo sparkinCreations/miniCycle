@@ -22,7 +22,7 @@
     overflow: hidden;
     color: var(--theme-stats-text);
     background: var(--theme-stats-bg);
-    border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
+    border: 1px solid var(--theme-stats-border, var(--color-white-a25));
     box-shadow: var(--shadow-panel);
     padding: var(--space-5) var(--space-6);
     border-radius: var(--panel-radius);
@@ -126,13 +126,13 @@ body.focus-mode #stats-panel {
 }
 
 .stats-panel-content::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.5), rgba(150, 210, 255, 0.4));
+    background: linear-gradient(180deg, var(--color-white-a50), var(--color-blue-96d2ff-a40));
     border-radius: var(--radius-10);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--overlay-white-light);
 }
 
 .stats-panel-content::-webkit-scrollbar-track {
-    background: rgba(100, 180, 255, 0.1);
+    background: var(--color-blue-64b4ff-a10);
     border-radius: var(--radius-10);
 }
 
@@ -187,7 +187,7 @@ body.focus-mode #stats-panel {
 .stats-feature-btn {
     background: var(--theme-button-secondary-bg);
     color: var(--theme-button-secondary-text);
-    border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--theme-stats-border, var(--overlay-medium));
     padding: 10px var(--space-4);
     border-radius: var(--radius-md);
     margin: var(--space-1-25);
@@ -368,7 +368,7 @@ body.focus-mode #stats-panel {
 }
 
 .current-routine-status:has(.visible) {
-    background: rgba(255, 255, 255, 0.45);
+    background: var(--color-white-a45);
 }
 
 /* =============================================================================
@@ -379,7 +379,7 @@ body.focus-mode #stats-panel {
     text-align: center;
     font-size: var(--font-size-md);
     font-weight: 600;
-    color: var(--theme-stats-text, #444);
+    color: var(--theme-stats-text, var(--color-neutral-444444));
     margin: var(--space-1) 0 0;
     display: none;
 }
@@ -401,11 +401,11 @@ body.focus-mode #stats-panel {
 .current-cycle-doughnut {
     width: 100%;
     height: 100%;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+    filter: drop-shadow(0 2px 4px var(--overlay-medium));
 }
 
 .doughnut-bg {
-    stroke: var(--theme-progress-track-bg, #e0e0e0);
+    stroke: var(--theme-progress-track-bg, var(--color-neutral-e0e0e0));
 }
 
 .doughnut-progress {
@@ -426,7 +426,7 @@ body.focus-mode #stats-panel {
     text-align: center;
     font-size: 1.05em;
     font-weight: 500;
-    color: var(--theme-stats-text, #555);
+    color: var(--theme-stats-text, var(--color-neutral-555555));
     margin-top: var(--space-2);
     margin-bottom: var(--space-2);
     display: none;
@@ -440,7 +440,7 @@ body.focus-mode #stats-panel {
 #current-routine-cleared-count {
     display: none;
     font-weight: 500;
-    color: var(--theme-stats-text, #444);
+    color: var(--theme-stats-text, var(--color-neutral-444444));
     white-space: pre-wrap;
     transition: opacity var(--transition-normal) ease;
 }
@@ -467,9 +467,9 @@ body.focus-mode #stats-panel {
     align-items: center;
     gap: var(--space-1-5);
     padding: var(--space-2) 14px;
-    border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--theme-stats-border, var(--overlay-medium));
     border-radius: var(--radius-2xl);
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--color-white-a50);
     color: var(--theme-stats-text, var(--theme-text-on-surface));
     font-size: var(--font-size-sm);
     cursor: pointer;
@@ -477,7 +477,7 @@ body.focus-mode #stats-panel {
 }
 
 .history-btn:hover {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--color-white-a70);
     transform: scale(1.02);
 }
 
@@ -496,7 +496,7 @@ body.focus-mode #stats-panel {
 #game-unlock-message {
     display: none;
     font-weight: 500;
-    color: var(--theme-stats-text, #444);
+    color: var(--theme-stats-text, var(--color-neutral-444444));
     white-space: pre-wrap;
     transition: opacity var(--transition-normal) ease;
 }
@@ -543,7 +543,7 @@ body.focus-mode #stats-panel {
     text-align: center;
     font-size: var(--font-size-sm);
     font-weight: 400;
-    color: var(--theme-stats-text, #595959);
+    color: var(--theme-stats-text, var(--color-neutral-595959));
 }
 
 /* ⓘ after the All Routines line: toggles what counts toward badges. The
@@ -555,7 +555,7 @@ body.focus-mode #stats-panel {
     text-align: center;
     font-size: var(--font-size-xs);
     line-height: 1.4;
-    color: var(--theme-stats-text, #595959);
+    color: var(--theme-stats-text, var(--color-neutral-595959));
 }
 
 /* =============================================================================
@@ -569,9 +569,9 @@ body.focus-mode #stats-panel {
     gap: var(--space-1-5);
     padding: var(--space-1) 10px;
     margin: var(--space-2) auto 0;
-    border: 1px solid var(--theme-stats-border, rgba(0, 0, 0, 0.1));
+    border: 1px solid var(--theme-stats-border, var(--overlay-medium));
     border-radius: var(--radius-2xl);
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--color-white-a50);
     color: var(--theme-stats-text, var(--theme-text-on-surface));
     font-size: var(--font-size-xs);
     font-weight: 600;
@@ -580,7 +580,7 @@ body.focus-mode #stats-panel {
 }
 
 .achievement-badges-btn:hover {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--color-white-a70);
     transform: scale(1.02);
 }
 
@@ -607,13 +607,13 @@ body.focus-mode #stats-panel {
 
 #milestone-progress-text {
     font-size: 0.85em;
-    color: var(--theme-stats-text, #595959);
+    color: var(--theme-stats-text, var(--color-neutral-595959));
     margin: 0 0 var(--space-2) 0;
     text-align: center;
 }
 
 .progress-container {
-    background: var(--theme-progress-track-bg, #d0d0d0);
+    background: var(--theme-progress-track-bg, var(--color-neutral-d0d0d0));
     border-radius: var(--radius-6);
     overflow: hidden;
     height: 10px;
@@ -622,14 +622,14 @@ body.focus-mode #stats-panel {
 }
 
 #stats-progress-bar {
-    background: linear-gradient(90deg, var(--color-primary, var(--color-primary)), var(--color-primary-light, #6b93ff));
+    background: linear-gradient(90deg, var(--color-primary, var(--color-primary)), var(--color-primary-light, var(--color-blue-6b93ff)));
 }
 
 .badge {
     width: 44px;
     height: 44px;
     border-radius: 50%;
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--color-black-a8);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -660,57 +660,57 @@ body.focus-mode #stats-panel {
 }
 
 .badge:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
 .badge.unlocked {
     color: var(--color-white);
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 4px 10px var(--overlay-backdrop);
 }
 
 /* Per-tier badge colors — each milestone matches its reward theme */
 .badge.unlocked[data-milestone="5"] {
-    background-color: #c87132;                          /* 🔥 Habit Tracker — cognac amber */
+    background-color: var(--color-orange-c87132);                          /* 🔥 Habit Tracker — cognac amber */
     box-shadow: var(--shadow-milestone-habit);
 }
 
 .badge.unlocked[data-milestone="25"] {
-    background-color: #22a05e;                          /* 💪 Fitness — athletic green */
+    background-color: var(--color-green-22a05e);                          /* 💪 Fitness — athletic green */
     box-shadow: var(--shadow-milestone-fitness);
 }
 
 .badge.unlocked[data-milestone="50"] {
-    background-color: #4440c0;                          /* 📚 Scholar — indigo */
+    background-color: var(--color-indigo-4440c0);                          /* 📚 Scholar — indigo */
     box-shadow: var(--shadow-milestone-scholar);
 }
 
 .badge.unlocked[data-milestone="75"] {
-    background-color: #0a8db5;                          /* 🧹 Cleaning — fresh teal */
+    background-color: var(--color-cyan-0a8db5);                          /* 🧹 Cleaning — fresh teal */
     box-shadow: var(--shadow-milestone-cleaning);
 }
 
 .badge.unlocked[data-milestone="100"] {
-    background-color: #d4a017;                          /* 👑 Crowned — royal gold */
+    background-color: var(--color-amber-d4a017);                          /* 👑 Crowned — royal gold */
     box-shadow: var(--shadow-milestone-classic);
 }
 
 .badge.unlocked.ocean-theme {
-    background-color: #4ecdc4;
+    background-color: var(--color-game-primary);
     color: var(--color-white);
-    box-shadow: 0 4px 10px rgba(0, 160, 147, 0.4);
+    box-shadow: 0 4px 10px var(--color-cyan-00a093-a40);
 }
 
 .badge.unlocked.golden-theme {
-    background-color: #ffd700;
-    color: #4a3d00;
-    box-shadow: 0 4px 10px rgba(255, 215, 0, 0.5);
+    background-color: var(--color-gold);
+    color: var(--color-amber-4a3d00);
+    box-shadow: 0 4px 10px var(--color-amber-ffd700-a50);
 }
 
 .badge.unlocked.game-unlocked {
-    background-color: rgba(0, 0, 0, 0.868);
+    background-color: var(--color-black-a86p8);
     color: var(--color-white);
-    box-shadow: 0 0 12px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 12px var(--color-black-a60);
     font-weight: bold;
 }
 
@@ -786,14 +786,14 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #all-routine
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #milestone-progress-text,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .achievement-badges-btn,
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .history-btn {
-    color: var(--pref-stats-text, var(--theme-stats-text, #333));
+    color: var(--pref-stats-text, var(--theme-stats-text, var(--color-neutral-333333)));
 }
 
 /* Stats progress bar — pref override (gradient from chosen color to lighter tint) */
 body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) #stats-progress-bar {
     background: linear-gradient(90deg,
-        var(--pref-stats-progress, var(--color-primary, #4c79ff)),
-        color-mix(in srgb, var(--pref-stats-progress, var(--color-primary, #4c79ff)), white 30%)
+        var(--pref-stats-progress, var(--color-primary, var(--color-primary))),
+        color-mix(in srgb, var(--pref-stats-progress, var(--color-primary, var(--color-primary))), var(--color-white) 30%)
     );
 }
 
@@ -807,32 +807,32 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .doughnut-pr
    ============================================================================= */
 
 body.dark-mode .stats-panel {
-    border-color: rgba(255, 255, 255, 0.15);
+    border-color: var(--color-white-a15);
 }
 
 body.dark-mode .current-routine-status:has(.visible),
 body.dark-mode .stats-tabs-card {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-white-a8);
 }
 
 body.dark-mode .stats-tabs,
 body.dark-mode .global-stats-container {
-    border-color: rgba(255, 255, 255, 0.14);
+    border-color: var(--color-white-a14);
 }
 
 body.dark-mode .achievement-badges-btn,
 body.dark-mode .history-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a8);
+    border-color: var(--color-white-a15);
 }
 
 body.dark-mode .achievement-badges-btn:hover,
 body.dark-mode .history-btn:hover {
-    background: rgba(255, 255, 255, 0.15);
+    background: var(--color-white-a15);
 }
 
 body.dark-mode .badge-container {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-white-a8);
 }
 
 /* =============================================================================
@@ -998,7 +998,7 @@ body.dark-mode .badge-container {
 .stats-tabs-card {
     display: flex;
     flex-direction: column;
-    background: rgba(255, 255, 255, 0.45);
+    background: var(--color-white-a45);
 }
 
 .stats-tabs {
@@ -1030,7 +1030,7 @@ body.dark-mode .badge-container {
 }
 
 .stats-tab:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: -2px;
 }
 

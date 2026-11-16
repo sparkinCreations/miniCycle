@@ -25,7 +25,7 @@
     padding: 0;
     border: none;
     overflow: auto;
-    color: white;
+    color: var(--color-white);
     /* Same treatment as #app-loader in critical.css, so the two screens read as
        one place. Routine_Lists.webp is not precached, so an offline visit falls
        back to the gradient alone — same as the first-run screen does today. */
@@ -40,11 +40,11 @@
            visible vertical seams. The photo still reads at the edges; the
            content is anchored without sitting in a card. */
         radial-gradient(ellipse 70% 65% at 50% 45%,
-            rgba(0, 0, 0, 0.55) 0%,
-            rgba(0, 0, 0, 0.46) 40%,
-            rgba(0, 0, 0, 0.20) 75%,
-            rgba(0, 0, 0, 0) 100%),
-        linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
+            var(--color-black-a55) 0%,
+            var(--color-black-a46) 40%,
+            var(--color-black-a20) 75%,
+            var(--color-black-a0) 100%),
+        linear-gradient(135deg, var(--color-blue-4c79ff-a50), var(--color-blue-74c0fc-a45)),
         url('../../assets/images/Stock/Routine_Lists.webp') center/cover no-repeat;
 }
 
@@ -57,11 +57,11 @@
     #title-screen.title-screen {
         background:
             radial-gradient(ellipse 70% 65% at 50% 45%,
-                rgba(0, 0, 0, 0.55) 0%,
-                rgba(0, 0, 0, 0.46) 40%,
-                rgba(0, 0, 0, 0.20) 75%,
-                rgba(0, 0, 0, 0) 100%),
-            linear-gradient(135deg, rgba(76, 121, 255, 0.5), rgba(116, 192, 252, 0.45)),
+                var(--color-black-a55) 0%,
+                var(--color-black-a46) 40%,
+                var(--color-black-a20) 75%,
+                var(--color-black-a0) 100%),
+            linear-gradient(135deg, var(--color-blue-4c79ff-a50), var(--color-blue-74c0fc-a45)),
             url('../../assets/images/Stock/Routine_Lists.webp') left center/cover no-repeat;
     }
 }
@@ -97,7 +97,7 @@
 .title-screen-logo {
     display: block;
     margin: 0 auto var(--space-3);
-    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 4px 10px var(--overlay-backdrop));
 }
 
 .title-screen-actions {
@@ -123,14 +123,14 @@
 .title-screen-credit {
     margin: 0;
     text-align: center;
-    color: white;
+    color: var(--color-white);
     opacity: 0.92;
     font-size: var(--font-size-xs);
     text-shadow: var(--text-shadow-lg);
 }
 
 .title-screen-credit a {
-    color: white;
+    color: var(--color-white);
     text-decoration: underline;
     text-underline-offset: 2px;
 }
@@ -155,7 +155,7 @@
 }
 
 .title-screen-legal a {
-    color: white;
+    color: var(--color-white);
     opacity: 0.92;
     font-size: var(--font-size-xs);
     text-decoration: underline;
@@ -190,10 +190,10 @@
     padding: 10px 24px;
     border: none;
     border-radius: 12px;
-    background: rgba(0, 0, 0, 0.25);
+    background: var(--color-black-a25);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-    color: white;
+    color: var(--color-white);
     opacity: 0.85;
     font-size: var(--font-size-sm);
     line-height: 1.4;
@@ -204,7 +204,7 @@
 
 .title-screen-tip:hover,
 .title-screen-tip:focus-visible {
-    background: rgba(0, 0, 0, 0.38);
+    background: var(--color-black-a38);
     opacity: 1;
 }
 
@@ -212,10 +212,10 @@
 #title-screen-close {
     margin-top: var(--space-5);
     padding: var(--space-2-5) var(--space-5);
-    border: 1px solid rgba(255, 255, 255, 0.55);
+    border: 1px solid var(--color-white-a55);
     border-radius: var(--radius-md);
     background: transparent;
-    color: white;
+    color: var(--color-white);
     font-size: var(--font-size-sm);
     font-weight: 600;
     cursor: pointer;
@@ -223,7 +223,7 @@
 }
 
 #title-screen-close:hover {
-    background: rgba(255, 255, 255, 0.16);
+    background: var(--color-white-a16);
 }
 
 /* .first-run-tagline and .first-run-usecase-text set their own opacity in
