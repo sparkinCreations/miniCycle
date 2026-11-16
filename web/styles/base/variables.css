@@ -151,6 +151,9 @@
   /* Navy palette (header/overlay context) */
   --color-navy: #2c3270;              /* dark navy text on header buttons */
   --color-navy-dark: #0c2091;         /* darker navy border/hover */
+  --color-navy-deep: #1a2650;         /* side-panel text: the Recently Used panel's
+                                         side of the gradient is darker, where
+                                         --color-navy measured 4.3:1 (Nov 2026) */
   /* Monospace / code viewer background */
   --color-code-bg: #282828;
   /* Charcoal surface for the name-entry prompt family and select-option hover.
@@ -415,8 +418,11 @@
   --panel-text-default: rgba(255, 255, 255, 0.9);
   /* The Help window's text when nothing is picked: the corner buttons' navy
      (Nov 2026). White where its panel is dark: a dark page colour (where
-     --pref-chrome-ink goes white), dark mode, a photo, Focus View. */
-  --help-window-text: var(--pref-chrome-ink, var(--color-navy));
+     --pref-chrome-ink goes white), dark mode, a photo, Focus View. The Recently
+     Used panel opposite it is the same glass and reads it too: its white title
+     and arrows measured 2.4:1 on the default gradient. A deeper navy than the
+     corner buttons': that panel sits on the darker end of the gradient. */
+  --help-window-text: var(--pref-chrome-ink, var(--color-navy-deep));
   --pref-panel-bg:    rgba(255, 255, 255, 0.12);
   --pref-panel-border: rgba(255, 255, 255, 0.25);
   --pref-panel-blur:  8px;

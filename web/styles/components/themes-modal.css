@@ -639,7 +639,9 @@ body.dark-mode {
 .preview-panel {
     font-size: 8px;
     font-weight: 600;
-    color: var(--preview-panel-text, var(--color-white));
+    /* Both preview panels show their live default: navy, or white where the
+       page is dark (--help-window-text). */
+    color: var(--preview-panel-text, var(--help-window-text));
     background: var(--overlay-white-light);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);
@@ -647,12 +649,6 @@ body.dark-mode {
     border-radius: var(--radius-sm);
     border: 1px solid var(--overlay-white-light);
     transition: color var(--transition-normal) ease, opacity var(--transition-normal) ease;
-}
-
-/* The Help panel previews the Help window's own default: navy, or white where
-   the page is dark (--help-window-text). Quick Actions keeps white. */
-.preview-panel.preview-help-window {
-    color: var(--preview-panel-text, var(--help-window-text));
 }
 
 .preview-help-window {

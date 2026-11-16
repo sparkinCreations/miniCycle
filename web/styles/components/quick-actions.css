@@ -21,7 +21,7 @@
 .quick-actions-title {
     font-size: var(--font-size-xs);
     font-weight: 600;
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
     white-space: nowrap;
     min-width: 100px;
     text-align: center;
@@ -30,7 +30,7 @@
 .quick-actions-nav {
     background: var(--color-white-a10);
     border: none;
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
     font-size: 12px;
     padding: var(--space-1) var(--space-2);
     border-radius: var(--radius-6);
@@ -41,7 +41,7 @@
 
 .quick-actions-nav:hover {
     background: var(--overlay-white-light);
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
 }
 
 .quick-actions-nav:active {
@@ -78,7 +78,7 @@
 /* Filled action slot */
 .quick-actions-slot.filled {
     background: var(--color-white-a12);
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
 }
 
 .quick-actions-slot.filled:hover {
@@ -93,7 +93,7 @@
 /* Empty "+" placeholder slot */
 .quick-actions-slot.empty {
     background: var(--color-white-a6);
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
     opacity: 0.7;
     border: 1.5px dashed var(--color-white-a30);
     font-size: 20px;
@@ -102,7 +102,7 @@
 
 .quick-actions-slot.empty:hover {
     background: var(--color-white-a12);
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
     opacity: 0.7;
     border-color: var(--color-white-a35);
 }
@@ -151,7 +151,7 @@
 /* Empty view message */
 .quick-actions-empty-msg {
     font-size: 12px;
-    color: var(--pref-panel-text, var(--panel-text-default));
+    color: var(--pref-panel-text, var(--help-window-text));
     text-align: center;
     padding: var(--space-2) var(--space-1);
 }

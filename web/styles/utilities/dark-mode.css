@@ -14,6 +14,8 @@
 html.dark-mode,
 body.dark-mode {
     --footer-text-contrast: #ffffff;
+    /* The side panels (Help, Recently Used) are dark here: their default text is white. */
+    --help-window-text: var(--panel-text-default);
     /* Phones show the copyright bare on the dark gradient: light text there. */
     background: linear-gradient(135deg, var(--dark-bg-start), var(--dark-surface-primary));
     color: var(--theme-text-primary);
@@ -1211,10 +1213,6 @@ body.dark-mode .quick-action-item:not(:last-child) {
 
 body.dark-mode .help-window {
     color: var(--pref-panel-text, var(--panel-text-default));
-}
-
-body.dark-mode .preview-panel.preview-help-window {
-    color: var(--preview-panel-text, var(--panel-text-default));
 }
 
 /* =============================================================================
