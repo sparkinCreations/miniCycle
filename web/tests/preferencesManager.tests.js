@@ -248,7 +248,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
         const prevVocab = root.dataset.vocabTheme;
         body.classList.remove('dark-mode');
         delete root.dataset.vocabTheme;
-        const vars = ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass', '--pref-app-bg'];
+        const vars = ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--footer-strip-text', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass', '--pref-app-bg'];
         const read = () => Object.fromEntries(vars.map(v => [v, root.style.getPropertyValue(v)]));
         const withBg = (appBg) => {
             mod.setPreferencesManagerDependencies({ AppState: { get: () => ({ settings: { customColors: { appBg } } }), update: () => {} } });
@@ -260,12 +260,15 @@ export async function runPreferencesManagerTests(resultsDiv) {
             const gold = withBg('#d4a017');
             if (gold['--footer-text'] !== '#111111' || gold['--footer-text-contrast'] !== '#111111') throw new Error('Golden: footer text should be near-black, got ' + JSON.stringify(gold));
             if (!/255, 255, 255/.test(gold['--footer-strip-bg'])) throw new Error('Golden: the on-request strip should be light, got ' + gold['--footer-strip-bg']);
+            // Nov 2026: the strip carries its own text colour (the default links went navy).
+            if (gold['--footer-strip-text'] !== '#111111') throw new Error('Golden: text on the light strip should be near-black, got ' + gold['--footer-strip-text']);
             if (gold['--pref-subtitle-color'] !== '' || gold['--pref-subtitle-opacity'] !== '') throw new Error('Golden: the subtitle should keep its black default, got ' + JSON.stringify(gold));
             if (gold['--pref-chrome-ink'] !== '' || gold['--pref-chrome-glass'] !== '') throw new Error('Golden: the header buttons should keep their navy on white frost, got ' + JSON.stringify(gold));
             // Ocean preset: white is 15:1 on #0a2540 → white links, navy strip, white subtitle at full opacity.
             const ocean = withBg('#0a2540');
             if (ocean['--footer-text'] !== '#ffffff' || ocean['--footer-text-contrast'] !== '#ffffff') throw new Error('Ocean: footer text should be white, got ' + JSON.stringify(ocean));
             if (!/10, 25, 60/.test(ocean['--footer-strip-bg'])) throw new Error('Ocean: the on-request strip should be navy, got ' + ocean['--footer-strip-bg']);
+            if (ocean['--footer-strip-text'] !== '#ffffff') throw new Error('Ocean: text on the navy strip should be white, got ' + ocean['--footer-strip-text']);
             if (ocean['--pref-subtitle-color'] !== '#ffffff' || ocean['--pref-subtitle-opacity'] !== '1') throw new Error('Ocean: the subtitle should be white at full opacity, got ' + JSON.stringify(ocean));
             // Nov 2026: the header's glass buttons were navy on navy here.
             if (ocean['--pref-chrome-ink'] !== '#ffffff' || !/10, 25, 60/.test(ocean['--pref-chrome-glass'])) throw new Error('Ocean: the header buttons should be white on a dark frost, got ' + JSON.stringify(ocean));
@@ -302,7 +305,7 @@ export async function runPreferencesManagerTests(resultsDiv) {
             if (body.classList.contains('custom-app-bg')) throw new Error('removeCustomColors left the strip class');
         } finally {
             body.classList.remove('custom-app-bg');
-            ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass', '--pref-app-bg'].forEach(v => root.style.removeProperty(v));
+            ['--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--footer-strip-text', '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass', '--pref-app-bg'].forEach(v => root.style.removeProperty(v));
             if (hadDark) body.classList.add('dark-mode');
             if (prevVocab !== undefined) root.dataset.vocabTheme = prevVocab;
         }

@@ -229,7 +229,7 @@ transition: opacity 300ms;
 - Gray scale: `--color-gray-50` through `--color-gray-900` (10 stops)
 - Slate scale: `--color-slate-100` through `--color-slate-900` (7 stops, blue-tinted)
 - Nav dots: `--color-nav-dot`, `--color-nav-dot-active`, `--color-nav-dot-press`
-- Navy: `--color-navy`, `--color-navy-dark`
+- Navy: `--color-navy`, `--color-navy-dark`, `--color-navy-deep` (side-panel and footer text)
 
 **Palette primitives (Nov 2026):** every colour the stylesheets used to hardcode is a
 token in the *PALETTE PRIMITIVES* block at the end of `:root` in `variables.css`

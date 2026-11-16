@@ -21,7 +21,7 @@
 
 /** The custom properties this module owns on an element's inline style. */
 export const READABLE_TEXT_VARS = Object.freeze([
-    '--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border',
+    '--footer-text', '--footer-text-contrast', '--footer-strip-bg', '--footer-strip-border', '--footer-strip-text',
     '--pref-subtitle-color', '--pref-subtitle-opacity', '--pref-chrome-ink', '--pref-chrome-glass'
 ]);
 
@@ -89,6 +89,8 @@ export function applyReadableTextColors(el, appBgHex) {
     // navy glass under white text, light glass under dark text.
     el.style.setProperty('--footer-strip-bg', whiteReads ? NAVY_GLASS : 'rgba(255, 255, 255, 0.72)');
     el.style.setProperty('--footer-strip-border', whiteReads ? 'rgba(255, 255, 255, 0.35)' : 'rgba(0, 0, 0, 0.3)');
+    // The strip's own text: the strip rule hands it to the links (footer.css).
+    el.style.setProperty('--footer-strip-text', whiteReads ? LIGHT_TEXT : DARK_TEXT);
     // The header's glass buttons keep their navy on a light frost unless the
     // background is dark enough for white; then white on a dark frost.
     if (whiteReads) {

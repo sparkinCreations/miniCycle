@@ -11,7 +11,7 @@
     display: block;
     position: fixed;
     bottom: 18px;
-    color: var(--footer-text, var(--color-white));
+    color: var(--footer-text, var(--color-navy-deep));
     text-align: center;
     font-size: 12px;
     font-family: 'Poppins', 'Poppins Fallback', sans-serif;
@@ -23,11 +23,10 @@
    COPYRIGHT TEXT
    ============================================================================= */
 
-/* Plain white links straight over the page gradient, no strip and no
-   dimming, at every width. This knowingly sits under 4.5:1 at the
-   gradient's light end (Oct 2026: the glass strip that met WCAG 1.4.3 was
-   traded away for the look). The contrast runner reports the number without
-   gating it; the accessibility statement lists it as a known limitation. */
+/* Plain links straight over the page gradient, no strip and no dimming, at
+   every width. Deep navy (--footer-text) since Nov 2026: the plain white they
+   were from Oct 2026 measured 2.1-2.5:1 along the gradient's light end. The
+   contrast runner gates them. */
 .footer-links {
     list-style: none;
     margin: 0 auto;
@@ -42,8 +41,10 @@
 /* More contrast on request, not by default. The OS "Increase contrast"
    setting (prefers-contrast) and the app's own High Contrast mode bring back
    the navy glass strip that puts the white links at 4.6:1 over the gradient's
-   light end; everyone else keeps the plain white above. The contrast runner
-   gates this mode. Phones swap the strip for dark text (see the mobile block). */
+   light end; everyone else keeps the plain navy above. The strip switches the
+   links to its own text colour (--footer-strip-text, white unless a picked
+   colour pairs it with a light strip). The contrast runner gates this mode.
+   Phones swap the strip for dark text (see the mobile block). */
 @media (prefers-contrast: more), (prefers-contrast: high) {
     .footer-links {
         background: var(--footer-strip-bg, var(--color-blue-0a193c-a43));
@@ -51,6 +52,7 @@
         border-radius: var(--radius-full, 999px);
         backdrop-filter: blur(14px) saturate(1.3);
         -webkit-backdrop-filter: blur(14px) saturate(1.3);
+        --footer-text: var(--footer-strip-text, var(--color-white));
     }
 }
 
@@ -63,6 +65,7 @@ body.custom-app-bg .footer-links {
     border-radius: var(--radius-full, 999px);
     backdrop-filter: blur(14px) saturate(1.3);
     -webkit-backdrop-filter: blur(14px) saturate(1.3);
+    --footer-text: var(--footer-strip-text, var(--color-white));
 }
 #copyright {
     margin: 0;
@@ -70,11 +73,11 @@ body.custom-app-bg .footer-links {
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--footer-text, var(--color-white));
+    color: var(--footer-text, var(--color-navy-deep));
 }
 
 #copyright a {
-    color: var(--footer-text, var(--color-white));
+    color: var(--footer-text, var(--color-navy-deep));
     text-decoration: none;
 }
 
@@ -96,7 +99,7 @@ body.custom-app-bg .footer-links {
     opacity: 1;
     transition: opacity var(--transition-normal) ease-in-out;
     align-items: center;
-    color: var(--footer-text, var(--color-white));
+    color: var(--footer-text, var(--color-navy-deep));
     z-index: var(--z-content);
 }
 
@@ -106,7 +109,7 @@ body.custom-app-bg .footer-links {
 }
 
 .footer-item a {
-    color: var(--footer-text, var(--color-white));
+    color: var(--footer-text, var(--color-navy-deep));
     text-decoration: none;
 }
 
@@ -120,7 +123,7 @@ body.custom-app-bg .footer-links {
 .footer-item button {
     background: none;
     border: none;
-    color: var(--footer-text, var(--color-white));
+    color: var(--footer-text, var(--color-navy-deep));
     text-decoration: none;
     cursor: pointer;
     font: inherit;

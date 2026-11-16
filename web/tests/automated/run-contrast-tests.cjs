@@ -218,22 +218,41 @@ function measureHandChecks(opts) {
         const bodyStyle = getComputedStyle(document.body);
         const painted = bodyStyle.backgroundImage;
         // A preset paints one solid colour (--pref-app-bg) and no gradient: measure
-        // that colour. Otherwise every stop of the painted gradient.
+        // that colour. Otherwise the part of the painted gradient behind the footer.
         const paintedSolid = /gradient/.test(painted) ? null : parse(bodyStyle.backgroundColor);
         const gradient = /gradient/.test(painted) ? painted : getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-gradient');
-        const stops = paintedSolid && paintedSolid.a > 0 ? [paintedSolid] : [...gradient.matchAll(/#[0-9a-f]{6}|rgba?\([^)]+\)/gi)].map(m => parse(m[0])).filter(Boolean);
+        const allStops = [...gradient.matchAll(/#[0-9a-f]{6}|rgba?\([^)]+\)/gi)].map(m => parse(m[0])).filter(Boolean);
+        // html and body are 100vh, so the gradient is painted on the viewport and
+        // the part behind the footer band is known: its colour at the band's
+        // corners, plus any stop between them. Until Nov 2026 this judged every
+        // stop, including the dark corner the footer never sits on — fine for
+        // white text, but it failed the navy links over pixels that measure
+        // 5.4:1. A gradient with explicit stop positions falls back to every stop.
+        const behindBand = (rect) => {
+            const m = gradient.match(/linear-gradient\(\s*(-?[\d.]+)deg\s*,(.*)\)\s*$/);
+            if (!m || /\d(%|px)/.test(m[2].replace(/rgba?\([^)]*\)/g, ''))) return null;
+            const n = allStops.length;
+            if (n < 2) return null;
+            const a = parseFloat(m[1]) * Math.PI / 180, W = window.innerWidth, H = window.innerHeight;
+            const dx = Math.sin(a), dy = -Math.cos(a), len = Math.abs(W * dx) + Math.abs(H * dy);
+            const tAt = (x, y) => Math.min(1, Math.max(0, ((x - W / 2) * dx + (y - H / 2) * dy) / len + 0.5));
+            const ts = [[rect.left, rect.top], [rect.right, rect.top], [rect.left, rect.bottom], [rect.right, rect.bottom]].map(([x, y]) => tAt(x, y));
+            const lo = Math.min(...ts), hi = Math.max(...ts);
+            const colourAt = (t) => {
+                const seg = Math.min(n - 2, Math.floor(t * (n - 1))), f = t * (n - 1) - seg, s0 = allStops[seg], s1 = allStops[seg + 1];
+                return { r: s0.r + (s1.r - s0.r) * f, g: s0.g + (s1.g - s0.g) * f, b: s0.b + (s1.b - s0.b) * f, a: s0.a + (s1.a - s0.a) * f };
+            };
+            return [colourAt(lo), colourAt(hi), ...allStops.filter((_, i) => i / (n - 1) > lo && i / (n - 1) < hi)];
+        };
+        const behind = behindBand(link.closest('.footer-links').getBoundingClientRect());
+        const stops = paintedSolid && paintedSolid.a > 0 ? [paintedSolid] : (behind || allStops);
         const solid = parse(getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-solid'));
         const bgs = stops.length ? stops : (solid ? [solid] : [WHITE]);
         let worst = Infinity;
         for (const bg of bgs) { const surface = over(band, over(bg, WHITE)); worst = Math.min(worst, ratio(over(text, surface), surface)); }
-        // By default reported, not gated (Oct 2026): the footer links are plain
-        // white over the page gradient by choice, and sit under 4.5:1 at its
-        // light end. GATED when more contrast is asked for — the app's High
-        // Contrast mode (body.high-contrast) or the OS setting the runner
-        // emulates with opts.moreContrast — because that is when the strip and
-        // the dark phone text come back and must deliver.
-        const gated = opts.moreContrast || document.body.classList.contains('high-contrast') || document.body.classList.contains('custom-app-bg');
-        out.push({ name: 'footer text over every gradient stop', ratio: worst, min: 4.5, reportOnly: gated ? undefined : 'design choice by default, see the accessibility statement' });
+        // Gated in every state since Nov 2026, when the default links went from
+        // plain white (2.1-2.5:1, reported only as a design choice) to deep navy.
+        out.push({ name: 'footer text over the gradient behind it', ratio: worst, min: 4.5 });
     }
     return out;
 }
@@ -400,7 +419,7 @@ async function run() {
                     }
                     for (const m of checks) {
                         handReported.add(m.name);
-                        const line = `${m.name}: ${m.ratio.toFixed(2)}:1 over every gradient stop (min ${m.min}:1)`;
+                        const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
                         if (m.ratio >= m.min) console.log(`   ${colors.green}✅${colors.reset} ${label.trim()} ${colors.gray}${line}${colors.reset}`);
                         else { console.log(`   ${colors.red}❌ ${label.trim()} ${line}${colors.reset}`); serious.push(`${label.trim()}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
                     }
@@ -438,7 +457,7 @@ async function run() {
                 const checks = await page.evaluate(measureGlass, BANNER_TARGETS);
                 if (checks.length !== BANNER_TARGETS.length) throw new Error(`measured ${checks.length} of ${BANNER_TARGETS.length} banner parts`);
                 for (const m of checks) {
-                    const line = `${m.name}: ${m.ratio.toFixed(2)}:1 over every gradient stop (min ${m.min}:1)`;
+                    const line = `${m.name}: ${m.ratio.toFixed(2)}:1 (min ${m.min}:1)`;
                     if (m.ratio >= m.min) console.log(`   ${colors.green}✅${colors.reset} ${label} ${colors.gray}${line}${colors.reset}`);
                     else { console.log(`   ${colors.red}❌ ${label} ${line}${colors.reset}`); serious.push(`${label}: ${m.name} ${m.ratio.toFixed(2)}:1`); }
                 }

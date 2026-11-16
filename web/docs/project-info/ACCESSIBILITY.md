@@ -225,8 +225,9 @@ runtime from `focusTaskPanel.js` via `getLabel()`.
 `CONTRAST_GATE=1 npm run test:contrast` (axe `color-contrast`, every theme state
 and view the runner lists in `THEMES` / `VIEWS`, zero serious/critical violations).
 The same runner adds hand-measured checks for what axe cannot judge — the footer
-over every gradient stop (gated in High Contrast, under the OS "more contrast"
-setting and for a user-picked colour; reported otherwise), the Focus View "Complete task" button, and the task checkbox
+over the part of the gradient behind it (gated in every state since Nov 2026, when
+the default links went from plain white, 2.1-2.5:1, to deep navy, 5.5:1 desktop and
+6.2:1 phone), the Focus View "Complete task" button, and the task checkbox
 edge (reported only, a design choice). Text over the photographic backgrounds is
 reported as "incomplete", never failed; the two branded screens over the desk
 photo were measured by hand (below).
@@ -491,10 +492,7 @@ across a range of widths.
    **Mitigation:** touch-action optimisation, three-dot menu and move arrows.
 4. **Task checkbox ring** — the empty ring is about 1.5:1 against the task row (by
    design; reported, not gated). **Mitigation:** High Contrast mode.
-5. **Footer links over the gradient** — fall below 4.5:1 over the light end of the
-   gradient unless High Contrast, the OS "increase contrast" setting, or a
-   personalised colour is in use (see the accessibility statement).
-6. **Custom colour combinations** — vocabulary theme and Personalization colours a
+5. **Custom colour combinations** — vocabulary theme and Personalization colours a
    user picks may not meet WCAG ratios in every combination.
 
 ### Open Improvements
