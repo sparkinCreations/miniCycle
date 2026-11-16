@@ -18,6 +18,39 @@
     <meta property="og:url" content="https://minicycle.app/pages/mcyc-format.html">
 
     <style>
+/* Colour tokens (Nov 2026). This page does not load the app's
+   styles/base/variables.css, so it carries its own. A name the app also
+   defines has the app's value; the rest are named for their value
+   (family + hex + alpha %), like the app's palette primitives. */
+:root {
+  --color-blue-0044bb-a9: rgba(0, 68, 187, 0.09);
+  --color-blue-0044bb-a85: rgba(0, 68, 187, 0.85);
+  --color-blue-0066cc: #0066cc;
+  --color-blue-0088ff-a30: rgba(0, 136, 255, 0.3);
+  --color-blue-0a5ca8-a8: rgba(10, 92, 168, 0.08);
+  --color-blue-0a5ca8-a35: rgba(10, 92, 168, 0.35);
+  --color-blue-0a5ca8: #0a5ca8;
+  --color-blue-12324f-a7: rgba(18, 50, 79, 0.07);
+  --color-blue-12324f: #12324f;
+  --color-blue-1b3f60: #1b3f60;
+  --color-blue-2c3e50: #2c3e50;
+  --color-blue-34465a: #34465a;
+  --color-blue-3d556c: #3d556c;
+  --color-blue-dce9f6: #dce9f6;
+  --color-blue-e8eef6: #e8eef6;
+  --color-blue-edf3fb: #edf3fb;
+  --color-green-cfe7d9: #cfe7d9;
+  --color-neutral-333333: #333333;
+  --color-neutral-bdc3c7: #bdc3c7;
+  --color-neutral-f4f8fd: #f4f8fd;
+  --color-neutral-f5fbf7: #f5fbf7;
+  --color-orange-f0dcc2: #f0dcc2;
+  --color-orange-fffaf3: #fffaf3;
+  --color-red-b3261e: #b3261e;
+  --color-white-a85: rgba(255, 255, 255, 0.85);
+  --color-white: #ffffff;
+}
+
         :root {
             --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
             --font-heading: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -40,8 +73,8 @@
         body {
             font-family: var(--font-body);
             line-height: 1.6;
-            color: #333;
-            background: #edf3fb;
+            color: var(--color-neutral-333333);
+            background: var(--color-blue-edf3fb);
         }
 
         /* ── Chrome: matches learn_more.html / product.html ───────────────── */
@@ -49,8 +82,8 @@
             position: absolute;
             top: -40px;
             left: 0;
-            background: #0066cc;
-            color: #fff;
+            background: var(--color-blue-0066cc);
+            color: var(--color-white);
             padding: 8px 16px;
             z-index: 1001;
             font-size: 0.9rem;
@@ -64,10 +97,10 @@
         }
 
         header {
-            background: rgba(0, 68, 187, 0.85);
+            background: var(--color-blue-0044bb-a85);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
-            color: white;
+            color: var(--color-white);
             padding: 1rem 0;
             position: sticky;
             top: 0;
@@ -75,7 +108,7 @@
         }
 
         header *:focus-visible {
-            outline-color: white;
+            outline-color: var(--color-white);
         }
 
         .header-content {
@@ -93,7 +126,7 @@
             align-items: center;
             gap: 10px;
             text-decoration: none;
-            color: white;
+            color: var(--color-white);
             padding: 0.5rem 0;
             min-width: 0;
         }
@@ -110,7 +143,7 @@
         }
 
         .header-nav a {
-            color: white;
+            color: var(--color-white);
             text-decoration: none;
             font-weight: 500;
             transition: color 0.2s;
@@ -118,12 +151,12 @@
         }
 
         .header-nav a:hover {
-            color: white;
+            color: var(--color-white);
         }
 
         .header-nav .cta-btn {
-            background: white;
-            color: #0066cc;
+            background: var(--color-white);
+            color: var(--color-blue-0066cc);
             padding: 0.6rem 1.2rem;
             border-radius: 25px;
             font-weight: 600;
@@ -132,8 +165,8 @@
 
         .header-nav .cta-btn:hover {
             background: transparent;
-            color: white;
-            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.85);
+            color: var(--color-white);
+            box-shadow: inset 0 0 0 2px var(--color-white-a85);
             transform: translateY(-2px);
         }
 
@@ -150,7 +183,7 @@
             font-weight: 600;
             letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: white;
+            color: var(--color-white);
             line-height: 1.2;
         }
 
@@ -168,7 +201,7 @@
         }
 
         .hero {
-            background: linear-gradient(160deg, #dce9f6 0%, #edf3fb 100%);
+            background: linear-gradient(160deg, var(--color-blue-dce9f6) 0%, var(--color-blue-edf3fb) 100%);
             padding: 3rem 0 2.5rem;
             border-bottom: 1px solid var(--rule);
         }
@@ -177,12 +210,12 @@
             font-family: var(--font-heading);
             font-size: clamp(1.9rem, 5vw, 2.7rem);
             line-height: 1.15;
-            color: #12324f;
+            color: var(--color-blue-12324f);
         }
 
         .hero .filetype {
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-            background: rgba(0, 68, 187, 0.09);
+            background: var(--color-blue-0044bb-a9);
             padding: 0 0.25em;
             border-radius: 4px;
         }
@@ -212,23 +245,23 @@
         }
 
         .btn-primary {
-            background: #0066cc;
-            color: white;
+            background: var(--color-blue-0066cc);
+            color: var(--color-white);
         }
 
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 16px rgba(0, 136, 255, 0.3);
+            box-shadow: 0 6px 16px var(--color-blue-0088ff-a30);
         }
 
         .btn-ghost {
             background: transparent;
-            color: #0a5ca8;
-            box-shadow: inset 0 0 0 2px rgba(10, 92, 168, 0.35);
+            color: var(--color-blue-0a5ca8);
+            box-shadow: inset 0 0 0 2px var(--color-blue-0a5ca8-a35);
         }
 
         .btn-ghost:hover {
-            background: rgba(10, 92, 168, 0.08);
+            background: var(--color-blue-0a5ca8-a8);
             transform: translateY(-2px);
         }
 
@@ -243,14 +276,14 @@
         h2 {
             font-family: var(--font-heading);
             font-size: 1.55rem;
-            color: #12324f;
+            color: var(--color-blue-12324f);
             margin-bottom: 0.35rem;
         }
 
         h3 {
             font-family: var(--font-heading);
             font-size: 1.1rem;
-            color: #1b3f60;
+            color: var(--color-blue-1b3f60);
             margin: 1.6rem 0 0.5rem;
         }
 
@@ -275,20 +308,20 @@
         }
 
         a {
-            color: #0a5ca8;
+            color: var(--color-blue-0a5ca8);
         }
 
         code {
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             font-size: 0.9em;
-            background: rgba(10, 92, 168, 0.08);
+            background: var(--color-blue-0a5ca8-a8);
             padding: 0.1em 0.35em;
             border-radius: 4px;
             overflow-wrap: break-word;
         }
 
         /* Muted intro text is 4.4:1 against the code chip's tint; inline code reads darker. */
-        .section-sub code { color: #34465a; }
+        .section-sub code { color: var(--color-blue-34465a); }
 
         /* Wide content must scroll inside its own box; the page body must never
            scroll horizontally (run-layout-overlap-tests.cjs sweeps 10 widths). */
@@ -316,7 +349,7 @@
             margin-bottom: 1.2rem;
             border: 1px solid var(--rule);
             border-radius: 10px;
-            background: white;
+            background: var(--color-white);
         }
 
         table {
@@ -329,18 +362,18 @@
         th, td {
             text-align: left;
             padding: 0.65rem 0.9rem;
-            border-bottom: 1px solid #e8eef6;
+            border-bottom: 1px solid var(--color-blue-e8eef6);
             vertical-align: top;
         }
 
         th {
-            background: #f4f8fd;
+            background: var(--color-neutral-f4f8fd);
             font-family: var(--font-heading);
             font-weight: 600;
             font-size: 0.82rem;
             text-transform: uppercase;
             letter-spacing: 0.04em;
-            color: #3d556c;
+            color: var(--color-blue-3d556c);
             white-space: nowrap;
         }
 
@@ -353,18 +386,18 @@
         }
 
         .req {
-            color: #b3261e;
+            color: var(--color-red-b3261e);
             font-weight: 600;
             white-space: nowrap;
         }
 
         .callout {
             border: 1px solid var(--rule);
-            background: #ffffff;
+            background: var(--color-white);
             padding: 1rem 1.2rem;
             border-radius: 10px;
             margin: 1.2rem 0;
-            box-shadow: 0 1px 3px rgba(18, 50, 79, 0.07);
+            box-shadow: 0 1px 3px var(--color-blue-12324f-a7);
         }
 
         .callout p:last-child {
@@ -374,24 +407,24 @@
         .callout-title {
             font-family: var(--font-heading);
             font-weight: 600;
-            color: #12324f;
+            color: var(--color-blue-12324f);
             margin-bottom: 0.35rem;
         }
 
         /* Warn/open keep a distinction without a coloured left edge: a faint
            tint plus a matching border, applied on all four sides. */
         .callout.warn {
-            background: #fffaf3;
-            border-color: #f0dcc2;
+            background: var(--color-orange-fffaf3);
+            border-color: var(--color-orange-f0dcc2);
         }
 
         .callout.open {
-            background: #f5fbf7;
-            border-color: #cfe7d9;
+            background: var(--color-neutral-f5fbf7);
+            border-color: var(--color-green-cfe7d9);
         }
 
         .toc {
-            background: white;
+            background: var(--color-white);
             border: 1px solid var(--rule);
             border-radius: 10px;
             padding: 1.1rem 1.3rem;
@@ -407,19 +440,19 @@
         }
 
         footer {
-            background: #2c3e50;
-            color: white;
+            background: var(--color-blue-2c3e50);
+            color: var(--color-white);
             text-align: center;
             padding: 2rem;
         }
 
         footer a {
-            color: #bdc3c7;
+            color: var(--color-neutral-bdc3c7);
             text-decoration: none;
         }
 
         footer a:hover {
-            color: white;
+            color: var(--color-white);
         }
 
         @media (prefers-reduced-motion: reduce) {
