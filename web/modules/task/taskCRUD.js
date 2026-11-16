@@ -851,9 +851,11 @@ export async function deleteTaskImpl(taskItem, deps = {}) {
  *
  * @param {HTMLElement} taskItem - The task DOM element
  * @param {Object} [deps={}] - Dependency overrides
+ * @param {{viaKeyboard?: boolean, returnFocus?: Function}} [options] - toggled with Enter / Space:
+ *   the level picker takes focus, and returnFocus (from taskEvents) hands it back
  * @returns {Promise<void>}
  */
-export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
+export async function toggleTaskPriorityImpl(taskItem, deps = {}, options = {}) {
     try {
         await waitForCoreWithTimeout();
 
@@ -965,7 +967,11 @@ export async function toggleTaskPriorityImpl(taskItem, deps = {}) {
                             });
                         }
                     };
-                    notifications.showPriorityColorPickerNotification(resolvedColor, 8000, taskId, onColorSelect);
+                    // Toggled from the keyboard, the picker takes focus: it is the
+                    // choice the user just asked for, and it sits ~40 tab stops
+                    // away and closes itself in 8 s (measured Nov 2026).
+                    notifications.showPriorityColorPickerNotification(resolvedColor, 8000, taskId, onColorSelect,
+                        { focus: options.viaKeyboard === true, returnFocus: options.returnFocus, returnFocusTo: button });
                 } else {
                     _deps.showNotification?.(getLabel('notify.priorityEnabled'), 'warning', UI_TIMEOUTS.NOTIFICATION_BRIEF);
                 }

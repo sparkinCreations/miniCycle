@@ -296,6 +296,89 @@ export async function runNotificationsTests(resultsDiv) {
         }
     });
 
+    // Nov 2026: the Focus View first-run tip names its exit button — a hint LIST,
+    // the icon given a spoken label, and the spoken text keeps its sentence gaps.
+    await test('show() renders a list of hints, one icon label spoken, sentences spaced', async () => {
+        setupMockGlobals();
+        const container = createNotificationContainer();
+        let region = document.getElementById('live-region');
+        const made = !region;
+        if (made) { region = document.createElement('div'); region.id = 'live-region'; document.body.appendChild(region); }
+        try {
+            const notifications = new window.MiniCycleNotifications();
+            notifications.show('Welcome.', 'info', 3000, { hint: [
+                { message: 'Click this button to go back.', icon: 'compress', iconLabel: 'Exit Focus View' },
+                { message: 'Drag to move this message.', icon: 'drag-handle' }
+            ] });
+            const hints = container.querySelectorAll('.notification-hint');
+            if (hints.length !== 2) throw new Error(`expected 2 hint lines, got ${hints.length}`);
+            if (!hints[0].querySelector('.visually-hidden')?.textContent.includes('Exit Focus View')) throw new Error('icon label missing');
+            if (hints[0].querySelector('.notification-hint-icon')?.getAttribute('aria-hidden') !== 'true') throw new Error('the icon itself should be hidden from assistive tech');
+            await settleFrames();
+            const spoken = region.textContent;
+            if (!/Welcome\. Exit Focus View\. Click this button to go back\. Drag to move/.test(spoken)) throw new Error(`spoken text: "${spoken}"`);
+        } finally {
+            if (made) region.remove();
+        }
+    });
+
+    // Nov 2026: toggling priority with the keyboard opened a level picker ~40 tab
+    // stops away that closed in 8 s — the choice it asked for was unreachable.
+    const pickerWith = (focusOptions) => {
+        setupMockGlobals();
+        createNotificationContainer();
+        const notifications = new window.MiniCycleNotifications();
+        notifications.showPriorityColorPickerNotification('#dc3545', 8000, null, null, focusOptions);
+        const radios = [...document.querySelectorAll('#notification-container .priority-color-btn')];
+        return { radios, waitFocus: () => new Promise(r => setTimeout(r, 60)) };
+    };
+    const key = (el, k) => el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true }));
+
+    await test('priority picker: focus option puts focus on the current level, one tab stop', async () => {
+        const { radios, waitFocus } = pickerWith({ focus: true });
+        await waitFocus();
+        const active = document.activeElement;
+        if (!radios.includes(active)) throw new Error('focus did not move into the picker');
+        if (active.getAttribute('aria-checked') !== 'true') throw new Error('focus is not on the current level');
+        if (radios.filter(r => r.tabIndex === 0).length !== 1) throw new Error('expected exactly one tab stop in the group');
+    });
+
+    await test('priority picker: without the focus option, focus stays put', async () => {
+        const outside = document.createElement('button');
+        document.body.appendChild(outside);
+        try {
+            outside.focus();
+            const { waitFocus } = pickerWith({});
+            await waitFocus();
+            if (document.activeElement !== outside) throw new Error('a mouse-opened picker took focus');
+        } finally { outside.remove(); }
+    });
+
+    await test('priority picker: arrows move between levels and wrap', async () => {
+        const { radios, waitFocus } = pickerWith({ focus: true });
+        await waitFocus();
+        const start = radios.indexOf(document.activeElement);
+        key(document.activeElement, 'ArrowRight');
+        if (radios.indexOf(document.activeElement) !== (start + 1) % radios.length) throw new Error('ArrowRight did not move to the next level');
+        key(document.activeElement, 'ArrowLeft');
+        key(document.activeElement, 'ArrowLeft');
+        if (radios.indexOf(document.activeElement) !== (start - 1 + radios.length) % radios.length) throw new Error('ArrowLeft did not wrap');
+        if (document.activeElement.tabIndex !== 0) throw new Error('the focused level is not the tab stop');
+    });
+
+    await test('priority picker: Escape and choosing a level hand focus back', async () => {
+        let returned = 0;
+        const first = pickerWith({ focus: true, returnFocus: () => { returned++; } });
+        await first.waitFocus();
+        key(document.activeElement, 'Escape');
+        if (returned !== 1) throw new Error('Escape did not hand focus back');
+        const second = pickerWith({ focus: true, returnFocus: () => { returned++; } });
+        await second.waitFocus();
+        document.activeElement.click();
+        await new Promise(r => setTimeout(r, 0));
+        if (returned !== 2) throw new Error('choosing a level did not hand focus back');
+    });
+
     // Browse Routines: a toast over it covers the routine being read (the user,
     // Oct 2026). Held while its dialog is open, shown when it closes; errors
     // still show at once.

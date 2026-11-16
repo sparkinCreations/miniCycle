@@ -105,7 +105,10 @@ export class TaskOptionsVisibilityController {
         // button taking focus (focusin). iOS keeps focus on the button after a tap
         // elsewhere, so once the row was closed, ⋮ could not reopen it (measured
         // in the WebKit journey job, Oct 2026: the click arrived, nothing changed).
-        if (caller === 'long-press' || caller === 'three-dots-button') {
+        // And 'restore-focus': handing keyboard focus back to a row button the
+        // user was on (the priority level picker, Nov 2026). focusout hid the
+        // row when focus went into the picker; a hidden button cannot take focus.
+        if (caller === 'long-press' || caller === 'three-dots-button' || caller === 'restore-focus') {
             return true;
         }
 

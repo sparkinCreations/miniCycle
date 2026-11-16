@@ -259,6 +259,44 @@ async function run() {
             }
         }
 
+        // Keyboard priority toggle (Nov 2026). The level picker it opens sat ~40
+        // tab stops away and closed in 8 s, so a keyboard user could not reach
+        // the choice it asked for. Toggled with Enter, focus now lands on the
+        // current level; Escape hands it back to the row's priority button
+        // (re-shown first: the row hides its buttons on focusout).
+        {
+            const fail = (msg) => { console.log(`   ${colors.red}❌ keyboard priority picker: ${msg}${colors.reset}`); failures.push(`keyboard priority picker: ${msg}`); };
+            await page.waitForTimeout(2500);   // boot-time focus restoration settles
+            const ready = await page.evaluate(() => {
+                document.querySelectorAll('#notification-container .notification').forEach(n => n.remove());
+                const btn = document.querySelector('#taskList li .priority-btn');
+                if (!btn) return 'no priority button in the routine';
+                btn.closest('li').querySelector('.task-options')?.classList.add('task-options-visible');
+                btn.tabIndex = 0;
+                btn.focus();
+                return document.activeElement === btn ? 'ok' : 'could not focus the priority button';
+            });
+            if (ready !== 'ok') fail(ready);
+            else {
+                await page.keyboard.press('Enter');
+                await page.waitForTimeout(400);
+                const inPicker = await page.evaluate(() => {
+                    const a = document.activeElement;
+                    return !!a?.closest('#notification-container .priority-color-picker') && a.getAttribute('aria-checked') === 'true';
+                });
+                if (!inPicker) fail('Enter on the priority button did not put focus on the current level');
+                else {
+                    await page.keyboard.press('Escape');
+                    await page.waitForTimeout(600);
+                    const back = await page.evaluate(() => document.activeElement?.matches?.('#taskList li .priority-btn') === true);
+                    if (!back) fail('Escape did not return focus to the priority button');
+                    else console.log(`   ${colors.green}✅${colors.reset} keyboard priority toggle: focus on the current level, Escape returns it`);
+                }
+            }
+            // Close any toast left open so it does not cover the surfaces below.
+            await page.evaluate(() => document.querySelector('#notification-container .notification')?.remove());
+        }
+
         for (const surface of SURFACES) {
             // Menus need the menu open first; modals are reached from it.
             const needsMenu = !['main menu', 'task options customizer', 'stats panel'].includes(surface.name);

@@ -281,6 +281,8 @@ export class MiniCycleNotifications {
   _speak(notification, container) {
     const copy = notification.cloneNode(true);
     copy.querySelectorAll('button, input, select, [role="button"], [role="radio"], [aria-hidden="true"]').forEach((el) => el.remove());
+    // Blocks run together in textContent ("…distractions.Click this…").
+    copy.querySelectorAll('div, p, li').forEach((el) => { el.prepend(' '); el.append(' '); });
     const text = (copy.textContent || '').replace(/\s+/g, ' ').trim();
     if (text) announce(text, { within: openModalDialog(container) });
   }
@@ -413,11 +415,23 @@ export class MiniCycleNotifications {
       // an optional extra instead of the end of one long sentence. The text is
       // escaped like the message; the icon is looked up by NAME in ICONS
       // (getIcon), so only the trusted SVG set can ever reach innerHTML.
-      const hintText = typeof options?.hint?.message === 'string' ? options.hint.message.trim() : '';
-      const hintIcon = typeof options?.hint?.icon === 'string' ? getIcon(options.hint.icon) : '';
-      const hintMarkup = hintText
-        ? `<div class="notification-hint">${hintIcon ? `<span class="notification-hint-icon">${hintIcon}</span>` : ''}<span class="notification-hint-text">${getEscapeHtml(this.deps)(hintText)}</span></div>`
-        : '';
+      // `hint` may also be a LIST of them (Nov 2026: Focus View's first-run tip
+      // names its exit button, then the drag tip); one divider sits above them all.
+      const hintMarkup = (Array.isArray(options?.hint) ? options.hint : [options?.hint])
+        .map(h => ({
+          text: typeof h?.message === 'string' ? h.message.trim() : '',
+          icon: typeof h?.icon === 'string' ? getIcon(h.icon) : '',
+          // iconLabel: what a screen reader hears for the icon (e.g. the name of
+          // the button it pictures); without it the icon is decorative.
+          iconLabel: typeof h?.iconLabel === 'string' ? h.iconLabel.trim() : ''
+        }))
+        .filter(h => h.text)
+        .map(h => {
+          const label = h.iconLabel ? `<span class="${DOM_CLASSES.VISUALLY_HIDDEN}">${getEscapeHtml(this.deps)(h.iconLabel)}. </span>` : '';
+          const icon = h.icon ? `<span class="notification-hint-icon" aria-hidden="true">${h.icon}</span>` : '';
+          return `<div class="notification-hint">${label}${icon}<span class="notification-hint-text">${getEscapeHtml(this.deps)(h.text)}</span></div>`;
+        })
+        .join('');
 
       // Leading icon: options.icon names one from ICONS (false: none), else
       // the type's. Looked up by NAME, so only the trusted SVG set reaches
@@ -1683,8 +1697,16 @@ async setDefaultPosition(notificationContainer) {
    * @param {number} [duration=8000] - How long to show the notification before auto-dismiss
    * @param {string|null} [taskId=null] - Task ID for immediate DOM update
    * @param {Function|null} [onColorSelect=null] - Callback(color) to persist the chosen color
+   * @param {{focus?: boolean, returnFocus?: Function|null, returnFocusTo?: HTMLElement|null}} [focusOptions]
+   *   focus: move keyboard focus onto the current level (priority toggled with
+   *   Enter / Space). The toast sits ~40 tab stops from the task and closes in
+   *   8 s, so a keyboard user could not reach the choice it asks for (measured
+   *   Nov 2026). Arrows move between levels, Enter / Space picks one, Escape
+   *   closes; picking, Escape and Close hand focus back — returnFocus() when
+   *   given (taskEvents re-shows the row's buttons first: they hide on
+   *   focusout), else returnFocusTo. A mouse toggle leaves focus where it was.
    */
-  showPriorityColorPickerNotification(currentColor = COLORS.PRIORITY_DEFAULT, duration = 8000, taskId = null, onColorSelect = null) {
+  showPriorityColorPickerNotification(currentColor = COLORS.PRIORITY_DEFAULT, duration = 8000, taskId = null, onColorSelect = null, { focus = false, returnFocus = null, returnFocusTo = null } = {}) {
     // Swatches are LEVELS (High / Medium / Low) in the active theme's colours,
     // from the theme manager — never a theme id read off the DOM — or the shared
     // defaults before the manager is wired. Same source the renderers map
@@ -1697,8 +1719,10 @@ async setDefaultPosition(notificationContainer) {
     // The picker is handed a COLOUR (the swatch the row currently shows); the
     // selected swatch is the one whose level that colour names.
     const currentLevel = themes?.getPriorityLevelForColor?.(currentColor) ?? getLevelForColor(currentColor);
+    // Roving tab stop: only the current level (or the first) is in the Tab order.
+    const tabStopIndex = Math.max(0, colorSwatches.findIndex(c => c.level === currentLevel));
 
-    const swatchesHTML = colorSwatches.map(c => {
+    const swatchesHTML = colorSwatches.map((c, i) => {
       const isSelected = c.level === currentLevel;
       const dotOpacity = isSelected ? '1' : '0';
       const swatchOutline = isSelected ? '2px solid rgba(255,255,255,0.9)' : '2px solid transparent';
@@ -1707,6 +1731,7 @@ async setDefaultPosition(notificationContainer) {
                        data-level="${c.level}"
                        role="radio"
                        aria-checked="${isSelected}"
+                       tabindex="${i === tabStopIndex ? 0 : -1}"
                        aria-label="${c.label}"
                        title="${c.label}"
                        style="display:flex;align-items:center;gap:5px;background:none;border:none;cursor:pointer;padding:2px;flex-shrink:0;">
@@ -1748,10 +1773,60 @@ async setDefaultPosition(notificationContainer) {
     const notification = this.showWithTip(html, 'warning', duration, null, { trusted: true });
     if (!notification) return;
 
+    const radios = [...notification.querySelectorAll(DOM_SELECTORS.PRIORITY_COLOR_BTN)];
+    const focusIsInside = () => notification.contains(document.activeElement);
+    // Back to the task's priority button — looked up again if the row re-rendered.
+    const giveFocusBack = () => {
+      if (typeof returnFocus === 'function') { returnFocus(); return; }
+      const target = returnFocusTo?.isConnected ? returnFocusTo
+        : (taskId ? document.querySelector(DATA_SELECTORS.elementByTaskId(taskId))?.querySelector(DOM_SELECTORS.PRIORITY_BTN) : null);
+      target?.focus();
+    };
+    const dismissNow = () => {
+      notification.classList.remove(DOM_CLASSES.SHOW);
+      setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
+    };
+
+    // Keyboard: arrows move between levels (one roving tab stop), Escape closes.
+    notification._colorPickerKeyHandler = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        const hadFocus = focusIsInside();
+        dismissNow();
+        if (hadFocus) giveFocusBack();
+        return;
+      }
+      const at = radios.indexOf(e.target.closest(DOM_SELECTORS.PRIORITY_COLOR_BTN));
+      if (at === -1) return;
+      const step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+      const next = step ? (at + step + radios.length) % radios.length
+        : e.key === 'Home' ? 0 : e.key === 'End' ? radios.length - 1 : -1;
+      if (next === -1) return;
+      e.preventDefault();
+      radios.forEach((r, i) => r.setAttribute('tabindex', i === next ? '0' : '-1'));
+      radios[next].focus();
+    };
+    _safeAddEventListener(notification, 'keydown', notification._colorPickerKeyHandler);
+
+    // Close from inside: focus would otherwise fall to <body> with the toast.
+    const closeBtn = notification.querySelector(DOM_SELECTORS.NOTIFICATION_CLOSE);
+    if (closeBtn) {
+      notification._colorPickerCloseHandler = () => {
+        if (focusIsInside()) setTimeout(giveFocusBack, 0);
+      };
+      _safeAddEventListener(closeBtn, 'click', notification._colorPickerCloseHandler);
+    }
+
+    if (focus && radios.length) {
+      setTimeout(() => radios[tabStopIndex]?.focus(), UI_TIMEOUTS.FOCUS_NEXT_TICK);
+    }
+
     // Attach color-picker interaction
     notification._colorPickerClickHandler = async (e) => {
       const btn = e.target.closest(DOM_SELECTORS.PRIORITY_COLOR_BTN);
       if (!btn) return;
+      const hadFocus = focusIsInside();
 
       const color = btn.dataset.color;
 
@@ -1785,13 +1860,14 @@ async setDefaultPosition(notificationContainer) {
         }
       }
 
+      // Chosen from the keyboard: focus goes back to the task now, before the
+      // toast fades (focus left inside a removed toast falls to <body>).
+      if (hadFocus) giveFocusBack();
+
       // Auto-dismiss shortly after color selection
       // If hovering, wait for mouseleave first, then dismiss after short delay
       const dismissAfterDelay = () => {
-        setTimeout(() => {
-          notification.classList.remove(DOM_CLASSES.SHOW);
-          setTimeout(() => notification.remove(), UI_TIMEOUTS.NOTIFICATION_FADE);
-        }, 1500);
+        setTimeout(dismissNow, 1500);
       };
       if (notification.matches(':hover')) {
         notification.addEventListener('mouseleave', dismissAfterDelay, { once: true });

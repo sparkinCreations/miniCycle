@@ -438,6 +438,7 @@ export const LIMITS = Object.freeze({
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     AUTO_BACKUPS_SHOWN: 8,               // Newest IndexedDB snapshots listed under Settings → Data Management → automatic backups
     BACKUP_FOLDER_KEEP: 7,               // Daily backup files kept in the device folder (storage/backupFolder.js) — one per day
+    RESTORE_FOCUS_MAX_FRAMES: 30,        // Frames _returnFocusToRowButton waits for a re-shown row button's visibility transition before focusing it anyway (~0.5 s)
     RECURRING_NAMED_MAX: 3,              // Up to this many respawned recurring tasks are named in their announcement / catch-up notification; more are counted
     RECURRING_OVERSLEEP_FACTOR: 2,       // Watch tick counts as overslept when the gap since the last tick exceeds this multiple of the expected interval (device sleep / tab freeze) — the tick then delegates to catch-up
     // Max task names stored on ONE history event's completion breakdown (per

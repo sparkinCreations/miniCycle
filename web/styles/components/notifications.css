@@ -287,6 +287,16 @@
     opacity: 0.35;
 }
 
+/* A list of hints: one divider above the first, the rest stack closer. */
+.notification .notification-hint + .notification-hint {
+    margin-top: var(--space-1);
+    padding-top: 0;
+}
+
+.notification .notification-hint + .notification-hint::before {
+    display: none;
+}
+
 .notification .notification-hint-icon {
     display: inline-flex;
     flex-shrink: 0;

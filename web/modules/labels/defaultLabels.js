@@ -449,6 +449,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // label above; splitting it lets the orientation read at a glance and
         // the drag tip read as an optional extra. Device-variant: the touch
         // gesture starts with a press-and-hold, the pointer gesture is a drag.
+        // Under that tip, first: the exit button's icon and what it does — the
+        // tip told a new user where they were but not how to leave (Nov 2026).
+        focusViewExitHint:      {
+            touch:   'Tap this button to go back to Home View.',
+            pointer: 'Click this button to go back to Home View.'
+        },
         focusViewDragHint:      {
             touch:   'Press and hold to move this message.',
             pointer: 'Drag to move this message.'
