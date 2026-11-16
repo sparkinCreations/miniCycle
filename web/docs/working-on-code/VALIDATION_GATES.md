@@ -57,8 +57,13 @@ worked.
 the pages carry a few intentional warnings (trailing slashes on void elements, redundant
 landmark roles).
 
-**Note:** this is the one gate that needs network access. `--dist` validates the built
-artifacts instead of source.
+**Note:** locally this is the one gate that needs network access: it posts to the public
+service. CI runs the same checker as a service container (`ghcr.io/validator/validator`)
+and points `HTML_VALIDATOR_URL` at it, because the public service rate-limits shared
+runner IPs (HTTP 429 failed the job three times in Nov 2026 with valid HTML). Set
+`HTML_VALIDATOR_URL` to use any other Nu checker, e.g. a local `vnu.jar`. Exit code 2
+means the checker could not be reached, not that the HTML is invalid. `--dist`
+validates the built artifacts instead of source.
 
 ## 🔴 `validate:docs` — links, nav, and AI routing
 

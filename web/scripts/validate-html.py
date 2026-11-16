@@ -8,6 +8,16 @@ validate-html.py — W3C (Nu) HTML validation for the maintained pages.
 
 Runs in CI (.github/workflows/performance.yml, html-validation job).
 
+WHICH CHECKER
+-------------
+Locally this posts to the public service, validator.w3.org/nu. CI points
+HTML_VALIDATOR_URL at the same checker running as a service container
+(ghcr.io/validator/validator), because the public service rate-limits shared
+runner IPs: HTTP 429 failed the job on Nov 10, 11 and 16, 2026 with nothing
+wrong in the HTML. Any Nu checker works, e.g. a local one started with
+    java -cp vnu.jar nu.validator.servlet.Main 8888
+    HTML_VALIDATOR_URL='http://localhost:8888/?out=json' npm run validate:html
+
 WHY NOT A PACKAGE
 -----------------
 `html-validator-cli` does the same job, but v7 depends on the deprecated `request`
@@ -33,7 +43,8 @@ import shutil
 import subprocess
 import sys
 
-ENDPOINT = 'https://validator.w3.org/nu/?out=json'
+PUBLIC_ENDPOINT = 'https://validator.w3.org/nu/?out=json'
+ENDPOINT = os.environ.get('HTML_VALIDATOR_URL') or PUBLIC_ENDPOINT
 
 # Transport note: this shells out to `curl` rather than using urllib. A stock
 # python.org install on macOS ships without a linked CA bundle, so urllib raises
@@ -96,7 +107,8 @@ def main():
         return 2
 
     label = 'dist/ build artifacts' if args.dist else 'source files'
-    print('🌐 W3C HTML validation — %s\n' % label)
+    where = 'validator.w3.org' if ENDPOINT == PUBLIC_ENDPOINT else ENDPOINT
+    print('🌐 W3C HTML validation — %s (%s)\n' % (label, where))
 
     total_errors = 0
     checked = 0
@@ -116,7 +128,7 @@ def main():
         except ValidatorUnreachable as exc:
             # Distinguish "we could not check" from "the HTML is invalid" — a
             # w3.org outage must not read as a validation failure.
-            print('\n   ⚠️  %s: could not reach the W3C validator (%s)' % (path, exc))
+            print('\n   ⚠️  %s: could not reach the validator at %s (%s)' % (path, ENDPOINT, exc))
             print('       Not a validation failure. Re-run when the service is reachable.')
             return 2
 

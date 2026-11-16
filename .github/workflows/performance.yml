@@ -74,13 +74,36 @@ jobs:
   html-validation:
     name: HTML Validation (W3C Nu)
     runs-on: ubuntu-latest
+    # The same Nu checker that runs validator.w3.org, as a service container.
+    # The public service rate-limits shared runner IPs (HTTP 429 failed this
+    # job on Nov 10, 11 and 16, 2026 with valid HTML). `latest` on purpose:
+    # upstream publishes it from the living standard, and an old checker
+    # false-flags popover/inert/fetchpriority (see the script's header).
+    services:
+      vnu:
+        image: ghcr.io/validator/validator:latest
+        ports:
+          - 8888:8888
+    env:
+      HTML_VALIDATOR_URL: http://localhost:8888/?out=json
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
 
+      # The container starts before the steps, but the JVM inside takes a few
+      # seconds to listen. Without this wait, the first request can be refused
+      # and the script exits 2 ("could not reach") instead of validating.
+      - name: Wait for the checker
+        run: |
+          for i in $(seq 1 60); do
+            curl -sf -o /dev/null http://localhost:8888/ && exit 0
+            sleep 1
+          done
+          echo "Nu checker did not start within 60s"; exit 1
+
       # No Node, no `npm ci`, no dev server: scripts/validate-html.py is pure
-      # stdlib + curl and posts the files straight to validator.w3.org. That
-      # keeps this the cheapest job in the workflow (a few seconds).
+      # stdlib + curl and posts the files to the checker above. That keeps
+      # this the cheapest job in the workflow.
       # NOT continue-on-error: see the header note.
       - name: Validate HTML
         working-directory: ./web
