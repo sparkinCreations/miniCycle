@@ -14,6 +14,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, UI_TIMEOUTS, DEFAU
 import { getLabel } from '../labels/labelResolver.js';
 import { buildRecurringTemplate, keepBiweeklyStart, withoutBiweeklyStart } from './recurringTemplate.js';
 import { getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, syncTaskAutoClear } from '../utils/cycleMode.js';
+import { setTaskRecurringState } from '../task/taskUtils.js';
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
 // ============================================================================
@@ -174,7 +175,7 @@ export async function applyRecurringSettings(panel, buildSettingsFromPanel) {
                 const taskEl = checkbox.closest(DATA_SELECTORS.TASK_ID_ELEMENT);
                 if (!taskEl) return;
                 const taskSettings = savedTemplates[taskEl.dataset.taskId]?.recurringSettings || settings;
-                taskEl.classList.add(DOM_CLASSES.RECURRING);
+                setTaskRecurringState(taskEl, true);
                 taskEl.setAttribute(DATA_SELECTORS.ATTR_RECURRING_SETTINGS, JSON.stringify(taskSettings));
                 const recurringBtn = taskEl.querySelector(DOM_SELECTORS.RECURRING_BTN);
                 if (recurringBtn) {

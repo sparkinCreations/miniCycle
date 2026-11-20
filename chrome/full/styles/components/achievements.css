@@ -26,7 +26,7 @@
     flex-direction: column;
     box-shadow:
         var(--shadow-modal),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     transform: translateY(20px);
     transition: transform var(--transition-fast) ease;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
@@ -307,21 +307,21 @@
 }
 
 /* Themed popup colors via data-attribute */
-.badge-detail-popup[data-reward="habit-tracker"] { background: #c87132; color: var(--color-white); }
-.badge-detail-popup[data-reward="fitness"]       { background: #22a05e; color: var(--color-white); }
-.badge-detail-popup[data-reward="scholar"]       { background: #4440c0; color: var(--color-white); }
-.badge-detail-popup[data-reward="cleaning"]      { background: #0a8db5; color: var(--color-white); }
-.badge-detail-popup[data-reward="whack-a-order"] { background: #8b0000; color: var(--color-white); }
+.badge-detail-popup[data-reward="habit-tracker"] { background: var(--color-orange-c87132); color: var(--color-white); }
+.badge-detail-popup[data-reward="fitness"]       { background: var(--color-green-22a05e); color: var(--color-white); }
+.badge-detail-popup[data-reward="scholar"]       { background: var(--color-indigo-4440c0); color: var(--color-white); }
+.badge-detail-popup[data-reward="cleaning"]      { background: var(--color-cyan-0a8db5); color: var(--color-white); }
+.badge-detail-popup[data-reward="whack-a-order"] { background: var(--color-red-8b0000); color: var(--color-white); }
 
 .badge-detail-popup[data-reward] .badge-detail-secondary {
-    color: rgba(255, 255, 255, 0.8);
+    color: var(--overlay-white-strong);
 }
 
-.badge-detail-popup[data-reward="habit-tracker"] .badge-detail-reward { color: #ffe0b8; }
-.badge-detail-popup[data-reward="fitness"] .badge-detail-reward       { color: #b8f0d4; }
-.badge-detail-popup[data-reward="scholar"] .badge-detail-reward       { color: #c8c4ff; }
-.badge-detail-popup[data-reward="cleaning"] .badge-detail-reward      { color: #b8eeff; }
-.badge-detail-popup[data-reward="whack-a-order"] .badge-detail-reward { color: #ffb8c8; }
+.badge-detail-popup[data-reward="habit-tracker"] .badge-detail-reward { color: var(--color-orange-ffe0b8); }
+.badge-detail-popup[data-reward="fitness"] .badge-detail-reward       { color: var(--color-teal-b8f0d4); }
+.badge-detail-popup[data-reward="scholar"] .badge-detail-reward       { color: var(--color-indigo-c8c4ff); }
+.badge-detail-popup[data-reward="cleaning"] .badge-detail-reward      { color: var(--color-cyan-b8eeff); }
+.badge-detail-popup[data-reward="whack-a-order"] .badge-detail-reward { color: var(--color-red-ffb8c8); }
 
 /* Badge spin area */
 .badge-spin-area {
@@ -363,11 +363,11 @@
 }
 
 /* Unlocked badge gradients */
-.badge-coin[data-reward="habit-tracker"] { background: linear-gradient(135deg, #c87132, #e8924a); }
-.badge-coin[data-reward="fitness"]       { background: linear-gradient(135deg, #22a05e, #3dba74); }
-.badge-coin[data-reward="scholar"]       { background: linear-gradient(135deg, #4440c0, #6560d8); }
-.badge-coin[data-reward="cleaning"]      { background: linear-gradient(135deg, #0a8db5, #20a8d8); }
-.badge-coin[data-reward="whack-a-order"] { background: linear-gradient(135deg, #8b0000, #dc143c); }
+.badge-coin[data-reward="habit-tracker"] { background: linear-gradient(135deg, var(--color-orange-c87132), var(--color-orange-e8924a)); }
+.badge-coin[data-reward="fitness"]       { background: linear-gradient(135deg, var(--color-green-22a05e), var(--color-green-3dba74)); }
+.badge-coin[data-reward="scholar"]       { background: linear-gradient(135deg, var(--color-indigo-4440c0), var(--color-indigo-6560d8)); }
+.badge-coin[data-reward="cleaning"]      { background: linear-gradient(135deg, var(--color-cyan-0a8db5), var(--color-cyan-20a8d8)); }
+.badge-coin[data-reward="whack-a-order"] { background: linear-gradient(135deg, var(--color-red-8b0000), var(--color-red-dc143c)); }
 
 .badge-coin-emoji {
     font-size: 40px;
@@ -457,15 +457,15 @@
     font-size: var(--font-size-xs);
     font-weight: 600;
     color: var(--color-white);
-    background: rgba(255, 255, 255, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.4);
+    background: var(--overlay-white-light);
+    border: 1px solid var(--overlay-white-medium);
     border-radius: var(--radius-md);
     cursor: pointer;
     transition: background var(--transition-fast), transform var(--transition-fast);
 }
 
 .badge-detail-reward-btn:hover {
-    background: rgba(255, 255, 255, 0.35);
+    background: var(--color-white-a35);
 }
 
 .badge-detail-reward-btn:active {

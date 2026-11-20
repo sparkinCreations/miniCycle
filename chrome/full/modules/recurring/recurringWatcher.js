@@ -27,6 +27,7 @@ import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } fro
 import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
+import { announce } from '../utils/announce.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP
@@ -445,9 +446,22 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
 
     return {
         added: tasksToActuallyAdd.length,
+        addedNames: tasksToActuallyAdd.map(t => t.text),
         updated: Object.keys(committedUpdates).length,
         blocked: limitCheck.blocked
     };
+}
+
+/**
+ * The respawned tasks' names as one phrase, or null when there are more than
+ * LIMITS.RECURRING_NAMED_MAX (then the message counts them instead).
+ * @param {string[]} names
+ * @returns {string|null}
+ */
+function namedList(names) {
+    const list = (names || []).filter(Boolean);
+    if (!list.length || list.length > LIMITS.RECURRING_NAMED_MAX) return null;
+    return list.join(', ');
 }
 
 // ============================================================================
@@ -518,8 +532,12 @@ export async function catchUpMissedRecurringTasks() {
     if (stats.added > 0) {
         assertInjected('showNotification', Deps.showNotification);
         const missedTaskWord = getLabel('noun.task', { count: stats.added });
+        // Named when few (Nov 2026): "Added 1 missed recurring task" never said which.
+        const names = namedList(stats.addedNames);
         Deps.showNotification(
-            getLabel('notify.recurringMissedAdded', { vars: { count: stats.added, taskWord: missedTaskWord } }),
+            names
+                ? getLabel('notify.recurringMissedAddedNamed', { vars: { taskWord: missedTaskWord, names } })
+                : getLabel('notify.recurringMissedAdded', { vars: { count: stats.added, taskWord: missedTaskWord } }),
             'info',
             UI_TIMEOUTS.NOTIFICATION_LONG,
             { icon: 'clock' }
@@ -602,12 +620,21 @@ export async function watchRecurringTasks() {
     }
 
     // The 15s watch re-validates the recurrence pattern (slow path) before recreating, so a
-    // task only spawns when it genuinely matches now. Recreation is silent (no notification).
+    // task only spawns when it genuinely matches now. Recreation is visually silent (no
+    // notification) but spoken by name: the task list is not a live region, so without this
+    // a screen-reader user never learned a task had come back.
     assertInjected('shouldRecreateRecurringTask', Deps.shouldRecreateRecurringTask);
-    await recreateDueTasks(
+    const stats = await recreateDueTasks(
         activeCycleId, templates, taskList, now,
         (template) => Deps.shouldRecreateRecurringTask(template, taskList, now)
     );
+    if (stats.added > 0) {
+        const taskWord = getLabel('noun.task', { count: stats.added });
+        const names = namedList(stats.addedNames);
+        announce(names
+            ? getLabel('accessibility.recurringTasksBack', { vars: { taskWord, names } })
+            : getLabel('accessibility.recurringTasksBackCount', { vars: { count: stats.added, taskWord } }));
+    }
 }
 
 // ============================================================================

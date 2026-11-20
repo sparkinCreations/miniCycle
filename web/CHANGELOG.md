@@ -1,3 +1,7 @@
+## [2.685] - 2026-11-20
+- feat(onboarding): new users get the Complete Cycle check; hints name the + Actions button; task bar notice goes quiet after four
+
+
 ## [2.684] - 2026-11-16
 - fix(onboarding): First Cycle Complete card drops the keyboard keys
 - ci: run the Nu HTML checker as a service container instead of the rate-limited public validator

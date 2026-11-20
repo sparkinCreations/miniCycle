@@ -45,7 +45,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, LIMITS, KEYBOARD_SHORTCUTS, shortcutKeyName } from '../core/constants.js';
 import { USER_MANUAL_SHORTCUTS_HASH, linkToUserManual } from '../utils/userManualLink.js';
 import { MODAL_NAMES, MODAL_DEFS } from './modalRegistry.js';
 import { getLabel } from '../labels/labelResolver.js';
@@ -58,6 +58,7 @@ import { hasActiveNotifications, isClickOnNotification, restoreFocusAfterClose }
 export { hasActiveNotifications, isClickOnNotification };
 
 import { animateDialogClose } from '../utils/dialogClose.js';
+import { isApplePlatform } from '../utils/keyboardNav.js';
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -103,6 +104,22 @@ function replaceStoredEventListener(element, event, key, handler, options) {
 }
 
 /**
+ * A short fingerprint of a feedback submission (rating + message + email),
+ * compared with the last one sent so the same feedback is not sent twice.
+ * Not the text itself — only this is kept, in userProgress.lastFeedback.
+ * @param {string} rating
+ * @param {string} message
+ * @param {string} email
+ * @returns {string}
+ */
+export function feedbackSignature(rating, message, email) {
+    const text = `${String(rating).trim()}|${String(message).trim().replace(/\s+/g, ' ')}|${String(email).trim().toLowerCase()}`;
+    let hash = 5381;
+    for (let i = 0; i < text.length; i++) hash = ((hash << 5) + hash + text.charCodeAt(i)) | 0;
+    return (hash >>> 0).toString(36);
+}
+
+/**
  * Coordinates modal lifecycle including open/close, focus trapping,
  * backdrop clicks, escape key handling, and cleanup of event listeners.
  */
@@ -121,7 +138,9 @@ export class ModalManager {
             hideMainMenu: resolvedDeps.hideMainMenu,
             sanitizeInput: resolvedDeps.sanitizeInput,
             safeAddEventListener: resolvedDeps.safeAddEventListener,
-            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve(false))
+            waitForCore: resolvedDeps.waitForCore || (() => Promise.resolve(false)),
+            // The feedback limits read and write userProgress.lastFeedback.
+            AppState: resolvedDeps.AppState
         };
     }
 
@@ -328,6 +347,35 @@ export class ModalManager {
                     return;
                 }
 
+                // Optional email, but an entered one must be an address. The
+                // form is novalidate, so the browser's own type="email" check
+                // never ran ("test123@" was accepted) — ask the input directly.
+                if (emailInput?.value.trim() && !emailInput.checkValidity()) {
+                    emailInput.setAttribute('aria-invalid', 'true');
+                    this.deps.showNotification(getLabel('feedback.emailInvalid'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    emailInput.focus();
+                    return;
+                }
+                emailInput?.removeAttribute('aria-invalid');
+
+                // Limits (Nov 2026 QA report): the same feedback again is not
+                // re-sent, and a second submission right after the last waits.
+                // Only a timestamp and a fingerprint are kept, never the text.
+                const signature = feedbackSignature(
+                    document.getElementById(DOM_IDS.FEEDBACK_RATING_VALUE)?.value || '',
+                    feedbackText?.value || '',
+                    emailInput?.value || '');
+                const last = this.deps.AppState?.get?.()?.userProgress?.lastFeedback;
+                const sinceLast = last?.at ? Date.now() - last.at : Infinity;
+                if (last?.signature === signature && sinceLast < LIMITS.FEEDBACK_DUPLICATE_WINDOW_MS) {
+                    this.deps.showNotification(getLabel('feedback.alreadySent'), "info", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    return;
+                }
+                if (sinceLast < LIMITS.FEEDBACK_COOLDOWN_MS) {
+                    this.deps.showNotification(getLabel('feedback.tooSoon'), "warning", UI_TIMEOUTS.NOTIFICATION_LONG);
+                    return;
+                }
+
                 // Disable button while sending
                 if (submitButton) {
                     submitButton.disabled = true;
@@ -345,6 +393,11 @@ export class ModalManager {
                 .then(response => response.json())
                 .then(data => {
                     if (data.success) {
+                        this.deps.AppState?.update?.((state) => {
+                            if (!state.userProgress) state.userProgress = {};
+                            state.userProgress.lastFeedback = { at: Date.now(), signature };
+                        }, true);
+
                         // Show Thank You Message
                         if (thankYouMessage) {
                             thankYouMessage.style.display = "block";
@@ -557,8 +610,7 @@ export class ModalManager {
      */
     renderShortcutsList(container) {
         if (!container) return;
-        const apple = /Mac|iPhone|iPad|iPod/.test(navigator.platform || '')
-            || navigator.userAgentData?.platform === 'macOS';
+        const apple = isApplePlatform();
         const mod = getLabel(apple ? 'shortcuts.keyOption' : 'shortcuts.keyAlt');
         const shift = getLabel('shortcuts.keyShift');
         const esc = getLabel('shortcuts.keyEscape');

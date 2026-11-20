@@ -3,10 +3,14 @@
  *
  * Pure functions using the roving tabindex pattern.
  * No DI required — import directly where needed.
+ * (One exception at the bottom: the shortcut-hint helpers keep a single
+ * MutationObserver, so a tooltip keeps its key when the app rewrites it.)
  *
  * @module utils/keyboardNav
  * @version 1.0.0
  */
+
+import { getLabel } from '../labels/labelResolver.js';
 
 /**
  * Get visible items from a container, optionally filtering hidden ones.
@@ -210,4 +214,94 @@ export function undoRedoShortcut(e) {
     if (letter === 'z') return e.shiftKey ? 'redo' : 'undo';
     if (letter === 'y' && !e.shiftKey) return 'redo';
     return null;
+}
+
+// ============================================================================
+// SHORTCUT HINTS IN TOOLTIPS
+// ============================================================================
+
+/**
+ * True on a Mac, iPhone or iPad, where the app shortcuts read Option and
+ * Cmd instead of Alt and Ctrl.
+ * @returns {boolean}
+ */
+export function isApplePlatform() {
+    return /Mac|iPhone|iPad|iPod/.test(navigator.platform || '')
+        || navigator.userAgentData?.platform === 'macOS';
+}
+
+/**
+ * How an Alt+Shift app shortcut reads on this platform: "Alt+Shift+O", or
+ * "Option+Shift+O" on Apple devices.
+ * @param {string} keyName - the key as shown (shortcutKeyName(code))
+ * @param {{apple?: boolean}} [opts] - override the platform (tests)
+ * @returns {string}
+ */
+export function appShortcutText(keyName, { apple = isApplePlatform() } = {}) {
+    return [getLabel(apple ? 'shortcuts.keyOption' : 'shortcuts.keyAlt'), getLabel('shortcuts.keyShift'), keyName].join('+');
+}
+
+/**
+ * How undo / redo read on this platform: Ctrl+Z / Ctrl+Y, or Cmd+Z /
+ * Cmd+Shift+Z on Apple devices (the pairs undoRedoShortcut accepts).
+ * @param {'undo'|'redo'} action
+ * @param {{apple?: boolean}} [opts] - override the platform (tests)
+ * @returns {string}
+ */
+export function undoShortcutText(action, { apple = isApplePlatform() } = {}) {
+    const mod = getLabel(apple ? 'shortcuts.keyCmd' : 'shortcuts.keyCtrl');
+    if (action === 'undo') return `${mod}+Z`;
+    return apple ? `${mod}+${getLabel('shortcuts.keyShift')}+Z` : `${mod}+Y`;
+}
+
+/** Re-applies a hint whenever the app rewrites a hinted control's title. */
+let _hintObserver = null;
+
+function _applyHint(el) {
+    const hint = el.dataset.shortcutHint;
+    if (!hint) return;
+    const suffix = ` (${hint})`;
+    // A control named only by its text (the + menu's "Add Tasks", which turns
+    // into "Hide task bar") takes its tooltip from that text, rebuilt when the
+    // text changes.
+    if (el.dataset.shortcutHintFromText === 'true'
+        || (!el.getAttribute('title') && !el.getAttribute('aria-label'))) {
+        el.dataset.shortcutHintFromText = 'true';
+        const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+        if (text && el.getAttribute('title') !== text + suffix) el.setAttribute('title', text + suffix);
+        return;
+    }
+    const base = el.getAttribute('title') || el.getAttribute('aria-label') || '';
+    if (!base || base.endsWith(suffix)) return;
+    el.setAttribute('title', base + suffix);
+}
+
+/**
+ * Show a control's keyboard shortcut in its tooltip: "Switch routine
+ * (Alt+Shift+O)". The app rewrites some of these tooltips as state changes
+ * (the mode picker, the add-task toggle) and on every label refresh, so a
+ * MutationObserver puts the hint back each time. Idempotent per element.
+ * @param {HTMLElement|null} el
+ * @param {string} hint - from appShortcutText / undoShortcutText
+ * @returns {void}
+ */
+export function setShortcutHint(el, hint) {
+    if (!el || !hint) return;
+    el.dataset.shortcutHint = hint;
+    _applyHint(el);
+    if (typeof MutationObserver !== 'function') return;
+    _hintObserver = _hintObserver || new MutationObserver((records) => records.forEach((r) => {
+        const target = r.target.nodeType === 1 ? r.target : r.target.parentElement;
+        const hinted = target?.closest?.('[data-shortcut-hint]');
+        if (hinted) _applyHint(hinted);
+    }));
+    _hintObserver.observe(el, el.dataset.shortcutHintFromText === 'true'
+        ? { attributes: true, attributeFilter: ['title'], childList: true, characterData: true, subtree: true }
+        : { attributes: true, attributeFilter: ['title'] });
+}
+
+/** Stop re-applying hints (boot-retry teardown, tests). */
+export function disconnectShortcutHints() {
+    _hintObserver?.disconnect();
+    _hintObserver = null;
 }

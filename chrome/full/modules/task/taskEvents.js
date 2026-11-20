@@ -23,7 +23,10 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, DATA_SELECTORS, LIMITS } from '../core/constants.js';
+
+/** Frames to wait for a re-shown row button to become visible before focusing it anyway. */
+const RESTORE_FOCUS_MAX_FRAMES = LIMITS.RESTORE_FOCUS_MAX_FRAMES;
 import { ICONS } from '../utils/icons.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { handleVerticalArrowNav } from '../utils/keyboardNav.js';
@@ -300,7 +303,13 @@ export class TaskEvents {
             shouldSave = false;
         } else if (button.classList.contains(DOM_CLASSES.PRIORITY_BTN)) {
             if (this.deps.taskCore) {
-                this.deps.taskCore.toggleTaskPriority(taskItem);
+                // detail is 0 for a click synthesized from Enter / Space: the
+                // level picker that opens then takes focus, and hands it back
+                // here — re-showing the row's buttons, which focusout hid.
+                this.deps.taskCore.toggleTaskPriority(taskItem, {
+                    viaKeyboard: event?.detail === 0,
+                    returnFocus: () => this._returnFocusToRowButton(taskItem, DOM_SELECTORS.PRIORITY_BTN)
+                });
             } else {
                 console.warn('⚠️ TaskCore not injected, priority toggle skipped');
                 _deps.showNotification?.(getLabel('notify.priorityUnavailable'), 'warning');
@@ -345,6 +354,38 @@ export class TaskEvents {
                 }
             }
         });
+    }
+
+    /**
+     * Put keyboard focus back on one of a row's buttons, showing the row's
+     * buttons first (they hide on focusout, and a hidden button cannot take
+     * focus). Looks the row up again by id in case it re-rendered meanwhile.
+     *
+     * The focus waits for the button to be visible: .task-options transitions
+     * `visibility`, which stays `hidden` until the transition's first frame, so
+     * a focus() in the same frame as show() is silently ignored (measured Nov
+     * 2026). A few frames at most; with reduced motion it is immediate.
+     * @param {HTMLElement} taskItem - the row the user was on
+     * @param {string} buttonSelector - e.g. DOM_SELECTORS.PRIORITY_BTN
+     * @returns {void}
+     */
+    _returnFocusToRowButton(taskItem, buttonSelector) {
+        const id = taskItem?.dataset?.taskId;
+        const row = taskItem?.isConnected ? taskItem
+            : (id ? document.querySelector(DATA_SELECTORS.taskById(id)) : null);
+        if (!row) return;
+        this.deps.TaskOptionsVisibilityController?.show(row, 'restore-focus');
+        const button = row.querySelector(buttonSelector);
+        if (!button) return;
+        let framesLeft = RESTORE_FOCUS_MAX_FRAMES;
+        const tryFocus = () => {
+            if (getComputedStyle(button).visibility === 'visible' || framesLeft-- <= 0) {
+                button.focus();
+                return;
+            }
+            requestAnimationFrame(tryFocus);
+        };
+        tryFocus();
     }
 
     /**

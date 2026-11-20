@@ -18,13 +18,13 @@ input:focus,
 select:focus,
 textarea:focus {
     outline: none;
-    box-shadow: 0 0 0 2px var(--theme-input-focus-border, rgba(76, 121, 255, 0.5));
+    box-shadow: 0 0 0 2px var(--theme-input-focus-border, var(--color-blue-4c79ff-a50));
 }
 
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -109,7 +109,7 @@ input[type="checkbox"] {
     width: 16px;
     height: 16px;
     cursor: pointer;
-    accent-color: var(--theme-success, #4CAF50);
+    accent-color: var(--theme-success, var(--color-green-4caf50));
 }
 
 /* =============================================================================
@@ -129,7 +129,7 @@ input[type="checkbox"] {
 
 .input-group label {
     font-size: var(--font-size-sm);
-    color: var(--theme-text-secondary, #666);
+    color: var(--theme-text-secondary, var(--color-neutral-666666));
 }
 
 .input-group input,

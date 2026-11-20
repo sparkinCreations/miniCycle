@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { createIconElement } from '../utils/icons.js';
 import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
@@ -1167,13 +1167,26 @@ export class ModeManager {
                 this._closeQuickActionsMenu?.();
                 this._switchToTaskViewIfInStats();
 
-                // Focus the text input when showing the input bar
+                // Focus the text input when showing the input bar — in the
+                // tap itself: iOS opens the keyboard only for a focus() made
+                // inside the user's gesture, and the frame-later focus left the
+                // bar shown but not focused there (Nov 2026 QA report). The
+                // frame-later try stays as a fallback for a bar still hidden.
                 if (newVisible) {
-                    requestAnimationFrame(() => {
-                        const textInput = this.deps.getElementById(DOM_IDS.TASK_INPUT);
-                        textInput?.focus();
-                    });
+                    const textInput = this.deps.getElementById(DOM_IDS.TASK_INPUT);
+                    textInput?.focus();
+                    if (textInput && document.activeElement !== textInput) {
+                        requestAnimationFrame(() => textInput.focus());
+                    }
                 }
+
+                // The "Task input shown / hidden" notification is a teaching
+                // message: it shows for the first few presses, then goes quiet
+                // once the user knows the button (LIMITS.TASK_INPUT_NOTICE_SHOWS,
+                // one count for all four variants). Turning Tour Prompts on
+                // starts the count again (guidedTourManager.enableTourPrompts).
+                const noticeCount = Number(this.deps.AppState?.get?.()?.settings?.taskInputNoticeCount) || 0;
+                const showNotice = noticeCount < LIMITS.TASK_INPUT_NOTICE_SHOWS;
 
                 // Persist to active routine (per-routine setting)
                 if (this.deps.AppState) {
@@ -1182,10 +1195,14 @@ export class ModeManager {
                         if (routine) {
                             routine.showTaskInput = newVisible;
                         }
+                        if (showNotice) {
+                            if (!state.settings) state.settings = {};
+                            state.settings.taskInputNoticeCount = noticeCount + 1;
+                        }
                     });
                 }
 
-                if (this.deps.showNotification) {
+                if (showNotice && this.deps.showNotification) {
                     // Focus mode hides the + button, so its variant of the
                     // notification points to the ⋯ menu instead.
                     const inFocusMode = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);

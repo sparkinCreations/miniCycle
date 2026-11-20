@@ -23,6 +23,7 @@ import { handleHorizontalArrowNav } from '../utils/keyboardNav.js';
 import { getActiveRoutine, getActiveRoutineId, getAutoClearMode, getAutoClearSettings, getRoutine, setAutoClear, syncTaskAutoClear } from '../utils/cycleMode.js';
 import { createIconElement } from '../utils/icons.js';
 import { attachLongPressHint } from '../utils/longPressHint.js';
+import { setTaskRecurringState } from './taskUtils.js';
 
 // SVG icons for task buttons (Font Awesome style)
 // Colors controlled by CSS via fill="currentColor" - see task-options.css
@@ -568,7 +569,7 @@ export class TaskButtons {
         const isToDoMode = cycle?.deleteCheckedTasks === true;
         const currentMode = isToDoMode ? 'todo' : 'cycle';
 
-        taskItem.classList.remove(DOM_CLASSES.RECURRING);
+        setTaskRecurringState(taskItem, false, task?.text);
 
         const recurringBtn = taskItem.querySelector(DOM_SELECTORS.RECURRING_BTN);
         if (recurringBtn) {

@@ -1164,7 +1164,7 @@ export async function handleCompleteAllTasksImpl(resetTasksFn, deps = {}) {
         const { activeCycle, cycleData, taskList } = context;
 
         // Step 2: Ask first if needed. Cycle modes only; Manual Cycle's unchecked
-        // warning is opt-in (Settings → Behavior) and folds the due-date notice
+        // warning is a setting (Settings → Behavior, on for new users) and folds the due-date notice
         // into its one dialog, so a press never meets two in a row. Every route
         // to Complete Cycle (Home button, Focus View, Quick Actions) comes here.
         if (!cycleData.deleteCheckedTasks) {

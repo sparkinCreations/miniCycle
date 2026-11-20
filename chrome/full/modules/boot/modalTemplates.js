@@ -503,7 +503,7 @@ export const PREFERENCES_MODAL_HTML = `<!-- Preferences Modal -->
                     <div class="preferences-color-row">
                         <span class="pref-color-icon" aria-hidden="true">${getIcon('font')}</span>
                         <label for="pref-panel-text">${getLabel('prefs.panelText')}</label>
-                        <input type="color" id="pref-panel-text" value="#ffffff" />
+                        <input type="color" id="pref-panel-text" value="#2c3270" />
                         <button class="preferences-reset-btn" data-target="pref-panel-text" title="${getLabel('prefs.resetDefault')}">${getLabel('button.reset')}</button>
                     </div>
                 </div>

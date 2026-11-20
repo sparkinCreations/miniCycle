@@ -152,11 +152,32 @@ export function measureFocusChromeBottom() {
     return rounded;
 }
 
+/**
+ * Mirror whether the header's "+ Actions" button is showing its word, as
+ * `.chrome-labels-hidden` on <html>. The empty-state hint reads it so it says
+ * "+ Actions button" or "+ button" to match what is on screen. The word is
+ * hidden by a container query on the header (mode-selector.css), which depends
+ * on the header's width and the Font Size setting, so the label's own computed
+ * display is the only exact answer. Skipped while the header row is not laid
+ * out (Focus View hides it): the last answer from Home View stays.
+ *
+ * @returns {boolean|null} true if the word is hidden, null if not measurable
+ */
+export function syncChromeLabelState() {
+    const wrapper = document.querySelector(DOM_SELECTORS.MODE_SELECTOR_WRAPPER);
+    const label = document.querySelector(DOM_SELECTORS.QUICK_ACTIONS_BTN_LABEL);
+    if (!wrapper || !label || wrapper.getBoundingClientRect().width <= 0) return null;
+    const hidden = getComputedStyle(label).display === 'none';
+    document.documentElement.classList.toggle(DOM_CLASSES.CHROME_LABELS_HIDDEN, hidden);
+    return hidden;
+}
+
 /** Measure every tracked element in one pass. */
 function _measureAll() {
     measureHeaderHeight();
     measureNavDotsClearance();
     measureFocusChromeBottom();
+    syncChromeLabelState();
 }
 
 /**
@@ -265,7 +286,10 @@ function _attachObservers() {
     // getBoundingClientRect(), which is border-box, so the observer must watch the
     // same box the measurement reads or the published var silently goes stale.
     if (headerEl && !_headerObserver) {
-        _headerObserver = new ResizeObserver(() => measureHeaderHeight());
+        _headerObserver = new ResizeObserver(() => {
+            measureHeaderHeight();
+            syncChromeLabelState();
+        });
         _headerObserver.observe(headerEl, { box: 'border-box' });
     }
     if (navEl && !_navObserver) {

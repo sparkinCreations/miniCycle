@@ -467,6 +467,32 @@ export function applyTaskStatusLabel(taskItem, completed, opts = {}) {
     taskItem.setAttribute('aria-label', getLabel(labelKey, { vars: { name, status } }));
 }
 
+/**
+ * Mark a task row recurring or not: the row class AND its accessible name.
+ *
+ * The ", recurring" in a row's name follows the RECURRING class (see
+ * applyTaskStatusLabel), but the places that turn recurring on or off only
+ * toggled the class — so until Nov 2026 a task made recurring was still read
+ * "…, Not completed", and one made non-recurring kept ", recurring" until the
+ * next full render. Every toggle goes through here. The completion status is
+ * read back off the row (its checkbox), and an "Overdue" status is kept.
+ *
+ * @param {HTMLElement|null} taskItem - the task <li>
+ * @param {boolean} isRecurring
+ * @param {string} [name] - the task's text, when the caller has it from state
+ * @returns {void}
+ */
+export function setTaskRecurringState(taskItem, isRecurring, name) {
+    if (!taskItem) return;
+    taskItem.classList.toggle(DOM_CLASSES.RECURRING, isRecurring);
+    const completed = taskItem.querySelector(DOM_SELECTORS.TASK_CHECKBOX)?.checked === true;
+    const overdue = !completed && taskItem.classList.contains(DOM_CLASSES.OVERDUE_TASK);
+    const opts = { recurring: isRecurring };
+    if (typeof name === 'string') opts.name = name;
+    if (overdue) opts.status = getLabel('nav.overdue');
+    applyTaskStatusLabel(taskItem, completed, opts);
+}
+
 // DI-pure module (no window.* fallbacks for dependencies)
 
 // ES6 exports

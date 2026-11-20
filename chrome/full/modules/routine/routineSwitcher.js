@@ -37,6 +37,7 @@ import { createModeIcon, describeMode } from './routineBrowserRender.js';
 import { ModePicker } from './modePicker.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { scrollBehavior } from '../utils/motionPreference.js';
+import { announce } from '../utils/announce.js';
 import { getActiveRoutineId, getRoutine, getRoutineOpenView, getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
 
 // ============================================================================
@@ -298,6 +299,13 @@ export class RoutineSwitcher {
         this._browser.destroy();
         this._filterPicker?.destroy();
         this._filterPicker = null;
+        // The search box's listeners live on static elements, guarded so they
+        // attach once; a retried boot must re-attach them to the new instance.
+        const searchInput = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_INPUT);
+        if (searchInput?._inputHandler) { searchInput.removeEventListener('input', searchInput._inputHandler); delete searchInput._inputHandler; }
+        if (searchInput?._keyHandler) { searchInput.removeEventListener('keydown', searchInput._keyHandler); delete searchInput._keyHandler; }
+        const clearBtn = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_CLEAR);
+        if (clearBtn?._clickHandler) { clearBtn.removeEventListener('click', clearBtn._clickHandler); delete clearBtn._clickHandler; }
     }
 
     /**
@@ -1637,15 +1645,32 @@ export class RoutineSwitcher {
             return;
         }
 
+        // The × beside the box (Nov 2026 QA report: there was no way to clear a
+        // search but selecting and deleting it). Shown only while there is text.
+        const clearBtn = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_CLEAR);
+        const syncClear = () => { if (clearBtn) clearBtn.hidden = !searchInput.value; };
+
         // Clear search input when modal opens
         searchInput.value = '';
+        syncClear();
 
         // Setup input handler (only once)
         if (!searchInput._inputHandler) {
             searchInput._inputHandler = (e) => {
                 this.filterRoutineList(e.target.value);
+                syncClear();
             };
             searchInput.addEventListener('input', searchInput._inputHandler);
+        }
+
+        if (clearBtn && !clearBtn._clickHandler) {
+            clearBtn._clickHandler = () => {
+                searchInput.value = '';
+                this.filterRoutineList('');
+                syncClear();
+                searchInput.focus();
+            };
+            clearBtn.addEventListener('click', clearBtn._clickHandler);
         }
 
         // From the search box into the results (once). Down Arrow moves to the
@@ -1722,6 +1747,18 @@ export class RoutineSwitcher {
                 }
             }
         });
+
+        // A search that hides every routine says so — the list was simply blank
+        // (Nov 2026 QA report). Spoken once, as the last match disappears.
+        const empty = this.deps.getElementById(DOM_IDS.ROUTINE_SEARCH_EMPTY);
+        if (empty) {
+            const noneShowing = lowerQuery !== '' && items.length > 0
+                && Array.from(items).every(item => item.style.display === 'none');
+            if (noneShowing && empty.hidden) {
+                announce(getLabel('routineBrowser.noMatches'), { within: this.deps.getModal('routineSwitcher') });
+            }
+            empty.hidden = !noneShowing;
+        }
 
         // If the selected item got filtered out, fully deselect
         const selectedItem = miniCycleList.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM_SELECTED);

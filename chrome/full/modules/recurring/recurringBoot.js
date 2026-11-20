@@ -12,6 +12,7 @@
 
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { plusButtonHintHtml } from '../labels/themeWords.js';
 import { createIconElement, getIcon } from '../utils/icons.js';
 import { getActiveRoutineId, getRoutine } from '../utils/cycleMode.js';
 
@@ -68,7 +69,7 @@ export function updateRecurringInfoLink(deps, { openPanel } = {}) {
         const hintVisible = deps.querySelector?.(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
         const restoreDefaultHints = () => {
             if (hint) {
-                hint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+                hint.innerHTML = plusButtonHintHtml('empty.noTasksHint');
             }
             if (hintVisible) {
                 hintVisible.textContent = getLabel('empty.noTasksHintVisible');

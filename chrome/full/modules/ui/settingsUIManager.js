@@ -970,7 +970,7 @@ export function setupSingleKeyShortcutsToggle() {
 
 /**
  * Settings → Behavior → "Ask before completing with unchecked tasks"
- * (`settings.confirmUncheckedCycle`, off unless turned on).
+ * (`settings.confirmUncheckedCycle`: on for new users since Nov 2026; data from before that has no value and reads as off).
  * handleCompleteAllTasksImpl reads the stored value on every press. Re-synced on
  * every call, wired once: same shape as setupSingleKeyShortcutsToggle above.
  */

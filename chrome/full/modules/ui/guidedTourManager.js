@@ -14,6 +14,10 @@ import { TOUR_DEFINITIONS } from './guidedTourDefinitions.js';
 
 const TOUR_ACTIVE_ATTR = 'data-tour-active';
 const TOUR_PADDING = 12;
+/** Closest the spotlight may come to the screen edge. */
+const TOUR_EDGE = 2;
+/** The tooltip arrow keeps at least this far from the tooltip's corners. */
+const TOUR_ARROW_INSET = 16;
 const TOOLTIP_MARGIN = 16;
 const ONBOARDING_SETUP_COMPLETE_EVENT = 'onboarding:setup-complete';
 const APP_READY_EVENT = 'init:app-ready';
@@ -630,6 +634,10 @@ export class GuidedTourManager {
             state.settings.quickActionsTipPinned = tipSeen;
             state.settings.quickActionsTipRecent = tipSeen;
             state.settings.quickActionsTipFrequent = tipSeen;
+            // The task bar's "shown / hidden" notification stops after a few
+            // presses (modeManager); switching prompts on brings it back for
+            // another few. Switching them off leaves the count alone.
+            if (enabled) state.settings.taskInputNoticeCount = 0;
         }, true);
 
         this._syncTourPromptButtons();
@@ -981,10 +989,18 @@ export class GuidedTourManager {
         this._currentTarget = target;
 
         const rect = target.getBoundingClientRect();
-        const spotlightTop = Math.max(TOUR_PADDING, rect.top - TOUR_PADDING);
-        const spotlightLeft = Math.max(TOUR_PADDING, rect.left - TOUR_PADDING);
-        const spotlightRight = Math.min(window.innerWidth - TOUR_PADDING, rect.right + TOUR_PADDING);
-        const spotlightBottom = Math.min(window.innerHeight - TOUR_PADDING, rect.bottom + TOUR_PADDING);
+        // The ring sits the same distance from the target on opposite sides.
+        // It used to be clamped 12px inside the screen on its own side only, so
+        // a target near an edge (Focus View, 18px from a phone's right edge)
+        // got 12px on the left and 6px on the right and looked off-centre (Nov
+        // 2026 QA report). Now it may come within TOUR_EDGE of the screen, and
+        // when it cannot fit, both sides shrink together.
+        const padX = Math.max(0, Math.min(TOUR_PADDING, rect.left - TOUR_EDGE, window.innerWidth - TOUR_EDGE - rect.right));
+        const padY = Math.max(0, Math.min(TOUR_PADDING, rect.top - TOUR_EDGE, window.innerHeight - TOUR_EDGE - rect.bottom));
+        const spotlightTop = rect.top - padY;
+        const spotlightLeft = rect.left - padX;
+        const spotlightRight = rect.right + padX;
+        const spotlightBottom = rect.bottom + padY;
         const spotlightWidth = Math.max(0, spotlightRight - spotlightLeft);
         const spotlightHeight = Math.max(0, spotlightBottom - spotlightTop);
 
@@ -1000,6 +1016,21 @@ export class GuidedTourManager {
         this._tooltipElement.dataset.position = position;
         this._tooltipElement.style.top = `${top}px`;
         this._tooltipElement.style.left = `${left}px`;
+
+        // Point the arrow at the target's centre. It sat at a fixed offset from
+        // the tooltip's corner, so when the tooltip was pushed sideways to stay
+        // on screen (Focus View, at a phone's right edge) it pointed at nothing
+        // (Nov 2026 QA report). Kept TOUR_ARROW_INSET clear of the corners.
+        const arrowSize = this._tooltipElement.querySelector('.tour-tooltip-arrow')?.offsetWidth || 0;
+        const clampArrow = (centre, start, length) =>
+            Math.min(Math.max(centre - start - arrowSize / 2, TOUR_ARROW_INSET), length - TOUR_ARROW_INSET - arrowSize);
+        if (position === 'top' || position === 'bottom') {
+            this._tooltipElement.style.setProperty('--tour-arrow-offset',
+                `${clampArrow(rect.left + rect.width / 2, left, tooltipRect.width)}px`);
+        } else {
+            this._tooltipElement.style.setProperty('--tour-arrow-offset',
+                `${clampArrow(rect.top + rect.height / 2, top, tooltipRect.height)}px`);
+        }
     }
 
     _computeTooltipPosition(targetRect, tooltipWidth, tooltipHeight, preferred = 'auto') {

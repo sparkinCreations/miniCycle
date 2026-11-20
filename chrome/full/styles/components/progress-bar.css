@@ -20,12 +20,12 @@
     z-index: var(--z-elevated);
     width: 90%;
     max-width: 400px;
-    background: rgba(0, 0, 0, 0.35);
+    background: var(--color-black-a35);
     border-radius: var(--radius-10);
     height: 12px;
     min-height: 12px;
     margin-top: var(--space-3-75);
-    box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 2px 5px var(--color-black-a20);
     overflow: hidden;
     flex-shrink: 0;
 }
@@ -35,7 +35,7 @@
     border: 1px solid var(--progress-track-border);
     /* Inset only. An outer 1px highlight under the track read as a seam along
        the bottom edge (Oct 2026, "the bottom half looks slightly off"). */
-    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.28);
+    box-shadow: inset 0 1px 2px var(--color-black-a28);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
 }
@@ -79,11 +79,11 @@
     transform: none;
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--progress-fill) 72%, white) 0%,
+        color-mix(in srgb, var(--progress-fill) 72%, var(--color-white)) 0%,
         var(--progress-fill) 100%
     );
     box-shadow:
-        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        inset 0 1px 0 var(--color-white-a35),
         0 0 10px color-mix(in srgb, var(--progress-fill) 45%, transparent);
     transition: width var(--transition-normal) ease-out;
     overflow: hidden;
@@ -100,7 +100,7 @@
     background: linear-gradient(
         100deg,
         transparent 20%,
-        rgba(255, 255, 255, 0.55) 50%,
+        var(--color-white-a55) 50%,
         transparent 80%
     );
     transform: translateX(-120%);
@@ -152,7 +152,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .progress-co
     /* the gradient must win over the flat background the two rules above set */
     background: linear-gradient(
         90deg,
-        color-mix(in srgb, var(--progress-fill) 72%, white) 0%,
+        color-mix(in srgb, var(--progress-fill) 72%, var(--color-white)) 0%,
         var(--progress-fill) 100%
     );
 }

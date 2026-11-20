@@ -142,7 +142,7 @@ dialog.due-date-picker-overlay[open] {
     top: 0;
     width: 100%;
     height: 100%;
-    background: var(--theme-modal-overlay, rgba(0, 0, 0, 0.6));
+    background: var(--theme-modal-overlay, var(--color-black-a60));
     justify-content: center;
     align-items: center;
     animation: fadeIn var(--transition-normal) ease;
@@ -165,7 +165,7 @@ dialog.due-date-picker-overlay[open] {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background-color: rgba(0, 0, 0, 0.3);
+    background-color: var(--overlay-backdrop);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -192,7 +192,7 @@ dialog.due-date-picker-overlay[open] {
     border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-lg),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     width: var(--modal-width-md);
     text-align: center;
     position: relative;
@@ -330,11 +330,11 @@ dialog.due-date-picker-overlay[open] {
     padding: 28px var(--space-6);
     background: var(--theme-stats-bg);
     color: var(--theme-stats-text);
-    border: 1px solid var(--theme-stats-border, rgba(255, 255, 255, 0.25));
+    border: 1px solid var(--theme-stats-border, var(--color-white-a25));
     box-shadow:
-        0 8px 32px rgba(0, 0, 0, 0.12),
-        0 2px 8px rgba(0, 0, 0, 0.08),
-        inset 0 1px 1px rgba(255, 255, 255, 0.4);
+        0 8px 32px var(--color-black-a12),
+        0 2px 8px var(--color-black-a8),
+        inset 0 1px 1px var(--overlay-white-medium);
     -webkit-backdrop-filter: blur(24px);
     backdrop-filter: blur(24px);
     width: var(--modal-width-sm);
@@ -356,7 +356,7 @@ dialog.due-date-picker-overlay[open] {
     width: 48px;
     height: 48px;
     margin-bottom: var(--space-2-5);
-    background: linear-gradient(135deg, #7ec8e3 0%, #4aa3df 100%);
+    background: linear-gradient(135deg, var(--color-cyan-7ec8e3) 0%, var(--color-blue-4aa3df) 100%);
     border-radius: var(--radius-10);
     padding: var(--space-1-5);
     box-shadow: var(--shadow-glow-info);
@@ -390,7 +390,7 @@ dialog.due-date-picker-overlay[open] {
 
 .about-version-badge {
     display: inline-block;
-    background: rgba(255, 255, 255, 0.5);
+    background: var(--color-white-a50);
     color: inherit;
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-lg);
@@ -408,7 +408,7 @@ dialog.due-date-picker-overlay[open] {
 }
 
 .about-links {
-    background: rgba(255, 255, 255, 0.45);
+    background: var(--color-white-a45);
     border-radius: var(--radius-lg);
     padding: var(--space-3);
     margin-bottom: var(--space-4);
@@ -430,7 +430,7 @@ dialog.due-date-picker-overlay[open] {
 }
 
 .about-footer {
-    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-top: 1px solid var(--color-white-a30);
     padding-top: var(--space-3-5);
 }
 
@@ -481,7 +481,7 @@ dialog.due-date-picker-overlay[open] {
     z-index: var(--z-modal);
     box-shadow:
         var(--shadow-modal-heavy),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     text-align: center;
     font-family: var(--font-family);
     animation: fadeInScale var(--transition-normal) ease;
@@ -535,7 +535,7 @@ dialog.due-date-picker-overlay[open] {
     justify-content: space-between;
     align-items: center;
     padding-bottom: var(--space-3-75);
-    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
+    border-bottom: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-medium)));
     margin-bottom: var(--space-3-75);
 }
 
@@ -554,7 +554,7 @@ dialog.due-date-picker-overlay[open] {
     justify-content: flex-end;
     gap: var(--space-2-5);
     padding-top: var(--space-3-75);
-    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
+    border-top: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-medium)));
     margin-top: var(--space-3-75);
 }
 
@@ -628,7 +628,7 @@ body.dark-mode {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-heavy);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -645,7 +645,7 @@ body.dark-mode {
     text-align: center;
     box-shadow:
         var(--shadow-modal-compound),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     animation: popIn var(--transition-normal) ease;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
@@ -786,8 +786,8 @@ body.dark-mode .btn-choice:hover {
     border-radius: var(--modal-radius);
     box-shadow:
         var(--shadow-lg),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
-    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.1)));
+        inset 0 1px 1px var(--color-white-a25);
+    border: 1px solid var(--pref-modal-border, var(--theme-modal-border, var(--overlay-medium)));
     width: var(--modal-width-md);
     text-align: center;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
@@ -808,7 +808,7 @@ body.dark-mode .btn-choice:hover {
 
 .feedback-modal-content p {
     font-size: 13px;
-    color: var(--pref-modal-text, var(--theme-modal-text, #666));
+    color: var(--pref-modal-text, var(--theme-modal-text, var(--color-neutral-666666)));
     opacity: 0.7;
     margin: 0 0 var(--space-4) 0;
     line-height: 1.5;
@@ -845,7 +845,7 @@ body.dark-mode .btn-choice:hover {
 }
 
 #thank-you-message {
-    color: var(--theme-success, green);
+    color: var(--theme-success, var(--color-green-008000));
     font-weight: bold;
     padding: var(--space-4) 0;
 }
@@ -1014,7 +1014,7 @@ body.dark-mode .btn-choice:hover {
     color: var(--modal-text-effective);
     box-shadow:
         var(--shadow-modal),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     overflow: hidden;
 }
 
@@ -1096,7 +1096,7 @@ body.dark-mode .btn-choice:hover {
        no affordance. --overlay-light is the token meant for chips like this. */
     border: none;
     border-radius: var(--radius-full, 50%);
-    background: var(--overlay-light, rgba(0, 0, 0, 0.06));
+    background: var(--overlay-light, var(--overlay-light));
     color: inherit;
     font-size: var(--font-size-lg);
     line-height: 1;
@@ -1105,7 +1105,7 @@ body.dark-mode .btn-choice:hover {
 }
 
 .tip-archive-nav-btn:hover {
-    background: var(--overlay-medium, rgba(0, 0, 0, 0.12));
+    background: var(--overlay-medium, var(--color-black-a12));
 }
 
 /* Close is a .close-bar (buttons.css). No corner radius:
@@ -1127,7 +1127,7 @@ body.dark-mode .btn-choice:hover {
     padding: 0;
     border: none;
     border-radius: var(--radius-full, 50%);
-    background: var(--overlay-light, rgba(0, 0, 0, 0.06));
+    background: var(--overlay-light, var(--overlay-light));
     color: inherit;
     cursor: pointer;
     display: inline-flex;
@@ -1137,7 +1137,7 @@ body.dark-mode .btn-choice:hover {
 }
 
 .tip-archive-pause-btn:hover {
-    background: var(--overlay-medium, rgba(0, 0, 0, 0.12));
+    background: var(--overlay-medium, var(--color-black-a12));
 }
 
 .tip-archive-pause-btn .icon,

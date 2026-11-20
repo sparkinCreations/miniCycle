@@ -11,7 +11,7 @@
 
 .long-press-hint {
     position: fixed;
-    background: rgba(0, 0, 0, 0.85);
+    background: var(--color-black-a85);
     color: var(--color-white);
     padding: var(--space-2) 14px;
     border-radius: var(--radius-md);
@@ -25,7 +25,7 @@
     opacity: 0;
     transition: opacity var(--transition-fast) ease;
     white-space: nowrap;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 8px var(--overlay-backdrop);
 }
 
 .long-press-hint.visible {

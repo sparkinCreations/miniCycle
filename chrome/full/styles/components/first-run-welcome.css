@@ -192,7 +192,7 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
          2. Whiter, lower-alpha glass-bg-soft underneath lets the backdrop
             read through strongly. */
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.32) 0%, rgba(255, 255, 255, 0) 55%),
+        linear-gradient(180deg, var(--color-white-a32) 0%, var(--color-white-a0) 55%),
         var(--pref-modal-bg, var(--theme-modal-glass-bg-soft, var(--theme-modal-glass-bg, var(--theme-modal-bg))));
     /* White text + dark halo — the previous "dark text + white halo" strategy
        lost contrast on slides where the backdrop's blue gradient brightened
@@ -206,14 +206,14 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     /* Soft dark halo behind text — anchors the white glyphs against the
        lighter regions of the glass gradient without sacrificing transparency. */
     text-shadow:
-        0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.45),
-        0 0 var(--space-2) rgba(0, 0, 0, 0.35);
+        0 var(--space-px) var(--space-px) var(--color-black-a45),
+        0 0 var(--space-2) var(--color-black-a35);
     border: var(--space-px) solid color-mix(in srgb, var(--color-white) 22%, transparent);
     /* Two-stop inset highlight along the top edge sells the glossy curvature. */
     box-shadow:
-        0 var(--space-4) var(--space-8) rgba(15, 23, 42, 0.22),
-        inset 0 var(--space-px) 0 rgba(255, 255, 255, 0.55),
-        inset 0 var(--space-2) var(--space-3) rgba(255, 255, 255, 0.18);
+        0 var(--space-4) var(--space-8) var(--color-blue-0f172a-a22),
+        inset 0 var(--space-px) 0 var(--color-white-a55),
+        inset 0 var(--space-2) var(--space-3) var(--color-white-a18);
     /* Stronger blur sells the glass effect now that the surface is more transparent. */
     -webkit-backdrop-filter: blur(calc(var(--theme-modal-blur) * 1.4));
     backdrop-filter: blur(calc(var(--theme-modal-blur) * 1.4));
@@ -656,7 +656,7 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     font-weight: var(--font-weight-semibold);
     /* SVG <text> doesn't honor text-shadow — use drop-shadow to mirror the
        banner's dark halo for parity on the glass surface. */
-    filter: drop-shadow(0 var(--space-px) var(--space-px) rgba(0, 0, 0, 0.5));
+    filter: drop-shadow(0 var(--space-px) var(--space-px) var(--overlay-heavy));
     /* NOTE: no font-size here. `.cycle-demo text` (0,1,1) would out-specify the
        per-element `.cycle-demo__*` size rules (0,1,0) and clobber them — that
        forced the subtitle to 9px (it wants 7px), overflowing the viewBox and

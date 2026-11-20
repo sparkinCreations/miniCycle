@@ -25,7 +25,7 @@ body::after {
     content: '';
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0);
+    background: var(--color-black-a0);
     backdrop-filter: blur(0px);
     -webkit-backdrop-filter: blur(0px);
     z-index: var(--z-base);
@@ -39,7 +39,7 @@ body::after {
 
 /* Dark blurred overlay to reduce distractions */
 body.focus-mode::after {
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--color-black-a40);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     opacity: 1;
@@ -50,7 +50,7 @@ body.focus-mode::after {
    gives a clean, solid backdrop in dark mode while light mode keeps its
    softer "dimmed glass" feel. */
 body.focus-mode.dark-mode::after {
-    background: rgba(38, 42, 48, 0.92);
+    background: var(--color-neutral-262a30-a92);
 }
 
 /* In dark-mode focus view, drop the task-list container alpha so the soft
@@ -58,7 +58,7 @@ body.focus-mode.dark-mode::after {
    hard-edged panel against the new ::after gray. 0.25 keeps the card
    boundary defined (border + box-shadow still draw it) without the slab look. */
 body.focus-mode.dark-mode .task-list-container {
-    background: rgba(40, 40, 45, 0.25);
+    background: var(--color-neutral-28282d-a25);
 }
 
 /* Suppress the SVG body::before pattern in dark-mode focus view — even at
@@ -419,6 +419,27 @@ body.focus-mode #help-window .help-window-size {
     display: none;
 }
 
+/* Focus View's text over the dimmed page, measured Nov 2026 with the text
+   hidden against the pixels behind it (light mode, default colours):
+   - the Help line was 90% white on light glass, 4.0:1. It now has the photo
+     background's dark frost and white text, like its title above;
+   - the routine title was 78% gray on the card's strip, 3.4:1. It is opaque
+     here unless a title colour is picked;
+   - the unselected tabs were white at 40% opacity, 2.2:1 (NAV DOTS below).
+   Dark mode already measured 5.7:1 and up, and keeps its own panel. A photo
+   background keeps its white title: its title bar is dark navy glass. */
+body.focus-mode:not(.dark-mode) {
+    --pref-panel-bg: var(--photo-glass);
+}
+
+body.focus-mode:not(.dark-mode):not(.has-bg-image) {
+    --task-list-title-text: var(--color-gray-800);
+}
+
+body.focus-mode #help-window {
+    color: var(--color-white);
+}
+
 /* Mode-description title: the default accent color (blue) clashes with
    the dim blue focus-mode overlay. White reads cleanly against the
    blurred backdrop and stays distinct from the body text below. */
@@ -527,7 +548,7 @@ body.focus-mode #undo-redo-buttons {
    Brightens on hover / keyboard focus so it's still discoverable. */
 body.focus-mode .undo-redo-btn {
     opacity: 0.4;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--color-black-a20);
     font-weight: 500;
     transition: opacity var(--transition-normal) ease,
                 background var(--transition-fast) ease;
@@ -536,7 +557,7 @@ body.focus-mode .undo-redo-btn {
 body.focus-mode .undo-redo-btn:hover,
 body.focus-mode .undo-redo-btn:focus-visible {
     opacity: 0.95;
-    background: rgba(0, 0, 0, 0.55);
+    background: var(--color-black-a55);
 }
 
 /* =============================================================================
@@ -565,8 +586,8 @@ body.focus-mode #focus-mode-menu-btn {
     height: 30px;
     border-radius: var(--radius-md);
     border: 1px solid var(--chrome-border-color);
-    background: rgba(255, 255, 255, 0.12);
-    color: var(--pref-panel-text, var(--color-white));
+    background: var(--color-white-a12);
+    color: var(--pref-panel-text, var(--panel-text-default));
     font-size: 22px;
     line-height: 1;
     cursor: pointer;
@@ -598,8 +619,8 @@ body.focus-mode #focus-mode-exit-btn {
     height: 36px;
     border-radius: var(--radius-full);
     border: 1px solid var(--chrome-border-color);
-    background: rgba(255, 255, 255, 0.12);
-    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
+    background: var(--color-white-a12);
+    color: var(--pref-panel-text, var(--panel-text-default));
     line-height: 1;
     cursor: pointer;
     padding: 0;
@@ -633,7 +654,7 @@ body.focus-mode #focus-mode-menu-btn svg {
 
 body.focus-mode #focus-mode-menu-btn:focus-visible,
 body.focus-mode #focus-mode-exit-btn:focus-visible {
-    background: rgba(255, 255, 255, 0.22);
+    background: var(--color-white-a22);
     transform: scale(1.05);
 }
 /* Hover only for real pointers — iOS keeps an emulated :hover after a tap
@@ -641,7 +662,7 @@ body.focus-mode #focus-mode-exit-btn:focus-visible {
 @media (hover: hover) and (pointer: fine) {
     body.focus-mode #focus-mode-menu-btn:hover,
     body.focus-mode #focus-mode-exit-btn:hover {
-        background: rgba(255, 255, 255, 0.22);
+        background: var(--color-white-a22);
         transform: scale(1.05);
     }
 }
@@ -731,7 +752,7 @@ body.focus-mode .focus-mode-menu-item:focus-visible {
 /* The header mode menu's ring. It was outline: none, with only the hover
    tint to show keyboard focus. */
 body.focus-mode .focus-mode-menu-item:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, rgba(76, 121, 255, 0.6));
+    outline: 2px solid var(--theme-input-focus-border, var(--color-blue-4c79ff-a60));
     outline-offset: -2px;
 }
 
@@ -755,7 +776,7 @@ body.focus-mode .focus-mode-menu-item--destructive {
 
 body.focus-mode .focus-mode-menu-item--destructive:hover,
 body.focus-mode .focus-mode-menu-item--destructive:focus-visible {
-    background: rgba(244, 67, 54, 0.18);
+    background: var(--color-red-f44336-a18);
     color: var(--color-danger-on-light);
 }
 
@@ -782,7 +803,7 @@ body.focus-mode #focus-mode-mode-item::after {
 .empty-state-hint-focus-visible {
     display: none;
     font-size: var(--font-size-sm);
-    color: rgba(255, 255, 255, 0.7);
+    color: var(--color-white-a70);
     max-width: 250px;
     line-height: 1.4;
 }
@@ -848,7 +869,7 @@ body.focus-mode.input-bar-visible:not(.all-tasks-complete) #empty-state .empty-s
 body.focus-mode .focus-mode-mode-modal-backdrop {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.5);
+    background: var(--overlay-heavy);
     -webkit-backdrop-filter: blur(2px);
     backdrop-filter: blur(2px);
     z-index: var(--z-modal-backdrop);
@@ -862,8 +883,8 @@ body.focus-mode .focus-mode-mode-modal {
     width: min(420px, calc(100vw - 32px));
     max-height: calc(100vh - 64px);
     overflow-y: auto;
-    background: rgba(20, 28, 50, 0.96);
-    border: 1px solid rgba(255, 255, 255, 0.18);
+    background: var(--color-blue-141c32-a96);
+    border: 1px solid var(--color-white-a18);
     border-radius: var(--radius-lg);
     box-shadow: var(--shadow-md);
     -webkit-backdrop-filter: blur(8px);
@@ -893,7 +914,7 @@ body.focus-mode .focus-mode-mode-modal {
 
 .focus-mode-mode-option:hover,
 .focus-mode-mode-option:focus-within {
-    background: rgba(255, 255, 255, 0.08);
+    background: var(--color-white-a8);
 }
 
 .focus-mode-mode-option input[type="radio"] {
@@ -927,8 +948,8 @@ body.focus-mode .focus-mode-mode-modal {
     margin-left: auto;
     margin-top: 12px;
     padding: 8px 18px;
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a15);
+    border: 1px solid var(--color-white-a25);
     border-radius: var(--radius-md);
     color: var(--color-white);
     font-size: var(--font-size-sm);
@@ -939,7 +960,7 @@ body.focus-mode .focus-mode-mode-modal {
 
 .focus-mode-mode-done-btn:hover,
 .focus-mode-mode-done-btn:focus-visible {
-    background: rgba(255, 255, 255, 0.25);
+    background: var(--color-white-a25);
     outline: none;
 }
 
@@ -1006,7 +1027,11 @@ body.focus-mode #nav-dots {
     transform: translateX(-50%);
     z-index: var(--z-notification);
     gap: 0;
-    background: transparent;
+    /* The Help line's dark frost (Nov 2026): white on the bare dimmed page
+       measured 3.9-4.5:1 even at 85% on the lighter presets. Colour and
+       corners only — the tabs' own padding sizes the row, so nothing moves. */
+    background: var(--photo-glass);
+    border-radius: var(--radius-lg);
     pointer-events: auto;
 }
 
@@ -1030,7 +1055,9 @@ body.focus-mode #nav-dots .dot {
     font-size: var(--font-size-sm);
     font-weight: 500;
     letter-spacing: 0.02em;
-    opacity: 0.4;
+    /* 0.85, not the 0.4 it was until Nov 2026 (2.2:1 on the dimmed page; 85% on
+       the row's dark frost clears 4.5:1 on every preset). The dot marks the active tab. */
+    opacity: 0.85;
     text-align: center;
     justify-content: center;
     transition: opacity var(--transition-normal) ease;
@@ -1040,7 +1067,7 @@ body.focus-mode #nav-dots .dot {
    Drawn via background-image (radial-gradient) so it doesn't conflict
    with ::after (which holds the "|" separator on Routine). */
 body.focus-mode #nav-dots .dot.active {
-    background-image: radial-gradient(circle 2px, rgba(255, 255, 255, 0.95) 100%, transparent 0);
+    background-image: radial-gradient(circle 2px, var(--color-white-a95) 100%, transparent 0);
     background-position: center calc(100% - 4px);
     background-repeat: no-repeat;
     background-size: 4px 4px;
@@ -1094,15 +1121,16 @@ body.focus-mode #nav-dots .dot[aria-controls="stats-panel"] {
     padding-left: 0;
 }
 
-/* Active tab = full opacity, inactive = faded (handled by base .dot rule) */
+/* Active tab = full opacity and the dot; inactive is slightly softer (base
+   .dot rule). Not bold: that widens the tab and shifts its neighbours. */
 body.focus-mode #nav-dots .dot.active {
-    opacity: 0.95;
+    opacity: 1;
 }
 
-/* Hover/focus lifts the faded tab so it's still discoverable */
+/* Hover/focus lifts the softer tab to full */
 body.focus-mode #nav-dots .dot:hover,
 body.focus-mode #nav-dots .dot:focus-visible {
-    opacity: 0.85;
+    opacity: 1;
 }
 
 body.focus-mode #nav-dots .dot.active:hover,
@@ -1196,8 +1224,8 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     height: 36px;
     border-radius: var(--radius-full);
     border: 1px solid var(--chrome-border-color);
-    background: rgba(255, 255, 255, 0.12);
-    color: var(--pref-panel-text, rgba(255, 255, 255, 0.85));
+    background: var(--color-white-a12);
+    color: var(--pref-panel-text, var(--panel-text-default));
     cursor: pointer;
     transition: all var(--transition-fast) ease;
     padding: 0;
@@ -1206,10 +1234,23 @@ body.focus-mode #nav-dots .dot[aria-controls="task-view"]::after {
     box-shadow: var(--chrome-shadow);
 }
 
+/* Home View: centred on the progress row, the 36px button reached up to
+   within 1-2px of the routine card above it and looked stuck to it (Nov 2026
+   QA report). `translate`, not a margin or `top`: it moves only the drawing,
+   so the row, the bar and everything measured from them stay put, and it
+   composes with the hover scale below. Browsers without the property keep
+   the old spot. Phones only: on a short desktop window (1280x800) the nudge
+   pushed the button past the nav-dot line (test:layout). */
+@media (max-width: 767px) {
+    .progress-focus-row > .focus-mode-btn {
+        translate: 0 var(--space-1-5);   /* 1px gap → 7px: inside test:layout's 1-8px "hangs just beneath" band */
+    }
+}
+
 @media (hover: hover) and (pointer: fine) {
     .focus-mode-btn:hover {
-        background: rgba(255, 255, 255, 0.22);
-        color: var(--pref-panel-text, var(--color-white));
+        background: var(--color-white-a22);
+        color: var(--pref-panel-text, var(--panel-text-default));
         transform: scale(1.08);
     }
 }
@@ -1252,9 +1293,9 @@ body.focus-mode #focus-action-btn {
     height: 56px;
     padding: 0;
     border-radius: var(--radius-full);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    background: rgba(255, 255, 255, 0.25);
-    color: var(--pref-panel-text, var(--color-white));
+    border: 1px solid var(--overlay-white-medium);
+    background: var(--color-white-a25);
+    color: var(--pref-panel-text, var(--panel-text-default));
     font-family: inherit;
     cursor: pointer;
     z-index: var(--z-notification);
@@ -1268,12 +1309,12 @@ body.focus-mode #focus-action-btn {
 }
 @media (hover: hover) and (pointer: fine) {
     body.focus-mode #focus-action-btn:hover {
-        background: rgba(255, 255, 255, 0.35);
+        background: var(--color-white-a35);
         transform: scale(1.05);
     }
 }
 body.focus-mode #focus-action-btn:focus-visible {
-    background: rgba(255, 255, 255, 0.35);
+    background: var(--color-white-a35);
 }
 body.focus-mode #focus-action-btn:active {
     transform: scale(0.95);
@@ -1307,7 +1348,7 @@ body.focus-mode #focus-action-btn::after {
     white-space: pre-line;
     text-align: center;
     /* Subtle shadow so the label reads against any background */
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    text-shadow: 0 1px 2px var(--color-black-a40);
 }
 
 /* Mode-specific emoji icon — visual affordance, not vocab; stays in CSS.
@@ -1444,7 +1485,7 @@ body.focus-mode #complete-all-and-help-window-container {
     body.focus-mode #nav-dots .dot.active {
         background-position: center calc(100% - 5px);
         background-size: 5px 5px;
-        background-image: radial-gradient(circle 2.5px, rgba(255, 255, 255, 0.95) 100%, transparent 0);
+        background-image: radial-gradient(circle 2.5px, var(--color-white-a95) 100%, transparent 0);
     }
 
     /* Stats-side offset (mobile padding is 14px right, 0 left → 7px shift). */

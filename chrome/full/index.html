@@ -96,7 +96,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.678">
+<meta name="app-version" content="2.685">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -149,17 +149,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.678" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.678" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.678" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.678" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.678" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.678" as="style">
+<link rel="preload" href="styles/main.css?v=2.685" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.685" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.685" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.685" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.685" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.685" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.678" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.685" media="print" id="async-main-css">
 <script src="ext-boot/02.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.678"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.685"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -170,7 +170,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.678"></script>
+<script src="./version.js?v=2.685"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -278,7 +278,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/10.js"></script>
-    <script src="boot-sw.js?v=2.678" defer></script>
+    <script src="boot-sw.js?v=2.685" defer></script>
 
 
 
@@ -390,7 +390,10 @@
     </div>
   </div>
 
-  <div id="notification-container" popover="manual" aria-live="polite" aria-atomic="true" role="status"></div>
+  <!-- Not a live region (Nov 2026): the popover is re-shown for every
+       notification, and VoiceOver skipped text that arrived as the region came
+       back. Notifications are spoken through utils/announce.js instead. -->
+  <div id="notification-container" popover="manual"></div>
 
 
   
@@ -991,7 +994,11 @@
                 <button id="sort-recent" class="routine-sort-btn" title="Sort by recently used" aria-pressed="false" data-label-key="switcher.sortRecent" data-label-title-key="switcher.sortRecentTitle">Recent</button>
                 <button id="sort-size" class="routine-sort-btn" title="Sort by file size" aria-pressed="false" data-label-key="switcher.sortSize" data-label-title-key="switcher.sortSizeTitle">Size</button>
             </div>
-            <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
+            <!-- The × clears the search (shown only while it holds text), as task search's does (Nov 2026 QA report) -->
+            <div class="routine-search-field">
+                <input type="text" id="routine-search-input" class="routine-search-input" placeholder="Search routines..." autocomplete="off" aria-label="Search routines">
+                <button type="button" id="routine-search-clear" class="routine-search-clear" hidden aria-label="Clear search" title="Clear search" data-label-aria-key="action.clearSearch" data-label-title-key="action.clearSearch">×</button>
+            </div>
         </div>
 
         <div class="routine-switcher-body">
@@ -999,6 +1006,8 @@
                 <!-- The list's heading, with Expand / Collapse (icon + label set by routineSwitcher._wireListExpand) -->
                 <div class="routine-panel-title routine-list-title"><span>Routines</span><button type="button" id="routine-list-expand-btn" class="routine-list-expand-btn" aria-expanded="false" aria-controls="miniCycleList" aria-label="Expand the routine list" title="Expand the routine list"></button></div>
                 <div class="mini-cycle-switch-list" id="miniCycleList" role="listbox" aria-label="Routines"></div>
+                <!-- Shown when a search hides every routine; the list was simply blank before -->
+                <p id="routine-search-empty" class="routine-search-empty" hidden data-label-key="routineBrowser.noMatches">No routines match</p>
                 <div id="routine-list-hint" class="routine-list-hint"></div>
             </div>
 
@@ -1095,7 +1104,8 @@
             </div>
 
             <label for="feedback-text" class="visually-hidden">Your feedback</label>
-            <textarea id="feedback-text" name="message" placeholder="Write your feedback here..." required minlength="10"></textarea>
+            <!-- Not required: a star rating alone is a valid submission (modalManager checks "rating OR 10+ characters") -->
+            <textarea id="feedback-text" name="message" placeholder="Write your feedback here (optional if you choose a star rating)..."></textarea>
 
             <label for="feedback-email" class="visually-hidden">Your email (optional)</label>
             <input type="email" id="feedback-email" name="email" placeholder="Your Email (optional)" autocomplete="email">
@@ -1227,7 +1237,11 @@
             <span class="auto-uncheck-banner-icon" aria-hidden="true">🕛</span>
             <span id="auto-uncheck-banner-text" class="auto-uncheck-banner-text">All tasks auto-uncheck daily at 12:00 AM</span>
         </button>
-        <ul id="taskList" class="task-list" aria-label="Task list" aria-live="polite" aria-relevant="additions removals"></ul>
+        <!-- Not a live region (Nov 2026): every refresh rebuilds the list with
+             replaceChildren(), which handed a screen reader the WHOLE list as
+             removals and additions. Changes are announced by name through
+             utils/announce.js instead. -->
+        <ul id="taskList" class="task-list" aria-label="Task list"></ul>
 
         <div id="empty-state" class="empty-state">
             <div class="empty-state-icon" aria-hidden="true">📋</div>
@@ -1241,7 +1255,7 @@
                  CSS in focus-mode.css shows exactly one via body.focus-mode ×
                  body.input-bar-visible. The two focus variants are injected at
                  runtime by focusMode.js. -->
-            <div class="empty-state-hint">Press the <strong>+</strong> button to open the task bar and add your first task</div>
+            <div class="empty-state-hint">Press the <strong>+<span class="hint-actions-word"> Actions</span></strong> button to open the task bar and add your first task</div>
             <div class="empty-state-hint-visible">Type your first task in the bar above and press Add</div>
             <!-- Completion variant: replaces the text + hint above when the routine
                  HAS tasks and all of them are complete. With the completed-tasks
@@ -1286,7 +1300,10 @@
         </div>
         <div class="quick-actions-slots" id="quick-actions-slots"></div>
     </div>
-    <div id="help-window" class="help-window" role="status" aria-label="Help information">
+    <!-- role="note", not "status" (Nov 2026): as a live region its status line
+         ("13 tasks remaining • ~11 KB") was re-spoken after nearly every action.
+         Its one-off messages are announced by helpWindowManager instead. -->
+    <div id="help-window" class="help-window" role="note" aria-label="Help information">
         <p></p>
     </div>
 </div>
@@ -1425,7 +1442,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.678"></script>
+ <script type="module" src="miniCycle-main.js?v=2.685"></script>
 
 <script src="ext-boot/13.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->

@@ -57,7 +57,7 @@ const DEFAULT_COLORS = {
     statsProgress: '#4c79ff',
     statsDoughnut: '#4caf50',
     patternColor: '#ffffff',
-    panelText: '#ffffff',
+    panelText: '#2c3270',   // --color-navy: the Help window's default text (Nov 2026)
     resetFlash: '#4caf50',
     celebrationBg: '#4caf4f'
 };
@@ -1816,7 +1816,7 @@ export class PreferencesManager {
         applyActionTextColors(root, '--pref', {
             complete: normalizeHex(customColors.completeBtn) || null,
             clear: normalizeHex(customColors.clearBtn) || null
-        });
+        }, appBg);
         // A colour the user picked themselves (not a quick preset: handleColorChange
         // clears `preset`) gets the backing strip under the footer links, so any
         // colour works without the user having to think about it. A preset relies
@@ -1951,6 +1951,13 @@ export class PreferencesManager {
             const inputValue = input?.value;
             const defaultColor = DEFAULT_COLORS[config.key];
 
+            // No Help text colour picked: leave the var unset so each preview
+            // panel shows its own live default (Help navy, Quick Actions white).
+            if (config.key === 'panelText' && !savedColor) {
+                preview.style.removeProperty(config.previewVar);
+                return;
+            }
+
             // Prefer saved color, then input value (if not the default black), then our default
             let color;
             if (savedColor) {
@@ -1983,7 +1990,7 @@ export class PreferencesManager {
         applyActionTextColors(preview, '--preview', {
             complete: normalizeHex(customColors.completeBtn) || null,
             clear: normalizeHex(customColors.clearBtn) || null
-        });
+        }, normalizeHex(customColors.appBg) || null);
 
         // Handle checkbox fill visibility in preview
         const checkboxFillToggle = _deps.getElementById(DOM_IDS.TOGGLE_CHECKBOX_FILL);

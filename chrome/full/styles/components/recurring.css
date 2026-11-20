@@ -40,7 +40,7 @@
 }
 
 .recurring-task-item:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: -2px;
 }
 
@@ -68,7 +68,7 @@
 }
 
 .recurring-task-item input[type="checkbox"] {
-    accent-color: var(--theme-success, #4CAF50);
+    accent-color: var(--theme-success, var(--color-green-4caf50));
     cursor: pointer;
     flex-shrink: 0;
 }
@@ -340,12 +340,12 @@
 }
 
 .recurring-scroll-area::-webkit-scrollbar-thumb {
-    background-color: rgba(100, 100, 100, 0.3);
+    background-color: var(--color-neutral-646464-a30);
     border-radius: var(--radius-sm);
 }
 
 .recurring-scroll-area::-webkit-scrollbar-thumb:hover {
-    background-color: rgba(100, 100, 100, 0.5);
+    background-color: var(--color-neutral-646464-a50);
 }
 
 /* Panel hint — instructs users to tap tasks */
@@ -382,7 +382,7 @@
 .radio-circle {
     width: 8px;
     height: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.7);
+    border: 2px solid var(--color-white-a70);
     border-radius: 50%;
     display: inline-flex;
     align-items: center;
@@ -559,7 +559,7 @@
 
 .trash-btn:hover .recurring-date-trash-icon,
 .trash-btn:hover .recurring-trash-icon {
-    color: var(--theme-error, #e74c3c);
+    color: var(--theme-error, var(--color-red-e74c3c));
 }
 
 .recurring-indicator {
@@ -668,7 +668,7 @@
 
 .time-picker-group input[type="number"]:focus-visible,
 .time-picker-group select:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -690,7 +690,7 @@
 }
 
 .recurring-time-input:focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -808,7 +808,7 @@ select.hidden {
 #specific-dates-panel {
     margin-top: var(--space-3);
     padding: var(--space-3);
-    border: 1px solid rgba(0, 0, 0, 0.08);
+    border: 1px solid var(--color-black-a8);
     border-radius: var(--radius-10);
     background-color: var(--color-white);
 }
@@ -839,7 +839,7 @@ select.hidden {
 #add-recurring-task-section {
     margin-top: var(--space-3);
     padding-top: var(--space-3);
-    border-top: 1px solid rgba(0, 0, 0, 0.1);
+    border-top: 1px solid var(--overlay-medium);
 }
 
 .add-recurring-task-btn {
@@ -876,7 +876,7 @@ button.add-recurring-task-btn:hover {
     padding: var(--space-2-5);
     background: var(--color-blue-pale-light);
     border-radius: var(--radius-md);
-    border: 1px solid rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--overlay-medium);
 }
 
 .available-tasks-header {
@@ -940,7 +940,7 @@ button.add-recurring-task-btn:hover {
 }
 
 #non-recurring-tasks li input[type="checkbox"] {
-    accent-color: var(--theme-success, #4CAF50);
+    accent-color: var(--theme-success, var(--color-green-4caf50));
     cursor: pointer;
     flex-shrink: 0;
     width: 16px;
@@ -1052,8 +1052,8 @@ dialog.reminders-modal[open] {
     border-radius: var(--modal-radius);
     width: var(--modal-width-md);
     box-shadow:
-        var(--shadow-lg, 0 4px 10px rgba(0, 0, 0, 0.3)),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        var(--shadow-lg, 0 4px 10px var(--overlay-backdrop)),
+        inset 0 1px 1px var(--color-white-a25);
     position: relative;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
@@ -1072,14 +1072,14 @@ dialog.reminders-modal[open] {
     top: var(--space-2);
     right: var(--space-2);
     background: transparent;
-    color: var(--theme-text-muted, #999);
+    color: var(--theme-text-muted, var(--color-neutral-999999));
     font-size: var(--font-size-xl);
     border: none;
     cursor: pointer;
 }
 
 .reminders-modal-content .close-btn:hover {
-    color: var(--theme-text-secondary, #666);
+    color: var(--theme-text-secondary, var(--color-neutral-666666));
 }
 
 /* Frequency Section — the schedule, directly under Enable Reminders and its
@@ -1167,9 +1167,9 @@ dialog.reminders-modal[open] {
     line-height: 1.4;
     margin: var(--space-1-5) 0 0 0;
     padding: var(--space-1-5) var(--space-2-5);
-    border-left: 3px solid var(--pref-modal-accent, var(--accent-color, #007bff));
+    border-left: 3px solid var(--pref-modal-accent, var(--accent-color, var(--color-accent)));
     border-radius: 0 var(--radius-md) var(--radius-md) 0;
-    background: var(--pref-modal-border, var(--theme-modal-border, rgba(0, 0, 0, 0.06)));
+    background: var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
 }
 
 /* =============================================================================

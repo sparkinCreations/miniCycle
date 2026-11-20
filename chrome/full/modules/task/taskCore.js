@@ -430,14 +430,15 @@ export class TaskCore {
     /**
      * Toggle high priority flag on a task
      * @param {HTMLElement} taskItem - Task DOM element
+     * @param {{viaKeyboard?: boolean, returnFocus?: Function}} [options] - toggled with Enter / Space
      * @returns {Promise<void>}
      */
-    async toggleTaskPriority(taskItem) {
+    async toggleTaskPriority(taskItem, options = {}) {
         if (!_subModules?.toggleTaskPriorityImpl) {
             console.warn('TaskCore: toggleTaskPriorityImpl not loaded');
             return;
         }
-        return _subModules.toggleTaskPriorityImpl(taskItem, this.deps);
+        return _subModules.toggleTaskPriorityImpl(taskItem, this.deps, options);
     }
 
     // ========================================================================
@@ -623,11 +624,12 @@ function deleteTask(taskItem) {
 /**
  * Toggle task priority (wrapper function)
  * @param {HTMLElement} taskItem - Task DOM element
+ * @param {{viaKeyboard?: boolean, returnFocus?: Function}} [options]
  * @returns {Promise<void>|undefined}
  */
-function toggleTaskPriority(taskItem) {
+function toggleTaskPriority(taskItem, options) {
     if (!taskCoreInstance) return;
-    return taskCoreInstance.toggleTaskPriority(taskItem);
+    return taskCoreInstance.toggleTaskPriority(taskItem, options);
 }
 
 /**

@@ -358,8 +358,13 @@ export class OnboardingManager {
             getLabel('notify.focusViewFirstRun'),
             'info',
             UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            // Same grip the Task View Layout drag handles use, so it reads as "drag".
-            { hint: { message: getLabel('notify.focusViewDragHint'), icon: 'drag-handle' } }
+            // First the way out: the exit button's own icon (focusMode draws it
+            // with 'compress'), so a new user can match it to the button. Then
+            // the drag tip, with the grip the Task View Layout handles use.
+            { hint: [
+                { message: getLabel('notify.focusViewExitHint'), icon: 'compress', iconLabel: getLabel('focusMode.exitAria') },
+                { message: getLabel('notify.focusViewDragHint'), icon: 'drag-handle' }
+            ] }
         );
 
         // EVERY first-run choice gets the Home View welcome on first Focus View

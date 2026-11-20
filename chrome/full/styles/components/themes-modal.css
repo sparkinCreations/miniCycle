@@ -37,7 +37,7 @@ body {
     --modal-border-effective:     var(--pref-modal-border, var(--theme-modal-border, var(--overlay-light)));
     --modal-bg-effective:         var(--pref-modal-bg, var(--theme-modal-glass-bg, var(--theme-modal-bg, var(--color-white))));
     --modal-bg-solid-effective:   var(--pref-modal-bg, var(--theme-modal-bg, var(--color-white)));
-    --modal-panel-text-effective: var(--pref-panel-text, var(--theme-text-primary, var(--color-gray-700)));
+    --modal-panel-text-effective: var(--pref-panel-text, var(--panel-text-default));
     /* --pref-modal-bg sits ahead of the theme's APP-header colour on purpose:
        every colorPreset pairs modalBg with modalText, and without that first
        link a DARK colour theme (dark, dark-ocean) painted this surface with its
@@ -93,7 +93,7 @@ body.dark-mode {
     text-align: center;
     box-shadow:
         var(--shadow-modal),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     overflow: hidden;
     cursor: default;
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
@@ -343,7 +343,7 @@ body.dark-mode {
     text-align: center;
     box-shadow:
         var(--shadow-modal),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        inset 0 1px 1px var(--color-white-a25);
     overflow: hidden;
     cursor: default;
     display: flex;
@@ -624,7 +624,7 @@ body.dark-mode {
     height: 100%;
     background: linear-gradient(90deg,
         var(--preview-stats-progress, var(--color-primary)),
-        color-mix(in srgb, var(--preview-stats-progress, var(--color-primary)), white 30%)
+        color-mix(in srgb, var(--preview-stats-progress, var(--color-primary)), var(--color-white) 30%)
     );
     border-radius: var(--radius-2xs);
     transition: background var(--transition-normal) ease;
@@ -639,7 +639,9 @@ body.dark-mode {
 .preview-panel {
     font-size: 8px;
     font-weight: 600;
-    color: var(--preview-panel-text, var(--color-white));
+    /* Both preview panels show their live default: navy, or white where the
+       page is dark (--help-window-text). */
+    color: var(--preview-panel-text, var(--help-window-text));
     background: var(--overlay-white-light);
     -webkit-backdrop-filter: blur(4px);
     backdrop-filter: blur(4px);

@@ -15,7 +15,7 @@
     top: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: var(--color-black-a60);
     justify-content: center;
     align-items: center;
     animation: fadeIn var(--transition-normal) ease-in-out;
@@ -40,8 +40,8 @@
     width: var(--modal-width-md);
     text-align: center;
     box-shadow:
-        0 6px 20px rgba(0, 0, 0, 0.3),
-        inset 0 1px 1px rgba(255, 255, 255, 0.25);
+        0 6px 20px var(--overlay-backdrop),
+        inset 0 1px 1px var(--color-white-a25);
     -webkit-backdrop-filter: blur(var(--theme-modal-blur));
     backdrop-filter: blur(var(--theme-modal-blur));
 }
@@ -56,7 +56,7 @@
 
 .games-modal-content p {
     margin-bottom: var(--space-5);
-    color: var(--theme-text-secondary, #444);
+    color: var(--theme-text-secondary, var(--color-neutral-444444));
     font-size: var(--font-size-base);
 }
 
@@ -99,8 +99,8 @@
    ============================================================================= */
 
 .game-card {
-    background: var(--theme-card-bg, #f8f9fa);
-    border: 1px solid var(--theme-card-border, #dee2e6);
+    background: var(--theme-card-bg, var(--color-neutral-f8f9fa));
+    border: 1px solid var(--theme-card-border, var(--color-neutral-dee2e6));
     border-radius: var(--radius-lg);
     padding: var(--space-4);
     margin-bottom: var(--space-3);
@@ -109,7 +109,7 @@
 
 .game-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px var(--overlay-medium);
 }
 
 .game-card-title {
@@ -121,7 +121,7 @@
 
 .game-card-description {
     font-size: var(--font-size-sm);
-    color: var(--theme-text-secondary, #666);
+    color: var(--theme-text-secondary, var(--color-neutral-666666));
     margin-bottom: var(--space-3);
 }
 
@@ -137,7 +137,7 @@
 }
 
 .game-card-btn:hover {
-    background: var(--theme-button-primary-hover-bg, #5a87ff);
+    background: var(--theme-button-primary-hover-bg, var(--color-blue-5a87ff));
 }
 
 .game-card-btn:disabled {
@@ -155,7 +155,7 @@
     justify-content: center;
     gap: var(--space-2);
     font-size: var(--font-size-sm);
-    color: var(--theme-text-secondary, #666);
+    color: var(--theme-text-secondary, var(--color-neutral-666666));
     margin-top: var(--space-2);
 }
 

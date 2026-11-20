@@ -449,6 +449,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // label above; splitting it lets the orientation read at a glance and
         // the drag tip read as an optional extra. Device-variant: the touch
         // gesture starts with a press-and-hold, the pointer gesture is a drag.
+        // Under that tip, first: the exit button's icon and what it does — the
+        // tip told a new user where they were but not how to leave (Nov 2026).
+        focusViewExitHint:      {
+            touch:   'Tap this button to go back to Home View.',
+            pointer: 'Click this button to go back to Home View.'
+        },
         focusViewDragHint:      {
             touch:   'Press and hold to move this message.',
             pointer: 'Drag to move this message.'
@@ -504,6 +510,8 @@ export const DEFAULT_LABELS = deepFreeze({
         recurringNoActiveCycle: 'No active routine',
         recurringAdded:         'Added {count} {taskWord} to recurring (daily by default)',
         recurringMissedAdded:   'Added {count} missed recurring {taskWord}',
+        // The same, naming them when there are few enough to read out (LIMITS.RECURRING_NAMED_MAX).
+        recurringMissedAddedNamed: 'Added missed recurring {taskWord}: {names}',
         recurringCountFinished: '"{taskName}" has completed all {count} scheduled occurrences',
         recurringEndDateFinished: '"{taskName}" reached its end date — final occurrence delivered',
         recurringLimitBlocked:  '{count} recurring {taskWord} couldn\'t spawn — task list full ({limit} limit). Complete or delete tasks to allow more.',
@@ -621,13 +629,17 @@ export const DEFAULT_LABELS = deepFreeze({
         changeCycleRenamed:      'Routine renamed',
         changeModeSwitched:      'Switched to {mode}',
         changeTaskAdded:         'Task added',
+        changeTaskAddedNamed:    'Task added: {name}',
         changeTasksAdded:        '{count} tasks added',
         changeTaskDeleted:       'Task deleted',
+        changeTaskDeletedNamed:  'Task deleted: {name}',
         changeTasksDeleted:      '{count} tasks deleted',
         changeTaskEdited:        'Task renamed',
         changeTaskCompleted:     'Task completed',
+        changeTaskCompletedNamed: 'Task completed: {name}',
         changeTasksCompleted:    '{count} tasks completed',
         changeTaskUncompleted:   'Task uncompleted',
+        changeTaskUncompletedNamed: 'Task uncompleted: {name}',
         changeTasksUncompleted:  '{count} tasks uncompleted',
         changeTasksReordered:    'Tasks reordered',
         changePrioritySet:       'Priority set',
@@ -2054,6 +2066,8 @@ export const DEFAULT_LABELS = deepFreeze({
         keyAlt:        'Alt',
         keyOption:     'Option',
         keyShift:      'Shift',
+        keyCtrl:       'Ctrl',
+        keyCmd:        'Cmd',
     },
 
     homeView: {
@@ -2141,10 +2155,10 @@ export const DEFAULT_LABELS = deepFreeze({
         titleCelebration:    'First Cycle Complete!',
         // To-Do mode never counts a cycle; its first success is a clear.
         titleCelebrationTodo: 'First Clear Complete!',
-        // The pointer variant is what keyboard users see too, so it names their
-        // way in: Alt+arrow reordering (dragDropManager.handleReorderKeydown) and
-        // Shift+→, which gesturePanelManager maps to the next panel (review, Oct 2026).
-        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange, or press Alt+↑ / Alt+↓ on a task.|Drag left or press Shift+→ for stats and achievements 📊' },
+        // No keyboard keys here (Nov 2026): onboarding speaks to everyone, and
+        // the keys live elsewhere: Shift+→ to the next panel in the Keyboard
+        // Shortcuts window, Alt+arrow reordering in the User Manual's full list.
+        messageCelebration:  { touch: 'Long press and drag tasks to rearrange.|Swipe left for stats and achievements 📊', pointer: 'Drag tasks to rearrange.|Drag left for stats and achievements 📊' },
         // Slide-6 view names interpolated from the canonical labels
         // (focusMode.enter for "Focus View", homeView.name for "Home View")
         // so a future rename in one place propagates everywhere automatically.
@@ -2394,7 +2408,7 @@ export const DEFAULT_LABELS = deepFreeze({
         exportTitle:  'Export as code',
         exportAction: 'Export',
         deleteTitle:  'Delete this preset',
-        deleteAction: 'Del'
+        deleteAction: 'Delete'   // 'Del' until Nov 2026 beside full 'Load' / 'Export' (QA report)
     },
 
     // ========================================================================
@@ -2475,8 +2489,10 @@ export const DEFAULT_LABELS = deepFreeze({
 
     feedback: {
         title:         'Provide Feedback',
-        description:   'We appreciate your feedback! Let us know how we can improve miniCycle.',
-        placeholder:   'Write your feedback here...',
+        // A rating, a message, or both is a valid submission; the form did not
+        // say so until a submit failed (Nov 2026 QA report).
+        description:   'We appreciate your feedback! Choose a star rating, write a message, or both.',
+        placeholder:   'Write your feedback here (optional if you choose a star rating)...',
         email:         'Your Email (optional)',
         emailLabel:    'Your email (optional)',
         feedbackLabel: 'Your feedback',
@@ -2503,7 +2519,14 @@ export const DEFAULT_LABELS = deepFreeze({
         tagOrganized:   'Keeps Me Organized',
         tagMotivating:  'Motivating',
         previousRating: 'You previously rated {stars} of 5 on {date}',
-        minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.'
+        minLengthOrRate: 'Please pick a star rating or enter at least 10 characters.',
+        // The email is optional, but one that is entered must be an address:
+        // "test123@" went through (the form is novalidate) — Nov 2026 QA report.
+        emailInvalid:    'Please enter a valid email address, or leave it empty.',
+        // The form posts straight to Web3Forms, which keeps every copy: the same
+        // feedback could be sent again and again (Nov 2026 QA report).
+        alreadySent:     'Thanks, we already received this feedback.',
+        tooSoon:         'Please wait a moment before sending more feedback.'
     },
 
     // ========================================================================
@@ -2736,6 +2759,8 @@ export const DEFAULT_LABELS = deepFreeze({
         darkModeOn: 'Dark mode on',
         darkModeOff: 'Dark mode off',
         taskCompleted: 'Task completed: {name}',
+        // The routine progress bar's tooltip and spoken value (cycleCompletion).
+        routineProgress: '{done} of {total} {taskWord} done ({percent}%)',
         taskUncompleted: 'Task uncompleted: {name}',
         cycleCompleted: 'Cycle completed',
         tasksCleared: 'Tasks cleared',
@@ -2756,6 +2781,11 @@ export const DEFAULT_LABELS = deepFreeze({
         routineCreated: 'Routine created: {name}',
         routineSwitched: 'Switched to routine: {name}',
         routineRenamed: 'Routine renamed to: {name}',
+        // A recurring task the watcher put back while the app was open. Visually
+        // silent by design, and until Nov 2026 spoken only as the whole task list
+        // re-entering a live region — never which task came back.
+        recurringTasksBack: 'Recurring {taskWord} back: {names}',
+        recurringTasksBackCount: '{count} recurring {taskWord} back',
         taskViewOpened: 'Routine view opened',
         statsPanelOpened: 'Stats panel opened',
         focusTaskPanelOpened: 'Task view opened',

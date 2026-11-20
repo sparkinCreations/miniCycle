@@ -173,7 +173,7 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
 }
 
 .task-btn.priority-btn.priority-active {
-    background: var(--task-priority-color, var(--priority-color, #dc3545));
+    background: var(--task-priority-color, var(--priority-color, var(--color-error)));
     color: var(--color-white);
 }
 
@@ -760,7 +760,7 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
 
 /* Show focus ring on custom checkbox when hidden input is keyboard-focused */
 .option-checkbox:focus-visible + .custom-checkbox {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -969,7 +969,7 @@ body.dark-mode .task-options-modal .modal-subtitle {
 }
 
 body.dark-mode .task-options-modal .modal-body {
-    background: rgba(0, 0, 0, 0.15);
+    background: var(--overlay-strong);
 }
 
 body.dark-mode .task-options-modal .modal-footer {

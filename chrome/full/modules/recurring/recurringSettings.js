@@ -97,6 +97,89 @@ const keepDaysByMonth = (obj) => {
     );
 };
 
+// ============================================================================
+// THE PUBLISHED .mcyc SCHEMA'S RECURRING NAMES (import only)
+// ============================================================================
+
+const isPlainObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+const HH_MM_24 = /^([01]?\d|2[0-3]):([0-5]\d)$/;
+
+/** "07:30" / "19:05" (24-hour) → the app's stored time shape, or null. */
+function timeFrom24h(value) {
+    const match = typeof value === 'string' ? HH_MM_24.exec(value.trim()) : null;
+    if (!match) return null;
+    const hour24 = Number(match[1]);
+    return {
+        hour: (hour24 % 12) || 12,
+        minute: Number(match[2]),
+        meridiem: hour24 < 12 ? 'AM' : 'PM',
+        military: false
+    };
+}
+
+/** nthWeekday 1–4 → '1'–'4'; 5 or -1 → 'last'; anything else → null. */
+function ordinalFrom(nthWeekday) {
+    const n = Number(nthWeekday);
+    if (!Number.isInteger(n)) return null;
+    if (n >= 1 && n <= 4) return String(n);
+    return (n === 5 || n === -1) ? 'last' : null;
+}
+
+/**
+ * Translate the recurring-settings names the published .mcyc schema documented
+ * into the names the app reads, for a file being IMPORTED.
+ *
+ * From 2.490 (Aug 2026) the schema and the format page — and, under them, the
+ * RecurringSettings JSDoc in core/types.js, which they were written from — named
+ * fields the app has never read: `repeatCount`, `daily.time`,
+ * `monthly.dayOfMonth`, `monthly.nthWeekday` + `monthly.weekday`.
+ * normalizeRecurringSettings() keeps known keys only, so a file written from the
+ * spec imported without an error and lost its repeat limit, its daily time and
+ * its monthly pattern (a monthly task fell back to the import day). The pinned
+ * /schema/mcyc-2.5 and -2.6 files promise "a file that validates here will
+ * import" and are immutable, so the importer accepts their names instead.
+ *
+ * The app's own names always win: an alias is used only when its counterpart is
+ * absent, so a file the app exported is untouched. Pure; returns a new object.
+ * Also: a file that gives a time but not `useSpecificTime` gets it set, as the
+ * recurring panel does — otherwise the panel shows no time for the task and
+ * re-saving it there drops the time.
+ *
+ * @param {Object} raw - recurringSettings as found in an imported file
+ * @returns {Object} The same settings with the schema's names translated
+ */
+export function acceptPublishedSchemaRecurring(raw) {
+    if (!isPlainObject(raw)) return raw;
+    const out = { ...raw };
+
+    if ((out.count === undefined || out.count === null)
+        && Number.isInteger(raw.repeatCount) && raw.repeatCount > 0) {
+        out.count = raw.repeatCount;
+    }
+
+    if (!out.time && isPlainObject(raw.daily)) {
+        const time = timeFrom24h(raw.daily.time);
+        if (time) out.time = time;
+    }
+    if (out.time && out.useSpecificTime === undefined) out.useSpecificTime = true;
+
+    if (isPlainObject(raw.monthly)) {
+        const m = raw.monthly;
+        const usesAppNames = (Array.isArray(m.days) && m.days.length > 0)
+            || m.lastDay === true || m.useWeekOfMonth === true || isPlainObject(m.weekOfMonth);
+        if (!usesAppNames) {
+            const ordinal = ordinalFrom(m.nthWeekday);
+            if (ordinal && VALID_WEEK_DAYS.has(m.weekday)) {
+                out.monthly = { ...m, useWeekOfMonth: true, weekOfMonth: { ordinal, day: m.weekday } };
+            } else if (inRange(m.dayOfMonth, 1, 31)) {
+                out.monthly = { ...m, useSpecificDays: true, days: [Number(m.dayOfMonth)] };
+            }
+        }
+    }
+
+    return out;
+}
+
 /**
  * Normalize recurring settings with all required fields
  * Uses memoization to avoid creating objects on every call

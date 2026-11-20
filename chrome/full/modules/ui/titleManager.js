@@ -202,6 +202,21 @@ async function handleMiniCycleTitleBlur() {
     announce(getLabel('accessibility.routineRenamed', { vars: { name: finalTitle } }));
 }
 
+/**
+ * Enter finishes editing the routine title. It is one line (aria-multiline
+ * false), but nothing stopped Enter, so the browser inserted a line break and
+ * the title grew and pushed the card down until blur trimmed it (Nov 2026 QA
+ * report). Enter now ends the edit — blur saves it. Not while an IME is
+ * composing: there Enter confirms the composed text.
+ * @param {KeyboardEvent} event
+ * @returns {void}
+ */
+export function handleMiniCycleTitleKeydown(event) {
+    if (event.key !== 'Enter' || event.isComposing) return;
+    event.preventDefault();
+    event.currentTarget?.blur?.();
+}
+
 // ============================================================================
 // SETUP
 // ============================================================================
@@ -228,8 +243,10 @@ export function setupMiniCycleTitleListener() {
     const GlobalUtils = _deps.GlobalUtils;
     if (GlobalUtils?.safeAddEventListener) {
         GlobalUtils.safeAddEventListener(titleElement, "blur", handleMiniCycleTitleBlur);
+        GlobalUtils.safeAddEventListener(titleElement, "keydown", handleMiniCycleTitleKeydown);
     } else {
         titleElement.addEventListener("blur", handleMiniCycleTitleBlur);
+        titleElement.addEventListener("keydown", handleMiniCycleTitleKeydown);
     }
 
 }

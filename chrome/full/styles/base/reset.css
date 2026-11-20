@@ -86,7 +86,7 @@ button, label, .checkbox-container {
 
 /* Accessibility: Focus visible styles */
 :focus-visible {
-    outline: 2px solid var(--theme-input-focus-border, #4c79ff);
+    outline: 2px solid var(--theme-input-focus-border, var(--color-primary));
     outline-offset: 2px;
 }
 
@@ -113,8 +113,8 @@ dialog:focus-visible {
     height: 1px;
     overflow: hidden;
     z-index: var(--z-critical);
-    background: var(--theme-bg-surface-elevated, #ffffff);
-    color: var(--theme-text-on-surface, #333333);
+    background: var(--theme-bg-surface-elevated, var(--color-white));
+    color: var(--theme-text-on-surface, var(--color-neutral-333333));
     padding: 12px 24px;
     font-size: var(--font-size-base);
     font-weight: var(--font-weight-semibold);
