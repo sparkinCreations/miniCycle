@@ -26,6 +26,7 @@ import { GlobalUtils } from '../utils/globalUtils.js';
 const newRoutineId = () => GlobalUtils.generateId('routine');
 import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, APP_VERSION, UI_TIMEOUTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
+import { plusButtonHintHtml } from '../labels/themeWords.js';
 import { setIconText } from '../utils/icons.js';
 import { announce } from '../utils/announce.js';
 import { getRoutines, setActiveRoutineId } from '../utils/cycleMode.js';
@@ -296,7 +297,7 @@ export class RoutineManager {
                             // hidden-bar copy too in case the user toggles the bar
                             // off before adding anything.
                             const firstHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
-                            if (firstHint) firstHint.innerHTML = getLabel('empty.firstStepHint').replace('+', '<strong>+</strong>');
+                            if (firstHint) firstHint.innerHTML = plusButtonHintHtml('empty.firstStepHint');
                             const firstHintVisible = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
                             if (firstHintVisible) firstHintVisible.textContent = getLabel('empty.firstStepHintVisible');
                         }
@@ -546,7 +547,7 @@ export class RoutineManager {
 
                 const emptyHint = this.deps.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
                 if (emptyHint) {
-                    emptyHint.innerHTML = getLabel('empty.noTasksHint').replace('+', '<strong>+</strong>');
+                    emptyHint.innerHTML = plusButtonHintHtml('empty.noTasksHint');
                 }
                 // Reset the bar-visible variant too — a new routine must not
                 // inherit the previous one's first-step copy.

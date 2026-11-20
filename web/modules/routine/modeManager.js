@@ -15,7 +15,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, EVENTS, LIMITS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { createIconElement } from '../utils/icons.js';
 import { ModePicker, MODE_PICKER_ICONS } from './modePicker.js';
@@ -1180,6 +1180,14 @@ export class ModeManager {
                     }
                 }
 
+                // The "Task input shown / hidden" notification is a teaching
+                // message: it shows for the first few presses, then goes quiet
+                // once the user knows the button (LIMITS.TASK_INPUT_NOTICE_SHOWS,
+                // one count for all four variants). Turning Tour Prompts on
+                // starts the count again (guidedTourManager.enableTourPrompts).
+                const noticeCount = Number(this.deps.AppState?.get?.()?.settings?.taskInputNoticeCount) || 0;
+                const showNotice = noticeCount < LIMITS.TASK_INPUT_NOTICE_SHOWS;
+
                 // Persist to active routine (per-routine setting)
                 if (this.deps.AppState) {
                     await this.deps.AppState.update(state => {
@@ -1187,10 +1195,14 @@ export class ModeManager {
                         if (routine) {
                             routine.showTaskInput = newVisible;
                         }
+                        if (showNotice) {
+                            if (!state.settings) state.settings = {};
+                            state.settings.taskInputNoticeCount = noticeCount + 1;
+                        }
                     });
                 }
 
-                if (this.deps.showNotification) {
+                if (showNotice && this.deps.showNotification) {
                     // Focus mode hides the + button, so its variant of the
                     // notification points to the ⋯ menu instead.
                     const inFocusMode = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);

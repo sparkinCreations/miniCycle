@@ -156,7 +156,12 @@ export function createInitialSchemaData() {
             notificationPositionModified: false,
             reducedMotion: false,
             highContrast: false,
-            fontSize: '16'
+            fontSize: '16',
+            // New users start with Manual Cycle's Complete Cycle asking first
+            // when tasks are still unchecked (the user's call, Nov 2026). Only
+            // fresh data gets it: existing data has no value, which still reads
+            // as off, so nobody's current setting changes.
+            confirmUncheckedCycle: true
         },
         data: {
             routine: {} // Empty - user will create their first routine

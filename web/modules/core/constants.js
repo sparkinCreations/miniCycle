@@ -411,6 +411,7 @@ export const LIMITS = Object.freeze({
     FEEDBACK_DUPLICATE_WINDOW_MS: 24 * 60 * 60 * 1000, // The same message + rating + email again within this long is not re-sent ("already received")
     MAX_TIMEOUT_MS: 2147483647,    // Largest setTimeout delay (~24.8 days). Above this the delay overflows a signed 32-bit int and the timer fires IMMEDIATELY — clamp and re-arm for anything longer (reminders.js scheduleNextReminder)
     UNDO_STACK: 20,                // Max items in undo/redo stack
+    TASK_INPUT_NOTICE_SHOWS: 4,    // Times the "Task input shown / hidden" notification appears before it goes quiet (settings.taskInputNoticeCount); turning Tour Prompts on starts the count again (the user's call, Nov 2026) — modeManager, guidedTourManager
     SLOW_BOOTS_BEFORE_LITE_OFFER: 2, // Slow boots in a row (BOOT_TIMEOUTS.SLOW_BOOT_LITE_OFFER) before the Lite version is offered; one is enough on a device with 2 or fewer cores. Asked once, the answer is kept (deviceDetection)
     UNDO_CACHE_MAX_BYTES: 1000000, // Byte cap on the localStorage undo cache (~1MB of the ~5MB quota shared with main state); oldest snapshots shed first. REAL bytes: consumers compare string length × 2 (UTF-16), matching storageUtils' quota metering
     TASKS_PER_CYCLE: 150,          // Max tasks per cycle/routine
@@ -1238,6 +1239,15 @@ export const DOM_CLASSES = Object.freeze({
     EMPTY_STATE_HINT_FOCUS: 'empty-state-hint-focus',
     EMPTY_STATE_HINT_VISIBLE: 'empty-state-hint-visible',
     EMPTY_STATE_HINT_FOCUS_VISIBLE: 'empty-state-hint-focus-visible',
+    // The word "Actions" inside the empty-state hint's "+ Actions" chip
+    // (plusButtonHintHtml). Hidden whenever the header button shows the + alone,
+    // so the hint names the button the user can actually see.
+    HINT_ACTIONS_WORD: 'hint-actions-word',
+    // Set on <html> by headerLayoutManager while the header's "+ Actions" button
+    // shows its icon alone (its label is hidden by a container query that
+    // depends on the header's width AND the Font Size setting, so CSS elsewhere
+    // cannot test the same condition).
+    CHROME_LABELS_HIDDEN: 'chrome-labels-hidden',
     // Set on <body> whenever the task input bar is showing (see modeManager's
     // _updateTaskInputVisibility — the single choke point for that state).
     INPUT_BAR_VISIBLE: 'input-bar-visible',
@@ -2331,6 +2341,7 @@ export const DOM_SELECTORS = Object.freeze({
     // Focus view hides the header's chrome children individually rather than the
     // whole .fixed-header-container, so the branding lockup can stay visible.
     MODE_SELECTOR_WRAPPER: '.mode-selector-wrapper',
+    QUICK_ACTIONS_BTN_LABEL: '.quick-actions-btn-label',
     HEADER_BRANDING_LOGO: '.header-branding .header-logo',
     HEADER_LOGO: '.header-logo',
     PULL_REFRESH_ICON: '.pull-refresh-icon',

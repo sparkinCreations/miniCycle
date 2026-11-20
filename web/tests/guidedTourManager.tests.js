@@ -2137,6 +2137,21 @@ export async function runGuidedTourManagerTests(resultsDiv) {
         }
     });
 
+    await test('enableTourPrompts brings the task bar notification back; disabling leaves its count', async () => {
+        // modeManager stops the "Task input shown / hidden" notification after
+        // LIMITS.TASK_INPUT_NOTICE_SHOWS presses; switching prompts on restarts it.
+        let manager = await createManager({ settings: { tourPromptsEnabled: false, taskInputNoticeCount: 4 } });
+        await manager.enableTourPrompts();
+        if (mockState.settings.taskInputNoticeCount !== 0) {
+            throw new Error(`enabling should reset the count, got ${mockState.settings.taskInputNoticeCount}`);
+        }
+        manager = await createManager({ settings: { tourPromptsEnabled: true, taskInputNoticeCount: 4 } });
+        await manager.enableTourPrompts(false);
+        if (mockState.settings.taskInputNoticeCount !== 4) {
+            throw new Error(`disabling should leave the count, got ${mockState.settings.taskInputNoticeCount}`);
+        }
+    });
+
     await test('both tour-prompt buttons say what a press will do', async () => {
         const make = (id) => {
             const btn = document.createElement('button');

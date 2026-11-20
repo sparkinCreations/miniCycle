@@ -27,7 +27,7 @@ import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, STORAGE_KEYS, UI_TIMEOUTS, MILESTO
 import { attachLongPressHint } from '../utils/longPressHint.js';
 import { createDIModule, optional } from '../core/diBase.js';
 import { getLabel } from '../labels/labelResolver.js';
-import { themeWordVars, inputBarToggleLabel } from '../labels/themeWords.js';
+import { themeWordVars, inputBarToggleLabel, plusButtonHintHtml } from '../labels/themeWords.js';
 import { createIconElement } from '../utils/icons.js';
 import { renderCompleteAllButton } from '../ui/completeAllButton.js';
 import { isClickOnNotification } from '../ui/modalUtils.js';
@@ -274,7 +274,7 @@ function _refreshLiveLensLabels() {
         const emptyPitch = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_PITCH);
         if (emptyPitch) emptyPitch.textContent = getLabel('empty.routinePitch');
         const emptyHint = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT);
-        if (emptyHint) emptyHint.textContent = getLabel('empty.noTasksHint');
+        if (emptyHint) emptyHint.innerHTML = plusButtonHintHtml('empty.noTasksHint');
         const emptyHintVisible = emptyState.querySelector(DOM_SELECTORS.EMPTY_STATE_HINT_VISIBLE);
         if (emptyHintVisible) emptyHintVisible.textContent = getLabel('empty.noTasksHintVisible');
         const emptyHintFocus = emptyState.querySelector(`.${DOM_CLASSES.EMPTY_STATE_HINT_FOCUS}`);

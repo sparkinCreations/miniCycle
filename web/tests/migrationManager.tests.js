@@ -172,6 +172,24 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
         });
     });
 
+    await test('new data asks before completing a cycle with unchecked tasks', () => {
+        MigrationManager.setMigrationManagerDependencies({
+            storage: localStorage,
+            sessionStorage: sessionStorage,
+            showNotification: () => {},
+            initialSetup: () => {},
+            now: () => Date.now(),
+            document: document
+        });
+
+        MigrationManager.createInitialSchemaData();
+
+        const data = JSON.parse(localStorage.getItem('miniCycleData'));
+        if (data.settings.confirmUncheckedCycle !== true) {
+            throw new Error(`confirmUncheckedCycle is ${data.settings.confirmUncheckedCycle}, expected true for a new user`);
+        }
+    });
+
     await test('includes metadata with timestamps', () => {
         MigrationManager.setMigrationManagerDependencies({
             storage: localStorage,

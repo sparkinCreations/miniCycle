@@ -313,6 +313,76 @@ export async function runHeaderLayoutManagerTests(resultsDiv) {
             `listener outlived destroy(): var moved to "${readVar()}"`);
     });
 
+    // ---- "+ Actions" word state ---------------------------------------------
+
+    resultsDiv.innerHTML += '<h4 class="test-section">➕ Actions word on the empty-state hint</h4>';
+
+    // A wrapper + label pair like the header's. The test page has no
+    // mode-selector.css, so the label's display is set inline to stand in for
+    // the container query that hides it in the app.
+    function makeChromeLabel(display, wrapperWidth = 300) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'mode-selector-wrapper';
+        wrapper.style.cssText = `position:absolute;top:-9999px;left:0;width:${wrapperWidth}px;height:20px;`;
+        if (wrapperWidth === 0) wrapper.style.display = 'none';
+        const label = document.createElement('span');
+        label.className = 'quick-actions-btn-label';
+        label.textContent = 'Actions';
+        label.style.display = display;
+        wrapper.appendChild(label);
+        document.body.appendChild(wrapper);
+        return wrapper;
+    }
+    async function withChromeLabel(display, wrapperWidth, fn) {
+        const wrapper = makeChromeLabel(display, wrapperWidth);
+        const root = document.documentElement;
+        const had = root.classList.contains('chrome-labels-hidden');
+        try { await fn(root); } finally {
+            wrapper.remove();
+            root.classList.toggle('chrome-labels-hidden', had);
+        }
+    }
+
+    await test('a visible Actions word clears chrome-labels-hidden', async () => {
+        const { syncChromeLabelState } = await import(`../modules/ui/headerLayoutManager.js?v=${window.testCacheBuster || ''}`);
+        await withChromeLabel('inline', 300, (root) => {
+            root.classList.add('chrome-labels-hidden');
+            assert(syncChromeLabelState() === false, 'should report the word as shown');
+            assert(!root.classList.contains('chrome-labels-hidden'), 'class should be removed');
+        });
+    });
+
+    await test('a hidden Actions word sets chrome-labels-hidden', async () => {
+        const { syncChromeLabelState } = await import(`../modules/ui/headerLayoutManager.js?v=${window.testCacheBuster || ''}`);
+        await withChromeLabel('none', 300, (root) => {
+            root.classList.remove('chrome-labels-hidden');
+            assert(syncChromeLabelState() === true, 'should report the word as hidden');
+            assert(root.classList.contains('chrome-labels-hidden'), 'class should be set');
+        });
+    });
+
+    await test('a header that is not laid out (Focus View) keeps the last answer', async () => {
+        const { syncChromeLabelState } = await import(`../modules/ui/headerLayoutManager.js?v=${window.testCacheBuster || ''}`);
+        await withChromeLabel('none', 0, (root) => {
+            root.classList.remove('chrome-labels-hidden');
+            assert(syncChromeLabelState() === null, 'should not measure a hidden header');
+            assert(!root.classList.contains('chrome-labels-hidden'), 'class should be left alone');
+        });
+    });
+
+    await test('plusButtonHintHtml puts the Actions word in its own span inside the + chip', async () => {
+        const { plusButtonHintHtml } = await import(`../modules/labels/themeWords.js?v=${window.testCacheBuster || ''}`);
+        const html = plusButtonHintHtml('empty.noTasksHint');
+        const box = document.createElement('div');
+        box.innerHTML = html;
+        const chip = box.querySelector('strong');
+        assert(chip, `no chip in "${html}"`);
+        const word = chip.querySelector('.hint-actions-word');
+        assert(word && word.textContent.trim() === 'Actions', `chip word wrong in "${html}"`);
+        assert(chip.textContent === '+ Actions', `chip reads "${chip.textContent}"`);
+        assert(box.textContent.startsWith('Press the + Actions button'), `hint reads "${box.textContent}"`);
+    });
+
     // ---- summary -----------------------------------------------------------
 
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed</h3>`;

@@ -634,6 +634,10 @@ export class GuidedTourManager {
             state.settings.quickActionsTipPinned = tipSeen;
             state.settings.quickActionsTipRecent = tipSeen;
             state.settings.quickActionsTipFrequent = tipSeen;
+            // The task bar's "shown / hidden" notification stops after a few
+            // presses (modeManager); switching prompts on brings it back for
+            // another few. Switching them off leaves the count alone.
+            if (enabled) state.settings.taskInputNoticeCount = 0;
         }, true);
 
         this._syncTourPromptButtons();

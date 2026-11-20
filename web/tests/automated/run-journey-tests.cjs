@@ -4502,6 +4502,10 @@ async function journeyFirstGestureUndo(browser, baseURL) {
             c.autoReset = false;            // manual cycle: Complete Cycle is how it completes
             c.deleteCheckedTasks = false;
             c.cycleCount = 0;
+            // New data asks before completing with unchecked tasks (Nov 2026).
+            // This journey is about Undo of the first gesture, so the press must
+            // complete the cycle itself, with no dialog in between.
+            d.settings.confirmUncheckedCycle = false;
             return JSON.stringify(d);
         }).then(doc => reloadWithSeed(page, doc));
         // Reloaded: undo's "initializing" flag starts over, so the next gesture is the first.
@@ -5962,6 +5966,46 @@ async function journeySettingsDescribedAndTourToggle(browser, baseURL) {
         await context.close();
     }
     return { name: 'Settings explain themselves; the tour-prompts button turns prompts on and off', failures };
+}
+
+// The task bar's "Task input shown / hidden" notification taught the + button on
+// every press, forever. It now shows for the first LIMITS.TASK_INPUT_NOTICE_SHOWS
+// presses (4) and goes quiet; turning Tour Prompts on brings it back (Nov 2026).
+async function journeyTaskInputNoticeQuietsAfterFour(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    const noticeRe = /Task input hidden|Add tasks using the input bar/;
+    const dismissToasts = () => page.evaluate(() => document.querySelectorAll('#notification-container .close-btn').forEach(b => b.click()));
+    const pressToggle = async () => {
+        await dismissToasts();
+        await page.waitForTimeout(200);
+        await page.evaluate(() => document.getElementById('toggle-task-input-btn').click());
+        await page.waitForTimeout(500);
+        return noticeRe.test(await page.evaluate(() => document.getElementById('notification-container')?.textContent || ''));
+    };
+    try {
+        await page.evaluate(() => {
+            document.getElementById('first-run-welcome-dismiss')?.click();
+            if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click();
+        });
+        await page.waitForTimeout(900);
+
+        const shown = [];
+        for (let i = 0; i < 6; i++) shown.push(await pressToggle());
+        const count = shown.filter(Boolean).length;
+        record('the task bar notification shows for the first four presses only',
+            count === 4 && shown.slice(0, 4).every(Boolean) && !shown[4] && !shown[5], `shown per press: ${JSON.stringify(shown)}`);
+
+        await dismissToasts();
+        await page.evaluate(() => document.getElementById('menu-retake-tours').click());
+        await page.waitForTimeout(600);
+        const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.taskInputNoticeCount);
+        record('turning Tour Prompts on starts the count again', stored === 0, `taskInputNoticeCount=${stored}`);
+        record('…and the next press shows the notification again', await pressToggle(), 'no notification after enabling tours');
+    } finally {
+        await context.close();
+    }
+    return { name: 'the task bar notification goes quiet after four presses; tours bring it back', failures };
 }
 
 // Home and Focus centre the card with different transforms, so leaving the card's
@@ -7858,6 +7902,7 @@ const JOURNEYS = [
     { name: 'switching between Home and Focus View keeps the routine card in place', fn: journeyViewSwitchKeepsCardInPlace },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
+    { name: 'the task bar notification goes quiet after four presses; tours bring it back', fn: journeyTaskInputNoticeQuietsAfterFour },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
     { name: 'data written by a newer build is never overwritten', fn: journeyNewerDataNeverOverwritten },

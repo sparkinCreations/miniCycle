@@ -203,6 +203,21 @@ body.all-tasks-complete .empty-state-hint-focus-visible {
     font-weight: 600;
 }
 
+/* "+ Actions" names the header button as it looks. When the header shows the
+   + alone (a narrow header or a large Font Size), so does the hint:
+   headerLayoutManager sets .chrome-labels-hidden from the button's own label.
+   The 374px media query matches mode-selector.css's floor, so a phone reads
+   right before that first measure. */
+.chrome-labels-hidden .hint-actions-word {
+    display: none;
+}
+
+@media (max-width: 374px) {
+    .hint-actions-word {
+        display: none;
+    }
+}
+
 /* =============================================================================
    RECURRING INFO LINK
    ============================================================================= */

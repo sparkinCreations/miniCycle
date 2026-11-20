@@ -12,6 +12,7 @@
  * Pure leaf (labels only) so it can be imported statically.
  */
 import { getLabel } from './labelResolver.js';
+import { DOM_CLASSES } from '../core/constants.js';
 
 /**
  * @param {Object} [overrides] - e.g. { button } for Focus View's own action label
@@ -46,4 +47,20 @@ export function themeWordVars(overrides = {}) {
  */
 export function inputBarToggleLabel(isVisible) {
     return getLabel(isVisible ? 'nav.hideAddTaskBar' : 'nav.addTasks', { vars: themeWordVars() });
+}
+
+/**
+ * An empty-state hint with its "+" shown as the header button's own chip:
+ * "Press the [+ Actions] button …". The word "Actions" sits in its own span,
+ * hidden (CSS, task-list.css) whenever the header shows the + alone, so a
+ * small screen reads "Press the [+] button …". Labels keep "the + button";
+ * only the first "+" is wrapped. Safe for innerHTML: both labels are
+ * var-free static strings.
+ *
+ * @param {string} key - e.g. 'empty.noTasksHint', 'empty.firstStepHint'
+ * @returns {string} HTML
+ */
+export function plusButtonHintHtml(key) {
+    const word = getLabel('nav.quickActionsShort');
+    return getLabel(key).replace('+', `<strong>+<span class="${DOM_CLASSES.HINT_ACTIONS_WORD}"> ${word}</span></strong>`);
 }
