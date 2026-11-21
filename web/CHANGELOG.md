@@ -1,3 +1,7 @@
+## [2.686] - 2026-11-21
+- fix(tabs): another tab's save redraws this tab; redraws no longer save
+
+
 ## [2.685] - 2026-11-20
 - feat(onboarding): new users get the Complete Cycle check; hints name the + Actions button; task bar notice goes quiet after four
 
