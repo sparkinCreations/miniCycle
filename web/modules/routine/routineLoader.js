@@ -109,6 +109,7 @@ async function loadMiniCycle() {
   const appState = getAppState();
   if (!appState) throw new Error('routineLoader: missing dependency AppState');
   assertInjected('addTask', _deps.addTask);
+  subscribeToOtherTabSaves(appState);
 
   // Reads AppState only (STATE_TRUTH_MIGRATION #25): the routine rendered below
   // IS the live state tree, never a copy parsed from storage.
@@ -179,6 +180,70 @@ async function loadMiniCycle() {
   // throws mid-build. Do not read its presence as evidence the render needs it.
   _deps.completedTasksManager?.organize?.();
 
+}
+
+// ============================================================================
+// ANOTHER TAB'S SAVE: REDRAW FROM THE ADOPTED STATE
+// ============================================================================
+
+const OTHER_TAB_REDRAW_SUBSCRIBER = 'routineLoader:otherTabSaves';
+
+// AppState instances already subscribed (one per instance, so a boot retry's
+// fresh AppState subscribes again) — same shape as undoRedoManager's. The old
+// instance and its subscription go together, so there is nothing to tear down.
+const _otherTabSubscriptions = new WeakSet();
+let _otherTabReloadRunning = false;
+let _otherTabReloadQueued = false;
+
+/**
+ * Redraw this tab when it adopts another tab's save.
+ *
+ * AppState adopts the other tab's document from the storage event (or in save()
+ * when it finds a newer foreign write) and notifies subscribers with
+ * `{ external: true }`, but until Nov 2026 nothing on screen listened: the data
+ * was right and the Home list, title, mode and dark mode stayed as they were
+ * until a refresh. Measured with two tabs: a task added in one never appeared in
+ * the other, even after the other was used. This runs the same full load that
+ * pull-to-refresh runs. It saves only when a repair is needed, which the first
+ * tab to repair settles, so two tabs cannot keep waking each other.
+ *
+ * @param {Object} appState
+ * @returns {void}
+ */
+function subscribeToOtherTabSaves(appState) {
+  if (typeof appState?.subscribe !== 'function' || _otherTabSubscriptions.has(appState)) return;
+  _otherTabSubscriptions.add(appState);
+  appState.subscribe(OTHER_TAB_REDRAW_SUBSCRIBER, (_newState, _oldState, meta) => {
+    if (meta?.external) scheduleOtherTabReload();
+  });
+}
+
+/**
+ * One load at a time; saves that arrive during a load are folded into one more
+ * load after it, so a burst of saves from the other tab costs at most two.
+ * On a frame, deliberately: a hidden tab gets no frames, so it redraws once
+ * when it is shown again instead of on every save made while it was hidden.
+ * @returns {void}
+ */
+function scheduleOtherTabReload() {
+  if (_otherTabReloadRunning) {
+    _otherTabReloadQueued = true;
+    return;
+  }
+  _otherTabReloadRunning = true;
+  requestAnimationFrame(async () => {
+    try {
+      await loadMiniCycle();
+    } catch (error) {
+      console.warn('⚠️ Redraw after another tab\'s save failed:', error);
+    } finally {
+      _otherTabReloadRunning = false;
+      if (_otherTabReloadQueued) {
+        _otherTabReloadQueued = false;
+        scheduleOtherTabReload();
+      }
+    }
+  });
 }
 
 /**
@@ -439,7 +504,11 @@ function updateCycleUIState(currentCycle, settings, titleBeforeLoad = null) {
     const shownTitle = (titleBeforeLoad !== null ? titleBeforeLoad : titleElement.textContent).trim();
     const isSwitch = shownTitle !== '' && shownTitle !== nextTitle;
 
-    titleElement.textContent = nextTitle;
+    // Not while the user is renaming it: a load can now arrive unasked (another
+    // tab's save), and overwriting the heading mid-edit would lose their typing.
+    if (document.activeElement !== titleElement) {
+      titleElement.textContent = nextTitle;
+    }
 
     if (isSwitch) {
       announce(getLabel('accessibility.routineSwitched', { vars: { name: nextTitle } }));

@@ -16,7 +16,8 @@ import {
 import {
     MiniCycleDueDates,
     setDueDatesDependencies,
-    computeDueDateNotificationSlots
+    computeDueDateNotificationSlots,
+    sameOverdueStates
 } from '../modules/features/dueDates.js';
 
 // The module compares against LOCAL midnight (parseDateAsLocal), so tests must
@@ -338,6 +339,28 @@ export async function runDueDatesTests(resultsDiv, isPartOfSuite = false) {
             if (!row.classList.contains('overdue-task')) throw new Error('row should carry the overdue class');
             if (!chip.classList.contains('due-date-overdue')) throw new Error('the due-date line should turn overdue');
             if (!/Overdue/.test(row.getAttribute('aria-label') || '')) throw new Error(`row label: ${row.getAttribute('aria-label')}`);
+        });
+
+        await test('checkOverdueTasks saves only when the overdue states change', async () => {
+            // It runs on every render. An unconditional save stamped a new
+            // lastModified each time, so two open tabs kept waking each other
+            // (each redraw after the other's save saved again). Nov 2026.
+            const mock = createMockAppStateForDueDates();
+            let saves = 0;
+            const update = mock.update;
+            mock.update = async (...args) => { saves++; return update(...args); };
+            const instance = new MiniCycleDueDates({ querySelectorAll: () => [], AppState: mock });
+
+            putTask({ id: 'overdue-task-2', text: 'Overdue Task', completed: false, dueDate: localDay(-1) });
+            const { row } = makeRow('overdue-task-2', 'Overdue Task');
+
+            await instance.checkOverdueTasks(row);
+            if (saves !== 1) throw new Error(`the first check should save the new overdue state once, saved ${saves} times`);
+            await instance.checkOverdueTasks(row);
+            if (saves !== 1) throw new Error(`a second check with nothing new saved again (${saves} saves)`);
+            if (!sameOverdueStates({ a: true }, { a: true }) || sameOverdueStates({ a: true }, { b: true }) || sameOverdueStates({}, { a: true })) {
+                throw new Error('sameOverdueStates compares the wrong thing');
+            }
         });
 
         await test('checkOverdueTasks: a completed task is never shown as overdue (but its memory is kept)', async () => {

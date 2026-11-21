@@ -3197,6 +3197,199 @@ async function journeyResetTwoTabs(browser, baseURL) {
     return { name: 'a factory reset survives a second open tab', failures };
 }
 
+// Two tabs of the app on one seeded document. A real routine comes from the
+// first-run choice in a setup tab; `mutate(doc)` edits it; the seed is written
+// from a same-origin page that runs no app code (so no tab can save over it
+// before both have read it); then A and B open together, as two tabs of one
+// browser (one context = one origin's storage). The caller closes `context`.
+async function openTwoTabsOnSeed(browser, baseURL, mutate) {
+    const context = await browser.newContext();
+    await context.grantPermissions(['notifications'], { origin: baseURL });
+    const setup = await context.newPage();
+    await setup.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    await seedViaLearnOn(setup);
+    await setup.waitForTimeout(1500);
+    const doc = JSON.parse(await setup.evaluate(() => localStorage.getItem('miniCycleData')));
+    await setup.close();   // its last save flushes on close, before the seed below
+    mutate(doc);
+    const seeder = await context.newPage();
+    await seeder.goto(`${baseURL}/version.js`, { timeout: 15000 });
+    await seeder.evaluate((raw) => localStorage.setItem('miniCycleData', raw), JSON.stringify(doc));
+    await seeder.close();
+    const A = await context.newPage();
+    const B = await context.newPage();
+    await Promise.all([A, B].map(p =>
+        p.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 25000 })));
+    await Promise.all([A, B].map(p => p.waitForFunction(
+        () => document.documentElement.dataset.appLoaded === 'true', null, { timeout: 25000 })));
+    return { context, A, B };
+}
+
+// Two tabs, one due recurring task: it must come back ONCE. There is no lock
+// between tabs. What keeps it single is the design: the instance reuses its
+// template's id and the watcher skips a template whose task exists; saves
+// replace the whole document; each tab adopts the other's save from the storage
+// event; and save() adopts a newer foreign write instead of writing over it.
+// Two races, both through catch-up (what runs on boot and on wake from sleep):
+// both tabs opening at once with the task already due, and both tabs waking at
+// the same instant after it falls due (Nov 2026, asked on r/webdev).
+async function journeyRecurringTwoTabs(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const TEMPLATE_ID = 'two-tab-recurring';
+
+    const readStored = (page) => page.evaluate((id) => {
+        try {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            const r = d.data.routine[d.appState.activeRoutineId];
+            return {
+                copies: (r.tasks || []).filter(t => t.id === id).length,
+                occurrences: r.recurringTemplates?.[id]?.occurrenceCount ?? null
+            };
+        } catch (e) { return null; }
+    }, TEMPLATE_ID);
+    const readMemory = (page) => page.evaluate(async (id) => {
+        const url = (path) => (globalThis.__MC_MODULE_MAP && globalThis.__MC_MODULE_MAP[path])
+            || `${path}?v=${globalThis.APP_VERSION}`;
+        const { getStateManager } = await import(url('/modules/core/appState.js'));
+        const d = getStateManager().get();
+        const r = d && d.data.routine[d.appState.activeRoutineId];
+        return r ? (r.tasks || []).filter(t => t.id === id).length : null;
+    }, TEMPLATE_ID);
+
+    const runCase = async (label, dueInMs, wakeTogether) => {
+        const { context, A, B } = await openTwoTabsOnSeed(browser, baseURL, (doc) => {
+            const r = doc.data.routine[doc.appState.activeRoutineId];
+            r.recurringTemplates = r.recurringTemplates || {};
+            r.recurringTemplates[TEMPLATE_ID] = {
+                id: TEMPLATE_ID, text: 'Water the plants', priority: null, remindersEnabled: false,
+                recurringSettings: { frequency: 'hourly', indefinitely: true, time: null },
+                nextScheduledOccurrence: Date.now() + dueInMs, occurrenceCount: 0,
+                createdAt: Date.now()
+            };
+        });
+        try {
+            if (wakeTogether) {
+                const before = await readStored(A);
+                record(`${label}: nothing is spawned before it is due`, before && before.copies === 0,
+                    `already ${JSON.stringify(before)} before the due time`);
+                await A.waitForTimeout(dueInMs + 1000);
+                // Both tabs wake in the same instant.
+                await Promise.all([A, B].map(p => p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))));
+            }
+            await A.waitForTimeout(5000);   // let both catch-ups and their saves land
+
+            const stored = await readStored(A);
+            record(`${label}: storage holds the task exactly once`, stored && stored.copies === 1,
+                `stored copies: ${JSON.stringify(stored)}`);
+            record(`${label}: the occurrence is counted once`, stored && stored.occurrences === 1,
+                `occurrenceCount: ${JSON.stringify(stored && stored.occurrences)}`);
+            const [memA, memB] = [await readMemory(A), await readMemory(B)];
+            record(`${label}: both tabs hold exactly one copy in memory`, memA === 1 && memB === 1,
+                `tab A holds ${memA}, tab B holds ${memB}`);
+        } finally {
+            await context.close();
+        }
+    };
+
+    await runCase('both tabs open with the task due', -60000, false);
+    await runCase('both tabs wake together after it falls due', 6000, true);
+    return { name: 'a due recurring task comes back once with two tabs open', failures };
+}
+
+// The other tab's SCREEN must follow, not just its memory. AppState adopted
+// another tab's save and told its subscribers, but nothing on screen listened:
+// a task added in tab A never appeared in tab B, B's dark mode did not follow,
+// and only a refresh caught B up (Nov 2026). routineLoader now redraws on an
+// adopted save. The redraw must not save on its own, or two tabs keep waking
+// each other — dueDates.checkOverdueTasks saved on every render and did exactly
+// that, and the echo then overwrote a fresh edit in the other tab. The seed has
+// an overdue task and a recurring template so their load paths are in the
+// "tabs settle" check too.
+async function journeyOtherTabScreenFollows(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, A, B } = await openTwoTabsOnSeed(browser, baseURL, (doc) => {
+        const r = doc.data.routine[doc.appState.activeRoutineId];
+        const yesterday = new Date(Date.now() - 86400000);
+        const ymd = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}-${String(yesterday.getDate()).padStart(2, '0')}`;
+        r.tasks.push({
+            id: 'two-tab-overdue', text: 'Pay the bill', completed: false, dueDate: ymd, priority: null,
+            remindersEnabled: false, recurring: false, recurringSettings: {},
+            autoClear: { cycle: false, todo: true }, schemaVersion: 2
+        });
+        r.recurringTemplates = r.recurringTemplates || {};
+        r.recurringTemplates['two-tab-later'] = {
+            id: 'two-tab-later', text: 'Stretch', priority: null, remindersEnabled: false,
+            recurringSettings: { frequency: 'daily', indefinitely: true, time: null },
+            nextScheduledOccurrence: Date.now() + 6 * 3600000, occurrenceCount: 0, createdAt: Date.now()
+        };
+        doc.settings.darkMode = false;
+    });
+    const rows = (p) => p.evaluate(() => [...document.querySelectorAll('#taskList li')].map(li => ({
+        text: (li.querySelector('.task-text')?.textContent || '').trim(),
+        checked: !!li.querySelector('input[type="checkbox"]')?.checked
+    })));
+    const stored = (p) => p.evaluate(() => {
+        const d = JSON.parse(localStorage.getItem('miniCycleData'));
+        const r = d.data.routine[d.appState.activeRoutineId];
+        return { tasks: r.tasks.map(t => ({ text: t.text, completed: !!t.completed })), dark: !!d.settings.darkMode, stamp: d.metadata.lastModified };
+    });
+    const showHome = (p) => p.evaluate(() => {
+        document.getElementById('first-run-welcome-dismiss')?.click();
+        if (document.body.classList.contains('focus-mode')) document.getElementById('focus-mode-exit-btn')?.click();
+    });
+    try {
+        await showHome(A); await showHome(B);
+        await A.waitForTimeout(1200);
+
+        // The tabs settle: nobody saves while nothing happens.
+        const idle0 = (await stored(A)).stamp;
+        await A.waitForTimeout(4000);
+        const idle1 = (await stored(A)).stamp;
+        record('two idle tabs settle: nothing is saved while nothing happens', idle0 === idle1,
+            `lastModified moved from ${idle0} to ${idle1} with no one touching either tab — the tabs are waking each other`);
+
+        // A adds a task; B shows it without a refresh.
+        await A.evaluate(() => document.getElementById('task-input-row')?.classList.remove('hidden'));
+        await A.fill('#taskInput', 'Added in tab A');
+        await clickEl(A, '#addTaskBtn');
+        await B.waitForFunction(() => [...document.querySelectorAll('#taskList li .task-text')]
+            .some(e => e.textContent.trim() === 'Added in tab A'), null, { timeout: 8000 }).catch(() => {});
+        const bRows = await rows(B);
+        record('a task added in tab A appears in tab B', bRows.some(r => r.text === 'Added in tab A'),
+            `tab B shows ${JSON.stringify(bRows.map(r => r.text))}`);
+
+        // B checks a task off; it is saved WITH A's task, and A shows the check.
+        const first = bRows.find(r => !r.checked);
+        await B.locator('#taskList li input[type="checkbox"]').first().click({ force: true });
+        await A.waitForTimeout(2500);
+        const after = await stored(A);
+        record('tab B\'s check-off is saved alongside tab A\'s new task',
+            after.tasks.some(t => t.text === 'Added in tab A') && after.tasks.some(t => t.text === first.text && t.completed),
+            `stored: ${JSON.stringify(after.tasks)}`);
+        const aRows = await rows(A);
+        record('tab A shows the task tab B checked off', aRows.some(r => r.text === first.text && r.checked),
+            `tab A shows ${JSON.stringify(aRows)}`);
+
+        // A turns dark mode on; B follows.
+        await clickEl(A, '#quick-dark-toggle');
+        await B.waitForFunction(() => document.body.classList.contains('dark-mode'), null, { timeout: 8000 }).catch(() => {});
+        record('dark mode turned on in tab A shows in tab B',
+            (await stored(A)).dark && await B.evaluate(() => document.body.classList.contains('dark-mode')),
+            'tab B is still light');
+
+        // And they settle again afterwards.
+        await A.waitForTimeout(1500);
+        const end0 = (await stored(A)).stamp;
+        await A.waitForTimeout(4000);
+        const end1 = (await stored(A)).stamp;
+        record('after the changes, the tabs settle again', end0 === end1,
+            `lastModified kept moving (${end0} → ${end1}) — a redraw is saving, so the tabs wake each other`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'another tab\'s change shows on screen, and two tabs settle', failures };
+}
+
 // ── Journey 16: the in-place re-render must show the dataless state ─────────
 // reloadWithLoader re-renders IN PLACE — there is no page reload — and every
 // routine-scoped updater only runs when a cycle EXISTS. A reset produces the one
@@ -7902,6 +8095,8 @@ const JOURNEYS = [
     { name: 'switching between Home and Focus View keeps the routine card in place', fn: journeyViewSwitchKeepsCardInPlace },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
+    { name: 'a due recurring task comes back once with two tabs open', fn: journeyRecurringTwoTabs },
+    { name: 'another tab\'s change shows on screen, and two tabs settle', fn: journeyOtherTabScreenFollows },
     { name: 'the task bar notification goes quiet after four presses; tours bring it back', fn: journeyTaskInputNoticeQuietsAfterFour },
     { name: 'pre-2.5 leftovers are never migrated or deleted', fn: journeyLegacyLeftoversUntouched },
     { name: 'priority levels follow the theme', fn: journeyPriorityLevelsFollowTheme },
