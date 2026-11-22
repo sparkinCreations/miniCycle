@@ -438,6 +438,8 @@ export const LIMITS = Object.freeze({
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
+    BACKUP_REMINDER_DAYS: 14,            // Backup reminder on app open after this many days (features/backupReminder.js)
+    BACKUP_REMINDER_DAYS_UNPROTECTED: 7, // …this many instead when the browser has NOT granted persistent storage (storagePersistence.protectionLevel): it may clear the data on its own
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     AUTO_BACKUPS_SHOWN: 8,               // Newest IndexedDB snapshots listed under Settings → Data Management → automatic backups
     BACKUP_FOLDER_KEEP: 7,               // Daily backup files kept in the device folder (storage/backupFolder.js) — one per day
@@ -868,6 +870,14 @@ export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`
 export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
 
 /**
+ * Web Locks names (navigator.locks), shared by every tab of the app.
+ * RECURRING_SPAWN: held while the recurring watcher decides which tasks are due
+ * and saves them (recurringWatcher.js), so two tabs never spawn at once — the
+ * second one waits, then sees the first one's save.
+ */
+export const LOCK_NAMES = Object.freeze({ RECURRING_SPAWN: 'minicycle:recurring-spawn' });
+
+/**
  * The daily backup FILE the native shells write to a folder on the device
  * (storage/backupFolder.js): desktop → Documents/<DESKTOP_DIR> through the
  * shell's IPC (the folder name is also spelled in desktop/src/backupFiles.js —
@@ -919,6 +929,11 @@ export const EVENTS = Object.freeze({
         so its entry lands on the undo stack BEFORE the action that followed
         it — the order the user performed them. */
     UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending',
+    /** Dispatched on document by storagePersistence when the browser's answer
+        to the persistent-storage request changes (e.g. granted on the first
+        tap): detail = { persisted, level, homeScreen } — protectionLevel() and
+        suggestsHomeScreen() at that moment. Settings redraws its storage line. */
+    STORAGE_PERSISTENCE_CHANGED: 'storage:persistenceChanged',
     FIRST_RUN_REARM: 'firstrun:rearm',          // backupRestoreManager after an IN-PLACE factory reset: the choice screen is back, the origin is empty again (inline rotators and the + shimmer re-arm on it)
     ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered', // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
     TASK_INLINE_EDIT_ENDED: 'task:inlineEditEnded' // taskCRUD when an inline task edit closes (saved, unchanged or cancelled): TaskRenderer runs the refresh it held back while the edit was open
@@ -1572,6 +1587,9 @@ export const DOM_IDS = Object.freeze({
     AUTO_BACKUPS_LIST: 'auto-backups-list',
     AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
     AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
+    // Settings → Data Management: whether the browser granted persistent storage
+    // (backupRestoreManager.refreshStorageStatus, from storagePersistence).
+    STORAGE_STATUS: 'storage-status',
     FACTORY_RESET: 'factory-reset',
     DATA_CORRUPTION_MODAL: 'data-corruption-modal',   // appInit.showDataCorruptionRecovery
     RECOVERY_FRESH_START: 'recovery-fresh-start',

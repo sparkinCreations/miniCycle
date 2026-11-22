@@ -1304,6 +1304,8 @@ async function catchUpMissedRecurringTasks() {
 
 `recreateDueTasks()` skips a template that is already in the list, paused, finished (`nextScheduledOccurrence == null`), count-exhausted, or not yet due. Each template is evaluated in its own `try`, so one template with bad data cannot stop the others.
 
+**Two tabs.** `recreateDueTasks()` decides and saves under a Web Lock every tab shares (`navigator.locks`, `LOCK_NAMES.RECURRING_SPAWN`). Once it holds the lock it adopts any newer save another tab made (`AppState.adoptNewerStoredData()` — that tab's storage event may not have arrived yet) and re-reads the routine, so a second tab waking at the same moment finds the task already there and writes nothing. The lock is taken there rather than in the two entry points because the watch calls catch-up when it overslept, and a Web Lock is not re-entrant. Browsers without Web Locks (Safari before 15.4) still adopt first; the instance id being the template id keeps it to one copy there. The *a due recurring task comes back once with two tabs open* journey checks the copy count and that only one tab writes. A spawned task carries the same complete shape `addTask` stores (`dueDate: null`, `schemaVersion: 2`), so the loader's repair pass has nothing to save when another tab redraws.
+
 #### Watch Recurring Tasks (15-second Polling)
 **Location:** `modules/recurring/recurringWatcher.js`
 **Function:** `watchRecurringTasks()`

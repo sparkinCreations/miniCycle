@@ -49,6 +49,8 @@ const di = createDIModule('SettingsManager', {
     safeAddEventListener: required(),
     BackupManager: optional(null),
     BackupFolder: optional(null),
+    // Forward-through to backupRestoreManager's storage line (Data Management).
+    StoragePersistence: optional(null),
     enableDebug: optional(null),
     disableDebug: optional(null),
     isDebug: optional(null),
@@ -156,6 +158,7 @@ async function loadSubModules(version) {
         setupFactoryResetButton: backupRestoreModule.setupFactoryResetButton,
         setupPreMigrationCopyControls: backupRestoreModule.setupPreMigrationCopyControls,
         setupAutoBackupsControls: backupRestoreModule.setupAutoBackupsControls,
+        setupStorageStatus: backupRestoreModule.setupStorageStatus,
         neutralizeAppState: backupRestoreModule.neutralizeAppState,
         downloadBackupFile: backupRestoreModule.downloadBackupFile,
         saveBackupFileAs: backupRestoreModule.saveBackupFileAs,
@@ -242,6 +245,7 @@ function wireSubModuleDependencies(dependencies) {
         safeAddEventListener: dependencies.safeAddEventListener,
         BackupManager: dependencies.BackupManager,
         BackupFolder: dependencies.BackupFolder,
+        StoragePersistence: dependencies.StoragePersistence,
         AppMeta: dependencies.AppMeta,
         loadMiniCycle: dependencies.loadMiniCycle,
         showLoader: dependencies.showLoader,
@@ -323,6 +327,7 @@ export class SettingsManager {
             _subModules.setupFactoryResetButton?.();
             _subModules.setupPreMigrationCopyControls?.();
             _subModules.setupAutoBackupsControls?.();
+            _subModules.setupStorageStatus?.();
             _subModules.setupShareRoutineButton?.();
             _subModules.setupShareAppButton?.();
 

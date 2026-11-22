@@ -23,7 +23,7 @@
  */
 
 import { createDIModule, optional } from '../core/diBase.js';
-import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS } from '../core/constants.js';
+import { INTERVALS, DEFAULT_RECURRING_DELETE_SETTINGS, LIMITS, UI_TIMEOUTS, LOCK_NAMES } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { autoClearFields, getActiveRoutineId, getAutoClearSettings, getRoutine } from '../utils/cycleMode.js';
 import { priorityFields } from '../utils/priorityLevel.js';
@@ -315,16 +315,21 @@ function buildRecurringInstance(template) {
     if (templateSettings && Object.values(templateSettings).some(value => value === false)) {
         console.debug(`⚠️ Template "${template.text}" keeps tasks in some mode; recreated instance forced to clear`);
     }
+    // The same complete shape addTask stores (taskUtils), so routineLoader's
+    // repair pass finds nothing to fix. A missing dueDate / schemaVersion was
+    // "repaired" and SAVED by the next render — with two tabs open, the other
+    // tab's redraw after every spawn wrote the document back (Nov 2026).
     return {
         text: template.text,
         completed: false,
-        dueDate: template.dueDate,
+        dueDate: template.dueDate ?? null,
         dueTime: template.dueDate ? (template.dueTime || null) : null,
         ...priorityFields(template),
-        remindersEnabled: template.remindersEnabled,
+        remindersEnabled: template.remindersEnabled === true,
         recurring: true,
         id: template.id,
-        recurringSettings: template.recurringSettings,
+        recurringSettings: template.recurringSettings || {},
+        schemaVersion: 2,
         // Always clears, in EVERY mode, whatever the template's map says (safety
         // override). Every mode, not just the current one: a recurring task's
         // pin is one choice for all modes, so a single false key would arrive
@@ -352,14 +357,83 @@ function buildRecurringInstance(template) {
  * adds one extra gate via `extraEligibility` (re-validates the recurrence pattern); catch-up
  * passes none — a missed-while-closed occurrence is trusted without re-matching the pattern.
  *
+ * ONE TAB AT A TIME. The decide-and-save runs under a Web Lock shared by every tab
+ * (LOCK_NAMES.RECURRING_SPAWN), and re-reads the routine once it holds it, after
+ * adopting any newer save another tab made (AppState.adoptNewerStoredData — that
+ * tab's storage event may not have arrived yet). So when two tabs wake together,
+ * the second one waits, finds the task already there and the template already
+ * advanced, and does nothing. Without the lock both spawned and both saved: the
+ * shared id kept it to one copy, but the later whole-document save replaced the
+ * earlier one, and anything else the first tab had saved with it was lost
+ * (measured Nov 2026: one write per tab; now one write in all).
+ * Browsers without navigator.locks (Safari before 15.4) still adopt first; the
+ * shared id remains the guarantee there.
+ *
+ * The lock is taken HERE, not in the two entry points: the watch calls catch-up
+ * when it overslept, and a Web Lock is not re-entrant — the nested request
+ * would wait forever for the one its own caller holds.
+ *
  * @param {string} activeCycleId
- * @param {Object} templates - cycle.recurringTemplates
- * @param {Array} taskList - current cycle.tasks
+ * @param {Object} templates - cycle.recurringTemplates as the caller read them
+ * @param {Array} taskList - cycle.tasks as the caller read them
  * @param {Date} now
- * @param {(template: Object) => boolean} [extraEligibility] - optional extra per-template gate
+ * @param {(template: Object, tasks: Array) => boolean} [extraEligibility] - optional
+ *   extra per-template gate, given the task list read under the lock
  * @returns {Promise<{added:number, updated:number, blocked:number}>}
  */
 async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEligibility) {
+    return withRecurringSpawnLock(() => {
+        const fresh = readRoutineAfterOtherTabs(activeCycleId);
+        if (fresh === null) return { added: 0, addedNames: [], updated: 0, blocked: 0 };
+        return spawnDueTasks(
+            activeCycleId,
+            fresh ? (fresh.recurringTemplates || {}) : templates,
+            fresh ? (fresh.tasks || []) : taskList,
+            now,
+            extraEligibility
+        );
+    });
+}
+
+/**
+ * Run `work` while holding the cross-tab recurring lock, or directly where the
+ * browser has no Web Locks.
+ * @template T
+ * @param {() => Promise<T>} work
+ * @returns {Promise<T>}
+ */
+function withRecurringSpawnLock(work) {
+    const locks = typeof navigator !== 'undefined' ? navigator.locks : null;
+    if (!locks || typeof locks.request !== 'function') return work();
+    return locks.request(LOCK_NAMES.RECURRING_SPAWN, work);
+}
+
+/**
+ * The routine as it stands now, after adopting another tab's newer save.
+ * @param {string} routineId
+ * @returns {Object|null|undefined} the routine; null when it no longer exists
+ *   (another tab deleted it); undefined when there is no AppState to read
+ *   (unit tests with a bare stub), so the caller keeps what it was given
+ */
+function readRoutineAfterOtherTabs(routineId) {
+    const appState = Deps.AppState;
+    if (typeof appState?.get !== 'function') return undefined;
+    if (typeof appState.adoptNewerStoredData === 'function') appState.adoptNewerStoredData();
+    const state = appState.get();
+    if (!state) return undefined;
+    return getRoutine(state, routineId) || null;
+}
+
+/**
+ * The decide-and-save body of recreateDueTasks, run under its lock.
+ * @param {string} activeCycleId
+ * @param {Object} templates
+ * @param {Array} taskList
+ * @param {Date} now
+ * @param {(template: Object, tasks: Array) => boolean} [extraEligibility]
+ * @returns {Promise<{added:number, updated:number, blocked:number}>}
+ */
+async function spawnDueTasks(activeCycleId, templates, taskList, now, extraEligibility) {
     const nowMs = now.getTime();
     const tasksToAdd = [];
     const templateUpdates = {};
@@ -377,7 +451,7 @@ async function recreateDueTasks(activeCycleId, templates, taskList, now, extraEl
             if (template.nextScheduledOccurrence == null) return;        // finished / exhausted
             if (isCountExhausted(template)) return;                      // count limit reached
             if (nowMs < template.nextScheduledOccurrence) return;        // not due yet
-            if (extraEligibility && !extraEligibility(template)) return; // watch: pattern re-validation
+            if (extraEligibility && !extraEligibility(template, taskList)) return; // watch: pattern re-validation
 
             tasksToAdd.push(buildRecurringInstance(template));
             templateUpdates[template.id] = buildTemplateUpdate(template, nowMs, Deps.calculateNextOccurrence);
@@ -626,7 +700,7 @@ export async function watchRecurringTasks() {
     assertInjected('shouldRecreateRecurringTask', Deps.shouldRecreateRecurringTask);
     const stats = await recreateDueTasks(
         activeCycleId, templates, taskList, now,
-        (template) => Deps.shouldRecreateRecurringTask(template, taskList, now)
+        (template, tasks) => Deps.shouldRecreateRecurringTask(template, tasks, now)
     );
     if (stats.added > 0) {
         const taskWord = getLabel('noun.task', { count: stats.added });

@@ -2619,12 +2619,64 @@ export async function runUndoRedoManagerTests(resultsDiv, isPartOfSuite = false)
         mockDeps.AppGlobalState.activeUndoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 1 }];
         mockDeps.AppGlobalState.activeRedoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 2 }];
         const state = mockDeps.AppState.get();
-        onChange(state, state, {});
+        // The other tab changed the OPEN routine's tasks — what undo writes back.
+        const changed = structuredClone(state);
+        const openRoutine = changed.data.routine[changed.appState.activeRoutineId];
+        openRoutine.tasks = [...(openRoutine.tasks || []), { id: 'from-other-tab', text: 'Added in the other tab', completed: false }];
+        onChange(changed, state, {});
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 1) throw new Error('a change made in this tab must keep the steps');
-        onChange(state, state, { external: true });
+        onChange(changed, state, { external: true });
         if (mockDeps.AppGlobalState.activeUndoStack.length !== 0 || mockDeps.AppGlobalState.activeRedoStack.length !== 0) {
             throw new Error('another tab\'s save must clear the stale steps');
         }
+    });
+
+    await test('another tab\'s save that leaves the open routine alone keeps this tab\'s undo and redo', async () => {
+        // Undo writes back only the open routine and the task-view layout, so a
+        // save that touched another routine, a setting or the stats cannot be
+        // overwritten by it — clearing there took the user's undo for nothing.
+        const mockDeps = createMockDependencies();
+        setUndoRedoManagerDependencies(mockDeps);
+        await initUndoSystemForApp();
+        const onChange = mockDeps.AppState._subscribers?.['undo-other-tab'];
+        if (typeof onChange !== 'function') throw new Error('undo did not subscribe to other-tab adoptions');
+        const steps = () => {
+            mockDeps.AppGlobalState.activeUndoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 1 }];
+            mockDeps.AppGlobalState.activeRedoStack = [{ activeCycleId: 'Test Cycle', title: 'Test Cycle', tasks: [], recurringTemplates: {}, timestamp: 2 }];
+        };
+        const kept = () => mockDeps.AppGlobalState.activeUndoStack.length === 1 && mockDeps.AppGlobalState.activeRedoStack.length === 1;
+        const state = mockDeps.AppState.get();
+        const openId = state.appState.activeRoutineId;
+
+        // Another routine, a setting and the stats changed — kept.
+        steps();
+        const elsewhere = structuredClone(state);
+        elsewhere.data.routine['other-routine'] = { id: 'other-routine', title: 'Other', tasks: [{ id: 'x', text: 'Elsewhere', completed: true }], recurringTemplates: {} };
+        elsewhere.settings = { ...(elsewhere.settings || {}), darkMode: !elsewhere.settings?.darkMode };
+        elsewhere.userProgress = { ...(elsewhere.userProgress || {}), cyclesCompleted: (elsewhere.userProgress?.cyclesCompleted || 0) + 1 };
+        onChange(elsewhere, state, { external: true });
+        if (!kept()) throw new Error('a save outside the open routine must keep the steps');
+
+        // The task-view layout is restored by undo too — cleared.
+        steps();
+        const layout = structuredClone(state);
+        layout.settings = { ...(layout.settings || {}), taskViewLayout: { positions: { a: { x: 1, y: 2 } } } };
+        onChange(layout, state, { external: true });
+        if (kept()) throw new Error('a layout change must clear: undo would put the old layout back');
+
+        // The other tab switched the open routine — cleared.
+        steps();
+        const switched = structuredClone(elsewhere);
+        switched.appState.activeRoutineId = 'other-routine';
+        onChange(switched, state, { external: true });
+        if (kept()) throw new Error('a switch to another routine must clear');
+
+        // The open routine's title changed — cleared.
+        steps();
+        const renamed = structuredClone(state);
+        renamed.data.routine[openId].title = 'Renamed elsewhere';
+        onChange(renamed, state, { external: true });
+        if (kept()) throw new Error('a rename of the open routine must clear');
     });
 
     await test('REGRESSION: when undo repairs a routine mismatch it still records the step that revealed it', async () => {

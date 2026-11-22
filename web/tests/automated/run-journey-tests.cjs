@@ -3273,10 +3273,29 @@ async function journeyRecurringTwoTabs(browser, baseURL) {
                 record(`${label}: nothing is spawned before it is due`, before && before.copies === 0,
                     `already ${JSON.stringify(before)} before the due time`);
                 await A.waitForTimeout(dueInMs + 1000);
+                // Count each tab's saves from here. Before the spawn ran under a
+                // cross-tab lock, BOTH tabs spawned and saved, and the later
+                // whole-document save replaced the earlier one — harmless when
+                // both held the same task, but anything else the first tab had
+                // just saved went with it. Now the second tab waits, adopts the
+                // first one's save and has nothing left to write.
+                await Promise.all([A, B].map(p => p.evaluate(() => {
+                    window.__dataWrites = 0;
+                    const setItem = Storage.prototype.setItem;
+                    Storage.prototype.setItem = function (key, value) {
+                        if (this === localStorage && key === 'miniCycleData') window.__dataWrites++;
+                        return setItem.call(this, key, value);
+                    };
+                })));
                 // Both tabs wake in the same instant.
                 await Promise.all([A, B].map(p => p.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))));
             }
             await A.waitForTimeout(5000);   // let both catch-ups and their saves land
+            if (wakeTogether) {
+                const writes = await Promise.all([A, B].map(p => p.evaluate(() => window.__dataWrites)));
+                record(`${label}: only one tab writes the spawn`, writes[0] + writes[1] === 1,
+                    `saves after waking: tab A ${writes[0]}, tab B ${writes[1]}`);
+            }
 
             const stored = await readStored(A);
             record(`${label}: storage holds the task exactly once`, stored && stored.copies === 1,

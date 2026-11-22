@@ -1020,6 +1020,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-data">
+                        <p id="${DOM_IDS.STORAGE_STATUS}" class="settings-note" hidden></p>
                         <button id="backup-mini-cycles" class="btn btn-primary settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
                         <button id="restore-mini-cycles" class="btn btn-primary settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
                         <button id="${DOM_IDS.AUTO_BACKUPS_TOGGLE}" class="btn btn-secondary settings-btn settings-btn-ghost" aria-expanded="false" aria-controls="${DOM_IDS.AUTO_BACKUPS}"><i class="fas fa-history"></i> <span class="${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}">${getLabel('settings.autoBackupsShow')}</span></button>

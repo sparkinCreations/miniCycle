@@ -1002,6 +1002,46 @@ export async function runAppStateTests(resultsDiv, isPartOfSuite = false) {
         if (metas[metas.length - 1]?.external !== true) throw new Error(`the adoption was not marked external: ${JSON.stringify(metas)}`);
     });
 
+    await test('adoptNewerStoredData takes another tab\'s newer save before its storage event arrives', async () => {
+        // The recurring watcher calls this once it holds the cross-tab lock: the
+        // other tab's write is already in storage, its event may not be here yet.
+        const stateManager = createStateManager();
+        await stateManager.init();
+        if (!stateManager.data.metadata) stateManager.data.metadata = {};
+        stateManager.data.metadata.lastModified = 1000000;
+        stateManager.data.settings.theme = 'ours';
+        const metas = [];
+        const listener = (_n, _o, meta) => metas.push(meta);
+        stateManager.subscribe('adopt-newer-test', listener);
+        metas.length = 0;
+        const doc = (lastModified, theme) => JSON.stringify({
+            schemaVersion: "2.6",
+            metadata: { lastModified, lastModifiedBy: 'tab-other' },
+            settings: { theme },
+            data: { routine: {} },
+            appState: { activeRoutineId: null }
+        });
+        try {
+            localStorage.setItem('miniCycleData', doc(900000, 'older-elsewhere'));
+            if (stateManager.adoptNewerStoredData() !== false) throw new Error('an OLDER stored save must not be adopted');
+            if (stateManager.data.settings.theme !== 'ours') throw new Error('state changed on an older save');
+
+            localStorage.setItem('miniCycleData', doc(2000000, 'newer-elsewhere'));
+            if (stateManager.adoptNewerStoredData() !== true) throw new Error('a newer stored save must be adopted');
+            if (stateManager.data.settings.theme !== 'newer-elsewhere') throw new Error('the newer save was not adopted');
+            if (metas[metas.length - 1]?.external !== true) throw new Error('the adoption must reach subscribers marked external');
+
+            // Its storage event arriving afterwards finds nothing newer.
+            if (stateManager.adoptNewerStoredData() !== false) throw new Error('the same save must not be adopted twice');
+
+            // An empty store never drops in-memory state from a read.
+            localStorage.removeItem('miniCycleData');
+            if (stateManager.adoptNewerStoredData() !== false || !stateManager.data) throw new Error('an empty store must leave the state alone');
+        } finally {
+            stateManager.unsubscribe('adopt-newer-test', listener);
+        }
+    });
+
     await test('flushes a pending save on pagehide and visibilitychange→hidden (iOS unload safety)', async () => {
         // beforeunload is unreliable on iOS (not fired on background/swipe-away), so
         // the debounced save must also flush on pagehide and when the tab is hidden.

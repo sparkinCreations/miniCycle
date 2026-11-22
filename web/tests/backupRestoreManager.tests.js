@@ -1439,6 +1439,73 @@ export async function runBackupRestoreManagerTests(resultsDiv) {
     });
 
     // ============================================
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Storage status line</h4>';
+
+    await test('the Data Management line says whether the browser may clear the data', async () => {
+        const { DOM_IDS } = await import('../modules/core/constants.js');
+        const { getLabel } = await import('../modules/labels/labelResolver.js');
+        // The suite may run inside the app, whose Settings already has the line.
+        const existing = document.getElementById(DOM_IDS.STORAGE_STATUS);
+        const line = existing || document.createElement('p');
+        const saved = existing ? { hidden: existing.hidden, text: existing.textContent } : null;
+        if (!existing) {
+            line.id = DOM_IDS.STORAGE_STATUS;
+            line.hidden = true;
+            document.body.appendChild(line);
+        }
+        const wire = (persistence) => mod.setBackupRestoreManagerDependencies({
+            AppState: { get: () => null },
+            showNotification: () => {},
+            showConfirmationModal: () => {},
+            safeAddEventListener: () => {},
+            StoragePersistence: persistence === undefined ? undefined : () => persistence
+        });
+        try {
+            const cases = [
+                [{ protectionLevel: () => 'protected', suggestsHomeScreen: () => true }, 'settings.storageProtected'],
+                [{ protectionLevel: () => 'unprotected', suggestsHomeScreen: () => false }, 'settings.storageUnprotected'],
+                [{ protectionLevel: () => 'unprotected', suggestsHomeScreen: () => true }, 'settings.storageUnprotectedHomeScreen']
+            ];
+            for (const [persistence, key] of cases) {
+                wire(persistence);
+                mod.refreshStorageStatus();
+                if (line.hidden) throw new Error(`${key}: the line should show`);
+                if (line.textContent !== getLabel(key)) throw new Error(`expected ${key}, got "${line.textContent}"`);
+            }
+            // The iOS / Android / desktop builds, and a boot without the module: hidden.
+            wire({ protectionLevel: () => 'app', suggestsHomeScreen: () => false });
+            mod.refreshStorageStatus();
+            if (!line.hidden) throw new Error('the app builds should not show the browser line');
+            wire(undefined);
+            line.hidden = false;
+            mod.refreshStorageStatus();
+            if (!line.hidden) throw new Error('without storagePersistence the line should stay hidden');
+
+            // The storage module's first answer arrives as an event BEFORE the
+            // loader registers it (Settings loads a phase earlier): the line is
+            // drawn from the event itself, with no instance to look up.
+            const { EVENTS } = await import('../modules/core/constants.js');
+            let listener = null;
+            mod.setBackupRestoreManagerDependencies({
+                AppState: { get: () => null }, showNotification: () => {}, showConfirmationModal: () => {},
+                safeAddEventListener: (el, type, fn) => { if (el === document && type === EVENTS.STORAGE_PERSISTENCE_CHANGED) listener = fn; }
+            });
+            mod.setupStorageStatus();
+            if (typeof listener !== 'function') {
+                // Wired once per page: an earlier setup (the app's own Settings) already holds it.
+                listener = null;
+            } else {
+                listener(new CustomEvent(EVENTS.STORAGE_PERSISTENCE_CHANGED, { detail: { persisted: false, level: 'unprotected', homeScreen: true } }));
+                if (line.hidden || line.textContent !== getLabel('settings.storageUnprotectedHomeScreen')) {
+                    throw new Error(`the event's own answer should draw the line, got "${line.textContent}"`);
+                }
+            }
+        } finally {
+            if (saved) { line.hidden = saved.hidden; line.textContent = saved.text; } else line.remove();
+        }
+    });
+
+    // ============================================
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

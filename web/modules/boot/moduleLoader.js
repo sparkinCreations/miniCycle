@@ -1571,6 +1571,8 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         BackupManager: () => deps.storage?.backupManager,
         // The device backup-folder INSTANCE (desktop / Android daily files)
         BackupFolder: () => deps.storage?.backupFolder,
+        // The persistent-storage INSTANCE (protectionLevel / suggestsHomeScreen)
+        StoragePersistence: () => deps.storage?.storagePersistence,
 
         // ─── Settings ───
         resetDefaultRecurringSettings: (...args) => deps.ui?.settingsManager?.resetDefaultRecurringSettings?.(...args),

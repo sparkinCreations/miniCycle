@@ -128,6 +128,65 @@ export async function runStoragePersistenceTests(resultsDiv) {
         });
     });
 
+    resultsDiv.innerHTML += '<h4 class="test-section">🛡️ Protection level (Settings line, reminder cadence)</h4>';
+
+    await test('protectionLevel reads unprotected until the browser grants, then protected', async () => {
+        let grant = false;
+        await withMockStorage({
+            persisted: async () => grant,
+            persist: async () => grant
+        }, async () => {
+            const sp = new StoragePersistence();
+            if (sp.protectionLevel() !== 'unprotected') throw new Error('unknown must read as unprotected');
+            await sp.init();
+            if (sp.protectionLevel() !== 'unprotected') throw new Error('a refused grant must read as unprotected');
+            grant = true;
+            await sp.getStatus(); // re-checks persisted()
+            if (sp.protectionLevel() !== 'protected') throw new Error('a later grant must read as protected');
+            sp.destroy();
+        });
+    });
+
+    await test('an unsupported Storage API reads as unprotected', async () => {
+        await withMockStorage(undefined, async () => {
+            const sp = new StoragePersistence();
+            await sp.init();
+            if (sp.protectionLevel() !== 'unprotected') throw new Error('no Storage API means the browser may clear the data');
+            sp.destroy();
+        });
+    });
+
+    await test('a changed answer is announced for Settings to redraw; an unchanged one is not', async () => {
+        const { EVENTS } = await import('../modules/core/constants.js');
+        const seen = [];
+        const onChange = (e) => seen.push(e.detail?.persisted);
+        document.addEventListener(EVENTS.STORAGE_PERSISTENCE_CHANGED, onChange);
+        let grant = false;
+        try {
+            await withMockStorage({
+                persisted: async () => grant,
+                persist: async () => grant
+            }, async () => {
+                const sp = new StoragePersistence();
+                await sp.init();                // null → false: one event
+                await sp.getStatus();           // false → false: none
+                grant = true;
+                await sp.getStatus();           // false → true: one event
+                sp.destroy();
+            });
+        } finally {
+            document.removeEventListener(EVENTS.STORAGE_PERSISTENCE_CHANGED, onChange);
+        }
+        if (JSON.stringify(seen) !== JSON.stringify([false, true])) throw new Error(`expected [false,true], got ${JSON.stringify(seen)}`);
+    });
+
+    await test('suggestsHomeScreen is false on a desktop browser', () => {
+        // The test runner is desktop Chromium: not an iPhone or iPad.
+        const sp = new StoragePersistence();
+        if (sp.suggestsHomeScreen() !== false) throw new Error('only an iPhone / iPad tab gets the Home Screen suggestion');
+        sp.destroy();
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

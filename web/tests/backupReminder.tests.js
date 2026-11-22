@@ -108,7 +108,7 @@ export async function runBackupReminderTests(resultsDiv) {
 
     const DAY = 24 * 60 * 60 * 1000;
 
-    function wire({ settings = {}, cyclesCompleted = 0, totalTasksCompleted = 0, downloadBackupFile, saveBackupFileAs } = {}) {
+    function wire({ settings = {}, cyclesCompleted = 0, totalTasksCompleted = 0, downloadBackupFile, saveBackupFileAs, protection, homeScreen = false } = {}) {
         const state = { settings: { ...settings }, userProgress: { cyclesCompleted, totalTasksCompleted } };
         const modalCalls = [];
         const deps = {
@@ -118,6 +118,8 @@ export async function runBackupReminderTests(resultsDiv) {
         };
         if (downloadBackupFile) deps.downloadBackupFile = downloadBackupFile;
         if (saveBackupFileAs) deps.saveBackupFileAs = saveBackupFileAs;
+        // StoragePersistence arrives as a getter (depMappings), like BackupFolder.
+        if (protection) deps.StoragePersistence = () => ({ protectionLevel: () => protection, suggestsHomeScreen: () => homeScreen });
         mod.setBackupReminderDependencies(deps);
         return { state, modalCalls };
     }
@@ -156,6 +158,50 @@ export async function runBackupReminderTests(resultsDiv) {
         w = wire({ settings: { lastBackupReminderShown: now - 10 * DAY }, cyclesCompleted: 3 });
         mod.checkBackupReminderOnBoot();
         if (w.modalCalls.length !== 0) throw new Error('reminder must not show before the 14-day cadence');
+    });
+
+    await test('boot reminder comes after 7 days, not 14, while the browser may clear the data', () => {
+        const now = Date.now();
+        let w = wire({ settings: { lastBackupReminderShown: now - 8 * DAY }, cyclesCompleted: 3, protection: 'unprotected' });
+        mod.checkBackupReminderOnBoot();
+        if (w.modalCalls.length !== 1) throw new Error('8 days without persistent storage should remind');
+
+        w = wire({ settings: { lastBackupReminderShown: now - 6 * DAY }, cyclesCompleted: 3, protection: 'unprotected' });
+        mod.checkBackupReminderOnBoot();
+        if (w.modalCalls.length !== 0) throw new Error('6 days is still inside the 7-day cadence');
+
+        // Protected, and the iOS / Android / desktop builds, keep the 14-day cadence.
+        for (const protection of ['protected', 'app']) {
+            w = wire({ settings: { lastBackupReminderShown: now - 8 * DAY }, cyclesCompleted: 3, protection });
+            mod.checkBackupReminderOnBoot();
+            if (w.modalCalls.length !== 0) throw new Error(`"${protection}" must keep the 14-day cadence`);
+        }
+        if (mod.backupReminderIntervalDays() !== 14) throw new Error('interval should read 14 days when protected');
+    });
+
+    await test('the reminder suggests the Home Screen only on an unprotected iPhone / iPad tab', async () => {
+        // Same module instance backupReminder.js reads (its import carries no ?v=).
+        const { getLabel } = await import('../modules/labels/labelResolver.js');
+        const cases = [
+            { protection: 'unprotected', homeScreen: true, expectTip: true },
+            { protection: 'unprotected', homeScreen: false, expectTip: false },
+            { protection: 'protected', homeScreen: true, expectTip: false }
+        ];
+        let plain = null;
+        let tip = null;
+        for (const c of cases) {
+            const w = wire({ settings: { lastBackupReminderShown: 0 }, cyclesCompleted: 3, protection: c.protection, homeScreen: c.homeScreen });
+            mod.checkBackupReminderOnBoot();
+            if (w.modalCalls.length !== 1) throw new Error('precondition: reminder should show');
+            const message = w.modalCalls[0].message;
+            if (c.expectTip) tip = message; else plain = plain || message;
+            const mentionsHomeScreen = /Home Screen/.test(message);
+            if (mentionsHomeScreen !== c.expectTip) {
+                throw new Error(`${c.protection}, homeScreen=${c.homeScreen}: Home Screen tip ${mentionsHomeScreen ? 'shown' : 'missing'}`);
+            }
+        }
+        if (plain !== getLabel('notify.backupReminderMessage')) throw new Error('the plain case should keep the usual message');
+        if (!/restore/i.test(tip)) throw new Error('the tip must say to restore the backup in the Home Screen app — it starts empty');
     });
 
     await test('boot reminder respects the new-user guard (0 completed cycles)', () => {

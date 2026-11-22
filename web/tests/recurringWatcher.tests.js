@@ -675,6 +675,117 @@ export async function runRecurringWatcherTests(resultsDiv) {
     mod.resetWatcherState();
 
     // ── results ──────────────────────────────────────────────────────────────
+    // ── Cross-tab lock ───────────────────────────────────────────────────────
+    // Two tabs used to wake together and both spawn the same task (one copy
+    // thanks to the shared id, but the second save threw its own away and
+    // warned "changed in another tab"). The spawn now runs under a Web Lock and
+    // re-reads after adopting the other tab's newer save.
+    resultsDiv.innerHTML += '<h4 class="test-section">🔒 Cross-tab lock</h4>';
+
+    const { LOCK_NAMES } = await import('../modules/core/constants.js');
+    const withLocks = async (locks, fn) => {
+        const orig = Object.getOwnPropertyDescriptor(navigator, 'locks');
+        Object.defineProperty(navigator, 'locks', { configurable: true, get: () => locks });
+        try { return await fn(); } finally {
+            if (orig) Object.defineProperty(navigator, 'locks', orig);
+            else delete navigator.locks;
+        }
+    };
+
+    await test('the spawn runs inside the shared recurring lock', async () => {
+        const requested = [];
+        let insideLock = false;
+        let spawnedInsideLock = null;
+        const AppState = cycleState({ r1: dueTemplate('r1') }, []);
+        const update = AppState.update;
+        AppState.update = async (producer) => { spawnedInsideLock = insideLock; return update(producer); };
+        const locks = {
+            request: async (name, cb) => {
+                requested.push(name);
+                insideLock = true;
+                try { return await cb(); } finally { insideLock = false; }
+            }
+        };
+        await withLocks(locks, async () => {
+            mod.setRecurringWatcherDependencies(makeDeps({ AppState }));
+            const r = await mod.catchUpMissedRecurringTasks();
+            eq(r.added, 1, 'added');
+        });
+        eq(JSON.stringify(requested), JSON.stringify([LOCK_NAMES.RECURRING_SPAWN]), 'lock requests');
+        eq(spawnedInsideLock, true, 'the save happened while the lock was held');
+    });
+
+    await test('inside the lock it adopts the other tab\'s save and skips a task that tab already spawned', async () => {
+        // This tab read the template as due; the other tab spawned it and
+        // advanced the template, and its storage event has not arrived yet.
+        const template = dueTemplate('r1');
+        const AppState = cycleState({ r1: template }, []);
+        let adopted = 0;
+        AppState.adoptNewerStoredData = () => {
+            adopted++;
+            const s = AppState.get().data.routine.c1;
+            s.tasks.push({ id: 'r1', text: template.text, completed: false });
+            s.recurringTemplates.r1 = { ...template, occurrenceCount: 1, nextScheduledOccurrence: NOW + 60000 };
+            return true;
+        };
+        let updates = 0;
+        const update = AppState.update;
+        AppState.update = async (producer) => { updates++; return update(producer); };
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(adopted, 1, 'adoptNewerStoredData calls');
+        eq(r.added, 0, 'added');
+        eq(updates, 0, 'saves');
+        eq(AppState.get().data.routine.c1.tasks.length, 1, 'copies of the task');
+    });
+
+    await test('a spawned task has the full stored shape, so the loader\'s repair pass saves nothing', async () => {
+        // A missing dueDate / schemaVersion was "repaired" and saved by the next
+        // render; with two tabs open the other tab's redraw wrote the document back.
+        const { repairAndCleanTasks } = await import('../modules/routine/routineLoader.js');
+        const AppState = cycleState({ r1: dueTemplate('r1') }, []); // the template has no dueDate
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState }));
+        const r = await mod.catchUpMissedRecurringTasks();
+        eq(r.added, 1, 'added');
+        const routine = structuredClone(AppState.get().data.routine.c1);
+        routine.title = 'Routine'; routine.cycleCount = 0; routine.autoReset = true; routine.deleteCheckedTasks = false;
+        const task = routine.tasks[0];
+        eq(task.dueDate, null, 'dueDate');
+        eq(task.schemaVersion, 2, 'schemaVersion');
+        eq(typeof task.remindersEnabled, 'boolean', 'remindersEnabled type');
+        const repair = repairAndCleanTasks(routine, 'c1', { quiet: true });
+        eq(repair.wasModified, false, 'repair pass changed the spawned task');
+    });
+
+    await test('without Web Locks (Safari before 15.4) it still spawns, after adopting', async () => {
+        const AppState = cycleState({ r1: dueTemplate('r1') }, []);
+        let adopted = 0;
+        AppState.adoptNewerStoredData = () => { adopted++; return false; };
+        await withLocks(undefined, async () => {
+            mod.setRecurringWatcherDependencies(makeDeps({ AppState }));
+            const r = await mod.catchUpMissedRecurringTasks();
+            eq(r.added, 1, 'added');
+        });
+        eq(adopted, 1, 'adoptNewerStoredData calls');
+    });
+
+    await test('an overslept watch hands over to catch-up without waiting on its own lock', async () => {
+        // The watch calls catch-up when it overslept; a Web Lock is not
+        // re-entrant, so taking it in both entry points would hang here.
+        mod.resetWatcherState?.();
+        let clock = NOW;
+        const AppState = cycleState({ r1: dueTemplate('r1') }, []);
+        mod.setRecurringWatcherDependencies(makeDeps({ AppState, now: () => clock }));
+        await mod.watchRecurringTasks();               // first tick records the time
+        AppState.get().data.routine.c1.tasks = [];      // nothing spawned yet for this check
+        clock += 60 * 60 * 1000;                        // an hour later: overslept
+        const done = await Promise.race([
+            mod.watchRecurringTasks().then(() => 'done'),
+            new Promise(r => setTimeout(() => r('hung'), 2000))
+        ]);
+        eq(done, 'done', 'overslept watch');
+    });
+
     const percentage = total.count ? Math.round((passed.count / total.count) * 100) : 0;
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {

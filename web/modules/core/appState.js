@@ -580,6 +580,35 @@ class MiniCycleState {
     }
 
     /**
+     * Adopt another tab's newer save NOW, without waiting for its storage event.
+     *
+     * The storage event reaches this tab some time after the other tab's write
+     * returns. Code that has just won a cross-tab lock (the recurring watcher,
+     * recurringWatcher.js) must decide from what is in storage at that moment,
+     * or it acts on the view from before the other tab's work. This runs the
+     * storage-event handler on the stored document, so it adopts on exactly the
+     * same terms: only a newer, valid, same-schema document, subscribers told
+     * with { external: true }. The late event then finds nothing newer.
+     * @returns {boolean} true when a newer document was adopted
+     */
+    adoptNewerStoredData() {
+        if (typeof this._storageHandler !== 'function') return false;
+        let stored = null;
+        try {
+            stored = this.deps.storage.getItem(STORAGE_KEYS.DATA);
+        } catch (error) {
+            console.warn('⚠️ Multi-tab sync: could not read storage to check for a newer save', error);
+            return false;
+        }
+        // An empty store is the reset case, which the real event handles; never
+        // drop in-memory state from a read.
+        if (!stored) return false;
+        const before = this.data;
+        this._storageHandler({ key: STORAGE_KEYS.DATA, newValue: stored });
+        return this.data !== before;
+    }
+
+    /**
      * Guarantee an adopted state object carries a metadata block. update()
      * hard-dereferences data.metadata.lastModified, but validateStateStructure
      * doesn't require metadata — so restored/salvaged/external data without it

@@ -723,6 +723,9 @@ export const DEFAULT_LABELS = deepFreeze({
         backupNamePlaceholder:   'My Backup',
         backupReminderTitle:     'Back up your routines?',
         backupReminderMessage:   'Your routines are stored on this device only. A backup keeps them safe if your browser data is cleared.',
+        // iPhone / iPad browser tab without persistent storage (backupReminder.backupReminderMessage).
+        // A Home Screen app starts with its own, empty storage — hence "restore it there".
+        backupReminderMessageHomeScreen: 'Your routines are stored on this device only, and Safari can clear a website\'s data after seven days of browsing without a visit. A backup keeps them safe. Adding miniCycle to your Home Screen also avoids this; it starts empty there, so restore your backup in it.',
         backupReminderConfirm:   'Backup All Routines',
         backupReminderDismiss:   'Not Now',
         backupCreated:           'Backup created successfully!',
@@ -1560,6 +1563,10 @@ export const DEFAULT_LABELS = deepFreeze({
         autoBackupKindAuto:     'Automatic backup, daily',
         autoBackupKindFile:     'Backup file in {folder}',
         autoBackupFileMeta:     '{date} · {size} KB',
+        // Persistent-storage line at the top of Data Management (backupRestoreManager.refreshStorageStatus).
+        storageProtected:       'Storage is protected: your browser has agreed not to clear miniCycle\'s data on its own.',
+        storageUnprotected:     'Storage is not protected: your browser may clear miniCycle\'s data if the device runs low on space or the site goes unused. Back up regularly to keep a copy.',
+        storageUnprotectedHomeScreen: 'Storage is not protected: Safari can clear a website\'s data after seven days of browsing without a visit. Adding miniCycle to your Home Screen avoids that. It starts empty there, so back up here first and restore the file in the Home Screen app.',
         autoBackupsFolderNote:  'A backup file is also written once a day to {folder} on this device. Those files stay even if the app is removed or its storage is cleared, and nothing leaves the device.',
         autoBackupsFolderNoteIos: 'A backup file is also written once a day to {folder}, which you can open in the Files app. Those files stay if the app\'s storage is cleared but are removed with the app, and nothing leaves the device.',
         autoBackupMeta:         '{date} · {count} {routines} · {size} KB',

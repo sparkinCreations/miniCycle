@@ -788,7 +788,9 @@ export class MiniCycleDueDates {
             if (registration) {
                 await registration.showNotification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON, tag: SYSTEM_NOTIFICATIONS.TAG_DUE_DATE });
             } else {
-                new Notification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON });
+                // Same tag on the fallback: with two tabs open each posts this
+                // slot, and a shared tag makes the second replace the first.
+                new Notification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON, tag: SYSTEM_NOTIFICATIONS.TAG_DUE_DATE });
             }
         } catch (e) {
             console.warn('⚠️ Due-date system notification failed:', e);

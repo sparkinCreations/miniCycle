@@ -497,7 +497,7 @@ export const MODULE_MANIFESTS = {
         // entry because featureBoot assigns it directly
         // (`deps.utils.showChoiceModal = …`) during the early notifications init,
         // which is why the depMappings route resolves but nothing declares it.
-        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'BackupFolder', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
+        optionalDeps: ['clearAllUndoHistory', 'closeUndoIndexedDB', 'initUndoIndexedDB', 'loadMiniCycle', 'showLoader', 'hideLoader', 'closeAllModals', 'hasActiveNotifications', 'hideMainMenu', 'BackupManager', 'BackupFolder', 'StoragePersistence', 'DataValidator', 'calculateNextOccurrence', 'disableDebug', 'enableDebug', 'isDebug', 'handleTaskListMovement', 'organizeCompletedTasks', 'onCycleCreated', 'refreshTaskListUI', 'resetDefaultRecurringSettings', 'setupDarkModeToggle', 'setupQuickDarkToggle', 'showChoiceModal', 'showConfirmationModal', 'showPromptModal', 'showSettingsTourNotification', 'startGuidedTour', 'enableTourPrompts', 'toggleHoverTaskOptions', 'updateCompletedTasksCount', 'updateHelpWindow', 'updateMoveArrowsVisibility', 'updateProgressBar', 'updateStatsPanel', 'vocabThemeManager'],
         provides: ['syncCurrentSettingsToStorage', 'exportMiniCycleData', 'downloadBackupFile', 'saveBackupFileAs', 'shareCurrentRoutine'],
         provideInstance: 'settingsManager',
         api: 'ui',
@@ -591,7 +591,8 @@ export const MODULE_MANIFESTS = {
 
     // Requests durable (non-evictable) origin storage. Dependency-free side-effect
     // module: its init() checks/requests persistence and arms a one-shot gesture
-    // retry. provideInstance exposes getStatus() for a future settings UI.
+    // retry. provideInstance exposes the instance as StoragePersistence (depMappings):
+    // Settings shows its protectionLevel(), backupReminder shortens its cadence by it.
     storagePersistence: {
         path: '../storage/storagePersistence.js',
         phase: PHASES.FEATURES,
@@ -826,7 +827,9 @@ export const MODULE_MANIFESTS = {
         path: '../features/backupReminder.js',
         phase: PHASES.FEATURES,
         requires: ['AppState', 'showConfirmationModal'],
-        optionalDeps: ['showNotification', 'saveBackupFileAs', 'downloadBackupFile'],
+        // StoragePersistence: reminders come every 7 days instead of 14 while the
+        // browser may clear the data, with a Home Screen tip on iPhone / iPad.
+        optionalDeps: ['showNotification', 'saveBackupFileAs', 'downloadBackupFile', 'StoragePersistence'],
         provides: ['checkBackupReminderOnBoot', 'checkBackupReminderOnCycleComplete', 'checkBackupReminderOnTaskClear'],
         api: 'features',
         optional: true,

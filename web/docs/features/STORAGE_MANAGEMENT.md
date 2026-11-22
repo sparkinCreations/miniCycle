@@ -86,13 +86,26 @@ asks the browser for durable storage via the Storage API:
   `navigator.storage.persist()` once, then re-attempts on the **first user gesture** (many browsers only
   grant after engagement). Chrome decides silently on heuristics (install / engagement); Firefox may
   prompt; Safari ties it to home-screen install.
-- It's **best-effort and silent** — a denied grant isn't actionable, so outcomes are logged, not shown.
-  The `.mcyc` export + backup-reminder system remains the user-facing durability net.
-- `getStatus()` exposes `{ supported, persisted, estimate }` live (nothing consumes it yet — it's there
-  for a future settings display), and is the intended path to fold real `navigator.storage.estimate()`
-  quota into the storage bar (which today measures usage manually via `getLocalStorageUsedBytes()`).
+- The grant is **best-effort, and shown** (Nov 2026). `protectionLevel()` answers `'protected'`,
+  `'unprotected'` (refused, unanswered, or no Storage API) or `'app'` (the iOS, Android and desktop
+  builds, which write a daily backup file instead). Two places read it:
+  - **Settings → Data Management** opens with a line saying whether the data is protected
+    (`backupRestoreManager.refreshStorageStatus`, `#storage-status`; hidden in the app builds).
+  - **The backup reminder** comes every `LIMITS.BACKUP_REMINDER_DAYS_UNPROTECTED` (7) days instead of
+    `LIMITS.BACKUP_REMINDER_DAYS` (14) while unprotected (`backupReminder.js`).
+- On an iPhone or iPad outside a Home Screen app (`suggestsHomeScreen()`), both also suggest adding
+  miniCycle to the Home Screen: WebKit clears a site's storage after seven days of browser use without a
+  visit, and a Home Screen app counts only its own days of use. A Home Screen app starts with its OWN,
+  empty storage, so the wording says to back up first and restore in it.
+- `EVENTS.STORAGE_PERSISTENCE_CHANGED` fires on `document` when the answer changes, carrying
+  `{ persisted, level, homeScreen }`. It carries the answer itself because the first one fires during
+  `init()`, before the module loader registers the instance — Settings (phase 6) builds its line before
+  this phase-7 module starts, so looking the instance up then finds nothing.
+- `getStatus()` exposes `{ supported, persisted, estimate }` live, and is the intended path to fold real
+  `navigator.storage.estimate()` quota into the storage bar (which today measures usage manually via
+  `getLocalStorageUsedBytes()`).
 
-Dependency-free side-effect module; see **ADR-012**.
+No injected dependencies (the platform checks are plain imports); see **ADR-012**.
 
 ### System-written backups (outside the user budget)
 

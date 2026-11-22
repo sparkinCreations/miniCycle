@@ -462,9 +462,17 @@ backup-reminder system stays the user-facing durability net.
 **Consequences.**
 - (+) Saved routines survive eviction on browsers that grant (installed PWAs / engaged users especially).
 - (−) Best-effort only — no guarantee; unsupported or low-engagement contexts still rely on backups.
-  Status is queryable via `getStatus()` but not yet shown anywhere.
+  Status is queryable via `getStatus()`.
 - Complements the ADR-003 durability guarantees and the unload-flush; details in
   `features/STORAGE_MANAGEMENT.md`.
+
+**Amended 2026-11-21.** The outcome is now shown — not as a prompt, but where it is actionable.
+Feedback pointed out that Safari on iOS commonly refuses the grant and then clears a tab's storage after
+seven days of browsing without a visit; the user CAN act on that (back up more often, or add miniCycle to
+the Home Screen, whose storage WebKit does not clear that way). So Settings → Data Management states
+whether storage is protected (with the Home Screen route on an iPhone / iPad tab), and the backup
+reminder comes every 7 days instead of 14 while unprotected. Still no prompt on boot, and still no
+attempt to "enable" persistence for the user — the rejected alternative above stands.
 
 ---
 

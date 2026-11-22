@@ -573,22 +573,65 @@ function relabelOnRekey(producer, globalState) {
 const _otherTabSubscriptions = new WeakSet();
 
 /**
- * Drop this tab's undo/redo steps when state is replaced by another tab's save.
+ * What an undo or redo step writes back, for one routine (see the restore in
+ * performStateBasedUndo): the routine's own fields plus the global task-view
+ * layout. userProgress is adjusted by a DIFFERENCE between two steps, so a
+ * change to it elsewhere is not overwritten and is left out.
+ * @param {Object|null} state
+ * @param {string} routineId
+ * @returns {string|null} comparable text; null when the routine is not there
+ */
+function undoRestorableText(state, routineId) {
+  const routine = state && routineId ? getRoutine(state, routineId) : null;
+  if (!routine) return null;
+  return JSON.stringify([
+    routine.tasks || [], routine.recurringTemplates || {}, routine.title || '',
+    routine.autoReset, routine.deleteCheckedTasks, routine.cycleCount || 0,
+    routine.theme || 'classic', routine.clearedTasks || null,
+    state.settings?.taskViewLayout || null
+  ]);
+}
+
+/**
+ * Whether another tab's save changed anything this tab's undo would put back.
+ * It did when the open routine changed, or that routine's restorable fields
+ * did. A save that only touched another routine, a setting or the stats leaves
+ * every step still valid.
+ * @param {Object|null} newState
+ * @param {Object|null} oldState
+ * @returns {boolean}
+ */
+function otherTabTouchedUndoableState(newState, oldState) {
+  const routineId = getActiveRoutineId(oldState);
+  if (!routineId || routineId !== getActiveRoutineId(newState)) return true;
+  const before = undoRestorableText(oldState, routineId);
+  return before === null || before !== undoRestorableText(newState, routineId);
+}
+
+/**
+ * Drop this tab's undo/redo steps when another tab's save changed what they
+ * would restore.
  *
  * Adopting another tab's save goes around AppState.update(), so no step is
  * recorded for it — and the steps already on the stack describe this tab's
  * OLDER view. Undo then put that view back and saved it, erasing the other
  * tab's change in both tabs. Those steps no longer describe anything that can
  * be cleanly reversed, so they go.
+ *
+ * Only when the save touched what a step writes back, though: the open
+ * routine's fields and the task-view layout (otherTabTouchedUndoableState).
+ * Until Nov 2026 ANY save from another tab cleared them — a check-off in a
+ * different routine took this tab's undo away for nothing.
  * @returns {void}
  */
 function subscribeToOtherTabChanges() {
   const appState = _deps.AppState;
   if (typeof appState?.subscribe !== 'function' || _otherTabSubscriptions.has(appState)) return;
   _otherTabSubscriptions.add(appState);
-  appState.subscribe('undo-other-tab', (_newState, _oldState, meta) => {
+  appState.subscribe('undo-other-tab', (newState, oldState, meta) => {
     if (!meta?.external) return;
     if (!_deps.AppGlobalState.activeUndoStack.length && !_deps.AppGlobalState.activeRedoStack.length) return;
+    if (!otherTabTouchedUndoableState(newState, oldState)) return;
     _deps.AppGlobalState.activeUndoStack = [];
     _deps.AppGlobalState.activeRedoStack = [];
     updateUndoRedoButtons();
