@@ -1,3 +1,7 @@
+## [2.687] - 2026-11-21
+- fix(storage, tabs): show storage protection, remind sooner when unprotected, one tab spawns recurring tasks, keep undo across unrelated saves
+
+
 ## [2.686] - 2026-11-21
 - fix(tabs): another tab's save redraws this tab; redraws no longer save
 
