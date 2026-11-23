@@ -180,7 +180,7 @@ export class OnboardingManager {
         // auto-fades after its animation completes, no caller coordination
         // needed. _attachFirstSessionLifecycle calls this again later as a
         // no-op (idempotent) for the reload-mid-first-run path.
-        const splashDone = this._splash._showFirstRunSplash();
+        this._splash._showFirstRunSplash();
 
         // Attach activation listener BEFORE any await. runFirstRunFlow is
         // called fire-and-forget from runInitialSetup which then returns,
@@ -214,19 +214,23 @@ export class OnboardingManager {
         // continuous-text handoff.
         this._attachFirstSessionLifecycle();
 
-        // Cursor in Add task once the splash is gone and Focus View is up.
-        this._focusAddTaskWhenLanded(splashDone);
+        // No cursor in Add task here (Nov 2026, MJ): this path is the tour, and
+        // on a phone a focused input raises the keyboard over the card the user
+        // is meant to be reading. Focus View's own landing (its ⋯ button) stays,
+        // which raises no keyboard. "Create My First Routine" still lands in
+        // Add task (startFocusViewForNewRoutine), since typing a task is its next step.
 
         return true;
     }
 
     /**
      * Put the cursor in Add task once a first-run landing has settled, so the
-     * user can type their first task straight away (Nov 2026; "Create My First
-     * Routine" and "Show How Cycles Work"). Waits for the welcome splash to be
-     * gone (when given), for Focus View — entering it focuses its own ⋯ button,
-     * and this runs after that — and for the Add task bar to show: the learn
-     * path enters Focus View before its starter routine has rendered. Gives up
+     * user can type their first task straight away. Used by "Create My First
+     * Routine"; "Show How Cycles Work" did too until Nov 2026 (see
+     * runFirstRunFlow). Waits for the welcome splash to be gone (when given),
+     * for Focus View — entering it focuses its own ⋯ button, and this runs
+     * after that — and for the Add task bar to show, which can lag Focus View
+     * while the routine renders. Gives up
      * after UI_TIMEOUTS.FIRST_RUN_ADD_TASK_FOCUS_WAIT, and never takes focus
      * from something the user has moved it to meanwhile.
      * @param {Promise|null} [splashDone] - settles once the splash is off screen

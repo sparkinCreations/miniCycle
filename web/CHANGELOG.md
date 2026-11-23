@@ -1,3 +1,7 @@
+## [2.690] - 2026-11-23
+- fix(onboarding): no keyboard on the tour, larger cycle-demo caption
+
+
 ## [2.689] - 2026-11-23
 - fix(onboarding): tutorial card clears the logo, readable first-run text
 

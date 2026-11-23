@@ -2122,7 +2122,7 @@ export const DEFAULT_LABELS = deepFreeze({
         // - cycleDemoSubtitle → passive observation copy (slide 3, "Example of a Cycle")
         // - tryItSubtitle     → call-to-action with downward arrow pointing
         //                       at the user's sample routine (slide 4, "Try it yourself")
-        cycleDemoSubtitle: 'Complete your routine, |the cycle count grows.',
+        cycleDemoSubtitle: 'Complete your|routine, the cycle|count grows.',
         // tryItSubtitle is the right-of-divider caption used by the SVG
         // demo render. Slide 4 currently uses tryItMessage in text-mode
         // (no SVG) — the caption is kept here for any future SVG-mode
