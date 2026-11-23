@@ -2687,7 +2687,7 @@ export const DEFAULT_LABELS = deepFreeze({
     firstRun: {
         wordmark:    'miniCycle',
         descriptor:  'Routine Checklist Manager',
-        tagline:     'Repeatable checklists that reset on completion — not one-and-done to-dos.',
+        tagline:     'Repeatable checklists that reset on completion.',
         createBtn:   'Create My First Routine',
         sampleBtn:   'Load a Sample',
         learnBtn:    'Show How Cycles Work',
