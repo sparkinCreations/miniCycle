@@ -4701,6 +4701,129 @@ async function journeyUndoBottom(browser, baseURL) {
 // action after load, Undo did nothing. Real input only — a scripted .click() fires no
 // pointerdown/keydown, which is exactly what the fix listens for. Each case opens a
 // fresh app so the gesture really is the first one.
+// Sound effects (Nov 2026): "reset" when a cycle completes and the routine
+// resets, "clear" when To-Do clears its completed tasks. On for NEW users only —
+// data from before has no value and must stay silent until the user turns it on
+// in Settings → Behavior. play() is spied on, so the check is that the app ASKS
+// for the sound, not that the headless browser has speakers.
+async function journeySoundEffects(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const spy = () => {
+        window.__played = [];
+        const play = HTMLMediaElement.prototype.play;
+        HTMLMediaElement.prototype.play = function () {
+            window.__played.push(String(this.src || '').split('/').pop());
+            return play.call(this).catch(() => {});
+        };
+    };
+    const { context, page } = await openFresh(browser, baseURL, { initScript: spy });
+    const played = () => page.evaluate(() => window.__played.slice());
+    const completeAll = async () => {
+        const before = (await persisted(page)).cycleCount || 0;
+        await page.evaluate(() => {
+            const t = document.getElementById('toggleAutoReset');
+            if (t && !t.checked) { t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true })); }
+            document.querySelectorAll('#taskList li input[type="checkbox"]')
+                .forEach(cb => { if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); } });
+        });
+        await page.waitForFunction((prev) => {
+            try {
+                const p = JSON.parse(localStorage.getItem('miniCycleData'));
+                return (p.data.routine[p.appState.activeRoutineId].cycleCount || 0) > prev;
+            } catch (e) { return false; }
+        }, before, { timeout: 10000 }).catch(() => {});
+        await page.waitForTimeout(600);
+    };
+    const toggleState = async () => {
+        await page.evaluate(() => document.getElementById('open-settings')?.click());
+        await page.waitForTimeout(500);
+        const on = await page.evaluate(() => document.getElementById('toggle-sound-effects')?.checked);
+        return on;
+    };
+    try {
+        await page.waitForTimeout(1500);
+        await page.evaluate(() => document.getElementById('first-run-welcome-dismiss')?.click());
+        const files = await page.evaluate(async () => Promise.all(['assets/sounds/clear.mp3', 'assets/sounds/reset.mp3']
+            .map(async (f) => (await fetch(f)).status)));
+        record('both sound files are served', files.every(s => s === 200), `status ${JSON.stringify(files)}`);
+        const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')).settings.soundEffects);
+        record('a new user starts with sound effects on', stored === true, `settings.soundEffects = ${stored}`);
+        record('the Settings toggle shows it on', (await toggleState()) === true, 'toggle unchecked');
+        await page.evaluate(() => document.getElementById('close-settings')?.click());
+
+        await completeAll();
+        let heard = await played();
+        record('completing a cycle plays the reset sound', heard.includes('reset.mp3'), `played ${JSON.stringify(heard)}`);
+        record('and not the clear sound', !heard.includes('clear.mp3'), `played ${JSON.stringify(heard)}`);
+
+        // To-Do mode: checking a task clears it.
+        await page.evaluate(() => { window.__played.length = 0; });
+        await openMenu(page).catch(() => {});
+        await page.evaluate(() => {
+            const cb = document.getElementById('deleteCheckedTasks');
+            if (cb && !cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(800);
+        await addTask(page, 'Sound check');
+        await page.waitForFunction(() => [...document.querySelectorAll('#taskList li .task-text')].some(e => e.textContent.includes('Sound check')), null, { timeout: 8000 }).catch(() => {});
+        // One task checked, then the Clear Completed Tasks button.
+        await page.evaluate(() => window.__played.length = 0);
+        await page.evaluate(() => {
+            const li = [...document.querySelectorAll('#taskList li')].find(l => l.textContent.includes('Sound check'));
+            const cb = li?.querySelector('input[type="checkbox"]');
+            if (cb) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); }
+        });
+        await page.waitForTimeout(800);
+        await page.evaluate(() => document.getElementById('completeAll')?.click());
+        await page.waitForTimeout(2500);
+        heard = await played();
+        record('the Clear Completed Tasks button plays the clear sound', heard.includes('clear.mp3') && !heard.includes('reset.mp3'), `played ${JSON.stringify(heard)}`);
+
+        // Checking the last task in To-Do mode clears the list: clear, not reset.
+        await page.evaluate(() => window.__played.length = 0);
+        await page.evaluate(() => document.querySelectorAll('#taskList li input[type="checkbox"]')
+            .forEach(cb => { if (!cb.checked) { cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); } }));
+        await page.waitForTimeout(3000);
+        heard = await played();
+        record('finishing every task in To-Do mode plays the clear sound', heard.includes('clear.mp3') && !heard.includes('reset.mp3'), `played ${JSON.stringify(heard)}`);
+
+        // Data from before sound effects existed: silent until turned on.
+        const doc = await page.evaluate(() => JSON.parse(localStorage.getItem('miniCycleData')));
+        delete doc.settings.soundEffects;
+        const r = doc.data.routine[doc.appState.activeRoutineId];
+        r.deleteCheckedTasks = false;
+        r.autoReset = true;
+        r.tasks = [
+            { id: 'snd-a', text: 'Sound A', completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false, recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2 },
+            { id: 'snd-b', text: 'Sound B', completed: false, dueDate: null, priority: null, remindersEnabled: false, recurring: false, recurringSettings: {}, autoClear: { cycle: false, todo: true }, schemaVersion: 2 }
+        ];
+        await reloadWithSeed(page, doc);
+        await bootApp(page);
+        await page.waitForTimeout(1200);
+        await completeAll();
+        heard = await played();
+        record('existing data (no setting) stays silent', heard.length === 0, `played ${JSON.stringify(heard)}`);
+        record('…and its Settings toggle shows off', (await toggleState()) === false, 'toggle checked');
+
+        await page.evaluate(() => {
+            const t = document.getElementById('toggle-sound-effects');
+            t.checked = true; t.dispatchEvent(new Event('change', { bubbles: true }));
+        });
+        await page.waitForTimeout(400);
+        await page.evaluate(() => document.getElementById('close-settings')?.click());
+        await completeAll();
+        heard = await played();
+        record('turning the toggle on brings the sound', heard.includes('reset.mp3'), `played ${JSON.stringify(heard)}`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'sound effects: on for new users, silent for existing data, toggle in Settings', failures };
+}
+
 async function journeyFirstGestureUndo(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const openColdRoutine = async () => {
@@ -8117,6 +8240,7 @@ const JOURNEYS = [
     { name: 'switching between Home and Focus View keeps the routine card in place', fn: journeyViewSwitchKeepsCardInPlace },
     { name: 'Undo is only offered when it changes something', fn: journeyUndoBottom },
     { name: 'the first gesture after load can be undone', fn: journeyFirstGestureUndo },
+    { name: 'sound effects: on for new users, silent for existing data, toggle in Settings', fn: journeySoundEffects },
     { name: 'a due recurring task comes back once with two tabs open', fn: journeyRecurringTwoTabs },
     { name: 'another tab\'s change shows on screen, and two tabs settle', fn: journeyOtherTabScreenFollows },
     { name: 'the task bar notification goes quiet after four presses; tours bring it back', fn: journeyTaskInputNoticeQuietsAfterFour },

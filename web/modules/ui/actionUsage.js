@@ -40,6 +40,7 @@ export const ACTION_BUTTON_MAP = Object.freeze({
     [DOM_IDS.ACHIEVEMENT_BADGES_BTN]: 'achievements',
     [DOM_IDS.COMPLETE_ALL]: 'complete-all',
     [DOM_IDS.QUICK_DARK_TOGGLE]: 'dark-mode',
+    [DOM_IDS.TOGGLE_SOUND_EFFECTS]: 'sound-effects',   // Settings switch; the quick action clicks it too
     [DOM_IDS.PERSONALIZATION_BTN]: 'personalization',
     [DOM_IDS.OPEN_THEMES_PANEL]: 'themes',
     [DOM_IDS.TOGGLE_HELP_WINDOW]: 'help',
@@ -62,7 +63,7 @@ export const VALID_ACTION_IDS = Object.freeze(new Set([
     'stats', 'open-routine', 'recurring', 'reminders', 'settings', 'history',
     'achievements', 'complete-all', 'dark-mode', 'personalization', 'themes', 'help',
     'games', 'feedback', 'search', 'user-manual', 'toggle-input', 'task-options',
-    'new-routine', 'share-routine', 'export', 'task-order-game'
+    'new-routine', 'share-routine', 'export', 'task-order-game', 'sound-effects'
 ]));
 
 /**

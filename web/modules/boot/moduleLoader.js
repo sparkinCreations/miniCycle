@@ -1702,6 +1702,7 @@ function buildModuleDependencies(manifest, deps, coreResult) {
         // Backup reminder (from deps.features)
         checkBackupReminderOnBoot: (...args) => deps.features?.checkBackupReminderOnBoot?.(...args),
         checkBackupReminderOnCycleComplete: (...args) => deps.features?.checkBackupReminderOnCycleComplete?.(...args),
+        playSound: (...args) => deps.features?.playSound?.(...args),
         checkBackupReminderOnTaskClear: (...args) => deps.features?.checkBackupReminderOnTaskClear?.(...args),
 
         // Backup file download (from deps.ui via settingsManager)

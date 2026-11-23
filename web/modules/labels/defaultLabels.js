@@ -1026,7 +1026,6 @@ export const DEFAULT_LABELS = deepFreeze({
         testsModulesFailed:      '{count} module(s) have failures',
         testsModulesTimedOut:    '{count} module(s) timed out (incomplete) — re-run',
         testsBackgrounded:       'Run was backgrounded — re-run with the tab focused',
-        appMoved:                'miniCycle has moved to {app} — bookmark this page. {home} is now our home page.',   // once, for returning users sent from the old address
         testsRequireNetwork:     'Tests require a network connection — test files are always fetched fresh. Reconnect and try again.',
         reminderDisabled:        'Task reminders disabled.',
         taskReminderDisabled:    'Reminder disabled for task.',
@@ -1610,6 +1609,7 @@ export const DEFAULT_LABELS = deepFreeze({
         enableNotifications:  'Enable Notifications',
         singleKeyShortcuts:   'Single-key shortcuts',
         confirmUncheckedCycle: 'Ask before completing with unchecked tasks',
+        soundEffects:         'Sound effects',
         clearUndoHistory:     'Clear Undo History',
         // One line under each control in Settings, saying what it does (and, for
         // the resets, whether it can be undone). Oct 2026: there were none.
@@ -1625,6 +1625,7 @@ export const DEFAULT_LABELS = deepFreeze({
         enableNotificationsDesc: 'The short messages that confirm what you did. Error messages always show.',
         singleKeyShortcutsDesc: 'When you are not typing: M menu, S Settings, [ ] previous or next routine, ? shortcut list. Off by default because screen readers and voice control use single keys.',
         confirmUncheckedCycleDesc: 'In Manual Cycle, Complete Cycle asks first if any task is still unchecked.',
+        soundEffectsDesc:     'Play a short sound when a cycle resets and when To-Do clears its completed tasks.',
         resetOnboardingDesc:    'Shows the welcome screens again the next time you open the app.',
         tourPromptsDesc:        'Offers a short tour the first time you open each feature.',
         resetNotifPositionDesc: 'Moves notifications back to their usual place if you dragged them.',
@@ -2213,6 +2214,10 @@ export const DEFAULT_LABELS = deepFreeze({
         achievements:   'Achievements',
         completeAll:    'Complete / Clear',
         darkMode:       'Dark Mode',
+        // The 'sound-effects' action is named by its state (quickActionsManager._shownAs).
+        soundEffects:    'Sound Effects',
+        soundEffectsOn:  'Sound Effects: On',
+        soundEffectsOff: 'Sound Effects: Off',
         personalization: 'Personalization',
         themes:         'Themes',
         help:           'Help',

@@ -838,8 +838,8 @@ export const STORAGE_KEYS = Object.freeze({
     // and re-written when a factory reset raises that screen again in place.
     FIRST_RUN_CHOICE_SESSION: 'miniCycle_firstRunChoice',
     FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
-    // The one-time "miniCycle moved to /app" redirect (Nov 2026). Written by the
-    // product page's pages/product-returning.js, which spells the literal itself.
+    // Flag of the retired one-time "miniCycle moved to /app" redirect (2.663–2.687,
+    // removed at MJ's request). Nothing writes it now; uiBoot deletes it at boot.
     MOVED_TO_APP_NOTICE: 'miniCycle_movedToAppNotice',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
@@ -876,6 +876,22 @@ export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
  * second one waits, then sees the first one's save.
  */
 export const LOCK_NAMES = Object.freeze({ RECURRING_SPAWN: 'minicycle:recurring-spawn' });
+
+/**
+ * Sound effects (features/soundEffects.js), played when Settings → Behavior →
+ * Sound effects is on (`settings.soundEffects`: on for new users since Nov 2026;
+ * older data has no value and reads as off). Name → file, relative to the app
+ * page. MP3 only: every browser the feature gate admits plays it, at a fifth of
+ * the WAV size. The WAV / MIDI sources live outside web/ so they never ship.
+ */
+export const SOUNDS = Object.freeze({
+    CLEAR: 'clear',   // To-Do mode clears: the Clear button (cycleCompletion.showClearAnimation), or the last task checked (showCompletionAnimation in To-Do mode)
+    RESET: 'reset'    // a cycle completes and the routine resets (cycleCompletion.showCompletionAnimation, cycle modes)
+});
+export const SOUND_FILES = Object.freeze({
+    [SOUNDS.CLEAR]: 'assets/sounds/clear.mp3',
+    [SOUNDS.RESET]: 'assets/sounds/reset.mp3'
+});
 
 /**
  * The daily backup FILE the native shells write to a folder on the device
@@ -934,6 +950,10 @@ export const EVENTS = Object.freeze({
         tap): detail = { persisted, level, homeScreen } — protectionLevel() and
         suggestsHomeScreen() at that moment. Settings redraws its storage line. */
     STORAGE_PERSISTENCE_CHANGED: 'storage:persistenceChanged',
+    /** Dispatched on document after settings.soundEffects is saved — by the
+        Settings switch and by the 'sound-effects' quick action: detail =
+        { enabled }. Quick Actions redraws so the action shows the new state. */
+    SOUND_EFFECTS_CHANGED: 'sound:effectsChanged',
     FIRST_RUN_REARM: 'firstrun:rearm',          // backupRestoreManager after an IN-PLACE factory reset: the choice screen is back, the origin is empty again (inline rotators and the + shimmer re-arm on it)
     ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered', // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
     TASK_INLINE_EDIT_ENDED: 'task:inlineEditEnded' // taskCRUD when an inline task edit closes (saved, unchanged or cancelled): TaskRenderer runs the refresh it held back while the edit was open
@@ -1538,6 +1558,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_SCROLL_ON_LOAD: 'toggle-scroll-on-load',
     TOGGLE_SINGLE_KEY_SHORTCUTS: 'toggle-single-key-shortcuts',   // Settings → Behavior → Single-key shortcuts
     TOGGLE_CONFIRM_UNCHECKED_CYCLE: 'toggle-confirm-unchecked-cycle',   // Settings → Behavior → Ask before completing with unchecked tasks
+    TOGGLE_SOUND_EFFECTS: 'toggle-sound-effects',   // Settings → Behavior → Sound effects (settings.soundEffects)
     TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',

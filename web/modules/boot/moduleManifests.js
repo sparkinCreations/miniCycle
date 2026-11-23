@@ -551,7 +551,9 @@ export const MODULE_MANIFESTS = {
         path: '../progress/cycleCompletion.js',
         phase: PHASES.UI_MANAGERS,
         requires: ['appInit', 'AppState', 'showNotification'],
-        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'checkBackupReminderOnCycleComplete', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
+        // playSound: features/soundEffects (later phase), called only when a cycle
+        // resets or To-Do clears — long after boot.
+        optionalDeps: ['logHistoryEvent', 'checkAchievements', 'checkBackupReminderOnCycleComplete', 'playSound', 'vocabThemeManager', 'renderVocabThemes', 'showConfirmationModal', 'resetTasks', 'unlockMiniGame', 'updateStatsPanel'],
         provides: ['checkMiniCycle', 'updateProgressBar', 'incrementCycleCount', 'showCompletionAnimation', 'showClearAnimation', 'animateProgressBarFill', 'animateProgressBarEmpty', 'showMilestoneCelebrationOverlay'],
         api: 'progress'
     },
@@ -821,6 +823,17 @@ export const MODULE_MANIFESTS = {
         provides: [],
         provideInstance: 'uxRatings',
         api: 'features'
+    },
+
+    // Short sounds when a cycle resets and when To-Do clears (settings.soundEffects).
+    // cycleCompletion plays them from its two animations through `playSound`.
+    soundEffects: {
+        path: '../features/soundEffects.js',
+        phase: PHASES.FEATURES,
+        requires: ['AppState'],
+        provides: ['playSound'],
+        api: 'features',
+        optional: true
     },
 
     backupReminder: {

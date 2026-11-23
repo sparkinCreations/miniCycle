@@ -193,6 +193,15 @@ const ACTION_REGISTRY = Object.assign(Object.create(null), {
         section: 'More',
         handler: 'openTaskOrderGame',
         unlockKey: 'task-order-game'
+    },
+    // Turns sound effects on and off (settings.soundEffects, also in Settings →
+    // Behavior). Shown as its current state — see _shownAs — since a switch
+    // with no sound to hear has nothing else to show it worked.
+    'sound-effects': {
+        labelKey: 'quickAction.soundEffects',
+        icon: 'volume',
+        section: 'Settings',
+        handler: 'toggleSoundEffects'
     }
 });
 
@@ -224,6 +233,8 @@ const ACTION_ICONS = {
     'book': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512" fill="currentColor"><path d="M96 0C43 0 0 43 0 96V416c0 53 43 96 96 96H384h32c17.7 0 32-14.3 32-32s-14.3-32-32-32V384c17.7 0 32-14.3 32-32V32c0-17.7-14.3-32-32-32H384 96zm0 384H352v64H96c-17.7 0-32-14.3-32-32s14.3-32 32-32zm32-240c0-8.8 7.2-16 16-16H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16zm16 48H336c8.8 0 16 7.2 16 16s-7.2 16-16 16H144c-8.8 0-16-7.2-16-16s7.2-16 16-16z"/></svg>',
     'pencil': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="currentColor"><path d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.3 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2 6.2 16.4 6.2 22.6 0s6.2 16.4 0 22.6z"/></svg>',
     'paintbrush': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path fill-rule="evenodd" d="M20.599 1.5c-.376 0-.743.111-1.055.32l-5.08 3.385a18.747 18.747 0 00-3.471 2.987 10.04 10.04 0 014.815 4.815 18.748 18.748 0 002.987-3.472l3.386-5.079A1.902 1.902 0 0020.599 1.5zm-8.3 14.025a18.76 18.76 0 001.896-1.207 8.026 8.026 0 00-4.513-4.513A18.75 18.75 0 008.475 11.7l-.278.5a5.26 5.26 0 013.601 3.602l.502-.278zM6.75 13.5A3.75 3.75 0 003 17.25a1.5 1.5 0 01-1.601 1.497.75.75 0 00-.7 1.143 5.25 5.25 0 009.8-2.62 3.75 3.75 0 00-3.75-3.75z" clip-rule="evenodd"/></svg>',
+    'volume': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>',
+    'volume-off': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"/><line x1="16" y1="9" x2="22" y2="15"/><line x1="22" y1="9" x2="16" y2="15"/></svg>',
     'minus-plus': '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="1" y1="9" x2="7" y2="9"/><line x1="9" y1="18" x2="15" y2="6"/><line x1="17" y1="15" x2="23" y2="15"/><line x1="20" y1="12" x2="20" y2="18"/></svg>'
 };
 
@@ -309,6 +320,9 @@ export class QuickActionsManager {
         if (!this._openViewHandler) {
             this._openViewHandler = () => this._renderAllPanels();
             document.addEventListener(EVENTS.ROUTINE_OPEN_VIEW_CHANGED, this._openViewHandler);
+            // Sound effects turned on or off (here or in Settings): the action
+            // shows the state, so redraw with the same handler.
+            document.addEventListener(EVENTS.SOUND_EFFECTS_CHANGED, this._openViewHandler);
         }
         if (this._initialized) return;
 
@@ -644,16 +658,28 @@ export class QuickActionsManager {
     // ========================================================================
 
     /**
-     * The label and icon an action shows when they depend on a setting. Only
-     * 'open-routine' does: it opens whichever view Settings → "When you open
-     * routines, show" chose, so it is named and drawn as that view.
+     * The label and icon an action shows when they depend on a setting.
+     * 'open-routine' opens whichever view Settings → "When you open routines,
+     * show" chose, so it is named and drawn as that view. 'sound-effects' is a
+     * switch, so it shows whether sound is on or off.
      * @param {string} actionId
      * @returns {{labelKey?: string, icon?: string}} overrides, or {} for none
      */
     _shownAs(actionId) {
+        if (actionId === 'sound-effects') {
+            const on = this._soundEffectsOn();
+            return on
+                ? { labelKey: 'quickAction.soundEffectsOn', icon: 'volume' }
+                : { labelKey: 'quickAction.soundEffectsOff', icon: 'volume-off' };
+        }
         if (actionId !== 'open-routine') return {};
         const browse = this.deps.AppState.isReady() && getRoutineOpenView(this.deps.AppState.get()) === ROUTINE_OPEN_VIEW.BROWSE;
         return browse ? { labelKey: 'quickAction.browseRoutines', icon: 'cards' } : {};
+    }
+
+    /** Whether settings.soundEffects is on (no state yet = off, as soundEffects.js reads it). */
+    _soundEffectsOn() {
+        return this.deps.AppState.isReady() && this.deps.AppState.get()?.settings?.soundEffects === true;
     }
 
     _isActionAvailable(action) {
@@ -806,6 +832,26 @@ export class QuickActionsManager {
                                 btn.click();
                             } else {
                                 this._warnMissingDep(DOM_IDS.COMPLETE_ALL, actionId);
+                            }
+                        } catch (err) {
+                            console.error(`⚡ Quick action '${actionId}' failed:`, err);
+                            this.deps.showNotification?.(getLabel('notify.actionFailed'), 'error', UI_TIMEOUTS.NOTIFICATION_LONG);
+                        }
+                    }, 0);
+                    break;
+                }
+                case 'toggleSoundEffects': {
+                    // Clicks Settings → Behavior's switch, like toggleDarkMode clicks
+                    // its toggle: one handler saves the setting and announces it
+                    // (setupSoundEffectsToggle), and the delegated listener records
+                    // usage from the click (ACTION_BUTTON_MAP).
+                    setTimeout(() => {
+                        try {
+                            const toggle = document.getElementById(DOM_IDS.TOGGLE_SOUND_EFFECTS);
+                            if (toggle) {
+                                toggle.click();
+                            } else {
+                                this._warnMissingDep(DOM_IDS.TOGGLE_SOUND_EFFECTS, actionId);
                             }
                         } catch (err) {
                             console.error(`⚡ Quick action '${actionId}' failed:`, err);
@@ -1528,6 +1574,7 @@ export class QuickActionsManager {
         }
         if (this._openViewHandler) {
             document.removeEventListener(EVENTS.ROUTINE_OPEN_VIEW_CHANGED, this._openViewHandler);
+            document.removeEventListener(EVENTS.SOUND_EFFECTS_CHANGED, this._openViewHandler);
             this._openViewHandler = null;
         }
     }

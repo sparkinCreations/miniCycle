@@ -188,6 +188,10 @@ export async function runMigrationManagerTests(resultsDiv, isPartOfSuite = false
         if (data.settings.confirmUncheckedCycle !== true) {
             throw new Error(`confirmUncheckedCycle is ${data.settings.confirmUncheckedCycle}, expected true for a new user`);
         }
+        // Sound effects: on for new users only (existing data has no value = off).
+        if (data.settings.soundEffects !== true) {
+            throw new Error(`soundEffects is ${data.settings.soundEffects}, expected true for a new user`);
+        }
     });
 
     await test('includes metadata with timestamps', () => {

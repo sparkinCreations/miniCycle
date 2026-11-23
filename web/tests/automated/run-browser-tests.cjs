@@ -49,7 +49,7 @@ const ALL_MODULES = [
     'dataValidator', 'appInit', 'appState', 'helpWindowManager', 'constants', 'basicPluginSystem',
     'accessibility', 'stress', 'coreBoot', 'uiBoot', 'featureBoot',
     'labelResolver', 'defaultLabels', 'diBase', 'themes',
-    'dataSanitizer', 'tipArchive', 'titleScreen', 'storageUtils', 'storagePersistence', 'achievementsManager', 'historyManager',
+    'dataSanitizer', 'tipArchive', 'titleScreen', 'storageUtils', 'storagePersistence', 'soundEffects', 'achievementsManager', 'historyManager',
     'recurringDateUtils', 'clearedTasksManager', 'taskCompletion', 'taskCRUD', 'dailyResetManager',
     'recurringMatcher', 'recurringCalculators', 'recurringActivation',
     'preferencesManager', 'settingsUIManager', 'focusMode', 'taskSearch', 'announce',

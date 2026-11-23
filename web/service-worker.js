@@ -124,7 +124,10 @@ var CORE = [
   './assets/fonts/poppins-300.woff2',
   './assets/fonts/poppins-400.woff2',
   './assets/fonts/poppins-500.woff2',
-  './assets/fonts/poppins-600.woff2'
+  './assets/fonts/poppins-600.woff2',
+  // Sound effects (features/soundEffects.js) — cached so they play offline
+  './assets/sounds/clear.mp3',
+  './assets/sounds/reset.mp3'
 ];
 
 // Boot-critical files - MUST be precached for instant startup
@@ -318,6 +321,7 @@ var BOOT_CRITICAL = [
   './modules/ui/guidedTourDefinitions.js',
   './modules/task/dailyResetManager.js',
   './modules/features/backupReminder.js',
+  './modules/features/soundEffects.js',
   './modules/other/basicPluginSystem.js',
   // July 2026 drift fix (test:sw caught these missing):
   './modules/features/uxRatings.js',

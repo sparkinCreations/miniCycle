@@ -20,7 +20,7 @@
 
 import { createDIModule, required, optional } from '../core/diBase.js';
 import { getDefaultPriorityLevel, getLevelColor } from '../utils/priorityLevel.js';
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES, ROUTINE_OPEN_VIEW } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, FONT_SIZE, DEFAULT_PRIORITY_SWATCHES, ROUTINE_OPEN_VIEW, EVENTS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isValidHex, normalizeFontSize } from '../utils/styleValidators.js';
 import { loadPanelVisibility } from './panelVisibilityHelpers.js';
@@ -117,6 +117,7 @@ export function _resetForTesting() {
     _initialized.routineOpenViewRadios = false;
     _initialized.singleKeyShortcutsToggle = false;
     _initialized.confirmUncheckedCycleToggle = false;
+    _initialized.soundEffectsToggle = false;
     _initialized.oneSectionAtATimeToggle = false;
     _initialized.scrollToNewTaskToggle = false;
     _initialized.scrollOnLoadToggle = false;
@@ -145,6 +146,7 @@ const _initialized = {
     routineOpenViewRadios: false,
     singleKeyShortcutsToggle: false,
     confirmUncheckedCycleToggle: false,
+    soundEffectsToggle: false,
     oneSectionAtATimeToggle: false,
     scrollToNewTaskToggle: false,
     scrollOnLoadToggle: false,
@@ -1007,6 +1009,46 @@ export function setupConfirmUncheckedCycleToggle() {
 }
 
 /**
+ * Settings → Behavior → "Sound effects" (`settings.soundEffects`: on for new
+ * users since Nov 2026; data from before that has no value and reads as off).
+ * features/soundEffects reads the stored value on every sound. Re-synced on
+ * every call, wired once: same shape as setupConfirmUncheckedCycleToggle above.
+ */
+export function setupSoundEffectsToggle() {
+    const toggle = document.getElementById(DOM_IDS.TOGGLE_SOUND_EFFECTS);
+    if (!toggle) return;
+
+    const AppState = _deps.AppState();
+    toggle.checked = AppState?.isReady?.() ? AppState.get()?.settings?.soundEffects === true : false;
+
+    if (_initialized.soundEffectsToggle) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('SettingsUIManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.soundEffectsToggle = true;
+
+    toggle._changeHandler = async () => {
+        const enabled = toggle.checked;
+        const AppState = _deps.AppState();
+        if (!AppState?.isReady?.()) {
+            _deps.showNotification(getLabel('notify.settingSaveFailed'), 'error');
+            toggle.checked = !enabled;
+            return;
+        }
+        await AppState.update(state => {
+            if (!state.settings) state.settings = {};
+            state.settings.soundEffects = enabled;
+        }, true);
+        // Quick Actions shows the state on its 'sound-effects' action.
+        document.dispatchEvent(new CustomEvent(EVENTS.SOUND_EFFECTS_CHANGED, { detail: { enabled } }));
+    };
+
+    safeAddEventListener(toggle, "change", toggle._changeHandler);
+}
+
+/**
  * Setup debug mode toggle
  */
 export function setupDebugModeToggle() {
@@ -1655,6 +1697,7 @@ export function initAllToggles() {
     setupRoutineOpenViewRadios();
     setupSingleKeyShortcutsToggle();
     setupConfirmUncheckedCycleToggle();
+    setupSoundEffectsToggle();
     setupNotificationsToggle();
     applyPriorityColor();
 }

@@ -383,6 +383,38 @@ export async function runQuickActionsManagerTests(resultsDiv) {
     });
 
     // ============================================
+    await test("the 'sound-effects' action clicks the Settings switch, and shows sound as on or off", async () => {
+        // Like dark mode: the switch's own handler saves the setting and records
+        // usage, so the quick action only clicks it.
+        const state = { settings: { quickActions: baseQA(), soundEffects: true } };
+        const { inst } = freshInstance({
+            quickActions: baseQA(),
+            overrides: { AppState: { isReady: () => true, get: () => state, update: async (fn) => { fn(state); } } }
+        });
+        const shown = () => inst._shownAs('sound-effects');
+        if (shown().icon !== 'volume' || shown().labelKey !== 'quickAction.soundEffectsOn') throw new Error(`on should show the speaker: ${JSON.stringify(shown())}`);
+        state.settings.soundEffects = false;
+        if (shown().icon !== 'volume-off' || shown().labelKey !== 'quickAction.soundEffectsOff') throw new Error(`off should show the muted speaker: ${JSON.stringify(shown())}`);
+        delete state.settings.soundEffects;
+        if (shown().icon !== 'volume-off') throw new Error('no value (data from before Nov 2026) should show as off');
+
+        const { DOM_IDS } = await import('../modules/core/constants.js');
+        const existing = document.getElementById(DOM_IDS.TOGGLE_SOUND_EFFECTS);
+        const toggle = existing || Object.assign(document.createElement('input'), { type: 'checkbox', id: DOM_IDS.TOGGLE_SOUND_EFFECTS });
+        if (!existing) document.body.appendChild(toggle);
+        let clicks = 0;
+        const onClick = (e) => { clicks++; e.preventDefault(); };   // count without flipping a real setting
+        toggle.addEventListener('click', onClick);
+        try {
+            inst.executeAction('sound-effects');
+            await new Promise(r => setTimeout(r, 20));
+            if (clicks !== 1) throw new Error(`the Settings switch should be clicked once, got ${clicks}`);
+        } finally {
+            toggle.removeEventListener('click', onClick);
+            if (!existing) toggle.remove();
+        }
+    });
+
     const percentage = Math.round((passed.count / total.count) * 100);
     resultsDiv.innerHTML += `<h3>Results: ${passed.count}/${total.count} tests passed (${percentage}%)</h3>`;
     if (passed.count === total.count) {
