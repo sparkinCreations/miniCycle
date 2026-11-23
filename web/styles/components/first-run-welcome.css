@@ -770,7 +770,10 @@ html.ios-pwa {
 }
 
 .cycle-demo__subtitle {
-    font-size: 7px;
+    /* Same size as the task labels (was 7px, ~10px on a phone — too small to
+       read, Nov 2026). At 9 the right column (x 96-200) holds ~18 characters
+       a line, so the label wraps over three lines, one per task row. */
+    font-size: 9px;
     fill: currentColor;
     opacity: 0.95;
     /* Slight letter spacing so the small text breathes at SVG render scale. */
