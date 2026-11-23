@@ -3379,7 +3379,10 @@ async function journeyOtherTabScreenFollows(browser, baseURL) {
 
         // B checks a task off; it is saved WITH A's task, and A shows the check.
         const first = bRows.find(r => !r.checked);
-        await B.locator('#taskList li input[type="checkbox"]').first().click({ force: true });
+        // Through the DOM, like the rest of the journeys: B may be mid-redraw
+        // after A's save, and Playwright's click refuses a checkbox that is not
+        // visible at that instant (CI, Node 18, Nov 2026 — the 2.687 deploy).
+        await clickEl(B, '#taskList li input[type="checkbox"]');
         await A.waitForTimeout(2500);
         const after = await stored(A);
         record('tab B\'s check-off is saved alongside tab A\'s new task',
