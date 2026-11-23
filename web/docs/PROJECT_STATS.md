@@ -10,7 +10,7 @@
 > Other sites should fetch that rather than scraping this page — both come from
 > the same counter, so they cannot disagree.
 
-**Last Updated**: November 21, 2026
+**Last Updated**: November 23, 2026
 
 ---
 
@@ -18,13 +18,13 @@
 
 | Metric | Value |
 |--------|-------|
-| **App Version** | 2.687 |
+| **App Version** | 2.688 |
 | **Lite Version** | 2.097 (frozen) |
 | **Schema Version** | 2.6 |
-| **Total Modules** | 176 |
-| **Total Tests** | 4280 |
+| **Total Modules** | 177 |
+| **Total Tests** | 4288 |
 | **CSS Files** | 45 |
-| **JSDoc Blocks** | 1755 |
+| **JSDoc Blocks** | 1760 |
 | **Documentation Files** | 263 |
 
 ---
@@ -41,7 +41,7 @@
 | `routine/` | 15 | Routine management, switching, migration |
 | `recurring/` | 18 | Recurring task scheduling, panel, activation |
 | `ui/` | 47 | Modals, menus, settings, onboarding, gestures |
-| `features/` | 12 | Themes, stats, achievements, history, reminders |
+| `features/` | 13 | Themes, stats, achievements, history, reminders |
 | `utils/` | 34 | Notifications, device detection, utilities |
 | `labels/` | 4 | Default labels + label resolver |
 | `storage/` | 3 | Backup manager (IndexedDB), storage persistence (eviction protection) |
@@ -49,7 +49,7 @@
 | `platform/` | 2 | capacitorBridge (iOS/Android shell) + desktopBridge (Electron); no-op on web |
 | `testing/` | 9 | Test infrastructure |
 | `other/` | 3 | Plugins, experimental |
-| **Total** | **176** | |
+| **Total** | **177** | |
 
 ---
 
@@ -61,8 +61,8 @@
 | `modules/boot/orchestrator.js` | ~1323 | Sequence control + boot UI + early coordination |
 | `modules/boot/coreBoot.js` | ~770 | Core state & init |
 | `modules/boot/featureBoot.js` | ~631 | DI wiring hub |
-| `modules/boot/uiBoot.js` | ~1584 | UI handlers |
-| **Total** | **~4358** | |
+| `modules/boot/uiBoot.js` | ~1562 | UI handlers |
+| **Total** | **~4336** | |
 
 ---
 
@@ -70,8 +70,8 @@
 
 | Category | Tests |
 |----------|-------|
-| Total Tests | 4280 |
-| Test Files | 153 |
+| Total Tests | 4288 |
+| Test Files | 154 |
 | Platforms Tested | Mac, iPad, iPhone |
 
 > **Note:** Test file count is `.tests.js` files only. The `tests/` directory also contains a few helper/utility files (testHelpers.js, testContext.js, performance.benchmark.js, etc.).

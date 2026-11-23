@@ -1,3 +1,8 @@
+## [2.688] - 2026-11-23
+- feat(sound): sound effects for cycle reset and To-Do clearing; drop the one-time /app redirect
+- test(journey): two-tab screen journey clicks the checkbox through the DOM
+
+
 ## [2.687] - 2026-11-21
 - fix(storage, tabs): show storage protection, remind sooner when unprotected, one tab spawns recurring tasks, keep undo across unrelated saves
 
