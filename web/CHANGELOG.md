@@ -1,3 +1,7 @@
+## [2.689] - 2026-11-23
+- fix(onboarding): tutorial card clears the logo, readable first-run text
+
+
 ## [2.688] - 2026-11-23
 - feat(sound): sound effects for cycle reset and To-Do clearing; drop the one-time /app redirect
 - test(journey): two-tab screen journey clicks the checkbox through the DOM

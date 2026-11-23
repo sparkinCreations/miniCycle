@@ -24,6 +24,12 @@
        a visual gap on both layouts. */
     --first-run-welcome-top: 64px;
 
+    /* Dark tint laid over the glass so the card's white text meets WCAG AA.
+       Without it the glass measured 2.1:1 (under the top sheen) to 3.2:1
+       against white on the default blue gradient (Nov 2026); small text needs
+       4.5:1. */
+    --first-run-welcome-tint: 30%;
+
     /* First-run splash (typewriter intro before banner appears).
        Per-char stagger × 19 chars = total typewriter duration.
 
@@ -188,11 +194,15 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     border-radius: var(--radius-xl);
 
     /* Glossy frosted-glass look:
-         1. Top-to-mid white sheen layer fakes a reflection highlight.
-         2. Whiter, lower-alpha glass-bg-soft underneath lets the backdrop
+         1. Top-to-mid white sheen layer fakes a reflection highlight
+            (a22; was a32, which lifted the title's backdrop to 2.1:1).
+         2. --first-run-welcome-tint darkens the glass evenly so white text
+            reads at AA (see the tunable).
+         3. Whiter, lower-alpha glass-bg-soft underneath lets the backdrop
             read through strongly. */
     background:
-        linear-gradient(180deg, var(--color-white-a32) 0%, var(--color-white-a0) 55%),
+        linear-gradient(180deg, var(--color-white-a22) 0%, var(--color-white-a0) 55%),
+        linear-gradient(color-mix(in srgb, var(--color-slate-900) var(--first-run-welcome-tint), transparent), color-mix(in srgb, var(--color-slate-900) var(--first-run-welcome-tint), transparent)),
         var(--pref-modal-bg, var(--theme-modal-glass-bg-soft, var(--theme-modal-glass-bg, var(--theme-modal-bg))));
     /* White text + dark halo — the previous "dark text + white halo" strategy
        lost contrast on slides where the backdrop's blue gradient brightened
@@ -223,6 +233,16 @@ body.focus-mode.first-run-welcome-active #undo-redo-buttons {
     transition:
         opacity var(--transition-normal) ease,
         transform var(--transition-normal) ease;
+}
+
+/* iPhone/iPad Home Screen web app (.ios-pwa): its header sits lower, on a
+   47px inset floor plus 34px of status-bar-glass clearance (layout/header.css —
+   keep in sync), so the logo starts there instead of ~19px down. The usual
+   64px put the card over the logo and ⋯ over Skip (measured Nov 2026). Start
+   the card 9px below the logo, the same gap as everywhere else. The safe-area
+   inset is subtracted because the banner's own `top` adds it back. */
+html.ios-pwa {
+    --first-run-welcome-top: calc(max(env(safe-area-inset-top, 0px), 47px) - env(safe-area-inset-top, 0px) + 34px + var(--corner-logo-height) + 9px);
 }
 
 .first-run-welcome.first-run-welcome--visible {

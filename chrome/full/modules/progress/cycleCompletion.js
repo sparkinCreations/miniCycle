@@ -48,7 +48,7 @@
  */
 
 import { createDIModule, required, optional } from '../core/diBase.js';
-import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION } from '../core/constants.js';
+import { UI_TIMEOUTS, DOM_IDS, DOM_CLASSES, APP_VERSION, SOUNDS } from '../core/constants.js';
 import { prefersReducedMotion } from '../utils/motionPreference.js';
 import { getLabel, getIcon } from '../labels/labelResolver.js';
 import { announce } from '../utils/announce.js';
@@ -80,6 +80,7 @@ const di = createDIModule('CycleCompletion', {
     logHistoryEvent: optional(null),       // (type, details) => void
     checkAchievements: optional(null),     // (cycles, tasks) => Array
     checkBackupReminderOnCycleComplete: optional(null),  // () => void — backup reminder after 25 cycles
+    playSound: optional(null),             // (name) => void — features/soundEffects; silent when the setting is off
     // Vocabulary theme system
     vocabThemeManager: optional(null),     // VocabThemeManager singleton
     // Confirmation modal for due date warning
@@ -117,6 +118,10 @@ export function getActiveRoutineTasks() {
 export function showCompletionAnimation() {
     const deps = di.resolve();
     const state = deps.AppState.get();
+    // The sound is its own setting: turning the toast off must not silence it.
+    // In To-Do mode finishing the last task clears the list (the cycle completes
+    // and its tasks go), so it is the clear sound there, as on the Clear button.
+    deps.playSound?.(getActiveRoutine(state)?.deleteCheckedTasks === true ? SOUNDS.CLEAR : SOUNDS.RESET);
     if (state?.settings?.disableCompletionToast) return;
 
     const animation = document.createElement("div");
@@ -157,6 +162,7 @@ export function showCompletionAnimation() {
  * @returns {void}
  */
 export function showClearAnimation() {
+    di.resolve().playSound?.(SOUNDS.CLEAR);
     const animation = document.createElement("div");
     animation.classList.add(DOM_CLASSES.CLEAR_ANIMATION);
     animation.setAttribute('role', 'status');

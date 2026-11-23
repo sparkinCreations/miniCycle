@@ -3,7 +3,10 @@
  *
  * Periodically reminds users to back up their routines via a confirmation modal.
  * Triggers on three conditions:
- *   1. Every 14 days (checked on app boot)
+ *   1. Every 14 days (checked on app boot) — every 7 while the browser has not
+ *      granted persistent storage, since it may then clear the data on its own
+ *      (StoragePersistence.protectionLevel; Safari does after seven days of
+ *      browsing without a visit)
  *   2. Every 25 completed cycles
  *   3. Every 100 cleared tasks (To-Do mode)
  *
@@ -12,6 +15,9 @@
  *   - Dismiss cooldown: 7-day suppression after "Not Now"
  *   - Recent backup: skip if user backed up within 3 days
  *   - New user guard: skip timer trigger if 0 cycles completed
+ *
+ * On an iPhone or iPad outside a Home Screen app, an unprotected reminder also
+ * suggests adding miniCycle to the Home Screen (StoragePersistence.suggestsHomeScreen).
  *
  * @module features/backupReminder
  */
@@ -30,6 +36,9 @@ const di = createDIModule('BackupReminder', {
     showNotification: optional(null),
     saveBackupFileAs: optional(null),
     downloadBackupFile: optional(null),
+    // Getter for the storagePersistence instance (depMappings) — absent in tests
+    // and on a boot that skipped it, which reads as "protected": the 14-day default.
+    StoragePersistence: optional(null),
 });
 
 const _deps = new Proxy({}, {
@@ -47,10 +56,10 @@ export function setBackupReminderDependencies(dependencies) {
 // ============================================================================
 
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
-const MS_14_DAYS = 14 * MS_PER_DAY;
 const MS_7_DAYS  = 7  * MS_PER_DAY;
 const MS_3_DAYS  = 3  * MS_PER_DAY;
-// Reminder cadence — see LIMITS.BACKUP_REMINDER_EVERY_N_CYCLES / EVERY_N_TASKS.
+// Reminder cadence — see LIMITS.BACKUP_REMINDER_DAYS, LIMITS.BACKUP_REMINDER_DAYS_UNPROTECTED,
+// LIMITS.BACKUP_REMINDER_EVERY_N_CYCLES and LIMITS.BACKUP_REMINDER_EVERY_N_TASKS.
 
 /** Delay before showing reminder — see UI_TIMEOUTS.BACKUP_REMINDER_BOOT / BACKUP_REMINDER_TRIGGER. */
 
@@ -84,6 +93,43 @@ function _getProgress() {
         cycles: state?.userProgress?.cyclesCompleted || 0,
         tasks:  state?.userProgress?.totalTasksCompleted || 0,
     };
+}
+
+/**
+ * The storagePersistence instance, or null where it was not wired.
+ * @returns {Object|null}
+ */
+function _storagePersistence() {
+    const getInstance = _deps.StoragePersistence;
+    return typeof getInstance === 'function' ? getInstance() || null : null;
+}
+
+/**
+ * True when the browser may clear the data on its own (no persistent-storage
+ * grant). Unknown — no instance wired — counts as protected: the old cadence.
+ * @returns {boolean}
+ */
+function _isUnprotected() {
+    return _storagePersistence()?.protectionLevel?.() === 'unprotected';
+}
+
+/**
+ * Days between timer reminders: shorter while the data is unprotected.
+ * @returns {number}
+ */
+export function backupReminderIntervalDays() {
+    return _isUnprotected() ? LIMITS.BACKUP_REMINDER_DAYS_UNPROTECTED : LIMITS.BACKUP_REMINDER_DAYS;
+}
+
+/**
+ * The reminder's message: with the Home Screen tip on an iPhone or iPad tab
+ * whose data is unprotected.
+ * @returns {string}
+ */
+export function backupReminderMessage() {
+    const persistence = _storagePersistence();
+    const homeScreenTip = _isUnprotected() && persistence?.suggestsHomeScreen?.() === true;
+    return getLabel(homeScreenTip ? 'notify.backupReminderMessageHomeScreen' : 'notify.backupReminderMessage');
 }
 
 /**
@@ -122,9 +168,9 @@ function _shouldShow(trigger) {
         case 'timer': {
             // New user guard: nothing to back up yet
             if (p.cycles < 1) return false;
-            // First time (never shown) or 14 days elapsed
+            // First time (never shown) or the interval elapsed (14 days, 7 unprotected)
             if (s.lastShown === 0) return true;
-            return (now - s.lastShown) >= MS_14_DAYS;
+            return (now - s.lastShown) >= backupReminderIntervalDays() * MS_PER_DAY;
         }
         case 'cycles':
             return (p.cycles - s.cyclesAtLastReminder) >= LIMITS.BACKUP_REMINDER_EVERY_N_CYCLES;
@@ -158,7 +204,7 @@ function _showReminder() {
 
     _deps.showConfirmationModal({
         title: getLabel('notify.backupReminderTitle'),
-        message: getLabel('notify.backupReminderMessage'),
+        message: backupReminderMessage(),
         confirmText: getLabel('notify.backupReminderConfirm'),
         cancelText: getLabel('notify.backupReminderDismiss'),
         callback: (confirmed) => {
@@ -187,7 +233,7 @@ function _showReminder() {
 // ============================================================================
 
 /**
- * Check if backup reminder should show on app boot (14-day timer).
+ * Check if backup reminder should show on app boot (14-day timer, 7 unprotected).
  * Called from uiBoot.js already wrapped in a 3s setTimeout — no extra delay needed.
  */
 export function checkBackupReminderOnBoot() {

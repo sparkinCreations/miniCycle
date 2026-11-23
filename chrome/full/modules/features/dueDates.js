@@ -125,6 +125,20 @@ export function setDueDatesDependencies(dependencies) {
     di.setDependencies(dependencies);
 }
 
+/**
+ * Do two overdueTaskStates maps hold the same task ids? Values are always
+ * `true` (an id is present or deleted), so the key sets decide it.
+ * @param {Object|undefined} before
+ * @param {Object} after
+ * @returns {boolean}
+ */
+export function sameOverdueStates(before, after) {
+    const a = Object.keys(before || {});
+    const b = Object.keys(after || {});
+    if (a.length !== b.length) return false;
+    return a.every(id => Object.prototype.hasOwnProperty.call(after, id) && after[id] === before[id]);
+}
+
 export class MiniCycleDueDates {
     constructor(dependencies = {}) {
         // Resolve deps from diBase, with constructor overrides
@@ -338,14 +352,20 @@ export class MiniCycleDueDates {
             }
         });
 
-        // ✅ Save overdue states back via AppState
-        try {
-            await AppState.update(state => {
-                if (!state.appState) state.appState = {};
-                state.appState.overdueTaskStates = overdueTaskStates;
-            }, true);
-        } catch (error) {
-            console.error('❌ Error saving overdue states:', error);
+        // Save overdue states back via AppState — only when they changed. This
+        // runs on every render, and an unconditional save stamped a new
+        // lastModified each time: with two tabs open, each tab's redraw after the
+        // other's save saved again, and the tabs woke each other forever (and a
+        // fresh edit in one tab lost to the other's echo). Measured Nov 2026.
+        if (!sameOverdueStates(currentState?.appState?.overdueTaskStates, overdueTaskStates)) {
+            try {
+                await AppState.update(state => {
+                    if (!state.appState) state.appState = {};
+                    state.appState.overdueTaskStates = overdueTaskStates;
+                }, true);
+            } catch (error) {
+                console.error('❌ Error saving overdue states:', error);
+            }
         }
 
         // ✅ Show notification ONLY if there are newly overdue tasks
@@ -768,7 +788,9 @@ export class MiniCycleDueDates {
             if (registration) {
                 await registration.showNotification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON, tag: SYSTEM_NOTIFICATIONS.TAG_DUE_DATE });
             } else {
-                new Notification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON });
+                // Same tag on the fallback: with two tabs open each posts this
+                // slot, and a shared tag makes the second replace the first.
+                new Notification(title, { body, icon: SYSTEM_NOTIFICATIONS.ICON, tag: SYSTEM_NOTIFICATIONS.TAG_DUE_DATE });
             }
         } catch (e) {
             console.warn('⚠️ Due-date system notification failed:', e);

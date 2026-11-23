@@ -723,6 +723,9 @@ export const DEFAULT_LABELS = deepFreeze({
         backupNamePlaceholder:   'My Backup',
         backupReminderTitle:     'Back up your routines?',
         backupReminderMessage:   'Your routines are stored on this device only. A backup keeps them safe if your browser data is cleared.',
+        // iPhone / iPad browser tab without persistent storage (backupReminder.backupReminderMessage).
+        // A Home Screen app starts with its own, empty storage — hence "restore it there".
+        backupReminderMessageHomeScreen: 'Your routines are stored on this device only, and Safari can clear a website\'s data after seven days of browsing without a visit. A backup keeps them safe. Adding miniCycle to your Home Screen also avoids this; it starts empty there, so restore your backup in it.',
         backupReminderConfirm:   'Backup All Routines',
         backupReminderDismiss:   'Not Now',
         backupCreated:           'Backup created successfully!',
@@ -1023,7 +1026,6 @@ export const DEFAULT_LABELS = deepFreeze({
         testsModulesFailed:      '{count} module(s) have failures',
         testsModulesTimedOut:    '{count} module(s) timed out (incomplete) — re-run',
         testsBackgrounded:       'Run was backgrounded — re-run with the tab focused',
-        appMoved:                'miniCycle has moved to {app} — bookmark this page. {home} is now our home page.',   // once, for returning users sent from the old address
         testsRequireNetwork:     'Tests require a network connection — test files are always fetched fresh. Reconnect and try again.',
         reminderDisabled:        'Task reminders disabled.',
         taskReminderDisabled:    'Reminder disabled for task.',
@@ -1560,6 +1562,10 @@ export const DEFAULT_LABELS = deepFreeze({
         autoBackupKindAuto:     'Automatic backup, daily',
         autoBackupKindFile:     'Backup file in {folder}',
         autoBackupFileMeta:     '{date} · {size} KB',
+        // Persistent-storage line at the top of Data Management (backupRestoreManager.refreshStorageStatus).
+        storageProtected:       'Storage is protected: your browser has agreed not to clear miniCycle\'s data on its own.',
+        storageUnprotected:     'Storage is not protected: your browser may clear miniCycle\'s data if the device runs low on space or the site goes unused. Back up regularly to keep a copy.',
+        storageUnprotectedHomeScreen: 'Storage is not protected: Safari can clear a website\'s data after seven days of browsing without a visit. Adding miniCycle to your Home Screen avoids that. It starts empty there, so back up here first and restore the file in the Home Screen app.',
         autoBackupsFolderNote:  'A backup file is also written once a day to {folder} on this device. Those files stay even if the app is removed or its storage is cleared, and nothing leaves the device.',
         autoBackupsFolderNoteIos: 'A backup file is also written once a day to {folder}, which you can open in the Files app. Those files stay if the app\'s storage is cleared but are removed with the app, and nothing leaves the device.',
         autoBackupMeta:         '{date} · {count} {routines} · {size} KB',
@@ -1603,6 +1609,7 @@ export const DEFAULT_LABELS = deepFreeze({
         enableNotifications:  'Enable Notifications',
         singleKeyShortcuts:   'Single-key shortcuts',
         confirmUncheckedCycle: 'Ask before completing with unchecked tasks',
+        soundEffects:         'Sound effects',
         clearUndoHistory:     'Clear Undo History',
         // One line under each control in Settings, saying what it does (and, for
         // the resets, whether it can be undone). Oct 2026: there were none.
@@ -1618,6 +1625,7 @@ export const DEFAULT_LABELS = deepFreeze({
         enableNotificationsDesc: 'The short messages that confirm what you did. Error messages always show.',
         singleKeyShortcutsDesc: 'When you are not typing: M menu, S Settings, [ ] previous or next routine, ? shortcut list. Off by default because screen readers and voice control use single keys.',
         confirmUncheckedCycleDesc: 'In Manual Cycle, Complete Cycle asks first if any task is still unchecked.',
+        soundEffectsDesc:     'Play a short sound when a cycle resets and when To-Do clears its completed tasks.',
         resetOnboardingDesc:    'Shows the welcome screens again the next time you open the app.',
         tourPromptsDesc:        'Offers a short tour the first time you open each feature.',
         resetNotifPositionDesc: 'Moves notifications back to their usual place if you dragged them.',
@@ -2206,6 +2214,10 @@ export const DEFAULT_LABELS = deepFreeze({
         achievements:   'Achievements',
         completeAll:    'Complete / Clear',
         darkMode:       'Dark Mode',
+        // The 'sound-effects' action is named by its state (quickActionsManager._shownAs).
+        soundEffects:    'Sound Effects',
+        soundEffectsOn:  'Sound Effects: On',
+        soundEffectsOff: 'Sound Effects: Off',
         personalization: 'Personalization',
         themes:         'Themes',
         help:           'Help',
@@ -2675,7 +2687,7 @@ export const DEFAULT_LABELS = deepFreeze({
     firstRun: {
         wordmark:    'miniCycle',
         descriptor:  'Routine Checklist Manager',
-        tagline:     'Repeatable checklists that reset on completion — not one-and-done to-dos.',
+        tagline:     'Repeatable checklists that reset on completion.',
         createBtn:   'Create My First Routine',
         sampleBtn:   'Load a Sample',
         learnBtn:    'Show How Cycles Work',

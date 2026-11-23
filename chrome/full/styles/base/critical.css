@@ -222,10 +222,13 @@ html.mc-first-run #app-loader .loader-tip {
   max-width: 78vw;
   padding: 7px 16px;
   font-size: var(--font-size-sm, 13px);
-  background: rgba(0, 0, 0, 0.18);
+  /* Dark enough for white text to read at AA over the photo's brightest
+     parts. 0.18 with the strip at 0.7 opacity measured under 2:1 there
+     (Nov 2026 screenshot) — quiet had become unreadable. */
+  background: rgba(0, 0, 0, 0.5);
 }
 html.mc-first-run #app-loader .loader-tip.visible {
-  opacity: 0.7;
+  opacity: 1;
 }
 html.mc-first-run #app-loader .loader-tip-header {
   display: none;
@@ -293,17 +296,22 @@ html:not(.mc-first-run) .first-run-choice,
   text-shadow: var(--text-shadow-lg);
 }
 .first-run-tagline {
-  /* Quiet context line — deliberately smaller/dimmer than the use-case hook below. */
+  /* Context line: one size under the use-case hook below and lighter weight,
+     so the hook still leads. Was 12px with a second clause ("— not
+     one-and-done to-dos"); dropped Nov 2026 and the size raised to read. */
   margin: 0 0 8px;
   color: white;
   text-align: center;
-  font-size: var(--font-size-xs, 12px);
+  font-size: var(--font-size-sm, 14px);
   font-weight: 400;
   line-height: 1.45;
+  /* Two even lines on a phone instead of "completion." alone on the second. */
+  text-wrap: balance;
   font-family: 'Poppins', 'Poppins Fallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   text-shadow: var(--text-shadow-lg);
-  /* Was 0.72 — measured 2.94:1 against the backdrop, under WCAG AA's 4.5:1. */
-  opacity: 0.92;
+  /* Full white: 0.72 measured 2.94:1 and 0.92 still dimmed the glyphs over a
+     photo backdrop. Same as the welcome screen, which shares this class. */
+  opacity: 1;
 }
 /* Rotating use-case line — the "that's me" hook, so it OUTRANKS the tagline
    (bigger + heavier). FIXED height + overflow hidden: swaps never shift the
@@ -334,7 +342,7 @@ html:not(.mc-first-run) .first-run-choice,
   transition: opacity 0.55s ease;
 }
 .first-run-usecase-text.is-active {
-  opacity: 0.97;
+  opacity: 1;
 }
 @media (prefers-reduced-motion: reduce) {
   /* Instant swap — still gap-free (incoming appears the same frame the

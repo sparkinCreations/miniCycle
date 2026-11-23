@@ -824,10 +824,12 @@ export class MiniCycleReminders {
                             tag: SYSTEM_NOTIFICATIONS.TAG_REMINDER
                         });
                     } else {
-                        // Fallback to basic Notification API
+                        // Fallback to basic Notification API — same tag, so a second
+                        // open tab's reminder replaces this one instead of stacking.
                         new Notification(getLabel('notify.reminderNotificationTitle'), {
                             body: notificationBody,
-                            icon: SYSTEM_NOTIFICATIONS.ICON
+                            icon: SYSTEM_NOTIFICATIONS.ICON,
+                            tag: SYSTEM_NOTIFICATIONS.TAG_REMINDER
                         });
                     }
                 } catch (e) {

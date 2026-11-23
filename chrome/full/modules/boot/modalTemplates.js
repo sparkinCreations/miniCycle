@@ -995,6 +995,13 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                             </span>
                             <span class="settings-option-text"><span>${getLabel('settings.confirmUncheckedCycle')}</span><span class="settings-desc" id="${DOM_IDS.TOGGLE_CONFIRM_UNCHECKED_CYCLE}-desc">${getLabel('settings.confirmUncheckedCycleDesc')}</span></span>
                         </label>
+                        <label class="settings-option">
+                            <span class="toggle-switch">
+                                <input type="checkbox" id="${DOM_IDS.TOGGLE_SOUND_EFFECTS}" name="${DOM_IDS.TOGGLE_SOUND_EFFECTS}" aria-describedby="${DOM_IDS.TOGGLE_SOUND_EFFECTS}-desc">
+                                <span class="toggle-slider"></span>
+                            </span>
+                            <span class="settings-option-text"><span>${getLabel('settings.soundEffects')}</span><span class="settings-desc" id="${DOM_IDS.TOGGLE_SOUND_EFFECTS}-desc">${getLabel('settings.soundEffectsDesc')}</span></span>
+                        </label>
                         <label class="settings-option ${DOM_CLASSES.KEYBOARD_ONLY}">
                             <span class="toggle-switch">
                                 <input type="checkbox" id="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" name="${DOM_IDS.TOGGLE_SINGLE_KEY_SHORTCUTS}" aria-describedby="toggle-single-key-shortcuts-desc">
@@ -1020,6 +1027,7 @@ export const SETTINGS_MODAL_HTML = `            <!-- Settings Modal -->
                         <span class="settings-section-toggle" aria-hidden="true">▼</span>
                     </div>
                     <div class="settings-section-content" id="settings-section-data">
+                        <p id="${DOM_IDS.STORAGE_STATUS}" class="settings-note" hidden></p>
                         <button id="backup-mini-cycles" class="btn btn-primary settings-btn settings-btn-primary"><i class="fas fa-download"></i> <span data-label-key="settings.backupAll">${getLabel('settings.backupAll')}</span></button>
                         <button id="restore-mini-cycles" class="btn btn-primary settings-btn settings-btn-primary"><i class="fas fa-upload"></i> <span data-label-key="settings.restoreAll">${getLabel('settings.restoreAll')}</span></button>
                         <button id="${DOM_IDS.AUTO_BACKUPS_TOGGLE}" class="btn btn-secondary settings-btn settings-btn-ghost" aria-expanded="false" aria-controls="${DOM_IDS.AUTO_BACKUPS}"><i class="fas fa-history"></i> <span class="${DOM_CLASSES.AUTO_BACKUPS_TOGGLE_LABEL}">${getLabel('settings.autoBackupsShow')}</span></button>

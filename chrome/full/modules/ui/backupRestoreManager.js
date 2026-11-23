@@ -35,6 +35,7 @@ const di = createDIModule('BackupRestoreManager', {
     safeAddEventListener: required(),
     BackupManager: optional(null),  // For safety backups before restore
     BackupFolder: optional(null),   // Daily backup files in the device folder (desktop / Android)
+    StoragePersistence: optional(null),  // Getter: whether the browser granted persistent storage (Settings line)
     AppMeta: optional(null),  // For version info
     loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
     showLoader: optional(null),  // Loading overlay from uiBoot
@@ -77,7 +78,8 @@ const _initialized = {
     restoreButton: false,
     resetButton: false,
     preMigration: false,
-    autoBackups: false
+    autoBackups: false,
+    storageStatus: false
 };
 
 const LITE_STORAGE_KEYS = Object.freeze([
@@ -1465,6 +1467,72 @@ function formatCopyDate(timestamp) {
     } catch {
         return new Date(timestamp).toDateString();
     }
+}
+
+// ============================================================================
+// STORAGE STATUS (Settings → Data Management)
+// ============================================================================
+
+/**
+ * Say whether the browser may clear the data on its own: protected, not
+ * protected, or — on an iPhone / iPad tab — not protected with the Home Screen
+ * way out. Hidden in the iOS, Android and desktop builds (not a browser site;
+ * they write a daily backup file instead) and where storagePersistence was not
+ * wired. Safe to call at any time.
+ * @returns {void}
+ */
+export function refreshStorageStatus() {
+    const getInstance = _deps.StoragePersistence;
+    const persistence = typeof getInstance === 'function' ? getInstance() : null;
+    renderStorageStatus(persistence?.protectionLevel?.(), persistence?.suggestsHomeScreen?.() === true);
+}
+
+/**
+ * Draw the storage line for one answer.
+ * @param {string|undefined} level - 'protected' | 'unprotected' | 'app' | undefined
+ * @param {boolean} homeScreen - suggest the Home Screen (iPhone / iPad tab)
+ * @returns {void}
+ */
+function renderStorageStatus(level, homeScreen) {
+    const line = document.getElementById(DOM_IDS.STORAGE_STATUS);
+    if (!line) return;
+    if (level !== 'protected' && level !== 'unprotected') {
+        line.hidden = true;
+        return;
+    }
+    let key = 'settings.storageProtected';
+    if (level === 'unprotected') key = homeScreen ? 'settings.storageUnprotectedHomeScreen' : 'settings.storageUnprotected';
+    line.textContent = getLabel(key);
+    line.hidden = false;
+}
+
+/**
+ * The storage module's change event carries its answer: the first one fires
+ * before the loader has registered the instance, so it cannot be looked up yet.
+ * @param {CustomEvent} event
+ * @returns {void}
+ */
+function onStoragePersistenceChanged(event) {
+    const detail = event?.detail;
+    if (detail && typeof detail.level === 'string') renderStorageStatus(detail.level, detail.homeScreen === true);
+    else refreshStorageStatus();
+}
+
+/**
+ * Draw the storage line and redraw it when the browser's answer changes (a
+ * grant often arrives on the first tap, after Settings was built). Idempotent.
+ * @returns {void}
+ */
+export function setupStorageStatus() {
+    refreshStorageStatus();
+    if (_initialized.storageStatus) return;
+    const safeAddEventListener = _deps.safeAddEventListener;
+    if (!safeAddEventListener) {
+        console.error('BackupRestoreManager: safeAddEventListener dependency not injected');
+        return;
+    }
+    _initialized.storageStatus = true;
+    safeAddEventListener(document, EVENTS.STORAGE_PERSISTENCE_CHANGED, onStoragePersistenceChanged);
 }
 
 /**

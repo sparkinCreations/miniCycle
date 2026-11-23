@@ -254,6 +254,7 @@
  * @property {boolean} [singleKeyShortcuts] - Opt-in single-key shortcuts (M, S, [, ], ?) besides the Alt+Shift ones; absent = off
  * @property {number} [taskInputNoticeCount] - Times the task bar's "shown / hidden" notification has appeared; it stops at LIMITS.TASK_INPUT_NOTICE_SHOWS, and turning Tour Prompts on sets it back to 0
  * @property {boolean} [confirmUncheckedCycle] - Manual Cycle: Complete Cycle asks first when tasks are unchecked (on for data created since Nov 2026; older data without the field reads as off)
+ * @property {boolean} [soundEffects] - Sounds when a cycle resets and when To-Do clears (features/soundEffects; on for data created since Nov 2026; older data without the field reads as off)
  * @property {'recent'|'alpha'} [routineBrowserSort='recent'] - Browse Routines' order
  * @property {'cards'|'grid'} [routineBrowserLayout='cards'] - Browse Routines' layout
  * @property {boolean} [onboardingCompleted=false] - User completed onboarding

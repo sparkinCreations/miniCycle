@@ -4,8 +4,9 @@
     var text = el.querySelector('.loader-tip-text');
     if (!text) return;
 
-    // Suppress the tip when it would sit on top of (or crowd) the first-run
-    // "Restore from a backup file" link. On a short viewport the tip's
+    // Suppress the tip when it would sit on top of (or crowd) the bottom of
+    // the first-run column ("Restore from a backup file" and the About links
+    // under it). On a short viewport the tip's
     // bottom-anchored strip and the bottom of the choice column meet, and the
     // two render over each other. Measured rather than guessed at a breakpoint:
     // whether they collide depends on the viewport, the browser's own chrome,
@@ -15,12 +16,17 @@
     // Measuring is safe before showing: the tip is position:absolute and only
     // opacity-hidden, so it is laid out and has a real rect either way, which
     // is what lets this decide without a visible flash.
-    var MIN_TIP_GAP = 8; // px of clear air required below the restore link
+    var MIN_TIP_GAP = 8; // px of clear air required below the choice column
 
     function tipWouldCollide() {
       var restore = document.getElementById('first-run-restore');
       if (!restore) return false;              // not the first-run screen
-      var rr = restore.getBoundingClientRect();
+      // The About links (sparkinCreations · miniCycle · User Manual) sit
+      // BELOW the restore link, so they are the column's lowest edge. Measuring
+      // only the restore link let a three-line tip land on them (Nov 2026).
+      var lowest = document.querySelector('.first-run-links') || restore;
+      var rr = lowest.getBoundingClientRect();
+      if (rr.height <= 0) rr = restore.getBoundingClientRect();
       if (rr.height <= 0) return false;        // present but not rendered
       var tr = el.getBoundingClientRect();
       if (tr.height <= 0) return false;

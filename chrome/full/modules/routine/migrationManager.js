@@ -161,7 +161,12 @@ export function createInitialSchemaData() {
             // when tasks are still unchecked (the user's call, Nov 2026). Only
             // fresh data gets it: existing data has no value, which still reads
             // as off, so nobody's current setting changes.
-            confirmUncheckedCycle: true
+            confirmUncheckedCycle: true,
+            // Sound effects on for new users (the user's call, Nov 2026): a
+            // short sound when a cycle resets and when To-Do clears. Existing
+            // data has no value, which reads as off — nobody starts hearing
+            // sounds they never chose.
+            soundEffects: true
         },
         data: {
             routine: {} // Empty - user will create their first routine

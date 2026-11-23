@@ -438,6 +438,8 @@ export const LIMITS = Object.freeze({
     STORAGE_WARNING_PERCENTAGE: 75,  // Show storage warning notification when localStorage usage exceeds this percentage
     BACKUP_REMINDER_EVERY_N_CYCLES: 25,  // Trigger backup reminder every N completed cycles
     BACKUP_REMINDER_EVERY_N_TASKS: 100,  // Trigger backup reminder every N cleared tasks (To-Do mode)
+    BACKUP_REMINDER_DAYS: 14,            // Backup reminder on app open after this many days (features/backupReminder.js)
+    BACKUP_REMINDER_DAYS_UNPROTECTED: 7, // …this many instead when the browser has NOT granted persistent storage (storagePersistence.protectionLevel): it may clear the data on its own
     MAX_CORRUPT_BACKUPS: 3,              // Max raw-corrupted-data snapshots kept in localStorage for manual recovery
     AUTO_BACKUPS_SHOWN: 8,               // Newest IndexedDB snapshots listed under Settings → Data Management → automatic backups
     BACKUP_FOLDER_KEEP: 7,               // Daily backup files kept in the device folder (storage/backupFolder.js) — one per day
@@ -836,8 +838,8 @@ export const STORAGE_KEYS = Object.freeze({
     // and re-written when a factory reset raises that screen again in place.
     FIRST_RUN_CHOICE_SESSION: 'miniCycle_firstRunChoice',
     FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
-    // The one-time "miniCycle moved to /app" redirect (Nov 2026). Written by the
-    // product page's pages/product-returning.js, which spells the literal itself.
+    // Flag of the retired one-time "miniCycle moved to /app" redirect (2.663–2.687,
+    // removed at MJ's request). Nothing writes it now; uiBoot deletes it at boot.
     MOVED_TO_APP_NOTICE: 'miniCycle_movedToAppNotice',
     CONSOLE_CAPTURE_ENABLED: 'miniCycle_enableAutoConsoleCapture',
     CONSOLE_CAPTURE_BUFFER: 'miniCycle_capturedConsoleBuffer',
@@ -866,6 +868,30 @@ export const PRE_MIGRATION_BACKUP_PREFIX = `${STORAGE_KEYS.DATA}_pre-migration_`
  * backgrounded). backupManager writes it; Settings → automatic backups reads it.
  */
 export const BACKUP_TRIGGERS = Object.freeze({ OPEN: 'open', HIDE: 'hide' });
+
+/**
+ * Web Locks names (navigator.locks), shared by every tab of the app.
+ * RECURRING_SPAWN: held while the recurring watcher decides which tasks are due
+ * and saves them (recurringWatcher.js), so two tabs never spawn at once — the
+ * second one waits, then sees the first one's save.
+ */
+export const LOCK_NAMES = Object.freeze({ RECURRING_SPAWN: 'minicycle:recurring-spawn' });
+
+/**
+ * Sound effects (features/soundEffects.js), played when Settings → Behavior →
+ * Sound effects is on (`settings.soundEffects`: on for new users since Nov 2026;
+ * older data has no value and reads as off). Name → file, relative to the app
+ * page. MP3 only: every browser the feature gate admits plays it, at a fifth of
+ * the WAV size. The WAV / MIDI sources live outside web/ so they never ship.
+ */
+export const SOUNDS = Object.freeze({
+    CLEAR: 'clear',   // To-Do mode clears: the Clear button (cycleCompletion.showClearAnimation), or the last task checked (showCompletionAnimation in To-Do mode)
+    RESET: 'reset'    // a cycle completes and the routine resets (cycleCompletion.showCompletionAnimation, cycle modes)
+});
+export const SOUND_FILES = Object.freeze({
+    [SOUNDS.CLEAR]: 'assets/sounds/clear.mp3',
+    [SOUNDS.RESET]: 'assets/sounds/reset.mp3'
+});
 
 /**
  * The daily backup FILE the native shells write to a folder on the device
@@ -919,6 +945,15 @@ export const EVENTS = Object.freeze({
         so its entry lands on the undo stack BEFORE the action that followed
         it — the order the user performed them. */
     UNDO_SNAPSHOT_PENDING: 'undo:snapshotPending',
+    /** Dispatched on document by storagePersistence when the browser's answer
+        to the persistent-storage request changes (e.g. granted on the first
+        tap): detail = { persisted, level, homeScreen } — protectionLevel() and
+        suggestsHomeScreen() at that moment. Settings redraws its storage line. */
+    STORAGE_PERSISTENCE_CHANGED: 'storage:persistenceChanged',
+    /** Dispatched on document after settings.soundEffects is saved — by the
+        Settings switch and by the 'sound-effects' quick action: detail =
+        { enabled }. Quick Actions redraws so the action shows the new state. */
+    SOUND_EFFECTS_CHANGED: 'sound:effectsChanged',
     FIRST_RUN_REARM: 'firstrun:rearm',          // backupRestoreManager after an IN-PLACE factory reset: the choice screen is back, the origin is empty again (inline rotators and the + shimmer re-arm on it)
     ADD_TASK_DISCOVERED: 'ui:addTaskDiscovered', // uiBoot when a task is added through the input bar: modeManager clears the + button's first-time shimmer and records the discovery
     TASK_INLINE_EDIT_ENDED: 'task:inlineEditEnded' // taskCRUD when an inline task edit closes (saved, unchanged or cancelled): TaskRenderer runs the refresh it held back while the edit was open
@@ -1523,6 +1558,7 @@ export const DOM_IDS = Object.freeze({
     TOGGLE_SCROLL_ON_LOAD: 'toggle-scroll-on-load',
     TOGGLE_SINGLE_KEY_SHORTCUTS: 'toggle-single-key-shortcuts',   // Settings → Behavior → Single-key shortcuts
     TOGGLE_CONFIRM_UNCHECKED_CYCLE: 'toggle-confirm-unchecked-cycle',   // Settings → Behavior → Ask before completing with unchecked tasks
+    TOGGLE_SOUND_EFFECTS: 'toggle-sound-effects',   // Settings → Behavior → Sound effects (settings.soundEffects)
     TOGGLE_DEBUG_MODE: 'toggle-debug-mode',
     RESET_RECURRING_DEFAULT: 'reset-recurring-default',
     RESET_ACHIEVEMENT_PROGRESS: 'reset-achievement-progress',
@@ -1572,6 +1608,9 @@ export const DOM_IDS = Object.freeze({
     AUTO_BACKUPS_LIST: 'auto-backups-list',
     AUTO_BACKUPS_EMPTY: 'auto-backups-empty',
     AUTO_BACKUPS_FOLDER_NOTE: 'auto-backups-folder-note',
+    // Settings → Data Management: whether the browser granted persistent storage
+    // (backupRestoreManager.refreshStorageStatus, from storagePersistence).
+    STORAGE_STATUS: 'storage-status',
     FACTORY_RESET: 'factory-reset',
     DATA_CORRUPTION_MODAL: 'data-corruption-modal',   // appInit.showDataCorruptionRecovery
     RECOVERY_FRESH_START: 'recovery-fresh-start',

@@ -12,19 +12,36 @@
  *  - Grants are heuristic (Chrome decides silently based on engagement/install)
  *    or gesture-gated, so we check first, request once at boot, and re-attempt
  *    on the first user interaction (which many browsers require before granting).
- *  - Outcomes are logged, never surfaced to the user: a denied grant isn't
- *    actionable, and the .mcyc export + backup-reminder system is the
- *    user-facing durability net. `getStatus()` exposes the live state for any
- *    future settings UI that wants to show it.
+ *  - The outcome is shown, not acted on: Settings → Data Management says
+ *    whether the data is protected (backupRestoreManager.refreshStorageStatus),
+ *    and the backup reminder comes twice as often when it is not
+ *    (backupReminder.js). `protectionLevel()` is the one answer both read;
+ *    EVENTS.STORAGE_PERSISTENCE_CHANGED tells Settings when it changes (a grant
+ *    on the first tap arrives after Settings has drawn).
  *
  * No injected dependencies: `navigator.storage` and `document` are browser
- * APIs, not app dependencies. The diBase scaffold is kept for boot-contract
+ * APIs, not app dependencies, and the platform checks are plain imports. The diBase scaffold is kept for boot-contract
  * consistency with the rest of the module system.
  *
  * @module storagePersistence
  */
 
 import { createDIModule } from '../core/diBase.js';
+import { EVENTS } from '../core/constants.js';
+import { isNativeApp } from '../platform/capacitorBridge.js';
+import { isDesktopApp } from '../platform/desktopBridge.js';
+import { runsAsInstalledApp } from '../utils/userManualLink.js';
+
+/**
+ * iPhone or iPad. iPadOS Safari reports itself as a Mac by default, so a Mac
+ * with a touch screen counts too (no real Mac has one).
+ * @returns {boolean}
+ */
+function isAppleMobileDevice() {
+    if (typeof navigator === 'undefined') return false;
+    if (/iPad|iPhone|iPod/.test(navigator.userAgent || '')) return true;
+    return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+}
 
 // ============================================================================
 // DEPENDENCY INJECTION SETUP (using diBase.js)
@@ -91,7 +108,35 @@ export class StoragePersistence {
     }
 
     /**
-     * Live persistence status for any UI that wants it (nothing consumes it yet).
+     * Whether the browser may clear the saved data on its own.
+     *  - 'app': the iOS, Android or desktop build. Not a browser site, and those
+     *    builds write a daily backup file (storage/backupFolder.js), so there is
+     *    nothing to tell the user here.
+     *  - 'protected': the browser granted persistent storage.
+     *  - 'unprotected': refused, not answered yet, or the Storage API is missing.
+     * Synchronous — reads the last answer init() or a later check recorded.
+     * @returns {'app'|'protected'|'unprotected'}
+     */
+    protectionLevel() {
+        if (isNativeApp() || isDesktopApp()) return 'app';
+        return this._persisted === true ? 'protected' : 'unprotected';
+    }
+
+    /**
+     * True in Safari (or any browser) on an iPhone or iPad, outside a Home Screen
+     * app. There, WebKit clears a site's storage after seven days of browser use
+     * without a visit; a Home Screen app counts only its own days of use, so the
+     * data stays. (A Home Screen app also starts with its OWN empty storage —
+     * the wording that suggests it says to back up and restore.)
+     * @returns {boolean}
+     */
+    suggestsHomeScreen() {
+        if (isNativeApp() || isDesktopApp()) return false;
+        return isAppleMobileDevice() && !runsAsInstalledApp();
+    }
+
+    /**
+     * Live persistence status for any UI that wants it.
      * @returns {Promise<{supported: boolean, persisted: boolean|null, estimate: {usage?: number, quota?: number}|null}>}
      */
     async getStatus() {
@@ -107,25 +152,48 @@ export class StoragePersistence {
 
     /** @returns {Promise<boolean>} @private */
     async _checkPersisted() {
+        let answer;
         try {
-            this._persisted = await navigator.storage.persisted();
+            answer = await navigator.storage.persisted();
         } catch (e) {
             console.warn('💾 Persistent storage: persisted() check failed:', e?.message || e);
-            this._persisted = null;
+            answer = null;
         }
+        this._record(answer);
         return this._persisted === true;
+    }
+
+    /**
+     * Store the browser's answer and announce it when it changed. The event
+     * carries the whole answer, not just the flag: the first one fires while
+     * init() runs, BEFORE the module loader has registered this instance, so a
+     * listener that looked the instance up then would find nothing (Settings,
+     * phase 6, builds its line before this phase-7 module starts).
+     * @param {boolean|null} answer
+     * @private
+     */
+    _record(answer) {
+        const changed = answer !== this._persisted;
+        this._persisted = answer;
+        if (!changed || typeof document === 'undefined') return;
+        try {
+            document.dispatchEvent(new CustomEvent(EVENTS.STORAGE_PERSISTENCE_CHANGED, {
+                detail: { persisted: answer, level: this.protectionLevel(), homeScreen: this.suggestsHomeScreen() }
+            }));
+        } catch { /* no CustomEvent — nothing listens there either */ }
     }
 
     /** @returns {Promise<boolean>} @private */
     async _requestPersist() {
         try {
-            this._persisted = await navigator.storage.persist();
-            console.info(this._persisted
+            const granted = await navigator.storage.persist();
+            this._record(granted);
+            console.info(granted
                 ? '💾 Persistent storage: GRANTED — saved data is now durable.'
                 : '💾 Persistent storage: not granted (best-effort storage; backups remain the durability net).');
         } catch (e) {
             console.warn('💾 Persistent storage: persist() request failed:', e?.message || e);
-            this._persisted = null;
+            this._record(null);
         }
         return this._persisted === true;
     }

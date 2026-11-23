@@ -226,18 +226,6 @@
     background: var(--color-white-a16);
 }
 
-/* .first-run-tagline and .first-run-usecase-text set their own opacity in
-   critical.css, which the first-run screen shares. Override inside this surface
-   only — the first-run screen has the same contrast problem, but changing it is
-   a separate decision (see the note in WELCOME_SCREEN_PLAN.md). */
-#title-screen .first-run-tagline {
-    opacity: 0.95;
-}
-
-#title-screen .first-run-usecase-text.is-active {
-    opacity: 1;
-}
-
 /* Reference footer: credit + legal, pinned to the bottom of the overlay.
    Narrow viewports stack the two rows — the credit line alone is ~250px, so
    forcing one line on a phone would wrap mid-list and read worse. */
