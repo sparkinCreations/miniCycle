@@ -851,7 +851,9 @@ select.hidden {
     padding: var(--space-2-5) var(--space-4);
     font-size: var(--font-size-sm);
     font-weight: 500;
-    color: var(--color-steel-blue);
+    /* The steel blue, darkened: the plain one measured 3.49:1 here (Nov 2026,
+       the first contrast check of any dialog). The dashed border keeps it. */
+    color: var(--color-blue-285480);
     background: var(--color-blue-pale);
     border: 1px dashed var(--color-steel-blue);
     border-radius: var(--radius-md);

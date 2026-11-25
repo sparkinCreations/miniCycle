@@ -1,3 +1,7 @@
+## [2.692] - 2026-11-25
+- fix: dialog contrast, legal-page top bar, restore reloads the app
+
+
 ## [2.691] - 2026-11-25
 - feat(routines): delete and create from Browse, New in the list; app wording, dark contrast, manual images
 

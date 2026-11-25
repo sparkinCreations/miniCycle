@@ -20,6 +20,47 @@
   --color-white-a70: rgba(255, 255, 255, 0.7);
   --color-white: #ffffff;
   --overlay-medium: rgba(0, 0, 0, 0.1);
+  /* Stacking on these pages only (they do not load the app's --z-* scale). */
+  --z-page-bar: 1;
+  --color-black-a15: rgba(0, 0, 0, 0.15);
+}
+
+/* ── The top bar: a way back from anywhere, clear of the iPhone's clock ─────
+   (Nov 2026.) The Back button used to scroll away with the first line, leaving
+   a reader at the end of the manual with no way back but scrolling up; and in
+   the iOS app these pages draw under the status bar (viewport-fit=cover), so
+   with a flat 20px top it sat under the clock. Now it lives in a bar pinned to
+   the top, in the page's own blue, that also fills the status-bar area —
+   content scrolls under the bar, not under a loose button.
+
+   The bar is full width without being wider than the page: its colour is a
+   box-shadow spread past both sides and clipped to its own height, so nothing
+   overflows sideways; the second shadow, 1px lower, leaves a full-width line
+   under it. `html body`, not `body`: terms.html sets its own body padding, and
+   the bar has to start at the very top. The side insets are for a phone on its
+   side (its notch on the left or right). */
+html {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
+html body {
+    padding-top: 0;
+}
+
+.page-bar {
+    position: sticky;
+    top: 0;
+    z-index: var(--z-page-bar);
+    margin-bottom: 20px;
+    padding: calc(env(safe-area-inset-top, 0px) + 10px) 0 10px;
+    background: var(--color-blue-6a97e4);
+    box-shadow: 0 0 0 100vmax var(--color-blue-6a97e4), 0 1px 0 100vmax var(--color-black-a15);
+    clip-path: inset(0 -100vmax -1px);
+}
+
+.page-bar .back-button {
+    margin-bottom: 0;
 }
 
 /* User Manual Specific Styles */

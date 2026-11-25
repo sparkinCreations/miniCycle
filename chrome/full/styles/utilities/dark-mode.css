@@ -198,6 +198,13 @@ body.dark-mode:not([data-theme]) {
     --theme-button-secondary-text: var(--theme-text-primary);
     --theme-button-secondary-hover-bg: var(--theme-bg-surface);
     --theme-stats-border: var(--dark-button-hover-bg);
+    /* Restore from Backup (App Diagnostics): the dark side of variables.css's pairs. */
+    --backup-text-secondary: #cccccc;
+    --backup-badge-auto: var(--color-success-light);
+    --backup-badge-manual: #6ea8fe;
+    --backup-badge-warning: var(--color-warning);
+    --backup-badge-info: #5bc8d9;
+    --backup-badge-neutral: #bbbbbb;
 }
 
 /* =============================================================================
@@ -824,6 +831,15 @@ body.dark-mode .selected {
     border-color: var(--color-black);
 }
 
+/* Not the backup picked in Restore from Backup: the rule above made it light
+   green with white text (2.1:1) and every label on it unreadable. It keeps
+   its own blue selection, and the box's text colours. */
+body.dark-mode .backup-item.selected {
+    background-color: var(--color-blue-007bff-a10);
+    color: inherit;
+    border-color: var(--color-accent);
+}
+
 body.dark-mode .summary-label {
     font-weight: bold;
     color: var(--color-white);
@@ -1033,7 +1049,7 @@ body.dark-mode .testing-modal-info {
 }
 
 body.dark-mode .welcome-message {
-    color: var(--color-slate-6b7280);
+    color: var(--dark-text-dim);   /* #6b7280 on the output (#13141a) was 3.8:1 */
     background: transparent;
 }
 

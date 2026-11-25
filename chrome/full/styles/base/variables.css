@@ -81,6 +81,7 @@
   --color-blue-medium: #3498db;       /* recurring / reminder option icons */
   --color-blue-light: #5dade2;        /* reminder icons on dark bg */
   --color-steel-blue: #376fa4;        /* the app's steel blue (= --menu-action-bg) */
+  --color-blue-285480: #285480;       /* steel blue, darkened for text on pale-blue panels (5.2:1 on #c0d4ed) */
   --color-blue-pale: #d6e4f7;         /* modal background */
   --color-blue-pale-mid: #c0d4ed;     /* summary/detail panels on blue modals */
   --color-blue-pale-light: #f5f8ff;   /* inner panel bg on pale blue modals */
@@ -143,6 +144,7 @@
   --color-slate-600: #4a5568;
   --color-slate-500: #64748b;
   --color-slate-400: #94a3b8;
+  --color-slate-300: #cbd5e1;
   --color-slate-100: #f1f5f9;
   /* Navigation dot colors */
   --color-nav-dot: #1a2650;           /* inactive dot */
@@ -291,6 +293,21 @@
   --task-checkbox-checked-bg: #5db567;
   --task-checkbox-checked-border: #40af4d;
   --task-checkmark: rgb(18, 70, 9);
+
+  /* ═══════════════════════════════════════════════════════════════════════════
+     RESTORE FROM BACKUP (App Diagnostics; testing.css, testing-modal-backup.js)
+     Its box is the theme's modal surface (pale blue here, dark grey in dark
+     mode), so its text and badges come in pairs too — dark-mode.css has the
+     dark side. Until Nov 2026 they were palette colours picked for a dark box:
+     light grey and bright badges on pale blue, 1.03–2.4:1. Each passes 4.5:1
+     on the box, a list item and the selected item.
+     ═══════════════════════════════════════════════════════════════════════════ */
+  --backup-text-secondary: #4a4a4a;
+  --backup-badge-auto: #17612a;
+  --backup-badge-manual: #0a4fb3;
+  --backup-badge-warning: #7a4f00;   /* TEST, legacy AUTO, (Latest) */
+  --backup-badge-info: #0c6170;      /* SESSION, IndexedDB */
+  --backup-badge-neutral: #525252;   /* legacy MANUAL, localStorage */
 
   /* ═══════════════════════════════════════════════════════════════════════════
      BROWSE ROUTINES (routine/routineBrowser.js, routine-switcher.css)
@@ -1092,6 +1109,7 @@
   /* Cyan */
   --color-cyan-00a093-a40: rgba(0, 160, 147, 0.4);
   --color-cyan-0a8db5: #0a8db5;
+  --color-cyan-117a8b: #117a8b;   /* App Diagnostics' info buttons: white on it 5.0:1 */
   --color-cyan-17a2b8-a10: rgba(23, 162, 184, 0.1);
   --color-cyan-20a8d8: #20a8d8;
   --color-cyan-66ccff: #66ccff;

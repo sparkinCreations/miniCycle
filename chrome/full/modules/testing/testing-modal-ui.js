@@ -675,8 +675,8 @@ export function addTestResultsHint() {
 /**
  * Initialize all testing modal enhancements
  * @param {Object} callbacks - Callback functions from main module
- * @param {Function} callbacks.setupTestButtons - Button setup function
- * @param {Function} callbacks.setupResultsControls - Results controls setup function
+ * @param {Function} callbacks.wireControls - wires the buttons, results controls and
+ *   test runner; safe to call on every open (it wires them the first time only)
  */
 export function initTestingModalEnhancements(callbacks = {}) {
     setupTestingTabs();
@@ -699,11 +699,9 @@ export function initTestingModalEnhancements(callbacks = {}) {
                     testingModal.showModal();
                     initTestingModalDrag();
 
-                    setTimeout(() => {
-                        setupTestingTabs();
-                        if (callbacks.setupTestButtons) callbacks.setupTestButtons();
-                        if (callbacks.setupResultsControls) callbacks.setupResultsControls();
-                    }, 150);
+                    // Not setupTestingTabs() again: it ran at startup, above,
+                    // and every call added another handler to each tab.
+                    if (callbacks.wireControls) setTimeout(callbacks.wireControls, 150);
                 }
             } else {
                 console.warn("Testing modal not found");

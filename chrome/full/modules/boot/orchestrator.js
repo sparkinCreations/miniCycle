@@ -24,7 +24,7 @@
  * @see {@link module:boot/uiBoot} - Phase 3 implementation
  */
 
-import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS } from '../core/constants.js';
+import { DOM_IDS, DOM_SELECTORS, DOM_CLASSES, UI_TIMEOUTS, STORAGE_KEYS } from '../core/constants.js';
 import { getLabel } from '../labels/labelResolver.js';
 import { isNativeApp } from '../platform/capacitorBridge.js';
 import { isDesktopApp } from '../platform/desktopBridge.js';
@@ -1287,6 +1287,14 @@ async function startOrchestrator() {
     if (localStorage.getItem('miniCycle_importReloading')) {
       localStorage.removeItem('miniCycle_importReloading');
       loaderMessageOverride = getLabel('boot.importingRoutine');
+    }
+    // A restore finishes with a reload (backupRestoreManager.finishRestore):
+    // say so on the loader. Read, not removed: the restore module shows the
+    // notice it carries once the app is up, and removes it then.
+    try {
+      if (sessionStorage.getItem(STORAGE_KEYS.RESTORE_NOTICE_SESSION)) loaderMessageOverride = getLabel('boot.restoringBackup');
+    } catch {
+      // sessionStorage blocked (private mode): the ordinary boot messages show
     }
 
     // Show initial progress immediately

@@ -397,7 +397,9 @@ body.show-three-dots-enabled .task-list-container:has(> #taskList > .task:first-
     margin: 0;
     font-size: var(--font-size-sm);
     font-weight: 600;
-    color: var(--theme-input-placeholder);
+    /* A heading, not a placeholder: the placeholder grey was 4.27:1 on the
+       modal (Nov 2026). The muted text colour is 4.6:1. */
+    color: var(--theme-text-muted);
     display: flex;
     align-items: center;
     gap: var(--space-1-5);
@@ -1064,7 +1066,7 @@ body.dark-mode .always-visible-badge {
 
 body.dark-mode #reset-task-options-btn {
     background: var(--dark-overlay-subtle);
-    color: var(--color-slate-400);
+    color: var(--color-slate-300);   /* slate-400 was 3.85:1 on this button (Nov 2026) */
     border: 1px solid var(--color-slate-600);
 }
 
