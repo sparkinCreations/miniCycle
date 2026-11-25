@@ -31,7 +31,6 @@ import {
     clearTestResults,
     exportTestResults,
     copyTestResults,
-    setupTestingTabs,
     setupResultsControls,
     safeShowNotification,
     safeShowConfirmationModal,
@@ -97,19 +96,8 @@ function setupTestingModal() {
         // No "Testing panel opened" notice: the window opening says so, and
         // the notice sat over its close button (Nov 2026).
 
-        // Setup ALL functionality AFTER modal is visible
-        setTimeout(() => {
-            setupTestingTabs();
-            setupTestButtons();
-            setupResultsControls(setupResultsAreaResize);
-            setupResultsAreaResize();
-
-            // Setup automated testing integration
-            const deps = getDeps();
-            if (typeof deps.setupAutomatedTestingFunctions === 'function') {
-                deps.setupAutomatedTestingFunctions();
-            }
-        }, 150);
+        // Wire its controls once it is visible — the first time only.
+        setTimeout(wireTestingControlsOnce, 150);
     });
 
     // Close testing modal
@@ -134,6 +122,29 @@ function setupTestingModal() {
 // ==========================================
 // BUTTON SETUP ORCHESTRATOR
 // ==========================================
+
+let controlsWired = false;
+
+/**
+ * Wire App Diagnostics' buttons, results controls and test runner — once.
+ * Both ways in (its button, and Ctrl/Cmd+J) ran every setup on each open, and
+ * each run added new handlers, so after three opens one press of Create Manual
+ * Backup made three backups, Restore stacked three dialogs, Export downloaded
+ * three files and Run All Tests ran the suite three times (found Nov 2026 by
+ * the contrast gate's dialog pass, which opens it repeatedly). The tabs are
+ * wired once already, by initTestingModalEnhancements at startup.
+ */
+function wireTestingControlsOnce() {
+    if (controlsWired) return;
+    controlsWired = true;
+    setupTestButtons();
+    setupResultsControls(setupResultsAreaResize);
+    setupResultsAreaResize();
+    const deps = getDeps();
+    if (typeof deps.setupAutomatedTestingFunctions === 'function') {
+        deps.setupAutomatedTestingFunctions();
+    }
+}
 
 /**
  * Setup all test buttons by delegating to sub-modules
@@ -175,10 +186,7 @@ export function initTestingModal(dependencies = {}) {
     setupTestingModal();
 
     // Initialize UI enhancements with callbacks for button setup
-    initTestingModalEnhancements({
-        setupTestButtons,
-        setupResultsControls: () => setupResultsControls(setupResultsAreaResize)
-    });
+    initTestingModalEnhancements({ wireControls: wireTestingControlsOnce });
 
     // Return exports for registration
     return {

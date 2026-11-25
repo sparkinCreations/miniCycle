@@ -842,6 +842,10 @@ export const STORAGE_KEYS = Object.freeze({
     // and re-written when a factory reset raises that screen again in place.
     FIRST_RUN_CHOICE_SESSION: 'miniCycle_firstRunChoice',
     FIRST_RUN_CHOICE_MADE: 'miniCycle_firstRunChoiceMade',
+    // sessionStorage: the "Backup restored" notice, carried across the page reload
+    // that finishes a restore (backupRestoreManager.finishRestore), shown once the
+    // reloaded app is up. Session-only, so it can never surface in a later visit.
+    RESTORE_NOTICE_SESSION: 'miniCycle_restoreNotice',
     // Flag of the retired one-time "miniCycle moved to /app" redirect (2.663–2.687,
     // removed at MJ's request). Nothing writes it now; uiBoot deletes it at boot.
     MOVED_TO_APP_NOTICE: 'miniCycle_movedToAppNotice',

@@ -101,6 +101,51 @@ const VIEWS = [
     { name: 'focus task panel', classes: ['focus-mode'], activate: () => document.querySelector('.focus-task-dot')?.click() }
 ];
 
+// The dialogs the dialog pass opens (Nov 2026): how to open each through its
+// real button, and the element axe is scoped to once it is open.
+const wait = (ms) => `await new Promise(r => setTimeout(r, ${ms}));`;
+const tap = (id) => `document.getElementById('${id}')?.click();`;
+const DIALOGS = [
+    { name: 'settings', open: tap('open-settings'), selector: '#settings-modal[open]' },
+    { name: 'personalize', open: tap('open-themes-panel'), selector: '#themes-modal[open]' },
+    { name: 'preferences', open: tap('open-preferences'), selector: '#preferences-modal[open]' },
+    { name: 'reminders', open: tap('open-reminders-modal'), selector: '#reminders-modal[open]' },
+    { name: 'recurring panel', open: tap('open-recurring-panel'), selector: '#recurring-panel-overlay[open]' },
+    { name: 'task options customizer', open: tap('menu-task-options'), selector: '#task-options-customizer-modal[open]' },
+    { name: 'games', open: "document.getElementById('games-panel')?.showModal();", selector: '#games-panel[open]' },
+    { name: 'keyboard shortcuts', open: tap('open-shortcuts-modal'), selector: '#shortcuts-modal[open]' },
+    { name: 'feedback', open: tap('open-feedback-modal'), selector: '#feedback-modal[open]' },
+    { name: 'about', open: tap('open-about-modal'), selector: '#about-modal[open]' },
+    { name: 'tip archive', open: tap('open-tip-archive'), selector: '#tip-archive-modal[open]' },
+    { name: 'create a routine', open: tap('new-mini-cycle'), selector: 'dialog.miniCycle-prompt-dialog[open], #miniCycle-prompt-dialog[open]' },
+    { name: 'routine list', open: "document.getElementById('routine-switcher-modal')?.open || " + tap('open-mini-cycle'), selector: '#routine-switcher-modal[open]' },
+    { name: 'delete-routine confirm', open: tap('open-mini-cycle') + wait(900) + "document.querySelector('#miniCycleList .mini-cycle-switch-item')?.click();" + wait(300) + tap('switch-delete'), selector: 'dialog.mini-modal-dialog[open]' },
+    { name: 'history', open: tap('history-btn'), selector: '#history-modal-dialog[open], .history-modal-dialog[open]' },
+    { name: 'achievements', open: tap('achievement-badges-btn'), selector: '#achievements-modal-dialog[open], .achievements-modal-dialog[open]' },
+    { name: 'app diagnostics', open: tap('open-testing-modal'), selector: '#testing-modal[open]' },
+    { name: 'app diagnostics: debug tab', open: tap('open-testing-modal') + wait(500) + "document.querySelector('.testing-tab[data-tab=\"debug\"]')?.click();", selector: '#testing-modal[open]' },
+    { name: 'app diagnostics: tests tab', open: tap('open-testing-modal') + wait(500) + "document.querySelector('.testing-tab[data-tab=\"automated-tests\"]')?.click();", selector: '#testing-modal[open]' },
+    { name: 'restore from backup', open: tap('open-testing-modal') + wait(500) + tap('create-manual-backup') + wait(1200)
+        + "document.querySelectorAll('dialog.mini-modal-dialog[open] .confirm-btn, dialog[open] .miniCycle-btn-confirm').forEach(b => b.click());" + wait(900)
+        + tap('restore-from-backup') + wait(1200) + "document.querySelector('#backup-restore-modal .backup-item')?.click();",
+      selector: '#backup-restore-modal[open]' }
+];
+
+// Close every open dialog the way a user does, with Escape, so each runs its
+// own close path. A bare dialog.close() skips it, and the app then refuses the
+// next open: the confirm dialog and Achievements both stayed "open" in their
+// managers and never came back (measured while writing this pass).
+async function closeAllDialogs(page) {
+    for (let i = 0; i < 6; i++) {
+        const open = await page.evaluate(() => document.querySelectorAll('dialog[open]').length);
+        if (!open) return;
+        await page.keyboard.press('Escape');
+        await page.waitForTimeout(350);
+    }
+    const stuck = await page.evaluate(() => [...document.querySelectorAll('dialog[open]')].map(d => d.id || d.className));
+    throw new Error(`dialog(s) would not close with Escape: ${stuck.join(', ')}`);
+}
+
 async function boot(page, baseURL) {
     await page.goto(`${baseURL}/miniCycle.html`, { waitUntil: 'domcontentloaded', timeout: 20000 });
     const choice = await page.$('[data-choice="sample"]');
@@ -438,6 +483,39 @@ async function run() {
                 }
             }
         }
+        // Dialogs (Nov 2026). Until then this gate never opened one, so no dialog
+        // had ever been measured: App Diagnostics' buttons (3.0–3.8:1), its
+        // Restore from Backup list (1.03:1 in light mode), the task options
+        // customizer and the recurring panel all shipped failing. Each is opened
+        // through its real button and judged on its own (axe scoped to it), in
+        // light and dark. One that does not open fails the gate: a skipped
+        // dialog is an unchecked one.
+        for (const theme of THEMES.filter(t => t.name === 'default' || t.name === 'dark mode')) {
+            await page.evaluate((viewOff) => document.body.classList.remove(...viewOff), allViewClasses);
+            await applyThemeState(page, theme);
+            for (const dlg of DIALOGS) {
+                const label = `${theme.name} / dialog: ${dlg.name}`;
+                try {
+                    await closeAllDialogs(page);
+                    await page.evaluate(`(async () => { ${dlg.open} })()`);
+                    await page.waitForFunction((sel) => !!document.querySelector(sel), dlg.selector, { timeout: 6000 });
+                    await page.waitForTimeout(400);
+                    const results = await new AxeBuilder({ page }).include(dlg.selector).withRules(['color-contrast']).analyze();
+                    const failing = results.violations.flatMap(v => v.nodes.map(n => ({ impact: n.impact || v.impact, target: n.target.join(' '), summary: (n.failureSummary || '').split('\n').find(l => /contrast/.test(l)) || '' })));
+                    if (failing.length === 0) console.log(`   ${colors.green}✅${colors.reset} ${label}`);
+                    else {
+                        console.log(`   ${colors.red}❌ ${label}${colors.reset} ${failing.length} failing node(s)`);
+                        failing.slice(0, 8).forEach(v => console.log(`      ${colors.red}${v.impact}${colors.reset} ${v.target}${colors.gray} — ${v.summary.trim().slice(0, 140)}${colors.reset}`));
+                        failing.forEach(v => { if (v.impact === 'serious' || v.impact === 'critical') serious.push(`${label}: ${v.target}`); });
+                    }
+                } catch (e) {
+                    console.log(`   ${colors.red}❌ ${label} did not open: ${e.message.split('\n')[0]}${colors.reset}`);
+                    serious.push(`${label}: did not open`);
+                }
+            }
+            await closeAllDialogs(page);
+        }
+
         // High Contrast onboarding banner: the boot above strips it, so bring it
         // back the way a user does (Welcome Screen → "How cycles work", from a
         // real Focus View) and measure it composited over the gradient.

@@ -63,8 +63,27 @@ const VIEWPORTS = [
 const STATIC_PAGES = [
     { name: 'product',    path: '/pages/product.html' },
     { name: 'learn-more', path: '/pages/learn_more.html' },
-    { name: 'mcyc-format', path: '/pages/mcyc-format.html' }
+    { name: 'mcyc-format', path: '/pages/mcyc-format.html' },
+    // The pages the apps bundle (Nov 2026): the legal pages and the Task Order
+    // game. They were written for the website and never swept here.
+    { name: 'user-manual', path: '/legal/user-manual.html' },
+    { name: 'terms', path: '/legal/terms.html' },
+    { name: 'privacy', path: '/legal/privacy.html' },
+    { name: 'security', path: '/legal/security.html' },
+    { name: 'accessibility', path: '/legal/accessibility.html' },
+    { name: 'task-order game', path: '/games/miniCycle-taskOrder.html' }
 ];
+
+// The legal pages' Back button on an iPhone (Nov 2026). In the iOS app the
+// pages draw under the status bar, and the button sat beneath the clock; it
+// also scrolled away, so a reader at the end of the manual had no way back but
+// scrolling up. The notch is simulated (DevTools' safe-area override, 59px: an
+// iPhone 16 Pro's status bar) — a run where it cannot be fails, since without
+// it the check would pass on any page.
+const LEGAL_PAGES = STATIC_PAGES.filter(pg => pg.path.startsWith('/legal/'));
+const NOTCH_PX = 59;
+// The same lookup legal-footer.js uses to find the button.
+const BACK_LINK = 'a[aria-label^="Back to"], a[aria-label^="Go back"]';
 
 // Width-only matrix: these pages are long documents, so height is irrelevant to
 // horizontal overflow. 768 and 900 are here BECAUSE they were the widths that
@@ -1800,6 +1819,47 @@ async function run() {
                 await tp.evaluate(() => document.getElementById('layout-test-insets')?.remove());
             } finally {
                 await tourContext.close();
+            }
+        }
+
+        // ── Legal pages on an iPhone: Back clears the notch, and stays ───────
+        {
+            const phone = await browser.newContext({ viewport: { width: 393, height: 852 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true });
+            try {
+                for (const pageDef of LEGAL_PAGES) {
+                    const lp = await phone.newPage();
+                    const vp = { name: `${pageDef.name} @iPhone (notch ${NOTCH_PX}px)`, width: 393, height: 852 };
+                    const cdp = await phone.newCDPSession(lp);
+                    await cdp.send('Emulation.setSafeAreaInsetsOverride', { insets: { top: NOTCH_PX, left: 0, bottom: 34, right: 0 } });
+                    await lp.goto(`${baseURL}${pageDef.path}`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+                    await lp.waitForTimeout(400);
+                    const inset = await lp.evaluate(() => {
+                        const d = document.createElement('div');
+                        d.style.cssText = 'position:fixed;top:0;height:env(safe-area-inset-top,0px)';
+                        document.body.appendChild(d);
+                        const h = d.getBoundingClientRect().height;
+                        d.remove();
+                        return h;
+                    });
+                    record(vp, 'the page draws under the status bar and reads its inset (viewport-fit=cover)', inset === NOTCH_PX,
+                        `env(safe-area-inset-top) is ${inset}px`);
+                    const box = () => lp.evaluate((sel) => {
+                        const r = document.querySelector(sel)?.getBoundingClientRect();
+                        return r ? { top: Math.round(r.top), bottom: Math.round(r.bottom) } : null;
+                    }, BACK_LINK);
+                    const atTop = await box();
+                    record(vp, 'Back clears the status bar when the page opens', !!atTop && atTop.top >= NOTCH_PX,
+                        `Back is at ${JSON.stringify(atTop)}`);
+                    await lp.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+                    await lp.waitForTimeout(300);
+                    const atEnd = await box();
+                    record(vp, 'Back is still on screen, below the status bar, at the end of the page',
+                        !!atEnd && atEnd.top >= NOTCH_PX && atEnd.bottom <= 852,
+                        `Back is at ${JSON.stringify(atEnd)} after scrolling to the end`);
+                    await lp.close();
+                }
+            } finally {
+                await phone.close();
             }
         }
 

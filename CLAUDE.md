@@ -42,12 +42,12 @@ which spawns its own server on its own port — no `npm start` needed:
 
 ```bash
 npm run test:sw       # offline boot + PRECACHE DRIFT GUARD (see below)
-npm run test:layout   # panel-overlap + measured-var guard (7 app viewports) + static-page horizontal-overflow sweep (product.html, 10 widths)
+npm run test:layout   # panel-overlap + measured-var guard (7 app viewports) + static-page horizontal-overflow sweep (product, legal pages, game; 10 widths) + legal pages' Back clears a simulated iPhone notch and stays reachable
 npm run test:meta     # static: every test must assert and await its async body
 npm run test:journey  # end-to-end user journeys on the real app
 JOURNEY_FILTER="factory reset" npm run test:journey  # only the journeys whose name contains the text
 npm run test:a11y     # custom controls must be keyboard-operable and named — the class no label gate can see
-npm run test:contrast # axe color-contrast on the real app, per theme and view (gated at zero serious violations; text over image backgrounds is reported, not judged)
+npm run test:contrast # axe color-contrast on the real app, per theme and view, AND every dialog opened through its real button in light + dark (gated at zero serious violations; text over image backgrounds is reported, not judged)
 npm run test:webkit   # the browser suite on WebKit (the iOS app is a WKWebView) — CI runs it non-blocking
 npm run test:journey:webkit  # the journeys on WebKit — LOCAL ONLY, run before an iOS release (dropped from CI Oct 2026: the Ubuntu WebKit port failed a different timing check most runs while macOS WebKit passed them all)
 ```

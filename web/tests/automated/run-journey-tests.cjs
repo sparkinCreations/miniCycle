@@ -5600,6 +5600,65 @@ async function journeyOpenedFilesImport(browser, baseURL) {
     return { name: 'files opened with the installed app import, once each', failures };
 }
 
+// ── A restore finishes with a fresh load ─────────────────────────────────────
+// Until Nov 2026 a restore re-rendered in place, and only what that path
+// redrew by hand followed the restored data. The Games menu is read once at
+// boot, so restoring a backup that had it unlocked left it hidden until the
+// app was relaunched (the user's report: games did not come back after a
+// factory reset and a restore). A restore now reloads the page, and carries
+// its "restored" notice across the reload.
+async function journeyRestoreReloadsTheApp(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        // The backup: the current document with the game unlocked.
+        const file = await page.evaluate(() => {
+            const d = JSON.parse(localStorage.getItem('miniCycleData'));
+            d.settings.unlockedFeatures = ['task-order-game'];
+            return JSON.stringify({ schemaVersion: '2.6', miniCycleData: JSON.stringify(d),
+                backupMetadata: { createdAt: Date.now(), version: '2.6', schemaVersion: '2.6', source: 'miniCycle App' } });
+        });
+        // Games is decided when the menu first opens (gamesManager loads on that
+        // click), so open it the way a user does, before and after.
+        const gamesShown = async () => {
+            await page.evaluate(() => document.querySelector('.menu-button')?.click());
+            await page.waitForTimeout(1200);
+            const shown = await page.evaluate(() => {
+                const el = document.getElementById('games-menu-option');
+                return !!el && getComputedStyle(el).display !== 'none';
+            });
+            await page.evaluate(() => document.getElementById('close-main-menu')?.click());
+            await page.waitForTimeout(500);
+            return shown;
+        };
+        record('before the restore, Games is locked and hidden (the menu has been opened)', !(await gamesShown()), 'Games shown before the restore');
+
+        await page.evaluate(() => { window.__beforeRestore = true; });
+        await openSettingsPanel(page);
+        await page.evaluate(() => document.getElementById('restore-mini-cycles')?.click());
+        await page.waitForTimeout(600);
+        await page.setInputFiles('#import-cycle-file-input', { name: 'games-unlocked.json', mimeType: 'application/json', buffer: Buffer.from(file) });
+        await page.waitForTimeout(1500);
+        await confirmDestructive(page);
+        await page.waitForFunction(() => !window.__beforeRestore && document.documentElement.dataset.appLoaded === 'true', null, { timeout: 20000 });
+        await page.waitForTimeout(1500);
+
+        record('the restore reloaded the app', await page.evaluate(() => !window.__beforeRestore), 'the page was not reloaded');
+        record('after the restore, Games is unlocked and shown, without a relaunch', await gamesShown(), 'Games still hidden');
+        const notice = await page.evaluate(() => [...document.querySelectorAll('.notification')].map(n => n.textContent.trim()).join(' | '));
+        record('the "restored" notice shows after the reload', /restored/i.test(notice), `notifications: ${notice || '(none)'}`);
+        const leftover = await page.evaluate(() => sessionStorage.getItem('miniCycle_restoreNotice'));
+        record('the carried notice is used once and dropped', leftover === null, `still in sessionStorage: ${leftover}`);
+        record('no starved dependencies', page.__diWarnings.length === 0, `DI warnings: ${page.__diWarnings.join(' | ')}`);
+    } catch (e) {
+        failures.push(`run error: ${e.message}`);
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'a restore reloads the app and brings everything back (Games included)', failures };
+}
+
 async function journeySettingsRestoreAcceptsOlderBackup(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const inner = JSON.stringify(Object.assign(legacy25Document(), {
@@ -6740,6 +6799,47 @@ async function journeyChoiceScreenKeepsFocus(browser, baseURL) {
 // is Done. Separately: the intro opens in Focus View and only its second slide
 // says so, so Skip before that slide leaves the user in a stripped-down view
 // with no word of what it is — Skip then gets a one-time notice (review, Oct 2026).
+// ── App Diagnostics, opened again and again: one press, one action ─────────
+// Both ways in (its button, Ctrl/Cmd+J) wired every control on each open, with
+// new handlers each time, so after three opens one press of Create Manual
+// Backup made three backups and Restore stacked three dialogs (Export: three
+// files; Run All Tests: three runs). Found Nov 2026 by the contrast gate's
+// dialog pass, which opens the panel repeatedly.
+async function journeyDiagnosticsWiredOnce(browser, baseURL) {
+    const { failures, record } = makeRecorder();
+    const { context, page } = await openFresh(browser, baseURL);
+    try {
+        const close = async () => {
+            await page.evaluate(() => document.querySelector('.close-testing-modal')?.click());
+            await page.waitForFunction(() => !document.getElementById('testing-modal').open, null, { timeout: 5000 });
+        };
+        for (let i = 0; i < 2; i++) {
+            await page.evaluate(() => document.getElementById('open-testing-modal').click());
+            await page.waitForTimeout(500);   // its controls are wired 150ms after it shows
+            await close();
+        }
+        await page.keyboard.press('Control+j');
+        await page.waitForFunction(() => document.getElementById('testing-modal').open, null, { timeout: 5000 });
+        await page.waitForTimeout(500);
+
+        await page.evaluate(() => document.getElementById('create-manual-backup').click());
+        await page.waitForTimeout(1500);
+        const backups = await page.evaluate(() => (document.getElementById('testing-output')?.textContent.match(/Creating Manual Backup/g) || []).length);
+        record('three opens, one press of Create Manual Backup: one backup', backups === 1, `${backups} backups started`);
+
+        await page.evaluate(() => document.getElementById('restore-from-backup').click());
+        await page.waitForTimeout(1500);
+        const dialogs = await page.evaluate(() => document.querySelectorAll('#backup-restore-modal').length);
+        record('one press of Restore from Backup: one dialog', dialogs === 1, `${dialogs} restore dialogs`);
+    } catch (e) {
+        console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
+        failures.push(`harness error: ${e.message}`);
+    } finally {
+        await context.close();
+    }
+    return { name: 'App Diagnostics opened three times: one press, one action', failures };
+}
+
 async function journeyIntroDoneAndFocusNotice(browser, baseURL) {
     const { failures, record } = makeRecorder();
     const NOTICE = /which shows just your tasks/;
@@ -8238,6 +8338,7 @@ const JOURNEYS = [
     { name: 'Alt+arrow reorders a task from the keyboard', fn: journeyKeyboardReorder },
     { name: 'keyboard focus stays on the welcome choice screen', fn: journeyChoiceScreenKeepsFocus },
     { name: 'the intro reads Done once it is finished; skipping it explains Focus View', fn: journeyIntroDoneAndFocusNotice },
+    { name: 'App Diagnostics opened three times: one press, one action', fn: journeyDiagnosticsWiredOnce },
     { name: 'renaming a routine inline in Open Routine stays in the box', fn: journeySwitcherInlineRename },
     { name: 'a routine search survives a mode filter or sort change', fn: journeySwitcherSearchSurvivesFilter },
     { name: 'a tap in Open Routine responds at once; a double-tap opens that routine', fn: journeySwitcherTapResponds },
@@ -8259,6 +8360,7 @@ const JOURNEYS = [
     { name: 'title-keyed routines are re-keyed by id at boot; rename keeps the key', fn: journeyBootRepairsTitleKeyedRoutines },
     { name: 'the pre-migration copy is usable from Settings', fn: journeyPreMigrationCopyFromSettings },
     { name: 'a backup made before 2.6 restores from Settings', fn: journeySettingsRestoreAcceptsOlderBackup },
+    { name: 'a restore reloads the app and brings everything back (Games included)', fn: journeyRestoreReloadsTheApp },
     { name: 'files opened with the installed app import, once each', fn: journeyOpenedFilesImport },
     { name: 'the Complete Cycle button survives every task moving to the dropdown', fn: journeyCompleteButtonSurvivesDropdown },
     { name: 'reorder arrows move the task the user pointed at', fn: journeyArrowReorderMovesTheRightTask },

@@ -209,7 +209,8 @@
 }
 
 .test-results-hint {
-    color: var(--theme-text-muted);
+    /* Not --theme-text-muted: #717171 on the results header (#e8ebf0) was 4.1:1. */
+    color: var(--theme-text-secondary);
     font-size: var(--font-size-xs);
     margin-left: var(--space-2);
     font-weight: var(--font-weight-normal);
@@ -388,7 +389,7 @@
 
 .backup-restore-description {
     margin: 0 0 var(--space-5) 0;
-    color: var(--color-gray-300);
+    color: var(--backup-text-secondary);
     font-size: var(--font-size-sm);
 }
 
@@ -407,24 +408,24 @@
     font-weight: var(--font-weight-bold);
 }
 
-.backup-type-badge.auto { color: var(--color-success); }
-.backup-type-badge.manual { color: var(--color-accent); }
-.backup-type-badge.test { color: var(--color-warning); }
-.backup-type-badge.session { color: var(--color-info); }
-.backup-type-badge.legacy-auto { color: var(--color-warning); }
-.backup-type-badge.legacy-manual { color: var(--color-gray-600); }
+.backup-type-badge.auto { color: var(--backup-badge-auto); }
+.backup-type-badge.manual { color: var(--backup-badge-manual); }
+.backup-type-badge.test { color: var(--backup-badge-warning); }
+.backup-type-badge.session { color: var(--backup-badge-info); }
+.backup-type-badge.legacy-auto { color: var(--backup-badge-warning); }
+.backup-type-badge.legacy-manual { color: var(--backup-badge-neutral); }
 
 /* Storage location labels */
 .backup-storage-label {
     font-size: var(--font-size-xs);
 }
 
-.backup-storage-label.indexeddb { color: var(--color-info); }
-.backup-storage-label.localstorage { color: var(--color-gray-600); }
+.backup-storage-label.indexeddb { color: var(--backup-badge-info); }
+.backup-storage-label.localstorage { color: var(--backup-badge-neutral); }
 
 /* Latest backup indicator */
 .backup-latest-label {
-    color: var(--color-warning);
+    color: var(--backup-badge-warning);
     font-size: var(--font-size-xs);
 }
 
@@ -455,12 +456,12 @@
 
 .backup-item-details {
     font-size: var(--font-size-xs);
-    color: var(--color-gray-300);
+    color: var(--backup-text-secondary);
 }
 
 .backup-item-name {
     font-size: var(--font-size-xs);
-    color: var(--color-gray-400);
+    color: var(--backup-text-secondary);
     margin-top: var(--space-1);
 }
 
@@ -931,12 +932,15 @@
     outline-offset: 2px;
 }
 
+/* Fills white 12px text can be read on (4.5:1) — measured Nov 2026, the
+   first time App Diagnostics was checked at all: the light blue was 3.8:1,
+   Bootstrap's teal 3.0:1 and its green 3.1:1. Now 5.8, 5.0 and 5.1:1. */
 .test-btn.test-primary {
-    background: var(--color-primary);
+    background: var(--color-primary-dark);
 }
 
 .test-btn.test-primary:hover {
-    background: var(--color-primary-dark);
+    filter: brightness(0.85);
 }
 
 .test-btn.test-secondary {
@@ -948,7 +952,7 @@
 }
 
 .test-btn.test-info {
-    background: var(--color-info);
+    background: var(--color-cyan-117a8b);
 }
 
 .test-btn.test-info:hover {
@@ -956,7 +960,7 @@
 }
 
 .test-btn.test-success {
-    background: var(--color-success);
+    background: var(--color-green-2e7d32);
 }
 
 .test-btn.test-success:hover {

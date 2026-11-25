@@ -2665,6 +2665,7 @@ export const DEFAULT_LABELS = deepFreeze({
         startingUp:       'Starting up...',
         ready:            'Ready!',
         importingRoutine: 'Importing routine...',
+        restoringBackup:  'Restoring your backup...',   // the loader across the reload that finishes a restore
         unableToLoad:     'Unable to Load',
         havingTrouble:    'Having trouble loading...',
         retrying:         'Retrying automatically...',

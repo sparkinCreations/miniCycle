@@ -37,7 +37,7 @@ const di = createDIModule('BackupRestoreManager', {
     BackupFolder: optional(null),   // Daily backup files in the device folder (desktop / Android)
     StoragePersistence: optional(null),  // Getter: whether the browser granted persistent storage (Settings line)
     AppMeta: optional(null),  // For version info
-    loadMiniCycle: optional(null),  // For in-place UI refresh after restore/reset (replaces location.reload)
+    loadMiniCycle: optional(null),  // In-place UI refresh: a factory reset, and a restore that cannot reload (finishRestore)
     showLoader: optional(null),  // Loading overlay from uiBoot
     hideLoader: optional(null),  // Loading overlay from uiBoot
     hideMainMenu: optional(null),  // Close settings menu after restore/reset
@@ -327,6 +327,73 @@ function rearmFirstRunChoiceScreen() {
     document.dispatchEvent(new CustomEvent(EVENTS.FIRST_RUN_REARM));
 
     return true;
+}
+
+/**
+ * Finish a restore with a page reload (Nov 2026). Restore used to re-render in
+ * place, and only what reloadWithLoader redraws by hand followed the restored
+ * data: anything a module reads once at boot kept the old document until the
+ * app was relaunched — the Games menu, for one, stayed hidden after restoring
+ * a backup that had it unlocked. A fresh load builds everything from the
+ * restored data. The notice that used to show here rides across the reload in
+ * sessionStorage and shows once the app is up (showRestoreNoticeAfterReload).
+ * Where a reload would not come back (no service worker and no network), it
+ * falls back to the in-place re-render, notice included.
+ *
+ * Safe to reload: the caller has neutralised AppState, so its unload flush
+ * has nothing to write over the restored document.
+ * @param {string} logContext - Console label (e.g. 'Restore')
+ * @param {{message: string, type: string, duration: number}} notice
+ * @returns {Promise<void>}
+ */
+async function finishRestore(logContext, notice) {
+    if (await canReloadAfterRestore()) {
+        try {
+            sessionStorage.setItem(STORAGE_KEYS.RESTORE_NOTICE_SESSION, JSON.stringify(notice));
+        } catch {
+            // Private mode: the notice is lost; the restored data is not.
+        }
+        _deps.closeAllModals?.();
+        _deps.hideMainMenu?.();
+        _deps.showLoader?.(getLabel('boot.restoringBackup'));
+        window.location.reload();
+        return;
+    }
+    _deps.showNotification(notice.message, notice.type, notice.duration);
+    reloadWithLoader(logContext);
+}
+
+/**
+ * The notice a restore carried across its reload (finishRestore), shown once
+ * the reloaded app is up, then dropped.
+ * @returns {void}
+ */
+function showRestoreNoticeAfterReload() {
+    let notice = null;
+    try {
+        const raw = sessionStorage.getItem(STORAGE_KEYS.RESTORE_NOTICE_SESSION);
+        sessionStorage.removeItem(STORAGE_KEYS.RESTORE_NOTICE_SESSION);
+        notice = raw ? JSON.parse(raw) : null;
+    } catch {
+        return;   // sessionStorage blocked, or the entry unreadable: nothing to show
+    }
+    if (!notice || typeof notice.message !== 'string' || !notice.message) return;
+    Promise.resolve(_deps.appInit?.waitForApp?.()).then(() => {
+        _deps.showNotification(notice.message, notice.type || 'success', notice.duration || UI_TIMEOUTS.NOTIFICATION_EXTENDED);
+    });
+}
+
+/**
+ * Whether a page reload after a RESTORE will come back up. Unlike a factory
+ * reset, a restore leaves the service worker and its caches alone, so while
+ * one controls this page it serves the reload, offline too. Without one (a
+ * browser that refused it), only the network can — the reset's probe decides.
+ * @returns {Promise<boolean>}
+ */
+async function canReloadAfterRestore() {
+    if (isNativeApp() || isDesktopApp()) return true;
+    if (typeof navigator !== 'undefined' && navigator.serviceWorker?.controller) return true;
+    return canReloadAfterReset();
 }
 
 /**
@@ -864,6 +931,10 @@ export function setupRestoreButton() {
     }
     _initialized.restoreButton = true;
 
+    // Runs once per page load, at boot: the place to show the notice a
+    // restore carried across its reload.
+    showRestoreNoticeAfterReload();
+
     const safeAddEventListener = _deps.safeAddEventListener;
     if (!safeAddEventListener) {
         console.error('BackupRestoreManager: safeAddEventListener dependency not injected');
@@ -1116,14 +1187,11 @@ async function processRestoreData(fileContent, options = {}) {
                 // what landed instead of claiming a full restore.
                 const liteOk = restoreLiteStorageSnapshot(backupData.liteStorage);
                 const extrasOk = restoreExtraStorageKeys(backupData.extraStorageKeys);
-                if (liteOk && extrasOk) {
-                    _deps.showNotification(getLabel('notify.backupRestored'), "success", UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-                } else {
-                    _deps.showNotification(getLabel('notify.restorePartialSettings'), "warning", UI_TIMEOUTS.NOTIFICATION_PERSISTENT);
-                }
+                const notice = (liteOk && extrasOk)
+                    ? { message: getLabel('notify.backupRestored'), type: 'success', duration: UI_TIMEOUTS.NOTIFICATION_EXTENDED }
+                    : { message: getLabel('notify.restorePartialSettings'), type: 'warning', duration: UI_TIMEOUTS.NOTIFICATION_PERSISTENT };
 
-                // Re-render UI in place — faster than location.reload() and works offline
-                reloadWithLoader('Restore');
+                finishRestore('Restore', notice);
                 resolve();
             }
         });
@@ -1685,8 +1753,7 @@ export async function restorePreMigrationCopy() {
         return false;
     }
 
-    _deps.showNotification(getLabel('notify.preMigrationRestored'), 'success', UI_TIMEOUTS.NOTIFICATION_EXTENDED);
-    reloadWithLoader('Pre-migration restore');
+    finishRestore('Pre-migration restore', { message: getLabel('notify.preMigrationRestored'), type: 'success', duration: UI_TIMEOUTS.NOTIFICATION_EXTENDED });
     return true;
 }
 
