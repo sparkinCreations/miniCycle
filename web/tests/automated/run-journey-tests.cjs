@@ -28,6 +28,13 @@ const playwright = require('playwright');
 // WebKit non-blocking — the iOS app is a WKWebView, so it is the second engine
 // this product ships on). Default stays Chromium.
 const ENGINE_NAME = (process.env.PW_BROWSER || 'chromium').toLowerCase();
+// The Tab key a keyboard user presses on this engine. WebKit follows Safari's
+// default: Tab moves only between text fields, and Option+Tab reaches every
+// control (or Tab does, once "Press Tab to highlight each item" is on). Plain
+// Tab on WebKit never reached the first-run choice buttons, so seven focus
+// checks failed there on a harness limit, not an app fault (Nov 2026).
+const TAB = ENGINE_NAME === 'webkit' ? 'Alt+Tab' : 'Tab';
+const SHIFT_TAB = ENGINE_NAME === 'webkit' ? 'Alt+Shift+Tab' : 'Shift+Tab';
 const engine = playwright[ENGINE_NAME];
 if (!engine) { console.error(`Unknown PW_BROWSER "${ENGINE_NAME}" (chromium | webkit | firefox)`); process.exit(2); }
 const { chromium } = playwright;
@@ -1980,6 +1987,12 @@ async function journeyKeyboardOnlyItems(browser, baseURL) {
 // A desktop browser has no inset and must not move.
 async function journeyFocusMenuSafeArea(browser, baseURL) {
     const { failures, record } = makeRecorder();
+    if (ENGINE_NAME !== 'chromium') {
+        // The status-bar inset is simulated through DevTools, which only
+        // Chromium has; CI runs this on Chromium.
+        skipOnEngine("Focus View's ⋯ button clears the status bar", 'the safe-area inset is simulated through DevTools (Chromium only)');
+        return { name: "Focus View's ⋯ button clears the status bar on a wide installed app", failures };
+    }
     for (const [name, viewport, inset, wantTop] of [
         ['iPad landscape, installed app', { width: 1180, height: 820 }, 24, 24],
         ['desktop browser', { width: 1280, height: 800 }, 0, 16]
@@ -4091,7 +4104,7 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
         await page.evaluate(() => document.querySelector('.menu-button').focus());
         await page.keyboard.press('Enter');
         await page.waitForTimeout(500);
-        await page.keyboard.press('Tab');
+        await page.keyboard.press(TAB);
         await page.waitForTimeout(150);
         await page.keyboard.press('Escape');
         await page.waitForTimeout(450);
@@ -4123,7 +4136,7 @@ async function journeyKeyboardFocusSurvivesDialogs(browser, baseURL) {
         // 3. Personalization: reverse Tab stays inside
         await openFromMenu('open-preferences');
         const first = await active();
-        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press(SHIFT_TAB);
         await page.waitForTimeout(200);
         const wrapped = await page.evaluate(() => { const a = document.activeElement; const d = document.querySelector('dialog[open]'); return { id: a.id || a.tagName, inside: !!(d && d.contains(a)) }; });
         record('Personalization: Shift+Tab from the first control stays inside the dialog',
@@ -4346,7 +4359,7 @@ async function journeyReauditDialogs(browser, baseURL) {
         const field = await page.evaluate(() => { const i = document.getElementById('sample-creation-input'); const l = document.querySelector(`label[for="${i.id}"]`); return { labelled: !!l, labelText: l && l.textContent.trim(), focused: document.activeElement === i }; });
         record('create routine: the dialog is named by its visible heading', !!d && /routine/i.test(d.name || '') && d.titleVisible, JSON.stringify(d));
         record('create routine: the name field has a real label, not just a placeholder', field.labelled && !!field.labelText && field.focused, JSON.stringify(field));
-        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press(SHIFT_TAB);
         await page.waitForTimeout(150);
         const wrapped = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { inside: !!dlg && dlg.contains(document.activeElement), id: document.activeElement.className || document.activeElement.tagName }; });
         record('create routine: Shift+Tab from the field stays inside the dialog', wrapped.inside, JSON.stringify(wrapped));
@@ -4366,7 +4379,7 @@ async function journeyReauditDialogs(browser, baseURL) {
         await page.evaluate(() => { document.querySelectorAll('.menu-section.collapsed').forEach(s => s.classList.remove('collapsed')); const el = document.getElementById('open-settings'); el.focus(); el.click(); });
         await page.waitForTimeout(1200);
         const sFirst = await active();
-        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press(SHIFT_TAB);
         await page.waitForTimeout(150);
         const sWrap = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { inside: !!dlg && dlg.contains(document.activeElement), open: !!dlg, id: document.activeElement.id || document.activeElement.tagName }; });
         record('Settings: Shift+Tab from the first control stays inside', sWrap.open && sWrap.inside, `from ${sFirst.id} to ${JSON.stringify(sWrap)}`);
@@ -4378,7 +4391,7 @@ async function journeyReauditDialogs(browser, baseURL) {
         await page.evaluate(() => document.getElementById('history-btn')?.click());
         await page.waitForTimeout(1200);
         const hFirst = await active();
-        await page.keyboard.press('Shift+Tab');
+        await page.keyboard.press(SHIFT_TAB);
         await page.waitForTimeout(150);
         const hWrap = await page.evaluate(() => { const dlg = document.querySelector('dialog[open]'); return { inside: !!dlg && dlg.contains(document.activeElement), open: !!dlg, id: document.activeElement.className || document.activeElement.tagName }; });
         record('History: Shift+Tab from the first control stays inside', hWrap.open && hWrap.inside, `from ${hFirst.id} to ${JSON.stringify(hWrap)}`);
@@ -6689,7 +6702,7 @@ async function journeyChoiceScreenKeepsFocus(browser, baseURL) {
         });
         const stops = [];
         for (let i = 0; i < 40; i++) {
-            await page.keyboard.press('Tab');
+            await page.keyboard.press(TAB);
             const stop = await page.evaluate(() => {
                 const a = document.activeElement;
                 if (!a || a === document.body) return null;
@@ -6735,8 +6748,8 @@ async function journeyChoiceScreenKeepsFocus(browser, baseURL) {
         // The ring has to read on a photo whose colours are unknown: white with
         // a dark band around it, not the app's 2px brand blue.
         await page.evaluate(() => document.querySelector('.first-run-btn[data-choice="learn"]').focus());
-        await page.keyboard.press('Shift+Tab');
-        await page.keyboard.press('Tab');
+        await page.keyboard.press(SHIFT_TAB);
+        await page.keyboard.press(TAB);
         await page.waitForTimeout(400);   // the button transitions its box-shadow
         const ring = await page.evaluate(() => {
             const cs = getComputedStyle(document.activeElement);
@@ -7728,7 +7741,11 @@ async function journeyBrowseRoutines(browser, baseURL) {
             record('…the Home View button is the folder and "Routines", the menu button reads "Switch"',
                 listButtons.homeText === 'Routines' && listButtons.menuText === 'Switch' && listButtons.menuTitle === 'Switch routines', JSON.stringify(listButtons));
 
-            await page.click('#routine-switcher-btn');
+            // Opened from the keyboard: the focus-return check below is a keyboard
+            // user's contract, and Safari does not focus a button on a click, so
+            // after a click there is nothing to return focus to on WebKit.
+            await page.focus('#routine-switcher-btn');
+            await page.keyboard.press('Enter');
             await page.waitForFunction(() => document.getElementById('routine-switcher-modal').open, null, { timeout: 5000 });
             const corner = await page.evaluate(() => {
                 const b = document.getElementById('switch-browse-btn');
