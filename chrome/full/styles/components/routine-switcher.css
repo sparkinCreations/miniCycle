@@ -810,7 +810,8 @@ input.routine-search-input:focus {
 }
 
 /* =============================================================================
-   UPLOAD BUTTON
+   UPLOAD BUTTON — also the look of New (#switch-new-routine) beside it, so the
+   row's two secondary actions match
    ============================================================================= */
 
 .mini-cycle-upload-btn {
@@ -1679,7 +1680,7 @@ input.routine-search-input:focus {
 
 /* Own hovers: the app-wide button:hover is a light grey, and white text on it
    measured 1.54:1. */
-#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-search-btn, .rb-import-btn, .rb-search-close, .rb-corner-btn, .rb-create-btn):hover:not(:disabled) {
+#routine-browser :is(.rb-close-btn, .rb-layout-btn, .rb-sort-btn, .rb-search-btn, .rb-import-btn, .rb-search-close, .rb-corner-btn, .rb-action-btn):hover:not(:disabled) {
     background: var(--browse-control-hover-bg);
     color: var(--browse-surround-text);
 }
@@ -2102,19 +2103,24 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     font-size: var(--font-size-sm);
 }
 
+/* Delete | Open | New routine: Open stays centred under the routine however
+   wide the two either side of it are. */
 .rb-actions {
-    display: flex;
-    justify-content: center;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
     gap: var(--space-3);
 }
+
+.rb-delete-btn { justify-self: end; }
+.rb-create-btn { justify-self: start; }
 
 .rb-open-btn:disabled {
     border-style: none;   /* buttons.css dashes every disabled button's border; this one has none */
 }
 
 .rb-open-btn,
-.rb-create-btn {
-    min-width: var(--browse-action-min-width);
+.rb-action-btn {
     padding: var(--space-2-5) var(--space-5);
     border-radius: var(--radius-md);
     font-size: var(--font-size-base);
@@ -2127,6 +2133,7 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
    view. Its text is large (20px bold, WCAG's 3:1 tier): white on the gradient's
    light end measures about 3.7:1, short of the 4.5:1 normal text needs. */
 .rb-open-btn {
+    min-width: var(--browse-action-min-width);
     border: none;
     background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
     color: var(--color-white);
@@ -2148,9 +2155,35 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     box-shadow: var(--shadow-sm);
 }
 
-.rb-create-btn {
+/* Delete and New routine, either side of Open: Browse's own control look,
+   icon and text (icons only on a phone, below). */
+.rb-action-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
     border: 1px solid var(--browse-control-border);
     background: var(--browse-control-bg);
+}
+
+.rb-action-btn svg {
+    width: 1em;
+    height: 1em;
+}
+
+/* Red on hover, as the list's Delete is; the confirm says the rest. Only
+   where there is a real hover: a tap on a phone leaves :hover stuck, and the
+   button stayed red behind the confirm and after Cancel. */
+@media (hover: hover) {
+    #routine-browser .rb-delete-btn:hover:not(:disabled) {
+        background: var(--browse-danger-hover-bg);
+        border-color: var(--browse-danger-hover-bg);
+    }
+}
+
+.rb-action-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 /* ── widths ──────────────────────────────────────────────────────────────────
@@ -2225,9 +2258,20 @@ body:not(.dark-mode):not(.theme-dark-ocean):not(.theme-golden-glow) .rb-tile {
     .rb-import-btn + .rb-corner-btn { margin-left: 0; }
     .rb-search { order: 2; max-width: none; }
 
-    /* Icons only for the layout switch on a phone; each is named by its text
-       for screen readers (visually hidden, not removed). */
-    .rb-layout-btn span {
+    /* Delete and New routine: round icons either side of Open, a full tap
+       target each. */
+    .rb-action-btn {
+        width: var(--browse-nav-size);
+        height: var(--browse-nav-size);
+        padding: 0;
+        border-radius: var(--radius-full);
+        font-size: var(--font-size-lg);
+    }
+
+    /* Icons only for the layout switch and the actions on a phone; each is
+       named by its text for screen readers (visually hidden, not removed). */
+    .rb-layout-btn span,
+    .rb-action-btn span {
         position: absolute;
         width: 1px;
         height: 1px;

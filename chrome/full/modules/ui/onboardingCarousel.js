@@ -531,13 +531,29 @@ export class OnboardingCarousel {
     _onFirstRunWelcomeDismiss() {
         // Read before the hide below clears the slide list.
         const slides = this.m._firstRunWelcomeSlides || [];
+        // The button said Done (see _syncFirstRunWelcomeDismissLabel): the
+        // user went through the slides rather than skipping them.
+        const index = this.m._firstRunWelcomeSlideIndex;
+        const pressedDone = index === slides.length - 1 || !!slides[index]?.pastIntro;
+        const inFocusView = document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+        const replay = !!this.m._firstRunWelcomeReplay;
         const explainerIndex = slides.findIndex((slide) => slide.explainsFocusView);
-        const missedExplainer = !this.m._firstRunWelcomeReplay
+        const missedExplainer = !replay
             && explainerIndex !== -1
             && (this._furthestSlideShown || 0) < explainerIndex
-            && document.body.classList.contains(DOM_CLASSES.FOCUS_MODE);
+            && inFocusView;
 
         this._hideFirstRunWelcome({ persist: true });
+
+        // Done, the first time through, still in Focus View: the tip the
+        // Create / Sample landing shows — the exit button's icon and the drag
+        // tip — which this path never had (the user's call, Nov 2026).
+        if (pressedDone && !replay && inFocusView) {
+            this.m._showFocusViewFirstRunNotice(getLabel('notify.focusViewTourDone', {
+                vars: { focusName: getLabel('focusMode.enter') }
+            }));
+            return;
+        }
 
         if (missedExplainer) {
             this.m.deps.showNotification(

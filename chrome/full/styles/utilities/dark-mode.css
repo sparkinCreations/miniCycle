@@ -109,7 +109,9 @@ body.dark-mode:not([data-theme]) {
     --dark-accent-green: #90ee90;
     --dark-link-color: #7cff9e;
     --dark-link-hover: #aaffaa;
-    --dark-menu-title: #4b56a7;
+    /* The routine's name at the top of the main menu. Was #4b56a7: 2.1:1 on
+       the menu (#2a2a2a). The same indigo, lightened: 6:1. */
+    --dark-menu-title: #9ba4f0;
     --dark-todo-bg: #1e3a5f;
     --dark-todo-hover: #1a3352;
     --dark-mini-modal-bg: #23272e;
@@ -221,6 +223,13 @@ body.dark-mode .task input[type="checkbox"]:not(:checked) {
 
 body.dark-mode .task input[type="checkbox"]:not(:checked):hover {
     border-color: var(--dark-checkbox-border);
+}
+
+/* The task's ⋮ (Settings → three dots): --color-gray-500 measured 2.3:1 on
+   the dark task card, under the 3:1 a control needs. #aaa is 4.5:1, the same
+   weight as the checkbox ring beside it. */
+body.dark-mode .three-dots-btn {
+    color: var(--dark-text-dim);
 }
 
 /* Keep green when checked */

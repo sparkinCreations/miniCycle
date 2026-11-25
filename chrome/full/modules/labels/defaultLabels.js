@@ -295,6 +295,8 @@ export const DEFAULT_LABELS = deepFreeze({
         changeRoutineTheme: 'Change routine theme',
         preview:            'Preview',
         importExternal:     'Import',
+        newRoutine:         'New',
+        newRoutineAria:     'Create a new routine',
         storage:            'Routine Storage',
         storageHint:        'Space used by your saved routines on this device',
         calculating:        'Calculating...',
@@ -443,6 +445,9 @@ export const DEFAULT_LABELS = deepFreeze({
         // and why they are on it; until Nov 2026 it was a bare "You're in Focus
         // View" that read as abrupt. The ⋯ button is in view beside it.
         focusViewFirstRun:      'We\'ve started you in Focus View, a simpler screen with fewer distractions.',
+        // The same tip on Done at the end of Show How Cycles Work, whose slides
+        // already said why the app opened here: just where they are.
+        focusViewTourDone:      'You\'re in {focusName}, which shows just your tasks.',
         // The second half of that tip, shown under a divider with the drag-handle
         // icon (onboardingManager passes it as the notification's `hint`): toasts
         // are draggable and the position persists. It was one sentence of the
@@ -722,7 +727,12 @@ export const DEFAULT_LABELS = deepFreeze({
         backupNamePrompt:        'Name your backup',
         backupNamePlaceholder:   'My Backup',
         backupReminderTitle:     'Back up your routines?',
-        backupReminderMessage:   'Your routines are stored on this device only. A backup keeps them safe if your browser data is cleared.',
+        // { browser, app }: in the iOS, Android and desktop apps there is no
+        // browser to speak of (Nov 2026, the user: "reads oddly in an iPhone app").
+        backupReminderMessage:   {
+            browser: 'Your routines are stored on this device only. A backup keeps them safe if your browser data is cleared.',
+            app:     'Your routines are stored on this device only. A backup keeps them safe if the app is deleted or its data is cleared.'
+        },
         // iPhone / iPad browser tab without persistent storage (backupReminder.backupReminderMessage).
         // A Home Screen app starts with its own, empty storage — hence "restore it there".
         backupReminderMessageHomeScreen: 'Your routines are stored on this device only, and Safari can clear a website\'s data after seven days of browsing without a visit. A backup keeps them safe. Adding miniCycle to your Home Screen also avoids this; it starts empty there, so restore your backup in it.',
@@ -830,7 +840,7 @@ export const DEFAULT_LABELS = deepFreeze({
         errorStorageQuota:       'Storage quota exceeded. Please export your data and clear some space.',
         errorNetwork:            'Network error. Please check your connection.',
         errorDataCorruption:     'Data corruption detected. Your data may need to be restored from backup.',
-        errorPermission:         'Permission denied. Please check your browser settings.',
+        errorPermission:         { browser: 'Permission denied. Please check your browser settings.', app: 'Permission denied. Please check your device settings.' },
         errorCriticalExport:     'Critical error detected. We recommend exporting your data as backup. Go to Settings \u2192 Import/Export.',
 
         // Storage warnings
@@ -920,7 +930,7 @@ export const DEFAULT_LABELS = deepFreeze({
         debugAutoCaptureDisabled: 'Auto-capture disabled',
         debugReportGenerating:    'Generating comprehensive debug report...',
         debugReportGenerated:     'Debug report generated successfully',
-        debugBrowserInfo:         'Browser info displayed',
+        debugBrowserInfo:         { browser: 'Browser info displayed', app: 'Device info displayed' },
         debugSwInfo:              'Service Worker info displayed',
         debugSwTesting:           'Testing service worker update functionality',
         debugSwNotSupported:      'Service Workers not supported',
@@ -974,7 +984,10 @@ export const DEFAULT_LABELS = deepFreeze({
         shareRoutineFailed:        'Share failed. Please try again.',
         shareRoutineNoActiveCycle: 'No active routine to share.',
         shareRoutineUnsupportedTitle:   'Sharing not supported',
-        shareRoutineUnsupportedMessage: 'This browser does not support sharing files directly. Would you like to download your routine as an .mcyc file instead? You can then share it manually.',
+        shareRoutineUnsupportedMessage: {
+            browser: 'This browser does not support sharing files directly. Would you like to download your routine as an .mcyc file instead? You can then share it manually.',
+            app:     'This device does not support sharing files directly. Would you like to download your routine as an .mcyc file instead? You can then share it manually.'
+        },
         shareAppSuccess:           'App link shared!',
         shareAppCopied:            'App link copied to clipboard!',
         shareAppFailed:            'Share failed. Please try again.',
@@ -1563,8 +1576,15 @@ export const DEFAULT_LABELS = deepFreeze({
         autoBackupKindFile:     'Backup file in {folder}',
         autoBackupFileMeta:     '{date} · {size} KB',
         // Persistent-storage line at the top of Data Management (backupRestoreManager.refreshStorageStatus).
-        storageProtected:       'Storage is protected: your browser has agreed not to clear miniCycle\'s data on its own.',
-        storageUnprotected:     'Storage is not protected: your browser may clear miniCycle\'s data if the device runs low on space or the site goes unused. Back up regularly to keep a copy.',
+        // { browser, app }: the apps keep their data with the app, not a site.
+        storageProtected:       {
+            browser: 'Storage is protected: your browser has agreed not to clear miniCycle\'s data on its own.',
+            app:     'Storage is protected: miniCycle\'s data is not cleared on its own.'
+        },
+        storageUnprotected:     {
+            browser: 'Storage is not protected: your browser may clear miniCycle\'s data if the device runs low on space or the site goes unused. Back up regularly to keep a copy.',
+            app:     'Storage is not protected: your device may clear miniCycle\'s data if it runs low on space. Back up regularly to keep a copy.'
+        },
         storageUnprotectedHomeScreen: 'Storage is not protected: Safari can clear a website\'s data after seven days of browsing without a visit. Adding miniCycle to your Home Screen avoids that. It starts empty there, so back up here first and restore the file in the Home Screen app.',
         autoBackupsFolderNote:  'A backup file is also written once a day to {folder} on this device. Those files stay even if the app is removed or its storage is cleared, and nothing leaves the device.',
         autoBackupsFolderNoteIos: 'A backup file is also written once a day to {folder}, which you can open in the Files app. Those files stay if the app\'s storage is cleared but are removed with the app, and nothing leaves the device.',
@@ -1632,7 +1652,10 @@ export const DEFAULT_LABELS = deepFreeze({
         resetRecurringDefaultDesc: 'New recurring tasks start as Daily, repeating indefinitely, again.',
         resetAchievementsDesc:  'Locks every badge and sets progress toward them back to zero. Your routines and their own stats stay. This cannot be undone.',
         clearUndoHistoryDesc:   'Deletes the undo steps saved for every routine. This cannot be undone.',
-        debugModeDesc:          'Writes the app\'s detailed log to the browser console and shows App Diagnostics, for troubleshooting.',
+        debugModeDesc:          {
+            browser: 'Writes the app\'s detailed log to the browser console and shows App Diagnostics, for troubleshooting.',
+            app:     'Writes the app\'s detailed log to the developer console and shows App Diagnostics, for troubleshooting.'
+        },
         ariaToggleDisplay:    'Toggle Display settings',
         ariaToggleAccessibility: 'Toggle Accessibility settings',
         ariaToggleBehavior:   'Toggle Behavior settings',
@@ -1711,7 +1734,7 @@ export const DEFAULT_LABELS = deepFreeze({
         startButton:     'Start Tour',
         step1:           'This is the master switch — turn reminders on or off for all your tasks.',
         step2:           'Get notified when a task\'s due date is approaching.',
-        step3:           'Enable browser notifications to get alerts even when the app isn\'t in focus.',
+        step3:           { browser: 'Enable browser notifications to get alerts even when the app isn\'t in focus.', app: 'Enable system notifications to get alerts even when the app isn\'t in focus.' },
         step4:           'Customize how often you\'re reminded — choose the interval and repeat count.',
         complete:        'You\'re all set! Configure reminders to stay on top of your tasks.'
     },
@@ -1872,7 +1895,11 @@ export const DEFAULT_LABELS = deepFreeze({
         showStats:      'Show Stats',
         showTasks:      'Show Tasks',
         quickActions:   'Quick Actions',
-        quickActionsAria: 'Quick actions',
+        // Starts with the + the button shows, so a screen reader says "plus" and
+        // Voice Control answers to "plus" as well as "actions" (WCAG 2.5.3: the
+        // name contains what is seen). The tooltip keeps the plain name.
+        quickActionsAria: '+ Quick actions',
+        quickActionsTitle: 'Quick actions',
         quickActionsShort: 'Actions',   // its visible text beside the + in the header group (the name above contains it)
         previousView:   'Previous view',
         nextView:       'Next view',
@@ -2043,7 +2070,10 @@ export const DEFAULT_LABELS = deepFreeze({
         position:       '{position} of {total} routines',
         onlyOne:        'Only one routine, nothing to switch to yet',
         storageLine:    '{size} · {used} of {total} used',
-        createAnother:  'Create another routine',
+        newRoutine:     'New routine',
+        newRoutineAria: 'Create a new routine',
+        delete:         'Delete',
+        deleteAria:     'Delete {name}',
         lastUsed:       'Last used {date}',
         announce:       '{name}, {mode}, {position} of {total}',
     },
@@ -2435,6 +2465,12 @@ export const DEFAULT_LABELS = deepFreeze({
         // post real system notifications, so "browser" is wrong there; on the
         // web the browser is what asks for permission, so it is the right word.
         browserNotifications:        { browser: 'Browser Notifications', app: 'System Notifications' },
+        // The Privacy Notice under the Settings checkbox (reminders.js sets it;
+        // the HTML carries the web wording as its fallback).
+        privacyNotice: {
+            browser: 'Task names will appear in your device\'s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.',
+            app:     'Task names will appear in your device\'s notification center and may be visible to others. Ensure notifications are allowed for miniCycle in your device settings.'
+        },
         browserNotificationsWarning: {
             browser: 'Enabling browser notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are enabled for your browser in your OS settings.',
             app:     'Enabling system notifications will allow your task names to appear in your device\'s notification center. This data will be visible outside this app. Ensure notifications are allowed for miniCycle in your device settings.'
@@ -2661,15 +2697,15 @@ export const DEFAULT_LABELS = deepFreeze({
 
         // Error descriptions (orchestrator boot failures)
         errorCachedFile:    'A cached file is outdated',
-        suggestClearCache:  'Clear browser cache and reload',
+        suggestClearCache:  { browser: 'Clear browser cache and reload', app: 'Close and reopen miniCycle, or update it' },
         errorNetwork:       'Network connection issue',
         suggestCheckInternet: 'Check your internet connection',
         errorTimeout:       '{phase} took too long',
         suggestRetryOrLite: 'Try again or use Lite version',
         errorStorage:       'Storage access problem',
-        suggestClearSiteData: 'Clear site data in browser settings',
+        suggestClearSiteData: { browser: 'Clear site data in browser settings', app: 'Free up space on your device, then reopen miniCycle' },
         errorGeneric:       'Something went wrong during startup',
-        suggestRefresh:     'Try refreshing or clearing cache',
+        suggestRefresh:     { browser: 'Try refreshing or clearing cache', app: 'Close and reopen miniCycle' },
         errorOffline:       'You appear to be offline',
         suggestReconnect:   'Connect to the internet and try again, or use Lite version'
     },
@@ -2916,7 +2952,7 @@ export const DEFAULT_LABELS = deepFreeze({
         btnViewLocalStorage: 'View Local Storage',
         btnShowServiceWorkerInfo: 'Service Worker Info',
         btnTestServiceWorkerUpdate: 'Test SW Update',
-        btnShowBrowserInfo: 'Browser Capabilities',
+        btnShowBrowserInfo: { browser: 'Browser Capabilities', app: 'Device Capabilities' },
         btnEnableAutoCapture: 'Enable Auto-Capture Mode',
         btnShowAllConsoleLogs: 'Show All Captured Logs',
         btnShowMigrationErrors: 'Show Migration Issues',
@@ -3064,6 +3100,8 @@ export const LENS_SENSITIVE_KEYS = Object.freeze(new Set([
     'switcher.renameRoutineMessage',
     'switcher.deleteRoutine',
     'switcher.importExternal',
+    'switcher.newRoutine',
+    'switcher.newRoutineAria',
     'switcher.deleteTitle',
     'switcher.deleteMessage',
     'switcher.noSaved',

@@ -1,3 +1,7 @@
+## [2.691] - 2026-11-25
+- feat(routines): delete and create from Browse, New in the list; app wording, dark contrast, manual images
+
+
 ## [2.690] - 2026-11-23
 - fix(onboarding): no keyboard on the tour, larger cycle-demo caption
 

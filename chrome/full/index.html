@@ -96,7 +96,7 @@
 
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" id="status-bar-style-meta">
 
-<meta name="app-version" content="2.690">
+<meta name="app-version" content="2.691">
 
 <!-- CSP is served via HTTP header in netlify.toml (production) -->
 <!-- No <meta> CSP tag needed — Netlify headers handle it, and omitting it here allows local HTTP dev servers -->
@@ -149,17 +149,17 @@
          light mode / full motion / default background on every load.
      ═══════════════════════════════════════════════════════════════════════════ -->
 
-<link rel="preload" href="styles/main.css?v=2.690" as="style">
-<link rel="preload" href="styles/base/variables.css?v=2.690" as="style">
-<link rel="preload" href="styles/base/reset.css?v=2.690" as="style">
-<link rel="preload" href="styles/layout/app-container.css?v=2.690" as="style">
-<link rel="preload" href="styles/layout/header.css?v=2.690" as="style">
-<link rel="preload" href="styles/components/task-list.css?v=2.690" as="style">
+<link rel="preload" href="styles/main.css?v=2.691" as="style">
+<link rel="preload" href="styles/base/variables.css?v=2.691" as="style">
+<link rel="preload" href="styles/base/reset.css?v=2.691" as="style">
+<link rel="preload" href="styles/layout/app-container.css?v=2.691" as="style">
+<link rel="preload" href="styles/layout/header.css?v=2.691" as="style">
+<link rel="preload" href="styles/components/task-list.css?v=2.691" as="style">
 
 <!-- Async CSS loading - doesn't block render, app starts with inline critical CSS -->
-<link rel="stylesheet" href="styles/main.css?v=2.690" media="print" id="async-main-css">
+<link rel="stylesheet" href="styles/main.css?v=2.691" media="print" id="async-main-css">
 <script src="ext-boot/02.js"></script>
-<noscript><link rel="stylesheet" href="styles/main.css?v=2.690"></noscript>
+<noscript><link rel="stylesheet" href="styles/main.css?v=2.691"></noscript>
 <!-- [chrome-ext build] removed PWA manifest link -->
 
 <!-- ═══════════════════════════════════════════════════════════════════════════
@@ -170,7 +170,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- version.js MUST load synchronously BEFORE modulepreloads to set globalThis.APP_VERSION -->
-<script src="./version.js?v=2.690"></script>
+<script src="./version.js?v=2.691"></script>
 
 <!-- Build version = the version baked into THIS HTML document (the meta tag
      above). It is the honest "what am I actually running" signal. By contrast,
@@ -278,7 +278,7 @@
      'feature-gate'. Keep the gate in its own block. (Fixed Jul 2026.)
      ═══════════════════════════════════════════════════════════════════════════ -->
 <script src="ext-boot/10.js"></script>
-    <script src="boot-sw.js?v=2.690" defer></script>
+    <script src="boot-sw.js?v=2.691" defer></script>
 
 
 
@@ -420,7 +420,7 @@
 
   <div class="mode-selector-wrapper">
   <div class="quick-actions-container">
-    <button id="quick-actions-btn" class="quick-actions-btn" aria-label="Quick actions" title="Quick actions" data-label-aria-key="nav.quickActionsAria" data-label-title-key="nav.quickActionsAria">
+    <button id="quick-actions-btn" class="quick-actions-btn" aria-label="+ Quick actions" title="Quick actions" data-label-aria-key="nav.quickActionsAria" data-label-title-key="nav.quickActionsTitle">
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
       </svg>
@@ -784,7 +784,7 @@
                     </label>
                     <details id="privacyNoticeDetails" class="settings-warning-details">
                         <summary class="settings-warning-summary">Privacy Notice</summary>
-                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
+                        <p id="privacy-notice-text" class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
                     </details>
                 </div>
         
@@ -1031,6 +1031,7 @@
         </div>
 
         <div class="switch-action-row">
+            <button type="button" id="switch-new-routine" class="mini-cycle-upload-btn switch-new-routine-btn" title="Create a new routine" aria-label="Create a new routine" data-label-aria-key="switcher.newRoutineAria" data-label-title-key="switcher.newRoutineAria"><i class="fas fa-sparkles" aria-hidden="true"></i> <span data-label-key="switcher.newRoutine">New</span></button>
             <button id="miniCycleUpload" class="mini-cycle-upload-btn" title="Import a routine from a file" aria-label="Import a routine from a file"><i class="fas fa-file-upload"></i> <span data-label-key="switcher.importExternal">Import</span></button>
             <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn" data-label-key="button.open">Open</button>
         </div>
@@ -1441,7 +1442,7 @@
      ═══════════════════════════════════════════════════════════════════════════ -->
 
 <!-- Boot File Split (Dec 2025): Load via entrypoint which orchestrates all boot files -->
- <script type="module" src="miniCycle-main.js?v=2.690"></script>
+ <script type="module" src="miniCycle-main.js?v=2.691"></script>
 
 <script src="ext-boot/13.js"></script>
    <!-- [chrome-ext build] removed inline script: late lite-version fallback redirect -->
