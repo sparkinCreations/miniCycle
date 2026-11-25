@@ -1217,6 +1217,55 @@ export async function runModeManagerTests(resultsDiv, isPartOfSuite = false) {
         document.getElementById('quick-actions-btn')?.parentElement?.remove();
     });
 
+    // === INPUT BAR: shown from another view goes to the routine view (Nov 2026) ===
+    resultsDiv.innerHTML += '<h4>⌨️ Showing the input bar goes to the routine view</h4>';
+    function inputBarFixture(startView) {
+        const host = document.createElement('div');
+        host.innerHTML = '<button id="quick-actions-btn"></button><div id="quick-actions-menu"></div>'
+            + '<button id="toggle-task-input-btn"></button><div class="task-input hidden"><input id="taskInput"></div>';
+        document.body.appendChild(host);
+        const view = { id: startView, shown: 0 };
+        setModeManagerDependencies(createMockDeps({
+            appInit: { waitForCore: async () => {}, addHook: () => {} },
+            statsPanelManager: () => ({ getActivePanelId: () => view.id }),
+            showTaskView: () => { view.shown++; view.id = 'task-view'; }
+        }));
+        const manager = new ModeManager();
+        manager.setupQuickActionsButton();
+        const toggle = () => host.querySelector('#toggle-task-input-btn').click();
+        const barShown = () => !host.querySelector('.task-input').classList.contains('hidden');
+        return { view, toggle, barShown, remove: () => { manager.destroy(); host.remove(); } };
+    }
+
+    await test('input bar: shown from Focus View\'s Task view → the routine view', async () => {
+        const f = inputBarFixture('focus-task-panel');
+        try {
+            f.toggle();
+            if (!f.barShown()) throw new Error('bar not shown');
+            if (f.view.shown !== 1) throw new Error(`showTaskView called ${f.view.shown} times`);
+        } finally { f.remove(); }
+    });
+
+    await test('input bar: shown from Stats → the routine view; hidden from Stats → stays in Stats', async () => {
+        const f = inputBarFixture('stats-panel');
+        try {
+            f.toggle();   // show
+            if (f.view.shown !== 1) throw new Error('showing from Stats did not go to the routine view');
+            f.view.id = 'stats-panel';
+            f.toggle();   // hide
+            if (f.barShown()) throw new Error('bar not hidden');
+            if (f.view.shown !== 1 || f.view.id !== 'stats-panel') throw new Error('hiding moved the user out of Stats');
+        } finally { f.remove(); }
+    });
+
+    await test('input bar: shown from the routine view → no view change', async () => {
+        const f = inputBarFixture('task-view');
+        try {
+            f.toggle();
+            if (f.view.shown !== 0) throw new Error('showTaskView called though already there');
+        } finally { f.remove(); }
+    });
+
     await test('syncTasksToMode repairs missing/invalid maps per key', async () => {
         const deps = createMockDeps();
         deps.DEFAULT_DELETE_WHEN_COMPLETE_SETTINGS = { cycle: false, todo: true };

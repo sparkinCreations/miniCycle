@@ -6784,11 +6784,19 @@ async function journeyIntroDoneAndFocusNotice(browser, baseURL) {
         record('Done from "Try it yourself" on, including the slides finishing the routine adds',
             seen.slice(3).every(c => c.text === 'Done'), labels);
 
-        // Leaving with Done after seeing everything: no extra notice.
+        // Leaving with Done after seeing everything: the Focus View tip the
+        // Create / Sample landing shows — the exit button's own icon and the
+        // drag tip (the user's call, Nov 2026; until then Done showed nothing) —
+        // not Skip's notice, which describes the button in words.
         await clickEl(page, '#first-run-welcome-dismiss');
         await page.waitForTimeout(1200);
-        record('no Focus View notice for a user who saw the intro', !(await noticeShown(page)),
-            'the notice appeared although the Focus View slide was shown');
+        const tip = await page.evaluate(() => {
+            const n = [...document.querySelectorAll('.notification')].find(x => /which shows just your tasks/.test(x.textContent));
+            return n ? { icons: n.querySelectorAll('.notification-hint-icon svg').length, text: n.textContent.replace(/\s+/g, ' ') } : null;
+        });
+        record('Done shows the Focus View tip with the exit icon and the drag hint, not Skip\'s notice',
+            !!tip && tip.icons === 2 && /this button to go back to Home View/.test(tip.text) && !/inward-pointing/.test(tip.text),
+            JSON.stringify(tip));
     } catch (e) {
         console.log(`   ${colors.red}❌ errored: ${e.message}${colors.reset}`);
         failures.push(`harness error: ${e.message}`);

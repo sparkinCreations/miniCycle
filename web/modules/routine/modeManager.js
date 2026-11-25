@@ -1165,7 +1165,11 @@ export class ModeManager {
                 // Update UI immediately
                 this._updateTaskInputVisibility(newVisible);
                 this._closeQuickActionsMenu?.();
-                this._switchToTaskViewIfInStats();
+                // Showing it: go to the routine view, where the bar is, from
+                // Stats or Focus View's Task view — it was shown on a view
+                // nobody was looking at, with the cursor in it (the user's
+                // call, Nov 2026). Hiding it leaves the user where they are.
+                if (newVisible) this._switchToRoutineViewIfElsewhere();
 
                 // Focus the text input when showing the input bar — in the
                 // tap itself: iOS opens the keyboard only for a focus() made
@@ -1235,6 +1239,21 @@ export class ModeManager {
             });
         }
 
+    }
+
+    /**
+     * Go to the routine view (the task list) from whichever view is on screen:
+     * Stats, or Focus View's Task view. No-op when already there.
+     * @private
+     */
+    _switchToRoutineViewIfElsewhere() {
+        const manager = typeof this.deps.statsPanelManager === 'function'
+            ? this.deps.statsPanelManager()
+            : this.deps.statsPanelManager;
+        const active = manager?.getActivePanelId?.();
+        if (active && active !== DOM_IDS.TASK_VIEW && typeof this.deps.showTaskView === 'function') {
+            this.deps.showTaskView();
+        }
     }
 
     /**

@@ -665,6 +665,13 @@ export class StatsPanelManager {
     showStatsPanel() { return this._gestures?.showStatsPanel(); }
 
     /**
+     * The view on screen: DOM_IDS.TASK_VIEW (the routine), DOM_IDS.STATS_PANEL,
+     * or Focus View's DOM_IDS.FOCUS_TASK_PANEL. Null before the carousel exists.
+     * @returns {string|null}
+     */
+    getActivePanelId() { return this._gestures?.carousel?.getActiveId() ?? null; }
+
+    /**
      * Indexed carousel navigation (+1 next / -1 previous).
      *
      * moduleLoader wires gesturePanelManager's onNavigate to

@@ -1286,7 +1286,7 @@
 
   <div class="mode-selector-wrapper">
   <div class="quick-actions-container">
-    <button id="quick-actions-btn" class="quick-actions-btn" aria-label="Quick actions" title="Quick actions" data-label-aria-key="nav.quickActionsAria" data-label-title-key="nav.quickActionsAria">
+    <button id="quick-actions-btn" class="quick-actions-btn" aria-label="+ Quick actions" title="Quick actions" data-label-aria-key="nav.quickActionsAria" data-label-title-key="nav.quickActionsTitle">
       <svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
         <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
       </svg>
@@ -1650,7 +1650,7 @@
                     </label>
                     <details id="privacyNoticeDetails" class="settings-warning-details">
                         <summary class="settings-warning-summary">Privacy Notice</summary>
-                        <p class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
+                        <p id="privacy-notice-text" class="settings-warning">Task names will appear in your device&#39;s notification center and may be visible to others. Ensure notifications are enabled for your browser in your OS settings.</p>
                     </details>
                 </div>
         
@@ -1897,6 +1897,7 @@
         </div>
 
         <div class="switch-action-row">
+            <button type="button" id="switch-new-routine" class="mini-cycle-upload-btn switch-new-routine-btn" title="Create a new routine" aria-label="Create a new routine" data-label-aria-key="switcher.newRoutineAria" data-label-title-key="switcher.newRoutineAria"><i class="fas fa-sparkles" aria-hidden="true"></i> <span data-label-key="switcher.newRoutine">New</span></button>
             <button id="miniCycleUpload" class="mini-cycle-upload-btn" title="Import a routine from a file" aria-label="Import a routine from a file"><i class="fas fa-file-upload"></i> <span data-label-key="switcher.importExternal">Import</span></button>
             <button id="miniCycleSwitchConfirm" class="mini-cycle-switch-btn open-btn" data-label-key="button.open">Open</button>
         </div>

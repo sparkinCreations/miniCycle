@@ -95,7 +95,8 @@ export class RoutineSwitcherActions {
     }
 
     /**
-     * Delete a miniCycle
+     * Delete the routine selected in the list. The list stays open on what is
+     * left; deleting the last one closes it for the Create a Routine dialog.
      */
     deleteMiniCycle() {
 
@@ -106,6 +107,36 @@ export class RoutineSwitcherActions {
             return;
         }
 
+        this.deleteRoutine(selectedCycle.dataset.cycleKey, {
+            onRemaining: () => {
+                // Keep modal open - just refresh the list
+                this.m.loadMiniCycleList();
+
+                // Select first remaining routine
+                setTimeout(() => {
+                    const firstCycle = this.m.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
+                    if (firstCycle) {
+                        firstCycle.classList.add(DOM_CLASSES.SELECTED);
+                        firstCycle.click();
+                    }
+                }, UI_TIMEOUTS.ROUTINE_DELETE_RESELECT);
+            },
+            closeView: () => this.m.hideSwitchMiniCycleModal()
+        });
+    }
+
+    /**
+     * Delete one routine by its key, once the user confirms. The one delete
+     * behind both the list and Browse Routines (Nov 2026), so both get the same
+     * confirm, undo hooks, storage estimate and fallback to another routine.
+     * The caller's view says what it does after:
+     *   onRemaining — the routine is gone and others remain: redraw the view
+     *   closeView   — it was the last one: close the view, before the Create a
+     *                 Routine dialog opens
+     * @param {string} cycleKey - the routine's key (its id)
+     * @param {{onRemaining?: Function, closeView?: Function}} [view]
+     */
+    deleteRoutine(cycleKey, { onRemaining = () => {}, closeView = () => {} } = {}) {
         // ✅ Use state-based data access
         if (!this.m.deps.AppState?.isReady?.()) {
             console.error('❌ AppState not ready for deleteMiniCycle');
@@ -122,7 +153,6 @@ export class RoutineSwitcherActions {
 
         const cycles = getRoutines(currentState) || {};
         const activeCycle = getActiveRoutineId(currentState);
-        const cycleKey = selectedCycle.dataset.cycleKey;
         const currentCycle = cycles[cycleKey];
 
         if (!cycleKey || !currentCycle) {
@@ -212,7 +242,7 @@ export class RoutineSwitcherActions {
                     // No cycles left — return the EXISTING user to the neutral
                     // create-routine flow (not the new-user onboarding).
                     setTimeout(() => {
-                        this.m.hideSwitchMiniCycleModal();
+                        closeView();
 
                         // ✅ FIX: Query DOM elements fresh inside setTimeout (not stale from outer scope)
                         const taskList = this.m.deps.getElementById(DOM_IDS.TASK_LIST);
@@ -238,25 +268,15 @@ export class RoutineSwitcherActions {
                             } else {
                                 console.warn('⚠️ showCycleCreationModal unavailable after deleting last routine');
                             }
-                        }, 500);
-                    }, 300);
+                        }, UI_TIMEOUTS.ROUTINE_DELETE_LAST_CREATE);
+                    }, UI_TIMEOUTS.ROUTINE_DELETE_LAST_CLOSE);
                 } else {
-                    // Keep modal open - just refresh the list
-                    this.m.loadMiniCycleList();
+                    onRemaining();
 
                     // If we deleted the active cycle, update background UI to show new active
                     if (wasActiveCycle && typeof this.m.deps.loadMiniCycle === 'function') {
                         this.m.deps.loadMiniCycle();
                     }
-
-                    // Select first remaining routine
-                    setTimeout(() => {
-                        const firstCycle = this.m.deps.querySelector(DOM_SELECTORS.MINI_CYCLE_SWITCH_ITEM);
-                        if (firstCycle) {
-                            firstCycle.classList.add(DOM_CLASSES.SELECTED);
-                            firstCycle.click();
-                        }
-                    }, 50);
                 }
 
                 if (wasActiveCycle && newActiveCycleName) {

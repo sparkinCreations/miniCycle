@@ -1561,6 +1561,8 @@ export class MiniCycleReminders {
         const browserLabel = this.deps.getElementById(DOM_IDS.BROWSER_NOTIFICATIONS)?.closest('label');
         const labelText = browserLabel && [...browserLabel.childNodes].reverse().find(n => n.nodeType === Node.TEXT_NODE && n.textContent.trim());
         if (labelText) labelText.textContent = ` ${getLabel('reminders.browserNotifications')}\n`;
+        const privacyText = this.deps.getElementById(DOM_IDS.PRIVACY_NOTICE_TEXT);
+        if (privacyText) privacyText.textContent = getLabel('reminders.privacyNotice');
         const dueNote = this.deps.getElementById(DOM_IDS.DUE_DATES_NOTE);
         if (dueNote) {
             const summary = dueNote.querySelector('summary');

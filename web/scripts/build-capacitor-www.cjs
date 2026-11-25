@@ -284,6 +284,17 @@ function copyAssets() {
   };
   walk(path.join(OUT, 'styles'));
   walk(path.join(OUT, 'modules'));
+  // The bundled pages too (legal/, games/): the user manual's screenshots are
+  // referenced only there, and before Nov 2026 this scan ran ahead of those
+  // copies and never read them — every packaged app showed the manual's images
+  // broken. Runs after copyLegal()/copyGames() for that reason.
+  for (const sub of ['legal', 'games']) {
+    const d = path.join(OUT, sub);
+    if (!fs.existsSync(d)) continue;
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      if (e.isFile() && e.name.endsWith('.html')) scanFiles.push(path.join(d, e.name));
+    }
+  }
 
   const refs = new Set();
   const re = /assets\/[A-Za-z0-9_./-]+\.[A-Za-z0-9]+/g;
@@ -345,6 +356,40 @@ function copyExamples() {
     }
   }
   log(`examples: copied ${EXAMPLE_DIRS.join(', ')}`);
+}
+
+// ── 3e. every image a bundled page shows is in the bundle ───────────────────
+// copyAssets() copies only what it finds referenced. A page it did not read
+// ships with broken images and nothing says so: the user manual's screenshots
+// were missing from every packaged app until Nov 2026. So check the result, not
+// the scan: each `assets/…` a bundled page names must exist in the output, or
+// the build stops with the list.
+function verifyPageAssets() {
+  const pages = [path.join(OUT, 'index.html')];
+  for (const sub of ['legal', 'games']) {
+    const d = path.join(OUT, sub);
+    if (!fs.existsSync(d)) continue;
+    for (const e of fs.readdirSync(d, { withFileTypes: true })) {
+      if (e.isFile() && e.name.endsWith('.html')) pages.push(path.join(d, e.name));
+    }
+  }
+  const re = /assets\/[A-Za-z0-9_./-]+\.[A-Za-z0-9]+/g;
+  const missing = [];
+  for (const page of pages) {
+    if (!fs.existsSync(page)) continue;
+    const txt = fs.readFileSync(page, 'utf8');
+    let m;
+    while ((m = re.exec(txt)) !== null) {
+      // Only refs whose source exists: a dead link in the source is copyAssets' WARN, not this.
+      if (fs.existsSync(path.join(WEB_ROOT, m[0])) && !fs.existsSync(path.join(OUT, m[0]))) {
+        missing.push(`${path.relative(OUT, page)} → ${m[0]}`);
+      }
+    }
+  }
+  if (missing.length) {
+    throw new Error(`bundled pages reference ${missing.length} asset(s) the build left out:\n  ${missing.join('\n  ')}`);
+  }
+  log(`assets: every image the ${pages.length} bundled pages show is bundled`);
 }
 
 // ── 3c. bundle legal pages (privacy / terms / security / accessibility …) ────
@@ -441,10 +486,11 @@ function run(platform) {
   const version = readVersion();
   transformHtml();
   copyAppCode();
-  copyAssets();
   copyExamples();
   copyLegal();
   copyGames();
+  copyAssets();   // after legal/ + games/: it scans their pages for images
+  verifyPageAssets();
   pruneJunk();
 
   log(`done — v${version}, ${human(dirSize(OUT))} total`);

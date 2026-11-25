@@ -66,7 +66,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
             settings: structuredClone(settings),
             metadata: {}
         };
-        const calls = { opened: [], lists: 0, created: 0, updates: 0, imports: 0, browseOpenOnImport: null };
+        const calls = { opened: [], lists: 0, created: 0, updates: 0, imports: 0, browseOpenOnImport: null, confirms: [], confirmAnswer: true };
         const btn = document.createElement('button');
         btn.id = 'routine-switcher-btn-test';
         document.body.appendChild(btn);
@@ -92,6 +92,7 @@ export async function runRoutineBrowserTests(resultsDiv) {
             },
             showNotification: () => {},
             showCycleCreationModal: () => { calls.created++; },
+            showConfirmationModal: (opts) => { calls.confirms.push(opts); opts.callback(calls.confirmAnswer); },
             showRoutineBrowserTourNotification: () => { calls.tourPrompts = (calls.tourPrompts || 0) + 1; },
             loadMiniCycle: () => {}
         });
@@ -581,16 +582,89 @@ export async function runRoutineBrowserTests(resultsDiv) {
         if (!navs.every(b => b.disabled)) throw new Error('arrows enabled with one routine');
         if (!metaLines()[0].includes(getLabel('routineBrowser.onlyOne'))) throw new Error(`meta "${metaLines()[0]}"`);
         const create = dialog().querySelector('.rb-create-btn');
-        if (create.hidden) throw new Error('Create another routine hidden');
+        if (create.hidden) throw new Error('New routine hidden');
         create.click();
         if (calls.created !== 1) throw new Error('create did not open the creation modal');
         cleanup();
     });
 
-    await test('more than one routine hides Create another routine', () => {
+    await test('REGRESSION: New routine is offered with several routines too (it was only shown with one)', () => {
+        const { browser, calls } = setup();
+        browser.open();
+        const create = dialog().querySelector('.rb-create-btn');
+        if (create.hidden) throw new Error('New routine hidden with 3 routines');
+        if (create.getAttribute('aria-label') !== getLabel('routineBrowser.newRoutineAria')) throw new Error(`named "${create.getAttribute('aria-label')}"`);
+        create.click();
+        if (calls.created !== 1) throw new Error('New routine did not open the creation modal');
+        if (dialog().open) throw new Error('Browse stayed open under the creation modal');
+        cleanup();
+    });
+
+    // ── delete ───────────────────────────────────────────────────────────────
+    await test('Delete is named for the routine shown', () => {
+        const { browser } = setup({ active: 'b' });
+        browser.open();
+        const del = dialog().querySelector('.rb-delete-btn');
+        const want = getLabel('routineBrowser.deleteAria', { vars: { name: 'Bravo' } });
+        if (del.disabled || del.getAttribute('aria-label') !== want) throw new Error(`disabled ${del.disabled}, "${del.getAttribute('aria-label')}"`);
+        browser.move(1);
+        if (del.getAttribute('aria-label') !== getLabel('routineBrowser.deleteAria', { vars: { name: 'charlie' } })) throw new Error('name did not follow the routine shown');
+        cleanup();
+    });
+
+    await test('Delete confirms, removes the routine shown, and stays open on the next one', () => {
+        // Recent order b, c, a: deleting b (in front) leaves charlie in front.
+        const { browser, state, calls } = setup({ active: 'b' });
+        browser.open();
+        dialog().querySelector('.rb-delete-btn').click();
+        if (calls.confirms.length !== 1 || !calls.confirms[0].destructive) throw new Error('no destructive confirm');
+        if (state.data.routine.b) throw new Error('Bravo still stored');
+        if (!dialog().open) throw new Error('Browse closed');
+        if (titleShown() !== 'charlie') throw new Error(`in front: ${titleShown()}`);
+        if (dialog().querySelector('.rb-card[data-key="b"]')) throw new Error('a card for the deleted routine remains');
+        if (!state.data.routine[state.appState.activeRoutineId]) throw new Error('the active routine was not moved off the deleted one');
+        if (!metaLines()[0].includes('1 of 2')) throw new Error(`meta "${metaLines()[0]}"`);
+        cleanup();
+    });
+
+    await test('Delete the last in the order lands on the one before it, in the Grid too', () => {
+        const { browser, state } = setup({ active: 'a', settings: { routineBrowserLayout: 'grid' } });
+        browser.open();   // a is last in Recent order (b, c, a)
+        dialog().querySelector('.rb-delete-btn').click();
+        if (state.data.routine.a) throw new Error('alpha still stored');
+        if (titleShown() !== 'charlie') throw new Error(`selected: ${titleShown()}`);
+        if (tile('a')) throw new Error('a tile for the deleted routine remains');
+        if (tile('c')?.getAttribute('aria-selected') !== 'true') throw new Error('charlie not selected');
+        cleanup();
+    });
+
+    await test('Cancel at the confirm deletes nothing', () => {
+        const { browser, state, calls } = setup({ active: 'b' });
+        calls.confirmAnswer = false;
+        browser.open();
+        dialog().querySelector('.rb-delete-btn').click();
+        if (!state.data.routine.b || titleShown() !== 'Bravo') throw new Error('deleted after Cancel');
+        cleanup();
+    });
+
+    await test('deleting the only routine closes Browse (the Create a Routine dialog follows)', async () => {
+        const { browser, state } = setup({ routines: { a: THREE.a }, active: 'a' });
+        browser.open();
+        dialog().querySelector('.rb-delete-btn').click();
+        if (state.data.routine.a) throw new Error('alpha still stored');
+        await new Promise(r => setTimeout(r, 450));
+        if (dialog().open) throw new Error('Browse still open with no routines');
+        cleanup();
+    });
+
+    await test('a search with no matches leaves nothing to delete', () => {
         const { browser } = setup();
         browser.open();
-        if (!dialog().querySelector('.rb-create-btn').hidden) throw new Error('create shown with 3 routines');
+        browser.openSearch();
+        const input = dialog().querySelector('.rb-search-input');
+        input.value = 'zzz-no-such';
+        input.dispatchEvent(new Event('input'));
+        if (!dialog().querySelector('.rb-delete-btn').disabled) throw new Error('Delete enabled with no match');
         cleanup();
     });
 

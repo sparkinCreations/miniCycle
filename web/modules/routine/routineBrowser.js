@@ -13,6 +13,10 @@
  *   Grid  — every routine as a tile. A tap selects (shows its details below);
  *           a tap on the selected tile, the Open button or Enter opens it.
  *
+ * Beside Open: Delete (the routine shown, through the list's own delete and its
+ * confirm) and New routine — both always there, however many routines there
+ * are (the user's call, Nov 2026; New was only offered with a single routine).
+ *
  * (An "All routines" jump list went once Grid existed: Grid shows them all,
  * and better — the user's call, Oct 2026.) Settings → "When you open routines,
  * show" decides whether the routine button opens this or the list, and each
@@ -321,12 +325,18 @@ export class RoutineBrowser {
         const metaSize = el('div', DOM_CLASSES.RB_META);
         info.append(titleRow, metaMode, metaSize);
 
+        // Delete ‹ Open › New: Open, the main action, in the middle. On a phone
+        // the two either side are icons, named by their (hidden) text.
         const actions = el('div', DOM_CLASSES.RB_ACTIONS);
-        const createBtn = el('button', DOM_CLASSES.RB_CREATE_BTN, { type: 'button' });
-        createBtn.textContent = getLabel('routineBrowser.createAnother');
+        const deleteBtn = iconButton(`${DOM_CLASSES.RB_ACTION_BTN} ${DOM_CLASSES.RB_DELETE_BTN}`, 'trash', 'routineBrowser.delete');
         const openBtn = el('button', DOM_CLASSES.RB_OPEN_BTN, { type: 'button' });
         openBtn.textContent = getLabel('routineBrowser.open');
-        actions.append(createBtn, openBtn);
+        const newRoutine = getLabel('routineBrowser.newRoutineAria');
+        // Sparkles: the icon New wears in the main menu and the + Actions menu.
+        const createBtn = iconButton(`${DOM_CLASSES.RB_ACTION_BTN} ${DOM_CLASSES.RB_CREATE_BTN}`, 'sparkles', 'routineBrowser.newRoutine', {
+            'aria-label': newRoutine, title: newRoutine
+        });
+        actions.append(deleteBtn, openBtn, createBtn);
 
         dialog.append(top, stage, grid, info, actions);
         // However it closes, say so: notifications held while Browse was on
@@ -335,7 +345,7 @@ export class RoutineBrowser {
         document.body.appendChild(dialog);
 
         this._dialog = dialog;
-        this._els = { closeBtn, layoutBtns, sortBtns, layout, sort, searchBtn, search, searchInput, searchClose, importBtn, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, createBtn, openBtn };
+        this._els = { closeBtn, layoutBtns, sortBtns, layout, sort, searchBtn, search, searchInput, searchClose, importBtn, toList, stage, track, grid, prevBtn, title, nextBtn, metaMode, metaSize, deleteBtn, createBtn, openBtn };
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -396,7 +406,7 @@ export class RoutineBrowser {
 
     /** A search with no matches: say so, and leave nothing to open. */
     _renderNoMatches() {
-        const { grid, prevBtn, nextBtn, title, metaMode, metaSize, createBtn, openBtn } = this._els;
+        const { grid, prevBtn, nextBtn, title, metaMode, metaSize, deleteBtn, openBtn } = this._els;
         const empty = document.createElement('p');
         empty.className = DOM_CLASSES.RB_EMPTY;
         empty.textContent = getLabel('routineBrowser.noMatches');
@@ -406,13 +416,16 @@ export class RoutineBrowser {
         metaSize.textContent = '';
         prevBtn.disabled = true;
         nextBtn.disabled = true;
-        createBtn.hidden = true;
+        deleteBtn.disabled = true;
+        deleteBtn.removeAttribute('aria-label');
+        deleteBtn.removeAttribute('title');
         openBtn.disabled = true;
     }
 
     _renderInfo(routine) {
-        const { prevBtn, nextBtn, title, metaMode, metaSize, createBtn, openBtn } = this._els;
+        const { prevBtn, nextBtn, title, metaMode, metaSize, deleteBtn, openBtn } = this._els;
         openBtn.disabled = false;
+        deleteBtn.disabled = false;
         const name = routine.title || this._currentKey();
         const total = this._order.length;
         const single = total < 2;
@@ -436,8 +449,10 @@ export class RoutineBrowser {
 
         prevBtn.disabled = single || this._index === 0;
         nextBtn.disabled = single || this._index === total - 1;
-        createBtn.hidden = !single || this._showingResults();
         openBtn.setAttribute('aria-label', getLabel('routineBrowser.openAria', { vars: { name } }));
+        const deleteName = getLabel('routineBrowser.deleteAria', { vars: { name } });
+        deleteBtn.setAttribute('aria-label', deleteName);
+        deleteBtn.setAttribute('title', deleteName);
     }
 
     /** A card for one routine, in its theme, drawn the way the user's view draws it. */
@@ -567,9 +582,13 @@ export class RoutineBrowser {
         return this._gridTiles().find(t => t.dataset.key === this._currentKey()) || null;
     }
 
-    /** Focus what Enter would act on: the grid's selected tile, or Open. */
+    /**
+     * Focus what Enter would act on: the grid's selected tile, or Open. With
+     * nothing to select (a search that matches nothing), the search field.
+     */
     _focusSelection() {
-        const target = this._isGrid() ? this._selectedTile() : this._els.openBtn;
+        let target = this._isGrid() ? this._selectedTile() : this._els.openBtn;
+        if (!this._currentKey() && this._searching) target = this._els.searchInput;
         target?.focus({ focusVisible: false });
     }
 
@@ -715,6 +734,42 @@ export class RoutineBrowser {
     }
 
     /**
+     * Delete the routine shown, through the switcher's own delete: the same
+     * confirm, undo hooks and fallback as the list's. Browse stays open on the
+     * routine that takes its place; deleting the last one closes Browse for
+     * the Create a Routine dialog, as the list does.
+     */
+    deleteCurrent() {
+        const key = this._currentKey();
+        const routine = this._routines()[key];
+        if (!routine) return;
+        const name = routine.title || key;
+        const index = this._index;
+        this.m.deleteRoutine(key, {
+            onRemaining: () => this._afterDelete(index, name),
+            closeView: () => this.close()
+        });
+    }
+
+    /**
+     * Redraw once a routine is gone: on the one after it in the order, or the
+     * one before when it was last. Its "deleted" notification is held until
+     * Browse closes (notifications.js), so say it to screen readers now.
+     * @param {number} index - where the deleted routine was in the order
+     * @param {string} name - its name
+     */
+    _afterDelete(index, name) {
+        if (!this.isOpen()) return;
+        this._order = this._orderFor(this._routines());
+        this._index = Math.min(index, Math.max(0, this._order.length - 1));
+        this._clearCards();
+        if (this._isGrid()) this._fillGrid();
+        this._render(0);
+        this._focusSelection();
+        announce(getLabel('notify.cycleDeleted', { vars: { name } }));
+    }
+
+    /**
      * Import a routine from a file: close Browse (the import's own choices are
      * dialogs of their own) and press the menu's Import, which owns the file
      * picker — the way the welcome screen's buttons reach the menu's. In the
@@ -772,7 +827,7 @@ export class RoutineBrowser {
 
     _attachListeners() {
         this._detachListeners();
-        const { closeBtn, layoutBtns, sortBtns, searchBtn, searchInput, searchClose, importBtn, toList, stage, grid, prevBtn, nextBtn, createBtn, openBtn } = this._els;
+        const { closeBtn, layoutBtns, sortBtns, searchBtn, searchInput, searchClose, importBtn, toList, stage, grid, prevBtn, nextBtn, deleteBtn, createBtn, openBtn } = this._els;
         const dialog = this._dialog;
 
         this._on(closeBtn, 'click', () => this.close());
@@ -789,6 +844,7 @@ export class RoutineBrowser {
         this._on(nextBtn, 'click', () => this.move(1));
         this._on(openBtn, 'click', () => this.openCurrent());
         this._on(createBtn, 'click', () => this.createAnother());
+        this._on(deleteBtn, 'click', () => this.deleteCurrent());
         this._on(importBtn, 'click', () => this.importRoutine());
 
         // Cards: a tap on the routine in front opens it (it is read-only, so a

@@ -272,6 +272,46 @@ export async function runRoutineSwitcherTests(resultsDiv, isPartOfSuite = false)
         }
     });
 
+    await test('New (beside Import) closes the list and opens Create a Routine', async () => {
+        // Nov 2026: Browse could make a routine and the list could not.
+        const schemaData = JSON.parse(localStorage.getItem('miniCycleData'));
+        const made = [];
+        const ensure = (tag, id) => {
+            let el = document.getElementById(id);
+            if (!el) { el = document.createElement(tag); el.id = id; document.body.appendChild(el); made.push(el); }
+            return el;
+        };
+        ['switch-items-row', 'miniCycleList'].forEach(id => ensure('div', id));
+        ['switch-duplicate', 'switch-rename', 'switch-delete', 'miniCycleSwitchConfirm', 'miniCycleSwitchCancel'].forEach(id => ensure('button', id));
+        const newBtn = ensure('button', 'switch-new-routine');
+        const modal = document.createElement('dialog');
+        modal.className = 'mini-cycle-switch-modal';
+        document.body.appendChild(modal);
+        made.push(modal);
+        let created = 0;
+        try {
+            const instance = new RoutineSwitcher({
+                AppState: { isReady: () => true, get: () => schemaData },
+                querySelector: (sel) => document.querySelector(sel),
+                getElementById: (id) => document.getElementById(id),
+                hideMainMenu: () => {},
+                showNotification: () => {},
+                showCycleCreationModal: () => { created++; },
+                getModal: () => modal
+            });
+            instance.switchMiniCycle();
+            if (!modal.open) throw new Error('the list did not open');
+            newBtn.click();
+            if (created !== 1) throw new Error(`Create a Routine opened ${created} times`);
+            if (modal.open) throw new Error('the list stayed open under Create a Routine');
+            instance.hideSwitchMiniCycleModal();
+            newBtn.click();
+            if (created !== 1) throw new Error('the click handler survived closing the list');
+        } finally {
+            made.forEach(el => el.remove());
+        }
+    });
+
     await test('switchMiniCycle handles no cycles gracefully', async () => {
         // Empty cycles
         const emptyData = {

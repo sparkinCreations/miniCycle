@@ -447,6 +447,20 @@ export class RoutineSwitcher {
             safeAdd(downloadButton, "click", downloadButton._clickHandler);
         }
 
+        // New routine, beside Import (Nov 2026: Browse had one and the list did
+        // not). Closes the list first, as Browse closes itself: the Create a
+        // Routine dialog is the next step, not a layer over this one.
+        const newRoutineButton = this.deps.getElementById(DOM_IDS.SWITCH_NEW_ROUTINE);
+        if (newRoutineButton) {
+            if (!newRoutineButton._clickHandler) {
+                newRoutineButton._clickHandler = () => {
+                    this.hideSwitchMiniCycleModal();
+                    this.deps.showCycleCreationModal();
+                };
+            }
+            safeAdd(newRoutineButton, "click", newRoutineButton._clickHandler);
+        }
+
         // ✅ Long-press hints for the Routine Actions row.
         //
         // On mobile .switch-btn-label is display:none (routine-switcher.css), so
@@ -507,6 +521,7 @@ export class RoutineSwitcher {
 
     renameMiniCycle() { return this._actions.renameMiniCycle(); }
     deleteMiniCycle() { return this._actions.deleteMiniCycle(); }
+    deleteRoutine(...args) { return this._actions.deleteRoutine(...args); }
     duplicateMiniCycle() { return this._actions.duplicateMiniCycle(); }
     downloadMiniCycle() { return this._actions.downloadMiniCycle(); }
     _buildExportPayload(...args) { return this._actions._buildExportPayload(...args); }
@@ -715,7 +730,7 @@ export class RoutineSwitcher {
         // Null button handler references so guards recreate on next open
         const buttonIds = [
             DOM_IDS.SWITCH_DUPLICATE, DOM_IDS.SWITCH_RENAME, DOM_IDS.SWITCH_DELETE,
-            DOM_IDS.SWITCH_DOWNLOAD, DOM_IDS.SWITCH_THEME_BTN,
+            DOM_IDS.SWITCH_DOWNLOAD, DOM_IDS.SWITCH_THEME_BTN, DOM_IDS.SWITCH_NEW_ROUTINE,
             DOM_IDS.MINI_CYCLE_SWITCH_CONFIRM, DOM_IDS.MINI_CYCLE_SWITCH_CLOSE,
             DOM_IDS.SWITCH_BROWSE_BTN, DOM_IDS.ROUTINE_LIST_EXPAND_BTN
         ];

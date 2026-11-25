@@ -201,6 +201,10 @@ export const UI_TIMEOUTS = Object.freeze({
     NOTIFICATION_OVERLAY: 10000,   // 10000ms - Overlay/celebration auto-dismiss
     ROUTINE_BROWSER_WHEEL_QUIET: 250, // 250ms - Browse Routines: a wheel/trackpad gesture moves ONE routine; further wheel events are ignored until they pause this long (a trackpad flick fires dozens)
     ROUTINE_STEP_WALK_IDLE: 10000, // ms - Alt+Shift+[ / ]: presses this close together keep walking the recent order as it was at the first press; after a pause the walk starts again from the order as it is then
+    // Deleting a routine (routineSwitcherActions.deleteRoutine, behind the list and Browse):
+    ROUTINE_DELETE_RESELECT: 50,          // ms - the list: select the first routine left, once the redrawn list is in the DOM
+    ROUTINE_DELETE_LAST_CLOSE: 300,       // ms - the last routine deleted: close the view after the confirm has gone
+    ROUTINE_DELETE_LAST_CREATE: 500,      // ms - then open Create a Routine, once the view has closed
     ROUTINE_BROWSER_CARD_EXIT: 400,   // ms - Browse Routines: a card sliding out of the carousel is removed after this (its --transition-normal slide, plus margin) if no transitionend arrives
     ROUTINE_BROWSER_SWIPE_CLICK_GUARD: 350, // ms - Browse Routines: the click a browser sends after a swipe's touchend (or a mouse drag's mouseup) is ignored for this long, so ending a swipe on the routine does not open it
     FOCUS_EXIT_DOUBLE_ESCAPE: 1500, // 1500ms - In Focus View, a second Escape within this leaves the view; also how long the "press again" hint stays up
@@ -1031,6 +1035,8 @@ export const DOM_CLASSES = Object.freeze({
     RB_ACTIONS: 'rb-actions',
     RB_OPEN_BTN: 'rb-open-btn',
     RB_CREATE_BTN: 'rb-create-btn',
+    RB_DELETE_BTN: 'rb-delete-btn',     // Browse: delete the routine shown (the list's delete and confirm)
+    RB_ACTION_BTN: 'rb-action-btn',     // Browse: the icon-and-text buttons either side of Open
     SHORTCUTS_INTRO: 'shortcuts-intro',     // Keyboard Shortcuts dialog: intro line
     SHORTCUTS_ROW: 'shortcuts-row',         // Keyboard Shortcuts dialog: one key + description pair
     SHORTCUTS_START: 'shortcuts-start',     // Keyboard Shortcuts dialog: "Start with these", the view's five keys
@@ -1711,6 +1717,7 @@ export const DOM_IDS = Object.freeze({
     REPEAT_COUNT_ROW: 'repeat-count-row',
     BROWSER_NOTIFICATIONS: 'browserNotifications',
     PRIVACY_NOTICE_DETAILS: 'privacyNoticeDetails',
+    PRIVACY_NOTICE_TEXT: 'privacy-notice-text',   // its text: platform wording (browser vs app)
 
     // ---- Routine / Cycle ----
     MINI_CYCLE_TITLE: 'mini-cycle-title',
@@ -1741,6 +1748,7 @@ export const DOM_IDS = Object.freeze({
     SWITCH_RENAME: 'switch-rename',
     SWITCH_DELETE: 'switch-delete',
     SWITCH_DOWNLOAD: 'switch-download',
+    SWITCH_NEW_ROUTINE: 'switch-new-routine',       // the list's bottom row: New, beside Import and Open
     SWITCH_THEME_BTN: 'switch-theme',
     THEME_PICKER_ROW: 'theme-picker-row',
     MINI_CYCLE_SWITCH_CONFIRM: 'miniCycleSwitchConfirm',

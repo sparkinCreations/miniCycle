@@ -444,6 +444,37 @@ export async function runLabelResolverTests(resultsDiv) {
             if (bad.length) throw new Error(`Non-string resolutions (app=${app}): ${bad.map(([k]) => k).join(', ')}`);
         }
     });
+    await test('REGRESSION: no label says "browser" in the apps (iOS, Android, desktop)', () => {
+        // The iPhone app read "if your browser data is cleared" and "the browser
+        // console" (the user, Nov 2026). Every label that names the browser is a
+        // { browser, app } pair, and its app side never says browser. The only
+        // plain strings allowed to are ones nothing shows any more.
+        const allowedPlain = new Set(['boot.oldCachedVersion', 'boot.refreshAndroid']);
+        const bad = [];
+        const walk = (node, path) => {
+            if (typeof node === 'string') {
+                if (/\bbrowser\b/i.test(node) && !allowedPlain.has(path)) bad.push(`${path} (plain)`);
+                return;
+            }
+            if (!node || typeof node !== 'object') return;
+            if ('browser' in node || 'app' in node) {
+                if (/\bbrowser\b/i.test(JSON.stringify(node.app ?? ''))) bad.push(`${path} (app side)`);
+                return;
+            }
+            for (const [k, v] of Object.entries(node)) walk(v, path ? `${path}.${k}` : k);
+        };
+        walk(DEFAULT_LABELS, '');
+        if (bad.length) throw new Error(`Says "browser" in the apps: ${bad.join(', ')}`);
+        // And they resolve to strings on both sides.
+        const keys = ['notify.backupReminderMessage', 'settings.debugModeDesc', 'reminders.privacyNotice', 'boot.suggestClearCache'];
+        for (const app of [true, false]) {
+            setLabelResolverDependencies({ isAppPlatform: () => app });
+            const got = keys.map(k => [k, getLabel(k)]);
+            setLabelResolverDependencies({ isAppPlatform: null });
+            const wrong = got.filter(([, v]) => typeof v !== 'string' || v.includes('object Object') || /\bbrowser\b/i.test(v) === app);
+            if (wrong.length) throw new Error(`app=${app}: ${wrong.map(([k, v]) => `${k}="${v}"`).join('; ')}`);
+        }
+    });
     await test('missing variant side falls back to the other side', () => {
         setLabelResolverDependencies({ isTouchDevice: () => false });
         // modeManualShort has both sides; simulate one-sided by checking fallback logic

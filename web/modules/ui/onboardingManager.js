@@ -358,18 +358,7 @@ export class OnboardingManager {
             state.settings.firstRunFocusExitPending = true;
         }, true);
 
-        this._focusViewFirstRunNotice = this.deps.showNotification?.(
-            getLabel('notify.focusViewFirstRun'),
-            'info',
-            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
-            // First the way out: the exit button's own icon (focusMode draws it
-            // with 'compress'), so a new user can match it to the button. Then
-            // the drag tip, with the grip the Task View Layout handles use.
-            { hint: [
-                { message: getLabel('notify.focusViewExitHint'), icon: 'compress', iconLabel: getLabel('focusMode.exitAria') },
-                { message: getLabel('notify.focusViewDragHint'), icon: 'drag-handle' }
-            ] }
-        );
+        this._showFocusViewFirstRunNotice(getLabel('notify.focusViewFirstRun'));
 
         // EVERY first-run choice gets the Home View welcome on first Focus View
         // exit — this is the one moment a new user is told Home View exists.
@@ -402,6 +391,30 @@ export class OnboardingManager {
             this._showHomeViewWelcomeNotification();
         };
         document.addEventListener(EVENTS.FOCUS_MODE_DEACTIVATED, this._sampleFirstExitHandler, { once: true });
+    }
+
+    /**
+     * The first-run Focus View tip: a line saying where the user is, then how
+     * to leave (the exit button's own icon — focusMode draws it with
+     * 'compress' — so a new user can match it to the button) and that toasts
+     * can be dragged (the grip the Task View Layout handles use). Shown on the
+     * Create / Sample landing, and on Done at the end of Show How Cycles Work
+     * (Nov 2026: that path had neither tip). Kept so the first Focus View exit
+     * can take it down: its "this button" is gone once the user has left.
+     * @param {string} message - the first line
+     * @private
+     */
+    _showFocusViewFirstRunNotice(message) {
+        this._dismissFocusViewFirstRunNotice();
+        this._focusViewFirstRunNotice = this.deps.showNotification?.(
+            message,
+            'info',
+            UI_TIMEOUTS.NOTIFICATION_PERSISTENT,
+            { hint: [
+                { message: getLabel('notify.focusViewExitHint'), icon: 'compress', iconLabel: getLabel('focusMode.exitAria') },
+                { message: getLabel('notify.focusViewDragHint'), icon: 'drag-handle' }
+            ] }
+        );
     }
 
     /**
@@ -500,6 +513,8 @@ export class OnboardingManager {
         this._firstFocusExitHandler = () => {
             const wasFresh = markOnboardingComplete();
             this._carousel._hideFirstRunWelcome();
+            // The Done tip's "this button" left with Focus View.
+            this._dismissFocusViewFirstRunNotice();
             this._detachFirstSessionLifecycle();
             if (!wasFresh) return;
             document.dispatchEvent(new Event('onboarding:setup-complete'));

@@ -302,6 +302,7 @@
   --browse-control-bg: rgba(255, 255, 255, 0.12);
   --browse-control-hover-bg: rgba(255, 255, 255, 0.24);  /* white text on it: well over 4.5:1 */
   --browse-control-border: rgba(255, 255, 255, 0.32);
+  --browse-danger-hover-bg: rgba(198, 40, 40, 0.7);  /* Delete's hover: white text on it over the surround about 8.7:1 */
   --browse-card-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
   --browse-card-max-width: 520px;
   --browse-card-max-height: 680px;
@@ -329,7 +330,7 @@
   --browse-z-far: 1;
   --browse-tile-min: 220px;         /* grid: narrowest a tile gets before the row reflows */
   --browse-tile-height: 230px;
-  --browse-action-min-width: 140px;   /* Open / Create another routine */
+  --browse-action-min-width: 140px;   /* Open */
   --browse-search-max-width: 420px;   /* the search field on a wide screen */
 
   /* ═══════════════════════════════════════════════════════════════════════════
