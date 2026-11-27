@@ -16,7 +16,7 @@
     <h1>🔐 Security Policy for miniCycle</h1>
 
     <div class="section">
-      <p><strong>Last Updated:</strong> June 15, 2026</p>
+      <p><strong>Last Updated:</strong> November 27, 2026</p>
       <p><strong>Version:</strong> 1.2</p>
     </div>
 
@@ -57,7 +57,7 @@
       <ul>
         <li><strong>Content Security Policy (CSP)</strong> — Strict script and resource loading rules with SHA-256 hashes for inline scripts on the web app; the Chrome extension uses Manifest V3's <code>script-src 'self'</code> policy with all inline scripts externalized</li>
         <li><strong>XSS Protection</strong> — Input sanitization and HTML escaping across all user-facing outputs</li>
-        <li><strong>Security Headers</strong> — X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS</li>
+        <li><strong>Security Headers</strong> — X-Content-Type-Options, Referrer-Policy, Permissions-Policy, and HSTS. Clickjacking protection comes from the Content Security Policy's frame-ancestors rule rather than X-Frame-Options, which cannot allow the separate test-runner origin</li>
         <li><strong>No External Dependencies</strong> — Self-hosted fonts, assets, and scripts; no third-party analytics, advertising, or tracking libraries. The only outbound third-party request the app makes is to the feedback form provider (Web3Forms), and only when you choose to submit feedback. Marketing pages post anonymous click and page-view events to a self-hosted Netlify Function on our own infrastructure</li>
         <li><strong>Import Validation</strong> — Imported .mcyc files are validated, sanitized, and rejected when they do not match miniCycle's expected structure. As a general best practice, only import routine files from people you trust</li>
         <li><strong>Local-Only Data</strong> — All user data stored in browser localStorage; no server-side storage or transmission</li>
